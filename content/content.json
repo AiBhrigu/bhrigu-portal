@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "id": "bhrigu-portal",
+    "version": "1.0",
+    "mode": "showcase",
+    "updated": "2025-12-13"
+  },
+  "portal": {
+    "name": "BHRIGU",
+    "role": "portal-gateway-economic-layer",
+    "statement": "BHRIGU is a structural portal and gateway layer. It exposes services, access paths, and economic interfaces without touching analytical cores."
+  },
+  "navigation": [
+    { "path": "/", "label": "Portal" },
+    { "path": "/services", "label": "Services" },
+    { "path": "/api", "label": "API" },
+    { "path": "/cosmography", "label": "Cosmography" },
+    { "path": "/frey", "label": "Frey" },
+    { "path": "/dao", "label": "DAO" },
+    { "path": "/access", "label": "Access" }
+  ],
+  "services": {
+    "phi_services": {
+      "human": "Φ-passport, resonance profiles, identity mapping",
+      "asset": "Φ-scoring, cycle alignment, portfolio resonance",
+      "crypto": "Astro-economic signals, cycle-based analytics"
+    }
+  },
+  "orion": {
+    "role": "analytical-core",
+    "access": "api-only",
+    "statement": "ORION Core is an isolated analytical engine. No UI, no governance, no economics."
+  },
+  "cosmography": {
+    "role": "scientific-visual-layer",
+    "separation": "independent",
+    "statement": "Φ-Cosmography is a scientific and visual exploration layer, fully separated from DAO and economics."
+  },
+  "frey": {
+    "role": "communication-operator",
+    "interface": "human-ai",
+    "statement": "Frey operates as the interaction and communication interface. No core authority."
+  },
+  "dao": {
+    "role": "governance-layer",
+    "control": "non-core",
+    "statement": "DAO governs access and economics. It has zero control over ORION or Cosmography."
+  },
+  "access": {
+    "mode": "email-only",
+    "statement": "Access is provided via direct email communication. No onboarding flows."
+  }
+}
