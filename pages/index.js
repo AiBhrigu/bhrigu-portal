@@ -4,6 +4,7 @@ export default function Home() {
     ["/reading", "Reading"],
     ["/map", "Map"],
     ["/services", "Services"],
+    ["/cosmography", "Cosmography"],
     ["/orion", "ORION"],
     ["/frey", "Frey"],
     ["/dao", "DAO"],
