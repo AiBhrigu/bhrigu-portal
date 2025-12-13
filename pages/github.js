@@ -11,7 +11,8 @@ export default function GitHub() {
       <hr />
 
       <p>
-        → <a href="https://github.com/AiBhrigu" target="_blank" rel="noreferrer">
+        →{" "}
+        <a href="https://github.com/AiBhrigu" target="_blank" rel="noreferrer">
           https://github.com/AiBhrigu
         </a>
       </p>
@@ -19,6 +20,7 @@ export default function GitHub() {
       <hr />
 
       <p><strong>RU</strong></p>
+
       <p>
         Справочная ссылка на публичный профиль.<br />
         Только внешний слой.
