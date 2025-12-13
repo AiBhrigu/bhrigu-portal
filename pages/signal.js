@@ -1,7 +1,7 @@
 export default function Signal() {
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      <h1>Signal</h1>
+      <h1>Signal Φ</h1>
 
       <p>
         System signal is present.<br />

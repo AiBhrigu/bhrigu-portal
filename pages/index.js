@@ -19,7 +19,7 @@ export default function Home() {
         <span>BHRIGU</span>
         <a href="/signal"
            aria-label="Phi anchor"
-           style={{ textDecoration: "none", opacity: 0.85, fontWeight: 700 }}>
+           style={{ textDecoration: "none", color: "inherit", opacity: 0.85, fontWeight: 700, letterSpacing: "0.02em" }}>
           Φ
         </a>
       </h1>
