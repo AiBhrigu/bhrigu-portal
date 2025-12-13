@@ -12,33 +12,24 @@ export default function Access() {
       <hr />
 
       <p>
-        There are no public entry points.<br />
-        There are no onboarding flows.
-      </p>
-
-      <p>
-        Contact, if established,<br />
-        is initiated externally.
+        Contact is temporarily offline.<br />
+        When it opens, it will be published here.
       </p>
 
       <hr />
 
       <p><strong>RU</strong></p>
-
       <p>
         Доступ существует.<br />
         Он не автоматизирован.<br />
         Он не мгновенный.
       </p>
 
-      <p>
-        Публичных точек входа нет.<br />
-        Онбординга нет.
-      </p>
+      <hr />
 
       <p>
-        Контакт, если возникает,<br />
-        инициируется извне.
+        Контакт временно закрыт.<br />
+        Когда он откроется — это будет опубликовано здесь.
       </p>
     </main>
   );

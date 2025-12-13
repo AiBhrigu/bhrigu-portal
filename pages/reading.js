@@ -10,46 +10,38 @@ export default function Reading() {
 
       <hr />
 
+      <p><strong>Order</strong></p>
       <p>
-        Order:
-      </p>
-      <p>
-        1. Start — establish presence.<br />
-        2. Map — perceive structure.<br />
-        3. Services — observe exposed contours.<br />
-        4. Access — understand the gate.<br />
-        5. Chronicle — fix the state.
-      </p>
-
-      <hr />
-
-      <p>
-        Do not search.<br />
-        Do not expect interaction.<br />
-        Read sequentially.
+        1. <a href="/start">/start</a> — establish presence.<br />
+        2. <a href="/map">/map</a> — perceive structure.<br />
+        3. <a href="/services">/services</a> — observe contours.<br />
+        4. <a href="/orion">/orion</a> — core boundary.<br />
+        5. <a href="/frey">/frey</a> — interface boundary.<br />
+        6. <a href="/dao">/dao</a> — economic shell boundary.<br />
+        7. <a href="/access">/access</a> — understand the gate.<br />
+        8. <a href="/chronicle">/chronicle</a> — fix the state.
       </p>
 
       <hr />
 
       <p><strong>RU</strong></p>
       <p>
-        Этот портал не навигируется.<br />
-        Он читается.
+        Этот портал не “листают”.<br />
+        Его читают.
       </p>
+
+      <hr />
+
+      <p><strong>Порядок</strong></p>
       <p>
-        Порядок:
-      </p>
-      <p>
-        1. Start — фиксация присутствия.<br />
-        2. Map — восприятие структуры.<br />
-        3. Services — наблюдение контуров.<br />
-        4. Access — понимание входа.<br />
-        5. Chronicle — фиксация состояния.
-      </p>
-      <p>
-        Не ищи.<br />
-        Не жди взаимодействия.<br />
-        Читай последовательно.
+        1. <a href="/start">/start</a> — зафиксировать присутствие.<br />
+        2. <a href="/map">/map</a> — увидеть структуру.<br />
+        3. <a href="/services">/services</a> — контуры.<br />
+        4. <a href="/orion">/orion</a> — граница ядра.<br />
+        5. <a href="/frey">/frey</a> — граница интерфейса.<br />
+        6. <a href="/dao">/dao</a> — граница экономической оболочки.<br />
+        7. <a href="/access">/access</a> — понять доступ.<br />
+        8. <a href="/chronicle">/chronicle</a> — зафиксировать состояние.
       </p>
     </main>
   );
