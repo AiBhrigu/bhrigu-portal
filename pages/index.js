@@ -1,6 +1,13 @@
 import { loadContent } from "../lib/loadContent";
 
-export default function Page() {
-  const content = loadContent();
-  return <pre>{JSON.stringify(content, null, 2)}</pre>;
+export async function getStaticProps() {
+  return {
+    props: {
+      content: loadContent()
+    }
+  };
+}
+
+export default function Page({ content }) {
+  return <pre>{JSON.stringify(content.portal, null, 2)}</pre>;
 }
