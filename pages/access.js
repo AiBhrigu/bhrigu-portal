@@ -12,15 +12,14 @@ export default function Access() {
       <hr />
 
       <p>
-        Communication is handled manually.<br />
+        There are no public entry points.<br />
         There are no onboarding flows.
       </p>
 
       <p>
-        Contact is established via email only.
+        Contact, if established,<br />
+        is initiated externally.
       </p>
-
-      <p><strong>bhrigu@proton.me</strong></p>
 
       <hr />
 
@@ -33,15 +32,14 @@ export default function Access() {
       </p>
 
       <p>
-        Коммуникация осуществляется вручную.<br />
+        Публичных точек входа нет.<br />
         Онбординга нет.
       </p>
 
       <p>
-        Связь — только по email.
+        Контакт, если возникает,<br />
+        инициируется извне.
       </p>
-
-      <p><strong>bhrigu@proton.me</strong></p>
     </main>
   );
 }
