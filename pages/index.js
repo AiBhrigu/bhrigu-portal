@@ -1,6 +1,19 @@
 export default function Home() {
+  const links = [
+    ["/start", "Start"],
+    ["/reading", "Reading"],
+    ["/map", "Map"],
+    ["/services", "Services"],
+    ["/orion", "ORION"],
+    ["/frey", "Frey"],
+    ["/dao", "DAO"],
+    ["/access", "Access"],
+    ["/chronicle", "Chronicle"],
+    ["/github", "GitHub"],
+  ];
+
   return (
-    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
+    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.7", maxWidth: "820px" }}>
       <h1>BHRIGU</h1>
 
       <p>
@@ -23,16 +36,15 @@ export default function Home() {
 
       <hr />
 
-      <p>Continue reading:</p>
-      <p>
-        <a href="/map">/map</a><br />
-        <a href="/services">/services</a><br />
-        <a href="/orion">/orion</a><br />
-        <a href="/frey">/frey</a><br />
-        <a href="/dao">/dao</a><br />
-        <a href="/access">/access</a><br />
-        <a href="/chronicle">/chronicle</a>
-      </p>
+      <p><strong>Continue reading:</strong></p>
+
+      <ul style={{ paddingLeft: "1.2rem" }}>
+        {links.map(([href, label]) => (
+          <li key={href}>
+            <a href={href}>{href}</a> — {label}
+          </li>
+        ))}
+      </ul>
 
       <hr />
 
