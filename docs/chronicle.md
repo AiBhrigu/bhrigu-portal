@@ -3,41 +3,35 @@
 ## EN
 This chronicle records states, not events.
 
-### 2025-12-13 — Launch Anchor
+### 2025-12-13 — Phase A · Portal Launch
 State: Canon  
 Mode: Hold  
 Contour: Closed  
-Note: The portal was deployed as a read-only field stage. No cores were touched.
+Note: BHRIGU was deployed as a structural portal. No cores were touched.
 
-### 2025-12-13 — Stabilization Anchor
+### 2025-12-13 — Phase B · Meaning Layer
 State: Stable  
-Mode: Observe  
-Contour: Locked  
-Note: Core contours were assembled and boundaries enforced.
-
-### 2025-12-13 — Continuation Anchor
-State: Assembled  
-Mode: Hold+  
+Mode: Read  
 Contour: Self-contained  
-Note: BHRIGU reached self-sufficiency. Further actions imply return to reading.
+Note: Semantic layers (Start, Reading, Map, Services, Access, Signal) assembled.
+The portal reached readable completeness without activation.
+
+Further actions imply observation only.
 
 ## RU
 Эта хроника фиксирует состояния, а не события.
 
-### 2025-12-13 — Якорь запуска
+### 2025-12-13 — Фаза A · Запуск портала
 Состояние: Канон  
 Режим: Удержание  
 Контур: Закрыт  
-Примечание: Портал развёрнут как стадия чтения. Ядра не затронуты.
+Примечание: BHRIGU развёрнут как структурный портал. Ядра не затронуты.
 
-### 2025-12-13 — Якорь стабилизации
+### 2025-12-13 — Фаза B · Слой смысла
 Состояние: Стабильно  
-Режим: Наблюдение  
-Контур: Зафиксирован  
-Примечание: Контуры собраны, границы соблюдены.
-
-### 2025-12-13 — Якорь продолжения
-Состояние: Собрано  
-Режим: Hold+  
+Режим: Чтение  
 Контур: Самодостаточный  
-Примечание: BHRIGU достиг автономности. Дальнейшие действия — возврат к чтению.
+Примечание: Семантические слои собраны.
+Портал завершён как читаемая структура без активации.
+
+Дальнейшие действия — только наблюдение.
