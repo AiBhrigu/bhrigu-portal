@@ -28,6 +28,11 @@ export default function Map() {
         The map is static.<br />
         Movement happens outside the portal.
       </p>
+      <p>
+  structural reference → <a href="/github">/github</a>
+      </p>
+
     </main>
   );
 }
+
