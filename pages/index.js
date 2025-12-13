@@ -1,18 +1,8 @@
 export default function Home() {
-  const linkStyle = {
-    color: "inherit",
-    textDecoration: "underline"
-  };
+  const linkStyle = { color: "inherit", textDecoration: "underline" };
 
   return (
-    <main
-      style={{
-        padding: "4rem",
-        fontFamily: "monospace",
-        lineHeight: "1.6",
-        maxWidth: "820px"
-      }}
-    >
+    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
       <h1>BHRIGU</h1>
 
       <p>
@@ -44,6 +34,12 @@ export default function Home() {
         <a href="/services" style={linkStyle}>/services</a><br />
         <a href="/access" style={linkStyle}>/access</a><br />
         <a href="/chronicle" style={linkStyle}>/chronicle</a>
+      </p>
+
+      <hr />
+
+      <p>
+        system signal → <a href="/signal" style={linkStyle}>/signal</a>
       </p>
 
       <hr />
