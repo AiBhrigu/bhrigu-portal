@@ -15,7 +15,14 @@ export default function Home() {
 
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.7", maxWidth: "820px" }}>
-      <h1>BHRIGU</h1>
+      <h1 style={{ display: "flex", alignItems: "baseline", gap: "0.6rem" }}>
+        <span>BHRIGU</span>
+        <a href="/signal"
+           aria-label="Phi anchor"
+           style={{ textDecoration: "none", opacity: 0.85, fontWeight: 700 }}>
+          Φ
+        </a>
+      </h1>
 
       <p>
         Structural portal.<br />
