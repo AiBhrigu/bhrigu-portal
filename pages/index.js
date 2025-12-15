@@ -2,6 +2,7 @@ export default function Home() {
   const links = [
     ["/start", "Start"],
     ["/reading", "Reading"],
+    ["/signal", "Signal"],
     ["/map", "Map"],
     ["/services", "Services"],
     ["/cosmography", "Cosmography"],
