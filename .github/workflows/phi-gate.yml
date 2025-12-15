@@ -1,0 +1,56 @@
+name: Φ Gate
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  phi-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Φ gate — paste-trash in pages
+        run: |
+          if grep -RIn "npx vercel" pages; then
+            echo "FAIL: found 'npx vercel' inside pages (paste trash)."
+            exit 1
+          fi
+          echo "OK"
+
+      - name: Φ gate — tracked build artifacts
+        run: |
+          if git ls-files | grep -E '^(node_modules/|\.next/)'; then
+            echo "FAIL: node_modules/.next tracked"
+            exit 1
+          fi
+          echo "OK"
+
+      - name: Build
+        run: npm run build
+
+      # Лёгкий smoke по прод-урлам. Только на push в master (не на PR).
+      - name: Φ smoke — prod routes (soft)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        run: |
+          base="https://www.bhrigu.io"
+          for p in / /signal /map /github /api; do
+            echo "== $p =="
+            curl -fsS -o /dev/null "$base$p"
+          done
+          echo "OK: prod routes reachable"
