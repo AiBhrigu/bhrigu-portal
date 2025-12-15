@@ -44,7 +44,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Лёгкий smoke по прод-урлам. Только на push в master (не на PR).
       - name: Φ smoke — prod routes (soft)
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
