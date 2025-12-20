@@ -1,0 +1,53 @@
+/* START · Surface Fix v1 (UI-only) */
+
+.content{
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 64px 24px 56px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.h1{
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0 0 22px;
+}
+
+.block{ margin: 0; }
+
+.en{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  margin: 0;
+}
+
+.ru{
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Arial, sans-serif;
+  margin: 0;
+}
+
+.lang{
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin: 0 0 12px;
+}
+
+.hr{
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.14);
+  margin: 28px 0;
+  width: 100%;
+}
+
+.rail{
+  margin-top: 34px;
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.rail a{ text-decoration: none; }
+.rail a:hover{ text-decoration: underline; opacity: 1; }
