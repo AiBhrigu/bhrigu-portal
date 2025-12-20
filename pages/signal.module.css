@@ -1,0 +1,23 @@
+.content{
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 64px 24px 56px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.rail{
+  margin: 10px 0 26px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+.railLink{
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255,255,255,0.18);
+}
+.railLink:hover{ opacity: 1; }
+.railHere{ opacity: 0.75; }
+.railSep{ opacity: 0.35; }

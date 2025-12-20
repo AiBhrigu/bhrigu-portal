@@ -1,7 +1,17 @@
+import styles from "./reading.module.css";
 export default function Reading() {
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
       <h1>Reading</h1>
+
+<nav className={styles.rail} aria-label="Route rail" data-phi-rail>
+  <a className={styles.railLink} href="/start">← /start</a>
+  <span className={styles.railSep}>/</span>
+  <span className={styles.railHere}>/reading</span>
+  <span className={styles.railSep}>/</span>
+  <a className={styles.railLink} href="/signal">/signal →</a>
+</nav>
+
 
       <p>
         This portal is not navigated.<br />
