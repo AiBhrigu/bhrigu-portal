@@ -4,7 +4,8 @@ export default function Document() {
   return (
     <Html lang="en">
       <Head>
-        <meta property="og:type" content="website" />
+                <title>BHRIGU</title>
+<meta property="og:type" content="website" />
         <meta property="og:title" content="BHRIGU" />
         <meta property="og:description" content="Structural portal and gateway layer." />
         <meta property="og:image" content="https://bhrigu.io/og/og.png" />
