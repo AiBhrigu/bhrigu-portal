@@ -1,0 +1,67 @@
+/* MAP · Route Rail v1 (UI-only) */
+
+.content{
+  max-width: 78ch;
+  margin: 0 auto;
+  padding: 64px 24px 56px;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.h1{
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 0 0 18px;
+}
+
+.phi{ opacity: 0.9; }
+
+.h2{
+  font-size: 16px;
+  margin: 0 0 14px;
+  opacity: 0.9;
+}
+
+.en{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  margin: 0;
+}
+
+.hr{
+  border: 0;
+  border-top: 1px solid rgba(255,255,255,0.14);
+  margin: 26px 0;
+  width: 100%;
+}
+
+.list{ list-style: none; padding: 0; margin: 0; }
+.item{ margin: 0 0 10px; }
+
+.link{
+  text-decoration: none;
+  display: inline-flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.path{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  opacity: 0.95;
+}
+
+.title{ opacity: 0.9; }
+.note{ opacity: 0.7; }
+.sep{ opacity: 0.35; }
+
+.link:hover{ text-decoration: underline; }
+
+.rail{
+  margin-top: 34px;
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+.rail a{ text-decoration: none; }
+.rail a:hover{ text-decoration: underline; opacity: 1; }
