@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { useEffect, useState } from "react";
 
 export default function Frey() {
   const box = { maxWidth: 920, margin: "0 auto", padding: "48px 20px", lineHeight: 1.6 };
@@ -39,89 +40,68 @@ export default function Frey() {
   };
   const small = { opacity: 0.78, fontSize: 13 };
 
+  const [localStatus, setLocalStatus] = useState("CHECKING");
+
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch("http://127.0.0.1:8811/ping", { signal: ctrl.signal })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(() => setLocalStatus("GREEN"))
+      .catch(() => setLocalStatus("RED"));
+    return () => ctrl.abort();
+  }, []);
+
   return (
     <>
       <Head>
         <title>Frey · Release v0.1</title>
-        <meta
-          name="description"
-          content="Frey — публичный интерфейс Φ-системы ORION (портал / локал), Release v0.1"
-        />
+        <meta name="description" content="Frey — публичный интерфейс Φ-системы ORION (portal / local), Release v0.1" />
       </Head>
 
       <main style={box}>
         <div style={{ marginBottom: 18 }}>
-          <div style={small}>
-            <span style={kbd}>/frey</span> · Release v0.1 · Φ
-          </div>
+          <div style={small}><span style={kbd}>/frey</span> · Release v0.1 · Φ</div>
           <h1 style={h1}>Frey</h1>
           <p style={lead}>
-            Frey — публичный интерфейс Φ-системы ORION: объясняет, как пользоваться,
-            и даёт безопасную “поверхностную” навигацию без раскрытия внутренних методов.
+            Frey — публичный интерфейс Φ-системы ORION: объяснение, навигация и безопасная
+            поверхность без раскрытия внутренних методов.
           </p>
 
           <div style={{ marginTop: 12 }}>
             <a href="#docs" style={btnPrimary}>Open Docs</a>
-            <a
-              href="http://127.0.0.1:8811/docs"
-              target="_blank"
-              rel="noreferrer"
-              style={btn}
-            >
+            <a href="http://127.0.0.1:8811/docs" target="_blank" rel="noreferrer" style={btn}>
               Open Local
             </a>
-            <div style={{ ...small, marginTop: 8 }}>
-              Open Local работает только на твоей машине, если Frey запущен локально (127.0.0.1:8811).
-            </div>
+          </div>
+
+          <div style={{ ...small, marginTop: 10 }}>
+            Local Status:&nbsp;
+            <b style={{ color: localStatus === "GREEN" ? "#6f6" : localStatus === "RED" ? "#f66" : "#ccc" }}>
+              {localStatus}
+            </b>
+            &nbsp;· работает только если Frey запущен локально (127.0.0.1).
           </div>
         </div>
 
         <section id="docs" style={card}>
-          <h2 style={{ margin: "0 0 8px 0" }}>Как пользоваться (онлайн)</h2>
-          <ol style={{ margin: 0, paddingLeft: 20 }}>
-            <li>Открой страницу <span style={kbd}>/frey</span> на портале.</li>
-            <li>Нажми <b>Open Docs</b> — прочитай возможности и ограничения.</li>
-            <li>Если ты на своей машине и Frey поднят локально — нажми <b>Open Local</b>.</li>
+          <h2>Как пользоваться</h2>
+          <ol>
+            <li>Открой <span style={kbd}>/frey</span> на портале.</li>
+            <li>Прочитай Docs (публичный режим).</li>
+            <li>Если Frey запущен локально — нажми <b>Open Local</b>.</li>
           </ol>
-          <p style={{ ...small, marginTop: 10 }}>
-            В публичном режиме достаточно Docs: мы не просим доступы и не выводим внутреннюю механику.
-          </p>
         </section>
 
         <section style={card}>
-          <h2 style={{ margin: "0 0 8px 0" }}>Режимы</h2>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            <li><b>Online (Portal):</b> объяснение, навигация, правила безопасности.</li>
-            <li><b>Local (Frey API):</b> локальный сервер для тестов и разработки (не публичный).</li>
-          </ul>
-        </section>
-
-        <section style={card}>
-          <h2 style={{ margin: "0 0 8px 0" }}>Быстрые ссылки (локал)</h2>
-          <ul style={{ margin: 0, paddingLeft: 20 }}>
-            <li>
-              <a href="http://127.0.0.1:8811/docs" target="_blank" rel="noreferrer">
-                http://127.0.0.1:8811/docs
-              </a>
-            </li>
-            <li>
-              <a href="http://127.0.0.1:8811/ping" target="_blank" rel="noreferrer">
-                http://127.0.0.1:8811/ping
-              </a>
-            </li>
-          </ul>
-        </section>
-
-        <section style={card}>
-          <h2 style={{ margin: "0 0 8px 0" }}>Safety / IP</h2>
-          <p style={{ margin: 0 }}>
-            Frey в публичном режиме не раскрывает внутренние методы, формулы, приватные пайплайны и патентные детали.
-            Любые запросы “как именно это считается” — RED и получают безопасный отказ/фоллбек.
+          <h2>Safety / IP</h2>
+          <p>
+            Публичный Frey не раскрывает формулы, алгоритмы и приватные пайплайны.
+            Любые вопросы “как считается” — RED и получают безопасный фоллбек.
           </p>
         </section>
 
         <div style={{ ...small, marginTop: 18 }}>
-          /api на портале остаётся выключен (410/404). Публичная поверхность — только навигация и правила.
+          /api на портале выключен (410). Публичная поверхность — только навигация и правила.
         </div>
       </main>
     </>
