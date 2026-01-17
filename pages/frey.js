@@ -88,10 +88,7 @@ export default function Frey() {
               <textarea
                 value={promptText}
                 onChange={(e) => setPromptText(e.target.value)}
-                placeholder={"ЦЕЛЬ: ...
-КОНТЕКСТ: ...
-ОГРАНИЧЕНИЯ: ...
-ВЫХОД: ..."}
+placeholder={`ЦЕЛЬ: ...\nКОНТЕКСТ: ...\nОГРАНИЧЕНИЯ: ...\nВЫХОД: ...`}
                 style={{
                   width: "100%",
                   minHeight: 120,
