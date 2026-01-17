@@ -63,8 +63,12 @@ export default function Frey() {
           <div style={small}><span style={kbd}>/frey</span> · Release v0.1 · Φ</div>
           <h1 style={h1}>Frey</h1>
           <p style={lead}>
-            Frey — публичный интерфейс Φ-системы ORION: объяснение, навигация и безопасная
-            поверхность без раскрытия внутренних методов.
+            <b>Frey (v0.1)</b><br />
+            Frey — публичная навигация: объясняю, структурирую, даю 3 шага и стоп-условия. Без раскрытия внутренних методов.<br /><br />
+            <b>Старт</b><br />
+            Напиши: <span style={kbd}>Цель / Контекст / Ограничения / Выход</span> — и я дам маршрут.<br /><br />
+            <b>Границы</b><br />
+            Я не раскрываю внутренние детали системы и не даю гарантий результата. Таблицы/градусы/астроданные — отдельный режим позже.
           </p>
 
           <div style={{ marginTop: 12 }}>
@@ -75,7 +79,7 @@ export default function Frey() {
           </div>
 
           <div style={{ ...small, marginTop: 10 }}>
-            Local Status:&nbsp;
+            Local Mode (optional):&nbsp;
             <b style={{ color: localStatus === "GREEN" ? "#6f6" : localStatus === "RED" ? "#f66" : "#ccc" }}>
               {localStatus}
             </b>
