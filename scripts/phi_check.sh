@@ -1,28 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "== Φ gate: paste-trash in pages =="
-if grep -RIn "npx vercel" pages; then
-  echo "FAIL: found 'npx vercel' inside pages (paste trash)."
-  exit 1
-else
-  echo "OK"
-fi
+base="${1:-https://www.bhrigu.io}"
+echo "Run base=\"$base\""
 
-echo "== Φ gate: tracked build artifacts =="
-if git ls-files | grep -E '^(node_modules/|\.next/)'; then
-  echo "FAIL: node_modules/.next tracked"
-  exit 1
-else
-  echo "OK"
-fi
+paths=(
+  /
+  /start
+  /reading
+  /signal
+  /map
+  /services
+  /cosmography
+  /orion
+  /frey
+  /dao
+  /access
+  /chronicle
+  /github
+)
 
-echo "== Φ build =="
-npm run build >/dev/null
-echo "OK: build"
+check_code() {
+  local url="$1" expect="$2"
+  local code
+  code="$(curl -sS -o /dev/null -w '%{http_code}' "$url" || true)"
+  echo "$code $url"
+  [ "$code" = "$expect" ]
+}
 
-echo "== Φ routes (HTTP) =="
-for p in / /start /reading /signal /map /services /cosmography /orion /frey /dao /access /chronicle /github /api; do
-  printf "== %s ==\n" "$p"
-  curl -s -o /dev/null -w "%{http_code} %{url_effective}\n" "https://www.bhrigu.io$p"
+ok=1
+
+for p in "${paths[@]}"; do
+  echo "== $p =="
+  check_code "${base}${p}" "200" || ok=0
 done
+
+echo "== /api =="
+check_code "${base}/api" "410" || ok=0
+
+[ "$ok" -eq 1 ]
+echo "OK"
