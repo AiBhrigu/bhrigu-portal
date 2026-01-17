@@ -43,7 +43,37 @@ export default function Frey() {
   const [localStatus, setLocalStatus] = useState("CHECKING");
     const [promptText, setPromptText] = useState("");
 
-  useEffect(() => {
+  
+    // Copy helper (SSR-safe: defined during prerender; clipboard runs only on click in browser)
+    const buildFreyLine = (t) => {
+      const v = (t || "").trim();
+      return v || `ЦЕЛЬ: ...
+КОНТЕКСТ: ...
+ОГРАНИЧЕНИЯ: ...
+ВЫХОД: ...`;
+    };
+
+    const copyFreyLine = async () => {
+      const text = buildFreyLine(promptText);
+      try {
+        if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+        if (typeof document === "undefined") return;
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch (e) {}
+    };
+useEffect(() => {
     const ctrl = new AbortController();
     fetch("http://127.0.0.1:8811/ping", { signal: ctrl.signal })
       .then(r => r.ok ? r.json() : Promise.reject())
@@ -105,7 +135,7 @@ placeholder={`ЦЕЛЬ: ...\nКОНТЕКСТ: ...\nОГРАНИЧЕНИЯ: ...\
                 }}
               />
               <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
-                <button onClick={copyLine} style={{ ...btn, cursor: "pointer" }}>Copy</button>
+                <button onClick={copyFreyLine} style={{ ...btn, cursor: "pointer" }}>Copy</button>
                 <button onClick={() => setPromptText("")} style={{ ...btn, cursor: "pointer", opacity: 0.85 }}>Clear</button>
                 <div style={{ ...small, opacity: 0.72, alignSelf: "center" }}>Вводи здесь → Copy → вставь в чат.</div>
               </div>
