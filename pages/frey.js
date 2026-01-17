@@ -41,6 +41,7 @@ export default function Frey() {
   const small = { opacity: 0.78, fontSize: 13 };
 
   const [localStatus, setLocalStatus] = useState("CHECKING");
+    const [promptText, setPromptText] = useState("");
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -48,6 +49,22 @@ export default function Frey() {
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(() => setLocalStatus("GREEN"))
       .catch(() => setLocalStatus("RED"));
+    const copyLine = async () => {
+      const text = promptText || "";
+      try { await navigator.clipboard.writeText(text); return; } catch (e) {}
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "absolute";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      } catch (e) {}
+    };
+
     return () => ctrl.abort();
   }, []);
 
@@ -68,10 +85,33 @@ export default function Frey() {
 
             <div style={{ margin: "10px 0 18px 0" }}>
               <div style={small}><span style={kbd}>СТРОКА</span></div>
-              <pre style={{ margin:"8px 0 0 0", padding:"12px 14px", borderRadius:16, border:"1px solid rgba(255,255,255,0.12)", background:"rgba(0,0,0,0.25)", whiteSpace:"pre-wrap" }}>{`ЦЕЛЬ: ...
+              <textarea
+                value={promptText}
+                onChange={(e) => setPromptText(e.target.value)}
+                placeholder={"ЦЕЛЬ: ...
 КОНТЕКСТ: ...
 ОГРАНИЧЕНИЯ: ...
-ВЫХОД: ...`}</pre>
+ВЫХОД: ..."}
+                style={{
+                  width: "100%",
+                  minHeight: 120,
+                  margin: "8px 0 0 0",
+                  padding: "12px 14px",
+                  borderRadius: 16,
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  background: "rgba(0,0,0,0.25)",
+                  color: "inherit",
+                  resize: "vertical",
+                  whiteSpace: "pre-wrap",
+                  fontFamily: kbd.fontFamily,
+                  fontSize: 13,
+                }}
+              />
+              <div style={{ display: "flex", gap: 10, marginTop: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <button onClick={copyLine} style={{ ...btn, cursor: "pointer" }}>Copy</button>
+                <button onClick={() => setPromptText("")} style={{ ...btn, cursor: "pointer", opacity: 0.85 }}>Clear</button>
+                <div style={{ ...small, opacity: 0.72, alignSelf: "center" }}>Вводи здесь → Copy → вставь в чат.</div>
+              </div>
             </div>
 
             <div style={{ marginTop: 8 }}>
