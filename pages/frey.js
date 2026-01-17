@@ -63,46 +63,52 @@ export default function Frey() {
           <div style={small}><span style={kbd}>/frey</span> · Release v0.1 · Φ</div>
           <h1 style={h1}>Frey</h1>
           <p style={lead}>
-            <b>Frey (v0.1)</b><br />
-            Frey — публичная навигация: объясняю, структурирую, даю 3 шага и стоп-условия. Без раскрытия внутренних методов.<br /><br />
-            <b>Старт</b><br />
-            Напиши: <span style={kbd}>Цель / Контекст / Ограничения / Выход</span> — и я дам маршрут.<br /><br />
-            <b>Границы</b><br />
-            Я не раскрываю внутренние детали системы и не даю гарантий результата. Таблицы/градусы/астроданные — отдельный режим позже.
-          </p>
+              Frey — публичная навигация: 3 шага + стоп-условия. Без раскрытия внутренних методов.
+            </p>
 
-          <div style={{ marginTop: 12 }}>
-            <a href="#docs" style={btnPrimary}>Open Docs</a>
-            <a href="http://127.0.0.1:8811/docs" target="_blank" rel="noreferrer" style={btn}>
-              Open Local
-            </a>
-          </div>
+            <div style={{ margin: "10px 0 18px 0" }}>
+              <div style={small}><span style={kbd}>СТРОКА</span></div>
+              <pre style={{ margin:"8px 0 0 0", padding:"12px 14px", borderRadius:16, border:"1px solid rgba(255,255,255,0.12)", background:"rgba(0,0,0,0.25)", whiteSpace:"pre-wrap" }}>{`ЦЕЛЬ: ...
+КОНТЕКСТ: ...
+ОГРАНИЧЕНИЯ: ...
+ВЫХОД: ...`}</pre>
+            </div>
 
-          <div style={{ ...small, marginTop: 10 }}>
-            Local Mode (optional):&nbsp;
-            <b style={{ color: localStatus === "GREEN" ? "#6f6" : localStatus === "RED" ? "#f66" : "#ccc" }}>
-              {localStatus}
-            </b>
-            &nbsp;· работает только если Frey запущен локально (127.0.0.1).
-          </div>
+            <div style={{ marginTop: 8 }}>
+              <a href="#docs" style={btnPrimary}>Details</a>
+            </div>
         </div>
 
-        <section id="docs" style={card}>
-          <h2>Как пользоваться</h2>
+        <details id="docs" style={card}>
+          <summary>Как пользоваться</summary>
           <ol>
             <li>Открой <span style={kbd}>/frey</span> на портале.</li>
             <li>Прочитай Docs (публичный режим).</li>
             <li>Если Frey запущен локально — нажми <b>Open Local</b>.</li>
           </ol>
-        </section>
 
-        <section style={card}>
-          <h2>Safety / IP</h2>
+            <div style={{ marginTop: 12 }}>
+              <a href="http://127.0.0.1:8811/docs" target="_blank" rel="noreferrer" style={btn}>
+                Open Local
+              </a>
+            </div>
+
+            <div style={{ ...small, marginTop: 10 }}>
+              Local Mode (optional):&nbsp;
+              <b style={{ color: localStatus === "GREEN" ? "#6f6" : localStatus === "RED" ? "#f66" : "#ccc" }}>
+                {localStatus}
+              </b>
+              &nbsp;· работает только если Frey запущен локально (127.0.0.1).
+            </div>
+        </details>
+
+        <details style={card}>
+          <summary>Safety / IP</summary>
           <p>
             Публичный Frey не раскрывает формулы, алгоритмы и приватные пайплайны.
             Любые вопросы “как считается” — RED и получают безопасный фоллбек.
           </p>
-        </section>
+        </details>
 
         <div style={{ ...small, marginTop: 18 }}>
           /api на портале выключен (410). Публичная поверхность — только навигация и правила.
