@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0d12"/>
+      <stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g opacity="0.10" fill="none" stroke="#ffffff" stroke-width="2">
+    <path d="M600,40 C820,40 980,200 980,315 C980,430 820,590 600,590 C380,590 220,430 220,315 C220,200 380,40 600,40 Z"/>
+  </g>
+  <g fill="#d7b55a">
+    <text x="90" y="250" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" font-size="64" font-weight="700">BHRIGU</text>
+    <text x="90" y="320" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto" font-size="40" font-weight="600">Frey · ORION · Cosmography</text>
+    <text x="90" y="390" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono'" font-size="28" opacity="0.9">/faq</text>
+    <text x="1020" y="520" font-family="ui-sans-serif, system-ui" font-size="140" font-weight="700" opacity="0.55">Φ</text>
+  </g>
+</svg>

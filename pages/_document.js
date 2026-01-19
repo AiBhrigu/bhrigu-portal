@@ -16,7 +16,12 @@ export default function Document() {
         <meta name="twitter:title" content="BHRIGU" />
         <meta name="twitter:description" content="Structural portal and gateway layer." />
         <meta name="twitter:image" content="https://bhrigu.io/og/og.png" />
-      </Head>
+        <meta property="og:site_name" content="BHRIGU" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="https://www.bhrigu.io/favicon.ico" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:image" content="https://www.bhrigu.io/favicon.ico" />
+</Head>
       <body>
         <Main />
         <NextScript />
