@@ -19,6 +19,27 @@ export default function FAQ() {
             Frey is a dialog interface for cosmography: navigation through time, cycles, links and scenarios.
           </p>
         </header>
+          <section className="card">
+            <h2>Start in 60 seconds</h2>
+            <ol className="ol">
+              <li><strong>Open Frey</strong> and copy the query template: <code>/frey</code></li>
+              <li><strong>Ask one concrete link</strong>: Human↔Human, Human↔Project, Human↔Asset (add date/period)</li>
+              <li><strong>Read the output</strong> as: phases → windows → tensions/support → next action</li>
+            </ol>
+
+            <div className="nav">
+              <a className="btn" href="/frey">Open Frey</a>
+              <a className="btn" href="/reading">Reading</a>
+              <a className="btn" href="/map">Map</a>
+              <a className="btn" href="/services">Services</a>
+              <a className="btn" href="/cosmography">Cosmography</a>
+            </div>
+
+            <p className="muted">
+              Tip: if you don’t know what to ask — start with “me ↔ project” and a 3–12 month window.
+            </p>
+          </section>
+
 
         <section className="card">
           <h2>What is cosmography?</h2>
@@ -61,6 +82,13 @@ export default function FAQ() {
           <h2>What links does Frey work with?</h2>
           <p className="muted">Core pattern:</p>
           <pre className="pre">(Entity A) × (Entity B) × (Time context) → structured interaction map</pre>
+
+            <p className="muted">Examples:</p>
+            <pre className="pre">human ↔ human → resonance / dynamics / tendencies
+human ↔ project → phases / entry-exit windows / friction points
+human ↔ asset → timing / risk-support tone / cycles
+author ↔ style → amplification vs dilution / peaks
+user ↔ scenario → relevance / maturity / decision nodes</pre>
 
           <div className="grid">
             <div className="chip">
@@ -175,6 +203,14 @@ export default function FAQ() {
       </main>
 
       <style jsx>{`
+          a { color: inherit; text-decoration: underline; text-decoration-color: rgba(215,181,90,0.55); text-underline-offset: 3px; word-break: break-word; }
+          a:hover { text-decoration-color: rgba(215,181,90,0.95); }
+          .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+          .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); text-decoration: none; }
+          .btn:hover { background: rgba(255,255,255,0.07); }
+          .ol { margin: 10px 0 0; padding-left: 18px; }
+          .ol li { margin: 8px 0; line-height: 1.45; }
+
         .wrap {
           max-width: 980px;
           margin: 0 auto;
