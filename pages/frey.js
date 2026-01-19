@@ -1,130 +1,92 @@
---- /mnt/data/_frey_patch/orig_frey.js	2026-01-18 15:11:39.490442939 +0000
-+++ /mnt/data/_frey_patch/patched_frey.js	2026-01-18 15:11:39.490894822 +0000
-@@ -47,10 +47,11 @@
-     // Copy helper (SSR-safe: defined during prerender; clipboard runs only on click in browser)
-     const buildFreyLine = (t) => {
-       const v = (t || "").trim();
--      return v || `ЦЕЛЬ: ...
--КОНТЕКСТ: ...
--ОГРАНИЧЕНИЯ: ...
--ВЫХОД: ...`;
-+      return v || `FREY_FREE_LINE v1.0
-+GOAL: <1 sentence>.
-+CONTEXT: <2–4 facts>.
-+CONSTRAINTS: <limits / what not to do>.
-+OUTPUT: <format: 3 steps + one stop condition>.`;
-     };
- 
-     const copyFreyLine = async () => {
-@@ -110,15 +111,29 @@
-           <div style={small}><span style={kbd}>/frey</span> · Release v0.1 · Φ</div>
-           <h1 style={h1}>Frey</h1>
-           <p style={lead}>
--              Frey — публичная навигация: 3 шага + стоп-условия. Без раскрытия внутренних методов.
--            </p>
-+            Frey turns vague questions into clear, repeatable tasks for AI. No magic. Just structure.
-+          </p>
-+          <div style={{ ...small, margin: "0 0 14px 0" }}>
-+            «Фрей — форма запроса: цель/контекст/ограничения/выход. Скопируй → вставь в любой ИИ-чат.»
-+          </div>
-+
-+          <div style={{ margin: "10px 0 18px 0" }}>
-+            <div style={small}><span style={kbd}>HOW IT WORKS</span></div>
-+            <ol style={{ margin: "8px 0 0 18px" }}>
-+              <li>Goal — what you want</li>
-+              <li>Context — facts that matter</li>
-+              <li>Constraints — limits / rules</li>
-+              <li>Output — required format</li>
-+              <li>Copy → paste into any AI chat</li>
-+            </ol>
-+          </div>
- 
-             <div style={{ margin: "10px 0 18px 0" }}>
--              <div style={small}><span style={kbd}>СТРОКА</span></div>
-+              <div style={small}><span style={kbd}>FREE LINE</span></div>
-               <textarea
-                 value={promptText}
-                 onChange={(e) => setPromptText(e.target.value)}
--placeholder={`ЦЕЛЬ: ...\nКОНТЕКСТ: ...\nОГРАНИЧЕНИЯ: ...\nВЫХОД: ...`}
-+placeholder={`FREY_FREE_LINE v1.0\nGOAL: <1 sentence>.\nCONTEXT: <2–4 facts>.\nCONSTRAINTS: <limits / what not to do>.\nOUTPUT: <format: 3 steps + one stop condition>.`}
-                 style={{
-                   width: "100%",
-                   minHeight: 120,
-@@ -141,6 +156,54 @@
-               </div>
-             </div>
- 
-+            <div style={{ marginTop: 12 }}>
-+              <div style={small}><span style={kbd}>PREVIEW ANSWER</span> (demo)</div>
-+              <pre style={{
-+                margin: "8px 0 0 0",
-+                padding: "12px 14px",
-+                borderRadius: 16,
-+                border: "1px solid rgba(255,255,255,0.12)",
-+                background: "rgba(0,0,0,0.25)",
-+                whiteSpace: "pre-wrap",
-+                fontFamily: kbd.fontFamily,
-+                fontSize: 13,
-+                opacity: 0.92,
-+              }}>
-+L0 — Result: 1–2 sentences aligned with GOAL.
-+L1 — Context: accepted; constraints respected.
-+L2 — Next steps:
-+• Step one
-+• Step two
-+• Step three
-+STOP: one clear stop condition.
-+              </pre>
-+            </div>
-+
-+            <details style={{ ...card, marginTop: 14 }}>
-+              <summary>Examples</summary>
-+              <pre style={{ ...small, marginTop: 10, whiteSpace: "pre-wrap", fontFamily: kbd.fontFamily }}>
-+FREY_FREE_LINE v1.0
-+GOAL: Define the next step for the Frey project.
-+CONTEXT: MVP API works locally (passport/match/log).
-+CONSTRAINTS: No code. No forecasts. Practical actions only.
-+OUTPUT: 3 steps for today + one stop condition.
-+              </pre>
-+              <pre style={{ ...small, marginTop: 10, whiteSpace: "pre-wrap", fontFamily: kbd.fontFamily }}>
-+FREY_FREE_LINE v1.0
-+GOAL: Outline a crypto test plan for BTC.
-+CONTEXT: I can call /phi-passport and /match-user-asset locally.
-+CONSTRAINTS: No price prediction. Use only testable steps.
-+OUTPUT: 3 tests + one stop condition.
-+              </pre>
-+              <pre style={{ ...small, marginTop: 10, whiteSpace: "pre-wrap", fontFamily: kbd.fontFamily }}>
-+FREY_FREE_LINE v1.0
-+GOAL: Prepare a music set brief.
-+CONTEXT: Style is cosmic / layered. Audience is live.
-+CONSTRAINTS: No marketing fluff.
-+OUTPUT: 3 actionable ideas + one stop condition.
-+              </pre>
-+            </details>
-+
-             <div style={{ marginTop: 8 }}>
-               <a href="#docs" style={btnPrimary}>Details</a>
-             </div>
-@@ -161,6 +224,12 @@
-             </div>
- 
-             <div style={{ ...small, marginTop: 10 }}>
-+              Developers (dev only): <a href="http://127.0.0.1:8811/docs" target="_blank" rel="noreferrer">Local API docs</a>
-+              &nbsp;· <a href="https://github.com/AiBhrigu" target="_blank" rel="noreferrer">GitHub</a>
-+              &nbsp;· <a href="https://aibhrigu.github.io/phi-cosmography-canon/" target="_blank" rel="noreferrer">Canon</a>
-+            </div>
-+
-+            <div style={{ ...small, marginTop: 10 }}>
-               Local Mode (optional):&nbsp;
-               <b style={{ color: localStatus === "GREEN" ? "#6f6" : localStatus === "RED" ? "#f66" : "#ccc" }}>
-                 {localStatus}
-@@ -172,8 +241,7 @@
-         <details style={card}>
-           <summary>Safety / IP</summary>
-           <p>
--            Публичный Frey не раскрывает формулы, алгоритмы и приватные пайплайны.
--            Любые вопросы “как считается” — RED и получают безопасный фоллбек.
-+            Public Frey shares templates and examples; methods stay internal.
-           </p>
-         </details>
- 
+import Head from "next/head";
+
+export default function FreyPage() {
+  const copy = async () => {
+    const text =
+`FREY · Query template
+
+ЦЕЛЬ: …
+КОНТЕКСТ: …
+ОГРАНИЧЕНИЯ: …
+ВЫХОД: …`;
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+        alert("Copied");
+      } else {
+        alert("Copy not supported in this browser");
+      }
+    } catch {
+      alert("Copy failed");
+    }
+  };
+
+  return (
+    <>
+      <Head>
+        <title>Frey · BHRIGU</title>
+        <meta
+          name="description"
+          content="Frey — dialog interface for cosmography. Query-first navigation through time, cycles and scenarios."
+        />
+      </Head>
+
+      <main className="wrap">
+        <header className="hero">
+          <div className="kicker">BHRIGU · Frey</div>
+          <h1 className="title">Frey</h1>
+          <p className="subtitle">
+            Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
+          </p>
+        </header>
+
+        <section className="card">
+          <h2>What Frey is</h2>
+          <ul>
+            <li>Query-first: one request → one structured output.</li>
+            <li>Navigation in time: phases, windows, transitions.</li>
+            <li>Works with links: human ↔ human, human ↔ project, human ↔ asset, author ↔ style, user ↔ scenario.</li>
+          </ul>
+        </section>
+
+        <section className="card">
+          <h2>Try a query template</h2>
+          <p className="muted">Copy and paste into Frey/chat:</p>
+          <pre className="pre">
+{`ЦЕЛЬ: …
+КОНТЕКСТ: …
+ОГРАНИЧЕНИЯ: …
+ВЫХОД: …`}
+          </pre>
+          <button className="btn" onClick={copy}>Copy template</button>
+        </section>
+
+        <section className="card">
+          <h2>Public surface</h2>
+          <p>
+            This page is UI-only. API routes can be disabled on the public portal by design.
+          </p>
+        </section>
+      </main>
+
+      <style jsx>{`
+        .wrap { max-width: 980px; margin: 0 auto; padding: 40px 18px 70px; }
+        .hero { padding: 18px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 18px; }
+        .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
+        .title { font-size: 42px; line-height: 1.08; margin: 0 0 10px; }
+        .subtitle { font-size: 16px; opacity: .85; margin: 0 0 10px; max-width: 70ch; }
+        .card { padding: 18px 16px; margin: 14px 0; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(255,255,255,0.02); }
+        h2 { margin: 0 0 10px; font-size: 18px; }
+        ul { margin: 10px 0 0; padding-left: 18px; }
+        li { margin: 6px 0; line-height: 1.45; }
+        p { margin: 8px 0; line-height: 1.55; }
+        .muted { opacity: .75; }
+        .pre { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.25); overflow-x: auto; margin: 10px 0 0; }
+        .btn { margin-top: 10px; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); cursor: pointer; }
+        .btn:hover { background: rgba(255,255,255,0.06); }
+        @media (max-width: 760px) { .title { font-size: 34px; } }
+      `}</style>
+    </>
+  );
+}
