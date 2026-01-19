@@ -36,6 +36,11 @@ for p in "${paths[@]}"; do
 done
 
 echo "== /api =="
+  code=$(curl -s -o /dev/null -w "%{http_code}" "$base/api")
+  if [ "$code" != "410" ]; then
+    echo "curl: expected /api HTTP 410, got $code"
+    exit 22
+  fi
 check_code "${base}/api" "410" || ok=0
 
 [ "$ok" -eq 1 ]
