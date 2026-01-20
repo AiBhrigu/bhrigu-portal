@@ -47,7 +47,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           </section>
 
           <section className="card">
-            <h2>Start in 60 seconds</h2>
+            
             <ol className="ol">
               <li><strong>Open Frey</strong> and copy the query template: <code>/frey</code></li>
               <li><strong>Ask one concrete link</strong>: Human↔Human, Human↔Project, Human↔Asset (add date/period)</li>
