@@ -1,9 +1,15 @@
 import "../styles/globals.css";
+import Head from "next/head";
+import { useRouter } from "next/router";
 import BhriguPhiHeader from "../components/BhriguPhiHeader"; // ATOM_BHRIGU_PORTAL_UX_UNIFY_V1
 
-import Head from "next/head";
-
 export default function App({ Component, pageProps }) {
+  // ATOM_BHRIGU_PORTAL_SEO_SURFACE_V3
+  const router = useRouter();
+  const path = (router.asPath || "/").split("?")[0].split("#")[0];
+  const canonical = `https://www.bhrigu.io${path === "/" ? "/" : path}`;
+  const DEFAULT_TITLE = "BHRIGU · Frey / ORION";
+  const DEFAULT_DESC = "A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces.";
   return (
     <>
       <Head>
