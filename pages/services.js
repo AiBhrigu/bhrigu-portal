@@ -68,7 +68,7 @@ export default function Services() {
         .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
         .title { font-size: 42px; line-height: 1.08; margin: 0 0 12px; }
         .subtitle { font-size: 16px; line-height: 1.6; opacity: .86; margin: 0 0 16px; max-width: 72ch; }
-        .cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 0; }
+        .cta { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 0; }
         .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 999px;
                border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); text-decoration: none; }
         .btn:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.08); transform: translateY(-1px); }

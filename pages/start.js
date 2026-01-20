@@ -75,7 +75,7 @@ export default function Start() {
         .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
         .title { font-size: 42px; line-height: 1.08; margin: 0 0 12px; }
         .subtitle { font-size: 16px; line-height: 1.6; opacity: .86; margin: 0 0 16px; max-width: 72ch; }
-        .cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 0; }
+        .cta { display: flex; flex-wrap: wrap; gap: 18px; margin: 10px 0 0; }
         .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 999px;
                border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); text-decoration: none; }
         .btn:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.08); transform: translateY(-1px); }
@@ -87,7 +87,7 @@ export default function Start() {
         .card li { margin: 6px 0; line-height: 1.45; }
         .support { margin-top: 18px; padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
         .support h2 { margin: 0 0 10px; font-size: 18px; }
-        .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+        .row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 12px; }
         .chip { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
         .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 6px; }
         .value { opacity: .9; line-height: 1.45; }

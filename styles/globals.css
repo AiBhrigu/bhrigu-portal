@@ -57,3 +57,61 @@ a:hover {
 strong, b { font-weight: 600; }
 h1, h2, h3 { font-weight: 600; }
 /* END ATOM_BHRIGU_PORTAL_PHI_UI_POLISH_V1 */
+
+/* PHI_UI_POLISH_V2:BEGIN */
+:root{
+  --phi-maxw: 980px;
+  --phi-gold: #c8a75a;
+  --phi-gold-2: #e1c37a;
+  --phi-text: #e7e5df;
+  --phi-muted: rgba(231,229,223,.78);
+  --phi-border: rgba(200,167,90,.22);
+}
+
+/* baseline typography */
+html{ font-size: 18px; }
+body{
+  font-weight: 400;
+  color: var(--phi-text);
+}
+
+/* unified content width (fix /frey vs /faq and legacy pages) */
+main{
+  max-width: var(--phi-maxw);
+  margin: 0 auto;
+  padding: 44px 20px 88px;
+}
+.wrap{
+  max-width: var(--phi-maxw);
+  margin: 0 auto;
+}
+
+/* headings spacing (less “stuck”) */
+h1{ margin: 0 0 14px 0; }
+h2{ margin: 22px 0 10px 0; }
+h3{ margin: 18px 0 8px 0; }
+
+/* inline links: Φ-gold underline (cards/buttons remain clean) */
+a, a:visited{
+  color: var(--phi-gold) !important;
+  text-decoration: underline !important;
+  text-decoration-color: rgba(200,167,90,.85) !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+a:hover{
+  color: var(--phi-gold-2) !important;
+  text-decoration-color: rgba(225,195,122,1) !important;
+}
+
+/* keep UI elements clean */
+a.card, a.pill, a.btn, a.button, a.navlink{
+  text-decoration: none !important;
+}
+
+/* legacy content: prevent “tiny” typography */
+main p, main li{
+  font-size: 1rem !important;
+  line-height: 1.6;
+}
+/* PHI_UI_POLISH_V2:END */
