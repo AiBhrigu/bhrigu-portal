@@ -115,3 +115,55 @@ main p, main li{
   line-height: 1.6;
 }
 /* PHI_UI_POLISH_V2:END */
+
+/* BEGIN:ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V2 */
+:root {
+  /* Single gold hue across nav/links/underlines (Φ canon) */
+  --phi-gold: #C9A457;
+  --phi-gold-soft: rgba(201, 164, 87, 0.72);
+  --phi-gold-glow: rgba(201, 164, 87, 0.18);
+}
+
+/* Links: gold + single underline geometry (avoid mixed styles) */
+main a,
+main a:visited {
+  color: var(--phi-gold);
+}
+
+main a {
+  text-decoration: underline;
+  text-decoration-color: var(--phi-gold-soft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.25em;
+}
+
+main a:hover {
+  text-decoration-color: var(--phi-gold);
+  text-shadow: 0 0 10px var(--phi-gold-glow);
+}
+
+/* Headings: subtle Φ-underline (applies to older pages too) */
+main h2 {
+  position: relative;
+  padding-bottom: 0.40em;
+  margin-bottom: 0.90em;
+}
+
+main h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 61.8%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--phi-gold-soft), transparent);
+}
+
+/* Card titles often render as h3; keep underline consistent */
+main h3 {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.14);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.30em;
+}
+/* END:ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V2 */
