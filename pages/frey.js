@@ -34,8 +34,8 @@ export default function FreyPage() {
 
       <main className="wrap">
         <header className="hero">
-          <div className="kicker">BHRIGU · Frey</div>
-          <h1 className="title">Frey</h1>
+          <div className="kicker"><a href="/">BHRIGU</a> · <a href="/frey">Frey</a> · <a href="/orion">ORION</a></div>
+          \1Φ · \2\3
           <p className="subtitle">
             Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
           </p>
@@ -113,7 +113,26 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         .btn { margin-top: 10px; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); cursor: pointer; }
         .btn:hover { background: rgba(255,255,255,0.06); }
         @media (max-width: 760px) { .title { font-size: 34px; } }
-      `}</style>
+
+          /*__BHRIGU_UI_CANON__*/
+          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}
+          a:hover{border-bottom-color:rgba(215,181,90,.95)}
+          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}
+          .nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+          .btn{
+            display:inline-flex;align-items:center;justify-content:center;
+            height:34px;padding:0 12px;border-radius:999px;
+            border:1px solid rgba(255,255,255,.12);
+            background:rgba(255,255,255,.03);
+            box-shadow:0 0 0 rgba(0,0,0,0);
+            transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+            -webkit-tap-highlight-color: transparent;
+          }
+          .btn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
+          .btn:active{transform:translateY(0px)}
+          .prewrap{white-space:pre-wrap;overflow-x:hidden}
+
+`}</style>
     </>
   );
 }

@@ -1,7 +1,7 @@
 export default function Orion() {
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      <h1>ORION</h1>
+      \1Φ · \2\3
 
       <p>
         ORION is the analytical core.<br />

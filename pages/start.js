@@ -3,7 +3,7 @@ import styles from "./start.module.css";
 export default function Start() {
   return (
     <main className={styles.content}>
-      <h1 className={styles.h1}>Start</h1>
+      \1Φ · \2\3
 
       <section className={styles.block}>
         <div className={styles.lang}>EN</div>

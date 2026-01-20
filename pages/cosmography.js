@@ -3,7 +3,7 @@ import styles from "./cosmography.module.css";
 export default function Cosmography() {
   return (
     <main className={styles.content}>
-      <h1 className={styles.h1}>Cosmography</h1>
+      \1Φ · \2\3
 
       <section className={styles.block}>
         <p className={styles.en}>
