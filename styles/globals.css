@@ -28,3 +28,32 @@ small, .dim{color:var(--phi-dim);}
 ul{margin:0; padding-left:1.2rem;}
 li{margin:.25rem 0;}
 .phi-seal{color:var(--phi-gold); font-weight:700;}
+
+/* BEGIN ATOM_BHRIGU_PORTAL_PHI_UI_POLISH_V1 */
+:root {
+  --phi-gold: #d7b55a;
+  --phi-gold-soft: rgba(215, 181, 90, 0.55);
+  --phi-text: rgba(255, 255, 255, 0.90);
+  --phi-muted: rgba(255, 255, 255, 0.72);
+  --phi-maxw: 1080px;
+}
+
+/* Typography baseline (applies to older pages too) */
+html { font-size: 18px; }
+body { color: var(--phi-text); font-weight: 400; line-height: 1.65; }
+
+/* Gold underline canon (buttons/cards can override) */
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--phi-gold-soft);
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+}
+a:hover {
+  text-decoration-color: rgba(215, 181, 90, 0.85);
+}
+
+strong, b { font-weight: 600; }
+h1, h2, h3 { font-weight: 600; }
+/* END ATOM_BHRIGU_PORTAL_PHI_UI_POLISH_V1 */

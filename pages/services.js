@@ -72,14 +72,14 @@ export default function Services() {
         .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 999px;
                border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); text-decoration: none; }
         .btn:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.08); transform: translateY(-1px); }
-        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-        .card { padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
-        .card h2 { margin: 0 0 8px; font-size: 18px; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 18px; }
+        .card { padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
+        .card h2 { margin: 0 0 8px; font-size: 18px; text-decoration: underline; text-decoration-color: rgba(215, 181, 90, 0.55); text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
         .card p { margin: 0; opacity: .82; line-height: 1.55; }
         .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
         .tag { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px;
                border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); font-size: 12px; opacity: .9; }
-        .road { margin-top: 18px; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+        .road { margin-top: 18px; padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
         .road h2 { margin: 0 0 10px; font-size: 18px; }
         .road ol { margin: 0; padding-left: 18px; }
         .road li { margin: 8px 0; line-height: 1.5; }

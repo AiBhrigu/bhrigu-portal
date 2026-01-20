@@ -91,12 +91,12 @@ export default function Home() {
         .chip { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
         .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 6px; }
         .value { opacity: .9; line-height: 1.45; }
-        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
-        .card { padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); text-decoration: none; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 18px; }
+        .card { padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); text-decoration: none; }
         .card:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.06); }
-        .card h2 { margin: 0 0 8px; font-size: 18px; }
+        .card h2 { margin: 0 0 8px; font-size: 18px; text-decoration: underline; text-decoration-color: rgba(215, 181, 90, 0.55); text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
         .card p { margin: 0; opacity: .82; line-height: 1.55; }
-        .trust { margin-top: 18px; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+        .trust { margin-top: 18px; padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
         .trust h2 { margin: 0 0 10px; font-size: 18px; }
         .trust ul { margin: 0; padding-left: 18px; }
         .trust li { margin: 8px 0; line-height: 1.5; }
