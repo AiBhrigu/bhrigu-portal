@@ -1,206 +1,94 @@
-/* ATOM_BHRIGU_PORTAL_LANDING_CANON_V2 */
+// ATOM_BHRIGU_PORTAL_TRUST_INVESTOR_V1
 import Head from "next/head";
+import Link from "next/link";
 
 export default function Services() {
-  const buckets = [
-    {
-      title: "Public surfaces (read-first)",
-      items: [
-        ["Reading", "/reading", "Framing, definitions, and how to navigate."],
-        ["Signal", "/signal", "Signal surfaces (research posture, not advice)."],
-        ["Map", "/map", "Maps and navigation surfaces."],
-        ["FAQ", "/faq", "What it is, what it is not, and why constraints exist."],
-      ],
-    },
-    {
-      title: "Interface layer",
-      items: [
-        ["Frey", "/frey", "User-facing interface layer (access-gated features may appear later)."],
-        ["ORION", "/orion", "Core research surface and system framing."],
-        ["Cosmography", "/cosmography", "Definitions and worldview layer."],
-      ],
-    },
-    {
-      title: "For partners (investors / grants)",
-      items: [
-        ["Access", "/access", "Request access, context, or a short deck."],
-        ["Chronicle", "/chronicle", "Evolution log: what changed and why."],
-        ["GitHub", "/github", "Public artifacts and transparent surface."],
-      ],
-    },
-  ];
-
   return (
     <>
       <Head>
         <title>Services · BHRIGU</title>
-        <meta
-          name="description"
-          content="BHRIGU services and surfaces: reading, signal, map, and the Frey/ORION interface layer — designed for trust, stability, and long-horizon research."
-        />
+        <meta name="description" content="What BHRIGU offers today: a stable portal surface, Frey-facing interfaces, and structured research presentation." />
         <link rel="canonical" href="https://www.bhrigu.io/services" />
-        <meta property="og:site_name" content="BHRIGU" />
-        <meta property="og:type" content="website" />
         <meta property="og:title" content="Services · BHRIGU" />
-        <meta
-          property="og:description"
-          content="A structured set of surfaces: public reading/maps/signals and the Frey/ORION interface layer."
-        />
-        <meta property="og:image" content="https://www.bhrigu.io/og.svg" />
+        <meta property="og:description" content="What BHRIGU offers today: a stable portal surface, Frey-facing interfaces, and structured research presentation." />
+        <meta property="og:url" content="https://www.bhrigu.io/services" />
+        <meta name="twitter:title" content="Services · BHRIGU" />
+        <meta name="twitter:description" content="What BHRIGU offers today: a stable portal surface, Frey-facing interfaces, and structured research presentation." />
       </Head>
-
       <main className="wrap">
-        <div className="hero">
-          <div className="kicker">Surfaces</div>
-          <h1 className="title">Services</h1>
-          <p className="subtitle">
-            BHRIGU is built as a stable set of surfaces. Public pages stay simple; deeper layers are intentionally gated.
-          </p>
-          <div className="nav">
-            <a className="btn" href="/start">Start</a>
-            <a className="btn" href="/reading">Reading</a>
-            <a className="btn" href="/frey">Frey</a>
-            <a className="btn" href="/access">Access</a>
+        <section className="hero">
+          <div className="kicker">Services</div>
+          <h1 className="title">A clean surface for Frey / ORION outputs.</h1>
+          <p className="subtitle">No hype. Clear boundaries. Designed for trust and long-term maintenance.</p>
+
+          <div className="cta">
+            <Link className="btn" href="/frey">Frey</Link>
+            <Link className="btn" href="/orion">ORION</Link>
+            <Link className="btn" href="/faq">FAQ</Link>
           </div>
-        </div>
-
-        {buckets.map((b) => (
-          <section key={b.title} className="card">
-            <h2>{b.title}</h2>
-            <div className="grid">
-              {b.items.map(([label, href, note]) => (
-                <a key={href} href={href} className="item">
-                  <div className="itemTop">
-                    <span className="itemLabel">{label}</span>
-                    <span className="itemHref">{href}</span>
-                  </div>
-                  <div className="muted">{note}</div>
-                </a>
-              ))}
-            </div>
-          </section>
-        ))}
-
-        <section className="card">
-          <h2>What we optimize for</h2>
-          <ul>
-            <li><strong>Trust</strong>: clear constraints, no hype-only claims.</li>
-            <li><strong>Stability</strong>: a 2026–2027 UI posture — consistent, not constantly rebuilt.</li>
-            <li><strong>Clarity</strong>: readable structure, minimal friction, and honest scope.</li>
-          </ul>
         </section>
 
-        <footer className="footer muted">
-          Not financial advice. No guarantees. Research surface only.
-        </footer>
+        <section className="grid">
+          <div className="card">
+            <h2>Portal surface (public)</h2>
+            <p>Stable pages with consistent navigation and a single visual canon.</p>
+            <div className="tags"><span className="tag">UX</span><span className="tag">SEO</span><span className="tag">Trust</span></div>
+          </div>
+          <div className="card">
+            <h2>Frey interface (constrained)</h2>
+            <p>Surface-only interaction layer. Internals remain sealed.</p>
+            <div className="tags"><span className="tag">Boundaries</span><span className="tag">Safety</span><span className="tag">IP</span></div>
+          </div>
+          <div className="card">
+            <h2>Research presentation</h2>
+            <p>Structured outputs for reading, not “demo chaos”.</p>
+            <div className="tags"><span className="tag">Rigor</span><span className="tag">Repro</span><span className="tag">Docs</span></div>
+          </div>
+          <div className="card">
+            <h2>Pilot / partnership</h2>
+            <p>For grants and aligned investors: fund the surface expansion, not the hype.</p>
+            <div className="tags"><span className="tag">Grant-fit</span><span className="tag">Investor</span><span className="tag">Roadmap</span></div>
+          </div>
+        </section>
 
-        <style jsx>{`
-          .wrap {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 40px 18px 70px;
-          }
-          .hero {
-            padding: 18px 0 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 18px;
-          }
-          .kicker {
-            font-size: 12px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            opacity: 0.72;
-            margin-bottom: 8px;
-          }
-          .title {
-            font-size: 40px;
-            line-height: 1.08;
-            margin: 0 0 10px;
-          }
-          .subtitle {
-            font-size: 16px;
-            opacity: 0.88;
-            margin: 0 0 10px;
-            max-width: 70ch;
-            line-height: 1.55;
-          }
-          .nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 36px;
-            padding: 0 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.04);
-            text-decoration: none;
-          }
-          .btn:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(215, 181, 90, 0.55);
-            box-shadow: 0 0 0 6px rgba(215, 181, 90, 0.08);
-            transform: translateY(-1px);
-          }
-          .card {
-            padding: 18px 16px;
-            margin: 14px 0;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.02);
-          }
-          h2 {
-            margin: 0 0 10px;
-            font-size: 18px;
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .item {
-            padding: 12px 12px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.01);
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-          .item:hover {
-            border-color: rgba(215, 181, 90, 0.55);
-            box-shadow: 0 0 0 6px rgba(215, 181, 90, 0.08);
-            transform: translateY(-1px);
-          }
-          .itemTop {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            align-items: baseline;
-          }
-          .itemLabel { font-size: 14px; }
-          .itemHref { font-size: 12px; opacity: 0.65; }
-          ul { margin: 10px 0 0; padding-left: 18px; }
-          li { margin: 6px 0; line-height: 1.45; }
-          .muted { opacity: 0.75; line-height: 1.45; }
-          .footer {
-            margin-top: 18px;
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-          }
-          @media (max-width: 760px) {
-            .grid { grid-template-columns: 1fr; }
-            .title { font-size: 34px; }
-          }
-        `}</style>
+        <section className="road">
+          <h2>What we build next (surface-only)</h2>
+          <ol>
+            <li>Sharper onboarding and a single “golden” reading path.</li>
+            <li>More verified pages with consistent SEO metadata.</li>
+            <li>Safer distribution and clearer access boundaries.</li>
+          </ol>
+          <p className="muted">Start with <Link href="/start">/start</Link>. Read constraints in <Link href="/faq">/faq</Link>.</p>
+        </section>
       </main>
+
+      <style jsx>{`
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 76px; }
+        .hero { padding: 10px 0 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
+        .title { font-size: 42px; line-height: 1.08; margin: 0 0 12px; }
+        .subtitle { font-size: 16px; line-height: 1.6; opacity: .86; margin: 0 0 16px; max-width: 72ch; }
+        .cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 0; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 999px;
+               border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); text-decoration: none; }
+        .btn:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.08); transform: translateY(-1px); }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+        .card { padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); }
+        .card h2 { margin: 0 0 8px; font-size: 18px; }
+        .card p { margin: 0; opacity: .82; line-height: 1.55; }
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+        .tag { display: inline-flex; align-items: center; height: 28px; padding: 0 10px; border-radius: 999px;
+               border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); font-size: 12px; opacity: .9; }
+        .road { margin-top: 18px; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+        .road h2 { margin: 0 0 10px; font-size: 18px; }
+        .road ol { margin: 0; padding-left: 18px; }
+        .road li { margin: 8px 0; line-height: 1.5; }
+        .muted { opacity: .78; margin-top: 10px; }
+        @media (max-width: 860px) {
+          .title { font-size: 34px; }
+          .grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </>
   );
 }

@@ -1,254 +1,112 @@
-/* ATOM_BHRIGU_PORTAL_LANDING_CANON_V2 */
+// ATOM_BHRIGU_PORTAL_TRUST_INVESTOR_V1
 import Head from "next/head";
+import Link from "next/link";
 
 export default function Home() {
-  const primary = [
-    ["/start", "Start"],
-    ["/services", "Services"],
-    ["/frey", "Frey"],
-  ];
-
-  const explore = [
-    ["/reading", "Reading"],
-    ["/signal", "Signal"],
-    ["/map", "Map"],
-    ["/cosmography", "Cosmography"],
-    ["/orion", "ORION"],
-    ["/chronicle", "Chronicle"],
-    ["/faq", "FAQ"],
-    ["/access", "Access"],
-    ["/github", "GitHub"],
-  ];
-
   return (
     <>
       <Head>
-        <title>BHRIGU · Φ Portal for Frey & ORION</title>
-        <meta
-          name="description"
-          content="BHRIGU is a structural portal for cosmography and Frey/ORION — a trust-first surface for reading, mapping, and signal exploration."
-        />
+        <title>BHRIGU · Frey / ORION</title>
+        <meta name="description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
         <link rel="canonical" href="https://www.bhrigu.io/" />
-        <meta property="og:site_name" content="BHRIGU" />
-        <meta property="og:type" content="website" />
-        <meta property="og:title" content="BHRIGU · Φ Portal for Frey & ORION" />
-        <meta
-          property="og:description"
-          content="A trust-first surface for cosmography, maps, signals, and Frey/ORION exploration."
-        />
-        <meta property="og:image" content="https://www.bhrigu.io/og.svg" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://www.bhrigu.io/og.svg" />
+        <meta property="og:title" content="BHRIGU · Frey / ORION" />
+        <meta property="og:description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
+        <meta property="og:url" content="https://www.bhrigu.io/" />
+        <meta name="twitter:title" content="BHRIGU · Frey / ORION" />
+        <meta name="twitter:description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
       </Head>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: "{\"@context\": \"https://schema.org\", \"@type\": \"WebSite\", \"name\": \"BHRIGU\", \"url\": \"https://www.bhrigu.io/\", \"description\": \"Structural portal and gateway layer for Frey / ORION \\u2014 cosmography, signals, and constrained research interfaces.\", \"publisher\": {\"@type\": \"Organization\", \"name\": \"BHRIGU\"}}" }} />
 
       <main className="wrap">
         <section className="hero">
-          <div className="kicker">Φ portal</div>
-          <h1 className="title">BHRIGU</h1>
+          <div className="kicker">BHRIGU · Frey / ORION</div>
+          <h1 className="title">Cosmography, signals, and a constrained research interface.</h1>
           <p className="subtitle">
-            A trust-first surface for cosmography — built to be stable, readable, and worth staying for.
-            Explore maps, signals, and the Frey/ORION interface layer.
+            Built for clarity and trust: explicit limits, reproducible surfaces, and a clean path from exploration → understanding.
           </p>
 
-          <div className="nav">
-            {primary.map(([href, label]) => (
-              <a key={href} href={href} className="btn">
-                {label}
-              </a>
-            ))}
+          <div className="cta">
+            <Link className="btn" href="/start">Start</Link>
+            <Link className="btn" href="/frey">Frey</Link>
+            <Link className="btn" href="/services">Services</Link>
           </div>
 
-          <div className="grid">
+          <div className="proof">
             <div className="chip">
-              <div className="chipTitle">Read-first UX</div>
-              <div className="muted">Clarity over noise. Minimal friction.</div>
+              <div className="label">Live</div>
+              <div className="value">Portal pages are public and stable.</div>
             </div>
             <div className="chip">
-              <div className="chipTitle">Trust by design</div>
-              <div className="muted">No forced sign-up. Public surface stays simple.</div>
+              <div className="label">Boundaries</div>
+              <div className="value">/api is intentionally disabled (safety & IP).</div>
             </div>
             <div className="chip">
-              <div className="chipTitle">Stability mindset</div>
-              <div className="muted">We ship in small, safe increments — no endless redesign loops.</div>
-            </div>
-            <div className="chip">
-              <div className="chipTitle">Research posture</div>
-              <div className="muted">Exploration + documentation. No hype-only claims.</div>
+              <div className="label">Method</div>
+              <div className="value">Surface-first UX; internals stay sealed.</div>
             </div>
           </div>
         </section>
 
-        <section className="card">
-          <h2>Explore</h2>
-          <p className="muted">
-            Pick a lane. Everything is intentionally structured as a set of stable “surfaces”.
-          </p>
-          <div className="grid2">
-            {explore.map(([href, label]) => (
-              <a key={href} href={href} className="link">
-                <span className="linkLabel">{label}</span>
-                <span className="linkHint">{href}</span>
-              </a>
-            ))}
-          </div>
+        <section className="grid">
+          <Link className="card" href="/cosmography">
+            <h2>Cosmography</h2>
+            <p>Definitions, boundaries, and what we mean by “structure”.</p>
+          </Link>
+          <Link className="card" href="/signal">
+            <h2>Signal</h2>
+            <p>How we talk about observations without hype.</p>
+          </Link>
+          <Link className="card" href="/map">
+            <h2>Map</h2>
+            <p>Navigation layer for exploring the surface outputs.</p>
+          </Link>
+          <Link className="card" href="/faq">
+            <h2>FAQ</h2>
+            <p>What this is, what it is not, and why constraints matter.</p>
+          </Link>
         </section>
 
-        <section className="card">
-          <h2>For builders, investors, and grants</h2>
+        <section className="trust">
+          <h2>Trust model</h2>
           <ul>
-            <li>Clear surface → predictable onboarding → lower support cost.</li>
-            <li>Security-first and intentionally constrained public scope.</li>
-            <li>Long-horizon R&D: cosmography as an interface layer for decision-making.</li>
+            <li><b>Explicit limits.</b> We say “no” when a boundary is required.</li>
+            <li><b>Surface-only public outputs.</b> Internals are not exposed.</li>
+            <li><b>No financial advice.</b> This is a research interface, not a trading product.</li>
           </ul>
-          <div className="nav">
-            <a className="btn" href="/services">See what we offer</a>
-            <a className="btn" href="/access">Request access</a>
-            <a className="btn" href="/faq">Read the FAQ</a>
-          </div>
+          <p className="muted">If you are evaluating support (grant/investor), start at <Link href="/start">/start</Link>.</p>
         </section>
-
-        <footer className="footer">
-          <div className="muted">
-            Not financial advice. No guarantees. This is a research and interface surface.
-          </div>
-        </footer>
-
-        <style jsx>{`
-          .wrap {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 18px 70px;
-          }
-          .hero {
-            padding: 18px 0 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            margin-bottom: 18px;
-          }
-          .kicker {
-            font-size: 12px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            opacity: 0.72;
-            margin-bottom: 8px;
-          }
-          .title {
-            font-size: 44px;
-            line-height: 1.05;
-            margin: 0 0 10px;
-          }
-          .subtitle {
-            font-size: 16px;
-            opacity: 0.88;
-            margin: 0 0 12px;
-            max-width: 72ch;
-            line-height: 1.55;
-          }
-          .nav {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 36px;
-            padding: 0 14px;
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            background: rgba(255, 255, 255, 0.04);
-            text-decoration: none;
-          }
-          .btn:hover {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: rgba(215, 181, 90, 0.55);
-            box-shadow: 0 0 0 6px rgba(215, 181, 90, 0.08);
-            transform: translateY(-1px);
-          }
-          .grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 14px;
-          }
-          .grid2 {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .chip {
-            padding: 12px 12px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.015);
-          }
-          .chipTitle {
-            font-size: 13px;
-            letter-spacing: 0.02em;
-            margin-bottom: 6px;
-          }
-          .card {
-            padding: 18px 16px;
-            margin: 14px 0;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            background: rgba(255, 255, 255, 0.02);
-          }
-          h2 {
-            margin: 0 0 10px;
-            font-size: 18px;
-          }
-          ul {
-            margin: 10px 0 0;
-            padding-left: 18px;
-          }
-          li {
-            margin: 6px 0;
-            line-height: 1.45;
-          }
-          .link {
-            padding: 12px 12px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            background: rgba(255, 255, 255, 0.01);
-            text-decoration: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-          }
-          .link:hover {
-            border-color: rgba(215, 181, 90, 0.55);
-            box-shadow: 0 0 0 6px rgba(215, 181, 90, 0.08);
-            transform: translateY(-1px);
-          }
-          .linkLabel {
-            font-size: 14px;
-          }
-          .linkHint {
-            font-size: 12px;
-            opacity: 0.65;
-          }
-          .muted {
-            opacity: 0.75;
-          }
-          .footer {
-            margin-top: 18px;
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-          }
-
-          @media (max-width: 760px) {
-            .grid, .grid2 {
-              grid-template-columns: 1fr;
-            }
-            .title {
-              font-size: 36px;
-            }
-          }
-        `}</style>
       </main>
+
+      <style jsx>{`
+        .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 76px; }
+        .hero { padding: 10px 0 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
+        .title { font-size: 46px; line-height: 1.06; margin: 0 0 12px; }
+        .subtitle { font-size: 16px; line-height: 1.6; opacity: .86; margin: 0 0 16px; max-width: 72ch; }
+        .cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 14px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 999px;
+               border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03); text-decoration: none; }
+        .btn:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.08); transform: translateY(-1px); }
+        .proof { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+        .chip { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+        .label { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; opacity: .7; margin-bottom: 6px; }
+        .value { opacity: .9; line-height: 1.45; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+        .card { padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.02); text-decoration: none; }
+        .card:hover { border-color: rgba(215,181,90,.55); box-shadow: 0 0 0 6px rgba(215,181,90,.06); }
+        .card h2 { margin: 0 0 8px; font-size: 18px; }
+        .card p { margin: 0; opacity: .82; line-height: 1.55; }
+        .trust { margin-top: 18px; padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.015); }
+        .trust h2 { margin: 0 0 10px; font-size: 18px; }
+        .trust ul { margin: 0; padding-left: 18px; }
+        .trust li { margin: 8px 0; line-height: 1.5; }
+        .muted { opacity: .78; margin-top: 10px; }
+        @media (max-width: 860px) {
+          .title { font-size: 36px; }
+          .proof { grid-template-columns: 1fr; }
+          .grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
     </>
   );
 }
