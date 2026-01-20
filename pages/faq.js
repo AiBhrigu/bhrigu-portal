@@ -19,6 +19,33 @@ export default function FAQ() {
             Frey is a dialog interface for cosmography: navigation through time, cycles, links and scenarios.
           </p>
         </header>
+
+          <section className="card">
+            <h2>Query line (human ↔ human / AI-ready)</h2>
+            <pre className="pre">human ↔ human → resonance / dynamics / tendencies
+human ↔ project → phases / entry-exit windows / friction points
+human ↔ asset → timing / risk-support tone / cycles
+author ↔ style → amplification vs dilution / peaks
+user ↔ scenario → relevance / maturity / decision nodes</pre>
+
+            <div className="nav">
+              <a className="btn" href="/start">Start</a>
+              <a className="btn" href="/frey">Frey</a>
+              <a className="btn" href="/faq">FAQ</a>
+              <a className="btn" href="/reading">Reading</a>
+            </div>
+          </section>
+
+
+          <section className="card">
+            <h2>Start in 1 minute</h2>
+            <ol className="ol">
+              <li><strong>Open Frey</strong> → ask one link (human↔human / human↔project / human↔asset).</li>
+              <li><strong>Add time</strong> (date / month / window).</li>
+              <li><strong>Read it as</strong>: phases → windows → support/tension → next step.</li>
+            </ol>
+          </section>
+
           <section className="card">
             <h2>Start in 60 seconds</h2>
             <ol className="ol">
@@ -202,7 +229,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         </footer>
       </main>
 
-      <style jsx>{`
+      <style jsx>{`\n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
           a { color: inherit; text-decoration: underline; text-decoration-color: rgba(215,181,90,0.55); text-underline-offset: 3px; word-break: break-word; }
           a:hover { text-decoration-color: rgba(215,181,90,0.95); }
           .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
