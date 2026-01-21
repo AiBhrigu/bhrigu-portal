@@ -260,3 +260,46 @@ main, .container{
 
 /* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 END */
 /* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 END */
+
+/* Φ VISUAL CANON v3r2 · SPACING (BEGIN) */
+/* Purpose: more air / spacing rhythm across the portal */
+:root {
+  --phi-gap-1: clamp(10px, 1.0vw, 14px);
+  --phi-gap-2: clamp(14px, 1.6vw, 22px);
+  --phi-gap-3: clamp(20px, 2.2vw, 30px);
+  --phi-gap-4: clamp(28px, 3.2vw, 44px);
+}
+
+/* Page breathing space */
+main, .main, .page, .content {
+  padding-top: var(--phi-gap-3);
+  padding-bottom: var(--phi-gap-4);
+}
+
+/* Header / nav spacing */
+header, .header, .topbar {
+  padding-top: var(--phi-gap-2);
+  padding-bottom: var(--phi-gap-2);
+}
+
+/* Card rhythm (most pages use card-like blocks) */
+.card, .panel, .tile, .box {
+  padding: var(--phi-gap-2);
+}
+
+/* Grid gap */
+.grid, .cards, .card-grid {
+  gap: var(--phi-gap-2);
+}
+
+/* Text rhythm inside cards */
+.card h1, .card h2, .card h3,
+.panel h1, .panel h2, .panel h3,
+.tile h1, .tile h2, .tile h3 {
+  margin-bottom: var(--phi-gap-1);
+}
+.card p, .panel p, .tile p {
+  margin-top: 0;
+  line-height: 1.55;
+}
+/* Φ VISUAL CANON v3r2 · SPACING (END) */
