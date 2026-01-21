@@ -167,3 +167,96 @@ main h3 {
   text-underline-offset: 0.30em;
 }
 /* END:ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V2 */
+
+/* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 START */
+/* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 START */
+:root{
+  /* Muted Φ-gold (less bright) */
+  --phi-gold: #B8894E;
+  --phi-gold-2: #D0B06A;
+  --phi-gold-dim: rgba(184,137,78,.55);
+
+  --phi-ink: #EDEDED;
+  --phi-muted: rgba(237,237,237,.74);
+  --phi-border: rgba(184,137,78,.18);
+
+  --phi-card-bg: rgba(255,255,255,.04);
+  --phi-card-bg2: rgba(255,255,255,.02);
+  --phi-shadow: 0 10px 40px rgba(0,0,0,.35);
+
+  --phi-radius: 18px;
+  --phi-gap: 20px;
+
+  /* Try to unify page width */
+  --phi-max: 980px;
+  --phi-pad: clamp(16px, 3vw, 28px);
+}
+
+body{
+  color: var(--phi-ink);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Gold link underline canon */
+a{
+  color: var(--phi-gold);
+  text-decoration: underline;
+  text-decoration-color: var(--phi-gold-dim);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.22em;
+}
+a:hover{
+  color: var(--phi-gold-2);
+  text-decoration-color: var(--phi-gold);
+}
+a:focus-visible{
+  outline: 2px solid var(--phi-gold-dim);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* Headings: keep clean (avoid heavy bold) */
+h1,h2,h3{
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Optional underline style when pages use these classes */
+.sectionTitle, .section-title{
+  position: relative;
+  display: inline-block;
+  padding-bottom: 8px;
+}
+.sectionTitle::after, .section-title::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  right: -10%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--phi-gold-dim), transparent);
+}
+
+/* Card + grid air */
+.card, .tile, .panel{
+  border: 1px solid var(--phi-border);
+  background: linear-gradient(180deg, var(--phi-card-bg), var(--phi-card-bg2));
+  border-radius: var(--phi-radius);
+  box-shadow: var(--phi-shadow);
+}
+.cards, .grid{
+  gap: var(--phi-gap);
+}
+
+/* Page width unification: apply to common wrappers */
+main, .container{
+  max-width: var(--phi-max);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--phi-pad);
+  padding-right: var(--phi-pad);
+}
+
+/* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 END */
+/* ATOM_BHRIGU_PORTAL_PHI_VISUAL_CANON_V3R1 END */
