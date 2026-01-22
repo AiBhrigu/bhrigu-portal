@@ -22,7 +22,7 @@ export default function Home() {
           <div className="kicker">BHRIGU · Frey / ORION</div>
           <h1 className="title">Cosmography, signals, and a constrained research interface.</h1>
           <p className="subtitle">
-            Built for clarity and trust: explicit limits, reproducible surfaces, and a clean path from exploration → understanding.
+            AI cosmography interface (domain of an AI cosmographer). Built for clarity and trust: explicit limits, reproducible surfaces, and a clean path from exploration → understanding.
           </p>
 
           <div className="cta">
