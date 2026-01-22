@@ -18,7 +18,7 @@ export default function Start() {
       <main className="wrap">
         <section className="hero">
           <div className="kicker">Start</div>
-          <h1 className="title">Understand the portal in 3 minutes.</h1>
+          <h1 className="title">Understand the portal in minutes.</h1>
           <p className="subtitle">This is a surface-first site: we show what you can trust, and we state what is intentionally restricted.</p>
 
           <div className="cta">

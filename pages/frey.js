@@ -42,7 +42,7 @@ export default function FreyPage() {
         </header>
 
           <section className="card">
-            <h2>Query line (human ↔ human / AI-ready)</h2>
+            <h2>Query line (AI-ready)</h2>
             <pre className="pre">human ↔ human → resonance / dynamics / tendencies
 human ↔ project → phases / entry-exit windows / friction points
 human ↔ asset → timing / risk-support tone / cycles
@@ -79,7 +79,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
         <section className="card">
           <h2>Try a query template</h2>
-          <p className="muted">Copy and paste into Frey/chat:</p>
+          <p className="muted">Copy & paste into Frey/chat:</p>
           <pre className="pre">
 {`ЦЕЛЬ: …
 КОНТЕКСТ: …
