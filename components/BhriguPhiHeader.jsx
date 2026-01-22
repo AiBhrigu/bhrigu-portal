@@ -119,8 +119,8 @@ export default function BhriguPhiHeader() {
         </nav>
 
         <div className="bh-cta" aria-label="Quick links">
-          <a className="phi-btn" href="/frey"></a>
-          <a className="phi-btn" href="/orion"></a>
+          <a className="phi-btn" href="/frey">Frey</a>
+          <a className="phi-btn" href="/orion">ORION</a>
         </div>
       </div>
     </header>
