@@ -26,13 +26,13 @@ export default function Cosmography() {
       <hr className={styles.hr} />
 
       <section className={styles.block}>
-        <div className={styles.lang}>Русский</div>
+        <div className={styles.lang}>English</div>
         <p className={styles.ru}>
-          Космография — научная поверхность.<br />
-          Она отделена от управления и экономического контура.<br />
+          Cosmography is the scientific surface.<br />
+          It is separated from governance and the economic layer.<br />
           <br />
-          Это декларация границ.<br />
-          Без витрин ядра и без “живых приборов” на этой странице.
+          This is a boundary declaration.<br />
+          No core showcase and no “live instruments” on this page.
         </p>
       </section>
 

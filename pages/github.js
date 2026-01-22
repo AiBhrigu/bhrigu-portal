@@ -21,8 +21,8 @@ export default function GitHub() {
 
       <p><strong>RU</strong></p>
       <p>
-        Справочная ссылка на публичный профиль.<br />
-        Только внешний слой.
+        Reference link to the public profile.<br />
+        External surface only.
       </p>
     </main>
   );

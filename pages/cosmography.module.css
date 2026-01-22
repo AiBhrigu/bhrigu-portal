@@ -26,7 +26,7 @@
   margin: 0;
 }
 
-/* RU must be readable: sans кириллица */
+/* RU must be readable: sans cyrillic */
 .ru{
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Arial, sans-serif;
   margin: 0;

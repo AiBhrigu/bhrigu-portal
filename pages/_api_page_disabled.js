@@ -25,12 +25,12 @@ export default function API() {
 
       <p><strong>RU</strong></p>
       <p>
-        Публичного API на портале нет.<br />
-        Здесь фиксируются только границы и наличие контуров.
+        There is no public API on the portal.<br />
+        This page only records boundaries and contour availability.
       </p>
 
       <p>
-        Доступ к ORION Core API — вручную и по запросу.
+        Access to ORION Core API is manual and by request.
       </p>
     </main>
   );

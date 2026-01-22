@@ -50,24 +50,24 @@ export default function DAO() {
       <p><strong>RU</strong></p>
 
       <p>
-        DAO — экономическая оболочка.<br />
-        Она не управляет ядром и не контролирует аналитику.
+        DAO is the economic layer.<br />
+        It does not govern the core or control analytics.
       </p>
 
       <p>
-        DAO существует для работы со стимулами,<br />
-        но не для определения истины и направления.
+        DAO exists to work with incentives,<br />
+        not to define truth or direction.
       </p>
 
       <p>
-        Участие в DAO не даёт доступа к ORION.<br />
-        Голосование не влияет на космографию.<br />
-        DAO не имеет власти над Frey.
+        DAO participation does not grant access to ORION.<br />
+        Voting does not affect cosmography.<br />
+        DAO has no authority over Frey.
       </p>
 
       <p>
-        Ядро остаётся закрытым.<br />
-        Структура сохраняется.
+        The core remains sealed.<br />
+        The structure stays intact.
       </p>
     </main>
   );

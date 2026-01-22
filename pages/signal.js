@@ -37,18 +37,18 @@ export default function Signal() {
       <p><strong>RU</strong></p>
 
       <p>
-        Сигнал системы присутствует.<br />
-        Действий не требуется.
+        The system signal is present.<br />
+        No action is required.
       </p>
 
       <p>
-        Чтение продолжается.<br />
-        Структура стабильна.
+        Reading continues.<br />
+        The structure is stable.
       </p>
 
       <p>
-        Эта страница фиксирует непрерывность.<br />
-        Она не требует взаимодействия.
+        This page records continuity.<br />
+        It does not require interaction.
       </p>
     </main>
   );

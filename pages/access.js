@@ -28,8 +28,8 @@ export default function Access() {
       <p><strong>RU</strong></p>
 
       <p>
-        Доступ — только через email.<br />
-        Автоматических входов и онбординга нет.
+        Access is via email only.<br />
+        No automated sign-in or onboarding.
       </p>
 
       <p>

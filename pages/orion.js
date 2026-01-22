@@ -50,30 +50,30 @@ export default function Orion() {
       <p><strong>RU</strong></p>
 
       <p>
-        ORION — аналитическое ядро.<br />
-        Оно не находится здесь.
+        ORION is the analytical core.<br />
+        It is not hosted here.
       </p>
 
       <p>
-        ORION считает циклы, резонанс и структуру.<br />
-        Он не интерактивен.
+        ORION computes cycles, resonance, and structure.<br />
+        It is not interactive.
       </p>
 
       <p>
-        Здесь нет панели.<br />
-        Здесь нет API.<br />
-        Здесь нет точек входа.
+        There is no dashboard here.<br />
+        There is no API here.<br />
+        There are no entry points here.
       </p>
 
       <p>
-        BHRIGU не управляет ORION.<br />
-        BHRIGU не настраивает ORION.<br />
-        BHRIGU лишь фиксирует его наличие.
+        BHRIGU does not govern ORION.<br />
+        BHRIGU does not configure ORION.<br />
+        BHRIGU only records its existence.
       </p>
 
       <p>
-        Доступ к ORION не запрашивается через портал.<br />
-        Он никогда не мгновенный.
+        Access to ORION is not requested via the portal.<br />
+        It is never instant.
       </p>
     </main>
   );

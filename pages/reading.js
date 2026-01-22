@@ -36,22 +36,22 @@ export default function Reading() {
 
       <p><strong>RU</strong></p>
       <p>
-        Этот портал не “листают”.<br />
-        Его читают.
+        This portal is not for scrolling.<br />
+        It is meant to be read.
       </p>
 
       <hr />
 
-      <p><strong>Порядок</strong></p>
+      <p><strong>Order</strong></p>
       <p>
-        1. <a href="/start">/start</a> — зафиксировать присутствие.<br />
-        2. <a href="/map">/map</a> — увидеть структуру.<br />
-        3. <a href="/services">/services</a> — контуры.<br />
-        4. <a href="/orion">/orion</a> — граница ядра.<br />
-        5. <a href="/frey">/frey</a> — граница интерфейса.<br />
-        6. <a href="/dao">/dao</a> — граница экономической оболочки.<br />
-        7. <a href="/access">/access</a> — понять доступ.<br />
-        8. <a href="/chronicle">/chronicle</a> — зафиксировать состояние.
+        1. <a href="/start">/start</a> — confirm presence.<br />
+        2. <a href="/map">/map</a> — see the structure.<br />
+        3. <a href="/services">/services</a> — contours.<br />
+        4. <a href="/orion">/orion</a> — core boundary.<br />
+        5. <a href="/frey">/frey</a> — interface boundary.<br />
+        6. <a href="/dao">/dao</a> — economic layer boundary.<br />
+        7. <a href="/access">/access</a> — understand access.<br />
+        8. <a href="/chronicle">/chronicle</a> — record state.
       </p>
     </main>
   );
