@@ -1,80 +1,57 @@
 export default function Orion() {
+  const railStyle = {
+    marginTop: "2.2rem",
+    display: "flex",
+    gap: "18px",
+    fontSize: "14px",
+    opacity: 0.85,
+  };
+
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      \1Φ · \2\3
+      <h1 style={{ margin: "0 0 1rem 0" }}>ORION</h1>
 
       <p>
-        ORION is the analytical core.<br />
-        It does not run here.
+        ORION is the analytical engine beneath this portal.<br />
+        The portal does not host it.
       </p>
 
       <hr />
 
+      <p><strong>What this page is</strong></p>
       <p>
-        ORION runs beneath the portal.<br />
-        It computes cycles, resonance, and structure (high-level).<br />
-        It is not interactive.
-      </p>
-
-      <p>
-        There is no dashboard here.<br />
-        There is no API access here.<br />
-        There are no endpoints exposed.
+        A boundary and a name.<br />
+        A stable surface reference.
       </p>
 
       <hr />
 
+      <p><strong>What this page is not</strong></p>
       <p>
-        BHRIGU does not control ORION.<br />
-        BHRIGU does not configure ORION.<br />
-        BHRIGU only reflects its existence here.
+        No dashboard.<br />
+        No public API.<br />
+        No onboarding.
       </p>
 
       <hr />
 
-      <p><strong>Boundaries</strong></p>
-
+      <p><strong>Access</strong></p>
       <p>
-        • ORION is not a product.<br />
-        • ORION is not a service.<br />
-        • ORION is not a SaaS.
-      </p>
-
-      <p>
-        Access to ORION is not requested here.<br />
-        Access is never instant.
+        Access is manual and contextual.<br />
+        Start at <a href="/access">/access</a>.
       </p>
 
       <hr />
-
-      <p><strong>RU</strong></p>
-
-      <p>
-        ORION is the analytical core.<br />
-        It is not hosted here.
-      </p>
-
-      <p>
-        ORION computes cycles, resonance, and structure.<br />
-        It is not interactive.
-      </p>
-
-      <p>
-        There is no dashboard here.<br />
-        There is no API here.<br />
-        There are no entry points here.
-      </p>
 
       <p>
         BHRIGU does not govern ORION.<br />
-        BHRIGU does not configure ORION.<br />
-        BHRIGU only records its existence.
+        BHRIGU only records the boundary.
       </p>
 
-      <p>
-        Access to ORION is not requested via the portal.<br />
-        It is never instant.
-      </p>
+      <nav style={railStyle} aria-label="Route rail">
+        <a href="/cosmography">← /cosmography</a>
+        <a href="/frey">/frey →</a>
+      </nav>
     </main>
   );
 }

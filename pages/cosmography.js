@@ -3,13 +3,12 @@ import styles from "./cosmography.module.css";
 export default function Cosmography() {
   return (
     <main className={styles.content}>
-      \1Φ · \2\3
+      <h1 className={styles.h1}>Cosmography Φ</h1>
 
       <section className={styles.block}>
         <p className={styles.en}>
           Cosmography is the research surface.<br />
-          It stays separate from governance.<br />
-          It stays separate from the portal’s economics.
+          It describes structure, cycles, and resonance as a readable field.
         </p>
       </section>
 
@@ -19,26 +18,24 @@ export default function Cosmography() {
         <p className={styles.en}>
           This page is a boundary statement:<br />
           — no dashboards<br />
-          — no live instruments exposed here
+          — no live instruments<br />
+          — no economics on this surface
         </p>
       </section>
 
       <hr className={styles.hr} />
 
       <section className={styles.block}>
-        <div className={styles.lang}>English</div>
-        <p className={styles.ru}>
-          Cosmography is the scientific surface.<br />
-          It is separated from governance and the economic layer.<br />
-          <br />
-          This is a boundary declaration.<br />
-          No core showcase and no “live instruments” on this page.
+        <p className={styles.en}>
+          If you want the engine boundary: <a href="/orion">/orion</a>.<br />
+          If you want the interface boundary: <a href="/frey">/frey</a>.<br />
+          If you want the reading order: <a href="/reading">/reading</a>.
         </p>
       </section>
 
       <nav className={styles.rail} aria-label="Route rail">
         <a href="/map">← /map</a>
-        <a href="/start">↑ /start</a>
+        <a href="/reading">↑ /reading</a>
       </nav>
     </main>
   );
