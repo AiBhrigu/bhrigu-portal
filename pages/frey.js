@@ -34,7 +34,7 @@ EXIT: …`;
 
       <main className="wrap">
         <header className="hero">
-          <div className="kicker"><a href="/">BHRIGU</a> · <a href="/frey">Frey</a> · <a href="/orion">ORION</a></div>
+          <div className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
           \1Φ · \2\3
           <p className="subtitle">
             Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
@@ -51,7 +51,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
             <div className="nav">
               <a className="btn" href="/start">Start</a>
-              <a className="btn" href="/frey">Frey</a>
+              <span>Frey</span>
               <a className="btn" href="/faq">FAQ</a>
               <a className="btn" href="/reading">Reading</a>
             </div>
