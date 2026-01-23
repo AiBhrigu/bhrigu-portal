@@ -5,14 +5,14 @@ export default function Orion() {
 
       <p>
         ORION is the analytical core.<br />
-        It does not live here.
+        It does not run here.
       </p>
 
       <hr />
 
       <p>
-        ORION operates beneath the portal.<br />
-        It computes cycles, resonance, and structure.<br />
+        ORION runs beneath the portal.<br />
+        It computes cycles, resonance, and structure (high-level).<br />
         It is not interactive.
       </p>
 
@@ -27,7 +27,7 @@ export default function Orion() {
       <p>
         BHRIGU does not control ORION.<br />
         BHRIGU does not configure ORION.<br />
-        BHRIGU only reflects its existence.
+        BHRIGU only reflects its existence here.
       </p>
 
       <hr />

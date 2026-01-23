@@ -7,9 +7,9 @@ export default function Cosmography() {
 
       <section className={styles.block}>
         <p className={styles.en}>
-          Cosmography is a research surface.<br />
-          It is separate from governance.<br />
-          It is separate from the portal’s economics.
+          Cosmography is the research surface.<br />
+          It stays separate from governance.<br />
+          It stays separate from the portal’s economics.
         </p>
       </section>
 
@@ -17,9 +17,9 @@ export default function Cosmography() {
 
       <section className={styles.block}>
         <p className={styles.en}>
-          This page is a boundary statement.<br />
-          No dashboards.<br />
-          No live instruments exposed here.
+          This page is a boundary statement:<br />
+          — no dashboards<br />
+          — no live instruments exposed here
         </p>
       </section>
 

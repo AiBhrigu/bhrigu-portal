@@ -14,8 +14,8 @@ export default function Reading() {
 
 
       <p>
-        This portal is not navigated.<br />
-        It is read.
+        This portal is not designed for scrolling.<br />
+        It is a map you read with intent.
       </p>
 
       <hr />
@@ -24,7 +24,7 @@ export default function Reading() {
       <p>
         1. <a href="/start">/start</a> — establish presence.<br />
         2. <a href="/map">/map</a> — perceive structure.<br />
-        3. <a href="/services">/services</a> — observe contours.<br />
+        3. <a href="/services">/services</a> — see the available surfaces.<br />
         4. <a href="/orion">/orion</a> — core boundary.<br />
         5. <a href="/frey">/frey</a> — interface boundary.<br />
         6. <a href="/dao">/dao</a> — economic shell boundary.<br />
