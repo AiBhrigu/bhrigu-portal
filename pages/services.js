@@ -8,8 +8,7 @@ export default function Services() {
       <Head>
         <title>Services · BHRIGU</title>
         <meta name="description" content="What BHRIGU offers today: a stable portal surface, Frey-facing interfaces, and structured research presentation." />
-        <link rel="canonical" href="https://www.bhrigu.io/services" />
-        <meta property="og:title" content="Services · BHRIGU" />
+<meta property="og:title" content="Services · BHRIGU" />
         <meta property="og:description" content="What BHRIGU offers today: a stable portal surface, Frey-facing interfaces, and structured research presentation." />
         <meta property="og:url" content="https://www.bhrigu.io/services" />
         <meta name="twitter:title" content="Services · BHRIGU" />

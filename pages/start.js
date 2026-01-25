@@ -8,8 +8,7 @@ export default function Start() {
       <Head>
         <title>Start · BHRIGU</title>
         <meta name="description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
-        <link rel="canonical" href="https://www.bhrigu.io/start" />
-        <meta property="og:title" content="Start · BHRIGU" />
+<meta property="og:title" content="Start · BHRIGU" />
         <meta property="og:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
         <meta property="og:url" content="https://www.bhrigu.io/start" />
         <meta name="twitter:title" content="Start · BHRIGU" />

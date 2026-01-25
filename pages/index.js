@@ -8,8 +8,7 @@ export default function Home() {
       <Head>
         <title>BHRIGU · Frey / ORION</title>
         <meta name="description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
-        <link rel="canonical" href="https://www.bhrigu.io/" />
-        <meta property="og:title" content="BHRIGU · Frey / ORION" />
+<meta property="og:title" content="BHRIGU · Frey / ORION" />
         <meta property="og:description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
         <meta property="og:url" content="https://www.bhrigu.io/" />
         <meta name="twitter:title" content="BHRIGU · Frey / ORION" />

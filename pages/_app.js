@@ -91,13 +91,19 @@ function getMeta(pathname) {
 }
 
 export default function App({ Component, pageProps }) {
+  // ATOM_BHRIGU_PORTAL_SEO_CANONICAL_DAO_V2_FIX
+  // Single router instance (dedupe). Canonical derived from normalized path.
   const router = useRouter();
-  const path = normalizePath(router?.asPath);
+  const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
+  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '' : path);
+
 
   return (
     <>
       <Head>
+        <link rel="canonical" href={canonical} key="canonical" />
+
         <title>{meta.title}</title>
         <meta name="description" content={meta.desc} />
 <meta property="og:type" content="website" />
