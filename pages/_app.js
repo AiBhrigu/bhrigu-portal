@@ -100,9 +100,7 @@ export default function App({ Component, pageProps }) {
       <Head>
         <title>{meta.title}</title>
         <meta name="description" content={meta.desc} />
-        <link rel="canonical" href={meta.canonical} />
-
-        <meta property="og:type" content="website" />
+<meta property="og:type" content="website" />
         <meta key="og:title" property="og:title" content={meta.title} />
         <meta key="og:description" property="og:description" content={meta.desc} />
         <meta key="og:url" property="og:url" content={meta.canonical} />
