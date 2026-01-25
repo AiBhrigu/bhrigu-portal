@@ -190,8 +190,7 @@ export default function Cosmographer() {
         
 
         {/* ATOM_META_COSMOGRAPHER_V1 */}
-        <link rel="canonical" href="https://www.bhrigu.io/cosmographer" />
-        <meta property="og:type" content="website" />
+<meta property="og:type" content="website" />
         <meta key="og:url" property="og:url" content="https://www.bhrigu.io/cosmographer" />
         <meta key="og:title" property="og:title" content="The Cosmographer · BHRIGU" />
         <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." />
