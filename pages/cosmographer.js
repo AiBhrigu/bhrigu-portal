@@ -200,7 +200,8 @@ export default function Cosmographer() {
         <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
         <meta key="twitter:title" name="twitter:title" content="The Cosmographer · BHRIGU" />
         <meta key="twitter:description" name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
-      </Head>
+              <link rel="canonical" href="https://www.bhrigu.io/cosmographer" />
+</Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
           <a href="/start">← /start</a>
