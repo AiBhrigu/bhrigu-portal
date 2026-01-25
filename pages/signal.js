@@ -1,55 +1,49 @@
-import styles from "./signal.module.css";
+import Head from "next/head";
+
 export default function Signal() {
   return (
-    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      <h1>Signal Φ</h1>
+    <>
+      <Head>
+        <title>Signal Φ · BHRIGU</title>
+        <meta
+          name="description"
+          content="System signal is present. No action required. Reading continues."
+        />
+      </Head>
 
-<nav className={styles.rail} aria-label="Route rail" data-phi-rail>
-  <a className={styles.railLink} href="/reading">← /reading</a>
-  <span className={styles.railSep}>/</span>
-  <span className={styles.railHere}>/signal</span>
-  <span className={styles.railSep}>/</span>
-  <a className={styles.railLink} href="/map">/map →</a>
-</nav>
+      <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
+        <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
+          <a href="/reading">← /reading</a>
+          <span style={{ margin: "0 10px", opacity: 0.5 }}>/</span>
+          <span style={{ opacity: 0.8 }}>/signal</span>
+          <span style={{ margin: "0 10px", opacity: 0.5 }}>/</span>
+          <a href="/map">/map →</a>
+        </div>
 
+        <h1 style={{ fontSize: 32, margin: "18px 0 18px", letterSpacing: 1.2 }}>
+          Signal Φ
+        </h1>
 
-      <p>
-        System signal is present.<br />
-        No action is required.
-      </p>
+        <div style={{ lineHeight: 1.7, fontSize: 16 }}>
+          <p>
+            System signal is present.
+            <br />
+            No action is required.
+          </p>
 
-      <hr />
+          <p>
+            Reading continues.
+            <br />
+            Structure remains stable.
+          </p>
 
-      <p>
-        Reading continues.<br />
-        Structure remains stable.
-      </p>
-
-      <hr />
-
-      <p>
-        This page confirms continuity.<br />
-        It does not request interaction.
-      </p>
-
-      <hr />
-
-      <p><strong>RU</strong></p>
-
-      <p>
-        The system signal is present.<br />
-        No action is required.
-      </p>
-
-      <p>
-        Reading continues.<br />
-        The structure is stable.
-      </p>
-
-      <p>
-        This page records continuity.<br />
-        It does not require interaction.
-      </p>
-    </main>
+          <p>
+            This page confirms continuity.
+            <br />
+            It does not request interaction.
+          </p>
+        </div>
+      </main>
+    </>
   );
 }
