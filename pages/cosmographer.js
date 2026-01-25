@@ -192,15 +192,15 @@ export default function Cosmographer() {
         {/* ATOM_META_COSMOGRAPHER_V1 */}
         <link rel="canonical" href="https://www.bhrigu.io/cosmographer" />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.bhrigu.io/cosmographer" />
-        <meta property="og:title" content="The Cosmographer · BHRIGU" />
-        <meta property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="The Cosmographer · BHRIGU" />
-        <meta name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." /><meta property="og:title" content="The Cosmographer · BHRIGU" />
-        <meta property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
-        <meta name="twitter:title" content="The Cosmographer · BHRIGU" />
-        <meta name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
+        <meta key="og:url" property="og:url" content="https://www.bhrigu.io/cosmographer" />
+        <meta key="og:title" property="og:title" content="The Cosmographer · BHRIGU" />
+        <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." />
+        <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+        <meta key="twitter:title" name="twitter:title" content="The Cosmographer · BHRIGU" />
+        <meta key="twitter:description" name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." /><meta key="og:title" property="og:title" content="The Cosmographer · BHRIGU" />
+        <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
+        <meta key="twitter:title" name="twitter:title" content="The Cosmographer · BHRIGU" />
+        <meta key="twitter:description" name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
       </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>

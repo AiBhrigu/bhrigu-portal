@@ -103,13 +103,13 @@ export default function App({ Component, pageProps }) {
         <link rel="canonical" href={meta.canonical} />
 
         <meta property="og:type" content="website" />
-        <meta property="og:title" content={meta.title} />
-        <meta property="og:description" content={meta.desc} />
-        <meta property="og:url" content={meta.canonical} />
+        <meta key="og:title" property="og:title" content={meta.title} />
+        <meta key="og:description" property="og:description" content={meta.desc} />
+        <meta key="og:url" property="og:url" content={meta.canonical} />
 
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={meta.title} />
-        <meta name="twitter:description" content={meta.desc} />
+        <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
+        <meta key="twitter:title" name="twitter:title" content={meta.title} />
+        <meta key="twitter:description" name="twitter:description" content={meta.desc} />
       </Head>
 
       <BhriguPhiHeader />
