@@ -1,74 +1,35 @@
-export default function DAO() {
- return (
- <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
- 
+// ATOM_BHRIGU_PORTAL_DAO_CHRONICLE_V1
+export default function Dao() {
+  return (
+    <main>
+      <h1>DAO</h1>
 
- <p>
- DAO is an economic shell.<br />
- It does not govern the core.<br />
- It does not control analysis.
- </p>
+      <p style={{ maxWidth: 820, lineHeight: 1.7 }}>
+        DAO is the economic shell. It does not govern the core. It does not control analysis.
+      </p>
 
- <hr />
+      <p style={{ maxWidth: 820, lineHeight: 1.7 }}>
+        The DAO exists to host incentives — not to define truth, direction, or cosmography.
+        Governance here is peripheral. It operates outside the analytical axis.
+      </p>
 
- <p>
- The DAO exists to host incentives.<br />
- Not to define truth.<br />
- Not to enforce direction.
- </p>
+      <p style={{ maxWidth: 820, lineHeight: 1.7 }}>
+        DAO participation does not grant access to ORION. DAO voting does not affect Cosmography.
+        DAO has no authority over Frey.
+      </p>
 
- <p>
- Governance here is peripheral.<br />
- It operates outside the analytical axis.
- </p>
+      <section style={{ marginTop: 24 }}>
+        <h2 style={{ marginBottom: 8 }}>Role</h2>
+        <ul style={{ lineHeight: 1.7, maxWidth: 820 }}>
+          <li>Economic coordination</li>
+          <li>Incentive alignment</li>
+          <li>External funding interfaces</li>
+        </ul>
+      </section>
 
- <hr />
-
- <p>
- DAO participation does not grant access to ORION.<br />
- DAO voting does not affect cosmography.<br />
- DAO has no authority over Frey.
- </p>
-
- <hr />
-
- <p><strong>Role</strong></p>
-
- <p>
- • Economic coordination<br />
- • Incentive alignment<br />
- • External funding interfaces
- </p>
-
- <p>
- The core remains closed.<br />
- The structure remains intact.
- </p>
-
- <hr />
-
- <p><strong>RU</strong></p>
-
- <p>
- DAO is the economic layer.<br />
- It does not govern the core or control analytics.
- </p>
-
- <p>
- DAO exists to work with incentives,<br />
- not to define truth or direction.
- </p>
-
- <p>
- DAO participation does not grant access to ORION.<br />
- Voting does not affect cosmography.<br />
- DAO has no authority over Frey.
- </p>
-
- <p>
- The core remains sealed.<br />
- The structure stays intact.
- </p>
- </main>
- );
+      <p style={{ maxWidth: 820, lineHeight: 1.7, marginTop: 20 }}>
+        The core remains closed. The structure remains intact.
+      </p>
+    </main>
+  );
 }
