@@ -115,6 +115,7 @@ export default function BhriguPhiHeader() {
           <a href="/map">Map</a>
           <a href="/services">Services</a>
           <a href="/cosmography">Cosmography</a>
+        <a href="/cosmographer">Cosmographer</a>
           <a href="/faq">FAQ</a>
         </nav>
 

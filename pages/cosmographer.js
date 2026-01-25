@@ -187,6 +187,10 @@ export default function Cosmographer() {
       <Head>
         <title>The Cosmographer · BHRIGU</title>
         <meta name="description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
+        <meta property="og:title" content="The Cosmographer · BHRIGU" />
+        <meta property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
+        <meta name="twitter:title" content="The Cosmographer · BHRIGU" />
+        <meta name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
       </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
