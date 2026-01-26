@@ -173,7 +173,12 @@ EXIT: …`}
         .btnCta:hover{background:rgba(255,255,255,0.06)}
         .btnCta:disabled{opacity:1;color:rgba(255,255,255,.38);border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.02);cursor:not-allowed}
 
-        .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+        
+          /*__FREY_QUERY_INPUT_HALO_V1_3__*/
+          .qInput{background:rgba(0,0,0,0.44);border:1px solid rgba(255,255,255,0.24);box-shadow:0 0 0 1px rgba(215,181,90,0.18), 0 10px 30px rgba(0,0,0,0.35);color:rgba(255,255,255,0.92);}
+          .qInput::placeholder{color:rgba(255,255,255,0.44)}
+          .qInput:focus,.qInput:focus-visible{outline:none;border-color:rgba(215,181,90,0.72);box-shadow:0 0 0 3px rgba(215,181,90,0.22), 0 14px 36px rgba(0,0,0,0.38);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
         .chip{border-radius:999px;padding:6px 10px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:rgba(255,255,255,.78);cursor:pointer;opacity:1}
         .chip:hover{border-color:rgba(215,181,90,.55);background:rgba(255,255,255,0.06)}
         .micro{margin-top:10px;font-size:13px;opacity:.85}
