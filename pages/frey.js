@@ -1,6 +1,22 @@
 import Head from "next/head";
+import { useRouter } from "next/router";
+import { useState } from "react";
 
 export default function FreyPage() {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+  const EXAMPLES = [
+    "human ↔ project: where are we now and what is the next step?",
+    "human ↔ asset: what is the risk/support tone for the next 30 days?",
+    "human ↔ human: what is the friction point and how to navigate it?",
+  ];
+
+  const submit = () => {
+    const s = (q || "").trim();
+    if (!s) return;
+    router.push(`/reading?q=${encodeURIComponent(s)}`);
+  };
+
   const copy = async () => {
     const text =
 `FREY · Query template
@@ -40,6 +56,43 @@ EXIT: …`;
             Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
           </p>
         </header>
+
+        {/*__FREY_QUERY_LINE_V1__*/}
+        <section className="card">
+          <h2>Ask Frey (pilot)</h2>
+          <p className="muted">
+            UI-only v1. Your question stays in your browser — we just open the next route.
+          </p>
+
+          <div className="queryRow">
+            <input
+              className="qInput"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              placeholder="Type a question…"
+              aria-label="Frey query"
+            />
+            <button className="btn" onClick={submit}>Continue → Reading</button>
+          </div>
+
+          <div className="chips">
+            {EXAMPLES.map((t) => (
+              <button
+                key={t}
+                className="chip"
+                onClick={() => setQ(t)}
+                type="button"
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+
+          <p className="micro">
+            Not ready? <a href="/start">Start</a> · <a href="/reading">Reading</a> · <a href="/faq">FAQ</a>
+          </p>
+        </section>
 
           <section className="card">
             <h2>Optional: compact schema (AI-ready)</h2>
@@ -112,6 +165,14 @@ EXIT: …`}
         .pre { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.25); overflow-x: auto; margin: 10px 0 0; }
         .btn { margin-top: 10px; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); cursor: pointer; }
         .btn:hover { background: rgba(255,255,255,0.06); }
+        .queryRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
+        .qInput{flex:1;min-width:240px;height:36px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(0,0,0,0.18);color:inherit}
+        .qInput:focus{outline:none;border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
+        .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+        .chip{border-radius:999px;padding:6px 10px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.02);cursor:pointer;opacity:.9}
+        .chip:hover{border-color:rgba(215,181,90,.45);opacity:1}
+        .micro{margin-top:10px;font-size:13px;opacity:.85}
+
         @media (max-width: 760px) { .title { font-size: 34px; } }
 
           /*__BHRIGU_UI_CANON__*/
