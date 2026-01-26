@@ -48,6 +48,8 @@ EXIT: …`;
         />
       </Head>
 
+      {/*__FREY_COPY_TEMPLATE_REMOVE_V1_1__*/}
+
       <main className="wrap">
         <header className="hero">
           <div className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
