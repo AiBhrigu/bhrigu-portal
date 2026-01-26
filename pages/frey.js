@@ -148,6 +148,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           
 /*__PHI_TOKENS_V1_0__*/
 :root{ --phi-8:8px; --phi-13:13px; --phi-21:21px; --phi-34:34px; --phi-55:55px; --phi-line:1px; --phi-r-13:13px; --phi-r-21:21px; --phi-v1:1;}
+/*__FREY_PHI_TOKENS_V1_0__*/
 .askFreyBox{border:1px solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:18px;padding:18px 18px 16px;}
           .askFreyBox h2{color:rgba(255,255,255,0.93)}
           .askFreyBox p{color:rgba(255,255,255,0.74)}
