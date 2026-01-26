@@ -173,7 +173,13 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         .btnCta:disabled{opacity:1;color:rgba(255,255,255,.38);border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.02);cursor:not-allowed}
 
         
-          /*__FREY_QUERY_INPUT_HALO_V1_3__*/
+          
+/*__FREY_ASKFREY_AIR_V1_0_4__*/
+.askFreyBox>*+*{margin-top:14px;}
+.askFreyBox .qRow{margin-top:2px;}
+.askFreyBox .pillRow,.askFreyBox .suggRow,.askFreyBox .chipsRow{gap:10px;}
+.askFreyBox .notReady{margin-top:2px;}
+/*__FREY_QUERY_INPUT_HALO_V1_3__*/
           .qInput{background:rgba(0,0,0,0.44);border:1px solid rgba(255,255,255,0.24);box-shadow:0 0 0 1px rgba(215,181,90,0.18), 0 10px 30px rgba(0,0,0,0.35);color:rgba(255,255,255,0.92);}
           .qInput::placeholder{color:rgba(255,255,255,0.44)}
           .qInput:focus,.qInput:focus-visible{outline:none;border-color:rgba(215,181,90,0.72);box-shadow:0 0 0 3px rgba(215,181,90,0.22), 0 14px 36px rgba(0,0,0,0.38);}
