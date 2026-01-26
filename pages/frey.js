@@ -145,10 +145,13 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
       <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
-          .askFreyBox{border:1px solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:18px;padding:18px 18px 16px;}
+          
+/*__PHI_TOKENS_V1_0__*/
+:root{ --phi-8:8px; --phi-13:13px; --phi-21:21px; --phi-34:34px; --phi-55:55px; --phi-line:1px; --phi-r-13:13px; --phi-r-21:21px; --phi-v1:1;}
+.askFreyBox{border:1px solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:18px;padding:18px 18px 16px;}
           .askFreyBox h2{color:rgba(255,255,255,0.93)}
           .askFreyBox p{color:rgba(255,255,255,0.74)}
-          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);padding:16px 18px;min-height:54px;line-height:1.25;cursor:text;--frey_qinput_hitbox_v1_4:1;box-sizing:border-box;--frey_qinput_hitbox_v1_4_1:1;flex:1;max-width:none;width:100%;--frey_qinput_wider_v1_4_2:1;}
+          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);padding:var(--phi-13) var(--phi-21);--phi_pad_v1:1;min-height:var(--phi-55);--phi_h_v1:1;line-height:1.25;cursor:text;--frey_qinput_hitbox_v1_4:1;box-sizing:border-box;--frey_qinput_hitbox_v1_4_1:1;flex:1;max-width:none;width:100%;--frey_qinput_wider_v1_4_2:1;}
           .askFreyBox .qInput::placeholder{color:rgba(255,255,255,0.56)}
 \n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
         .wrap { max-width: 980px; margin: 0 auto; padding: 40px 18px 70px; }
@@ -176,7 +179,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           
 /*__FREY_ASKFREY_AIR_V1_0_4__*/
 /*__FREY_ASKFREY_AIR2_V1_0_5__*/
-.askFreyBox{display:flex;flex-direction:column;gap:14px;--frey_askfrey_air2_v1_0_5:1;}
+.askFreyBox{display:flex;flex-direction:column;gap:var(--phi-13);--phi_gap_v1:1;--frey_askfrey_air2_v1_0_5:1;}
 .askFreyBox button:not(.btnCta){margin:10px 10px 0 0;}
 
 .askFreyBox>*+*{margin-top:14px;}
