@@ -58,6 +58,7 @@ EXIT: …`;
         </header>
 
         {/*__FREY_QUERY_LINE_V1__*/}
+        {/*__FREY_QUERY_LINE_V1_CONTRAST__*/}
         <section className="card">
           <h2>Ask Frey (pilot)</h2>
           <p className="muted">
@@ -73,7 +74,7 @@ EXIT: …`;
               placeholder="Type a question…"
               aria-label="Frey query"
             />
-            <button className="btn" onClick={submit}>Continue → Reading</button>
+            <button className="btn btnCta" onClick={submit} disabled={!q.trim()}>Continue → Reading</button>
           </div>
 
           <div className="chips">
@@ -168,9 +169,13 @@ EXIT: …`}
         .queryRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
         .qInput{flex:1;min-width:240px;height:36px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(0,0,0,0.18);color:inherit}
         .qInput:focus{outline:none;border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
+        .btnCta{border:1px solid rgba(215,181,90,.55);background:rgba(255,255,255,0.04);color:rgba(255,255,255,.90)}
+        .btnCta:hover{background:rgba(255,255,255,0.06)}
+        .btnCta:disabled{opacity:1;color:rgba(255,255,255,.38);border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.02);cursor:not-allowed}
+
         .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-        .chip{border-radius:999px;padding:6px 10px;border:1px solid rgba(255,255,255,0.10);background:rgba(255,255,255,0.02);cursor:pointer;opacity:.9}
-        .chip:hover{border-color:rgba(215,181,90,.45);opacity:1}
+        .chip{border-radius:999px;padding:6px 10px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:rgba(255,255,255,.78);cursor:pointer;opacity:1}
+        .chip:hover{border-color:rgba(215,181,90,.55);background:rgba(255,255,255,0.06)}
         .micro{margin-top:10px;font-size:13px;opacity:.85}
 
         @media (max-width: 760px) { .title { font-size: 34px; } }
