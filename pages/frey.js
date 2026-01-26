@@ -175,6 +175,10 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         
           
 /*__FREY_ASKFREY_AIR_V1_0_4__*/
+/*__FREY_ASKFREY_AIR2_V1_0_5__*/
+.askFreyBox{display:flex;flex-direction:column;gap:14px;--frey_askfrey_air2_v1_0_5:1;}
+.askFreyBox button:not(.btnCta){margin:10px 10px 0 0;}
+
 .askFreyBox>*+*{margin-top:14px;}
 .askFreyBox .qRow{margin-top:2px;}
 .askFreyBox .pillRow,.askFreyBox .suggRow,.askFreyBox .chipsRow{gap:10px;}
