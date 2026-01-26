@@ -48,6 +48,8 @@ EXIT: …`;
         />
       </Head>
 
+      {/*__FREY_ASKFREY_PREMIUM_V1_0_3__*/}
+
       {/*__FREY_COPY_TEMPLATE_REMOVE_V1_1__*/}
 
       <main className="wrap">
@@ -61,7 +63,7 @@ EXIT: …`;
 
         {/*__FREY_QUERY_LINE_V1__*/}
         {/*__FREY_QUERY_LINE_V1_CONTRAST__*/}
-        <section className="card">
+        <section className="card askFreyBox">
           <h2>Ask Frey (pilot)</h2>
           <p className="muted">
             UI-only v1. Your question stays in your browser — we just open the next route.
@@ -141,7 +143,14 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         </section>
       </main>
 
-      <style jsx>{`\n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
+      <style jsx>{`
+          /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
+          .askFreyBox{border:1px solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:18px;padding:18px 18px 16px;}
+          .askFreyBox h2{color:rgba(255,255,255,0.93)}
+          .askFreyBox p{color:rgba(255,255,255,0.74)}
+          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);}
+          .askFreyBox .qInput::placeholder{color:rgba(255,255,255,0.56)}
+\n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
         .wrap { max-width: 980px; margin: 0 auto; padding: 40px 18px 70px; }
         .hero { padding: 18px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 18px; }
         .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
