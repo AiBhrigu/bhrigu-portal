@@ -130,20 +130,8 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
             <li>Works with links: human ↔ human, human ↔ project, human ↔ asset, author ↔ style, user ↔ scenario.</li>
           </ul>
         </section>
-
-        <section className="card">
-          <h2>Copy template (start here)</h2>
-          <p className="muted">Copy & paste into Frey/chat:</p>
-          <pre className="pre">
-{`GOAL: …
-CONTEXT: …
-CONSTRAINTS: …
-EXIT: …`}
-          </pre>
-          <button className="btn" onClick={copy}>Copy template</button>
-        </section>
-
-        <section className="card">
+      {/*__FREY_COPY_TEMPLATE_REMOVED_V1__*/}
+<section className="card">
           <h2>Public surface</h2>
           <p>
             This page is UI-only. API routes can be disabled on the public portal by design.
