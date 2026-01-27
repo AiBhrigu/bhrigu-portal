@@ -76,4 +76,20 @@ if px_bad "$LINE_Q"; then
   exit 2
 fi
 
+
+# == Φ query mode lock v0.1 (FREY_QUERY_MODE_LOCK_V0_1) ==
+# rule: exactly one marker must exist in pages/frey.js
+STUB_HITS="$(grep -F -c -- "__FREY_QUERY_MODE_STUB_V0_1__" pages/frey.js || true)"
+LIVE_HITS="$(grep -F -c -- "__FREY_QUERY_MODE_LIVE_V0_1__" pages/frey.js || true)"
+if [ "$STUB_HITS" -gt 0 ] && [ "$LIVE_HITS" -gt 0 ]; then
+  echo "FAIL: query mode conflict (stub+live markers)"; exit 2;
+fi
+if [ "$STUB_HITS" -eq 0 ] && [ "$LIVE_HITS" -eq 0 ]; then
+  echo "FAIL: missing query mode marker (stub/live)"; exit 2;
+fi
+if [ "$STUB_HITS" -gt 0 ]; then
+  VAR_HITS="$(grep -F -c -- "--frey_query_mode_stub:1" pages/frey.js || true)"
+  [ "$VAR_HITS" -gt 0 ] || { echo "FAIL: stub marker present but var missing"; exit 2; }
+fi
+
 echo "PASS: Φ-gate v0.2 (Ask Frey block)"
