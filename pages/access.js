@@ -24,10 +24,7 @@ export default function Access() {
       </p>
 
       <hr />
-
-      <p><strong>RU</strong></p>
-
-      <p>
+<p>
         Access is via email only.<br />
         No automated sign-in or onboarding.
       </p>
