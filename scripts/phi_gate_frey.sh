@@ -21,10 +21,10 @@ line_of(){
 }
 
 # Anchors / markers
-need "__FREY_PHI_TOKENS_V1_0__" "Φ tokens marker"
+need "--frey_phi_tokens_v1_0:1" "Φ tokens marker"
 need "--phi-" "Φ variables"
 need "askFreyBox" "askFreyBox token"
-need "__FREY_ASKFREY_AIR2_V1_0_5__" "air marker"
+need "--frey_askfrey_air2_v1_0_5:1" "air marker"
 
 # Targeted CSS lines (keep scope tight)
 L_BOX="$(line_of ".askFreyBox{")"

@@ -18,7 +18,7 @@ fi
 # Local signals (surface-only)
 phi_vars="$(grep -E -o -- "--phi[-_][A-Za-z0-9_-]+" "$F" | sort -u | wc -l | tr -d " " || true)"
 phi_var_uses="$(grep -F -c -- "var(--phi" "$F" || true)"
-phi_marker="$(grep -F -c -- "__FREY_PHI_TOKENS_V1_0__" "$F" || true)"
+phi_marker="$(grep -F -c -- "--frey_phi_tokens_v1_0:1" "$F" || true)"
 ask_box="$(grep -F -c -- "askFreyBox" "$F" || true)"
 qinput="$(grep -F -c -- ".qInput" "$F" || true)"
 px_cnt="$(grep -E -o -- "[0-9]{1,4}px" "$F" | wc -l | tr -d " " || true)"
@@ -44,7 +44,7 @@ if command -v curl >/dev/null 2>&1; then
   if [ -n "$JS" ]; then
     prod_js="$JS"
     JSC="$(curl -fsSL "$BASE$JS" || true)"
-    prod_phi_marker="$(printf "%s" "$JSC" | grep -F -c -- "__FREY_PHI_TOKENS_V1_0__" || true)"
+    prod_phi_marker="$(printf "%s" "$JSC" | grep -F -c -- "--frey_phi_tokens_v1_0:1" || true)"
     prod_phi_vars="$(printf "%s" "$JSC" | grep -E -o -- "--phi[-_][A-Za-z0-9_-]+" | sort -u | wc -l | tr -d " " || true)"
     prod_phi_uses="$(printf "%s" "$JSC" | grep -F -c -- "var(--phi" || true)"
   fi
