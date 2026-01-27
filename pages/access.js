@@ -3,7 +3,7 @@ export default function Access() {
 
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      \1Φ · \2\3
+      Φ · Access
 
       <p>
         Access exists.<br />
