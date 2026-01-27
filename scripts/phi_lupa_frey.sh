@@ -86,3 +86,6 @@ fi
 sha256sum "$OUT" | tee "$OUT.sha256" >/dev/null
 cp -f "$OUT" "$OUT.sha256" "$D/" 2>/dev/null || true
 echo "OK: $OUT"
+
+echo "== Query Mode STUB prod token =="
+grep -nF -- "--frey_query_mode_stub_prod_v0_1_1:1" pages/frey.js | head -n 3 || true

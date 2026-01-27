@@ -93,3 +93,6 @@ if [ "$STUB_HITS" -gt 0 ]; then
 fi
 
 echo "PASS: Φ-gate v0.2 (Ask Frey block)"
+
+# Φ gate: Query Mode STUB prod token (must survive bundle)
+grep -F -q -- "--frey_query_mode_stub_prod_v0_1_1:1" pages/frey.js || { echo "FAIL: missing: Query Mode STUB prod token"; exit 2; }
