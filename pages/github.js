@@ -1,7 +1,7 @@
 export default function GitHub() {
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
-      \1Φ · \2\3
+      Φ · v1
 
       <p>
         Structural reference.<br />
