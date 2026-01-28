@@ -12,6 +12,11 @@ set -e
 
 set -euo pipefail
 
+# __PHI_LUPA_PORTAL_HARDEN_V0_3__
+echo "PHI_LUPA_PORTAL: START $(date -Is)" 
+set +e  # diagnostics must not hard-fail callers
+PHI_LUPA_FAIL=0
+
 BASE="https://www.bhrigu.io"
 A="$HOME/orion_ai/artifacts"
 D="/mnt/c/Users/top-a/Downloads"
@@ -103,3 +108,6 @@ sha256sum "$OUT" | tee "$OUT.sha256" >/dev/null
 cp -f "$OUT" "$OUT.sha256" "$D/" 2>/dev/null || true
 
 echo "OK: $OUT"
+
+echo "PHI_LUPA_PORTAL: END $(date -Is)" 
+exit 0
