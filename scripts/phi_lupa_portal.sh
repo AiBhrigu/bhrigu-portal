@@ -1,4 +1,15 @@
 #!/usr/bin/env bash
+# Φ-Lupa hardening v0.2
+set +e
+command -v curl >/dev/null 2>&1 || {
+  echo "WARN: curl not found; network checks will be skipped" >&2
+  export PHI_LUPA_SKIP_NET=1
+}
+export PHI_LUPA_RUNLOG="${PHI_LUPA_RUNLOG:-$HOME/orion_ai/artifacts/PHI_LUPA_PORTAL_RUN_$(date +%Y%m%d_%H%M%S).log}"
+: > "$PHI_LUPA_RUNLOG" 2>/dev/null || true
+exec > >(tee -a "$PHI_LUPA_RUNLOG") 2>&1
+set -e
+
 set -euo pipefail
 
 BASE="https://www.bhrigu.io"
