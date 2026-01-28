@@ -1,3 +1,4 @@
+/*__PORTAL_GITHUB_RU_REMOVED_V0_1__*/
 export default function GitHub() {
   return (
     <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
@@ -19,7 +20,7 @@ export default function GitHub() {
 
       <hr />
 
-      <p><strong>RU</strong></p>
+      <p></p>
       <p>
         Reference link to the public profile.<br />
         External surface only.
