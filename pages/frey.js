@@ -1,8 +1,12 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import React, { useState } from "react";
 
+import { FREY_SAFETY, freyUiOnlyAssert } from "../lib/frey_safety_kernel";
 export default function FreyPage() {
+  freyUiOnlyAssert();
+
+
   const router = useRouter();
   const [q, setQ] = useState("");
   const EXAMPLES = [
@@ -69,7 +73,7 @@ EXIT: …`;
             UI-only v1. Your question stays in your browser — we just open the next route.
           </p>
 
-          <div className="queryRow">
+          <div className="qRow">
             <input
               className="qInput"
               value={q}
@@ -94,10 +98,50 @@ EXIT: …`;
             ))}
           </div>
 
+          
+          <div className="mt-6 w-full max-w-2xl">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <input
+                          value={query}
+                          onChange={(e) => setQuery(e.target.value)}
+                          placeholder="Ask Frey… (signals, cycles, assets)"
+                          className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
+                        />
+                        <button
+                          onClick={runQuery}
+                          className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/15"
+                        >
+                          Ask
+                        </button>
+                      </div>
+                      <div className="mt-2 text-xs text-white/50">
+                        
+                      </div>
+                      {error ? (
+                        <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                          {error}
+                        </div>
+                      ) : null}
+                      {answer ? (
+                        <div className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white/90">
+                          {answer}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+
           <p className="micro">
             Not ready? <a href="/start">Start</a> · <a href="/reading">Reading</a> · <a href="/faq">FAQ</a>
           </p>
         </section>
+
+        
+        <details className="fold" open={false}>
+          <summary className="foldSummary">More (optional)</summary>
+          <div className="foldBody">
+
 
           <section className="card">
             <h2>Optional: compact schema (AI-ready)</h2>
@@ -141,6 +185,10 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
             This page is UI-only. API routes can be disabled on the public portal by design.
           </p>
         </section>
+          </div>
+        </details>
+
+
       </main>
 
       <style jsx>{`
@@ -185,6 +233,36 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
 .askFreyBox>*+*{margin-top:14px;}
 .askFreyBox .qRow{margin-top:2px;}
+/*__FREY_FIRST_SCREEN_CANON_PATCH_V0_1__*/
+
+        
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Ask Frey… (signals, cycles, assets)"
+                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
+              />
+                onClick={runQuery}
+                className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/15"
+              >
+                Ask
+              
+            {error ? (
+                {error}
+            ) : null}
+            {answer ? (
+                {answer}
+            ) : null}
+/* Fix double vertical spacing: keep gap, remove extra margins */
+.askFreyBox>*+*{margin-top:0!important;}
+/* Ensure the row styling applies (we use className=qRow now) */
+.askFreyBox .qRow{margin-top:0!important;}
+/* Fold styling: keep first screen tight, rest accessible */
+details.fold{margin-top:var(--phi-21);border:1px solid rgba(255,255,255,0.10);border-radius:var(--phi-r-21);background:rgba(255,255,255,0.012);}
+summary.foldSummary{list-style:none;cursor:pointer;padding:12px 14px;opacity:.9;}
+summary.foldSummary::-webkit-details-marker{display:none;}
+details.fold[open] summary.foldSummary{opacity:1;}
+.foldBody{padding:0 14px 14px;}
+
 .askFreyBox .pillRow,.askFreyBox .suggRow,.askFreyBox .chipsRow{gap:10px;}
 .askFreyBox .notReady{margin-top:2px;}
 /*__FREY_QUERY_INPUT_HALO_V1_3__*/
@@ -215,7 +293,6 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           .btn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
           .btn:active{transform:translateY(0px)}
           .prewrap{white-space:pre-wrap;overflow-x:hidden}
-
 `}</style>
     </>
   );
