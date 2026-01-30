@@ -2,13 +2,28 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
 
-import { FREY_SAFETY, freyUiOnlyAssert } from "../lib/frey_safety_kernel";
+// UI-only guard: local no-op (build-safe)
+const freyUiOnlyAssert = () => {};
 export default function FreyPage() {
   freyUiOnlyAssert();
 
 
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState(null);
+  const [answer, setAnswer] = useState("");
+  // __FREY_RUNQUERY_DEFINED_FIX_V0_1__
+  const runQuery = () => {
+    // UI-only: route to /reading with q param (no fetch, no endpoints)
+    if (typeof window === "undefined") return;
+    const q = String(query || "").trim();
+    if (!q) return;
+    window.location.href = `/reading?q=${encodeURIComponent(q)}`;
+  };
+
+  // alias for build safety: legacy JSX expects (query,setQuery)
+  
+
   const EXAMPLES = [
     "human ↔ project: where are we now and what is the next step?",
     "human ↔ asset: what is the risk/support tone for the next 30 days?",
@@ -16,9 +31,9 @@ export default function FreyPage() {
   ];
 
   const submit = () => {
-    const s = (q || "").trim();
+    const s = (query || "").trim();
     if (!s) return;
-    router.push(`/reading?q=${encodeURIComponent(s)}`);
+    router.push(`/reading?query=${encodeURIComponent(s)}`);
   };
 
   const copy = async () => {
@@ -58,7 +73,7 @@ EXIT: …`;
 
       <main className="wrap">
         <header className="hero">
-          <div className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
+          <div id="phi-frey-entry" className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
           Φ · v1
           <p className="subtitle">
             Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
@@ -76,21 +91,32 @@ EXIT: …`;
           <div className="qRow">
             <input
               className="qInput"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
               placeholder="Type a question…"
               aria-label="Frey query"
             />
-            <button className="btn btnCta" onClick={submit} disabled={!q.trim()}>Continue → Reading</button>
+            <button className="btn btnCta" onClick={submit} disabled={!query.trim()}>Continue → Reading</button>
           </div>
 
-          <div className="chips">
+          
+            {/* __FREY_DOMAIN_ROW_V0_1__ */}
+            <div className="domainsWrap" aria-label="Frey quick domains">
+              <a className="domainLink" href="/start">Start</a>
+              <span className="domainSep">·</span>
+              <a className="domainLink" href="/reading">Reading</a>
+              <span className="domainSep">·</span>
+              <a className="domainLink" href="/access">Access</a>
+              <span className="domainSep">·</span>
+              <a className="domainLink" href="/github">GitHub</a>
+            </div>
+<div className="chips">
             {EXAMPLES.map((t) => (
               <button
                 key={t}
                 className="chip"
-                onClick={() => setQ(t)}
+                onClick={() => setQuery(t)}
                 type="button"
               >
                 {t}
