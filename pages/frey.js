@@ -319,6 +319,78 @@ details.fold[open] summary.foldSummary{opacity:1;}
           .btn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
           .btn:active{transform:translateY(0px)}
           .prewrap{white-space:pre-wrap;overflow-x:hidden}
+
+/* Φ MOBILE CANON v0.2 */
+@media (max-width: 640px) {
+  :global(html), :global(body) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  :global(body) {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  main {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .freyNoScroll, .page, .container, .wrap {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .queryBox, .box, .card, .panel {
+    border-radius: 14px !important;
+    padding: 16px !important;
+  }
+
+  input[type="text"], textarea, .queryInput {
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 16px !important;
+    line-height: 24px !important;
+  }
+
+  .queryRow, .queryControls, .row, .controls, form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  button, .btn {
+    width: 100% !important;
+    min-height: 48px !important;
+    font-size: 14px !important;
+    letter-spacing: 0.02em;
+  }
+
+  .chip, .pill, .quick, .suggestion {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 12px;
+    opacity: 0.64 !important;
+  }
+
+  a { opacity: 0.72; }
+  a:hover { opacity: 0.9; }
+
+  .freyNoise { opacity: 0.01618 !important; }
+}
+
 `}</style>
     </>
   );
