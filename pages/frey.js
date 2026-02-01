@@ -114,9 +114,6 @@ EXIT: …`;
       {/*__FREY_COPY_TEMPLATE_REMOVE_V1_1__*/}
 
       <main className="wrap">
-
-        <h1 style={{ marginTop: 0 }}>Frey</h1>
-        <p style={{ marginTop: 10, opacity: 0.85 }}>Эпистемический навигационный слой BHRIGU / ORION. UI-only v0.1 — локальный черновик, без сети.</p>
         <header className="hero">
           <div id="phi-frey-entry" className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
           Φ · v1
@@ -264,7 +261,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
       
       {/* Φ-QUERYBAR: UI-only query drafting (pilot) */}
-      <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14 }}>
+      <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, color: "rgba(255,255,255,0.92)", caretColor: "rgba(255,255,255,0.92)"}}>
         <h2 style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 10 }}><span>Query Bar (pilot)</span><span style={{ fontSize: 12, opacity: 0.65 }}>PHI surface v0.3</span></h2>
         <p style={{ marginTop: 10, opacity: 0.85 }}>
           UI-only v0.1: локальный черновик запроса. Никаких сетевых вызовов, никаких API, никаких токенов.
@@ -321,10 +318,10 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           </button>
         </form>
 
-        {freyDraft ? (
+        {(freyDraft || freyQuery) ? (
           <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)" }}>
             <div style={{ fontSize: 12, opacity: 0.75 }}>Draft</div>
-            <pre style={{ whiteSpace: "pre-wrap", marginTop: 8, marginBottom: 0, fontSize: 14 }}>{freyDraft}</pre>
+            <pre style={{ whiteSpace: "pre-wrap", marginTop: 8, marginBottom: 0, fontSize: 14 }}>{freyDraft || freyQuery}</pre>
           </div>
         ) : null}
 
