@@ -308,7 +308,9 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
             value={freyQuery}
             onChange={(e) => setFreyQuery(e.target.value)}
             placeholder="Спроси про /reading, /access, ORION, правила…"
-            style={{ flex: "1 1 320px", minWidth: 240, padding: "12px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "transparent" }}
+            style={{ flex: "1 1 320px", minWidth: 240, padding: "12px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "transparent",
+            color: "rgba(255,255,255,0.92)",
+            caretColor: "rgba(255,255,255,0.92)" }}
           />
           <button type="submit" disabled={!freyQuery.trim()} style={{ padding: "12px 14px", borderRadius: 12 }}>
             Draft
