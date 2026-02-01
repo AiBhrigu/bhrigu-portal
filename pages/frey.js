@@ -260,13 +260,14 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
       
       {/* Φ-QUERYBAR: UI-only query drafting (pilot) */}
       <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14 }}>
-        <h2 style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 10 }}><span>Query Bar (pilot)</span><span style={{ fontSize: 12, opacity: 0.65 }}>Φ surface v0.3</span></h2>
+        <h2 style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 10 }}><span>Query Bar (pilot)</span><span style={{ fontSize: 12, opacity: 0.65 }}>PHI surface v0.3</span></h2>
         <p style={{ marginTop: 10, opacity: 0.85 }}>
           UI-only v0.1: это локальный черновик. Никаких запросов в сеть, никаких API, никаких токенов.
         </p>
 
 
         <span data-phi-marker="FREY_SURFACE_CANON_V0_3" style={{ display: "none" }}>FREY_SURFACE_CANON_V0_3</span>
+        <span style={{ display: "none" }}>PHI_SURFACE_V0_3</span>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           {freyTemplates.map((t) => (
             <button
