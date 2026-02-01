@@ -14,7 +14,7 @@ export default function FreyPage() {
   const [answer, setAnswer] = useState("");
   // __FREY_RUNQUERY_DEFINED_FIX_V0_1__
   const runQuery = () => {
-    // UI-only: route to /reading with q param (no fetch, no endpoints)
+    // UI-only: route to /reading with q param (no network, no public routes)
     if (typeof window === "undefined") return;
     const q = String(query || "").trim();
     if (!q) return;
@@ -64,7 +64,9 @@ EXIT: …`;
   const [freyCopied, setFreyCopied] = useState(false);
 
   const freyTemplates = [
-    { label: "Что такое Frey?", value: "Что такое Frey? Дай коротко: что он делает и где границы v0.1." },
+    
+    { label: "Протокол Φ", value: "Напомни Protocol: UI-only v0.1, гейты, STOP-условия и как правильно работать через АТОМы." },
+{ label: "Что такое Frey?", value: "Что такое Frey? Дай коротко: что он делает и где границы v0.1." },
     { label: "Как получить доступ?", value: "Как получить доступ к Frey? Какие шаги и ограничения v0.1?" },
     { label: "Маршрут", value: "Дай маршрут для новичка: /start → /reading → /access. Что читать и в каком порядке?" },
   ];
@@ -112,6 +114,9 @@ EXIT: …`;
       {/*__FREY_COPY_TEMPLATE_REMOVE_V1_1__*/}
 
       <main className="wrap">
+
+        <h1 style={{ marginTop: 0 }}>Frey</h1>
+        <p style={{ marginTop: 10, opacity: 0.85 }}>Эпистемический навигационный слой BHRIGU / ORION. UI-only v0.1 — локальный черновик, без сети.</p>
         <header className="hero">
           <div id="phi-frey-entry" className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
           Φ · v1
@@ -262,7 +267,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
       <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14 }}>
         <h2 style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 10 }}><span>Query Bar (pilot)</span><span style={{ fontSize: 12, opacity: 0.65 }}>PHI surface v0.3</span></h2>
         <p style={{ marginTop: 10, opacity: 0.85 }}>
-          UI-only v0.1: это локальный черновик. Никаких запросов в сеть, никаких API, никаких токенов.
+          UI-only v0.1: локальный черновик запроса. Никаких сетевых вызовов, никаких API, никаких токенов.
         </p>
 
 
@@ -326,7 +331,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         <details className="fold" style={{ marginTop: 14 }}>
           <summary className="foldSummary">Boundaries</summary>
           <ul style={{ marginTop: 10, lineHeight: 1.45, opacity: 0.9 }}>
-            <li>UI-only v0.1 — <b>нет</b> сетевых вызовов, <b>нет</b> публичных endpoints.</li>
+            <li>UI-only v0.1 — <b>нет</b> сетевых вызовов, <b>нет</b> публичных public routes.</li>
             <li>Поле ввода локальное: текст остаётся в браузере.</li>
             <li>Когда появятся реальные ответы — они будут за гейтами Trust/epistemic/IP.</li>
           </ul>
