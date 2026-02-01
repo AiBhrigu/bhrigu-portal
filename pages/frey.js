@@ -57,6 +57,29 @@ EXIT: …`;
     }
   };
 
+  
+  // Φ-QUERYBAR: local-only query drafting (no network)
+  const [freyQuery, setFreyQuery] = useState("");
+  const [freyDraft, setFreyDraft] = useState("");
+  const [freyCopied, setFreyCopied] = useState(false);
+
+  const onFreyQuerySubmit = (e) => {
+    e.preventDefault();
+    const v = (freyQuery || "").trim();
+    setFreyDraft(v);
+    setFreyCopied(false);
+  };
+
+  const onFreyCopy = async () => {
+    const v = (freyQuery || "").trim();
+    if (!v) return;
+    try {
+      await navigator.clipboard.writeText(v);
+      setFreyCopied(true);
+    } catch (_) {
+      setFreyCopied(false);
+    }
+  };
   return (
     <>
       <Head>
@@ -217,7 +240,52 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
       </main>
 
-      <style jsx>{`
+      
+      {/* Φ-QUERYBAR: UI-only query drafting (pilot) */}
+      <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14 }}>
+        <h2 style={{ margin: 0 }}>Query Bar (pilot)</h2>
+        <p style={{ marginTop: 10, opacity: 0.85 }}>
+          UI-only v0.1: это локальный черновик. Никаких запросов в сеть, никаких API, никаких токенов.
+        </p>
+
+        <form onSubmit={onFreyQuerySubmit} style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+          <input
+            value={freyQuery}
+            onChange={(e) => setFreyQuery(e.target.value)}
+            placeholder="Спроси про /reading, /access, ORION, правила…"
+            style={{ flex: "1 1 320px", minWidth: 240, padding: "12px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "transparent" }}
+          />
+          <button type="submit" disabled={!freyQuery.trim()} style={{ padding: "12px 14px", borderRadius: 12 }}>
+            Draft
+          </button>
+          <button type="button" onClick={onFreyCopy} disabled={!freyQuery.trim()} style={{ padding: "12px 14px", borderRadius: 12 }}>
+            {freyCopied ? "Copied" : "Copy"}
+          </button>
+        </form>
+
+        {freyDraft ? (
+          <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)" }}>
+            <div style={{ fontSize: 12, opacity: 0.75 }}>Draft</div>
+            <pre style={{ whiteSpace: "pre-wrap", marginTop: 8, marginBottom: 0, fontSize: 14 }}>{freyDraft}</pre>
+          </div>
+        ) : null}
+
+        <details className="fold" style={{ marginTop: 14 }}>
+          <summary className="foldSummary">Boundaries</summary>
+          <ul style={{ marginTop: 10, lineHeight: 1.45, opacity: 0.9 }}>
+            <li>UI-only v0.1 — <b>нет</b> сетевых вызовов, <b>нет</b> публичных endpoints.</li>
+            <li>Поле ввода локальное: текст остаётся в браузере.</li>
+            <li>Когда появятся реальные ответы — они будут за гейтами Trust/epistemic/IP.</li>
+          </ul>
+        </details>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
+          <a href="/start" style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)" }}>Start</a>
+          <a href="/access" style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)" }}>Access</a>
+        </div>
+      </section>
+
+<style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
           
 /*__PHI_TOKENS_V1_0__*/
