@@ -395,3 +395,11 @@ details.fold[open] summary.foldSummary{opacity:1;}
     </>
   );
 }
+// Φ-GUARD: force SSR to avoid edge/ISR stale HTML on /frey
+export async function getServerSideProps(ctx) {
+  const res = ctx && ctx.res;
+  if (res && typeof res.setHeader === "function") {
+    res.setHeader("Cache-Control", "no-store, max-age=0");
+  }
+  return { props: {} };
+}
