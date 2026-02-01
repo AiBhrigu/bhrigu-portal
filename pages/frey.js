@@ -238,7 +238,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         </details>
 
 
-      </main>
+      
 
       
       {/* Φ-QUERYBAR: UI-only query drafting (pilot) */}
@@ -285,7 +285,8 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         </div>
       </section>
 
-<style jsx>{`
+</main>
+      <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
           
 /*__PHI_TOKENS_V1_0__*/
