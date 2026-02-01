@@ -63,6 +63,23 @@ EXIT: …`;
   const [freyDraft, setFreyDraft] = useState("");
   const [freyCopied, setFreyCopied] = useState(false);
 
+  const freyTemplates = [
+    { label: "Что такое Frey?", value: "Что такое Frey? Дай коротко: что он делает и где границы v0.1." },
+    { label: "Как получить доступ?", value: "Как получить доступ к Frey? Какие шаги и ограничения v0.1?" },
+    { label: "Маршрут", value: "Дай маршрут для новичка: /start → /reading → /access. Что читать и в каком порядке?" },
+  ];
+
+  const onFreyTemplate = (v) => {
+    setFreyQuery(v);
+    setFreyCopied(false);
+  };
+
+  const onFreyClear = () => {
+    setFreyQuery("");
+    setFreyDraft("");
+    setFreyCopied(false);
+  };
+
   const onFreyQuerySubmit = (e) => {
     e.preventDefault();
     const v = (freyQuery || "").trim();
@@ -248,6 +265,41 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           UI-only v0.1: это локальный черновик. Никаких запросов в сеть, никаких API, никаких токенов.
         </p>
 
+
+        <span data-phi-marker="FREY_SURFACE_CANON_V0_3" style={{ display: "none" }} />
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          {freyTemplates.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => onFreyTemplate(t.value)}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.14)",
+                background: "transparent",
+                fontSize: 13,
+                opacity: 0.9,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={onFreyClear}
+            style={{
+              padding: "8px 10px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.14)",
+              background: "transparent",
+              fontSize: 13,
+              opacity: 0.75,
+            }}
+          >
+            Clear
+          </button>
+        </div>
         <form onSubmit={onFreyQuerySubmit} style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
           <input
             value={freyQuery}
