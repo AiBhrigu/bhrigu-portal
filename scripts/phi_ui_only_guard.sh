@@ -6,8 +6,7 @@ set -euo pipefail
 # Current target: pages/frey.js (Frey surface is UI-only v0.x)
 
 DATE="$(date -Iseconds)"
-TARGETS=("pages/frey.js")
-
+TARGETS=("pages/frey.js" "pages/index.js" "pages/start.js")
 # Forbidden patterns are intentionally strict (string/regex). Keep them stable.
 FORBIDDEN_REGEX=(
   'fetch[[:space:]]*\('

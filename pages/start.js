@@ -1,8 +1,60 @@
 // ATOM_BHRIGU_PORTAL_TRUST_INVESTOR_V1
 import Head from "next/head";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import Link from "next/link";
 
 export default function Start() {
+  // UI-only: Frey Query Bar wiring (local only, no network)
+  const FREY_QUEUE_KEY = "frey_queue_v0_5";
+  const router = useRouter();
+  const [freyQ, setFreyQ] = useState("");
+  const [freyCount, setFreyCount] = useState(0);
+
+  const freyQueueRead = () => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(FREY_QUEUE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (_) {
+      return [];
+    }
+  };
+
+  const freyQueueWrite = (arr) => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(FREY_QUEUE_KEY, JSON.stringify(arr));
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    const sync = () => setFreyCount(freyQueueRead().length);
+    sync();
+    const onStorage = (e) => {
+      if (!e || e.key === FREY_QUEUE_KEY) sync();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", onStorage);
+      return () => window.removeEventListener("storage", onStorage);
+    }
+  }, []);
+
+  const onFreySubmit = (e) => {
+    e.preventDefault();
+    const q = (freyQ || "").trim();
+    if (!q) return;
+    const now = Date.now();
+    const item = { id: now.toString(36), when: now, text: q, src: "start" };
+    const prev = freyQueueRead();
+    const next = [item, ...prev].slice(0, 24);
+    freyQueueWrite(next);
+    setFreyQ("");
+    setFreyCount(next.length);
+    router.push("/frey");
+  };
+
   return (
     <>
       <Head>
@@ -15,6 +67,26 @@ export default function Start() {
         <meta name="twitter:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
       </Head>
       <main className="wrap">
+        {/*__FREY_QUERY_BAR_STUB_V0_1__*/}
+        <section aria-label="Frey Query Bar" data-mark="FREY_QUERY_BAR_STUB_V0_1" style={{ marginTop: "var(--phi-34)", border: "1px solid rgba(215,181,90,0.22)", borderRadius: "var(--phi-21)", padding: "var(--phi-21)", background: "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.22))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.055), 0 18px 54px rgba(0,0,0,0.42)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--phi-8)" }}>
+            <div style={{ fontWeight: 650, letterSpacing: "0.02em" }}>Frey Query Bar</div>
+            <div style={{ opacity: 0.78, fontSize: "0.95rem", lineHeight: 1.35 }}>UI-only: saved locally, no network.</div>
+          </div>
+
+          <form onSubmit={onFreySubmit} style={{ marginTop: "var(--phi-13)", display: "flex", gap: "var(--phi-13)", alignItems: "stretch" }}>
+            <input value={freyQ} onChange={(e) => setFreyQ(e.target.value)} placeholder="Type a query…" style={{ flex: 1, width: "100%", minHeight: "var(--phi-55)", padding: "var(--phi-13) var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.28)", background: "rgba(0,0,0,0.52)", color: "inherit" }} />
+            <button type="submit" style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(215,181,90,0.36)", background: "rgba(0,0,0,0.12)", color: "inherit" }}>Queue</button>
+            <button type="button" onClick={() => router.push("/frey")} style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.22)", background: "rgba(0,0,0,0.06)", color: "inherit" }}>Open</button>
+          </form>
+
+          <div style={{ marginTop: "var(--phi-13)", opacity: 0.8, fontSize: "0.92rem" }}>
+            <span>{freyCount} queued</span>
+          </div>
+
+          <span style={{ display: "none" }}>FREY_QUERY_BAR_STUB_V0_1</span>
+        </section>
+
         <section className="hero">
           <div className="kicker">Start</div>
           <h1 className="title">Understand the portal in minutes.</h1>
