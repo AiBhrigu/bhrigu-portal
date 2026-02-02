@@ -1,91 +1,48 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="${1:-$HOME/bhrigu-portal}"
+# phi_lupa_frey v0.1 — prod probe for /frey surface
+# Writes an artifact into ~/orion_ai/artifacts and copies it to Windows Downloads.
+
 A="$HOME/orion_ai/artifacts"
 D="/mnt/c/Users/top-a/Downloads"
 TS="$(date +%Y%m%d_%H%M%S)"
-OUT="$A/OPS_PHI_LUPA_FREY_${TS}.md"
+Q="$(date +%s)"
 
-F="$REPO/pages/frey.js"
 mkdir -p "$A" "$D"
 
-if [ ! -f "$F" ]; then
-  echo "STOP: missing $F" >&2
-  exit 1
-fi
+probe_one(){
+  local base="$1"
+  local url="${base%/}/frey?v=$Q"
+  local html="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').html"
+  local hdr="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').hdr"
 
-# Local signals (surface-only)
-phi_vars="$(grep -E -o -- "--phi[-_][A-Za-z0-9_-]+" "$F" | sort -u | wc -l | tr -d " " || true)"
-phi_var_uses="$(grep -F -c -- "var(--phi" "$F" || true)"
-phi_marker="$(grep -F -c -- "--frey_phi_tokens_v1_0:1" "$F" || true)"
-ask_box="$(grep -F -c -- "askFreyBox" "$F" || true)"
-qinput="$(grep -F -c -- ".qInput" "$F" || true)"
-px_cnt="$(grep -E -o -- "[0-9]{1,4}px" "$F" | wc -l | tr -d " " || true)"
+  curl -fsSL -D "$hdr" -o "$html" "$url"
 
-verdict="PASS"
-reason="tokens_present"
-if [ "${phi_vars:-0}" -lt 1 ] || [ "${phi_var_uses:-0}" -lt 1 ]; then
-  verdict="FAIL"
-  reason="phi_tokens_missing_or_unused"
-fi
+  echo "URL: $url"
+  echo "HEADERS:"
+  grep -Ei '^(cache-control|age|x-vercel-cache|x-matched-path|x-vercel-id|strict-transport-security):' "$hdr" || true
 
-# PROD probe (best-effort, cache-busted)
-BASE="https://www.bhrigu.io"
-PAGE="$BASE/frey?v=$(date +%s)"
-prod_js="NA"
-prod_phi_marker="NA"
-prod_phi_vars="NA"
-prod_phi_uses="NA"
+  echo "MARKERS:"
+  for m in "FREY_SURFACE_CANON_V0_3" "PHI_SURFACE_V0_3" "PHI surface v0.3"; do
+    if grep -q "$m" "$html"; then echo "  OK: $m"; else echo "  MISS: $m"; fi
+  done
+  echo
+}
 
-if command -v curl >/dev/null 2>&1; then
-  HTML="$(curl -fsSL "$PAGE" || true)"
-  JS="$(printf "%s" "$HTML" | grep -oE "/_next/static/chunks/pages/frey-[^\"' ]+\.js" | head -n 1 || true)"
-  if [ -n "$JS" ]; then
-    prod_js="$JS"
-    JSC="$(curl -fsSL "$BASE$JS" || true)"
-    prod_phi_marker="$(printf "%s" "$JSC" | grep -F -c -- "--frey_phi_tokens_v1_0:1" || true)"
-    prod_phi_vars="$(printf "%s" "$JSC" | grep -E -o -- "--phi[-_][A-Za-z0-9_-]+" | sort -u | wc -l | tr -d " " || true)"
-    prod_phi_uses="$(printf "%s" "$JSC" | grep -F -c -- "var(--phi" || true)"
-  fi
-fi
-
+OUT="$A/PROD_PROBE_PHI_LUPA_FREY_v0_1_${TS}.md"
 {
-  echo "# OPS · Φ-LUPA · FREY v0.1"
-  echo "DATE: $(date -Is)"
-  echo "REPO: $REPO"
-  echo "FILE: $F"
+  echo "# PROD PROBE · PHI_LUPA_FREY v0.1"
+  echo "DATE: $(date -Iseconds)"
   echo
-  echo "## verdict"
-  echo "VERDICT: $verdict"
-  echo "REASON:  $reason"
-  echo
-  echo "## local_signals"
-  echo "phi_vars_unique: $phi_vars"
-  echo "phi_var_uses:    $phi_var_uses"
-  echo "phi_marker_hits: $phi_marker"
-  echo "askFreyBox_hits: $ask_box"
-  echo "qInput_hits:     $qinput"
-  echo "px_tokens_cnt:   $px_cnt  (info)"
-  echo
-  echo "## prod_probe"
-  echo "page:   $PAGE"
-  echo "frey_js:$prod_js"
-  echo "prod_phi_marker_hits: $prod_phi_marker"
-  echo "prod_phi_vars_unique: $prod_phi_vars"
-  echo "prod_phi_var_uses:    $prod_phi_uses"
-  echo
-  echo "## snippets"
-  echo "### phi_vars (first 30)"
-  grep -E -o -- "--phi[-_][A-Za-z0-9_-]+" "$F" | sort -u | head -n 30 || true
-  echo
-  echo "### var(--phi) lines (first 20)"
-  grep -nF -- "var(--phi" "$F" | head -n 20 || true
+  echo "## TARGETS"
+  probe_one "https://bhrigu.io"
+  probe_one "https://www.bhrigu.io"
 } > "$OUT"
 
-sha256sum "$OUT" | tee "$OUT.sha256" >/dev/null
-cp -f "$OUT" "$OUT.sha256" "$D/" 2>/dev/null || true
-echo "OK: $OUT"
+sha256sum "$OUT" > "$OUT.sha256"
+cp -f "$OUT" "$D/$(basename "$OUT")"
+cp -f "$OUT.sha256" "$D/$(basename "$OUT").sha256"
 
-echo "== Query Mode STUB prod token =="
-grep -nF -- "--frey_query_mode_stub_prod_v0_1_1:1" pages/frey.js | head -n 3 || true
+echo "OK: $OUT"
+ls -l "$D/$(basename "$OUT")" "$D/$(basename "$OUT").sha256" | sed -n '1,10p'
