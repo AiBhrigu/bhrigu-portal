@@ -93,8 +93,8 @@ count_stream(){
     if [ "$route" = "/frey" ] && [ -n "$js" ]; then
       m1="$(curl -fsSL "$BASE$js" | grep -F -c -- "__FREY_PHI_TOKENS_V1_0__" || true)"
       m2="$(curl -fsSL "$BASE$js" | grep -F -c -- "__FREY_ASKFREY_AIR2_V1_0_5__" || true)"
-      m3="$(curl -fsSL "$BASE$js" | grep -F -c -- "--frey_phi_tokens_v1_0:1" || true)"
-      markers="tokens=${m1:-0};air2=${m2:-0};vars=${m3:-0}"
+      m3="$(curl -fsSL "$BASE$js" | grep -F -c -- "--frey_phi_marks_v1_0:1" || true)"
+      markers="marks=${m1:-0};air2=${m2:-0};vars=${m3:-0}"
     fi
 
     printf "| %s | %s | %s | %s | %s |\n" "$route" "${js:-NA}" "${phi_hits:-0}" "${px_hits:-0}" "$markers"

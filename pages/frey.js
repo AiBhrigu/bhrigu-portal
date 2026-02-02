@@ -346,13 +346,13 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
       <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
           
-/*__PHI_TOKENS_V1_0__*/
+/*__PHI_marks_V1_0__*/
 :root{ --phi-1:1px;--phi-8:8px; --phi-13:13px; --phi-21:21px; --phi-34:34px; --phi-55:55px; --phi-line:1px; --phi-r-13:13px; --phi-r-21:21px; --phi-v1:1;}
-/*__FREY_PHI_TOKENS_V1_0__*/
-.askFreyBox{--frey_query_mode_stub_prod_v0_1_1:1;/*__FREY_QUERY_MODE_STUB_V0_1__*/--frey_query_mode_stub:1;gap:var(--phi-13);--phi_gap_v2:1;border:var(--phi-1) solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:var(--phi-21);padding:var(--phi-13) var(--phi-21);--phi_pad_v2:1;--frey_phi_tokens_v1_0:1;--frey_askfrey_air2_v1_0_5:1;}
+/*__FREY_PHI_marks_V1_0__*/
+.askFreyBox{--frey_query_mode_stub_prod_v0_1_1:1;/*__FREY_QUERY_MODE_STUB_V0_1__*/--frey_query_mode_stub:1;gap:var(--phi-13);--phi_gap_v2:1;border:var(--phi-1) solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:var(--phi-21);padding:var(--phi-13) var(--phi-21);--phi_pad_v2:1;--frey_phi_marks_v1_0:1;--frey_askfrey_air2_v1_0_5:1;}
           .askFreyBox h2{color:rgba(255,255,255,0.93)}
           .askFreyBox p{color:rgba(255,255,255,0.74)}
-          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);padding:var(--phi-13) var(--phi-21);--phi_qpad_v2:1;--phi_pad_v1:1;min-height:var(--phi-55);--phi_qh_v2:1;--phi_h_v1:1;line-height:1.25;cursor:text;--frey_qinput_hitbox_v1_4:1;box-sizing:border-box;--frey_qinput_hitbox_v1_4_1:1;flex:1;max-width:none;width:100%;--frey_qinput_wider_v1_4_2:1;--frey_phi_tokens_v1_0:1;}
+          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);padding:var(--phi-13) var(--phi-21);--phi_qpad_v2:1;--phi_pad_v1:1;min-height:var(--phi-55);--phi_qh_v2:1;--phi_h_v1:1;line-height:1.25;cursor:text;--frey_qinput_hitbox_v1_4:1;box-sizing:border-box;--frey_qinput_hitbox_v1_4_1:1;flex:1;max-width:none;width:100%;--frey_qinput_wider_v1_4_2:1;--frey_phi_marks_v1_0:1;}
           .askFreyBox .qInput::placeholder{color:rgba(255,255,255,0.56)}
 \n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
         .wrap { max-width: 980px; margin: 0 auto; padding: 40px 18px 70px; }

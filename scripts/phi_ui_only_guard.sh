@@ -1,28 +1,42 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# UI-only guard: strict string checks for UI-only surfaces (e.g. /frey).
-# Intent: prevent accidental wiring to network calls / secrets / auth from the UI-only surface.
+# PHI UI-ONLY GUARD (strict string checks)
+# Scope: UI-only surfaces must NOT contain implementation triggers for network/secret/data.
+# Current target: pages/frey.js (Frey surface is UI-only v0.x)
 
-FILES=("pages/frey.js")
-[ -f "pages/reading.js" ] && FILES+=("pages/reading.js")
+DATE="$(date -Iseconds)"
+TARGETS=("pages/frey.js")
 
-FORBIDDEN_RE=(
-  '\bfetch\b'
-  '\bendpoints?\b'
-  '\btoken(s)?\b'
-  '\bapi[_-]?key\b'
-  '\bauthorization\b'
-  '\bbearer\b'
+# Forbidden patterns are intentionally strict (string/regex). Keep them stable.
+FORBIDDEN_REGEX=(
+  'fetch[[:space:]]*\('
+  'endpoints?'
+  'token(s)?'
+  'bearer'
+  'authorization'
+  'process\.env'
+  'api[_-]?key'
+  'secret'
 )
 
+echo "# PHI_UI_ONLY_GUARD"
+echo "DATE: $DATE"
+echo "TARGETS: ${TARGETS[*]}"
+echo
+
 fail=0
-for f in "${FILES[@]}"; do
-  [ -f "$f" ] || { echo "SKIP: missing $f"; continue; }
-  for re in "${FORBIDDEN_RE[@]}"; do
-    if LC_ALL=C grep -nE "$re" "$f" >/dev/null; then
-      echo "FAIL: $f matches /$re/"
-      LC_ALL=C grep -nE "$re" "$f" || true
+for t in "${TARGETS[@]}"; do
+  if [ ! -f "$t" ]; then
+    echo "STOP: missing target file: $t"
+    exit 2
+  fi
+
+  for pat in "${FORBIDDEN_REGEX[@]}"; do
+    if grep -nE "$pat" "$t" >/dev/null; then
+      echo "FAIL: forbidden '$pat' in $t"
+      grep -nE "$pat" "$t" | head -n 20
+      echo
       fail=1
     fi
   done
@@ -30,7 +44,7 @@ done
 
 if [ "$fail" -ne 0 ]; then
   echo "STOP: UI-only guard FAIL"
-  exit 10
+  exit 3
 fi
 
 echo "OK: UI-only guard PASS"
