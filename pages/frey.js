@@ -1,10 +1,56 @@
 import Head from "next/head";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
 
 // UI-only guard: local no-op (build-safe)
 const freyUiOnlyAssert = () => {};
 export default function FreyPage() {
+  // Local query queue (UI-only, persisted in browser storage)
+  const FREY_QUEUE_KEY = "frey_queue_v0_5";
+  const [freyQueue, setFreyQueue] = useState([]);
+  const qQueueRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FREY_QUEUE_KEY);
+      if (!raw) return;
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) setFreyQueue(arr.slice(0, 12));
+    } catch (_) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(FREY_QUEUE_KEY, JSON.stringify(freyQueue.slice(0, 12)));
+    } catch (_) {}
+  }, [freyQueue]);
+
+  const freyQueueAdd = (raw) => {
+    const t = String(raw || "").trim();
+    if (!t) return;
+    const text = t.length > 240 ? t.slice(0, 240) + "…" : t;
+    const now = new Date();
+    const item = {
+      id: now.getTime().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
+      when: now.toISOString().replace("T", " ").slice(0, 19) + "Z",
+      text,
+    };
+    setFreyQueue((prev) => {
+      const p = Array.isArray(prev) ? prev : [];
+      if (p.length && p[0] && p[0].text === text) return p;
+      return [item, ...p].slice(0, 12);
+    });
+  };
+
+  const freyQueueAddFromRef = () => {
+    const el = qQueueRef.current;
+    const v = el && el.value ? el.value : "";
+    freyQueueAdd(v);
+    if (el) el.value = "";
+  };
+
+  const freyQueueClear = () => setFreyQueue([]);
+
   freyUiOnlyAssert();
 
 
@@ -344,14 +390,39 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 
 </main>
       
-        <section className="freyQueue" data-phi-mark="FREY_QUERY_QUEUE_STUB_V0_2" aria-label="Local query queue">
+        <section className="freyQueue" data-mark="FREY_QUERY_QUEUE_LOCAL_V0_6" data-phi-mark="FREY_QUERY_QUEUE_STUB_V0_2" aria-label="Local query queue">
           <div className="qTop">
-            <div className="qTitle">Local queue</div>
-            <div className="qMark" aria-hidden="true">FREY_QUERY_QUEUE_STUB_V0_2</div>
-            <div className="qSub">UI-only stub (no network). Next: connect to Frey runtime after Trust layer.</div>
+            <div className="qTitle">Local Query Queue</div>
+            <div className="qSub">UI-only: saved in this browser (local storage). No network.</div>
           </div>
-          <div className="qList">
-            <div className="qItem">—</div>
+
+          <div className="qComposer">
+            <input
+              ref={qQueueRef}
+              className="qQueueInput"
+              type="text"
+              placeholder="Save a query locally (no network)"
+            />
+            <button type="button" className="qBtn" onClick={freyQueueAddFromRef}>
+              Add
+            </button>
+            <button type="button" className="qBtn qBtnGhost" onClick={freyQueueClear}>
+              Clear
+            </button>
+            <span className="qMarkLocal" aria-hidden="true">FREY_QUERY_QUEUE_LOCAL_V0_5</span>
+          </div>
+
+          <div className="qList" role="list">
+            {freyQueue.length === 0 ? (
+              <div className="qEmpty">Queue is empty.</div>
+            ) : (
+              freyQueue.map((it) => (
+                <div key={it.id} className="qItem" role="listitem">
+                  <div className="qWhen">{it.when}</div>
+                  <div className="qText">{it.text}</div>
+                </div>
+              ))
+            )}
           </div>
         </section>
 
@@ -540,6 +611,25 @@ details.fold[open] summary.foldSummary{opacity:1;}
           .freyQueue .qList{margin-top:var(--phi-13);display:flex;flex-direction:column;gap:var(--phi-8);}
           .freyQueue .qItem{opacity:0.72;border:1px dashed rgba(255,255,255,0.18);border-radius:var(--phi-13);padding:var(--phi-13);}
 
+
+
+          /*__FREY_QUERY_QUEUE_LOCAL_V0_5__*/
+          .freyQueue{margin-top:var(--phi-21);}
+          .freyQueue .qTop{margin-bottom:var(--phi-13);}
+          .freyQueue .qTitle{font-weight:600;letter-spacing:0.02em;}
+          .freyQueue .qSub{opacity:0.8;margin-top:6px;}
+          .freyQueue .qComposer{margin-top:var(--phi-13);display:flex;flex-wrap:wrap;gap:var(--phi-8);align-items:center;}
+          .freyQueue .qQueueInput{flex:1;min-width:220px;background:rgba(0,0,0,0.52);border:1px solid rgba(255,255,255,0.22);border-radius:var(--phi-13);padding:var(--phi-8) var(--phi-13);line-height:1.25;outline:none;}
+          .freyQueue .qQueueInput:focus{border-color:rgba(215,181,90,0.55);box-shadow:0 0 0 1px rgba(215,181,90,0.22), 0 18px 44px rgba(0,0,0,0.38);}
+          .freyQueue .qBtn{border:1px solid rgba(215,181,90,0.28);background:rgba(0,0,0,0.28);border-radius:var(--phi-13);padding:var(--phi-8) var(--phi-13);cursor:pointer;transition:transform 120ms ease, border-color 120ms ease, background 120ms ease;}
+          .freyQueue .qBtn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,0.42);background:rgba(0,0,0,0.34);}
+          .freyQueue .qBtnGhost{border-color:rgba(255,255,255,0.18);color:rgba(255,255,255,0.84);}
+          .freyQueue .qList{margin-top:var(--phi-13);display:flex;flex-direction:column;gap:var(--phi-8);}
+          .freyQueue .qItem{padding:var(--phi-13);border:1px solid rgba(255,255,255,0.12);border-radius:var(--phi-13);background:rgba(0,0,0,0.22);}
+          .freyQueue .qEmpty{opacity:0.75;padding:var(--phi-13) 0;}
+          .freyQueue .qWhen{opacity:0.7;font-size:0.9rem;margin-bottom:2px;}
+          .freyQueue .qText{white-space:pre-wrap;word-break:break-word;}
+          .freyQueue .qMarkLocal{display:none;}
 `}</style>
     </>
   );
