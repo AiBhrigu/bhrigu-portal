@@ -347,6 +347,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         <section className="freyQueue" data-phi-mark="FREY_QUERY_QUEUE_STUB_V0_2" aria-label="Local query queue">
           <div className="qTop">
             <div className="qTitle">Local queue</div>
+            <div className="qMark" aria-hidden="true">FREY_QUERY_QUEUE_STUB_V0_2</div>
             <div className="qSub">UI-only stub (no network). Next: connect to Frey runtime after Trust layer.</div>
           </div>
           <div className="qList">
@@ -530,6 +531,8 @@ details.fold[open] summary.foldSummary{opacity:1;}
 
 
           /*__FREY_QUERY_QUEUE_STUB_V0_2__*/
+          .freyQueue .qMark{display:none;}
+
           .freyQueue{margin-top:var(--phi-34);border:1px solid rgba(215,181,90,0.22);border-radius:var(--phi-21);padding:var(--phi-21);background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.22));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 18px 54px rgba(0,0,0,0.42);}
           .freyQueue .qTop{display:flex;flex-direction:column;gap:var(--phi-8);}
           .freyQueue .qTitle{font-weight:650;letter-spacing:0.02em;}
