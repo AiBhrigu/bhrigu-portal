@@ -65,6 +65,7 @@ export default function Home() {
         <meta property="og:url" content="https://www.bhrigu.io/" />
         <meta name="twitter:title" content="BHRIGU · Frey / ORION" />
         <meta name="twitter:description" content="A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces." />
+      <meta name="phi-surface" content="PHI_SURFACE_V0_3" />
       </Head>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: "{\"@context\": \"https://schema.org\", \"@type\": \"WebSite\", \"name\": \"BHRIGU\", \"url\": \"https://www.bhrigu.io/\", \"description\": \"Structural portal and gateway layer for Frey / ORION \\u2014 cosmography, signals, and constrained research interfaces.\", \"publisher\": {\"@type\": \"Organization\", \"name\": \"BHRIGU\"}}" }} />
 

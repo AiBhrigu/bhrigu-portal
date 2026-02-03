@@ -65,6 +65,7 @@ export default function Start() {
         <meta property="og:url" content="https://www.bhrigu.io/start" />
         <meta name="twitter:title" content="Start · BHRIGU" />
         <meta name="twitter:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
+      <meta name="phi-surface" content="PHI_SURFACE_V0_3" />
       </Head>
       <main className="wrap">
         {/*__FREY_QUERY_BAR_STUB_V0_1__*/}
