@@ -1,3 +1,4 @@
+export const config = { runtime: "edge" };
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
