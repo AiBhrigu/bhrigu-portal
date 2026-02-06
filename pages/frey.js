@@ -170,7 +170,7 @@ EXIT: …`;
         {/*__FREY_QUERY_LINE_V1__*/}
         {/*__FREY_QUERY_LINE_V1_CONTRAST__*/}
         <section className="card askFreyBox">
-          <h2>Ask Frey (pilot)</h2>
+          <h2>Query Bar (pilot) · PHI surface v0.3</h2>
           <p className="muted">
             UI-only v1. Your question stays in your browser — we just open the next route.
           </p>
@@ -218,7 +218,7 @@ EXIT: …`;
                         <input
                           value={query}
                           onChange={(e) => setQuery(e.target.value)}
-                          placeholder="Ask Frey… (signals, cycles, assets)"
+                          placeholder="Query… (signals, cycles, assets)"
                           className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
                         />
                         <button
@@ -472,7 +472,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Ask Frey… (signals, cycles, assets)"
+                placeholder="Query… (signals, cycles, assets)"
                 className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
               />
                 onClick={runQuery}
