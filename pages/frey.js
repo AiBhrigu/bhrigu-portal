@@ -167,7 +167,51 @@ EXIT: …`;
           </p>
         </header>
 
-        {/*__FREY_QUERY_LINE_V1__*/}
+        {/*__FREY_CANON_SINGLE_BLOCK_EN_V0_1R__*/}
+        <section className="card askFreyBox">
+          <h2>Query Bar (pilot) · PHI surface v0.3</h2>
+          <p className="muted">UI-only v1. Your question stays in your browser — we just open the next route.</p>
+
+          <div className="qRow">
+            <input
+              className="qInput"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+              placeholder="Ask Frey… (signals, cycles, assets)"
+              aria-label="Frey query"
+            />
+            <button className="btn btnCta" onClick={submit} disabled={!query.trim()}>Continue → Reading</button>
+          </div>
+
+          {/* __FREY_DOMAIN_ROW_V0_1__ */}
+          <div className="domainsWrap" aria-label="Frey quick domains">
+            <a className="domainLink" href="/start">Start</a>
+            <span className="domainSep">·</span>
+            <a className="domainLink" href="/reading">Reading</a>
+            <span className="domainSep">·</span>
+            <a className="domainLink" href="/access">Access</a>
+            <span className="domainSep">·</span>
+            <a className="domainLink" href="/github">GitHub</a>
+          </div>
+
+          <div className="chips">
+            {EXAMPLES.map((t) => (
+              <button
+                key={t}
+                className="chip"
+                onClick={() => setQuery(t)}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        {/*__FREY_CANON_HIDDEN_REMAINDER__*/}
+        {false && (
+          <>
+{/*__FREY_QUERY_LINE_V1__*/}
         {/*__FREY_QUERY_LINE_V1_CONTRAST__*/}
         <section className="card askFreyBox">
           <h2>Query Bar (pilot) · PHI surface v0.3</h2>
@@ -386,8 +430,9 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           <a href="/access" style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)" }}>Access</a>
         </div>
       </section>
-
-</main>
+          </>
+        )}
+      </main>
       
         <section className="freyQueue" data-mark="FREY_QUERY_QUEUE_LOCAL_V0_6" data-phi-mark="FREY_QUERY_QUEUE_STUB_V0_2" aria-label="Local query queue">
           <div className="qTop">
