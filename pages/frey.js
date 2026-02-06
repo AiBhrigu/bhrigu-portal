@@ -434,41 +434,8 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         )}
       </main>
       
-        <section className="freyQueue" data-mark="FREY_QUERY_QUEUE_LOCAL_V0_6" data-phi-mark="FREY_QUERY_QUEUE_STUB_V0_2" aria-label="Local query queue">
-          <div className="qTop">
-            <div className="qTitle">Local Query Queue</div>
-            <div className="qSub">UI-only: saved in this browser (local storage). No network.</div>
-          </div>
+        
 
-          <div className="qComposer">
-            <input
-              ref={qQueueRef}
-              className="qQueueInput"
-              type="text"
-              placeholder="Save a query locally (no network)"
-            />
-            <button type="button" className="qBtn" onClick={freyQueueAddFromRef}>
-              Add
-            </button>
-            <button type="button" className="qBtn qBtnGhost" onClick={freyQueueClear}>
-              Clear
-            </button>
-            <span className="qMarkLocal" aria-hidden="true">FREY_QUERY_QUEUE_LOCAL_V0_5</span>
-          </div>
-
-          <div className="qList" role="list">
-            {freyQueue.length === 0 ? (
-              <div className="qEmpty">Queue is empty.</div>
-            ) : (
-              freyQueue.map((it) => (
-                <div key={it.id} className="qItem" role="listitem">
-                  <div className="qWhen">{it.when}</div>
-                  <div className="qText">{it.text}</div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
 
 <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
