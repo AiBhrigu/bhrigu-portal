@@ -641,6 +641,61 @@ details.fold[open] summary.foldSummary{opacity:1;}
           .freyQueue .qWhen{opacity:0.7;font-size:0.9rem;margin-bottom:2px;}
           .freyQueue .qText{white-space:pre-wrap;word-break:break-word;}
           .freyQueue .qMarkLocal{display:none;}
+
+
+/*__FREY_PHI_SPACE_BG_V0_3__*/
+:root{
+  --phi: 1.618;
+  --phiA: 0.618;
+  --phiB: 0.382;
+}
+
+/* phi-space background: depth without revealing method */
+body{
+  background:
+    radial-gradient(1200px 900px at 20% 18%, rgba(210,230,255,0.085), transparent 62%),
+    radial-gradient(1100px 800px at 78% 26%, rgba(160,120,255,0.070), transparent 58%),
+    radial-gradient(900px 700px at 55% 78%, rgba(120,200,255,0.055), transparent 55%),
+    radial-gradient(700px 520px at 50% 50%, rgba(255,255,255,0.035), transparent 60%),
+    linear-gradient(180deg, #05060b 0%, #04050a 55%, #03040a 100%);
+}
+
+.wrap{
+  position: relative;
+}
+
+.wrap::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 1;
+  background:
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,0.55), transparent 2px),
+    radial-gradient(1px 1px at 36% 18%, rgba(255,255,255,0.45), transparent 2px),
+    radial-gradient(1px 1px at 68% 28%, rgba(255,255,255,0.40), transparent 2px),
+    radial-gradient(1px 1px at 82% 64%, rgba(255,255,255,0.35), transparent 2px),
+    radial-gradient(1px 1px at 44% 72%, rgba(255,255,255,0.30), transparent 2px),
+    radial-gradient(1px 1px at 22% 78%, rgba(255,255,255,0.28), transparent 2px),
+    radial-gradient(1px 1px at 58% 52%, rgba(255,255,255,0.22), transparent 2px);
+  filter: blur(0.2px);
+}
+
+.wrap::after{
+  content: "";
+  position: fixed;
+  inset: -10vh -10vw;
+  pointer-events: none;
+  z-index: -2;
+  opacity: 0.55;
+  background:
+    radial-gradient(closest-side at 50% 36%, rgba(255,255,255,0.05), transparent 62%),
+    radial-gradient(closest-side at 50% 36%, rgba(120,180,255,0.05), transparent 66%),
+    radial-gradient(closest-side at 50% 36%, rgba(170,130,255,0.04), transparent 70%);
+  transform: scale(1.02);
+}
+
 `}</style>
     </>
   );
