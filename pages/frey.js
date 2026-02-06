@@ -5,6 +5,8 @@ import { useRouter } from "next/router";
 
 // UI-only guard: local no-op (build-safe)
 const freyUiOnlyAssert = () => {};
+export async function getServerSideProps(){ return { props:{} } }
+
 export default function FreyPage() {
   // Local query queue (UI-only, persisted in browser storage)
   const FREY_QUEUE_KEY = "frey_queue_v0_5";
