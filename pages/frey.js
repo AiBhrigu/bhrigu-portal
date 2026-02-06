@@ -162,7 +162,6 @@ EXIT: …`;
       <main className="wrap">
         <header className="hero">
           <div id="phi-frey-entry" className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
-          Φ · v1
           <p className="subtitle">
             Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
           </p>
