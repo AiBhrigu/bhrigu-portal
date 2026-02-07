@@ -143,6 +143,8 @@ export default function Start() {
         </section>
       
             <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
+      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+
 </main>
 
       <style jsx>{`

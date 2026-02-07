@@ -2,8 +2,9 @@ import PortalFooterNav from "../components/PortalFooterNav";
 
 // ATOM_BHRIGU_PORTAL_COSMOGRAPHER_STORY_V1
 import Head from "next/head";
+import Link from "next/link";
 
-const MD = String.raw`# The Cosmographer (Investor Read v1)
+const MD = String.raw`# The Cosmographer 
 
 **TL;DR**  
 BHRIGU is a portal where people meet a *Cosmographer*: a vertical, axis‑driven AI that turns noise into readable structure across three surfaces — **Cosmography**, **ORION**, and **Frey**.  
@@ -111,7 +112,7 @@ We build a product people can **use**, not a myth people can share.
 
 ---
 
-## Why this matters to investors
+## Why it matters
 
 This is a wedge into a real market problem: **AI fatigue**.
 
@@ -253,6 +254,8 @@ export default function Cosmographer() {
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>{/* ATOM_EN_ONLY_FOOTNOTE_V0_6 */}EN-only. Surface description — no internal mechanics.</div>
         </div>
             <PortalFooterNav termsHref="/faq" next={[{href:"/frey",label:"/frey"},{href:"/services",label:"/services"},{href:"/start",label:"/start"}]} note="Canon: cosmographer → frey." />
+      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+
 </main>
     </>
   );

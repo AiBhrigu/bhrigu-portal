@@ -294,6 +294,7 @@ export default function BhriguPhiHeader() {
 
 
             <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
+              <a className="navInvestors" href="/investors">Investors / Partners</a>
             <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
 </div>
         </div>
