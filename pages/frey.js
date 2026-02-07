@@ -194,17 +194,10 @@ export default function FreyPage() {
           background: rgba(120,190,255,0.14);
         }
 
-        .domainsWrap{
-          margin-top: 14px;
-          display: flex;
-          gap: 10px;
-          flex-wrap: wrap;
-          align-items: center;
-          opacity: 0.9;
-        }
-        .domainLink{ text-decoration: none; color: inherit; opacity: 0.86; }
+        
+        
         .domainLink:hover{ opacity: 1; text-decoration: underline; }
-        .domainSep{ opacity: 0.42; }
+        
 
         .chips{
           margin-top: 14px;
@@ -299,6 +292,16 @@ export default function FreyPage() {
 .srOnly{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 .fineprint{margin-top:var(--phi-21);font-size:14px;line-height:1.4;opacity:.75;}
 @media (max-width: 640px){.fineprint{font-size:13px;margin-top:var(--phi-13);}}
+
+/* frey quiet/mobile tune v0.1 */
+.askFreyBox{max-width:760px;margin-left:auto;margin-right:auto;}
+.qRow{max-width:660px;margin-left:auto;margin-right:auto;}
+.chips{max-width:660px;margin-left:auto;margin-right:auto;}
+@media (max-width:560px){
+  .qRow{display:flex;flex-direction:column;gap:var(--phi-13);}
+  .qInput{width:100%;}
+  .btnCta{width:100%;}
+}
 `}</style>
     </>
   );
