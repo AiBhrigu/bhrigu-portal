@@ -158,6 +158,9 @@ function mdToHtml(md) {
     const h2 = line.match(/^##\s+(.*)$/);
     const h1 = line.match(/^#\s+(.*)$/);
     const li = line.match(/^[-*]\s+(.*)$/);
+    const hr = line.trim().match(/^-{3,}$/);
+
+    if (hr) { flushUl(); out.push("<hr />"); continue; }
 
     if (h1) { flushUl(); out.push(`<h1>${escapeHtml(h1[1])}</h1>`); continue; }
     if (h2) { flushUl(); out.push(`<h2>${escapeHtml(h2[1])}</h2>`); continue; }
@@ -187,29 +190,72 @@ export default function Cosmographer() {
       <Head>
         <title>The Cosmographer · BHRIGU</title>
         <meta name="description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
-        
 
         {/* ATOM_META_COSMOGRAPHER_V1 */}
-<meta property="og:type" content="website" />
+        <meta property="og:type" content="website" />
         <meta key="og:url" property="og:url" content="https://www.bhrigu.io/cosmographer" />
         <meta key="og:title" property="og:title" content="The Cosmographer · BHRIGU" />
-        <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." />
+        <meta
+          key="og:description"
+          property="og:description"
+          content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained."
+        />
         <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
         <meta key="twitter:title" name="twitter:title" content="The Cosmographer · BHRIGU" />
-        <meta key="twitter:description" name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained." /><meta key="og:title" property="og:title" content="The Cosmographer · BHRIGU" />
-        <meta key="og:description" property="og:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
-        <meta key="twitter:title" name="twitter:title" content="The Cosmographer · BHRIGU" />
-        <meta key="twitter:description" name="twitter:description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
-</Head>
+        <meta
+          key="twitter:description"
+          name="twitter:description"
+          content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained."
+        />
+      </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
           <a href="/start">← /start</a>
         </div>
+
+        <section
+          style={{
+            margin: "18px 0 22px",
+            padding: "14px 14px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.03)",
+          }}
+        >
+          <div style={{ fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.75, marginBottom: 8 }}>
+            Cosmographer · quick map
+          </div>
+          <div style={{ fontSize: 15, lineHeight: 1.55 }}>
+            <strong>What:</strong> axis‑first AI that turns noise into a readable map.<br />
+            <strong>For:</strong> builders, researchers, and investors who want orientation, not endless chat.<br />
+            <strong>You get:</strong> outcome → context → next atom, plus stable artifacts.<br />
+            <strong>Start:</strong> open <a href="/frey">/frey</a> (pilot) or see <a href="/services">/services</a>.
+          </div>
+        </section>
+
+        <div style={{ display: "none" }} aria-hidden="true">__COSMOGRAPHER_PATCH_V0_1__</div>
         <article
           style={{ lineHeight: 1.7, fontSize: 16 }}
           dangerouslySetInnerHTML={{ __html: html }}
         />
         <div style={{ marginTop: 32, opacity: 0.7, fontSize: 13 }}>
+        <section
+          style={{
+            marginTop: 26,
+            padding: "14px 14px",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 12,
+            background: "rgba(255,255,255,0.02)",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 8 }}>Next</div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <a href="/frey">/frey</a>
+            <a href="/services">/services</a>
+            <a href="/start">/start</a>
+          </div>
+        </section>
+
           EN-only. Surface description — no internal mechanics.
         </div>
       </main>
