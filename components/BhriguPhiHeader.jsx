@@ -8,7 +8,7 @@ export default function BhriguPhiHeader() {
   const isActive = (href) => path === href;
 
   const css = `
-    /* ATOM_PORTAL_HEADER_META_DEDUP_V0_1 */
+    /* ATOM_PORTAL_HEADER_SUITE_LABEL_OFF_V0_1 */
     :root{
       --bh-gold: rgba(215,181,90,0.92);
       --bh-w3: rgba(255,255,255,0.58);
@@ -262,15 +262,13 @@ export default function BhriguPhiHeader() {
 `;
 
   return (
-    <header className="bh-header" role="banner" data-bh="HEADER_META_DEDUP_V0_1">
+    <header className="bh-header" role="banner" data-bh="HEADER_SUITE_LABEL_OFF_V0_1">
       <style>{css}</style>
 
       <div className="bh-shell">
         <div className="bh-meta" aria-label="Header meta">
-          <div className="bh-meta-left">
-            <span className="bh-meta-strong">ORION</span> · Φ-COSMOGRAPHY · SOLAR SUITE
-          </div>
-          <div className="bh-meta-right">
+          <div className="bh-meta-left" aria-hidden="true"></div>
+<div className="bh-meta-right">
             <a className="bh-meta-link" href="/start">Investors / Partners</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
             <a className="bh-meta-link" href="/faq">FAQ</a>
           </div>
