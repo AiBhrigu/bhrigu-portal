@@ -13,7 +13,7 @@ const FLOW_MARK = "__FREY_QUERY_FLOW_UI_ONLY_V0_4__";
 const CHIPS = [
   "human ↔ project: where are we now and what is the next step?",
   "human ↔ asset: what is the risk/support tone for the next 30 days?",
-  "human ↔ human: what is the friction point and how to navigate it?",
+
 ];
 
 export default function FreyPage() {
@@ -86,15 +86,7 @@ export default function FreyPage() {
               </button>
             </div>
 
-            <div className="domainsWrap" aria-label="Frey quick domains">
-              <a href="/start" className="domainLink">Start</a>
-              <span className="domainSep">·</span>
-              <a href="/reading" className="domainLink">Reading</a>
-              <span className="domainSep">·</span>
-              <a href="/access" className="domainLink">Access</a>
-              <span className="domainSep">·</span>
-              <a href="/github" className="domainLink">GitHub</a>
-            </div>
+            
 
             <div className="chips" aria-label="Frey example queries">
               {CHIPS.map((t) => (
@@ -243,4 +235,3 @@ export async function getServerSideProps(ctx) {
   } catch (_) {}
   return { props: {} };
 }
-
