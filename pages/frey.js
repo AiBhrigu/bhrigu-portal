@@ -1,12 +1,10 @@
-export const config = { runtime: "edge" };
+export const config = { runtime: "experimental-edge" };
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 
 // UI-only guard: local no-op (build-safe)
 const freyUiOnlyAssert = () => {};
-export async function getServerSideProps(){ return { props:{} } }
-
 export default function FreyPage() {
   // Local query queue (UI-only, persisted in browser storage)
   const FREY_QUEUE_KEY = "frey_queue_v0_5";
@@ -150,6 +148,7 @@ EXIT: …`;
   };
   return (
     <>
+      <div aria-hidden="true" className="freyPhiSpaceBg" data-frey-mark="__FREY_PHI_SPACE_BG_V0_3__" />
       <Head>
         <title>Frey · BHRIGU</title>
         <meta
@@ -440,6 +439,21 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
         
 
 
+<style jsx global>{`
+/* __FREY_PHI_SPACE_BG_V0_3__ */
+body { background:#000; background-color:#000; }
+.freyPhiSpaceBg {
+  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background-color:#000;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.10), rgba(0,0,0,0) 42%),
+    radial-gradient(circle at 82% 26%, rgba(255,255,255,0.06), rgba(0,0,0,0) 46%),
+    radial-gradient(circle at 48% 72%, rgba(120,180,255,0.08), rgba(0,0,0,0) 58%),
+    radial-gradient(circle at 50% 110%, rgba(255,120,255,0.06), rgba(0,0,0,0) 52%),
+    linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,1));
+}
+#__next { min-height:100vh; }
+`}</style>
 <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
           
