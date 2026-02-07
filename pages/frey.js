@@ -1,3 +1,4 @@
+// __FREY_QUERY_FLOW_UI_ONLY_V0_4__
 // __FREY_QUERY_FLOW_UI_ONLY_V0_3__
 export const config = { runtime: "experimental-edge" };
 import Head from "next/head";
