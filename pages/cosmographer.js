@@ -209,9 +209,6 @@ export default function Cosmographer() {
         />
       </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
-        <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
-          
-        </div>
 
         <section
           style={{
