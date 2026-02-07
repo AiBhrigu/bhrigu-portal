@@ -69,7 +69,7 @@ export default function FreyPage() {
               <input
                 ref={inputRef}
                 className="qInput"
-                placeholder="Ask Frey… (signals, cycles, assets)"
+                data-frey-q="1"
                 aria-label="Frey query"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -295,6 +295,36 @@ export default function FreyPage() {
   .qRow{display:flex;flex-direction:column;gap:var(--phi-13);}
   .qInput{width:100%;}
   .btnCta{width:100%;}
+}
+/* __FREY_INPUT_CHIPS_TONE_V0_3__ */
+
+/* query input: kill double ring; keep single subtle border */
+:global([data-frey-q]){
+  outline: none !important;
+  box-shadow: none !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  background: rgba(0,0,0,0.10) !important;
+}
+:global([data-frey-q]::placeholder){
+  color: rgba(255,255,255,0.34) !important;
+}
+:global([data-frey-q]:focus),
+:global([data-frey-q]:focus-visible){
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+/* chips: quieter text + softer surface */
+:global([data-frey-chip="1"]){
+  color: rgba(255,255,255,0.62) !important;
+  background: rgba(255,255,255,0.028) !important;
+  border-color: rgba(255,255,255,0.11) !important;
+}
+:global([data-frey-chip="1"]:hover){
+  color: rgba(255,255,255,0.70) !important;
+  background: rgba(255,255,255,0.040) !important;
+  border-color: rgba(255,255,255,0.14) !important;
 }
 `}</style>
     </>
