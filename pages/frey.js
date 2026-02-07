@@ -1,6 +1,6 @@
+// __FREY_RUNTIME_NODE_SSR_FIX_V0_1__
 // __FREY_QUERY_FLOW_UI_ONLY_V0_4__
 // __FREY_QUERY_FLOW_UI_ONLY_V0_3__
-export const config = { runtime: "experimental-edge" };
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
