@@ -443,7 +443,7 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
 /* __FREY_PHI_SPACE_BG_V0_3__ */
 body { background:#000; background-color:#000; }
 .freyPhiSpaceBg {
-  position:fixed; inset:0; z-index:-1; pointer-events:none;
+  position:fixed; inset:0; z-index:0; pointer-events:none;
   background-color:#000;
   background-image:
     radial-gradient(circle at 20% 10%, rgba(255,255,255,0.10), rgba(0,0,0,0) 42%),
@@ -452,7 +452,7 @@ body { background:#000; background-color:#000; }
     radial-gradient(circle at 50% 110%, rgba(255,120,255,0.06), rgba(0,0,0,0) 52%),
     linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,1));
 }
-#__next { min-height:100vh; }
+#__next { min-height:100vh; position:relative; z-index:1; }
 `}</style>
 <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
