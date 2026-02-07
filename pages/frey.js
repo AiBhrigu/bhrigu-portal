@@ -1,761 +1,246 @@
-// __FREY_RUNTIME_NODE_SSR_FIX_V0_1__
-// __FREY_QUERY_FLOW_UI_ONLY_V0_4__
-// __FREY_QUERY_FLOW_UI_ONLY_V0_3__
+// __FREY_CANON_MINIMAL_FIX_V0_2__
+//
+// UI-only. No network calls. No sensitive strings.
+// Query Bar -> /reading?q=...
+
 import Head from "next/head";
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 
-// UI-only guard: local no-op (build-safe)
-const freyUiOnlyAssert = () => {};
+const BG_MARK = "__FREY_PHI_SPACE_BG_V0_3__";
+const FLOW_MARK = "__FREY_QUERY_FLOW_UI_ONLY_V0_4__";
+
+const CHIPS = [
+  "human ↔ project: where are we now and what is the next step?",
+  "human ↔ asset: what is the risk/support tone for the next 30 days?",
+  "human ↔ human: what is the friction point and how to navigate it?",
+];
+
 export default function FreyPage() {
-  // Local query queue (UI-only, persisted in browser storage)
-  const FREY_QUEUE_KEY = "frey_queue_v0_5";
-  const [freyQueue, setFreyQueue] = useState([]);
-  const qQueueRef = useRef(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(FREY_QUEUE_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      if (Array.isArray(arr)) setFreyQueue(arr.slice(0, 12));
-    } catch (_) {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(FREY_QUEUE_KEY, JSON.stringify(freyQueue.slice(0, 12)));
-    } catch (_) {}
-  }, [freyQueue]);
-
-  const freyQueueAdd = (raw) => {
-    const t = String(raw || "").trim();
-    if (!t) return;
-    const text = t.length > 240 ? t.slice(0, 240) + "…" : t;
-    const now = new Date();
-    const item = {
-      id: now.getTime().toString(36) + "-" + Math.random().toString(36).slice(2, 8),
-      when: now.toISOString().replace("T", " ").slice(0, 19) + "Z",
-      text,
-    };
-    setFreyQueue((prev) => {
-      const p = Array.isArray(prev) ? prev : [];
-      if (p.length && p[0] && p[0].text === text) return p;
-      return [item, ...p].slice(0, 12);
-    });
-  };
-
-  const freyQueueAddFromRef = () => {
-    const el = qQueueRef.current;
-    const v = el && el.value ? el.value : "";
-    freyQueueAdd(v);
-    if (el) el.value = "";
-  };
-
-  const freyQueueClear = () => setFreyQueue([]);
-
-  freyUiOnlyAssert();
-
-
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  
-  // FREY_QUERY_FLOW_UI_ONLY_V0_3
-  const goFreyQueryV03 = (val) => {
-    const v = (typeof val === "string" ? val : query).trim();
-    if (!v) return;
-    const enc = encodeURIComponent(v);
-    router.push(`/reading?q=${enc}`);
-  };
-const [error, setError] = useState(null);
-  const [answer, setAnswer] = useState("");
-  // __FREY_RUNQUERY_DEFINED_FIX_V0_1__
-  const runQuery = () => {
-    // UI-only: route to /reading with q param (no network, no public routes)
-    if (typeof window === "undefined") return;
-    const q = String(query || "").trim();
-    if (!q) return;
-    window.location.href = `/reading?q=${encodeURIComponent(q)}`;
-  };
+  const inputRef = useRef(null);
+  const [q, setQ] = useState("");
 
-  // alias for build safety: legacy JSX expects (query,setQuery)
-  
+  const canGo = useMemo(() => q.trim().length > 0, [q]);
 
-  const EXAMPLES = [
-    "human ↔ project: where are we now and what is the next step?",
-    "human ↔ asset: what is the risk/support tone for the next 30 days?",
-    "human ↔ human: what is the friction point and how to navigate it?",
-  ];
-
-  const submit = () => {
-    const s = (query || "").trim();
+  const go = (raw) => {
+    const s = (raw ?? q).trim();
     if (!s) return;
-    router.push(`/reading?query=${encodeURIComponent(s)}`);
-  };
-
-  const copy = async () => {
-    const text =
-`FREY · Query template
-
-GOAL: …
-CONTEXT: …
-CONSTRAINTS: …
-EXIT: …`;
-
     try {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-        alert("Copied");
-      } else {
-        alert("Copy not supported in this browser");
-      }
-    } catch {
-      alert("Copy failed");
-    }
-  };
-
-  
-  // Φ-QUERYBAR: local-only query drafting (no network)
-  const [freyQuery, setFreyQuery] = useState("");
-  const [freyDraft, setFreyDraft] = useState("");
-  const [freyCopied, setFreyCopied] = useState(false);
-
-  const freyTemplates = [
-    
-    { label: "Протокол Φ", value: "Напомни Protocol: UI-only v0.1, гейты, STOP-условия и как правильно работать через АТОМы." },
-{ label: "Что такое Frey?", value: "Что такое Frey? Дай коротко: что он делает и где границы v0.1." },
-    { label: "Как получить доступ?", value: "Как получить доступ к Frey? Какие шаги и ограничения v0.1?" },
-    { label: "Маршрут", value: "Дай маршрут для новичка: /start → /reading → /access. Что читать и в каком порядке?" },
-  ];
-
-  const onFreyTemplate = (v) => {
-    setFreyQuery(v);
-    setFreyCopied(false);
-  };
-
-  const onFreyClear = () => {
-    setFreyQuery("");
-    setFreyDraft("");
-    setFreyCopied(false);
-  };
-
-  const onFreyQuerySubmit = (e) => {
-    e.preventDefault();
-    const v = (freyQuery || "").trim();
-    setFreyDraft(v);
-    setFreyCopied(false);
-  };
-
-  const onFreyCopy = async () => {
-    const v = (freyQuery || "").trim();
-    if (!v) return;
-    try {
-      await navigator.clipboard.writeText(v);
-      setFreyCopied(true);
+      router.push(`/reading?q=${encodeURIComponent(s)}`);
     } catch (_) {
-      setFreyCopied(false);
+      if (typeof window !== "undefined") window.location.assign(`/reading?q=${encodeURIComponent(s)}`);
     }
   };
+
+  const onKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      go();
+    }
+  };
+
+  const onChip = (t) => {
+    setQ(t);
+    go(t);
+  };
+
   return (
     <>
-      <div aria-hidden="true" className="freyPhiSpaceBg" data-frey-mark="__FREY_PHI_SPACE_BG_V0_3__" data-frey-flow="__FREY_QUERY_FLOW_UI_ONLY_V0_3__" />
       <Head>
         <title>Frey · BHRIGU</title>
-        <meta
-          name="description"
-          content="Frey — dialog interface for cosmography. Query-first navigation through time, cycles and scenarios."
-        />
+        <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      {/*__FREY_ASKFREY_PREMIUM_V1_0_3__*/}
-
-      {/*__FREY_COPY_TEMPLATE_REMOVE_V1_1__*/}
-
-      <main className="wrap">
-        <header className="hero">
-          <div id="phi-frey-entry" className="kicker"><span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span></div>
-          <p className="subtitle">
-            Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
-          </p>
-        </header>
-
-        {/*__FREY_CANON_SINGLE_BLOCK_EN_V0_1R__*/}
-        <section className="card askFreyBox">
-          <h2>Query Bar (pilot) · PHI surface v0.3</h2>
-          <p className="muted">UI-only v1. Your question stays in your browser — we just open the next route.</p>
-
-          <div className="qRow">
-            <input
-              className="qInput"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-              placeholder="Ask Frey… (signals, cycles, assets)"
-              aria-label="Frey query"
-            />
-            <button className="btn btnCta" onClick={() => goFreyQueryV03(query)} disabled={!canGo}>Continue → Reading</button>
-          </div>
-
-          {/* __FREY_DOMAIN_ROW_V0_1__ */}
-          <div className="domainsWrap" aria-label="Frey quick domains">
-            <a className="domainLink" href="/start">Start</a>
-            <span className="domainSep">·</span>
-            <a className="domainLink" href="/reading">Reading</a>
-            <span className="domainSep">·</span>
-            <a className="domainLink" href="/access">Access</a>
-            <span className="domainSep">·</span>
-            <a className="domainLink" href="/github">GitHub</a>
-          </div>
-
-          <div className="chips">
-            {EXAMPLES.map((t) => (
-              <button
-                key={t}
-                className="chip"
-                onClick={() => setQuery(t)}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/*__FREY_CANON_HIDDEN_REMAINDER__*/}
-        {false && (
-          <>
-{/*__FREY_QUERY_LINE_V1__*/}
-        {/*__FREY_QUERY_LINE_V1_CONTRAST__*/}
-        <section className="card askFreyBox">
-          <h2>Query Bar (pilot) · PHI surface v0.3</h2>
-          <p className="muted">
-            UI-only v1. Your question stays in your browser — we just open the next route.
-          </p>
-
-          <div className="qRow">
-            <input
-              className="qInput"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-              placeholder="Type a question…"
-              aria-label="Frey query"
-            />
-            <button className="btn btnCta" onClick={() => goFreyQueryV03(query)} disabled={!canGo}>Continue → Reading</button>
-          </div>
-
-          
-            {/* __FREY_DOMAIN_ROW_V0_1__ */}
-            <div className="domainsWrap" aria-label="Frey quick domains">
-              <a className="domainLink" href="/start">Start</a>
-              <span className="domainSep">·</span>
-              <a className="domainLink" href="/reading">Reading</a>
-              <span className="domainSep">·</span>
-              <a className="domainLink" href="/access">Access</a>
-              <span className="domainSep">·</span>
-              <a className="domainLink" href="/github">GitHub</a>
+      <div className="freyPage" data-frey-flow={FLOW_MARK}>
+        <div aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" />
+        <main className="wrap">
+          <header className="hero">
+            <div id="phi-frey-entry" className="kicker">
+              <span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span>
             </div>
-<div className="chips">
-            {EXAMPLES.map((t) => (
-              <button
-                key={t}
-                className="chip"
-                onClick={() => setQuery(t)}
-                type="button"
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+            <p className="subtitle">
+              Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
+            </p>
+          </header>
 
-          
-          <div className="mt-6 w-full max-w-2xl">
-                    <div className="rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4">
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                        <input
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                          placeholder="Query… (signals, cycles, assets)"
-                          className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
-                        />
-                        <button
-                          onClick={runQuery}
-                          className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/15"
-                        >
-                          Ask
-                        </button>
-                      </div>
-                      <div className="mt-2 text-xs text-white/50">
-                        
-                      </div>
-                      {error ? (
-                        <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                          {error}
-                        </div>
-                      ) : null}
-                      {answer ? (
-                        <div className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-3 text-sm text-white/90">
-                          {answer}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+          <section className="card askFreyBox" aria-label="Frey query bar">
+            <h2 className="h2">Query Bar (pilot) · PHI surface v0.3</h2>
+            <p className="muted">UI-only v1. Your question stays in your browser — we just open the next route.</p>
 
-
-          <p className="micro">
-            Not ready? <a href="/start">Start</a> · <a href="/reading">Reading</a> · <a href="/faq">FAQ</a>
-          </p>
-        </section>
-
-        
-        <details className="fold" open={false}>
-          <summary className="foldSummary">More (optional)</summary>
-          <div className="foldBody">
-
-
-          <section className="card">
-            <h2>Optional: compact schema (AI-ready)</h2>
-            <pre className="pre">human ↔ human → resonance / dynamics / tendencies
-human ↔ project → phases / entry-exit windows / friction points
-human ↔ asset → timing / risk-support tone / cycles
-author ↔ style → amplification vs dilution / peaks
-user ↔ scenario → relevance / maturity / decision nodes</pre>
-
-            <div className="nav">
-              <a className="btn" href="/start">Start</a>
-              <span>Frey</span>
-              <a className="btn" href="/faq">FAQ</a>
-              <a className="btn" href="/reading">Reading</a>
-            </div>
-          </section>
-
-
-          <section className="card">
-            <h2>Start in 1 minute</h2>
-            <ol className="ol">
-              <li><strong>Open Frey</strong> → ask one link (human↔human / human↔project / human↔asset).</li>
-              <li><strong>Add time</strong> (date / month / window).</li>
-              <li><strong>Read it as</strong>: phases → windows → support/tension → next step.</li>
-            </ol>
-          </section>
-
-
-        <section className="card">
-          <h2>What Frey is</h2>
-          <ul>
-            <li>Query-first: one request → one structured output.</li>
-            <li>Navigation in time: phases, windows, transitions.</li>
-            <li>Works with links: human ↔ human, human ↔ project, human ↔ asset, author ↔ style, user ↔ scenario.</li>
-          </ul>
-        </section>
-      {/*__FREY_COPY_TEMPLATE_REMOVED_V1__*/}
-<section className="card">
-          <h2>Public surface</h2>
-          <p>
-            This page is UI-only. API routes can be disabled on the public portal by design.
-          </p>
-        </section>
-          </div>
-        </details>
-
-
-      
-
-      
-      {/* Φ-QUERYBAR: UI-only query drafting (pilot) */}
-      <section style={{ marginTop: 28, padding: 18, border: "1px solid rgba(255,255,255,0.10)", borderRadius: 14, color: "rgba(255,255,255,0.92)", caretColor: "rgba(255,255,255,0.92)"}}>
-        <h2 style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 10 }}><span>Query Bar (pilot)</span><span style={{ fontSize: 12, opacity: 0.65 }}>PHI surface v0.3</span></h2>
-        <p style={{ marginTop: 10, opacity: 0.85 }}>
-          UI-only v0.1: локальный черновик запроса. Никаких сетевых вызовов, никаких API, никаких токенов.
-        </p>
-
-
-        <span data-phi-marker="FREY_SURFACE_CANON_V0_3" style={{ display: "none" }}>FREY_SURFACE_CANON_V0_3</span>
-        <span style={{ display: "none" }}>PHI_SURFACE_V0_3</span>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          {freyTemplates.map((t) => (
-            <button
-              key={t.label}
-              type="button"
-              onClick={() => onFreyTemplate(t.value)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 999,
-                border: "1px solid rgba(255,255,255,0.14)",
-                background: "transparent",
-                fontSize: 13,
-                opacity: 0.9,
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={onFreyClear}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 999,
-              border: "1px solid rgba(255,255,255,0.14)",
-              background: "transparent",
-              fontSize: 13,
-              opacity: 0.75,
-            }}
-          >
-            Clear
-          </button>
-        </div>
-        <form onSubmit={onFreyQuerySubmit} style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
-          <input
-            value={freyQuery}
-            onChange={(e) => setFreyQuery(e.target.value)}
-            placeholder="Спроси про /reading, /access, ORION, правила…"
-            style={{ flex: "1 1 320px", minWidth: 240, padding: "12px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)", background: "transparent",
-            color: "rgba(255,255,255,0.92)",
-            caretColor: "rgba(255,255,255,0.92)" }}
-          />
-          <button type="submit" disabled={!freyQuery.trim()} style={{ padding: "12px 14px", borderRadius: 12 }}>
-            Draft
-          </button>
-          <button type="button" onClick={onFreyCopy} disabled={!freyQuery.trim()} style={{ padding: "12px 14px", borderRadius: 12 }}>
-            {freyCopied ? "Copied" : "Copy"}
-          </button>
-        </form>
-
-        {(freyDraft || freyQuery) ? (
-          <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: "1px solid rgba(255,255,255,0.10)" }}>
-            <div style={{ fontSize: 12, opacity: 0.75 }}>Draft</div>
-            <pre style={{ whiteSpace: "pre-wrap", marginTop: 8, marginBottom: 0, fontSize: 14 }}>{freyDraft || freyQuery}</pre>
-          </div>
-        ) : null}
-
-        <details className="fold" style={{ marginTop: 14 }}>
-          <summary className="foldSummary">Boundaries</summary>
-          <ul style={{ marginTop: 10, lineHeight: 1.45, opacity: 0.9 }}>
-            <li>UI-only v0.1 — <b>нет</b> сетевых вызовов, <b>нет</b> публичных public routes.</li>
-            <li>Поле ввода локальное: текст остаётся в браузере.</li>
-            <li>Когда появятся реальные ответы — они будут за гейтами Trust/epistemic/IP.</li>
-          </ul>
-        </details>
-
-        <div style={{ display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" }}>
-          <a href="/start" style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)" }}>Start</a>
-          <a href="/access" style={{ padding: "10px 12px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.14)" }}>Access</a>
-        </div>
-      </section>
-          </>
-        )}
-      </main>
-      
-        
-
-
-<style jsx global>{`
-/* __FREY_PHI_SPACE_BG_V0_3__ */
-body { background:#000; background-color:#000; }
-.freyPhiSpaceBg {
-  position:fixed; inset:0; z-index:0; pointer-events:none;
-  background-color:#000;
-  background-image:
-    radial-gradient(circle at 20% 10%, rgba(255,255,255,0.10), rgba(0,0,0,0) 42%),
-    radial-gradient(circle at 82% 26%, rgba(255,255,255,0.06), rgba(0,0,0,0) 46%),
-    radial-gradient(circle at 48% 72%, rgba(120,180,255,0.08), rgba(0,0,0,0) 58%),
-    radial-gradient(circle at 50% 110%, rgba(255,120,255,0.06), rgba(0,0,0,0) 52%),
-    linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,1));
-}
-#__next { min-height:100vh; position:relative; z-index:1; }
-
-/* FREY_LAYOUT_FIT_V0_1 */
-main.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 72px; }
-main.wrap header.hero { padding: 18px 0 10px; }
-main.wrap header.hero .subtitle { max-width: 70ch; }
-main.wrap .askFreyBox { margin-top: 18px; }
-main.wrap .qRow { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-main.wrap .qInput { flex: 1 1 520px; min-width: 240px; }
-main.wrap .btnCta { white-space: nowrap; }
-main.wrap .domainsWrap { display:flex; flex-wrap:wrap; row-gap:6px; }
-main.wrap .chips { display:flex; flex-wrap:wrap; gap:10px; }
-main.wrap .chip { max-width: 100%; white-space: normal; text-align:left; }
-@media (max-width: 720px){
-  main.wrap { padding: 18px 12px 56px; }
-  main.wrap header.hero { padding: 14px 0 8px; }
-  main.wrap header.hero .subtitle { font-size: 14px; }
-  main.wrap .askFreyBox h2 { font-size: 20px; }
-  main.wrap .qRow { flex-direction: column; align-items: stretch; }
-  main.wrap .btnCta { width: 100%; }
-}
-@media (max-width: 420px){
-  main.wrap .askFreyBox h2 { font-size: 18px; }
-}
-`}</style>
-<style jsx>{`
-          /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
-          
-/*__PHI_marks_V1_0__*/
-:root{ --phi-1:1px;--phi-8:8px; --phi-13:13px; --phi-21:21px; --phi-34:34px; --phi-55:55px; --phi-line:1px; --phi-r-13:13px; --phi-r-21:21px; --phi-v1:1;}
-/*__FREY_PHI_marks_V1_0__*/
-.askFreyBox{--frey_query_mode_stub_prod_v0_1_1:1;/*__FREY_QUERY_MODE_STUB_V0_1__*/--frey_query_mode_stub:1;gap:var(--phi-13);--phi_gap_v2:1;border:var(--phi-1) solid rgba(215,181,90,0.36);background:linear-gradient(180deg, rgba(255,255,255,0.055), rgba(0,0,0,0.26));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.065),0 14px 44px rgba(0,0,0,0.42),0 0 0 1px rgba(215,181,90,0.12);border-radius:var(--phi-21);padding:var(--phi-13) var(--phi-21);--phi_pad_v2:1;--frey_phi_marks_v1_0:1;--frey_askfrey_air2_v1_0_5:1;}
-          .askFreyBox h2{color:rgba(255,255,255,0.93)}
-          .askFreyBox p{color:rgba(255,255,255,0.74)}
-          .askFreyBox .qInput{background:rgba(0,0,0,0.52);border-color:rgba(255,255,255,0.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 12px 34px rgba(0,0,0,0.34);padding:var(--phi-13) var(--phi-21);--phi_qpad_v2:1;--phi_pad_v1:1;min-height:var(--phi-55);--phi_qh_v2:1;--phi_h_v1:1;line-height:1.25;cursor:text;--frey_qinput_hitbox_v1_4:1;box-sizing:border-box;--frey_qinput_hitbox_v1_4_1:1;flex:1;max-width:none;width:100%;--frey_qinput_wider_v1_4_2:1;--frey_phi_marks_v1_0:1;}
-          .askFreyBox .qInput::placeholder{color:rgba(255,255,255,0.56)}
-\n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
-        .wrap { max-width: 980px; margin: 0 auto; padding: 40px 18px 70px; }
-        .hero { padding: 18px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 18px; }
-        .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
-        .title { font-size: 42px; line-height: 1.08; margin: 0 0 10px; }
-        .subtitle { font-size: 16px; opacity: .85; margin: 0 0 10px; max-width: 70ch; }
-        .card { padding: 18px 16px; margin: 14px 0; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; background: rgba(255,255,255,0.02); }
-        h2 { margin: 0 0 10px; font-size: 18px; }
-        ul { margin: 10px 0 0; padding-left: 18px; }
-        li { margin: 6px 0; line-height: 1.45; }
-        p { margin: 8px 0; line-height: 1.55; }
-        .muted { opacity: .75; }
-        .pre { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.10); background: rgba(0,0,0,0.25); overflow-x: auto; margin: 10px 0 0; }
-        .btn { margin-top: 10px; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); cursor: pointer; }
-        .btn:hover { background: rgba(255,255,255,0.06); }
-        .queryRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}
-        .qInput{flex:1;min-width:240px;height:36px;padding:0 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.14);background:rgba(0,0,0,0.18);color:inherit}
-        .qInput:focus{outline:none;border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
-        .btnCta{border:1px solid rgba(215,181,90,.55);background:rgba(255,255,255,0.04);color:rgba(255,255,255,.90)}
-        .btnCta:hover{background:rgba(255,255,255,0.06)}
-        .btnCta:disabled{opacity:1;color:rgba(255,255,255,.38);border-color:rgba(255,255,255,0.14);background:rgba(255,255,255,0.02);cursor:not-allowed}
-
-        
-          
-/*__FREY_ASKFREY_AIR_V1_0_4__*/
-/*__FREY_ASKFREY_AIR2_V1_0_5__*/
-.askFreyBox{padding:var(--phi-13) var(--phi-21);--phi_pad_v2:1;display:flex;flex-direction:column;gap:var(--phi-13);--phi_gap_v2:1;--frey_phi_gap_align_v0_3_1:1;--phi_gap_v1:1;--frey_askfrey_air2_v1_0_5:1;}
-.askFreyBox button:not(.btnCta){margin:10px 10px 0 0;}
-
-.askFreyBox>*+*{margin-top:14px;}
-.askFreyBox .qRow{margin-top:2px;}
-/*__FREY_FIRST_SCREEN_CANON_PATCH_V0_1__*/
-
-        
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Query… (signals, cycles, assets)"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white placeholder-white/40 outline-none focus:ring-2 focus:ring-white/20"
+            <div className="qRow">
+              <input
+                ref={inputRef}
+                className="qInput"
+                placeholder="Ask Frey… (signals, cycles, assets)"
+                aria-label="Frey query"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={onKeyDown}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
               />
-                onClick={runQuery}
-                className="rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-medium text-white hover:bg-white/15"
-              >
-                Ask
-              
-            {error ? (
-                {error}
-            ) : null}
-            {answer ? (
-                {answer}
-            ) : null}
-/* Fix double vertical spacing: keep gap, remove extra margins */
-.askFreyBox>*+*{margin-top:0!important;}
-/* Ensure the row styling applies (we use className=qRow now) */
-.askFreyBox .qRow{margin-top:0!important;}
-/* Fold styling: keep first screen tight, rest accessible */
-details.fold{margin-top:var(--phi-21);border:1px solid rgba(255,255,255,0.10);border-radius:var(--phi-r-21);background:rgba(255,255,255,0.012);}
-summary.foldSummary{list-style:none;cursor:pointer;padding:12px 14px;opacity:.9;}
-summary.foldSummary::-webkit-details-marker{display:none;}
-details.fold[open] summary.foldSummary{opacity:1;}
-.foldBody{padding:0 14px 14px;}
+              <button type="button" className="btn btnCta" onClick={() => go()} disabled={!canGo}>
+                Continue → Reading
+              </button>
+            </div>
 
-.askFreyBox .pillRow,.askFreyBox .suggRow,.askFreyBox .chipsRow{gap:10px;}
-.askFreyBox .notReady{margin-top:2px;}
-/*__FREY_QUERY_INPUT_HALO_V1_3__*/
-          .qInput{background:rgba(0,0,0,0.44);border:1px solid rgba(255,255,255,0.24);box-shadow:0 0 0 1px rgba(215,181,90,0.18), 0 10px 30px rgba(0,0,0,0.35);color:rgba(255,255,255,0.92);}
-          .qInput::placeholder{color:rgba(255,255,255,0.44)}
-          .qInput:focus,.qInput:focus-visible{outline:none;border-color:rgba(215,181,90,0.72);box-shadow:0 0 0 3px rgba(215,181,90,0.22), 0 14px 36px rgba(0,0,0,0.38);}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-        .chip{border-radius:999px;padding:6px 10px;border:1px solid rgba(255,255,255,0.16);background:rgba(255,255,255,0.04);color:rgba(255,255,255,.78);cursor:pointer;opacity:1}
-        .chip:hover{border-color:rgba(215,181,90,.55);background:rgba(255,255,255,0.06)}
-        .micro{margin-top:10px;font-size:13px;opacity:.85}
+            <div className="domainsWrap" aria-label="Frey quick domains">
+              <a href="/start" className="domainLink">Start</a>
+              <span className="domainSep">·</span>
+              <a href="/reading" className="domainLink">Reading</a>
+              <span className="domainSep">·</span>
+              <a href="/access" className="domainLink">Access</a>
+              <span className="domainSep">·</span>
+              <a href="/github" className="domainLink">GitHub</a>
+            </div>
 
-        @media (max-width: 760px) { .title { font-size: 34px; } }
+            <div className="chips" aria-label="Frey example queries">
+              {CHIPS.map((t) => (
+                <button key={t} type="button" className="chip" onClick={() => onChip(t)}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
 
-          /*__BHRIGU_UI_CANON__*/
-          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}
-          a:hover{border-bottom-color:rgba(215,181,90,.95)}
-          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}
-          .nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-          .btn{
-            display:inline-flex;align-items:center;justify-content:center;
-            height:34px;padding:0 12px;border-radius:999px;
-            border:1px solid rgba(255,255,255,.12);
-            background:rgba(255,255,255,.03);
-            box-shadow:0 0 0 rgba(0,0,0,0);
-            transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-            -webkit-tap-highlight-color: transparent;
-          }
-          .btn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
-          .btn:active{transform:translateY(0px)}
-          .prewrap{white-space:pre-wrap;overflow-x:hidden}
+      <style jsx global>{`
+        :root{
+          --phi-8: 8px;
+          --phi-13: 13px;
+          --phi-21: 21px;
+          --phi-34: 34px;
+          --phi-55: 55px;
+        }
 
-/* Φ MOBILE CANON v0.2 */
-@media (max-width: 640px) {
-  :global(html), :global(body) {
-    height: 100%;
-    overflow: hidden;
-    overscroll-behavior: none;
-  }
+        html, body { height: 100%; }
+        body { background: #000; color: rgba(255,255,255,0.92); }
 
-  :global(body) {
-    min-height: 100dvh;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+        .freyPage { position: relative; min-height: 100vh; }
+        .freyPhiSpaceBg{
+          position: fixed; inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          background:
+            radial-gradient(1200px 800px at 30% 20%, rgba(120,190,255,0.16), transparent 60%),
+            radial-gradient(900px 600px at 80% 40%, rgba(255,190,140,0.10), transparent 60%),
+            radial-gradient(700px 700px at 50% 85%, rgba(160,120,255,0.10), transparent 60%),
+            linear-gradient(180deg, rgba(0,0,0,0.92), rgba(0,0,0,0.98));
+          filter: saturate(1.05) contrast(1.05);
+        }
 
-  main {
-    min-height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
+        .wrap{
+          position: relative;
+          z-index: 1;
+          max-width: 980px;
+          margin: 0 auto;
+          padding: 28px 18px 80px;
+        }
 
-  .freyNoScroll, .page, .container, .wrap {
-    min-height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 16px;
-    padding-right: 16px;
-  }
+        .hero { padding: 10px 0 18px; }
+        .kicker { letter-spacing: 0.02em; opacity: 0.92; font-size: 13px; }
+        .subtitle { margin: 10px 0 0; opacity: 0.82; max-width: 60ch; }
 
-  .queryBox, .box, .card, .panel {
-    border-radius: 14px !important;
-    padding: 16px !important;
-  }
+        .card{
+          margin-top: 18px;
+          border-radius: 18px;
+          padding: 18px;
+          background: rgba(0,0,0,0.46);
+          border: 1px solid rgba(255,255,255,0.12);
+          backdrop-filter: blur(10px);
+        }
 
-  input[type="text"], textarea, .queryInput {
-    width: 100% !important;
-    min-height: 48px !important;
-    font-size: 16px !important;
-    line-height: 24px !important;
-  }
+        .h2{ margin: 0 0 6px; font-size: 16px; letter-spacing: 0.01em; }
+        .muted{ margin: 0 0 14px; opacity: 0.75; }
 
-  .queryRow, .queryControls, .row, .controls, form {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 10px !important;
-    align-items: stretch !important;
-  }
+        .qRow{
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          flex-wrap: wrap;
+        }
 
-  button, .btn {
-    width: 100% !important;
-    min-height: 48px !important;
-    font-size: 14px !important;
-    letter-spacing: 0.02em;
-  }
+        .qInput{
+          flex: 1 1 360px;
+          width: 100%;
+          min-height: var(--phi-55);
+          padding: var(--phi-13) var(--phi-21);
+          border-radius: var(--phi-13);
+          border: 1px solid rgba(255,255,255,0.28);
+          background: rgba(0,0,0,0.52);
+          color: inherit;
+          outline: none;
+        }
+        .qInput:focus{
+          border-color: rgba(160,220,255,0.65);
+          box-shadow: 0 0 0 3px rgba(120,190,255,0.18);
+        }
 
-  .chip, .pill, .quick, .suggestion {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    padding: 10px 12px;
-    opacity: 0.64 !important;
-  }
+        .btn{
+          min-height: var(--phi-55);
+          border-radius: var(--phi-13);
+          padding: 0 18px;
+          border: 1px solid rgba(255,255,255,0.24);
+          background: rgba(255,255,255,0.08);
+          color: inherit;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .btn:disabled{
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+        .btnCta{
+          border-color: rgba(160,220,255,0.45);
+          background: rgba(120,190,255,0.14);
+        }
 
-  a { opacity: 0.72; }
-  a:hover { opacity: 0.9; }
+        .domainsWrap{
+          margin-top: 14px;
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+          align-items: center;
+          opacity: 0.9;
+        }
+        .domainLink{ text-decoration: none; color: inherit; opacity: 0.86; }
+        .domainLink:hover{ opacity: 1; text-decoration: underline; }
+        .domainSep{ opacity: 0.42; }
 
-  .freyNoise { opacity: 0.01618 !important; }
-}
+        .chips{
+          margin-top: 14px;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        .chip{
+          border-radius: 999px;
+          padding: 10px 12px;
+          border: 1px solid rgba(255,255,255,0.18);
+          background: rgba(255,255,255,0.06);
+          color: inherit;
+          cursor: pointer;
+          text-align: left;
+          max-width: 100%;
+        }
+        .chip:hover{ background: rgba(255,255,255,0.10); }
 
-
-          /*__FREY_QUERY_QUEUE_STUB_V0_2__*/
-          .freyQueue .qMark{display:none;}
-
-          .freyQueue{margin-top:var(--phi-34);border:1px solid rgba(215,181,90,0.22);border-radius:var(--phi-21);padding:var(--phi-21);background:linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.22));box-shadow:inset 0 0 0 1px rgba(255,255,255,0.055), 0 18px 54px rgba(0,0,0,0.42);}
-          .freyQueue .qTop{display:flex;flex-direction:column;gap:var(--phi-8);}
-          .freyQueue .qTitle{font-weight:650;letter-spacing:0.02em;}
-          .freyQueue .qSub{opacity:0.78;font-size:0.95rem;line-height:1.35;}
-          .freyQueue .qList{margin-top:var(--phi-13);display:flex;flex-direction:column;gap:var(--phi-8);}
-          .freyQueue .qItem{opacity:0.72;border:1px dashed rgba(255,255,255,0.18);border-radius:var(--phi-13);padding:var(--phi-13);}
-
-
-
-          /*__FREY_QUERY_QUEUE_LOCAL_V0_5__*/
-          .freyQueue{margin-top:var(--phi-21);}
-          .freyQueue .qTop{margin-bottom:var(--phi-13);}
-          .freyQueue .qTitle{font-weight:600;letter-spacing:0.02em;}
-          .freyQueue .qSub{opacity:0.8;margin-top:6px;}
-          .freyQueue .qComposer{margin-top:var(--phi-13);display:flex;flex-wrap:wrap;gap:var(--phi-8);align-items:center;}
-          .freyQueue .qQueueInput{flex:1;min-width:220px;background:rgba(0,0,0,0.52);border:1px solid rgba(255,255,255,0.22);border-radius:var(--phi-13);padding:var(--phi-8) var(--phi-13);line-height:1.25;outline:none;}
-          .freyQueue .qQueueInput:focus{border-color:rgba(215,181,90,0.55);box-shadow:0 0 0 1px rgba(215,181,90,0.22), 0 18px 44px rgba(0,0,0,0.38);}
-          .freyQueue .qBtn{border:1px solid rgba(215,181,90,0.28);background:rgba(0,0,0,0.28);border-radius:var(--phi-13);padding:var(--phi-8) var(--phi-13);cursor:pointer;transition:transform 120ms ease, border-color 120ms ease, background 120ms ease;}
-          .freyQueue .qBtn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,0.42);background:rgba(0,0,0,0.34);}
-          .freyQueue .qBtnGhost{border-color:rgba(255,255,255,0.18);color:rgba(255,255,255,0.84);}
-          .freyQueue .qList{margin-top:var(--phi-13);display:flex;flex-direction:column;gap:var(--phi-8);}
-          .freyQueue .qItem{padding:var(--phi-13);border:1px solid rgba(255,255,255,0.12);border-radius:var(--phi-13);background:rgba(0,0,0,0.22);}
-          .freyQueue .qEmpty{opacity:0.75;padding:var(--phi-13) 0;}
-          .freyQueue .qWhen{opacity:0.7;font-size:0.9rem;margin-bottom:2px;}
-          .freyQueue .qText{white-space:pre-wrap;word-break:break-word;}
-          .freyQueue .qMarkLocal{display:none;}
-
-
-/*__FREY_PHI_SPACE_BG_V0_3__*/
-:root{
-  --phi: 1.618;
-  --phiA: 0.618;
-  --phiB: 0.382;
-}
-
-/* phi-space background: depth without revealing method */
-body{
-  background:
-    radial-gradient(1200px 900px at 20% 18%, rgba(210,230,255,0.085), transparent 62%),
-    radial-gradient(1100px 800px at 78% 26%, rgba(160,120,255,0.070), transparent 58%),
-    radial-gradient(900px 700px at 55% 78%, rgba(120,200,255,0.055), transparent 55%),
-    radial-gradient(700px 520px at 50% 50%, rgba(255,255,255,0.035), transparent 60%),
-    linear-gradient(180deg, #05060b 0%, #04050a 55%, #03040a 100%);
-}
-
-.wrap{
-  position: relative;
-}
-
-.wrap::before{
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  opacity: 1;
-  background:
-    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,0.55), transparent 2px),
-    radial-gradient(1px 1px at 36% 18%, rgba(255,255,255,0.45), transparent 2px),
-    radial-gradient(1px 1px at 68% 28%, rgba(255,255,255,0.40), transparent 2px),
-    radial-gradient(1px 1px at 82% 64%, rgba(255,255,255,0.35), transparent 2px),
-    radial-gradient(1px 1px at 44% 72%, rgba(255,255,255,0.30), transparent 2px),
-    radial-gradient(1px 1px at 22% 78%, rgba(255,255,255,0.28), transparent 2px),
-    radial-gradient(1px 1px at 58% 52%, rgba(255,255,255,0.22), transparent 2px);
-  filter: blur(0.2px);
-}
-
-.wrap::after{
-  content: "";
-  position: fixed;
-  inset: -10vh -10vw;
-  pointer-events: none;
-  z-index: -2;
-  opacity: 0.55;
-  background:
-    radial-gradient(closest-side at 50% 36%, rgba(255,255,255,0.05), transparent 62%),
-    radial-gradient(closest-side at 50% 36%, rgba(120,180,255,0.05), transparent 66%),
-    radial-gradient(closest-side at 50% 36%, rgba(170,130,255,0.04), transparent 70%);
-  transform: scale(1.02);
-}
-
-`}</style>
+        @media (max-width: 520px){
+          .wrap{ padding: 22px 14px 72px; }
+          .btn{ width: 100%; }
+        }
+      `}</style>
     </>
   );
 }
-// Φ-GUARD: force SSR to avoid edge/ISR stale HTML on /frey
+
 export async function getServerSideProps(ctx) {
-  const res = ctx && ctx.res;
-  if (res && typeof res.setHeader === "function") {
-    res.setHeader("Cache-Control", "no-store, max-age=0");
-  }
+  try {
+    ctx?.res?.setHeader("Cache-Control", "no-store, max-age=0");
+  } catch (_) {}
   return { props: {} };
 }
-// rebuild trigger 1770405095
+
