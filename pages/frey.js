@@ -65,8 +65,10 @@ export default function FreyPage() {
           </header>
 
           <section className="card askFreyBox" aria-label="Frey query bar">
-            <h2 className="h2">Query Bar (pilot) · PHI surface v0.3</h2>
-            <p className="muted">UI-only v1. Your question stays in your browser — we just open the next route.</p>
+  <h2 className="srOnly">Query Bar (pilot) · PHI surface v0.3</h2>
+
+            
+            
 
             <div className="qRow">
               <input
@@ -95,7 +97,9 @@ export default function FreyPage() {
                 </button>
               ))}
             </div>
-          </section>
+          
+  <div data-frey-mark="__FREY_CARD_FOOTNOTE_V0_1__" className="fineprint">Query Bar (pilot) · PHI surface v0.3 · UI-only v1. Browser-only route.</div>
+</section>
         </main>
       </div>
 
@@ -290,6 +294,11 @@ export default function FreyPage() {
   .chips{ flex-direction: column; }
   .chip{ width: 100%; text-align: left; }
 }
+
+/* frey: a11y + footnote */
+.srOnly{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+.fineprint{margin-top:var(--phi-21);font-size:14px;line-height:1.4;opacity:.75;}
+@media (max-width: 640px){.fineprint{font-size:13px;margin-top:var(--phi-13);}}
 `}</style>
     </>
   );
