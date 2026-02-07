@@ -1,3 +1,5 @@
+import PortalFooterNav from "../components/PortalFooterNav";
+
 // ATOM_BHRIGU_PORTAL_TRUST_INVESTOR_V1
 import Head from "next/head";
 import Link from "next/link";
@@ -59,7 +61,9 @@ export default function Services() {
           </ol>
           <p className="muted">Start with <Link href="/start">/start</Link>. Read constraints in <Link href="/faq">/faq</Link>.</p>
         </section>
-      </main>
+      
+            <PortalFooterNav termsHref="/faq" next={[{href:"/access",label:"/access"},{href:"/dao",label:"/dao"}]} note="Canon: services → access." />
+</main>
 
       <style jsx>{`
         .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 76px; }

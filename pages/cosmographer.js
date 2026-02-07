@@ -1,3 +1,5 @@
+import PortalFooterNav from "../components/PortalFooterNav";
+
 // ATOM_BHRIGU_PORTAL_COSMOGRAPHER_STORY_V1
 import Head from "next/head";
 
@@ -245,17 +247,13 @@ export default function Cosmographer() {
             background: "rgba(255,255,255,0.015)",
           }}
         >
-          <div style={{ fontWeight: 600, marginBottom: 8 }}>Next</div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <a href="/frey">/frey</a>
-            <a href="/services">/services</a>
-            <a href="/start">/start</a>
-          </div>
-        </section>
+          
+      </section>
 
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>{/* ATOM_EN_ONLY_FOOTNOTE_V0_6 */}EN-only. Surface description — no internal mechanics.</div>
         </div>
-      </main>
+            <PortalFooterNav termsHref="/faq" next={[{href:"/frey",label:"/frey"},{href:"/services",label:"/services"},{href:"/start",label:"/start"}]} note="Canon: cosmographer → frey." />
+</main>
     </>
   );
 }

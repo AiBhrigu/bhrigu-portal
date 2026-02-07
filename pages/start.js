@@ -1,3 +1,5 @@
+import PortalFooterNav from "../components/PortalFooterNav";
+
 // ATOM_BHRIGU_PORTAL_TRUST_INVESTOR_V1
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -139,7 +141,9 @@ export default function Start() {
           </div>
           <p className="muted">If you need a quick overview, start with <Link href="/services">/services</Link> and <Link href="/faq">/faq</Link>.</p>
         </section>
-      </main>
+      
+            <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
+</main>
 
       <style jsx>{`
         .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 76px; }

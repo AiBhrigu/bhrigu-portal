@@ -1,4 +1,5 @@
 import styles from "./map.module.css";
+import PortalFooterNav from "../components/PortalFooterNav";
 
 const NODES = [
   { href: "/start", label: "/start", title: "Start", note: "presence anchor" },
@@ -49,6 +50,8 @@ export default function MapPhi() {
         <a href="/start">← /start</a>
         <a href="/cosmography">→ /cosmography</a>
       </nav>
-    </main>
+    
+            <PortalFooterNav termsHref="/faq" next={[{href:"/cosmography",label:"/cosmography"},{href:"/services",label:"/services"}]} note="Canon: map → cosmography." />
+</main>
   );
 }

@@ -1,4 +1,5 @@
 import styles from "./reading.module.css";
+import PortalFooterNav from "../components/PortalFooterNav";
 
 export default function Reading() {
   return (
@@ -44,6 +45,8 @@ export default function Reading() {
         If you need terms: <a href="/faq">/faq</a>.<br />
         Next: <a href="/signal">/signal</a> or <a href="/map">/map</a>.
       </p>
-    </main>
+    
+            <PortalFooterNav termsHref="/faq" next={[{href:"/signal",label:"/signal"},{href:"/map",label:"/map"}]} note="Canon: reading → signal." />
+</main>
   );
 }
