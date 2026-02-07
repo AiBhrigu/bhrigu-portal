@@ -210,16 +210,16 @@ export default function Cosmographer() {
       </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
-          <a href="/start">← /start</a>
+          
         </div>
 
         <section
           style={{
-            margin: "18px 0 22px",
+            margin: "10px 0 18px",
             padding: "14px 14px",
-            border: "1px solid rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 12,
-            background: "rgba(255,255,255,0.03)",
+            background: "rgba(255,255,255,0.015)",
           }}
         >
           <div style={{ fontSize: 12, letterSpacing: 0.6, textTransform: "uppercase", opacity: 0.75, marginBottom: 8 }}>
@@ -243,9 +243,9 @@ export default function Cosmographer() {
           style={{
             marginTop: 26,
             padding: "14px 14px",
-            border: "1px solid rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 12,
-            background: "rgba(255,255,255,0.02)",
+            background: "rgba(255,255,255,0.015)",
           }}
         >
           <div style={{ fontWeight: 600, marginBottom: 8 }}>Next</div>
