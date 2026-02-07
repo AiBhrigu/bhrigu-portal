@@ -65,12 +65,7 @@ export default function FreyPage() {
           </header>
 
           <section className="card askFreyBox" aria-label="Frey query bar">
-  <h2 className="srOnly">Query Bar (pilot) · PHI surface v0.3</h2>
-
-            
-            
-
-            <div className="qRow">
+  <div className="qRow">
               <input
                 ref={inputRef}
                 className="qInput"
@@ -98,8 +93,7 @@ export default function FreyPage() {
               ))}
             </div>
           
-  <div data-frey-mark="__FREY_CARD_FOOTNOTE_V0_1__" className="fineprint">Query Bar (pilot) · PHI surface v0.3 · UI-only v1. Browser-only route.</div>
-</section>
+  </section>
         </main>
       </div>
 
