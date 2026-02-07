@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 
-// ATOM_PORTAL_HEADER_IA_MINIMAL_V0_2
+// ATOM_PORTAL_HEADER_META_DEDUP_V0_1
 export default function BhriguPhiHeader() {
   const router = useRouter();
   const path = (router?.asPath || router?.pathname || "/").split("?")[0];
@@ -8,7 +8,7 @@ export default function BhriguPhiHeader() {
   const isActive = (href) => path === href;
 
   const css = `
-    /* ATOM_PORTAL_HEADER_IA_MINIMAL_V0_2 */
+    /* ATOM_PORTAL_HEADER_META_DEDUP_V0_1 */
     :root{
       --bh-gold: rgba(215,181,90,0.92);
       --bh-w3: rgba(255,255,255,0.58);
@@ -258,23 +258,11 @@ export default function BhriguPhiHeader() {
       .bh-btn{ padding: 0 12px; }
       .bh-mark{ width: 36px; height: 36px; }
     }
-  
-
-.bh-meta-inline{
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      margin-right: 10px;
-      font-size: 12px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.60);
-}
 
 `;
 
   return (
-    <header className="bh-header" role="banner" data-bh="HEADER_IA_MINIMAL_V0_2">
+    <header className="bh-header" role="banner" data-bh="HEADER_META_DEDUP_V0_1">
       <style>{css}</style>
 
       <div className="bh-shell">
@@ -283,7 +271,7 @@ export default function BhriguPhiHeader() {
             <span className="bh-meta-strong">ORION</span> · Φ-COSMOGRAPHY · SOLAR SUITE
           </div>
           <div className="bh-meta-right">
-            <a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
+            <a className="bh-meta-link" href="/start">Investors / Partners</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
             <a className="bh-meta-link" href="/faq">FAQ</a>
           </div>
         </div>
@@ -305,11 +293,7 @@ export default function BhriguPhiHeader() {
           </nav>
 
           <div className="bh-cta" aria-label="Calls to action">
-            <div className="bh-meta-inline" aria-label="Meta">
-              <a className="bh-meta-link" href="/start">Investors / Partners</a>
-              <a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
-              <a className="bh-meta-link" href="/faq">FAQ</a>
-            </div>
+
 
             <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
             <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
