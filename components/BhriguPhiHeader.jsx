@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 
-// ATOM_PORTAL_HEADER_PREMIUM_V0_4
+// ATOM_PORTAL_HEADER_IA_MINIMAL_V0_2
 export default function BhriguPhiHeader() {
   const router = useRouter();
   const path = (router?.asPath || router?.pathname || "/").split("?")[0];
@@ -8,7 +8,7 @@ export default function BhriguPhiHeader() {
   const isActive = (href) => path === href;
 
   const css = `
-    /* ATOM_PORTAL_HEADER_PREMIUM_V0_4 */
+    /* ATOM_PORTAL_HEADER_IA_MINIMAL_V0_2 */
     :root{
       --bh-gold: rgba(215,181,90,0.92);
       --bh-w3: rgba(255,255,255,0.58);
@@ -212,13 +212,11 @@ export default function BhriguPhiHeader() {
 
     .bh-btn-primary{
       color: rgba(8,10,14,0.92) !important;
-      background: linear-gradient(180deg, rgba(229,200,112,0.98), rgba(171,132,36,0.96));
-      border: 1px solid rgba(215,181,90,0.62);
-      box-shadow:
-        0 16px 38px rgba(0,0,0,0.46),
-        0 0 26px rgba(215,181,90,0.18),
-        inset 0 0 0 1px rgba(255,255,255,0.14);
-    }
+      background: linear-gradient(180deg, rgba(215,181,90,0.96), rgba(215,181,90,0.72)) !important;
+      border-color: rgba(215,181,90,0.55) !important;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(215,181,90,0.10) inset;
+      text-shadow: none;
+}
     .bh-btn-primary::before{
       content: "";
       position: absolute;
@@ -230,18 +228,12 @@ export default function BhriguPhiHeader() {
     }
     .bh-btn-primary:hover{
       transform: translateY(-1px);
-      box-shadow:
-        0 18px 44px rgba(0,0,0,0.52),
-        0 0 34px rgba(215,181,90,0.22),
-        inset 0 0 0 1px rgba(255,255,255,0.16);
-    }
+      box-shadow: 0 14px 34px rgba(0,0,0,0.55), 0 0 0 1px rgba(215,181,90,0.14) inset;
+}
     .bh-btn:focus-visible{
       outline: none;
-      box-shadow:
-        0 0 0 4px rgba(215,181,90,0.18),
-        0 0 0 1px rgba(215,181,90,0.42) inset,
-        0 16px 38px rgba(0,0,0,0.46);
-    }
+      box-shadow: 0 0 0 3px rgba(215,181,90,0.22), 0 10px 28px rgba(0,0,0,0.45);
+}
 
     .bh-btn-secondary{
       color: rgba(255,255,255,0.80) !important;
@@ -266,10 +258,23 @@ export default function BhriguPhiHeader() {
       .bh-btn{ padding: 0 12px; }
       .bh-mark{ width: 36px; height: 36px; }
     }
-  `;
+  
+
+.bh-meta-inline{
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-right: 10px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.60);
+}
+
+`;
 
   return (
-    <header className="bh-header" role="banner" data-bh="HEADER_PREMIUM_V0_4">
+    <header className="bh-header" role="banner" data-bh="HEADER_IA_MINIMAL_V0_2">
       <style>{css}</style>
 
       <div className="bh-shell">
@@ -295,16 +300,20 @@ export default function BhriguPhiHeader() {
 
           <nav className="bh-nav" aria-label="Primary">
             <a className={"bh-link" + (isActive("/reading") ? " bh-active" : "")} href="/reading" aria-current={isActive("/reading") ? "page" : undefined}>Reading</a>
-            <a className={"bh-link" + (isActive("/signal") ? " bh-active" : "")} href="/signal" aria-current={isActive("/signal") ? "page" : undefined}>Signal</a>
-            <a className={"bh-link" + (isActive("/map") ? " bh-active" : "")} href="/map" aria-current={isActive("/map") ? "page" : undefined}>Map</a>
             <a className={"bh-link" + (isActive("/services") ? " bh-active" : "")} href="/services" aria-current={isActive("/services") ? "page" : undefined}>Services</a>
             <a className={"bh-link" + (isActive("/cosmography") ? " bh-active" : "")} href="/cosmography" aria-current={isActive("/cosmography") ? "page" : undefined}>Cosmography</a>
           </nav>
 
           <div className="bh-cta" aria-label="Calls to action">
-            <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_3">Open Frey</a>
+            <div className="bh-meta-inline" aria-label="Meta">
+              <a className="bh-meta-link" href="/start">Investors / Partners</a>
+              <a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
+              <a className="bh-meta-link" href="/faq">FAQ</a>
+            </div>
+
+            <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
             <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
-          </div>
+</div>
         </div>
       </div>
     </header>
