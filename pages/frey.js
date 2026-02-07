@@ -1,3 +1,4 @@
+// __FREY_QUERY_FLOW_UI_ONLY_V0_3__
 export const config = { runtime: "experimental-edge" };
 import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
@@ -57,7 +58,15 @@ export default function FreyPage() {
 
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [error, setError] = useState(null);
+  
+  // FREY_QUERY_FLOW_UI_ONLY_V0_3
+  const goFreyQueryV03 = (val) => {
+    const v = (typeof val === "string" ? val : query).trim();
+    if (!v) return;
+    const enc = encodeURIComponent(v);
+    router.push(`/reading?q=${enc}`);
+  };
+const [error, setError] = useState(null);
   const [answer, setAnswer] = useState("");
   // __FREY_RUNQUERY_DEFINED_FIX_V0_1__
   const runQuery = () => {
@@ -148,7 +157,7 @@ EXIT: …`;
   };
   return (
     <>
-      <div aria-hidden="true" className="freyPhiSpaceBg" data-frey-mark="__FREY_PHI_SPACE_BG_V0_3__" />
+      <div aria-hidden="true" className="freyPhiSpaceBg" data-frey-mark="__FREY_PHI_SPACE_BG_V0_3__" data-frey-flow="__FREY_QUERY_FLOW_UI_ONLY_V0_3__" />
       <Head>
         <title>Frey · BHRIGU</title>
         <meta
@@ -183,7 +192,7 @@ EXIT: …`;
               placeholder="Ask Frey… (signals, cycles, assets)"
               aria-label="Frey query"
             />
-            <button className="btn btnCta" onClick={submit} disabled={!query.trim()}>Continue → Reading</button>
+            <button className="btn btnCta" onClick={() => goFreyQueryV03(query)} disabled={!canGo}>Continue → Reading</button>
           </div>
 
           {/* __FREY_DOMAIN_ROW_V0_1__ */}
@@ -230,7 +239,7 @@ EXIT: …`;
               placeholder="Type a question…"
               aria-label="Frey query"
             />
-            <button className="btn btnCta" onClick={submit} disabled={!query.trim()}>Continue → Reading</button>
+            <button className="btn btnCta" onClick={() => goFreyQueryV03(query)} disabled={!canGo}>Continue → Reading</button>
           </div>
 
           
