@@ -224,7 +224,28 @@ export default function FreyPage() {
           .wrap{ padding: 22px 14px 72px; }
           .btn{ width: 100%; }
         }
-      `}</style>
+/* __FREY_AIR_SPACING_V0_1__ */
+.wrap{
+  max-width: 1040px;
+  padding-top: clamp(52px, 7vh, 92px);
+  padding-bottom: clamp(110px, 12vh, 170px);
+}
+.hero{ margin-bottom: clamp(30px, 4vh, 58px); }
+.card{
+  max-width: 920px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: clamp(24px, 3vw, 36px);
+}
+.qRow{ gap: 14px; margin-top: 18px; }
+.qInput{ min-height: 56px; font-size: 18px; }
+.btnCta{ min-height: 56px; padding: 0 22px; }
+.chips{ margin-top: 18px; gap: 12px; }
+@media (max-width: 720px){
+  .qRow{ flex-direction: column; align-items: stretch; }
+  .btnCta{ width: 100%; }
+}
+`}</style>
     </>
   );
 }
