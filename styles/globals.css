@@ -303,3 +303,7 @@ header, .header, .topbar {
   line-height: 1.55;
 }
 /* Φ VISUAL CANON v3r2 · SPACING (END) */
+
+/* FREY reading query input canon (scoped) */
+[data-frey-reading-surface="__FREY_READING_QUERY_CANON_V0_4__"] input{flex:1 !important;width:100% !important;min-height:var(--phi-55) !important;padding:var(--phi-13) var(--phi-21) !important;border-radius:var(--phi-13) !important;border:1px solid rgba(255,255,255,0.28) !important;background:rgba(0,0,0,0.52) !important;color:inherit !important;}
+[data-frey-reading-surface="__FREY_READING_QUERY_CANON_V0_4__"] input::placeholder{opacity:0.72;}

@@ -2,7 +2,7 @@ import styles from "./reading.module.css";
 
 export default function Reading() {
   return (
-    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }}>
+    <main style={{ padding: "4rem", fontFamily: "monospace", lineHeight: "1.6", maxWidth: "820px" }} data-frey-reading-surface="__FREY_READING_QUERY_CANON_V0_4__">
       <nav className={styles.rail} aria-label="Route rail" data-phi-rail>
         <a className={styles.railLink} href="/start">← /start</a>
         <span className={styles.railSep}>/</span>
