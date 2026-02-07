@@ -245,6 +245,51 @@ export default function FreyPage() {
   .qRow{ flex-direction: column; align-items: stretch; }
   .btnCta{ width: 100%; }
 }
+/* __FREY_NOISE_MOBILE_TUNE_V0_1__ */
+.hero{ margin-bottom: var(--phi-55); }
+.askFreyBox{
+  max-width: 860px;
+  margin-left: auto;
+  margin-right: auto;
+  background: rgba(0,0,0,0.44) !important;
+  border-color: rgba(255,255,255,0.14) !important;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.askFreyBox h2{
+  margin: 0 0 var(--phi-13) 0;
+  padding: 0 0 var(--phi-8) 0;
+  border-bottom: 0 !important;
+}
+.askFreyBox .muted{
+  margin-top: 0;
+  opacity: 0.72;
+  max-width: 62ch;
+}
+.qRow{
+  gap: var(--phi-13);
+  margin-top: var(--phi-13);
+  margin-bottom: var(--phi-21);
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.qInput{
+  background: rgba(0,0,0,0.38) !important;
+  border-color: rgba(255,255,255,0.22) !important;
+}
+.btnCta{ min-width: 240px; }
+.chips{ margin-top: var(--phi-8); gap: var(--phi-13); }
+
+@media (max-width: 640px){
+  .wrap{ padding-left: var(--phi-21); padding-right: var(--phi-21); }
+  .askFreyBox{ padding: var(--phi-21); }
+  .qRow{ flex-direction: column; max-width: 100%; }
+  .btnCta{ width: 100%; min-height: var(--phi-55); }
+  .qInput{ width: 100%; }
+  .chips{ flex-direction: column; }
+  .chip{ width: 100%; text-align: left; }
+}
 `}</style>
     </>
   );
