@@ -76,7 +76,7 @@ export default function Start() {
           </div>
 
           <form onSubmit={onFreySubmit} style={{ marginTop: "var(--phi-13)", display: "flex", gap: "var(--phi-13)", alignItems: "stretch" }}>
-            <input value={freyQ} onChange={(e) => setFreyQ(e.target.value)} placeholder="Type a query…" style={{ flex: 1, width: "100%", minHeight: "var(--phi-55)", padding: "var(--phi-13) var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.28)", background: "rgba(0,0,0,0.52)", color: "inherit" }} />
+            <input value={freyQ} onChange={(e) => setFreyQ(e.target.value)} placeholder="Ask Frey… (signals, cycles, assets)" style={{ flex: 1, width: "100%", minHeight: "var(--phi-55)", padding: "var(--phi-13) var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.28)", background: "rgba(0,0,0,0.52)", color: "inherit" }} />
             <button type="submit" style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(215,181,90,0.36)", background: "rgba(0,0,0,0.12)", color: "inherit" }}>Queue</button>
             <button type="button" onClick={() => router.push("/frey")} style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.22)", background: "rgba(0,0,0,0.06)", color: "inherit" }}>Open</button>
           </form>
@@ -169,7 +169,19 @@ export default function Start() {
           .grid { grid-template-columns: 1fr; }
           .row { grid-template-columns: 1fr; }
         }
-      `}</style>
+
+/* __FREY_HOME_QUERY_INPUT_CANON_V0_2__ */
+.qInput{
+  flex: 1;
+  width: 100%;
+  min-height: var(--phi-55);
+  padding: var(--phi-13) var(--phi-21);
+  border-radius: var(--phi-13);
+  border: 1px solid rgba(255,255,255,0.28);
+  background: rgba(0,0,0,0.52);
+  color: inherit;
+}
+`}</style>
     </>
   );
 }
