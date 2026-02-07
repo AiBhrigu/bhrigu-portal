@@ -25,7 +25,13 @@ probe_one(){
   grep -Ei '^(cache-control|age|x-vercel-cache|x-matched-path|x-vercel-id|strict-transport-security):' "$hdr" || true
 
   echo "MARKERS:"
-  for m in "FREY_SURFACE_CANON_V0_3" "PHI_SURFACE_V0_3" "PHI surface v0.3"; do
+# PHI_LUPA_FREY_MARKERS_CANON_V0_2
+BG_MARK="__FREY_PHI_SPACE_BG_V0_3__"
+FLOW_MARK="__FREY_QUERY_FLOW_UI_ONLY_V0_4__"
+# Canon checks (HTML is fetched with --compressed in prior canon patch)
+if grep -q "$BG_MARK" "$HTML"; then echo "  OK: BG_MARK $BG_MARK"; else echo "  MISS: BG_MARK $BG_MARK"; FAIL=1; fi
+if grep -q "$FLOW_MARK" "$HTML"; then echo "  OK: FLOW_MARK $FLOW_MARK"; else echo "  MISS: FLOW_MARK $FLOW_MARK"; FAIL=1; fi
+  for m in "__FREY_PHI_SPACE_BG_V0_3__" "__FREY_QUERY_FLOW_UI_ONLY_V0_4__" "PHI surface v0.3"; do
     if grep -q "$m" "$html"; then echo "  OK: $m"; else echo "  MISS: $m"; fi
   done
   echo
