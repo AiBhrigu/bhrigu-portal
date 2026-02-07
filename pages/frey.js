@@ -453,6 +453,29 @@ body { background:#000; background-color:#000; }
     linear-gradient(180deg, rgba(0,0,0,0.85), rgba(0,0,0,1));
 }
 #__next { min-height:100vh; position:relative; z-index:1; }
+
+/* FREY_LAYOUT_FIT_V0_1 */
+main.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 72px; }
+main.wrap header.hero { padding: 18px 0 10px; }
+main.wrap header.hero .subtitle { max-width: 70ch; }
+main.wrap .askFreyBox { margin-top: 18px; }
+main.wrap .qRow { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+main.wrap .qInput { flex: 1 1 520px; min-width: 240px; }
+main.wrap .btnCta { white-space: nowrap; }
+main.wrap .domainsWrap { display:flex; flex-wrap:wrap; row-gap:6px; }
+main.wrap .chips { display:flex; flex-wrap:wrap; gap:10px; }
+main.wrap .chip { max-width: 100%; white-space: normal; text-align:left; }
+@media (max-width: 720px){
+  main.wrap { padding: 18px 12px 56px; }
+  main.wrap header.hero { padding: 14px 0 8px; }
+  main.wrap header.hero .subtitle { font-size: 14px; }
+  main.wrap .askFreyBox h2 { font-size: 20px; }
+  main.wrap .qRow { flex-direction: column; align-items: stretch; }
+  main.wrap .btnCta { width: 100%; }
+}
+@media (max-width: 420px){
+  main.wrap .askFreyBox h2 { font-size: 18px; }
+}
 `}</style>
 <style jsx>{`
           /*__FREY_ASKFREY_PREMIUM_V1_0_3__*/
