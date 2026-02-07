@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# PHI_LUPA_FREY_COMPRESSED_CANON_V0_1 :: always use curl --compressed for HTML probes
 set -euo pipefail
 
 # phi_lupa_frey v0.1 — prod probe for /frey surface
@@ -17,7 +18,7 @@ probe_one(){
   local html="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').html"
   local hdr="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').hdr"
 
-  curl -fsSL -D "$hdr" -o "$html" "$url"
+  curl -fsSL --compressed -D "$hdr" -o "$html" "$url"
 
   echo "URL: $url"
   echo "HEADERS:"
