@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 
-// ATOM_PORTAL_HEADER_PREMIUM_V0_2
+// ATOM_PORTAL_HEADER_PREMIUM_V0_4
 export default function BhriguPhiHeader() {
   const router = useRouter();
   const path = (router?.asPath || router?.pathname || "/").split("?")[0];
@@ -8,17 +8,10 @@ export default function BhriguPhiHeader() {
   const isActive = (href) => path === href;
 
   const css = `
-    /* ATOM_PORTAL_HEADER_PREMIUM_V0_2 */
+    /* ATOM_PORTAL_HEADER_PREMIUM_V0_4 */
     :root{
       --bh-gold: rgba(215,181,90,0.92);
-      --bh-gold-2: rgba(215,181,90,0.58);
-      --bh-ink: rgba(8,10,14,0.88);
-      --bh-w: rgba(255,255,255,0.90);
-      --bh-w2: rgba(255,255,255,0.74);
       --bh-w3: rgba(255,255,255,0.58);
-      --bh-line: rgba(255,255,255,0.09);
-      --bh-line2: rgba(215,181,90,0.18);
-      --bh-r: 14px;
     }
 
     .bh-header{
@@ -73,14 +66,14 @@ export default function BhriguPhiHeader() {
     }
 
     .bh-meta-link{
-      color: rgba(255,255,255,0.60);
-      text-decoration: none;
+      color: rgba(255,255,255,0.60) !important;
+      text-decoration: none !important;
       border-bottom: 1px solid rgba(255,255,255,0);
       padding-bottom: 2px;
       transition: color 160ms ease, border-color 160ms ease;
     }
     .bh-meta-link:hover{
-      color: rgba(255,255,255,0.82);
+      color: rgba(255,255,255,0.86) !important;
       border-color: rgba(215,181,90,0.26);
     }
 
@@ -91,32 +84,67 @@ export default function BhriguPhiHeader() {
       gap: 16px;
     }
 
-    .bh-brand{
+    /* Brand cluster: Φ anchor + BHRIGU wordmark */
+    .bh-brandwrap{
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      text-decoration: none;
       white-space: nowrap;
-      padding: 6px 10px;
-      border-radius: 12px;
-      transition: background 160ms ease, box-shadow 160ms ease;
-    }
-    .bh-brand:hover{
-      background: rgba(255,255,255,0.03);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
     }
 
+    .bh-mark{
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none !important;
+      color: rgba(0,0,0,0.90) !important;
+      background: linear-gradient(180deg, rgba(229,200,112,0.96), rgba(171,132,36,0.96));
+      border: 1px solid rgba(215,181,90,0.58);
+      box-shadow:
+        0 14px 34px rgba(0,0,0,0.46),
+        0 0 24px rgba(215,181,90,0.16),
+        inset 0 0 0 1px rgba(255,255,255,0.14);
+      transition: transform 120ms ease, box-shadow 160ms ease;
+    }
+    .bh-mark:hover{
+      transform: translateY(-1px);
+      box-shadow:
+        0 18px 42px rgba(0,0,0,0.52),
+        0 0 30px rgba(215,181,90,0.22),
+        inset 0 0 0 1px rgba(255,255,255,0.16);
+    }
+    .bh-mark:focus-visible{
+      outline: none;
+      box-shadow:
+        0 0 0 4px rgba(215,181,90,0.18),
+        0 0 0 1px rgba(215,181,90,0.42) inset,
+        0 16px 38px rgba(0,0,0,0.46);
+    }
     .bh-phi{
       font-size: 18px;
       line-height: 1;
-      color: var(--bh-gold);
-      opacity: 0.95;
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
 
-    .bh-name{
-      font-weight: 700;
+    .bh-word{
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none !important;
+      padding: 6px 10px;
+      border-radius: 12px;
+      transition: background 160ms ease, box-shadow 160ms ease;
+      color: rgba(255,255,255,0.88) !important;
+      font-weight: 760;
       letter-spacing: 0.10em;
-      color: rgba(255,255,255,0.88);
+    }
+    .bh-word:hover{
+      background: rgba(255,255,255,0.03);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
     }
 
     .bh-nav{
@@ -135,20 +163,20 @@ export default function BhriguPhiHeader() {
       justify-content: center;
       padding: 8px 12px;
       border-radius: 999px;
-      text-decoration: none;
-      color: rgba(255,255,255,0.74);
+      text-decoration: none !important;
+      color: rgba(255,255,255,0.74) !important;
       border: 1px solid rgba(255,255,255,0);
       transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
       white-space: nowrap;
     }
     .bh-link:hover{
-      color: rgba(255,255,255,0.88);
+      color: rgba(255,255,255,0.90) !important;
       border-color: rgba(255,255,255,0.10);
       background: rgba(255,255,255,0.02);
     }
 
     .bh-active{
-      color: rgba(255,255,255,0.92);
+      color: rgba(255,255,255,0.94) !important;
       border-color: rgba(215,181,90,0.34);
       background:
         radial-gradient(140px 48px at 20% 10%, rgba(215,181,90,0.10), rgba(0,0,0,0) 60%),
@@ -166,38 +194,63 @@ export default function BhriguPhiHeader() {
     }
 
     .bh-btn{
+      position: relative;
+      overflow: hidden;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       min-height: 38px;
       padding: 0 14px;
       border-radius: 999px;
-      text-decoration: none;
-      font-weight: 650;
+      text-decoration: none !important;
+      font-weight: 720;
       letter-spacing: 0.04em;
-      transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease;
+      transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease, color 160ms ease, opacity 160ms ease;
       transform: translateZ(0);
+      opacity: 1 !important;
     }
 
     .bh-btn-primary{
-      color: rgba(0,0,0,0.88);
-      background: linear-gradient(180deg, rgba(215,181,90,0.98), rgba(215,181,90,0.78));
-      border: 1px solid rgba(215,181,90,0.44);
-      box-shadow: 0 12px 28px rgba(0,0,0,0.38), inset 0 0 0 1px rgba(255,255,255,0.10);
+      color: rgba(8,10,14,0.92) !important;
+      background: linear-gradient(180deg, rgba(229,200,112,0.98), rgba(171,132,36,0.96));
+      border: 1px solid rgba(215,181,90,0.62);
+      box-shadow:
+        0 16px 38px rgba(0,0,0,0.46),
+        0 0 26px rgba(215,181,90,0.18),
+        inset 0 0 0 1px rgba(255,255,255,0.14);
+    }
+    .bh-btn-primary::before{
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background: radial-gradient(180px 60px at 20% 18%, rgba(255,255,255,0.26), rgba(0,0,0,0) 60%);
+      opacity: 0.65;
+      pointer-events: none;
+      mix-blend-mode: screen;
     }
     .bh-btn-primary:hover{
-      box-shadow: 0 14px 34px rgba(0,0,0,0.44), inset 0 0 0 1px rgba(255,255,255,0.14);
       transform: translateY(-1px);
+      box-shadow:
+        0 18px 44px rgba(0,0,0,0.52),
+        0 0 34px rgba(215,181,90,0.22),
+        inset 0 0 0 1px rgba(255,255,255,0.16);
+    }
+    .bh-btn:focus-visible{
+      outline: none;
+      box-shadow:
+        0 0 0 4px rgba(215,181,90,0.18),
+        0 0 0 1px rgba(215,181,90,0.42) inset,
+        0 16px 38px rgba(0,0,0,0.46);
     }
 
     .bh-btn-secondary{
-      color: rgba(255,255,255,0.78);
+      color: rgba(255,255,255,0.80) !important;
       background: rgba(255,255,255,0.02);
       border: 1px solid rgba(255,255,255,0.14);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.10);
     }
     .bh-btn-secondary:hover{
-      color: rgba(255,255,255,0.88);
+      color: rgba(255,255,255,0.92) !important;
       border-color: rgba(215,181,90,0.22);
       background: rgba(255,255,255,0.03);
     }
@@ -211,11 +264,12 @@ export default function BhriguPhiHeader() {
       .bh-shell{ padding: 10px 14px 12px; }
       .bh-link{ padding: 7px 10px; }
       .bh-btn{ padding: 0 12px; }
+      .bh-mark{ width: 36px; height: 36px; }
     }
   `;
 
   return (
-    <header className="bh-header" role="banner" data-bh="HEADER_PREMIUM_V0_2">
+    <header className="bh-header" role="banner" data-bh="HEADER_PREMIUM_V0_4">
       <style>{css}</style>
 
       <div className="bh-shell">
@@ -230,10 +284,14 @@ export default function BhriguPhiHeader() {
         </div>
 
         <div className="bh-row">
-          <a className="bh-brand" href="/" aria-label="BHRIGU Home">
-            <span className="bh-phi" aria-hidden="true">Φ</span>
-            <span className="bh-name">BHRIGU</span>
-          </a>
+          <div className="bh-brandwrap" aria-label="Brand">
+            <a className="bh-mark" href="/frey" aria-label="Phi anchor" data-bh="PHI_ANCHOR_V0_1">
+              <span className="bh-phi" aria-hidden="true">Φ</span>
+            </a>
+            <a className="bh-word" href="/" aria-label="BHRIGU Home">
+              BHRIGU
+            </a>
+          </div>
 
           <nav className="bh-nav" aria-label="Primary">
             <a className={"bh-link" + (isActive("/reading") ? " bh-active" : "")} href="/reading" aria-current={isActive("/reading") ? "page" : undefined}>Reading</a>
@@ -244,7 +302,7 @@ export default function BhriguPhiHeader() {
           </nav>
 
           <div className="bh-cta" aria-label="Calls to action">
-            <a className="bh-btn bh-btn-primary" href="/frey">Open Frey</a>
+            <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_3">Open Frey</a>
             <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
           </div>
         </div>
