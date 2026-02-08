@@ -134,7 +134,6 @@ export default function Start() {
                   {/*  */}
       
 
-<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
       
 
