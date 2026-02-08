@@ -142,7 +142,10 @@ export default function Start() {
           <p className="muted">If you need a quick overview, start with <Link href="/services">/services</Link> and <Link href="/faq">/faq</Link>.</p>
         </section>
       
-            <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
+                  {/* __IA_START_TO_INVESTORS_V0_1__ */}
+      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+
+<PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
       <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
 
 </main>

@@ -206,6 +206,9 @@ export default function Investors() {
           .grid2 { grid-template-columns: 1fr; }
         }
       `}</style>
-    </main>
+          {/* __IA_INVESTORS_TO_COSMO_V0_1__ */}
+      <p className="muted">Deep context: <Link href="/cosmographer">/cosmographer</Link>.</p>
+
+</main>
   );
 }
