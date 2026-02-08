@@ -135,10 +135,11 @@ export default function Start() {
       
 
 <p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
-<div style={{ display: "none" }} aria-hidden="true">__IA_START_TO_INVESTORS_V0_2__</div>
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
       
 
+
+<p className="muted">For investors / partners: <Link href="/investors">/investors</Link>. <span style={{display:"none"}}>__IA_START_TO_INVESTORS_V0_2__</span></p>
 </main>
 
       <style jsx>{`

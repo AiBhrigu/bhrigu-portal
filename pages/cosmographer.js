@@ -256,11 +256,11 @@ export default function Cosmographer() {
                   {/*  */}
       
 
-<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
-<div style={{ display: "none" }} aria-hidden="true">__IA_COSMO_TO_INVESTORS_V0_2__</div>
 <PortalFooterNav termsHref="/faq" next={[{href:"/frey",label:"/frey"},{href:"/services",label:"/services"},{href:"/start",label:"/start"}]} note="Canon: cosmographer → frey." />
       
 
+
+<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>. <span style={{display:"none"}}>__IA_COSMO_TO_INVESTORS_V0_2__</span></p>
 </main>
     </>
   );

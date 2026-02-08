@@ -207,9 +207,9 @@ export default function Investors() {
         }
       `}</style>
           {/*  */}
-      <p className="muted">Deep context: <Link href="/cosmographer">/cosmographer</Link>.</p>
 
-<div style={{ display: "none" }} aria-hidden="true">__IA_INVESTORS_TO_COSMO_V0_2__</div>
+
+<p className="muted">Deep context: <Link href="/cosmographer">/cosmographer</Link>. <span style={{display:"none"}}>__IA_INVESTORS_TO_COSMO_V0_2__</span></p>
 </main>
   );
 }
