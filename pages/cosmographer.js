@@ -253,11 +253,13 @@ export default function Cosmographer() {
 
           <div style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>{/* ATOM_EN_ONLY_FOOTNOTE_V0_6 */}EN-only. Surface description — no internal mechanics.</div>
         </div>
-                  {/* __IA_COSMO_TO_INVESTORS_V0_1__ */}
-      <p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
+                  {/*  */}
+      
 
+<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
+<div style={{ display: "none" }} aria-hidden="true">__IA_COSMO_TO_INVESTORS_V0_2__</div>
 <PortalFooterNav termsHref="/faq" next={[{href:"/frey",label:"/frey"},{href:"/services",label:"/services"},{href:"/start",label:"/start"}]} note="Canon: cosmographer → frey." />
-      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+      
 
 </main>
     </>

@@ -123,30 +123,21 @@ export default function Start() {
           </div>
         </section>
 
-        <section className="support">
-          <h2>Why support this (grant / investor)</h2>
-          <div className="row">
-            <div className="chip">
-              <div className="label">What exists</div>
-              <div className="value">Stable portal UX, strict boundaries, and a clear surface for users.</div>
-            </div>
-            <div className="chip">
-              <div className="label">What funding unlocks</div>
-              <div className="value">More verified surfaces, structured onboarding, and safer distribution of outputs.</div>
-            </div>
-            <div className="chip">
-              <div className="label">How we stay honest</div>
-              <div className="value">No hype. Only what can be explained on the surface and tested repeatedly.</div>
-            </div>
-          </div>
-          <p className="muted">If you need a quick overview, start with <Link href="/services">/services</Link> and <Link href="/faq">/faq</Link>.</p>
-        </section>
-      
-                  {/* __IA_START_TO_INVESTORS_V0_1__ */}
-      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+        
+<section className="trust">
+  <h2>Investors / partners</h2>
+  <p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
+  <div style={{ display: "none" }} aria-hidden="true"></div>
+</section>
 
+      
+                  {/*  */}
+      
+
+<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
+<div style={{ display: "none" }} aria-hidden="true">__IA_START_TO_INVESTORS_V0_2__</div>
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
-      <p className="muted">For investors / partners: <Link href="/investors">/investors</Link>.</p>
+      
 
 </main>
 
