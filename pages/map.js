@@ -52,6 +52,10 @@ export default function MapPhi() {
       </nav>
     
             <PortalFooterNav termsHref="/faq" next={[{href:"/cosmography",label:"/cosmography"},{href:"/services",label:"/services"}]} note="Canon: map → cosmography." />
-</main>
+
+        <p className="muted">Archive: <a href="/archive">/archive</a>.</p>
+      
+        <p className="muted">You are here: <a href="/map">/map</a>.</p>
+      </main>
   );
 }

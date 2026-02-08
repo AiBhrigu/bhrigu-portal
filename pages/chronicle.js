@@ -30,6 +30,8 @@ export default function Chronicle() {
           <Link href="/map">Map</Link> · <Link href="/services">Services</Link> · <Link href="/access">Access</Link>
         </p>
       </section>
-    </main>
+    
+        <p className="muted">Archive: <a href="/archive">/archive</a>.</p>
+      </main>
   );
 }

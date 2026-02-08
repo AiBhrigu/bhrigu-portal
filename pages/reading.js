@@ -47,6 +47,8 @@ export default function Reading() {
       </p>
     
             <PortalFooterNav termsHref="/faq" next={[{href:"/signal",label:"/signal"},{href:"/map",label:"/map"}]} note="Canon: reading → signal." />
-</main>
+
+        <p className="muted">Archive: <a href="/archive">/archive</a>.</p>
+      </main>
   );
 }
