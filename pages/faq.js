@@ -111,42 +111,12 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
           <pre className="pre">(Entity A) × (Entity B) × (Time context) → structured interaction map</pre>
 
             <p className="muted">Examples:</p>
-            <pre className="pre">human ↔ human → resonance / dynamics / tendencies
-human ↔ project → phases / entry-exit windows / friction points
-human ↔ asset → timing / risk-support tone / cycles
-author ↔ style → amplification vs dilution / peaks
-user ↔ scenario → relevance / maturity / decision nodes</pre>
+            <pre className="pre">{`human ↔ human → explain "F-protocol" in 3 steps
+owner ↔ style → rewrite this page in minimal English
+system ↔ probe → check the portal structure map
+system ↔ gate → disable /api in production`}</pre>
 
-          <div className="grid">
-            <div className="chip">
-              <h3>Human ↔ Human</h3>
-              <p>resonant compatibility, relationship dynamics, tendencies across periods</p>
-            </div>
-            <div className="chip">
-              <h3>Human ↔ Project</h3>
-              <p>role fit, growth phases, entry/exit windows, stress/support periods</p>
-            </div>
-            <div className="chip">
-              <h3>Human ↔ Asset</h3>
-              <p>timing windows, interaction tone, risk/support phases</p>
-            </div>
-            <div className="chip">
-              <h3>Author ↔ Style</h3>
-              <p>voice amplification vs dilution, expressive peaks, friction zones</p>
-            </div>
-            <div className="chip">
-              <h3>User ↔ Scenario</h3>
-              <p>scenario maturity, relevance timing, decision points</p>
-            </div>
-            <div className="chip">
-              <h3>Team ↔ Team</h3>
-              <p>group resonance, coordination stability, phase shifts (extended mode)</p>
-            </div>
-          </div>
-        </section>
-
-        <section className="card">
-          <h2>Is this “predictions”?</h2>
+<h2>Is this “predictions”?</h2>
           <p>
             Frey works with tendencies, windows, phases and transitions. A forecast is always interpretation —
             Frey provides structure and time-coordinates, not absolute verdicts.
