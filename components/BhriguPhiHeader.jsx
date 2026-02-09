@@ -269,7 +269,7 @@ export default function BhriguPhiHeader() {
         <div className="bh-meta" aria-label="Header meta">
           <div className="bh-meta-left" aria-hidden="true"></div>
 <div className="bh-meta-right">
-            <a className="bh-meta-link" href="/investors">Investors / Partners</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
+            <a className="bh-meta-link" href="/investors">Investors</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
             <a className="bh-meta-link" href="/faq">FAQ</a>
           </div>
         </div>
@@ -294,7 +294,7 @@ export default function BhriguPhiHeader() {
 
 
             <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
-              <a className="navInvestors" href="/investors">Investors / Partners</a>
+              <a className="navInvestors" href="/investors">Investors</a>
             <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
 </div>
         </div>
