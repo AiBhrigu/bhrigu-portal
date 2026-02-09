@@ -269,7 +269,7 @@ export default function BhriguPhiHeader() {
         <div className="bh-meta" aria-label="Header meta">
           <div className="bh-meta-left" aria-hidden="true"></div>
 <div className="bh-meta-right">
-            <a className="bh-meta-link" href="/start">Investors / Partners</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
+            <a className="bh-meta-link" href="/investors">Investors / Partners</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
             <a className="bh-meta-link" href="/faq">FAQ</a>
           </div>
         </div>
