@@ -333,6 +333,22 @@ export default function BhriguPhiHeader() {
   .bh-brandwrap{padding:8px 12px;}
   .bh-word{letter-spacing:0.22em;}
 }
+
+/* HDR_BRAND_PREMIUM_V0_2 */
+/* Single brand plaque (avoid double ring) + quiet ORION */
+.bh-brandwrap{background:transparent!important;border:none!important;box-shadow:none!important;padding:0!important;}
+.bh-word{position:relative;display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;}
+.bh-word:before{content:;position:absolute;inset:0;border-radius:999px;border:1px solid rgba(220,180,80,0.14);
+  background:radial-gradient(140px 48px at 18% 55%, rgba(220,180,80,0.10), transparent 62%);}
+.bh-word > *{position:relative;z-index:1;}
+.bh-word{letter-spacing:0.28em;font-weight:600;}
+
+.bh-btn-secondary{background:rgba(0,0,0,0.14);border-color:rgba(220,180,80,0.18);color:rgba(220,180,80,0.78);box-shadow:none;}
+.bh-btn-secondary:hover{background:rgba(0,0,0,0.26);border-color:rgba(220,180,80,0.30);color:rgba(220,180,80,0.92);}
+
+@media (max-width:520px){
+  .bh-word{padding:8px 12px;letter-spacing:0.22em;}
+}
 `;
 
   return (
