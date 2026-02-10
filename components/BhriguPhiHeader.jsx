@@ -303,6 +303,20 @@ export default function BhriguPhiHeader() {
 /* Meta row slightly lighter */
 .bh-meta { opacity: 0.80; }
 /* === /HDR_HIERARCHY_GRID_V0_4 === */
+
+/* HDR_MOBILE_PASS_V0_1 */
+/* Mobile tightening: keep hierarchy, avoid CTA overflow */
+ (max-width: 520px) {
+  .bh-word { letter-spacing: 0.18em; font-size: 16px; }
+  .bh-btn { padding: 8px 12px; font-size: 12px; border-radius: 999px; }
+  .bh-btn.bh-btn-primary { padding: 9px 14px; font-size: 12px; }
+}
+ (max-width: 420px) {
+  .bh-header { padding-left: 14px; padding-right: 14px; }
+  .bh-nav { gap: 14px; }
+  .bh-btn { padding: 7px 10px; font-size: 12px; }
+  .bh-btn.bh-btn-primary { padding: 8px 12px; }
+}
 `;
 
   return (
