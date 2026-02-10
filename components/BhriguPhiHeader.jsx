@@ -92,7 +92,7 @@ export default function BhriguPhiHeader() {
       white-space: nowrap;
     }
 
-    .bh-mark{
+    .{
       width: 38px;
       height: 38px;
       border-radius: 999px;
@@ -109,21 +109,21 @@ export default function BhriguPhiHeader() {
         inset 0 0 0 1px rgba(255,255,255,0.14);
       transition: transform 120ms ease, box-shadow 160ms ease;
     }
-    .bh-mark:hover{
+    .:hover{
       transform: translateY(-1px);
       box-shadow:
         0 18px 42px rgba(0,0,0,0.52),
         0 0 30px rgba(215,181,90,0.22),
         inset 0 0 0 1px rgba(255,255,255,0.16);
     }
-    .bh-mark:focus-visible{
+    .:focus-visible{
       outline: none;
       box-shadow:
         0 0 0 4px rgba(215,181,90,0.18),
         0 0 0 1px rgba(215,181,90,0.42) inset,
         0 16px 38px rgba(0,0,0,0.46);
     }
-    .bh-phi{
+    .{
       font-size: 18px;
       line-height: 1;
       font-weight: 800;
@@ -256,7 +256,7 @@ export default function BhriguPhiHeader() {
       .bh-shell{ padding: 10px 14px 12px; }
       .bh-link{ padding: 7px 10px; }
       .bh-btn{ padding: 0 12px; }
-      .bh-mark{ width: 36px; height: 36px; }
+      .{ width: 36px; height: 36px; }
     }
 
 `;
@@ -276,15 +276,13 @@ export default function BhriguPhiHeader() {
 
         <div className="bh-row">
           <div className="bh-brandwrap" aria-label="Brand">
-            <a className="bh-mark" href="/frey" aria-label="Phi anchor" data-bh="PHI_ANCHOR_V0_1">
-              <span className="bh-phi" aria-hidden="true">Φ</span>
-            </a>
-            <a className="bh-word" href="/" aria-label="BHRIGU Home">
+<a className="bh-word" href="/" aria-label="BHRIGU Home">
               BHRIGU
             </a>
           </div>
 
           <nav className="bh-nav" aria-label="Primary">
+            <a className="bh-link" href="/start">Start</a>
             <a className={"bh-link" + (isActive("/reading") ? " bh-active" : "")} href="/reading" aria-current={isActive("/reading") ? "page" : undefined}>Reading</a>
             <a className={"bh-link" + (isActive("/services") ? " bh-active" : "")} href="/services" aria-current={isActive("/services") ? "page" : undefined}>Services</a>
             <a className={"bh-link" + (isActive("/cosmography") ? " bh-active" : "")} href="/cosmography" aria-current={isActive("/cosmography") ? "page" : undefined}>Cosmography</a>
@@ -294,8 +292,7 @@ export default function BhriguPhiHeader() {
 
 
             <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
-              <a className="navInvestors" href="/investors">Investors</a>
-            <a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
+<a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
 </div>
         </div>
       </div>
