@@ -304,6 +304,65 @@ export default function BhriguPhiHeader() {
 .bh-meta { opacity: 0.80; }
 /* === /HDR_HIERARCHY_GRID_V0_4 === */
 
+
+/* HDR_BRAND_PLAQUE_PREMIUM_V0_5 */
+/* Premium plaque: emblem typography + material feel; keep mobile rules last */
+.bh-brandwrap{
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.035), rgba(0,0,0,0.30));
+  border: 1px solid rgba(220,180,80,0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 -1px 0 rgba(0,0,0,0.35),
+    0 10px 30px rgba(0,0,0,0.35);
+}
+.bh-brandwrap:after{
+  content:"";
+  position:absolute;
+  inset: 1px;
+  border-radius: 999px;
+  background: radial-gradient(120px 46px at 22% 52%, rgba(220,180,80,0.14), transparent 64%);
+  opacity: 0.55;
+  pointer-events:none;
+}
+.bh-brandwrap *{ position:relative; z-index:1; }
+
+.bh-word{
+  letter-spacing: 0.22em;
+  font-weight: 650;
+  font-size: 15px;
+  color: rgba(220,180,80,0.92);
+  text-shadow: 0 0 10px rgba(220,180,80,0.14);
+}
+.bh-word:hover{ color: rgba(240,210,120,0.96); }
+
+/* ORION quiet CTA: closer to nav than button */
+.bh-btn.bh-btn-secondary{
+  background: transparent;
+  border-color: rgba(220,180,80,0.12);
+  color: rgba(220,180,80,0.72);
+  box-shadow: none;
+}
+.bh-btn.bh-btn-secondary:hover{
+  background: rgba(0,0,0,0.18);
+  border-color: rgba(220,180,80,0.22);
+  color: rgba(220,180,80,0.86);
+}
+
+/* Responsive alignment for plaque (keeps hierarchy) */
+@media (max-width: 520px) {
+  .bh-brandwrap{ padding: 9px 13px; }
+  .bh-word{ letter-spacing: 0.18em; font-size: 15px; }
+}
+@media (max-width: 420px) {
+  .bh-brandwrap{ padding: 8px 12px; }
+  .bh-word{ letter-spacing: 0.16em; font-size: 14px; }
+}
+
 /* HDR_MOBILE_PASS_V0_1 */
 /* Mobile tightening: keep hierarchy, avoid CTA overflow */
  (max-width: 520px) {
@@ -350,44 +409,7 @@ export default function BhriguPhiHeader() {
   .bh-word{padding:8px 12px;letter-spacing:0.22em;}
 }
 
-/* HDR_BRAND_PLAQUE_PREMIUM_V0_4 */
-/* Premium brand plaque: single-surface + jeweler spacing */
-/* Force single surface: wrapper must not draw its own plaque */
-.bh-brandwrap{ background: transparent; border: 0; box-shadow:none; }
-.bh-brandwrap::before, .bh-brandwrap::after{ content: none; }
 
-.bh-word{
-  display:inline-flex;
-  align-items:center;
-  padding:10px 14px;
-  border-radius:999px;
-  border:1px solid rgba(220,180,80,0.18);
-  background:
-    radial-gradient(120px 44px at 18% 55%, rgba(220,180,80,0.14), transparent 62%),
-    linear-gradient(180deg, rgba(255,240,200,0.05), rgba(0,0,0,0.18));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 -1px 0 rgba(0,0,0,0.55),
-    0 10px 22px rgba(0,0,0,0.35);
-  font-weight:600;
-  letter-spacing:0.26em;
-  text-shadow:
-    0 1px 0 rgba(0,0,0,0.55),
-    0 0 10px rgba(220,180,80,0.12);
-}
-
-/* ORION as quiet CTA (closer to nav-link) */
-.bh-btn-secondary{
-  background: transparent;
-  box-shadow: none;
-  border-color: rgba(220,180,80,0.14);
-  color: rgba(220,180,80,0.70);
-  filter: none;
-}
-.bh-btn-secondary:hover{
-  background: rgba(0,0,0,0.18);
-  border-color: rgba(220,180,80,0.22);
-}
 `;
 
   return (
@@ -405,7 +427,7 @@ export default function BhriguPhiHeader() {
 
         <div className="bh-row">
           <div className="bh-brandwrap" aria-label="Brand">
-<a className="bh-word" href="/" aria-label="BHRIGU Home" data-hdr="HDR_BRAND_PLAQUE_PREMIUM_V0_4">
+<a className="bh-word" href="/" aria-label="BHRIGU Home" data-hdr="HDR_BRAND_PLAQUE_PREMIUM_V0_5">
               BHRIGU
             </a>
           </div>
