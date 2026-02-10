@@ -349,6 +349,45 @@ export default function BhriguPhiHeader() {
 @media (max-width:520px){
   .bh-word{padding:8px 12px;letter-spacing:0.22em;}
 }
+
+/* HDR_BRAND_PLAQUE_PREMIUM_V0_4 */
+/* Premium brand plaque: single-surface + jeweler spacing */
+/* Force single surface: wrapper must not draw its own plaque */
+.bh-brandwrap{ background: transparent; border: 0; box-shadow:none; }
+.bh-brandwrap::before, .bh-brandwrap::after{ content: none; }
+
+.bh-word{
+  display:inline-flex;
+  align-items:center;
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(220,180,80,0.18);
+  background:
+    radial-gradient(120px 44px at 18% 55%, rgba(220,180,80,0.14), transparent 62%),
+    linear-gradient(180deg, rgba(255,240,200,0.05), rgba(0,0,0,0.18));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 -1px 0 rgba(0,0,0,0.55),
+    0 10px 22px rgba(0,0,0,0.35);
+  font-weight:600;
+  letter-spacing:0.26em;
+  text-shadow:
+    0 1px 0 rgba(0,0,0,0.55),
+    0 0 10px rgba(220,180,80,0.12);
+}
+
+/* ORION as quiet CTA (closer to nav-link) */
+.bh-btn-secondary{
+  background: transparent;
+  box-shadow: none;
+  border-color: rgba(220,180,80,0.14);
+  color: rgba(220,180,80,0.70);
+  filter: none;
+}
+.bh-btn-secondary:hover{
+  background: rgba(0,0,0,0.18);
+  border-color: rgba(220,180,80,0.22);
+}
 `;
 
   return (
@@ -366,7 +405,7 @@ export default function BhriguPhiHeader() {
 
         <div className="bh-row">
           <div className="bh-brandwrap" aria-label="Brand">
-<a className="bh-word" href="/" aria-label="BHRIGU Home">
+<a className="bh-word" href="/" aria-label="BHRIGU Home" data-hdr="HDR_BRAND_PLAQUE_PREMIUM_V0_4">
               BHRIGU
             </a>
           </div>
