@@ -259,10 +259,48 @@ export default function BhriguPhiHeader() {
       .{ width: 36px; height: 36px; }
     }
 
+
+
+/* HDR_BRAND_CTA_POLISH_V0_3 */
+/* Wordmark: make BHRIGU read like a logo, not a nav button */
+.bh-word{
+  display:inline-flex;
+  align-items:center;
+  font-weight:800;
+  letter-spacing:0.24em;
+  text-transform:uppercase;
+  font-size:18px;
+  line-height:1;
+  text-decoration:none;
+  position:relative;
+  top:-1px; /* optical lift */
+}
+
+/* Primary CTA: Open Frey */
+.bh-btn.bh-btn-primary{
+  background:linear-gradient(180deg, rgba(220,188,118,0.96), rgba(176,132,58,0.96)) !important;
+  color:#0b0b0b !important;
+  border:1px solid rgba(250,230,170,0.55) !important;
+  box-shadow:0 8px 24px rgba(196,160,88,0.20) !important;
+}
+.bh-btn.bh-btn-primary:hover{
+  filter:brightness(1.06) !important;
+  box-shadow:0 10px 28px rgba(196,160,88,0.26) !important;
+}
+
+/* Secondary CTA: ORION */
+.bh-btn.bh-btn-secondary{
+  color:rgba(220,188,118,0.92) !important;
+  border:1px solid rgba(220,188,118,0.35) !important;
+}
+.bh-btn.bh-btn-secondary:hover{
+  border-color:rgba(220,188,118,0.55) !important;
+  filter:brightness(1.04) !important;
+}
 `;
 
   return (
-    <header className="bh-header" role="banner" data-bh="HEADER_SUITE_LABEL_OFF_V0_1 HDR_BRAND_CTA_V0_2">
+    <header className="bh-header" role="banner" data-bh="HEADER_SUITE_LABEL_OFF_V0_1 HDR_BRAND_CTA_V0_3">
       <style>{css}</style>
 
       <div className="bh-shell">
