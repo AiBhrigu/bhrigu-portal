@@ -93,23 +93,7 @@ export default function BhriguPhiHeader() {
       white-space: nowrap;
     }
 
-    .{
-      width: 38px;
-      height: 38px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none !important;
-      color: rgba(0,0,0,0.90) !important;
-      background: linear-gradient(180deg, rgba(229,200,112,0.96), rgba(171,132,36,0.96));
-      border: 1px solid rgba(215,181,90,0.58);
-      box-shadow:
-        0 14px 34px rgba(0,0,0,0.46),
-        0 0 24px rgba(215,181,90,0.16),
-        inset 0 0 0 1px rgba(255,255,255,0.14);
-      transition: transform 120ms ease, box-shadow 160ms ease;
-    }
+
     .:hover{
       transform: translateY(-1px);
       box-shadow:
@@ -123,12 +107,6 @@ export default function BhriguPhiHeader() {
         0 0 0 4px rgba(215,181,90,0.18),
         0 0 0 1px rgba(215,181,90,0.42) inset,
         0 16px 38px rgba(0,0,0,0.46);
-    }
-    .{
-      font-size: 18px;
-      line-height: 1;
-      font-weight: 800;
-      letter-spacing: 0.02em;
     }
 
     .bh-word{
@@ -257,7 +235,6 @@ export default function BhriguPhiHeader() {
       .bh-shell{ padding: 10px 14px 12px; }
       .bh-link{ padding: 7px 10px; }
       .bh-btn{ padding: 0 12px; }
-      .{ width: 36px; height: 36px; }
     }
 
 
