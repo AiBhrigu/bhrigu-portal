@@ -352,7 +352,7 @@ export default function BhriguPhiHeader() {
 `;
 
   return (
-    <header  data-hdr="HDR_HIERARCHY_GRID_V0_4" className="bh-header" role="banner" data-bh="HEADER_SUITE_LABEL_OFF_V0_1 HDR_BRAND_CTA_V0_3">
+    <header  data-hdr="HDR_HIERARCHY_GRID_V0_4" className="bh-header" data-hdr-premium="HDR_BRAND_PREMIUM_V0_3" role="banner" data-bh="HEADER_SUITE_LABEL_OFF_V0_1 HDR_BRAND_CTA_V0_3">
       <style>{css}</style>
 
       <div className="bh-shell">
