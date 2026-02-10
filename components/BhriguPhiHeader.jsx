@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
 
 // ATOM_PORTAL_HEADER_META_DEDUP_V0_1
+// HDR_HIERARCHY_GRID_V0_4
 export default function BhriguPhiHeader() {
   const router = useRouter();
   const path = (router?.asPath || router?.pathname || "/").split("?")[0];
@@ -297,6 +298,34 @@ export default function BhriguPhiHeader() {
   border-color:rgba(220,188,118,0.55) !important;
   filter:brightness(1.04) !important;
 }
+/* === HDR_HIERARCHY_GRID_V0_4 (desktop-only) === */
+.bh-header { padding-top: 18px; padding-bottom: 18px; }
+.bh-shell { align-items: center; }
+
+/* Brand dominance */
+.bh-word {
+  font-size: 18px;
+  letter-spacing: 0.38em;
+  opacity: 0.92;
+  position: relative;
+  top: -1px; /* optical lift */
+}
+
+/* Primary nav slightly quieter than brand */
+.bh-nav a { opacity: 0.82; }
+.bh-nav a:hover { opacity: 0.92; }
+
+/* CTA hierarchy */
+.bh-btn-primary { filter: saturate(1.08) contrast(1.05); }
+.bh-btn-secondary {
+  opacity: 0.92;
+  border-color: rgba(180,140,70,0.55);
+}
+.bh-btn-secondary:hover { border-color: rgba(200,160,90,0.75); }
+
+/* Meta row slightly lighter */
+.bh-meta { opacity: 0.80; }
+/* === /HDR_HIERARCHY_GRID_V0_4 === */
 `;
 
   return (
