@@ -307,3 +307,41 @@ header, .header, .topbar {
 /* FREY reading query input canon (scoped) */
 [data-frey-reading-surface="__FREY_READING_QUERY_CANON_V0_4__"] input{flex:1 !important;width:100% !important;min-height:var(--phi-55) !important;padding:var(--phi-13) var(--phi-21) !important;border-radius:var(--phi-13) !important;border:1px solid rgba(255,255,255,0.28) !important;background:rgba(0,0,0,0.52) !important;color:inherit !important;}
 [data-frey-reading-surface="__FREY_READING_QUERY_CANON_V0_4__"] input::placeholder{opacity:0.72;}
+
+
+/* HDR_BRAND_CTA_POLISH_V0_2 */
+/* Brand wordmark */
+.bh-word{
+  display:inline-flex;
+  align-items:center;
+  font-weight:700;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  font-size:18px;
+  line-height:1;
+  text-decoration:none;
+  position:relative;
+  top:-1px; /* optical lift: logo reads slightly higher */
+}
+
+/* Primary CTA */
+.bh-btn-primary{
+  background:linear-gradient(180deg, rgba(220,188,118,0.96), rgba(176,132,58,0.96));
+  color:#0b0b0b;
+  border:1px solid rgba(250,230,170,0.55);
+  box-shadow:0 8px 24px rgba(196,160,88,0.20);
+}
+.bh-btn-primary:hover{
+  filter:brightness(1.06);
+  box-shadow:0 10px 28px rgba(196,160,88,0.26);
+}
+
+/* Secondary CTA */
+.bh-btn-secondary{
+  color:var(--gold-1, #c8a45a);
+  border:1px solid rgba(200,164,90,0.35);
+}
+.bh-btn-secondary:hover{
+  border-color:rgba(220,188,118,0.55);
+  filter:brightness(1.04);
+}
