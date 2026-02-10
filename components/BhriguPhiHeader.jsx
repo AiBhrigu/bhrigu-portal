@@ -317,6 +317,22 @@ export default function BhriguPhiHeader() {
   .bh-btn { padding: 7px 10px; font-size: 12px; }
   .bh-btn.bh-btn-primary { padding: 8px 12px; }
 }
+
+/* HDR_BRAND_PREMIUM_V0_1 */
+/* Brand plaque + CTA hierarchy: keep Open Frey primary, demote others */
+.bh-brandwrap{position:relative;display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;}
+.bh-brandwrap:before{content:"";position:absolute;inset:0;border-radius:999px;border:1px solid rgba(220,180,80,0.12);background:radial-gradient(120px 44px at 18% 55%, rgba(220,180,80,0.10), transparent 62%);}
+.bh-brandwrap *{position:relative;z-index:1;}
+.bh-word{letter-spacing:0.30em;font-weight:600;}
+
+/* Secondary CTA quiet */
+.bh-btn-secondary{opacity:0.86;filter:saturate(0.92) contrast(0.98);}
+.bh-btn-secondary:hover{opacity:1;}
+
+ (max-width:520px){
+  .bh-brandwrap{padding:8px 12px;}
+  .bh-word{letter-spacing:0.22em;}
+}
 `;
 
   return (
