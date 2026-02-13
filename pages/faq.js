@@ -14,29 +14,10 @@ export default function FAQ() {
       <main className="wrap">
         <header className="hero">
           <div className="kicker">BHRIGU · Frey / ORION</div>
-          \1Φ · \2\3
           <p className="subtitle">
             Frey is a dialog interface for cosmography: navigation through time, cycles, links and scenarios.
           </p>
         </header>
-
-          <section className="card">
-            <h2>Query line (human ↔ human / AI-ready)</h2>
-            <pre className="pre">human ↔ human → resonance / dynamics / tendencies
-human ↔ project → phases / entry-exit windows / friction points
-human ↔ asset → timing / risk-support tone / cycles
-author ↔ style → amplification vs dilution / peaks
-user ↔ scenario → relevance / maturity / decision nodes</pre>
-
-            <div className="nav">
-              Start
-              Frey
-              FAQ
-              Reading
-            </div>
-          </section>
-
-
           <section className="card">
             <h2>Start in 1 minute</h2>
             <ol className="ol">

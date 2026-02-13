@@ -251,7 +251,6 @@ export default function Cosmographer() {
           
       </section>
 
-          <div style={{ marginTop: 12, fontSize: 12, opacity: 0.6 }}>{/* ATOM_EN_ONLY_FOOTNOTE_V0_6 */}EN-only. Surface description — no internal mechanics.</div>
         </div>
                   {/*  */}
       
