@@ -29,10 +29,10 @@ author ↔ style → amplification vs dilution / peaks
 user ↔ scenario → relevance / maturity / decision nodes</pre>
 
             <div className="nav">
-              <a className="btn" href="/start">Start</a>
-              <a className="btn" href="/frey">Frey</a>
-              <a className="btn" href="/faq">FAQ</a>
-              <a className="btn" href="/reading">Reading</a>
+              Start
+              Frey
+              FAQ
+              Reading
             </div>
           </section>
 
@@ -55,11 +55,11 @@ user ↔ scenario → relevance / maturity / decision nodes</pre>
             </ol>
 
             <div className="nav">
-              <a className="btn" href="/frey">Open Frey</a>
-              <a className="btn" href="/reading">Reading</a>
-              <a className="btn" href="/map">Map</a>
-              <a className="btn" href="/services">Services</a>
-              <a className="btn" href="/cosmography">Cosmography</a>
+              Open Frey
+              Reading
+              Map
+              Services
+              Cosmography
             </div>
 
             <p className="muted">

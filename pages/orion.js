@@ -49,8 +49,8 @@ export default function Orion() {
       </p>
 
       <nav style={railStyle} aria-label="Route rail">
-        <a href="/cosmography">← /cosmography</a>
-        <a href="/frey">/frey →</a>
+        ← /cosmography
+        /frey →
       </nav>
     </main>
   );

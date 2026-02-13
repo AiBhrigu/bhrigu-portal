@@ -13,11 +13,11 @@ export default function Signal() {
 
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
         <div style={{ marginBottom: 18, opacity: 0.85, fontSize: 14 }}>
-          <a href="/reading">← /reading</a>
+          ← /reading
           <span style={{ margin: "0 10px", opacity: 0.5 }}>/</span>
           <span style={{ opacity: 0.8 }}>/signal</span>
           <span style={{ margin: "0 10px", opacity: 0.5 }}>/</span>
-          <a href="/map">/map →</a>
+          /map →
         </div>
 
         <h1 style={{ fontSize: 32, margin: "18px 0 18px", letterSpacing: 1.2 }}>

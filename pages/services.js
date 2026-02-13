@@ -23,9 +23,9 @@ export default function Services() {
           <p className="subtitle">No hype. Clear boundaries. Designed for trust and long-term maintenance.</p>
 
           <div className="cta">
-            <Link className="btn" href="/frey">Frey</Link>
-            <Link className="btn" href="/orion">ORION</Link>
-            <Link className="btn" href="/faq">FAQ</Link>
+            Frey
+            ORION
+            FAQ
           </div>
         </section>
 
@@ -59,7 +59,7 @@ export default function Services() {
             <li>More verified pages with consistent SEO metadata.</li>
             <li>Safer distribution and clearer access boundaries.</li>
           </ol>
-          <p className="muted">Start with <Link href="/start">/start</Link>. Read constraints in <Link href="/faq">/faq</Link>.</p>
+          <p className="muted">Start with /start. Read constraints in /faq.</p>
         </section>
       
             <PortalFooterNav termsHref="/faq" next={[{href:"/access",label:"/access"},{href:"/dao",label:"/dao"}]} note="Canon: services → access." />

@@ -420,30 +420,28 @@ export default function BhriguPhiHeader() {
         <div className="bh-meta" aria-label="Header meta">
           <div className="bh-meta-left" aria-hidden="true"></div>
 <div className="bh-meta-right">
-            <a className="bh-meta-link" href="/investors">Investors</a><a className="bh-meta-link" href="/cosmographer">Cosmographer</a>
-            <a className="bh-meta-link" href="/faq">FAQ</a>
+            
+            
           </div>
         </div>
 
         <div className="bh-row">
           <div className="bh-brandwrap" aria-label="Brand">
-<a className="bh-word" href="/" aria-label="BHRIGU Home" data-hdr="HDR_BRAND_PLAQUE_PREMIUM_V0_5">
-              BHRIGU
-            </a>
+
           </div>
 
           <nav className="bh-nav" aria-label="Primary">
-            <a className="bh-link" href="/start">Start</a>
-            <a className={"bh-link" + (isActive("/reading") ? " bh-active" : "")} href="/reading" aria-current={isActive("/reading") ? "page" : undefined}>Reading</a>
-            <a className={"bh-link" + (isActive("/services") ? " bh-active" : "")} href="/services" aria-current={isActive("/services") ? "page" : undefined}>Services</a>
-            <a className={"bh-link" + (isActive("/cosmography") ? " bh-active" : "")} href="/cosmography" aria-current={isActive("/cosmography") ? "page" : undefined}>Cosmography</a>
+            
+            
+            
+            
           </nav>
 
           <div className="bh-cta" aria-label="Calls to action">
 
 
-            <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_4">Open Frey</a>
-<a className="bh-btn bh-btn-secondary" href="/orion">ORION</a>
+            
+
 </div>
         </div>
       </div>

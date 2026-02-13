@@ -96,9 +96,9 @@ export default function Start() {
           <p className="subtitle">This is a surface-first site: we show what you can trust, and we state what is intentionally restricted.</p>
 
           <div className="cta">
-            <Link className="btn" href="/faq">Read FAQ</Link>
-            <Link className="btn" href="/frey">Open Frey</Link>
-            <Link className="btn" href="/services">See Services</Link>
+            Read FAQ
+            Open Frey
+            See Services
           </div>
         </section>
 
@@ -116,9 +116,9 @@ export default function Start() {
             <h2>2) Explore the surface</h2>
             <p>Use the portal to navigate what exists today.</p>
             <ul>
-              <li><Link href="/cosmography">Cosmography</Link> — definitions.</li>
-              <li><Link href="/signal">Signal</Link> — how we speak about observations.</li>
-              <li><Link href="/map">Map</Link> — structured navigation.</li>
+              <li>Cosmography — definitions.</li>
+              <li>Signal — how we speak about observations.</li>
+              <li>Map — structured navigation.</li>
             </ul>
           </div>
         </section>
@@ -126,7 +126,7 @@ export default function Start() {
         
 <section className="trust">
   <h2>Investors / partners</h2>
-  <p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>.</p>
+  <p className="muted">Investors / partners overview: /investors.</p>
   <div style={{ display: "none" }} aria-hidden="true"></div>
 </section>
 
@@ -138,7 +138,7 @@ export default function Start() {
       
 
 
-<p className="muted">For investors / partners: <Link href="/investors">/investors</Link>. <span style={{display:"none"}}>__IA_START_TO_INVESTORS_V0_2__</span></p>
+<p className="muted">For investors / partners: /investors. <span style={{display:"none"}}>__IA_START_TO_INVESTORS_V0_2__</span></p>
 </main>
 
       <style jsx>{`

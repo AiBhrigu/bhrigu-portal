@@ -14,24 +14,24 @@ export default function Chronicle() {
         <h2 style={{ marginBottom: 8 }}>Milestones</h2>
         <ul style={{ lineHeight: 1.7, maxWidth: 980 }}>
           <li><strong>Jan 2026</strong> — Portal stabilized; EN-only sweep across key pages.</li>
-          <li><strong>Jan 2026</strong> — <Link href="/signal">Signal</Link> cleaned: duplicates removed.</li>
-          <li><strong>Jan 2026</strong> — <Link href="/cosmographer">Cosmographer</Link> shipped with aligned metadata.</li>
+          <li><strong>Jan 2026</strong> — Signal cleaned: duplicates removed.</li>
+          <li><strong>Jan 2026</strong> — Cosmographer shipped with aligned metadata.</li>
           <li><strong>Jan 2026</strong> — Canonical unified: one canonical tag per page.</li>
           <li><strong>Jan 2026</strong> — Public API disabled (<code>/api</code> returns 410) to keep the surface safe.</li>
-          <li><strong>Jan 2026</strong> — <Link href="/dao">DAO</Link> clarified as an economic shell (peripheral governance).</li>
-          <li><strong>Jan 2026</strong> — <Link href="/frey">Frey</Link> surface entrypoint stabilized for onboarding.</li>
+          <li><strong>Jan 2026</strong> — DAO clarified as an economic shell (peripheral governance).</li>
+          <li><strong>Jan 2026</strong> — Frey surface entrypoint stabilized for onboarding.</li>
         </ul>
       </section>
 
       <section style={{ marginTop: 24 }}>
         <h2 style={{ marginBottom: 8 }}>Anchors</h2>
         <p style={{ maxWidth: 980, lineHeight: 1.7 }}>
-          Explore: <Link href="/frey">Frey</Link> · <Link href="/cosmography">Cosmography</Link> · 
-          <Link href="/map">Map</Link> · <Link href="/services">Services</Link> · <Link href="/access">Access</Link>
+          Explore: Frey · Cosmography · 
+          Map · Services · <Link href="/access">Access</Link>
         </p>
       </section>
     
-        <p className="muted">Archive: <a href="/archive">/archive</a>.</p>
+        <p className="muted">Archive: /archive.</p>
       </main>
   );
 }

@@ -229,7 +229,7 @@ export default function Cosmographer() {
             <strong>What:</strong> axis‑first AI that turns noise into a readable map.<br />
             <strong>For:</strong> builders, researchers, and investors who want orientation, not endless chat.<br />
             <strong>You get:</strong> outcome → context → next atom, plus stable artifacts.<br />
-            <strong>Start:</strong> open <a href="/frey">/frey</a> (pilot) or see <a href="/services">/services</a>.
+            <strong>Start:</strong> open /frey (pilot) or see /services.
           </div>
         </section>
 
@@ -260,7 +260,7 @@ export default function Cosmographer() {
       
 
 
-<p className="muted">Investors / partners overview: <Link href="/investors">/investors</Link>. <span style={{display:"none"}}>__IA_COSMO_TO_INVESTORS_V0_2__</span></p>
+<p className="muted">Investors / partners overview: /investors. <span style={{display:"none"}}>__IA_COSMO_TO_INVESTORS_V0_2__</span></p>
 </main>
     </>
   );

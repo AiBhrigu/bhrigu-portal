@@ -27,15 +27,15 @@ export default function Cosmography() {
 
       <section className={styles.block}>
         <p className={styles.en}>
-          If you want the engine boundary: <a href="/orion">/orion</a>.<br />
-          If you want the interface boundary: <a href="/frey">/frey</a>.<br />
-          If you want the reading order: <a href="/reading">/reading</a>.
+          If you want the engine boundary: /orion.<br />
+          If you want the interface boundary: /frey.<br />
+          If you want the reading order: /reading.
         </p>
       </section>
 
       <nav className={styles.rail} aria-label="Route rail">
-        <a href="/map">← /map</a>
-        <a href="/reading">↑ /reading</a>
+        ← /map
+        ↑ /reading
       </nav>
     </main>
   );

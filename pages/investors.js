@@ -40,7 +40,7 @@ export default function Investors() {
       <section className="section">
         <h2>Shipped (S0)</h2>
         <ul>
-          <li><a href="/frey">/frey</a> — public UI-only surface</li>
+          <li>/frey — public UI-only surface</li>
           <li><a href="/access">/access</a> — invite-based entry (manual onboarding)</li>
           <li>Production posture: minimal exposure, stability-first, controlled rollout</li>
           <li>L0 loop: gated response contour for approved users</li>
@@ -163,16 +163,16 @@ export default function Investors() {
         <div className="ctaRow" style={{ marginTop: 12 }}>
           <a className="btn primary" href="/access">Request invite</a>
           <a className="btn secondary" href="mailto:aibhrigu@gmail.com?subject=BHRIGU%20Partner%20%2F%20Investor%20%E2%80%94%20intro">Partner intro</a>
-          <Link className="btn ghost" href="/cosmographer">Deep context → /cosmographer</Link>
+          Deep context → /cosmographer
         </div>
       </section>
 
       <div className="footerNav">
-        <Link href="/start">/start</Link>
+        /start
         <span>·</span>
-        <Link href="/cosmographer">/cosmographer</Link>
+        /cosmographer
         <span>·</span>
-        <Link href="/frey">/frey</Link>
+        /frey
       </div>
 
       <style jsx>{`
@@ -209,7 +209,7 @@ export default function Investors() {
           {/*  */}
 
 
-<p className="muted">Deep context: <Link href="/cosmographer">/cosmographer</Link>. <span style={{display:"none"}}>__IA_INVESTORS_TO_COSMO_V0_2__</span></p>
+<p className="muted">Deep context: /cosmographer. <span style={{display:"none"}}>__IA_INVESTORS_TO_COSMO_V0_2__</span></p>
 </main>
   );
 }

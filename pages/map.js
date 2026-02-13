@@ -47,15 +47,15 @@ export default function MapPhi() {
       <p className={styles.en}>UI-level only. No data. No backend. No core access.</p>
 
       <nav className={styles.rail} aria-label="Route rail">
-        <a href="/start">← /start</a>
-        <a href="/cosmography">→ /cosmography</a>
+        ← /start
+        → /cosmography
       </nav>
     
             <PortalFooterNav termsHref="/faq" next={[{href:"/cosmography",label:"/cosmography"},{href:"/services",label:"/services"}]} note="Canon: map → cosmography." />
 
-        <p className="muted">Archive: <a href="/archive">/archive</a>.</p>
+        <p className="muted">Archive: /archive.</p>
       
-        <p className="muted">You are here: <a href="/map">/map</a>.</p>
+        <p className="muted">You are here: /map.</p>
       </main>
   );
 }

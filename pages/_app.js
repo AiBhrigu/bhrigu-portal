@@ -1,6 +1,7 @@
 import "../styles/globals.css";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import PrevNextBlock from "../components/PrevNextBlock";
 
 import BhriguPhiHeader from "../components/BhriguPhiHeader"; // ATOM_BHRIGU_PORTAL_UX_UNIFY_V1
 
@@ -118,6 +119,7 @@ export default function App({ Component, pageProps }) {
 
       <BhriguPhiHeader />
       <Component {...pageProps} />
+      <PrevNextBlock route={router.asPath} />
     </>
   );
 }
