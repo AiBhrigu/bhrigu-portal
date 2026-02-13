@@ -71,26 +71,7 @@ export default function Start() {
       </Head>
       <main className="wrap">
         {/*__FREY_QUERY_BAR_STUB_V0_1__*/}
-        <section aria-label="Frey Query Bar" data-mark="FREY_QUERY_BAR_STUB_V0_1" style={{ marginTop: "var(--phi-34)", border: "1px solid rgba(215,181,90,0.22)", borderRadius: "var(--phi-21)", padding: "var(--phi-21)", background: "linear-gradient(180deg, rgba(255,255,255,0.045), rgba(0,0,0,0.22))", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.055), 0 18px 54px rgba(0,0,0,0.42)" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--phi-8)" }}>
-            <div style={{ fontWeight: 650, letterSpacing: "0.02em" }}>Frey Query Bar</div>
-            <div style={{ opacity: 0.78, fontSize: "0.95rem", lineHeight: 1.35 }}>UI-only: saved locally, no network.</div>
-          </div>
-
-          <form onSubmit={onFreySubmit} style={{ marginTop: "var(--phi-13)", display: "flex", gap: "var(--phi-13)", alignItems: "stretch" }}>
-            <input value={freyQ} onChange={(e) => setFreyQ(e.target.value)} placeholder="Ask Frey… (signals, cycles, assets)" style={{ flex: 1, width: "100%", minHeight: "var(--phi-55)", padding: "var(--phi-13) var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.28)", background: "rgba(0,0,0,0.52)", color: "inherit" }} />
-            <button type="submit" style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(215,181,90,0.36)", background: "rgba(0,0,0,0.12)", color: "inherit" }}>Queue</button>
-            <button type="button" onClick={() => router.push("/frey")} style={{ padding: "0 var(--phi-21)", borderRadius: "var(--phi-13)", border: "1px solid rgba(255,255,255,0.22)", background: "rgba(0,0,0,0.06)", color: "inherit" }}>Open</button>
-          </form>
-
-          <div style={{ marginTop: "var(--phi-13)", opacity: 0.8, fontSize: "0.92rem" }}>
-            <span>{freyCount} queued</span>
-          </div>
-
-          <span style={{ display: "none" }}>FREY_QUERY_BAR_STUB_V0_1</span>
-        </section>
-
-        <section className="hero">
+<section className="hero">
           <div className="kicker">Start</div>
           <h1 className="title">Understand the portal in minutes.</h1>
           <p className="subtitle">This is a surface-first site: we show what you can trust, and we state what is intentionally restricted.</p>
@@ -136,7 +117,6 @@ export default function Start() {
 
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
       
-
 
 <p className="muted">For investors / partners: /investors. <span style={{display:"none"}}>__IA_START_TO_INVESTORS_V0_2__</span></p>
 </main>
