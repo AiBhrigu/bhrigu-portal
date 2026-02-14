@@ -233,7 +233,9 @@ export default function Cosmographer() {
           </div>
         </section>
 
-        <div style={{ display: "none" }} aria-hidden="true">__COSMOGRAPHER_PATCH_V0_1__</div>
+        <div style={{ display: "none" }} aria-hidden="true"></div>
+        <span aria-hidden="true" data-mark="__COSMOGRAPHER_PATCH_V0_1__" />
+
         <article
           style={{ lineHeight: 1.7, fontSize: 16 }}
           dangerouslySetInnerHTML={{ __html: html }}

@@ -209,7 +209,7 @@ export default function Investors() {
           {/*  */}
 
 
-<p className="muted">Deep context: /cosmographer. <span style={{display:"none"}}>__IA_INVESTORS_TO_COSMO_V0_2__</span></p>
+<p className="muted" data-mark="__IA_INVESTORS_TO_COSMO_V0_2__">Deep context: /cosmographer.</p>
 </main>
   );
 }
