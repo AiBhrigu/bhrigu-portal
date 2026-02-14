@@ -117,7 +117,7 @@ export default function Investors() {
         </ul>
         <div className="callout">
           <div><b>Runway</b></div>
-          <div className="muted">target runway: <b>[X months]</b> · budget: <b>[X]</b> (team, infra, evaluation, operations, legal/IP)</div>
+          <div className="muted">target runway: <b></b> · budget: <b></b> (team, infra, evaluation, operations, legal/IP)</div>
         </div>
       </section>
 
