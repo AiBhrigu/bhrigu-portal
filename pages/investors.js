@@ -3,6 +3,7 @@ import Link from "next/link";
 export default function Investors() {
   return (
     <main className="page" data-mark="INVESTORS_SURFACE_V0_1">
+      <span aria-hidden="true" style={{ display: "none" }} data-mark="IA" />
       <div className="hero">
         <div className="kicker">Investors &amp; Partners</div>
         <h1>BHRIGU × Frey</h1>

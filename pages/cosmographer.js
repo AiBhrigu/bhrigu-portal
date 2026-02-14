@@ -212,6 +212,7 @@ export default function Cosmographer() {
         />
       </Head>
       <main style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }}>
+      <span aria-hidden="true" style={{ display: "none" }} data-mark="COSMO" />
 
         <section
           style={{
@@ -234,7 +235,6 @@ export default function Cosmographer() {
         </section>
 
         <div style={{ display: "none" }} aria-hidden="true"></div>
-        <span aria-hidden="true" data-mark="__COSMOGRAPHER_PATCH_V0_1__" />
 
         <article
           style={{ lineHeight: 1.7, fontSize: 16 }}
