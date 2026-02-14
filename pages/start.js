@@ -118,7 +118,7 @@ export default function Start() {
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
       
 
-<p className="muted">For investors / partners: /investors. <span style={{display:"none"}}>__IA_START_TO_INVESTORS_V0_2__</span></p>
+<p className="muted">For investors / partners: /investors. <span style={{display:"none"}}><span data-mark="IA_START_TO_INVESTORS_V0_2" style={{display:"none"}} aria-hidden="true"></span></span></p>
 </main>
 
       <style jsx>{`
