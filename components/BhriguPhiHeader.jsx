@@ -84,7 +84,7 @@ export default function BhriguPhiHeader() {
   `;
 
   return (
-    <header className="bh-header" data-hdr="HDR_CANON_GOLDENPATH_V0_1">
+    <header className="bh-header" data-hdr="HDR_CANON_GOLDENPATH_V0_1" data-ops="OPS_MARKERS_DATA_ATTRS_V0_2">
       <div className="bh-shell">
         <a className="bh-brand" href="/" aria-label="BHRIGU home">
           <span className="bh-plaque">
