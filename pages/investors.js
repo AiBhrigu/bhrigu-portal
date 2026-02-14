@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Investors() {
   return (
-    <main className="page">
+    <main className="page" data-mark="INVESTORS_SURFACE_V0_1">
       <div className="hero">
         <div className="kicker">Investors &amp; Partners</div>
         <h1>BHRIGU × Frey</h1>
@@ -21,10 +21,10 @@ export default function Investors() {
           <a className="btn secondary" href="mailto:aibhrigu@gmail.com?subject=BHRIGU%20Partner%20%2F%20Investor%20%E2%80%94%20intro">Partner intro</a>
         </div>
 
-        <div className="marker" style={{display:"none"}}>___INVESTORS_SURFACE_V0_1__</div>
+        <div className="marker" style={{display:"none"}}>__ </div>
       </div>
 
-      <section className="section">
+      <section className="section" data-mark="INVESTORS_SURFACE_V0_1">
         <h2>What it is</h2>
         <p>
           BHRIGU is a cosmography-first product surface. Frey is the interface layer that turns structured meaning into guided,
