@@ -164,7 +164,6 @@ export default function Investors() {
         <div className="ctaRow" style={{ marginTop: 12 }}>
           <a className="btn primary" href="/access">Request invite</a>
           <a className="btn secondary" href="mailto:aibhrigu@gmail.com?subject=BHRIGU%20Partner%20%2F%20Investor%20%E2%80%94%20intro">Partner intro</a>
-          Deep context → /cosmographer
         </div>
       </section>
 
