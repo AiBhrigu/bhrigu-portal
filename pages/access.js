@@ -25,7 +25,7 @@ export default function Access() {
 
       <hr />
 <p>
-        Access is via email only.<br />
+        Access is invite-only. Email to request access.<br />
         No automated sign-in or onboarding.
       </p>
 
