@@ -53,7 +53,7 @@ export default function FreyPage() {
       </Head>
 
       <div className="freyPage" data-frey-flow={FLOW_MARK}>
-        <div aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" />
+        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" />
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker">
@@ -326,6 +326,12 @@ export default function FreyPage() {
   background: rgba(255,255,255,0.040) !important;
   border-color: rgba(255,255,255,0.14) !important;
 }
+
+/* __FREY_MOBILE_WIDTH_V0_1__ */
+[data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { width: 100%; max-width: 860px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+[data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] input, [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] textarea { width: 100%; max-width: 100%; }
+@media (max-width: 520px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 12px; padding-right: 12px; } }
+@media (max-width: 420px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 10px; padding-right: 10px; } }
 `}</style>
     </>
   );
