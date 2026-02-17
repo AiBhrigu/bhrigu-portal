@@ -53,7 +53,7 @@ export default function FreyPage() {
       </Head>
 
       <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK}>
-        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_V0_1" />
+        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker">
@@ -269,13 +269,22 @@ export default function FreyPage() {
           .wrap{ padding: 22px 14px 72px; }
           .btn{ width: 100%; }
         }
-/* __FREY_AIR_SPACING_V0_1__ */
-.wrap{
-  max-width: 1040px;
-  padding-top: clamp(52px, 7vh, 92px);
-  padding-bottom: clamp(110px, 12vh, 170px);
-}
-.hero{ margin-bottom: clamp(30px, 4vh, 58px); }
+/* __FREY_AIR_SPACING_V0_2__ */
+      .wrap{
+        max-width: 980px;
+        margin: 0 auto;
+        padding-top: clamp(40px, 5vh, 76px);
+        padding-left: 18px;
+        padding-right: 18px;
+        padding-bottom: clamp(78px, 9vh, 128px);
+        display:flex;
+        flex-direction:column;
+        gap: clamp(12px, 1.8vh, 18px);
+      }
+.hero{
+        margin-top: 0;
+        margin-bottom: clamp(22px, 3vh, 44px);
+      }
 .card{
   max-width: 920px;
   margin-left: auto;
