@@ -53,7 +53,7 @@ export default function FreyPage() {
       </Head>
 
       <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK}>
-        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" />
+        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_LAYER_STACKING_V0_3" />
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker">
@@ -105,6 +105,14 @@ export default function FreyPage() {
   .qInput{ width: 100%; min-width: 0; }
   .btnCta{ width: 100%; }
 }
+
+
+/* __FREY_VIBE_LAYER_STACKING_V0_3__ */
+.freyPhiSpaceBg{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.freyPhiSpaceBg:after{content:"";position:absolute;left:0;right:0;bottom:-22vh;height:58vh;background:radial-gradient(55% 60% at 50% 100%, rgba(120,180,255,.28), rgba(80,120,255,.12) 40%, rgba(0,0,0,0) 72%);filter:blur(22px);opacity:.95;}
+#_next{position:relative;z-index:1;}
+ (max-width:760px){.freyPhiSpaceBg:after{bottom:-28vh;height:66vh;filter:blur(26px);opacity:1;}}
+
 `}</style>
 <style jsx global>{`
         :root{
