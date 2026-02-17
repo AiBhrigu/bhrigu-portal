@@ -65,12 +65,12 @@ export default function FreyPage() {
           </header>
 
           <section className="card askFreyBox" aria-label="Frey query bar">
-  <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_7">
+  <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_11">
               <input
                 ref={inputRef}
                 className="qInput"
                 data-frey-q="1"
-                data-frey-qinput="FREY_QINPUT_V0_7"
+               
                 aria-label="Frey query"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -78,8 +78,8 @@ export default function FreyPage() {
                 autoComplete="off"
                 autoCapitalize="none"
                 spellCheck={false}
-              />
-              <button type="button" className="btn btnCta" data-frey-qcta="FREY_QCTA_V0_7" onClick={() => go()}>
+               data-frey-qinput="FREY_QINPUT_V0_11" />
+              <button type="button" className="btn btnCta" onClick={() => go()} data-frey-qcta="FREY_QCTA_V0_11" disabled={!canGo}>
                 Continue → Reading
               </button>
             </div>
@@ -335,22 +335,19 @@ export default function FreyPage() {
 @media (max-width: 520px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 420px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 10px; padding-right: 10px; } }
 
-/* __FREY_QUERYROW_MOBILE_STACK_V0_6__ */
-@media (max-width: 760px) {
-  [data-frey-qrow="FREY_QROW_STACK_V0_6"] {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-  }
-  [data-frey-qrow="FREY_QROW_STACK_V0_6"] [data-frey-qinput="FREY_QINPUT_V0_6"] {
+[data-frey-qrow="FREY_QROW_STACK_V0_6"] [data-frey-qinput="FREY_QINPUT_V0_6"] {
     width: 100%;
   }
   [data-frey-qrow="FREY_QROW_STACK_V0_6"] [data-frey-qcta="FREY_QCTA_V0_6"] {
     width: 100%;
   }
 }
-
+/* __FREY_QUERYROW_MOBILE_STACK_V0_11__ */
+@media (max-width: 760px){
+  [data-frey-qrow="FREY_QROW_STACK_V0_11"]{ display:flex; flex-direction:column; align-items:stretch; gap:10px; width:100%; min-width:0; }
+  [data-frey-qinput="FREY_QINPUT_V0_11"]{ width:100%; min-width:0; }
+  [data-frey-qcta="FREY_QCTA_V0_11"]{ width:100%; }
+}
 `}</style>
     </>
   );
