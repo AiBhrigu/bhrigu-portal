@@ -52,7 +52,7 @@ export default function FreyPage() {
         <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK}>
+      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_1">
         <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
@@ -406,6 +406,12 @@ export default function FreyPage() {
 }
   [data-frey-qinput="FREY_QINPUT_V0_11"]{ width:100%; min-width:0; }
   [data-frey-qcta="FREY_QCTA_V0_11"]{ width:100%; }
+}
+
+/* __FREY_DELOAD_WINDOW_V0_1__ */
+/* Hide any placeholder blocks inside the ask box. Keep only query row + chips. */
+.askFreyBox > :not(.qRow):not(.chips) {
+  display: none !important;
 }
 `}</style>
     </>
