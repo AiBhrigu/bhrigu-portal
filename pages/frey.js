@@ -124,24 +124,29 @@ export default function FreyPage() {
 .freyPhiSpaceBg::before{
   content: "";
   position: absolute;
-  left: -12%;
-  right: -12%;
-  bottom: -22%;
-  height: 62%;
+  inset: -18% -10%;
   background:
-    radial-gradient(closest-side at 50% 92%, rgba(120,70,255,0.22), transparent 70%),
-    radial-gradient(closest-side at 28% 88%, rgba(30,140,255,0.14), transparent 74%),
-    radial-gradient(closest-side at 72% 88%, rgba(20,180,160,0.10), transparent 76%);
-  filter: blur(44px);
-  opacity: 0.42;
-  transform: translate3d(0, 10px, 0) scale(1.02);
-  animation: freyVibeBreath 14s ease-in-out infinite alternate;
+    radial-gradient(70% 65% at 35% 22%, rgba(56,112,235,0.22), rgba(0,0,0,0) 60%),
+    radial-gradient(65% 60% at 72% 60%, rgba(137,87,210,0.18), rgba(0,0,0,0) 62%),
+    radial-gradient(70% 70% at 40% 85%, rgba(46,206,255,0.10), rgba(0,0,0,0) 68%);
+  opacity: 0.10;
+  filter: blur(58px) saturate(1.03) brightness(1.04);
+  transform: translate3d(0,0,0) scale(1.02);
+  animation: freyVibeBreath 14.4s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: 42px;
+  z-index: 0;
+  will-change: transform, opacity, filter;
 }
+/* __FREY_VIBE_BREATH_TUNE_V0_6__ */
+
 
 @keyframes freyVibeBreath{
-  from { opacity: 0.30; transform: translate3d(0, 14px, 0) scale(1.01); }
-  to   { opacity: 0.48; transform: translate3d(0, -8px, 0) scale(1.06); }
+  0%{ transform: translate3d(-1.5%, -1.0%, 0) scale(1.015); opacity:0.09; filter: blur(56px) saturate(1.02) brightness(1.04); }
+  50%{ transform: translate3d( 1.2%,  1.1%, 0) scale(1.030); opacity:0.11; filter: blur(60px) saturate(1.05) brightness(1.06); }
+  100%{ transform: translate3d(-1.5%, -1.0%, 0) scale(1.015); opacity:0.09; filter: blur(56px) saturate(1.02) brightness(1.04); }
 }
+
 #_next{position:relative;z-index:1;}
 @media (max-width:760px){.freyPhiSpaceBg:after{bottom:-28vh;height:66vh;filter:blur(26px);opacity:1;}}
 
