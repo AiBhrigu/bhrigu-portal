@@ -65,11 +65,12 @@ export default function FreyPage() {
           </header>
 
           <section className="card askFreyBox" aria-label="Frey query bar">
-  <div className="qRow">
+  <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_7">
               <input
                 ref={inputRef}
                 className="qInput"
                 data-frey-q="1"
+                data-frey-qinput="FREY_QINPUT_V0_7"
                 aria-label="Frey query"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -78,7 +79,7 @@ export default function FreyPage() {
                 autoCapitalize="none"
                 spellCheck={false}
               />
-              <button type="button" className="btn btnCta" onClick={() => go()} disabled={!canGo}>
+              <button type="button" className="btn btnCta" data-frey-qcta="FREY_QCTA_V0_7" onClick={() => go()}>
                 Continue → Reading
               </button>
             </div>
@@ -232,6 +233,7 @@ export default function FreyPage() {
 .qInput{ min-height: 56px; font-size: 18px; }
 .btnCta{ min-height: 56px; padding: 0 22px; }
 .chips{ margin-top: 18px; gap: 12px; }
+/* __FREY_QUERYROW_MOBILE_STACK_V0_7__ */
 @media (max-width: 720px){
   .qRow{ flex-direction: column; align-items: stretch; }
   .btnCta{ width: 100%; }
@@ -332,6 +334,23 @@ export default function FreyPage() {
 [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] input, [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] textarea { width: 100%; max-width: 100%; }
 @media (max-width: 520px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 420px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 10px; padding-right: 10px; } }
+
+/* __FREY_QUERYROW_MOBILE_STACK_V0_6__ */
+@media (max-width: 760px) {
+  [data-frey-qrow="FREY_QROW_STACK_V0_6"] {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  [data-frey-qrow="FREY_QROW_STACK_V0_6"] [data-frey-qinput="FREY_QINPUT_V0_6"] {
+    width: 100%;
+  }
+  [data-frey-qrow="FREY_QROW_STACK_V0_6"] [data-frey-qcta="FREY_QCTA_V0_6"] {
+    width: 100%;
+  }
+}
+
 `}</style>
     </>
   );
