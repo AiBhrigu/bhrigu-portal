@@ -52,7 +52,7 @@ export default function FreyPage() {
         <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      <div className="freyPage" data-frey-flow={FLOW_MARK}>
+      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK}>
         <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" />
         <main className="wrap">
           <header className="hero">
@@ -98,7 +98,15 @@ export default function FreyPage() {
         </main>
       </div>
 
-      <style jsx global>{`
+      <style jsx>{`
+/* __FREY_QUERYROW_MOBILE_STACK_V0_14__ */
+@media (max-width: 760px){
+  .qRow{ flex-direction: column; align-items: stretch; gap: 10px; width: 100%; min-width: 0; }
+  .qInput{ width: 100%; min-width: 0; }
+  .btnCta{ width: 100%; }
+}
+`}</style>
+<style jsx global>{`
         :root{
           --phi-8: 8px;
           --phi-13: 13px;
@@ -342,9 +350,6 @@ export default function FreyPage() {
     width: 100%;
   }
 }
-/* __FREY_QUERYROW_MOBILE_STACK_V0_11__ */
-@media (max-width: 760px){
-  [data-frey-qrow="FREY_QROW_STACK_V0_11"]{ display:flex; flex-direction:column; align-items:stretch; gap:10px; width:100%; min-width:0; }
   [data-frey-qinput="FREY_QINPUT_V0_11"]{ width:100%; min-width:0; }
   [data-frey-qcta="FREY_QCTA_V0_11"]{ width:100%; }
 }
