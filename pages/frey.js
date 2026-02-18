@@ -52,7 +52,7 @@ export default function FreyPage() {
         <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_1">
+      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3">
         <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
@@ -149,6 +149,14 @@ export default function FreyPage() {
 
 #_next{position:relative;z-index:1;}
 @media (max-width:760px){.freyPhiSpaceBg:after{bottom:-28vh;height:66vh;filter:blur(26px);opacity:1;}}
+
+        /* FREY_DELOAD_WINDOW_V0_3 */
+        [data-frey-deload] .askFreyBox { max-width: 820px; padding: 44px 20px; }
+        [data-frey-deload] .askFreyInner { padding: 10px; }
+        [data-frey-deload] .askFreyTitle { margin-bottom: 18px; }
+        [data-frey-deload] .askFreyInput { height: 44px; }
+        [data-frey-deload] .askFreyCta { height: 44px; margin-top: 12px; }
+        [data-frey-deload] .askFreySuggestions { margin-top: 14px; }
 
 `}</style>
 <style jsx global>{`
