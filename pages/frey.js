@@ -79,7 +79,7 @@ export default function FreyPage() {
                 autoCapitalize="none"
                 spellCheck={false}
                data-frey-qinput="FREY_QINPUT_V0_11" />
-              <button type="button" className="btn btnCta" onClick={() => go()} data-frey-qcta="FREY_QCTA_V0_11" disabled={!canGo}>
+              <button type="button" className="btn btnCta" data-frey-cta="FREY_CTA_PHI_CANON_V0_3" onClick={() => go()} data-frey-qcta="FREY_QCTA_V0_11" disabled={!canGo}>
                 Continue → Reading
               </button>
             </div>
@@ -443,6 +443,26 @@ export default function FreyPage() {
   }
 }
 /* FREY_CONTROLS_FIX_V0_2_END */
+
+
+/* __FREY_CTA_PHI_CANON_V0_3__ */
+.qRow{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+}
+.btnCta{
+  width:100%;
+  min-width:0;
+  min-height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 22px;
+  line-height:1;
+}
+
 `}</style>
     </>
   );
