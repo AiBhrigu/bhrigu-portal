@@ -52,7 +52,7 @@ export default function FreyPage() {
         <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1">
+      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1" data-frey-controls="FREY_CONTROLS_FIX_V0_2">
         <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
@@ -86,7 +86,7 @@ export default function FreyPage() {
 
             
 
-            <div className="chips" aria-label="Frey example queries">
+            <div className="chips askFreyChipRow" aria-label="Frey example queries">
               {CHIPS.map((t) => (
                 <button key={t} type="button" className="chip" onClick={() => onChip(t)}>
                   {t}
@@ -280,7 +280,7 @@ export default function FreyPage() {
 
 
 /* __FREY_DELOAD_WINDOW_V0_2__ */
-[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"]{
+[data-frey-deload]{
   max-width: 720px !important;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -291,10 +291,10 @@ export default function FreyPage() {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] h2,
-[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .muted{ display: none !important; }
+[data-frey-deload] h2,
+[data-frey-deload] .muted{ display: none !important; }
 
-[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .qRow{
+[data-frey-deload] .qRow{
   max-width: 720px !important;
   margin: 0 auto 14px auto !important;
   padding: 16px !important;
@@ -304,7 +304,7 @@ export default function FreyPage() {
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
-[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .chips{
+[data-frey-deload] .chips{
   max-width: 720px !important;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -315,7 +315,7 @@ export default function FreyPage() {
 .hero{ margin-bottom: clamp(18px, 3vh, 36px) !important; }
 
 @media (max-width: 640px){
-  [data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .qRow{ padding: 14px !important; border-radius: 20px !important; }
+  [data-frey-deload] .qRow{ padding: 14px !important; border-radius: 20px !important; }
 }
 
 /* FREY_UI_CONTROLS_V0_1 */
@@ -375,6 +375,74 @@ export default function FreyPage() {
   background: rgba(10, 14, 20, 0.52);
   border-color: rgba(233, 184, 93, 0.32);
 }
+
+/* FREY_CONTROLS_FIX_V0_2_START */
+[data-frey-controls] .qInput,
+[data-frey-controls] .askFreyInput{
+  background: rgba(10,14,20,0.55) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.92) !important;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.35) !important;
+}
+[data-frey-controls] .qInput::placeholder,
+[data-frey-controls] .askFreyInput::placeholder{
+  color: rgba(255,255,255,0.45) !important;
+}
+
+[data-frey-controls] .btn,
+[data-frey-controls] .qCta,
+[data-frey-controls] .askFreyCta{
+  background: rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.86) !important;
+  border-radius: 12px !important;
+  appearance: none;
+  -webkit-appearance: none;
+}
+[data-frey-controls] .btn:hover,
+[data-frey-controls] .qCta:hover,
+[data-frey-controls] .askFreyCta:hover{
+  background: rgba(255,255,255,0.10) !important;
+}
+
+[data-frey-controls] .chip,
+[data-frey-controls] .qChip,
+[data-frey-controls] .askFreyChip{
+  background: rgba(0,0,0,0.38) !important;
+  border: 1px solid rgba(255,255,255,0.16) !important;
+  color: rgba(255,255,255,0.86) !important;
+  border-radius: 12px !important;
+  padding: 10px 12px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-frey-controls] .chips,
+[data-frey-controls] .qChips,
+[data-frey-controls] .chipRow,
+[data-frey-controls] .askFreyChipRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+/* de-load window selector (version-agnostic) */
+[data-frey-deload].askFreyBox,
+[data-frey-deload] .askFreyBox{
+  max-width: 820px !important;
+  padding: 38px 18px !important;
+}
+@media (max-width:760px){
+  [data-frey-deload].askFreyBox,
+  [data-frey-deload] .askFreyBox{
+    padding: 20px 14px !important;
+  }
+}
+/* FREY_CONTROLS_FIX_V0_2_END */
 `}</style>
     </>
   );
