@@ -64,7 +64,7 @@ export default function FreyPage() {
             </p>
           </header>
 
-          <section className="card askFreyBox" aria-label="Frey query bar">
+          <section className="card askFreyBox" data-frey-tight="FREY_TIGHTEN_V0_4" aria-label="Frey query bar">
   <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_11">
               <input
                 ref={inputRef}
@@ -109,195 +109,51 @@ export default function FreyPage() {
 
 /* __FREY_VIBE_LAYER_STACKING_V0_3__ */
 .freyPhiSpaceBg{
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
+  position:fixed;
+  inset:-6vh -6vw;
+  z-index:0;
+  pointer-events:none;
   background:
-    radial-gradient(1000px 420px at 50% 20%, rgba(30,140,255,0.18), transparent 62%),
-    radial-gradient(760px 360px at 72% 58%, rgba(120,70,255,0.14), transparent 64%),
-    radial-gradient(820px 380px at 28% 62%, rgba(20,180,160,0.10), transparent 66%),
-    linear-gradient(180deg, #050608 0%, #06070a 40%, #050608 100%);
+    radial-gradient(980px 660px at 38% 28%, rgba(14,58,162,0.18), rgba(0,0,0,0) 66%),
+    radial-gradient(1020px 720px at 72% 62%, rgba(3,214,255,0.06), rgba(0,0,0,0) 72%),
+    radial-gradient(1240px 860px at 55% 75%, rgba(140,40,255,0.045), rgba(0,0,0,0) 76%),
+    radial-gradient(1600px 1200px at 50% 50%, rgba(255,255,255,0.04), rgba(0,0,0,0) 80%);
 }
 
 .freyPhiSpaceBg::before{
-  content: "";
-  position: absolute;
-  inset: -18% -10%;
+  content:"";
+  position:absolute;
+  inset:-36vh -36vw;
   background:
-    radial-gradient(70% 65% at 35% 22%, rgba(56,112,235,0.22), rgba(0,0,0,0) 60%),
-    radial-gradient(65% 60% at 72% 60%, rgba(137,87,210,0.18), rgba(0,0,0,0) 62%),
-    radial-gradient(70% 70% at 40% 85%, rgba(46,206,255,0.10), rgba(0,0,0,0) 68%);
-  opacity: 0.10;
+    radial-gradient(820px 560px at 38% 34%, rgba(14,58,162,0.20), rgba(0,0,0,0) 64%),
+    radial-gradient(980px 660px at 66% 62%, rgba(3,214,255,0.07), rgba(0,0,0,0) 70%),
+    radial-gradient(1180px 820px at 52% 72%, rgba(140,40,255,0.055), rgba(0,0,0,0) 74%);
   filter: blur(58px) saturate(1.03) brightness(1.04);
-  transform: translate3d(0,0,0) scale(1.02);
-  animation: freyVibeBreath 14.4s ease-in-out infinite;
-  pointer-events: none;
-  border-radius: 42px;
-  z-index: 0;
-  will-change: transform, opacity, filter;
+  opacity:0.085;
+  transform: translate3d(0,0,0);
+  animation: freyVibeBreath 26s ease-in-out infinite;
 }
 /* __FREY_VIBE_BREATH_TUNE_V0_6__ */
 
 
 @keyframes freyVibeBreath{
-  0%{ transform: translate3d(-1.5%, -1.0%, 0) scale(1.015); opacity:0.09; filter: blur(56px) saturate(1.02) brightness(1.04); }
-  50%{ transform: translate3d( 1.2%,  1.1%, 0) scale(1.030); opacity:0.11; filter: blur(60px) saturate(1.05) brightness(1.06); }
-  100%{ transform: translate3d(-1.5%, -1.0%, 0) scale(1.015); opacity:0.09; filter: blur(56px) saturate(1.02) brightness(1.04); }
+  0%{ transform: translate3d(-1.2%, -0.9%, 0) scale(1.012); opacity:0.08; filter: blur(56px) saturate(1.02) brightness(1.03); }
+  50%{ transform: translate3d( 1.0%,  0.9%, 0) scale(1.026); opacity:0.10; filter: blur(60px) saturate(1.04) brightness(1.05); }
+  100%{ transform: translate3d(-1.2%, -0.9%, 0) scale(1.012); opacity:0.08; filter: blur(56px) saturate(1.02) brightness(1.03); }
 }
 
 #_next{position:relative;z-index:1;}
-@media (max-width:760px){.freyPhiSpaceBg:after{bottom:-28vh;height:66vh;filter:blur(26px);opacity:1;}}
-
-        /* FREY_DELOAD_WINDOW_V0_3 */
-        [data-frey-deload] .askFreyBox { max-width: 820px; padding: 44px 20px; }
-        [data-frey-deload] .askFreyInner { padding: 10px; }
-        [data-frey-deload] .askFreyTitle { margin-bottom: 18px; }
-        [data-frey-deload] .askFreyInput { height: 44px; }
-        [data-frey-deload] .askFreyCta { height: 44px; margin-top: 12px; }
-        [data-frey-deload] .askFreySuggestions { margin-top: 14px; }
-
-`}</style>
-<style jsx global>{`
-        :root{
-          --phi-8: 8px;
-          --phi-13: 13px;
-          --phi-21: 21px;
-          --phi-34: 34px;
-          --phi-55: 55px;
-        }
-
-        html, body { height: 100%; }
-        body { background: #000; color: rgba(255,255,255,0.92); }
-
-        .freyPage { position: relative; min-height: 100vh; }
-        .freyPhiSpaceBg{
-          position: fixed; inset: 0;
-          pointer-events: none;
-          z-index: 0;
-          background:
-            radial-gradient(1200px 800px at 30% 20%, rgba(120,190,255,0.16), transparent 60%),
-            radial-gradient(900px 600px at 80% 40%, rgba(255,190,140,0.10), transparent 60%),
-            radial-gradient(700px 700px at 50% 85%, rgba(160,120,255,0.10), transparent 60%),
-            linear-gradient(180deg, rgba(0,0,0,0.92), rgba(0,0,0,0.98));
-          filter: saturate(1.05) contrast(1.05);
-        }
-
-        .wrap{
-          position: relative;
-          z-index: 1;
-          max-width: 980px;
-          margin: 0 auto;
-          padding: 28px 18px 80px;
-        }
-
-        .hero { padding: 10px 0 18px; }
-        .kicker { letter-spacing: 0.02em; opacity: 0.92; font-size: 13px; }
-        .subtitle { margin: 10px 0 0; opacity: 0.82; max-width: 60ch; }
-
-        .card{
-          margin-top: 18px;
-          border-radius: 18px;
-          padding: 18px;
-          background: rgba(0,0,0,0.46);
-          border: 1px solid rgba(255,255,255,0.12);
-          backdrop-filter: blur(10px);
-        }
-
-        .h2{ margin: 0 0 6px; font-size: 16px; letter-spacing: 0.01em; }
-        .muted{ margin: 0 0 14px; opacity: 0.75; }
-
-        .qRow{
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        .qInput{
-          flex: 1 1 360px;
-          width: 100%;
-          min-height: var(--phi-55);
-          padding: var(--phi-13) var(--phi-21);
-          border-radius: var(--phi-13);
-          border: 1px solid rgba(255,255,255,0.28);
-          background: rgba(0,0,0,0.52);
-          color: inherit;
-          outline: none;
-        }
-        .qInput:focus{
-          border-color: rgba(160,220,255,0.65);
-          box-shadow: 0 0 0 3px rgba(120,190,255,0.18);
-        }
-
-        .btn{
-          min-height: var(--phi-55);
-          border-radius: var(--phi-13);
-          padding: 0 18px;
-          border: 1px solid rgba(255,255,255,0.24);
-          background: rgba(255,255,255,0.08);
-          color: inherit;
-          cursor: pointer;
-          white-space: nowrap;
-        }
-        .btn:disabled{
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-        .btnCta{
-          border-color: rgba(160,220,255,0.45);
-          background: rgba(120,190,255,0.14);
-        }
-
-        
-        
-        .domainLink:hover{ opacity: 1; text-decoration: underline; }
-        
-
-        .chips{
-          margin-top: 14px;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-        }
-        .chip{
-          border-radius: 999px;
-          padding: 10px 12px;
-          border: 1px solid rgba(255,255,255,0.18);
-          background: rgba(255,255,255,0.06);
-          color: inherit;
-          cursor: pointer;
-          text-align: left;
-          max-width: 100%;
-        }
-        .chip:hover{ background: rgba(255,255,255,0.10); }
-
-        @media (max-width: 520px){
-          .wrap{ padding: 22px 14px 72px; }
-          .btn{ width: 100%; }
-        }
-/* __FREY_AIR_SPACING_V0_2__ */
-      .wrap{
-        max-width: 980px;
-        margin: 0 auto;
-        padding-top: clamp(40px, 5vh, 76px);
-        padding-left: 18px;
-        padding-right: 18px;
-        padding-bottom: clamp(78px, 9vh, 128px);
-        display:flex;
-        flex-direction:column;
-        gap: clamp(12px, 1.8vh, 18px);
-      }
-.hero{
-        margin-top: 0;
-        margin-bottom: clamp(22px, 3vh, 44px);
-      }
-.card{
-  max-width: 920px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: clamp(24px, 3vw, 36px);
+@media (max-width:760px){.freyPhiSpaceBg::after{
+  content:"";
+  position:absolute;
+  inset:-34vh -34vw;
+  background:
+    radial-gradient(900px 620px at 46% 70%, rgba(14,58,162,0.14), rgba(0,0,0,0) 68%),
+    radial-gradient(1100px 740px at 58% 58%, rgba(3,214,255,0.05), rgba(0,0,0,0) 74%);
+  filter: blur(52px) saturate(1.02) brightness(1.03);
+  opacity:0.06;
+  transform: translate3d(0,0,0);
+  animation: freyVibeBreath 34s ease-in-out infinite;
 }
 .qRow{ gap: 14px; margin-top: 18px; }
 .qInput{ min-height: 56px; font-size: 18px; }
