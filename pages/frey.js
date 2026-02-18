@@ -52,7 +52,7 @@ export default function FreyPage() {
         <meta name="description" content="Frey: query-first navigation through cosmography." />
       </Head>
 
-      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3">
+      <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1">
         <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
@@ -68,7 +68,7 @@ export default function FreyPage() {
   <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_11">
               <input
                 ref={inputRef}
-                className="qInput"
+                className="qInput askFreyInput"
                 data-frey-q="1"
                
                 aria-label="Frey query"
@@ -167,7 +167,7 @@ export default function FreyPage() {
 /* __FREY_NOISE_MOBILE_TUNE_V0_1__ */
 .hero{ margin-bottom: var(--phi-55); }
 .askFreyBox{
-  max-width: 860px;
+  max-width: 780px;
   margin-left: auto;
   margin-right: auto;
   background: rgba(0,0,0,0.44) !important;
@@ -316,6 +316,64 @@ export default function FreyPage() {
 
 @media (max-width: 640px){
   [data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .qRow{ padding: 14px !important; border-radius: 20px !important; }
+}
+
+/* FREY_UI_CONTROLS_V0_1 */
+.askFreyInput {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px;
+  color: rgba(233, 238, 247, 0.95);
+  background: rgba(10, 14, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  outline: none;
+}
+.askFreyInput::placeholder {
+  color: rgba(233, 238, 247, 0.55);
+}
+.askFreyInput:focus {
+  border-color: rgba(233, 184, 93, 0.55);
+  box-shadow: 0 0 0 3px rgba(233, 184, 93, 0.12);
+}
+
+.askFreyCta {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 14, 20, 0.40);
+  color: rgba(233, 238, 247, 0.92);
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 120ms ease;
+}
+.askFreyCta:hover {
+  background: rgba(10, 14, 20, 0.52);
+  border-color: rgba(233, 184, 93, 0.35);
+}
+.askFreyCta:active {
+  transform: translateY(1px);
+}
+.askFreyCta:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.askFreyChip {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 14, 20, 0.38);
+  color: rgba(233, 238, 247, 0.90);
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.askFreyChip:hover {
+  background: rgba(10, 14, 20, 0.52);
+  border-color: rgba(233, 184, 93, 0.32);
 }
 `}</style>
     </>
