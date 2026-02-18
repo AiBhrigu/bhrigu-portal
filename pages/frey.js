@@ -413,6 +413,46 @@ export default function FreyPage() {
 .askFreyBox > :not(.qRow):not(.chips) {
   display: none !important;
 }
+
+
+/* __FREY_DELOAD_WINDOW_V0_2__ */
+[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"]{
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] h2,
+[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .muted{ display: none !important; }
+
+[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .qRow{
+  max-width: 720px !important;
+  margin: 0 auto 14px auto !important;
+  padding: 16px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  background: rgba(0,0,0,0.20) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+[data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .chips{
+  max-width: 720px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  margin-top: 10px !important;
+}
+
+.wrap{ padding-top: clamp(32px, 4vh, 56px) !important; padding-bottom: clamp(78px, 9vh, 120px) !important; }
+.hero{ margin-bottom: clamp(18px, 3vh, 36px) !important; }
+
+@media (max-width: 640px){
+  [data-frey-deload="FREY_DELOAD_WINDOW_V0_2"] .qRow{ padding: 14px !important; border-radius: 20px !important; }
+}
 `}</style>
     </>
   );
