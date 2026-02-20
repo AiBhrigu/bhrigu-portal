@@ -464,12 +464,17 @@ export default function FreyPage() {
 }
 }
 /* FGMGA_V0_4 */
-@media (max-width: 520px) {
-  [data-frey-kicker="FGMGA_V0_4"],
-  [data-frey-lead="FGMGA_V0_4"] {
-    padding-left: clamp(16px, 4vw, 28px);
-    padding-right: clamp(16px, 4vw, 28px);
-  }
+
+/* FGMGA_V0_6: mobile gutter unification (wrap is the single gutter source) */
+@media (max-width: 560px){
+  .wrap{ padding-left: 16px !important; padding-right: 16px !important; }
+  .hero{ max-width: 760px !important; margin-left: auto !important; margin-right: auto !important; width: 100% !important; }
+}
+@media (max-width: 520px){
+  .wrap{ padding-left: 12px !important; padding-right: 12px !important; }
+}
+@media (max-width: 420px){
+  .wrap{ padding-left: 10px !important; padding-right: 10px !important; }
 }
 `}</style>
     </>
