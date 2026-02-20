@@ -57,7 +57,7 @@ export default function FreyPage() {
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker" data-frey-kicker="FGMGA_V0_4">
-              <span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span>
+              <span>FREY</span>
             </div>
             <p className="subtitle" data-frey-lead="FGMGA_V0_4">
               Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
