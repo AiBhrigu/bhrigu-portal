@@ -53,7 +53,7 @@ export default function FreyPage() {
       </Head>
 
       <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1" data-frey-controls="FREY_CONTROLS_FIX_V0_2">
-        <div data-frey-root="FREY_ROOT_V0_1" data-frey-stability="FREY_INPUT_STABILITY_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" data-frey-shell="FREY_SHELL_MAXWIDTH_ALIGN_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
+        <div data-frey-root="FREY_ROOT_V0_1 FREY_INPUT_STABILITY_V0_1" data-frey-stability="FREY_INPUT_STABILITY_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" data-frey-shell="FREY_SHELL_MAXWIDTH_ALIGN_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker" data-frey-kicker="FGMGA_V0_4">
