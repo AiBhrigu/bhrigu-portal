@@ -19,7 +19,31 @@ const CHIPS = [
 export default function FreyPage() {
   const router = useRouter();
   const inputRef = useRef(null);
-  const [q, setQ] = useState("");
+  const qRef = useRef("");
+  const qInputRef = useRef(null);
+  const qBtnRef = useRef(null);
+
+  const syncCanGo = (raw) => {
+    const ok = ((raw || "").trim().length > 0);
+    const b = qBtnRef.current;
+    if (b) {
+      b.disabled = !ok;
+      b.dataset.canGo = ok ? "1" : "0";
+    }
+  };
+
+  const setQDirect = (raw) => {
+    const v = String(raw || "");
+    qRef.current = v;
+    const i = qInputRef.current;
+    if (i) i.value = v;
+    syncCanGo(v);
+  };
+
+  const onQInput = (e) => {
+    qRef.current = e.currentTarget.value || "";
+    syncCanGo(qRef.current);
+  };
 
   const canGo = useMemo(() => q.trim().length > 0, [q]);
 
@@ -41,7 +65,7 @@ export default function FreyPage() {
   };
 
   const onChip = (t) => {
-    setQ(t);
+    setQDirect(t);
     go(t);
   };
 
@@ -68,12 +92,11 @@ export default function FreyPage() {
   <div className="qRow" data-frey-qrow="FREY_QROW_STACK_V0_11">
               <input
                 ref={inputRef}
-                className="qInput askFreyInput"
+                className="qInput askFreyInput" ref={qInputRef} defaultValue=""
                 data-frey-q="1"
                
                 aria-label="Frey query"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onInput={onQInput}
                 onKeyDown={onKeyDown}
                 autoComplete="off"
                 autoCapitalize="none"
