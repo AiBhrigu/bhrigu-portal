@@ -345,3 +345,8 @@ header, .header, .topbar {
   border-color:rgba(220,188,118,0.55);
   filter:brightness(1.04);
 }
+
+
+/* HDR_SCROLLBAR_GUTTER_STABLE_V0_1 */
+html{scrollbar-gutter:stable;}
+@supports not (scrollbar-gutter:stable){html{overflow-y:scroll;}}
