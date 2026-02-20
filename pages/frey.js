@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import BhriguPhiHeader from "../components/BhriguPhiHeader";
 
 const CHIPS = [
   "human <-> project: where are we now and what is the next step?",
@@ -52,7 +51,6 @@ export default function Frey() {
         data-frey-flow="FREY_QUERY_FLOW_UI_ONLY_V0_4"
         data-frey-inp="FREY_INPUT_STABILITY_V0_1"
       >
-        <BhriguPhiHeader />
 
         <main className="freyMain">
           <section className="freyHero">
