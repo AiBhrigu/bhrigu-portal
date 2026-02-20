@@ -350,3 +350,9 @@ header, .header, .topbar {
 /* HDR_SCROLLBAR_GUTTER_STABLE_V0_1 */
 html{scrollbar-gutter:stable;}
 @supports not (scrollbar-gutter:stable){html{overflow-y:scroll;}}
+
+/* HDR_SCROLL_GUTTER_V0_2 */
+html { scrollbar-gutter: stable; }
+@supports not (scrollbar-gutter: stable) {
+  html { overflow-y: scroll; }
+}
