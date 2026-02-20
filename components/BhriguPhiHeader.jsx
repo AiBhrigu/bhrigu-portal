@@ -9,6 +9,16 @@ import React from "react"; export default function BhriguPhiHeader() { const css
 @media (max-width: 420px){
   [data-hdr-logo="HDR_LOGO_GUTTER_ALIGN_V0_2"]{ padding-left: 10px !important; padding-right: 10px !important; }
 }
+/* HDR_LOGO_GUTTER_ALIGN_V0_4: mobile gutter unify for header root */
+@media (max-width: 560px){
+  [data-hdr-logo="HDR_LOGO_GUTTER_ALIGN_V0_4"]{ padding-left: 16px !important; padding-right: 16px !important; }
+}
+@media (max-width: 520px){
+  [data-hdr-logo="HDR_LOGO_GUTTER_ALIGN_V0_4"]{ padding-left: 12px !important; padding-right: 12px !important; }
+}
+@media (max-width: 420px){
+  [data-hdr-logo="HDR_LOGO_GUTTER_ALIGN_V0_4"]{ padding-left: 10px !important; padding-right: 10px !important; }
+}
 
 `; return ( <header className="bh-header" data-hdr="HDR_CANON_GOLDENPATH_V0_1" data-hdr-logo="HDR_LOGO_GUTTER_ALIGN_V0_1" data-ops="OPS_MARKERS_DATA_ATTRS_V0_2"> <div className="bh-shell"> <a className="bh-brand" href="/" aria-label="BHRIGU home"> <span className="bh-plaque"> <span className="bh-word">BHRIGU</span> <span className="bh-sub"></span> </span> </a> <div className="bh-ctas"> <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_6">Open Frey</a> <a className="bh-btn" href="/orion">ORION</a> </div> </div> <style>{css}</style> </header> );
 }
