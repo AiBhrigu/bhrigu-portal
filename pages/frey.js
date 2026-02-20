@@ -97,11 +97,7 @@ export default function Frey() {
               </div>
             </div>
 
-            <div className="navLift" aria-label="Golden path">
-              <a className="lift" href="/start">Prev</a>
-              <a className="lift" href="/map">Up</a>
-              <a className="lift" href="/reading">Next</a>
-            </div>
+            
           </section>
         </main>
 
