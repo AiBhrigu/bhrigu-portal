@@ -53,7 +53,7 @@ export default function FreyPage() {
       </Head>
 
       <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1" data-frey-controls="FREY_CONTROLS_FIX_V0_2">
-        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
+        <div data-frey-root="FREY_ROOT_V0_1" data-frey-mobile="FREY_MOBILE_WIDTH_V0_1" data-frey-shell="FREY_SHELL_MAXWIDTH_ALIGN_V0_1" aria-hidden="true" data-frey-mark={BG_MARK} className="freyPhiSpaceBg" data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6" />
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker" data-frey-kicker="FGMGA_V0_4">
@@ -256,7 +256,10 @@ export default function FreyPage() {
 }
 
 /* __FREY_MOBILE_WIDTH_V0_1__ */
-[data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { width: 100%; max-width: 860px; margin: 0 auto; padding-left: 16px; padding-right: 16px; }
+[data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { width: 100%; max-width: 860px; margin: 0 auto; padding-left: 16px; padding-right: 16px;
+  max-width: 1120px;
+  padding: 0 28px;
+}
 [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] input, [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] textarea { width: 100%; max-width: 100%; }
 @media (max-width: 520px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 12px; padding-right: 12px; } }
 @media (max-width: 420px) { [data-frey-mobile="FREY_MOBILE_WIDTH_V0_1"] { padding-left: 10px; padding-right: 10px; } }
