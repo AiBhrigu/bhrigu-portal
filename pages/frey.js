@@ -49,7 +49,7 @@ export default function FreyPage() {
     <>
       <Head>
         <title>Frey · BHRIGU</title>
-        <meta name="description" content="Frey: query-first navigation through cosmography." />
+        <meta name="description" content="Frey: query-first navigation through cosmography."  data-frey-lead="FGMGA_V0_3"/>
       </Head>
 
       <div className="freyPage" data-frey-qrow-stack="FREY_QROW_STACK_V0_14" data-frey-flow={FLOW_MARK} data-frey-deload="FREY_DELOAD_WINDOW_V0_3" data-frey-ui="FREY_UI_CONTROLS_V0_1" data-frey-controls="FREY_CONTROLS_FIX_V0_2">
@@ -57,7 +57,7 @@ export default function FreyPage() {
         <main className="wrap">
           <header className="hero">
             <div id="phi-frey-entry" className="kicker">
-              <span>BHRIGU</span> · <span>Frey</span> · <span>ORION</span>
+              <span data-frey-kicker="FGMGA_V0_3">BHRIGU</span> · <span>Frey</span> · <span>ORION</span>
             </div>
             <p className="subtitle">
               Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
@@ -462,7 +462,14 @@ export default function FreyPage() {
   padding:0 22px;
   line-height:1;
 }
-
+/* FGMGA_V0_3 */
+@media (max-width: 520px) {
+  [data-frey-kicker="FGMGA_V0_3"],
+  [data-frey-lead="FGMGA_V0_3"] {
+    padding-left: clamp(16px, 4vw, 28px);
+    padding-right: clamp(16px, 4vw, 28px);
+  }
+}
 `}</style>
     </>
   );
