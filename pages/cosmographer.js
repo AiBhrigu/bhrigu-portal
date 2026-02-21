@@ -213,7 +213,8 @@ export default function Cosmographer() {
           content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained."
         />
       </Head>
-      <main data-cosmo-quickmap="COSMO_QUICKMAP_POLISH_V0_4" style={{ maxWidth: 980, margin: "0 auto", padding: "48px 18px" }} data-cosmo="COSMO_QUICKMAP_POLISH_V0_4" data-cosmographer-ui="COSMOGRAPHER_UI_MARK_V0_1">
+      <main data-cosmo-quickmap="COSMO_QUICKMAP_POLISH_V0_4" style={{ maxWidth: 980, margin: "0 auto", padding: "48px 18px" }} data-cosmo="COSMO_QUICKMAP_POLISH_V0_4" data-cosmographer-ui="COSMOGRAPHER_UI_MARK_V0_1" data-cosmographer-center="COSMOGRAPHER_CENTER_V0_13">
+<div data-cosmographer-wrap="COSMOGRAPHER_CENTER_V0_13" style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto" }}>
 <div data-phi-cosmographer-center={__PHI_COSMOGRAPHER_CENTER_V0_13} style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto" }}>
 
       <span aria-hidden="true" style={{ display: "none" }} data-mark="COSMO" />
@@ -266,6 +267,8 @@ export default function Cosmographer() {
 
 
 <p className="muted">Investors / partners overview: /investors. <span style={{display:"none"}}>__IA_COSMO_TO_INVESTORS_V0_2__</span></p>
+
+</div>
 
 </div>
 </main>
