@@ -2,6 +2,8 @@ import React, { useMemo, useState, useCallback } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
+const __PHI_FREY_CENTER_V0_13 = "FREY_CENTER_LAYOUT_V0_13";
+
 const CHIPS = [
   "human <-> project: where are we now and what is the next step?",
   "human <-> asset: what is the risk/support tone for the next 30 days?",
@@ -53,6 +55,8 @@ export default function Frey() {
       >
 
         <main className="freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
+<div data-phi-frey-center={__PHI_FREY_CENTER_V0_13} style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto" }}>
+
           <section className="freyHero">
             <div className="copy">
               <div className="kicker">FREY</div>
@@ -99,7 +103,9 @@ export default function Frey() {
 
             
           </section>
-        </main>
+        
+</div>
+</main>
 
         <style jsx>{`
           .freyRoot {
