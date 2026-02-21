@@ -6,7 +6,7 @@ export default function PrevNextBlock({ route }) {
   if (!prev && !next && !up) return null;
 
   return (
-    <nav className="pn" data-pn-root="PORTAL_PREVNEXT_V0_2" aria-label="Portal navigation">
+    <nav data-prevnext="FREY_NAV_SINGLE_V0_2" className="pn" data-pn-root="PORTAL_PREVNEXT_V0_2" aria-label="Portal navigation">
       <div className="pnInner">
         {prev ? <Link className="pnLink" href={prev}>Prev</Link> : <span className="pnGhost">Prev</span>}
         {up ? <Link className="pnLink pnUp" href={up}>Up</Link> : null}
