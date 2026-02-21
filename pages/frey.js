@@ -55,7 +55,7 @@ export default function Frey() {
       >
 
         <main className="freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
-<div className="phiCenter" data-phi-frey-center={__PHI_FREY_CENTER_V0_13}>
+<div style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }} data-frey-hero="FREY_HERO_CENTER_V0_20" className="phiCenter" data-phi-frey-center={__PHI_FREY_CENTER_V0_13}>
 
           <section className="freyHero">
             <div className="copy">
