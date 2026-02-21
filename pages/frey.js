@@ -55,7 +55,7 @@ export default function Frey() {
       >
 
         <main className="freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
-<div data-phi-frey-center={__PHI_FREY_CENTER_V0_13} style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto" }}>
+<div className="phiCenter" data-phi-frey-center={__PHI_FREY_CENTER_V0_13}>
 
           <section className="freyHero">
             <div className="copy">
@@ -255,6 +255,15 @@ export default function Frey() {
   margin-right: auto;
   text-align: left;
 }
+
+          .freyMain {
+            display: flex;
+            justify-content: center;
+          }
+          .phiCenter {
+            width: min(980px, calc(100vw - 48px));
+            margin: 0 auto;
+          }
 `}</style>
       </div>
     </>
