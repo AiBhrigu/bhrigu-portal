@@ -211,7 +211,7 @@ export default function Cosmographer() {
           content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey. Surface-first, reproducible, and constrained."
         />
       </Head>
-      <main data-cosmo-quickmap="COSMO_QUICKMAP_POLISH_V0_4" style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }} data-cosmo="COSMO_QUICKMAP_POLISH_V0_4">
+      <main data-cosmo-quickmap="COSMO_QUICKMAP_POLISH_V0_4" style={{ maxWidth: 920, margin: "0 auto", padding: "48px 18px" }} data-cosmo="COSMO_QUICKMAP_POLISH_V0_4" data-cosmographer-ui="COSMOGRAPHER_UI_MARK_V0_1">
       <span aria-hidden="true" style={{ display: "none" }} data-mark="COSMO" />
 
         <section

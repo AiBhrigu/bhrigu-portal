@@ -52,7 +52,7 @@ export default function Frey() {
         data-frey-inp="FREY_INPUT_STABILITY_V0_1"
       >
 
-        <main className="freyMain">
+        <main className="freyMain" data-frey-ui="FREY_UI_CENTER_V0_5">
           <section className="freyHero">
             <div className="copy">
               <div className="kicker">FREY</div>
@@ -238,7 +238,18 @@ export default function Frey() {
               grid-template-columns: 1fr 1fr;
             }
           }
-        `}</style>
+
+.k, .h, .p {
+  width: 100%;
+  text-align: center;
+}
+
+.card {
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+`}</style>
       </div>
     </>
   );
