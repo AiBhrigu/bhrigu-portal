@@ -40,7 +40,7 @@ export default function Frey() {
   );
 
   return (
-    <>
+    <main data-phi-page="PHI_FREY_DOM_MARK_V0_23">
       <Head>
         <title>FREY - BHRIGU</title>
         <meta name="robots" content="index,follow" />
@@ -266,6 +266,6 @@ export default function Frey() {
           }
 `}</style>
       </div>
-    </>
+    </main>
   );
 }

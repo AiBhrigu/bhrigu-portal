@@ -191,7 +191,7 @@ function mdToHtml(md) {
 export default function Cosmographer() {
   const html = mdToHtml(MD);
   return (
-    <>
+    <main data-phi-page="PHI_COSMOGRAPHER_DOM_MARK_V0_23">
       <Head>
         <title>The Cosmographer · BHRIGU</title>
         <meta name="description" content="Meet the Cosmographer: a vertical, axis-driven AI for cosmography, ORION, and Frey." />
@@ -272,6 +272,6 @@ export default function Cosmographer() {
 
 </div>
 </main>
-    </>
+    </main>
   );
 }
