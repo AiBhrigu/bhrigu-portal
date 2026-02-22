@@ -110,7 +110,14 @@ export default function Frey() {
         <style jsx>{`
           .freyRoot { min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; background: radial-gradient(60% 70% at 45% 40%, rgba(50, 90, 160, 0.35), rgba(0, 0, 0, 0.95)); }
 
-          .freyMain { margin: 0 auto; padding: 48px 18px; transform: translateY(-4vh); }
+          .freyMain {
+  margin: 0 auto;
+  padding: 0 18px;
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
           .freyHero {
             display: grid;
