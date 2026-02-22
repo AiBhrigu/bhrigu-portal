@@ -114,9 +114,9 @@ export default function Frey() {
           }
 
           .freyMain {
-            max-width: 1100px;
+            
             margin: 0 auto;
-            padding: 72px 18px 64px;
+            padding: 48px 18px;
           }
 
           .freyHero {
