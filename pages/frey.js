@@ -55,7 +55,7 @@ export default function Frey() {
       >
 
         <div className="phiPageFrame freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
-<div style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }} data-frey-hero="FREY_HERO_CENTER_V0_20"  >
+<div style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }} data-frey-hero="FREY_HERO_CENTER_V0_20"  >
 
           <section className="phiPageFrame freyHero">
             <div className="phiPageFrame copy">
@@ -120,10 +120,12 @@ export default function Frey() {
 }
 
           .freyHero {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 28px;
-          }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+}
 
           .kicker {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
