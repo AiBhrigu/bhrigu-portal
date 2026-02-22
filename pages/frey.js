@@ -115,8 +115,9 @@ export default function Frey() {
   padding: 0 18px;
   min-height: calc(100vh - 80px);
   display: flex;
+  justify-content: flex-start;
   align-items: center;
-  justify-content: center;
+  padding-top: calc((100vh - 80px) * 0.382);
 }
 
           .freyHero {
