@@ -47,7 +47,7 @@ export default function Frey() {
       </Head>
 
       <div
-        className="phiPageFrame freyRoot"
+        className="phiPageFrame freyRoot heroScene"
         data-frey-shell="FREY_SHELL_MAXWIDTH_ALIGN_V0_1"
         data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6"
         data-frey-flow="FREY_QUERY_FLOW_UI_ONLY_V0_4"
