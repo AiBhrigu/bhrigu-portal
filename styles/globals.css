@@ -356,3 +356,13 @@ html { scrollbar-gutter: stable; }
 @supports not (scrollbar-gutter: stable) {
   html { overflow-y: scroll; }
 }
+
+.phiPageFrame {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+}

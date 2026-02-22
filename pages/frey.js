@@ -47,29 +47,29 @@ export default function Frey() {
       </Head>
 
       <div
-        className="freyRoot"
+        className="phiPageFrame freyRoot"
         data-frey-shell="FREY_SHELL_MAXWIDTH_ALIGN_V0_1"
         data-frey-vibe="FREY_VIBE_BREATH_TUNE_V0_6"
         data-frey-flow="FREY_QUERY_FLOW_UI_ONLY_V0_4"
         data-frey-inp="FREY_INPUT_STABILITY_V0_1"
       >
 
-        <main className="freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
+        <main className="phiPageFrame freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
 <div style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }} data-frey-hero="FREY_HERO_CENTER_V0_20"  >
 
-          <section className="freyHero">
-            <div className="copy">
-              <div className="kicker">FREY</div>
-              <h1 className="h1">
+          <section className="phiPageFrame freyHero">
+            <div className="phiPageFrame copy">
+              <div className="phiPageFrame kicker">FREY</div>
+              <h1 className="phiPageFrame h1">
                 Dialog interface for cosmography: query-first navigation through time, cycles, links and scenarios.
               </h1>
             </div>
 
-            <div className="cardWrap">
-              <div className="card" data-frey-card="1">
-                <div className="ask">
+            <div className="phiPageFrame cardWrap">
+              <div className="phiPageFrame card" data-frey-card="1">
+                <div className="phiPageFrame ask">
                   <input
-                    className="qInput askFreyInput"
+                    className="phiPageFrame qInput askFreyInput"
                     data-frey-q="1"
                     aria-label="Frey query"
                     value={q}
@@ -82,7 +82,7 @@ export default function Frey() {
                   />
                   <button
                     type="button"
-                    className="btn btnCta"
+                    className="phiPageFrame btn btnCta"
                     data-frey-cta="FREY_CTA_PHI_CANON_V0_3"
                     onClick={go}
                     disabled={!canGo}
@@ -91,9 +91,9 @@ export default function Frey() {
                   </button>
                 </div>
 
-                <div className="chips" aria-label="Frey example queries">
+                <div className="phiPageFrame chips" aria-label="Frey example queries">
                   {CHIPS.map((t) => (
-                    <button key={t} type="button" className="chip" onClick={() => onChip(t)}>
+                    <button key={t} type="button" className="phiPageFrame chip" onClick={() => onChip(t)}>
                       {t}
                     </button>
                   ))}
