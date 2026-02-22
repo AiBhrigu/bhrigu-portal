@@ -54,7 +54,7 @@ export default function Frey() {
         data-frey-inp="FREY_INPUT_STABILITY_V0_1"
       >
 
-        <main className="phiPageFrame freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
+        <div className="phiPageFrame freyMain" data-frey-ui="FREY_UI_CENTER_V0_6">
 <div style={{ width: "min(980px, calc(100vw - 48px))", margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "flex-start", textAlign: "left" }} data-frey-hero="FREY_HERO_CENTER_V0_20"  >
 
           <section className="phiPageFrame freyHero">
@@ -105,19 +105,12 @@ export default function Frey() {
           </section>
         
 </div>
-</main>
+</div>
 
         <style jsx>{`
-          .freyRoot {
-            min-height: 100vh;
-            background: radial-gradient(60% 70% at 45% 40%, rgba(50, 90, 160, 0.35), rgba(0, 0, 0, 0.95));
-          }
+          .freyRoot { min-height: calc(100vh - 72px); display: flex; align-items: center; justify-content: center; background: radial-gradient(60% 70% at 45% 40%, rgba(50, 90, 160, 0.35), rgba(0, 0, 0, 0.95)); }
 
-          .freyMain {
-            
-            margin: 0 auto;
-            padding: 48px 18px;
-          }
+          .freyMain { margin: 0 auto; padding: 48px 18px; transform: translateY(-4vh); }
 
           .freyHero {
             display: grid;
