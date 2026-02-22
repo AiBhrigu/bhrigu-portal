@@ -115,9 +115,8 @@ export default function Frey() {
   padding: 0 18px;
   min-height: calc(100vh - 80px);
   display: flex;
-  justify-content: flex-start;
   align-items: center;
-  padding-top: calc((100vh - 80px) * 0.382);
+  justify-content: center;
 }
 
           .freyHero {
@@ -125,7 +124,7 @@ export default function Frey() {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 36px;
 }
 
           .kicker {
