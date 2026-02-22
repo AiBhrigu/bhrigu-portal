@@ -131,7 +131,7 @@ export default function Home() {
       </main>
 
       <style jsx>{`
-        .wrap { max-width: 1100px; margin: 0 auto; padding: 36px 18px 76px; }
+        .wrap { max-width: 980px; margin: 0 auto; padding: 36px 18px 76px; }
         .hero { padding: 10px 0 18px; border-bottom: 1px solid rgba(255,255,255,.08); }
         .kicker { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; opacity: .75; margin-bottom: 10px; }
         .title { font-size: 46px; line-height: 1.06; margin: 0 0 12px; }
