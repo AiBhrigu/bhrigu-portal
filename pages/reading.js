@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 
 function frame(mode, q) {
   const base = [`Signal: "${q}"`, ""];
@@ -7,16 +7,9 @@ function frame(mode, q) {
     return [
       ...base,
       "▣ Objective Layer",
-      "  Structural objective detected.",
-      "",
       "▣ Timeline Layer",
-      "  Mid-term phase transition likely.",
-      "",
       "▣ Execution Layer",
-      "  Controlled expansion advised.",
-      "",
-      "▣ Risk Node",
-      "  Volatility cluster present."
+      "▣ Risk Node"
     ];
   }
 
@@ -24,39 +17,29 @@ function frame(mode, q) {
     return [
       ...base,
       "▣ Asset Definition",
-      "  Interpreted as structural capital layer.",
-      "",
       "▣ Liquidity Layer",
-      "  Compression detected.",
-      "",
       "▣ Risk Envelope",
-      "  Moderate instability window.",
-      "",
-      "▣ Evolution Potential",
-      "  Adaptive positioning suggested."
+      "▣ Evolution Potential"
     ];
   }
 
   return [
     ...base,
     "▣ Pattern Recognition",
-    "  Interaction pattern identified.",
-    "",
     "▣ Interaction Vector",
-    "  Directional alignment needed.",
-    "",
     "▣ Stability Vector",
-    "  Balance threshold near pivot.",
-    "",
-    "▣ Suggested Move",
-    "  Recalibrate communication phase."
+    "▣ Suggested Move"
   ];
 }
 
 export default function Reading() {
-  const router = useRouter();
-  const { mode = "project", q = "" } = router.query;
-  const lines = frame(mode, q);
+  const [lines, setLines] = useState([]);
+
+  useEffect(() => {
+    const mode = sessionStorage.getItem("frey_mode") || "project";
+    const q = sessionStorage.getItem("frey_signal") || "";
+    setLines(frame(mode, q));
+  }, []);
 
   return (
     <div style={{ padding: "120px 40px", maxWidth: "720px", margin: "0 auto" }}>
