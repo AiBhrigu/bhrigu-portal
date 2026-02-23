@@ -8,7 +8,9 @@ export default function Frey() {
   const examples = [
     "Early-stage AI infrastructure startup",
     "Renewable energy DAO",
-    "Founder facing burnout"
+    "Founder facing burnout",
+    "Pre-seed Web3 protocol seeking product-market fit",
+    "Illiquid asset under high macro volatility"
   ]
 
   const goReading = (value) => {
@@ -53,7 +55,7 @@ export default function Frey() {
           .exampleLayer {
             margin-top: 20px;
             font-size: 13px;
-            opacity: 0.8;
+            opacity: 0.85;
           }
 
           .exampleItem {
