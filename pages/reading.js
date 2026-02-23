@@ -22,14 +22,19 @@ export default function Reading() {
   const summary = readiness > 0.75
     ? "Structure is strong. Expansion window is open."
     : readiness > 0.6
-    ? "Structure is stable. Growth depends on risk control."
+    ? "Structure is stable. Growth is possible. Risk discipline defines expansion speed."
     : "Execution strength is emerging. Focus on internal reinforcement."
 
   return (
     <main style={{ padding: "80px 24px", maxWidth: "1000px", margin: "0 auto" }}>
 
       <h1>FREY · Project State Model</h1>
-      <h2 style={{ marginTop: "20px" }}>
+
+      <p style={{ opacity: 0.5, fontSize: "14px", marginTop: "8px" }}>
+        Demo Interface · Strategic System Simulation
+      </p>
+
+      <h2 style={{ marginTop: "28px" }}>
         You are in: {baseState.title}
       </h2>
 
@@ -37,7 +42,7 @@ export default function Reading() {
         {summary}
       </p>
 
-      <section style={{ marginTop: "40px" }}>
+      <section style={{ marginTop: "48px" }}>
         <h3>What this phase enables</h3>
         <ul>
           <li>Fundraising readiness window</li>
@@ -79,6 +84,14 @@ System Resilience      ${resilience.toFixed(2)}`}
           onChange={(e) => setReadiness(parseFloat(e.target.value))}
           style={{ width: "100%" }}
         />
+      </section>
+
+      <section style={{ marginTop: "80px", paddingTop: "40px", borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <h3>Powered by Frey Architecture</h3>
+        <p style={{ maxWidth: "720px", opacity: 0.75 }}>
+          This model is part of a broader strategic system used for capital structuring,
+          ecosystem design, AI-native venture architecture and frontier-scale projects.
+        </p>
       </section>
 
     </main>
