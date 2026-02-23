@@ -12,16 +12,28 @@ export default function Reading() {
       <pre style={{ marginTop: "40px" }}>
 {`FIELD_TENSION     = (W - R) × (S / 200) × (H / 12)
 SYSTEM_RESILIENCE = R × (1 - W) × (S / 200)`}
-
-MODEL SCOPE
-
-This framework is project-agnostic.
-It applies to early-stage startups, AI systems,
-infrastructure builds and capital-intensive ventures.
-
-Variables adapt to context.
-Structural logic remains constant.
       </pre>
+
+      <section style={{ marginTop: "40px", opacity: 0.8 }}>
+        <h3>MODEL SCOPE</h3>
+        <p>
+          Frey is a structural evaluation framework.
+        </p>
+        <p>
+          It applies to early-stage startups, AI-native systems,
+          infrastructure builds, deep-tech ventures,
+          and capital-intensive ecosystems.
+        </p>
+        <p>
+          The variables adapt to context.
+          The structural logic remains constant.
+        </p>
+        <p>
+          Frey becomes most valuable during pre-investment evaluation,
+          capital allocation decisions, scaling transitions,
+          and strategic consolidation phases.
+        </p>
+      </section>
 
       <section style={{ marginTop: "60px" }}>
         <pre>
@@ -45,8 +57,8 @@ SYSTEM_RESILIENCE   0.20`}
 
       <p style={{ marginTop: "80px", opacity: 0.6 }}>
         Frey does not describe a single project.
-It models structural balance across evolving systems.
-Capital acts as a measurable vector within that balance.
+        It models structural balance across evolving systems.
+        Capital acts as a measurable vector within that balance.
       </p>
     </main>
   )
