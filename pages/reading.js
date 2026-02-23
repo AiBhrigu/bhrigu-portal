@@ -19,20 +19,56 @@ export default function Reading() {
     return readiness * (1 - baseState.risk) * (baseState.scale / 200)
   }, [readiness])
 
-  const maxScale = 450
-  const maxTension = 0.5
-
-  const x = 40 + (baseState.scale / maxScale) * 520
-  const y = 240 - ((fieldTension + maxTension) / (maxTension * 2)) * 220
+  const summary = readiness > 0.75
+    ? "Structure is strong. Expansion window is open."
+    : readiness > 0.6
+    ? "Structure is stable. Growth depends on risk control."
+    : "Execution strength is emerging. Focus on internal reinforcement."
 
   return (
-    <main style={{ padding: "80px 24px", maxWidth: "1100px", margin: "0 auto" }}>
+    <main style={{ padding: "80px 24px", maxWidth: "1000px", margin: "0 auto" }}>
 
-      <h1>FREY · PROJECT STATE MODEL</h1>
+      <h1>FREY · Project State Model</h1>
+      <h2 style={{ marginTop: "20px" }}>
+        You are in: {baseState.title}
+      </h2>
 
-      <div style={{ marginTop: "40px", marginBottom: "40px" }}>
+      <p style={{ marginTop: "16px", maxWidth: "680px", opacity: 0.85 }}>
+        {summary}
+      </p>
+
+      <section style={{ marginTop: "40px" }}>
+        <h3>What this phase enables</h3>
+        <ul>
+          <li>Fundraising readiness window</li>
+          <li>Strategic partnership alignment</li>
+          <li>Controlled product expansion</li>
+        </ul>
+      </section>
+
+      <section style={{ marginTop: "40px" }}>
+        <h3>To move forward</h3>
+        <ul>
+          <li>Increase execution readiness</li>
+          <li>Reduce structural risk</li>
+          <li>Extend capital horizon</li>
+        </ul>
+      </section>
+
+      <section style={{ marginTop: "60px" }}>
+        <h3>Key Indicators</h3>
+        <pre>
+{`Execution Readiness   ${readiness.toFixed(2)}
+Risk Weight            ${baseState.risk.toFixed(2)}
+Horizon (months)       ${baseState.horizon}
+Field Tension          ${fieldTension.toFixed(2)}
+System Resilience      ${resilience.toFixed(2)}`}
+        </pre>
+      </section>
+
+      <section style={{ marginTop: "40px" }}>
         <label style={{ display: "block", marginBottom: "12px" }}>
-          EXECUTION_READINESS: {readiness.toFixed(2)}
+          Adjust Execution Readiness
         </label>
         <input
           type="range"
@@ -43,19 +79,7 @@ export default function Reading() {
           onChange={(e) => setReadiness(parseFloat(e.target.value))}
           style={{ width: "100%" }}
         />
-      </div>
-
-      <svg width="100%" height="280" viewBox="0 0 600 280">
-        <line x1="40" y1="20" x2="40" y2="240" stroke="#333" />
-        <line x1="40" y1="240" x2="580" y2="240" stroke="#333" />
-
-        <circle cx={x} cy={y} r="6" fill="#c6a85b" />
-      </svg>
-
-      <pre style={{ marginTop: "40px" }}>
-{`FIELD_TENSION       ${fieldTension.toFixed(2)}
-SYSTEM_RESILIENCE    ${resilience.toFixed(2)}`}
-      </pre>
+      </section>
 
     </main>
   )
