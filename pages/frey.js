@@ -19,10 +19,21 @@ export default function Frey() {
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      background: "radial-gradient(ellipse at center, rgba(255,170,80,0.35) 0%, rgba(0,0,0,1) 70%)",
+      background: "radial-gradient(ellipse 70% 40% at center, rgba(255,170,80,0.45) 0%, rgba(0,0,0,0.95) 65%)",
+      position: "relative",
       color: "#e7c58f"
     }}>
-      <div style={{ width: "600px", textAlign: "center" }}>
+      <div style={{
+        position: "absolute",
+        width: "60%",
+        height: "1px",
+        background: "rgba(255,190,120,0.8)",
+        boxShadow: "0 0 18px rgba(255,170,80,0.9)",
+        top: "50%",
+        transform: "translateY(-50%)"
+      }} />
+
+      <div style={{ width: "520px", maxWidth: "90%", textAlign: "center" }}>
         <div style={{ marginBottom: "20px" }}>
           <button onClick={() => setMode("project")}>PROJECT</button>
           <button onClick={() => setMode("asset")}>ASSET</button>
