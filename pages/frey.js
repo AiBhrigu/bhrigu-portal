@@ -1,58 +1,73 @@
-import { useState } from "react";
-import { useRouter } from "next/router";
+import { useState } from 'react'
+import { useRouter } from 'next/router'
 
 export default function Frey() {
-  const router = useRouter();
-  const [mode, setMode] = useState("project");
-  const [q, setQ] = useState("");
+  const [signal, setSignal] = useState("")
+  const router = useRouter()
 
-  const submit = () => {
-    if (!q.trim()) return;
-    sessionStorage.setItem("frey_mode", mode);
-    sessionStorage.setItem("frey_signal", q);
-    router.push("/reading");
-  };
+  const examples = [
+    "Early-stage AI infrastructure startup",
+    "Renewable energy DAO",
+    "Founder facing burnout"
+  ]
+
+  const goReading = (value) => {
+    const q = value || signal
+    if (!q) return
+    router.push(`/reading?q=${encodeURIComponent(q)}`)
+  }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "radial-gradient(ellipse 70% 40% at center, rgba(255,170,80,0.45) 0%, rgba(0,0,0,0.95) 65%)",
-      position: "relative",
-      color: "#e7c58f"
-    }}>
-      <div style={{
-        position: "absolute",
-        width: "60%",
-        height: "1px",
-        background: "rgba(255,190,120,0.8)",
-        boxShadow: "0 0 18px rgba(255,170,80,0.9)",
-        top: "50%",
-        transform: "translateY(-50%)"
-      }} />
+    <div className="phiPageFrame freyRoot heroScene">
+      <div className="freyShell">
 
-      <div style={{ width: "520px", maxWidth: "90%", textAlign: "center" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <button onClick={() => setMode("project")}>PROJECT</button>
-          <button onClick={() => setMode("asset")}>ASSET</button>
-          <button onClick={() => setMode("human")}>HUMAN</button>
+        <div className="freyModes">
+          <button>PROJECT</button>
+          <button>ASSET</button>
+          <button>HUMAN</button>
         </div>
 
         <input
-          autoFocus
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
+          value={signal}
+          onChange={(e) => setSignal(e.target.value)}
           placeholder="Enter signal..."
-          style={{
-            width: "100%",
-            padding: "14px",
-            fontSize: "16px"
-          }}
         />
+
+        <div className="exampleLayer">
+          {examples.map((ex, i) => (
+            <div
+              key={i}
+              className="exampleItem"
+              onClick={() => goReading(ex)}
+            >
+              {ex}
+            </div>
+          ))}
+        </div>
+
+        <div className="freyNav">
+          <button onClick={() => goReading()}>Next</button>
+        </div>
+
+        <style jsx>{`
+          .exampleLayer {
+            margin-top: 20px;
+            font-size: 13px;
+            opacity: 0.8;
+          }
+
+          .exampleItem {
+            margin-bottom: 6px;
+            cursor: pointer;
+            color: rgba(255,200,120,0.85);
+          }
+
+          .exampleItem:hover {
+            opacity: 1;
+          }
+        `}</style>
+
       </div>
     </div>
-  );
+  )
 }
