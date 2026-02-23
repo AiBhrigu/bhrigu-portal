@@ -7,8 +7,8 @@ export default function Frey() {
         <title>Frey</title>
       </Head>
 
-      <div className="phiScene" data-frey-hero="FREY_PHI_CORE_V2_BREATH">
-        <div className="phiDepth" />
+      <div className="phiScene" data-frey-hero="FREY_PHI_CORE_V3_CONTROLLED_FIELD">
+        <div className="phiField" />
         <div className="phiMembrane" />
         <div className="phiAxis" />
         <div className="phiContent">
@@ -28,34 +28,36 @@ export default function Frey() {
           overflow: hidden;
         }
 
-        .phiDepth {
+        .phiField {
           position: absolute;
           inset: 0;
           background: radial-gradient(
             ellipse at center,
-            rgba(210,170,90,0.06) 0%,
-            rgba(0,0,0,0.85) 65%,
+            rgba(210,170,90,0.04) 0%,
+            rgba(210,170,90,0.02) 35%,
+            rgba(0,0,0,0.92) 70%,
             #000 100%
           );
+          pointer-events: none;
         }
 
         .phiMembrane {
           position: absolute;
-          width: min(820px, 90vw);
+          width: min(860px, 92vw);
           aspect-ratio: 1.618 / 1;
           border-radius: 50%;
-          border: 1px solid rgba(210,170,90,0.22);
-          animation: phiBreath 14s ease-in-out infinite;
+          border: 1px solid rgba(210,170,90,0.18);
+          animation: phiBreath 16s ease-in-out infinite;
         }
 
         .phiAxis {
           position: absolute;
           width: 1px;
-          height: 70%;
+          height: 72%;
           background: linear-gradient(
             to bottom,
             transparent,
-            rgba(210,170,90,0.45),
+            rgba(210,170,90,0.35),
             transparent
           );
         }
@@ -80,9 +82,9 @@ export default function Frey() {
         }
 
         @keyframes phiBreath {
-          0%   { transform: scale(1); opacity: 0.9; }
-          50%  { transform: scale(1.015); opacity: 1; }
-          100% { transform: scale(1); opacity: 0.9; }
+          0%   { transform: scale(1); opacity: 0.95; }
+          50%  { transform: scale(1.008); opacity: 1; }
+          100% { transform: scale(1); opacity: 0.95; }
         }
       `}</style>
     </>
