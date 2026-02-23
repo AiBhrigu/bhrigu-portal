@@ -1,75 +1,85 @@
-import { useState } from 'react'
-import { useRouter } from 'next/router'
-
 export default function Frey() {
-  const [signal, setSignal] = useState("")
-  const router = useRouter()
-
-  const examples = [
-    "Early-stage AI infrastructure startup",
-    "Renewable energy DAO",
-    "Founder facing burnout",
-    "Pre-seed Web3 protocol seeking product-market fit",
-    "Illiquid asset under high macro volatility"
-  ]
-
-  const goReading = (value) => {
-    const q = value || signal
-    if (!q) return
-    router.push(`/reading?q=${encodeURIComponent(q)}`)
-  }
-
   return (
-    <div className="phiPageFrame freyRoot heroScene">
-      <div className="freyShell">
-
-        <div className="freyModes">
-          <button>PROJECT</button>
-          <button>ASSET</button>
-          <button>HUMAN</button>
+    <div className="freyRoot">
+      <div className="freyAxis" />
+      <div className="freyMembrane">
+        <div className="freyContent">
+          <div className="freyMode">FREY · Query Interface</div>
+          <input
+            className="freyInput"
+            placeholder="Enter signal..."
+          />
+          <button className="freyButton">Next</button>
         </div>
-
-        <input
-          value={signal}
-          onChange={(e) => setSignal(e.target.value)}
-          placeholder="Enter signal..."
-        />
-
-        <div className="exampleLayer">
-          {examples.map((ex, i) => (
-            <div
-              key={i}
-              className="exampleItem"
-              onClick={() => goReading(ex)}
-            >
-              {ex}
-            </div>
-          ))}
-        </div>
-
-        <div className="freyNav">
-          <button onClick={() => goReading()}>Next</button>
-        </div>
-
-        <style jsx>{`
-          .exampleLayer {
-            margin-top: 20px;
-            font-size: 13px;
-            opacity: 0.85;
-          }
-
-          .exampleItem {
-            margin-bottom: 6px;
-            cursor: pointer;
-            color: rgba(255,200,120,0.85);
-          }
-
-          .exampleItem:hover {
-            opacity: 1;
-          }
-        `}</style>
-
       </div>
+
+      <style jsx>{`
+        .freyRoot {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at center, #0b1220 0%, #05070c 70%);
+          position: relative;
+        }
+
+        .freyAxis {
+          position: absolute;
+          width: 1px;
+          height: 100%;
+          background: rgba(255,200,120,0.15);
+        }
+
+        .freyMembrane {
+          width: 560px;
+          padding: 48px;
+          border-radius: 22px;
+          border: 1px solid rgba(255,200,120,0.3);
+          background: rgba(12,16,24,0.92);
+          backdrop-filter: blur(14px);
+          box-shadow:
+            0 0 80px rgba(255,200,120,0.15),
+            inset 0 0 40px rgba(255,200,120,0.05);
+          transition: all 0.4s ease;
+        }
+
+        .freyContent {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+          text-align: center;
+        }
+
+        .freyMode {
+          font-size: 14px;
+          letter-spacing: 1px;
+          opacity: 0.7;
+        }
+
+        .freyInput {
+          padding: 12px 14px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,200,120,0.3);
+          background: rgba(10,14,20,0.9);
+          color: #fff;
+        }
+
+        .freyButton {
+          padding: 10px;
+          border-radius: 10px;
+          border: 1px solid rgba(255,200,120,0.4);
+          background: rgba(255,200,120,0.1);
+          color: #fff;
+          cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+          .freyMembrane {
+            width: 92%;
+            padding: 32px;
+          }
+        }
+      `}</style>
     </div>
   )
 }
