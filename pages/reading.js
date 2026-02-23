@@ -1,123 +1,42 @@
-import { useRouter } from 'next/router'
-
 export default function Reading() {
-  const router = useRouter()
-  const { q } = router.query
-
-  const signal = q || "Signal not provided"
-
-  const data = {
-    objective: "Distributed intelligence infrastructure buildout",
-    scale: 180,
-    phase: 2,
-    horizon: "9–18 months",
-    readiness: 0.62,
-    riskWeight: 0.71,
-    riskVector: "Capital alignment"
-  }
-
   return (
-    <div className="phiReadingRoot">
-      <div className="phiAxis" />
+    <main style={{ padding: "80px 24px", maxWidth: "1100px", margin: "0 auto" }}>
+      <h1>FREY · PROJECT STATE MODEL</h1>
 
-      <div className="phiMembrane">
-        <div className="phiHeader">Mode: project</div>
-        <div className="phiSignal">Signal: {signal}</div>
+      <p style={{ opacity: 0.7, maxWidth: "640px" }}>
+        Frey models project evolution through structured metrics.
+        Each scenario below represents a systemic configuration.
+        Capital impact can be simulated through readiness shifts.
+      </p>
 
-        <div className="phiLayer">
-          <div className="phiTitle">Objective Layer</div>
-          <div className="phiText">{data.objective}</div>
-          <div className="phiMetric">Scale Index: {data.scale}</div>
-        </div>
+      <pre style={{ marginTop: "40px" }}>
+{`FIELD_TENSION     = (W - R) × (S / 200) × (H / 12)
+SYSTEM_RESILIENCE = R × (1 - W) × (S / 200)`}
+      </pre>
 
-        <div className="phiLayer">
-          <div className="phiTitle">Timeline Layer</div>
-          <div className="phiMetric">Phase: {data.phase} / 5</div>
-          <div className="phiMetric">Horizon: {data.horizon}</div>
-        </div>
+      <section style={{ marginTop: "60px" }}>
+        <pre>
+{`STATE 03 · Capital Alignment
 
-        <div className="phiLayer">
-          <div className="phiTitle">Execution Layer</div>
-          <div className="phiMetric">Readiness: {data.readiness}</div>
-        </div>
+SCALE_INDEX         180
+EXECUTION_READINESS 0.62
+RISK_WEIGHT         0.71
+HORIZON_MONTHS      9–18
 
-        <div className="phiLayer phiRisk">
-          <div className="phiTitle">Risk Node</div>
-          <div className="phiMetric">Risk Weight: {data.riskWeight}</div>
-          <div className="phiMetric">Vector: {data.riskVector}</div>
-        </div>
-      </div>
+FIELD_TENSION       0.12
+SYSTEM_RESILIENCE   0.14
 
-      <style jsx>{`
-        .phiReadingRoot {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: #05070c;
-          position: relative;
-        }
+Investment Simulation:
+If EXECUTION_READINESS = 0.72
 
-        .phiAxis {
-          position: absolute;
-          width: 1px;
-          height: 100%;
-          background: rgba(255,200,120,0.2);
-        }
+FIELD_TENSION       -0.01
+SYSTEM_RESILIENCE   0.20`}
+        </pre>
+      </section>
 
-        .phiMembrane {
-          width: 640px;
-          padding: 44px;
-          border-radius: 18px;
-          border: 1px solid rgba(255,200,120,0.3);
-          background: rgba(10,14,20,0.9);
-          backdrop-filter: blur(12px);
-          box-shadow: 0 0 70px rgba(255,200,120,0.15);
-          display: flex;
-          flex-direction: column;
-          gap: 26px;
-        }
-
-        .phiHeader {
-          font-size: 14px;
-          opacity: 0.65;
-        }
-
-        .phiSignal {
-          font-size: 20px;
-        }
-
-        .phiLayer {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .phiTitle {
-          font-weight: 600;
-        }
-
-        .phiText {
-          opacity: 0.85;
-        }
-
-        .phiMetric {
-          font-family: monospace;
-          font-size: 14px;
-          color: rgba(255,220,160,0.9);
-        }
-
-        .phiRisk {
-          color: rgba(255,120,120,0.85);
-        }
-
-        @media (max-width: 768px) {
-          .phiMembrane {
-            width: 94%;
-            padding: 28px;
-          }
-        }
-      `}</style>
-    </div>
+      <p style={{ marginTop: "80px", opacity: 0.6 }}>
+        Frey measures structural balance between scale, risk and readiness.
+      </p>
+    </main>
   )
 }
