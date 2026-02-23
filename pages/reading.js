@@ -3,32 +3,48 @@ import { useRouter } from 'next/router'
 export default function Reading() {
   const router = useRouter()
   const { q } = router.query
+
   const signal = q || "Signal not provided"
 
-  const getVariant = (text) => {
-    if (!text) return "default"
-    if (text.includes("AI")) return "ai"
-    if (text.includes("Renewable")) return "dao"
-    if (text.includes("burnout")) return "human"
-    if (text.includes("Web3")) return "web3"
-    if (text.includes("Illiquid")) return "asset"
-    return "default"
+  const data = {
+    objective: "Distributed intelligence infrastructure buildout",
+    scale: 180,
+    phase: 2,
+    horizon: "9–18 months",
+    readiness: 0.62,
+    riskWeight: 0.71,
+    riskVector: "Capital alignment"
   }
 
-  const variant = getVariant(signal)
-
   return (
-    <div className={`phiReadingRoot variant-${variant}`}>
+    <div className="phiReadingRoot">
       <div className="phiAxis" />
-      <div className="phiMembrane">
-        <div className="phiContent">
-          <div className="phiHeader">Mode: project</div>
-          <div className="phiSignal">Signal: {signal}</div>
 
-          <div className="phiBlock block-objective">Objective Layer</div>
-          <div className="phiBlock block-timeline">Timeline Layer</div>
-          <div className="phiBlock block-execution">Execution Layer</div>
-          <div className="phiBlock block-risk">Risk Node</div>
+      <div className="phiMembrane">
+        <div className="phiHeader">Mode: project</div>
+        <div className="phiSignal">Signal: {signal}</div>
+
+        <div className="phiLayer">
+          <div className="phiTitle">Objective Layer</div>
+          <div className="phiText">{data.objective}</div>
+          <div className="phiMetric">Scale Index: {data.scale}</div>
+        </div>
+
+        <div className="phiLayer">
+          <div className="phiTitle">Timeline Layer</div>
+          <div className="phiMetric">Phase: {data.phase} / 5</div>
+          <div className="phiMetric">Horizon: {data.horizon}</div>
+        </div>
+
+        <div className="phiLayer">
+          <div className="phiTitle">Execution Layer</div>
+          <div className="phiMetric">Readiness: {data.readiness}</div>
+        </div>
+
+        <div className="phiLayer phiRisk">
+          <div className="phiTitle">Risk Node</div>
+          <div className="phiMetric">Risk Weight: {data.riskWeight}</div>
+          <div className="phiMetric">Vector: {data.riskVector}</div>
         </div>
       </div>
 
@@ -38,81 +54,61 @@ export default function Reading() {
           display: flex;
           align-items: center;
           justify-content: center;
-          position: relative;
           background: #05070c;
+          position: relative;
         }
 
         .phiAxis {
           position: absolute;
           width: 1px;
           height: 100%;
-          background: rgba(255,200,120,0.08);
+          background: rgba(255,200,120,0.2);
         }
 
         .phiMembrane {
           width: 640px;
           padding: 44px;
           border-radius: 18px;
-          border: 1px solid rgba(255,200,120,0.25);
-          background: rgba(10,14,20,0.88);
-          backdrop-filter: blur(10px);
-          box-shadow: 0 0 70px rgba(255,200,120,0.12);
-          transition: all 0.4s ease;
-        }
-
-        .phiContent {
+          border: 1px solid rgba(255,200,120,0.3);
+          background: rgba(10,14,20,0.9);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 0 70px rgba(255,200,120,0.15);
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 26px;
         }
 
         .phiHeader {
-          opacity: 0.65;
           font-size: 14px;
+          opacity: 0.65;
         }
 
         .phiSignal {
           font-size: 20px;
-          margin-bottom: 6px;
         }
 
-        .phiBlock {
-          padding: 10px 0;
-          opacity: 0.9;
+        .phiLayer {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
         }
 
-        /* AI variant */
-        .variant-ai .phiBlock {
-          border-bottom: 1px solid rgba(120,160,255,0.25);
-        }
-        .variant-ai .block-risk {
-          border-bottom: none;
-        }
-
-        /* DAO variant */
-        .variant-dao .phiMembrane {
-          padding: 52px;
-          line-height: 1.8;
-        }
-
-        /* HUMAN variant */
-        .variant-human .block-risk {
+        .phiTitle {
           font-weight: 600;
+        }
+
+        .phiText {
+          opacity: 0.85;
+        }
+
+        .phiMetric {
+          font-family: monospace;
+          font-size: 14px;
+          color: rgba(255,220,160,0.9);
+        }
+
+        .phiRisk {
           color: rgba(255,120,120,0.85);
-        }
-
-        /* WEB3 variant */
-        .variant-web3 .phiBlock {
-          border-top: 1px solid rgba(180,120,255,0.25);
-        }
-        .variant-web3 .phiHeader {
-          letter-spacing: 1px;
-        }
-
-        /* ASSET variant */
-        .variant-asset .phiMembrane {
-          padding: 36px;
-          border-radius: 12px;
         }
 
         @media (max-width: 768px) {
