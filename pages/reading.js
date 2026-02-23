@@ -1,51 +1,50 @@
-import { useEffect, useState } from "react";
-
-function frame(mode, q) {
-  const base = [`Signal: "${q}"`, ""];
-
-  if (mode === "project") {
-    return [
-      ...base,
-      "▣ Objective Layer",
-      "▣ Timeline Layer",
-      "▣ Execution Layer",
-      "▣ Risk Node"
-    ];
-  }
-
-  if (mode === "asset") {
-    return [
-      ...base,
-      "▣ Asset Definition",
-      "▣ Liquidity Layer",
-      "▣ Risk Envelope",
-      "▣ Evolution Potential"
-    ];
-  }
-
-  return [
-    ...base,
-    "▣ Pattern Recognition",
-    "▣ Interaction Vector",
-    "▣ Stability Vector",
-    "▣ Suggested Move"
-  ];
-}
+import { useRouter } from 'next/router'
 
 export default function Reading() {
-  const [lines, setLines] = useState([]);
+  const router = useRouter()
+  const { q } = router.query
 
-  useEffect(() => {
-    const mode = sessionStorage.getItem("frey_mode") || "project";
-    const q = sessionStorage.getItem("frey_signal") || "";
-    setLines(frame(mode, q));
-  }, []);
+  const isDemo = !q
+  const signal = q || "Early-stage AI infrastructure startup"
 
   return (
-    <div style={{ padding: "120px 40px", maxWidth: "720px", margin: "0 auto" }}>
-      {lines.map((l, i) => (
-        <div key={i} style={{ marginBottom: "6px" }}>{l}</div>
-      ))}
+    <div className="phiPageFrame freyRoot heroScene">
+      <div className="freyShell">
+
+        <div className="freySignalHeader">
+          <div className="freyMode">Mode: project</div>
+          <div className="freySignal">Signal: {signal}</div>
+          {isDemo && (
+            <div className="freyDemoLabel">Demonstration Example</div>
+          )}
+        </div>
+
+        <div className="freyFrame">
+          {isDemo ? (
+            <>
+              <div><strong>Objective Layer</strong><br/>
+              Building distributed inference infrastructure optimized for modular AI workloads.</div>
+
+              <div><strong>Timeline Layer</strong><br/>
+              Transition window between prototype validation and first enterprise deployment.</div>
+
+              <div><strong>Execution Layer</strong><br/>
+              Bottleneck in orchestration scalability vs deployment maturity.</div>
+
+              <div><strong>Risk Node</strong><br/>
+              Capital runway misaligned with infrastructure expansion rate.</div>
+            </>
+          ) : (
+            <>
+              <div><strong>Objective Layer</strong></div>
+              <div><strong>Timeline Layer</strong></div>
+              <div><strong>Execution Layer</strong></div>
+              <div><strong>Risk Node</strong></div>
+            </>
+          )}
+        </div>
+
+      </div>
     </div>
-  );
+  )
 }
