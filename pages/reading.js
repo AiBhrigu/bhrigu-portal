@@ -15,11 +15,13 @@ export default function Reading() {
           <div className="freyMode">Mode: project</div>
           <div className="freySignal">Signal: {signal}</div>
           {isDemo && (
-            <div className="freyDemoLabel">Demonstration Example</div>
+            <div className="freyDemoLabel">
+              Structured Demonstration Layer
+            </div>
           )}
         </div>
 
-        <div className="freyFrame">
+        <div className={isDemo ? "freyFrame demoMembrane" : "freyFrame"}>
           {isDemo ? (
             <>
               <div><strong>Objective Layer</strong><br/>
@@ -43,6 +45,24 @@ export default function Reading() {
             </>
           )}
         </div>
+
+        <style jsx>{`
+          .demoMembrane {
+            border: 1px solid rgba(255, 200, 120, 0.6);
+            box-shadow: 0 0 40px rgba(255, 180, 80, 0.25);
+            padding: 32px;
+            border-radius: 18px;
+            backdrop-filter: blur(4px);
+          }
+
+          .freyDemoLabel {
+            margin-top: 12px;
+            font-size: 12px;
+            letter-spacing: 0.12em;
+            color: rgba(255, 210, 140, 0.8);
+            text-transform: uppercase;
+          }
+        `}</style>
 
       </div>
     </div>
