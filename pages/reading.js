@@ -1,89 +1,62 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 
-const states = [
-  { id: "01", title: "Pre-Formation", scale: 40, tension: 0.45 },
-  { id: "02", title: "Structural Build", scale: 95, tension: 0.32 },
-  { id: "03", title: "Capital Alignment", scale: 180, tension: 0.12 },
-  { id: "04", title: "Expansion Threshold", scale: 260, tension: 0.05 },
-  { id: "05", title: "Structural Stability", scale: 420, tension: -0.02 }
-]
+const baseState = {
+  id: "03",
+  title: "Capital Alignment",
+  scale: 180,
+  risk: 0.71,
+  horizon: 12
+}
 
 export default function Reading() {
-  const [active, setActive] = useState("03")
+  const [readiness, setReadiness] = useState(0.62)
+
+  const fieldTension = useMemo(() => {
+    return (baseState.risk - readiness) * (baseState.scale / 200) * (baseState.horizon / 12)
+  }, [readiness])
+
+  const resilience = useMemo(() => {
+    return readiness * (1 - baseState.risk) * (baseState.scale / 200)
+  }, [readiness])
 
   const maxScale = 450
   const maxTension = 0.5
 
+  const x = 40 + (baseState.scale / maxScale) * 520
+  const y = 240 - ((fieldTension + maxTension) / (maxTension * 2)) * 220
+
   return (
-    <main style={{ display: "flex", minHeight: "100vh", padding: "80px 24px" }}>
+    <main style={{ padding: "80px 24px", maxWidth: "1100px", margin: "0 auto" }}>
 
-      <aside style={{
-        width: "25%",
-        position: "sticky",
-        top: "120px",
-        height: "fit-content",
-        fontSize: "14px"
-      }}>
-        {states.map((s) => (
-          <div
-            key={s.id}
-            onClick={() => setActive(s.id)}
-            style={{
-              padding: "12px 0",
-              cursor: "pointer",
-              opacity: active === s.id ? 1 : 0.5,
-              borderLeft: active === s.id ? "2px solid #c6a85b" : "2px solid transparent",
-              paddingLeft: "12px"
-            }}
-          >
-            {s.id} · {s.title}
-          </div>
-        ))}
-      </aside>
+      <h1>FREY · PROJECT STATE MODEL</h1>
 
-      <section style={{ width: "75%", paddingLeft: "60px" }}>
+      <div style={{ marginTop: "40px", marginBottom: "40px" }}>
+        <label style={{ display: "block", marginBottom: "12px" }}>
+          EXECUTION_READINESS: {readiness.toFixed(2)}
+        </label>
+        <input
+          type="range"
+          min="0.2"
+          max="1"
+          step="0.01"
+          value={readiness}
+          onChange={(e) => setReadiness(parseFloat(e.target.value))}
+          style={{ width: "100%" }}
+        />
+      </div>
 
-        <h1>FREY · PROJECT STATE MODEL</h1>
+      <svg width="100%" height="280" viewBox="0 0 600 280">
+        <line x1="40" y1="20" x2="40" y2="240" stroke="#333" />
+        <line x1="40" y1="240" x2="580" y2="240" stroke="#333" />
 
-        {/* Phase Topology Map */}
-        <div style={{ marginTop: "40px", marginBottom: "60px" }}>
-          <svg width="100%" height="280" viewBox="0 0 600 280">
-            <line x1="40" y1="20" x2="40" y2="240" stroke="#333" />
-            <line x1="40" y1="240" x2="580" y2="240" stroke="#333" />
+        <circle cx={x} cy={y} r="6" fill="#c6a85b" />
+      </svg>
 
-            {states.map((s, i) => {
-              const x = 40 + (s.scale / maxScale) * 520
-              const y = 240 - ((s.tension + maxTension) / (maxTension * 2)) * 220
-              return (
-                <circle
-                  key={s.id}
-                  cx={x}
-                  cy={y}
-                  r={active === s.id ? 6 : 4}
-                  fill={active === s.id ? "#c6a85b" : "#888"}
-                />
-              )
-            })}
+      <pre style={{ marginTop: "40px" }}>
+{`FIELD_TENSION       ${fieldTension.toFixed(2)}
+SYSTEM_RESILIENCE    ${resilience.toFixed(2)}`}
+      </pre>
 
-            <polyline
-              fill="none"
-              stroke="#555"
-              strokeWidth="1"
-              points={states.map(s => {
-                const x = 40 + (s.scale / maxScale) * 520
-                const y = 240 - ((s.tension + maxTension) / (maxTension * 2)) * 220
-                return `${x},${y}`
-              }).join(" ")}
-            />
-          </svg>
-        </div>
-
-        <pre>
-{`FIELD_TENSION     = (W - R) × (S / 200) × (H / 12)
-SYSTEM_RESILIENCE = R × (1 - W) × (S / 200)`}
-        </pre>
-
-      </section>
     </main>
   )
 }
