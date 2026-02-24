@@ -14,14 +14,14 @@ export default function Cosmographer() {
       <ul>
         <li>Reads system structure</li>
         <li>Identifies leverage points</li>
-        <li>Designs an executable plan</li>
+        <li>Designs executable plans</li>
       </ul>
 
       <h2>When to use it</h2>
       <ul>
         <li>Scaling phase</li>
+        <li>Structural restructuring</li>
         <li>Strategic alignment stage</li>
-        <li>Long-horizon system design</li>
       </ul>
 
       <h2>Applied across</h2>
