@@ -1,59 +1,63 @@
+import React from "react";
+
 export default function Investors() {
   return (
-    <main style={{ padding: "100px 24px", maxWidth: "900px", margin: "0 auto" }}>
+    <main style={{ maxWidth: 880, margin: "0 auto", padding: "80px 20px" }}>
+      <h1>Capital Alignment Phase</h1>
 
-      <h1>FREY · Capital Alignment Phase</h1>
-
-      <p style={{ marginTop: "24px", opacity: 0.85 }}>
-        Frey is entering structured capital participation.
-        Capital acts as structural acceleration within an evolving system.
+      <p>
+        Frey is entering a capital alignment phase designed to scale strategic execution,
+        infrastructure maturity, and long-horizon ecosystem growth.
       </p>
 
-      <section style={{ marginTop: "64px" }}>
-        <h2>Current Phase</h2>
-        <ul>
-          <li>Operational diagnostic layer</li>
-          <li>Strategic design layer</li>
-          <li>Multi-domain applicability</li>
-        </ul>
-        <p style={{ marginTop: "16px", opacity: 0.75 }}>
-          We are structuring capital alignment for controlled expansion.
-        </p>
-      </section>
+      <h2>Institutional & Strategic Capital</h2>
 
-      <section style={{ marginTop: "56px" }}>
-        <h2>Institutional & Strategic Capital</h2>
-        <ul>
-          <li>Long-horizon equity alignment</li>
-          <li>Strategic AI partnerships</li>
-          <li>Infrastructure collaboration</li>
-        </ul>
-      </section>
+      <p>
+        Strategic capital enables structural leverage. This includes aligned venture funds,
+        AI-native companies, protocol foundations, and long-horizon innovation partners.
+      </p>
 
-      <section style={{ marginTop: "48px" }}>
-        <h2>Grants & Ecosystem Funding</h2>
-        <ul>
-          <li>AI ecosystem grants</li>
-          <li>Web3 protocol grants</li>
-          <li>Research-backed capital programs</li>
-        </ul>
-      </section>
+      <h2>Who Can Engage with Frey</h2>
 
-      <section style={{ marginTop: "48px" }}>
-        <h2>Community Support</h2>
-        <ul>
-          <li>Early backers</li>
-          <li>Signal support</li>
-          <li>Donation layer</li>
-        </ul>
-      </section>
+      <ul>
+        <li>Strategic AI companies</li>
+        <li>Research institutions & labs</li>
+        <li>Web3 & protocol foundations</li>
+        <li>Venture funds & family offices</li>
+        <li>Innovators & early ecosystem partners</li>
+      </ul>
 
-      <section style={{ marginTop: "80px", opacity: 0.7 }}>
-        <p>
-          Capital participation is structured through direct strategic alignment.
-        </p>
-      </section>
+      <h2>Grants & Ecosystem Funding</h2>
 
+      <p>
+        Frey welcomes ecosystem-aligned grants and research funding that accelerate
+        infrastructure development, strategic modeling, and capital design layers.
+      </p>
+
+      <h2>What Participation Looks Like</h2>
+
+      <ul>
+        <li>Strategic partnership design</li>
+        <li>Capital alignment & co-development</li>
+        <li>Joint ecosystem initiatives</li>
+        <li>Research & innovation collaboration</li>
+        <li>Mission-aligned strategic backing</li>
+      </ul>
+
+      <h2>Ways to Engage</h2>
+
+      <ul>
+        <li>Request a strategic briefing</li>
+        <li>Apply for ecosystem grant</li>
+        <li>Partner on pilot initiative</li>
+        <li>Explore capital participation terms</li>
+        <li>Signal support as early backer</li>
+      </ul>
+
+      <p>
+        Capital participation in Frey is structural. It supports the design layer of Cosmographer,
+        the execution intelligence of Frey, and the long-horizon growth of the Bhrigu ecosystem.
+      </p>
     </main>
-  )
+  );
 }
