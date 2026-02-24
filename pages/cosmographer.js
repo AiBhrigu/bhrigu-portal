@@ -4,6 +4,10 @@ export default function Cosmographer() {
 
       <h1>A Cosmographer doesn’t entertain you.</h1>
 
+      <p style={{ marginTop: "28px", opacity: "0.85" }}>
+        A Cosmographer operates at the structural layer where capital architecture, governance systems, product logic and long-horizon strategy intersect.
+      </p>
+
       <p style={{ marginTop: "24px", opacity: 0.85 }}>
         A Cosmographer reads structure. Identifies leverage. Designs the next executable move.
       </p>
@@ -40,6 +44,20 @@ export default function Cosmographer() {
       <section style={{ marginTop: "80px", opacity: 0.7 }}>
         <p>
           Cosmographer is the strategic design layer of Frey.
+
+      <section style={{ marginTop: "64px", opacity: "0.8" }}>
+        <h2>Structural Layer</h2>
+        <ul>
+          <li>Capital architecture alignment</li>
+          <li>Governance topology design</li>
+          <li>System-level product logic</li>
+          <li>Long-horizon evolution modeling</li>
+        </ul>
+      </section>
+
+      <section style={{ marginTop: "48px", opacity: "0.75" }}>
+        <p>Frey is designed for structural evolution, not tactical optimization.</p>
+      </section>
         </p>
       </section>
 
