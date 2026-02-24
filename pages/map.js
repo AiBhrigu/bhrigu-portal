@@ -1,61 +1,42 @@
-import styles from "./map.module.css";
-import PortalFooterNav from "../components/PortalFooterNav";
+import React from "react";
+import Link from "next/link";
 
-const NODES = [
-  { href: "/start", label: "/start", title: "Start", note: "presence anchor" },
-  { href: "/reading", label: "/reading", title: "Reading", note: "rhythm of traversal" },
-  { href: "/signal", label: "/signal", title: "Signal", note: "Φ continuity seal" },
-  { href: "/services", label: "/services", title: "Services", note: "exposed contours" },
-  { href: "/cosmography", label: "/cosmography", title: "Cosmography", note: "separated statement" },
-  { href: "/orion", label: "/orion", title: "ORION", note: "core boundary" },
-  { href: "/frey", label: "/frey", title: "Frey", note: "human interface layer" },
-  { href: "/dao", label: "/dao", title: "DAO", note: "economic shell boundary" },
-  { href: "/access", label: "/access", title: "Access", note: "email gate" },
-  { href: "/github", label: "/github", title: "GitHub", note: "surface reference" },
-  { href: "/chronicle", label: "/chronicle", title: "Chronicle", note: "state log" },
-];
-
-export default function MapPhi() {
+export default function Map() {
   return (
-    <main className={styles.content}>
-      <h1 className={styles.h1}>
-        Map <span className={styles.phi}>Φ</span>
-      </h1>
+    <main style={{ maxWidth: 880, margin: "0 auto", padding: "80px 20px" }}>
 
-      <p className={styles.en}>This is not navigation. This is structure.</p>
+      <h1>Portal Navigation Surface</h1>
 
-      <hr className={styles.hr} />
+      <p>
+        A structured navigation layer to explore the public surfaces of BHRIGU × Frey.
+        This map orients — it does not expose internal systems.
+      </p>
 
-      <h2 className={styles.h2}>Nodes</h2>
-
-      <ul className={styles.list}>
-        {NODES.map((n) => (
-          <li key={n.href} className={styles.item}>
-            <a className={styles.link} href={n.href}>
-              <span className={styles.path}>{n.label}</span>
-              <span className={styles.sep}>—</span>
-              <span className={styles.title}>{n.title}</span>
-              <span className={styles.sep}>—</span>
-              <span className={styles.note}>{n.note}</span>
-            </a>
-          </li>
-        ))}
+      <h2>Core Surfaces</h2>
+      <ul>
+        <li><Link href="/cosmographer">Cosmographer</Link></li>
+        <li><Link href="/frey">Frey</Link></li>
+        <li><Link href="/reading">Reading</Link></li>
       </ul>
 
-      <hr className={styles.hr} />
+      <h2>System Layers</h2>
+      <ul>
+        <li><Link href="/cosmography">Cosmography</Link></li>
+        <li><Link href="/orion">Orion</Link></li>
+        <li><Link href="/dao">DAO</Link></li>
+      </ul>
 
-      <p className={styles.en}>UI-level only. No data. No backend. No core access.</p>
+      <h2>Access & Capital</h2>
+      <ul>
+        <li><Link href="/investors">Investors</Link></li>
+        <li><Link href="/access">Access</Link></li>
+        <li><Link href="/services">Services</Link></li>
+      </ul>
 
-      <nav className={styles.rail} aria-label="Route rail">
-        ← /start
-        → /cosmography
-      </nav>
-    
-            <PortalFooterNav termsHref="/faq" next={[{href:"/cosmography",label:"/cosmography"},{href:"/services",label:"/services"}]} note="Canon: map → cosmography." />
+      <p>
+        The map maintains structural clarity across the portal.
+      </p>
 
-        <p className="muted">Archive: /archive.</p>
-      
-        <p className="muted">You are here: /map.</p>
-      </main>
+    </main>
   );
 }
