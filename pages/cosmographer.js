@@ -2,7 +2,9 @@ export default function Cosmographer() {
   return (
     <main style={{ padding: "100px 24px", maxWidth: "900px", margin: "0 auto" }}>
 
-      <h1>A Cosmographer doesn’t entertain you.</h1>
+      <h1>A Cosmographer doesn’t entertain you.
+
+Design discipline, not entertainment.</h1>
 
       <p style={{ marginTop: "28px", opacity: "0.85" }}>
         A Cosmographer operates at the structural layer where capital architecture, governance systems, product logic and long-horizon strategy intersect.
@@ -26,7 +28,7 @@ export default function Cosmographer() {
         <ul>
           <li>Scaling phase</li>
           <li>Structural restructuring</li>
-          <li>Capital alignment stage</li>
+          <li>Alignment stage</li>
           <li>Long-horizon system design</li>
         </ul>
       </section>
@@ -44,6 +46,8 @@ export default function Cosmographer() {
       <section style={{ marginTop: "80px", opacity: 0.7 }}>
         <p>
           Cosmographer is the strategic design layer of Frey.
+n
+Partners: /investors
 
       <section style={{ marginTop: "64px", opacity: "0.8" }}>
         <h2>Structural Layer</h2>
