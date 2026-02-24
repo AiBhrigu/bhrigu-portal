@@ -1,353 +1,42 @@
-import Head from "next/head";
-
 export default function FAQ() {
   return (
-    <>
-      <Head>
-        <title>FAQ · Frey / ORION · BHRIGU</title>
-        <meta
-          name="description"
-          content="Frey / ORION FAQ — what it is, what it can do, what is intentionally restricted, and how cosmography is defined."
-        />
-      </Head>
+    <main style={{ maxWidth: "720px", margin: "0 auto", padding: "80px 24px" }}>
+      <h1 style={{ marginBottom: "40px" }}>FAQ</h1>
 
-      <main className="wrap">
-        <header className="hero">
-          <div className="kicker">BHRIGU · Frey / ORION</div>
-          <p className="subtitle">
-            Frey is a dialog interface for cosmography: navigation through time, cycles, links and scenarios.
-          </p>
-        </header>
-          <section className="card">
-            <h2>Start in 1 minute</h2>
-            <ol className="ol">
-              <li><strong>Open Frey</strong> → ask one link (human↔human / human↔project / human↔asset).</li>
-              <li><strong>Add time</strong> (date / month / window).</li>
-              <li><strong>Read it as</strong>: phases → windows → support/tension → next step.</li>
-            </ol>
-          </section>
+      <section style={{ marginBottom: "48px" }}>
+        <h3 style={{ marginBottom: "12px" }}>What is BHRIGU?</h3>
+        <p style={{ lineHeight: "1.7" }}>
+          BHRIGU is a surface-first system. Public layers remain minimal by design.
+        </p>
+      </section>
 
-          <section className="card">
-            
-            <ol className="ol">
-              <li><strong>Open Frey</strong> and copy the query template: <code>/frey</code></li>
-              <li><strong>Ask one concrete link</strong>: Human↔Human, Human↔Project, Human↔Asset (add date/period)</li>
-              <li><strong>Read the output</strong> as: phases → windows → tensions/support → next action</li>
-            </ol>
+      <section style={{ marginBottom: "48px" }}>
+        <h3 style={{ marginBottom: "12px" }}>What is Frey?</h3>
+        <p style={{ lineHeight: "1.7" }}>
+          Frey is the execution interface. It reads structure and defines the next move.
+        </p>
+      </section>
 
-            <div className="nav">
-              Open Frey
-              Reading
-              Map
-              Services
-              Cosmography
-            </div>
+      <section style={{ marginBottom: "48px" }}>
+        <h3 style={{ marginBottom: "12px" }}>Is access public?</h3>
+        <p style={{ lineHeight: "1.7" }}>
+          Access is invite-based. Core internals remain gated.
+        </p>
+      </section>
 
-            <p className="muted">
-              Tip: if you don’t know what to ask — start with “me ↔ project” and a 3–12 month window.
-            </p>
-          </section>
+      <section style={{ marginBottom: "48px" }}>
+        <h3 style={{ marginBottom: "12px" }}>Do you disclose internals?</h3>
+        <p style={{ lineHeight: "1.7" }}>
+          No. Architecture boundaries are intentional.
+        </p>
+      </section>
 
-
-        <section className="card">
-          <h2>What is cosmography?</h2>
-          <p>
-            Cosmography is not disciplinary knowledge. It is a way to describe reality through position, rhythm,
-            cycles and correlations — across different layers of experience.
-          </p>
-          <p className="muted">
-            It is not: astrology, astronomy, physics, philosophy, psychology, metaphysics.
-            It can use elements from many domains as inputs, without being reduced to any one of them.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>What is Frey?</h2>
-          <p>
-            Frey is a cosmographer: it helps a human (or a system) see how a moment is structured in time —
-            and how entities relate to each other across phases.
-          </p>
-          <ul>
-            <li>Not “just answers” — it gives a map of a period.</li>
-            <li>Not dogma — it supports research, sensemaking and decision navigation.</li>
-            <li>Not a UI zoo — the core interface is a query (search-like) flow.</li>
-          </ul>
-        </section>
-
-        <section className="card">
-          <h2>What can I talk to Frey about?</h2>
-          <p>
-            Anything that has time, process, choice, interaction or meaning:
-            life, relationships, projects, money, creativity, philosophy, future, and also space and cycles.
-          </p>
-          <p className="muted">
-            Frey does not “discredit” intuition, mystery or forecasting traditions — it makes the inquiry more
-            structured and readable through time.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>What links does Frey work with?</h2>
-          <p className="muted">Core pattern:</p>
-          <pre className="pre">(Entity A) × (Entity B) × (Time context) → structured interaction map</pre>
-
-            <p className="muted">Examples:</p>
-            <pre className="pre">{`human ↔ human → explain "F-protocol" in 3 steps
-owner ↔ style → rewrite this page in minimal English
-system ↔ probe → check the portal structure map
-system ↔ gate → disable /api in production`}</pre>
-
-<h2>Is this “predictions”?</h2>
-          <p>
-            Frey works with tendencies, windows, phases and transitions. A forecast is always interpretation —
-            Frey provides structure and time-coordinates, not absolute verdicts.
-          </p>
-          <ul>
-            <li>It can show support / tension / neutral phases.</li>
-            <li>It can highlight windows where action is natural vs costly.</li>
-            <li>If no signal exists, it says so — “no strong correlation” is also information.</li>
-          </ul>
-        </section>
-
-        <section className="card">
-          <h2>What is available for Free vs Pro vs API?</h2>
-
-          <div className="table">
-            <div className="row head">
-              <div>Layer</div>
-              <div>What you get</div>
-              <div>Typical use</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Free</div>
-              <div>
-                Observation mode: real outputs, time structure, periods, tables/visuals,
-                and readable explanations. Enough to learn the system and use it daily.
-              </div>
-              <div>research, exploration, learning, first value</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Pro</div>
-              <div>
-                Work mode: deeper parameterization, comparisons, saved scenarios, stronger operational use.
-              </div>
-              <div>daily work, decisions, repeated scenarios</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">API</div>
-              <div>
-                Integration mode: programmatic access, scale, automation, exports, product embedding.
-              </div>
-              <div>systems, apps, research pipelines</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Research</div>
-              <div>
-                Closed experiments: unstable features, testing layers (invite / limited).
-              </div>
-              <div>validation, experiments</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="card">
-          <h2>What is intentionally restricted?</h2>
-          <p>
-            Only one area is intentionally closed: <strong>X₄-SEED — Deep-Space Harmonic Line</strong>.
-            This is a protected R&amp;D contour for deep cosmographic research.
-          </p>
-          <p className="muted">
-            Everything practical and user-valuable remains visible and testable through the public layer.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>Why a query-first interface?</h2>
-          <p>
-            Because it scales, stays stable for years, and works for both humans and systems.
-            One query → one finished, structured output.
-          </p>
-        </section>
-
-        <footer className="footer">
-          <div className="muted">
-            Tip: open this page directly at <code>/faq</code>.
-          </div>
-        </footer>
-      </main>
-
-      <style jsx>{`\n          /*__LINK_CANON__*/\n          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}\n          a:hover{border-bottom-color:rgba(215,181,90,.95)}\n          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}\n
-          a { color: inherit; text-decoration: underline; text-decoration-color: rgba(215,181,90,0.55); text-underline-offset: 3px; word-break: break-word; }
-          a:hover { text-decoration-color: rgba(215,181,90,0.95); }
-          .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-          .btn { display: inline-flex; align-items: center; justify-content: center; height: 36px; padding: 0 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.04); text-decoration: none; }
-          .btn:hover { background: rgba(255,255,255,0.07); }
-          .ol { margin: 10px 0 0; padding-left: 18px; }
-          .ol li { margin: 8px 0; line-height: 1.45; }
-
-        .wrap {
-          max-width: 980px;
-          margin: 0 auto;
-          padding: 40px 18px 70px;
-        }
-        .hero {
-          padding: 18px 0 8px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          margin-bottom: 18px;
-        }
-        .kicker {
-          font-size: 12px;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          opacity: 0.7;
-          margin-bottom: 8px;
-        }
-        .title {
-          font-size: 42px;
-          line-height: 1.08;
-          margin: 0 0 10px;
-        }
-        .subtitle {
-          font-size: 16px;
-          opacity: 0.85;
-          margin: 0 0 10px;
-          max-width: 70ch;
-        }
-        .card {
-          padding: 18px 16px;
-          margin: 14px 0;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.02);
-        }
-        h2 {
-          margin: 0 0 10px;
-          font-size: 18px;
-        }
-        h3 {
-          margin: 0 0 6px;
-          font-size: 14px;
-        }
-        p {
-          margin: 8px 0;
-          line-height: 1.55;
-        }
-        ul {
-          margin: 10px 0 0;
-          padding-left: 18px;
-        }
-        li {
-          margin: 6px 0;
-          line-height: 1.45;
-        }
-        .muted {
-          opacity: 0.75;
-        }
-        .pre {
-          padding: 10px 12px;
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.10);
-          background: rgba(0, 0, 0, 0.25);
-          overflow-x: auto;
-          margin: 10px 0 0;
-        }
-        .grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
-          margin-top: 12px;
-        }
-        @media (max-width: 760px) {
-          .grid {
-            grid-template-columns: 1fr;
-          }
-          .title {
-            font-size: 34px;
-          }
-        }
-        .chip {
-          padding: 12px 12px;
-          border-radius: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.01);
-        }
-        .table {
-          margin-top: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 14px;
-          overflow: hidden;
-        }
-        .row {
-          display: grid;
-          grid-template-columns: 110px 1fr 220px;
-          gap: 12px;
-          padding: 12px 12px;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-        .row.head {
-          border-top: none;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          opacity: 0.75;
-          background: rgba(255, 255, 255, 0.02);
-        }
-        @media (max-width: 860px) {
-          .row {
-            grid-template-columns: 110px 1fr;
-          }
-          .row > div:nth-child(3) {
-            grid-column: 1 / -1;
-            opacity: 0.8;
-          }
-        }
-        .tag {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          height: 28px;
-          padding: 0 10px;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          background: rgba(255, 255, 255, 0.03);
-          font-size: 12px;
-          width: fit-content;
-        }
-        .footer {
-          margin-top: 18px;
-          padding-top: 14px;
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        code {
-          padding: 2px 6px;
-          border-radius: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.10);
-          background: rgba(0, 0, 0, 0.22);
-        }
-
-          /*__BHRIGU_UI_CANON__*/
-          a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(215,181,90,.55);padding-bottom:1px}
-          a:hover{border-bottom-color:rgba(215,181,90,.95)}
-          a:focus-visible{outline:2px solid rgba(215,181,90,.85);outline-offset:3px;border-bottom-color:transparent}
-          .nav{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-          .btn{
-            display:inline-flex;align-items:center;justify-content:center;
-            height:34px;padding:0 12px;border-radius:999px;
-            border:1px solid rgba(255,255,255,.12);
-            background:rgba(255,255,255,.03);
-            box-shadow:0 0 0 rgba(0,0,0,0);
-            transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-            -webkit-tap-highlight-color: transparent;
-          }
-          .btn:hover{transform:translateY(-1px);border-color:rgba(215,181,90,.55);box-shadow:0 0 0 6px rgba(215,181,90,.08)}
-          .btn:active{transform:translateY(0px)}
-          .prewrap{white-space:pre-wrap;overflow-x:hidden}
-
-`}</style>
-    </>
+      <section>
+        <h3 style={{ marginBottom: "12px" }}>How to engage?</h3>
+        <p style={{ lineHeight: "1.7" }}>
+          Use the relevant surface layer: /start, /cosmographer, or /investors.
+        </p>
+      </section>
+    </main>
   );
 }
