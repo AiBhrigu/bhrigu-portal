@@ -50,7 +50,7 @@ export default function Investors() {
 
       <h2>Contact</h2>
       <p>
-        Email: partners@bhrigu.io<br/>
+        Email: aibhrigu@gmail.com<br/>
         Subject: BHRIGU Partner / Investor — intro
       </p>
 
