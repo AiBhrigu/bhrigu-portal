@@ -6,6 +6,12 @@ export default function handler(req, res) {
   if (!date) {
     return res.status(400).json({ error: "date required" });
   }
+
   const result = computeTemporalSnapshot(date);
-  res.status(200).json(result);
+  const analysis = freyTemporalAnalysis(result);
+
+  return res.status(200).json({
+    ...result,
+    analysis
+  });
 }
