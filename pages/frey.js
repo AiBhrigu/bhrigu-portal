@@ -1,15 +1,53 @@
+import { useState } from "react";
+
 export default function Frey() {
+  const [date, setDate] = useState("");
+  const [result, setResult] = useState(null);
+
+  async function runTemporal() {
+    if (!date) return;
+    const res = await fetch(`/api/frey-temporal?date=${date}`);
+    const data = await res.json();
+    setResult(data);
+  }
+
   return (
     <div className="freyRoot">
       <div className="freyAxis" />
       <div className="freyMembrane">
         <div className="freyContent">
           <div className="freyMode">FREY · Query Interface</div>
+
           <input
             className="freyInput"
             placeholder="Enter signal..."
           />
+
           <button className="freyButton">Next</button>
+
+          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,200,120,0.2)", paddingTop: "24px" }}>
+            <div style={{ fontSize: "13px", opacity: 0.6, marginBottom: "10px" }}>
+              Temporal Snapshot
+            </div>
+
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="freyInput"
+              style={{ marginBottom: "12px" }}
+            />
+
+            <button onClick={runTemporal} className="freyButton">
+              Run Temporal
+            </button>
+
+            {result && (
+              <pre style={{ marginTop: "18px", textAlign: "left", fontSize: "12px" }}>
+                {JSON.stringify(result, null, 2)}
+              </pre>
+            )}
+          </div>
         </div>
       </div>
 
