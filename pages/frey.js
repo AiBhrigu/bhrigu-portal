@@ -111,7 +111,13 @@ export default function Frey() {
           cursor: pointer;
         }
 
-        @media (max-width: 768px) {
+        @media.freyTemporalRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+ (max-width: 768px) {
           .freyMembrane {
             width: 92%;
             padding: 32px;
