@@ -23,8 +23,13 @@ export default function Frey() {
 
           <div className="freyDivider" />
 
-          <div className="freyTemporalBlock">
-            <div className="freyTemporalTitle">Temporal Snapshot</div>
+          <div
+            className="freyTemporalBlock"
+            data-frey-temporal="V0_7"
+          >
+            <div className="freyTemporalTitle">
+              Temporal Snapshot
+            </div>
 
             <div className="freyTemporalRow">
               <input
@@ -90,10 +95,22 @@ export default function Frey() {
           padding-top: 24px;
         }
 
+        .freyTemporalBlock {
+          margin-top: 6px;
+        }
+
+        .freyTemporalTitle {
+          font-size: 14px;
+          opacity: 0.7;
+          margin-bottom: 14px;
+        }
+
         .freyTemporalRow {
           display: flex;
           align-items: center;
           gap: 14px;
+          max-width: 460px;
+          margin: 0 auto;
         }
 
         .freyInput {
@@ -123,6 +140,10 @@ export default function Frey() {
           height: 44px;
         }
 
+        .freyTemporalButton:hover {
+          background: rgba(255,200,120,0.18);
+        }
+
         .freyJson {
           margin-top: 18px;
           text-align: left;
@@ -133,6 +154,16 @@ export default function Frey() {
           .freyMembrane {
             width: 92%;
             padding: 32px;
+          }
+        }
+
+        @media (max-width: 520px) {
+          .freyTemporalRow {
+            flex-direction: column;
+          }
+
+          .freyTemporalButton {
+            width: 100%;
           }
         }
       `}</style>
