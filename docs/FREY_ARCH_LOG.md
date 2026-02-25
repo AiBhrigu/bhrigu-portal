@@ -24,3 +24,9 @@ Replace input when:
 ### Planned Upgrade Path
 Controlled ISO input (YYYY-MM-DD).
 
+
+2026-02-25 — Temporal Surface Isolation
+
+Native date input is part of Layer 4 (Surface Layer) only.
+It has zero coupling to Layer 1 (Core Engine).
+No direct binding, no implicit dependency, no future shortcut allowed.
