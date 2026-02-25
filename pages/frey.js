@@ -18,32 +18,32 @@ export default function Frey() {
         <div className="freyContent">
           <div className="freyMode">FREY · Query Interface</div>
 
-          <input
-            className="freyInput"
-            placeholder="Enter signal..."
-          />
-
+          <input className="freyInput" placeholder="Enter signal..." />
           <button className="freyButton">Next</button>
 
-          <div style={{ marginTop: "28px", borderTop: "1px solid rgba(255,200,120,0.2)", paddingTop: "24px" }}>
-            <div style={{ fontSize: "13px", opacity: 0.6, marginBottom: "10px" }}>
-              Temporal Snapshot
+          <div className="freyDivider" />
+
+          <div className="freyTemporalBlock">
+            <div className="freyTemporalTitle">Temporal Snapshot</div>
+
+            <div className="freyTemporalRow">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="freyInput freyTemporalInput"
+              />
+
+              <button
+                onClick={runTemporal}
+                className="freyButton freyTemporalButton"
+              >
+                Run Temporal
+              </button>
             </div>
 
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="freyInput"
-              style={{ marginBottom: "12px" }}
-            />
-
-            <button onClick={runTemporal} className="freyButton">
-              Run Temporal
-            </button>
-
             {result && (
-              <pre style={{ marginTop: "18px", textAlign: "left", fontSize: "12px" }}>
+              <pre className="freyJson">
                 {JSON.stringify(result, null, 2)}
               </pre>
             )}
@@ -75,10 +75,6 @@ export default function Frey() {
           border: 1px solid rgba(255,200,120,0.3);
           background: rgba(12,16,24,0.92);
           backdrop-filter: blur(14px);
-          box-shadow:
-            0 0 80px rgba(255,200,120,0.15),
-            inset 0 0 40px rgba(255,200,120,0.05);
-          transition: all 0.4s ease;
         }
 
         .freyContent {
@@ -88,10 +84,16 @@ export default function Frey() {
           text-align: center;
         }
 
-        .freyMode {
-          font-size: 14px;
-          letter-spacing: 1px;
-          opacity: 0.7;
+        .freyDivider {
+          margin-top: 28px;
+          border-top: 1px solid rgba(255,200,120,0.2);
+          padding-top: 24px;
+        }
+
+        .freyTemporalRow {
+          display: flex;
+          align-items: center;
+          gap: 14px;
         }
 
         .freyInput {
@@ -103,12 +105,28 @@ export default function Frey() {
         }
 
         .freyButton {
-          padding: 10px;
+          padding: 10px 14px;
           border-radius: 10px;
           border: 1px solid rgba(255,200,120,0.4);
           background: rgba(255,200,120,0.1);
           color: #fff;
           cursor: pointer;
+        }
+
+        .freyTemporalInput {
+          flex: 1;
+          height: 44px;
+        }
+
+        .freyTemporalButton {
+          flex: 0.618;
+          height: 44px;
+        }
+
+        .freyJson {
+          margin-top: 18px;
+          text-align: left;
+          font-size: 12px;
         }
 
         @media (max-width: 768px) {
@@ -119,5 +137,5 @@ export default function Frey() {
         }
       `}</style>
     </div>
-  )
+  );
 }
