@@ -11,6 +11,7 @@ export default function handler(req, res) {
   const analysis = freyTemporalAnalysis(result);
 
   return res.status(200).json({
+    engine: "frey-temporal-core-v0.1",
     ...result,
     analysis
   });
