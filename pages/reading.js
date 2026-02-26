@@ -1,42 +1,38 @@
-import BhriguPhiHeader from "../components/BhriguPhiHeader"
-import { deriveReading } from "../lib/reading-derive"
+import { interpretReading } from "../lib/reading-interpretation"
 
 export async function getServerSideProps(context) {
-  const { date } = context.query || {}
-  const qs = date ? `?date=${date}` : ""
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "https://www.bhrigu.io"}/api/frey-temporal${qs}`)
-  const core = await res.json()
-  const derived = deriveReading(core)
+  const { date } = context.query
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.bhrigu.io"}/api/frey-temporal?date=${date || ""}`
+  )
+
+  const raw = await res.json()
+
+  const interpreted = interpretReading(raw)
 
   return {
     props: {
-      core,
-      derived
+      reading: interpreted
     }
   }
 }
 
-export default function Reading({ core, derived }) {
+export default function ReadingPage({ reading }) {
+  if (!reading || reading.status !== "ok") {
+    return (
+      <div style={{ padding: 40 }}>
+        <h2>Reading unavailable</h2>
+      </div>
+    )
+  }
+
   return (
-    <>
-      <BhriguPhiHeader />
-      <main style={{ padding: "40px", maxWidth: "800px", margin: "0 auto" }}>
-        <h1>Reading</h1>
-
-        <section>
-          <h2>Core Metrics</h2>
-          <pre>{JSON.stringify(core, null, 2)}</pre>
-        </section>
-
-        <section style={{ marginTop: "32px" }}>
-          <h2>Derived State</h2>
-          <pre>{JSON.stringify(derived, null, 2)}</pre>
-        </section>
-
-        <section style={{ marginTop: "32px" }}>
-          <button disabled>Export (coming soon)</button>
-        </section>
-      </main>
-    </>
+    <div style={{ padding: 40 }}>
+      <h1>Reading v2</h1>
+      <p>Status: {reading.status}</p>
+      <p>Summary: {reading.summary}</p>
+      <p>Metrics Count: {reading.metricsCount}</p>
+    </div>
   )
 }
