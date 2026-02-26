@@ -1,5 +1,4 @@
-import { interpretReading } from "../lib/reading-interpretation"
-import { enrichWithObservability } from "../lib/contracts/reading-observability"
+import { composeReadingV2 } from "../lib/contracts/reading-compose-v2"
 import { assertReadingShape } from "../lib/contracts/reading-schema-guard"
 
 function generateTraceId() {
@@ -19,16 +18,15 @@ export async function getServerSideProps(context) {
   )
 
   const raw = await res.json()
-  const interpreted = interpretReading(raw)
-  const enriched = enrichWithObservability(interpreted, traceId)
+  const composed = composeReadingV2(raw, traceId)
 
-  if (!assertReadingShape(enriched)) {
+  if (!assertReadingShape(composed)) {
     return { props: { reading: { status: "error" } } }
   }
 
   return {
     props: {
-      reading: enriched
+      reading: composed
     }
   }
 }
