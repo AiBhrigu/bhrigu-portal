@@ -1,3 +1,4 @@
+import { deriveReading } from "../lib/reading-derive"
 import { interpretReading } from "../lib/reading-interpretation"
 import { enrichWithObservability } from "../lib/contracts/reading-observability"
 
@@ -18,7 +19,8 @@ export async function getServerSideProps(context) {
   )
 
   const raw = await res.json()
-  const interpreted = interpretReading(raw)
+  const derived = deriveReading(raw)
+  const interpreted = interpretReading(derived)
   const enriched = enrichWithObservability(interpreted, traceId)
 
   return {
