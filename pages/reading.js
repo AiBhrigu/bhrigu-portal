@@ -1,4 +1,3 @@
-import { deriveReading } from "../lib/reading-derive"
 import { interpretReading } from "../lib/reading-interpretation"
 import { enrichWithObservability } from "../lib/contracts/reading-observability"
 import { assertReadingShape } from "../lib/contracts/reading-schema-guard"
@@ -20,8 +19,7 @@ export async function getServerSideProps(context) {
   )
 
   const raw = await res.json()
-  const derived = deriveReading(raw)
-  const interpreted = interpretReading(derived)
+  const interpreted = interpretReading(raw)
   const enriched = enrichWithObservability(interpreted, traceId)
 
   if (!assertReadingShape(enriched)) {
@@ -55,6 +53,9 @@ export default function ReadingPage({ reading }) {
 
       {isDev && (
         <div style={{ marginTop: 20, opacity: 0.6 }}>
+          <p>Volatility: {reading.meta_metrics?.volatility_band}</p>
+          <p>Coherence: {reading.meta_metrics?.coherence_state}</p>
+          <p>Stress Direction: {reading.meta_metrics?.stress_direction}</p>
           <p>Engine: {reading.engine}</p>
           <p>Reading Version: {reading.reading_version}</p>
           <p>Trace ID: {reading.trace_id}</p>
@@ -63,3 +64,4 @@ export default function ReadingPage({ reading }) {
     </div>
   )
 }
+
