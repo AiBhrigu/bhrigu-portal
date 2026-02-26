@@ -1,6 +1,7 @@
 import { deriveReading } from "../lib/reading-derive"
 import { interpretReading } from "../lib/reading-interpretation"
 import { enrichWithObservability } from "../lib/contracts/reading-observability"
+import { assertReadingShape } from "../lib/contracts/reading-schema-guard"
 
 function generateTraceId() {
   return (
@@ -22,6 +23,10 @@ export async function getServerSideProps(context) {
   const derived = deriveReading(raw)
   const interpreted = interpretReading(derived)
   const enriched = enrichWithObservability(interpreted, traceId)
+
+  if (!assertReadingShape(enriched)) {
+    return { props: { reading: { status: "error" } } }
+  }
 
   return {
     props: {
