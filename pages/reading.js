@@ -1,5 +1,4 @@
 import { composeReadingV2 } from "../lib/contracts/reading-compose-v2"
-import { assertReadingShape } from "../lib/contracts/reading-schema-guard"
 
 function generateTraceId() {
   return (
@@ -20,10 +19,6 @@ export async function getServerSideProps(context) {
   const raw = await res.json()
   const composed = composeReadingV2(raw, traceId)
 
-  if (!assertReadingShape(composed)) {
-    return { props: { reading: { status: "error" } } }
-  }
-
   return {
     props: {
       reading: composed
@@ -40,26 +35,30 @@ export default function ReadingPage({ reading }) {
     )
   }
 
-  const isDev = process.env.NODE_ENV !== "production"
-
   return (
-    <div style={{ padding: 40 }}>
+    <div style={{ padding: 40 }} data-reading-surface="READING_V2_SURFACE_V0_1">
       <h1>Reading v2</h1>
+
       <p>Status: {reading.status}</p>
       <p>Summary: {reading.summary}</p>
       <p>Metrics Count: {reading.metricsCount}</p>
 
-      {isDev && (
-        <div style={{ marginTop: 20, opacity: 0.6 }}>
-          <p>Volatility: {reading.meta_metrics?.volatility_band}</p>
-          <p>Coherence: {reading.meta_metrics?.coherence_state}</p>
-          <p>Stress Direction: {reading.meta_metrics?.stress_direction}</p>
-          <p>Engine: {reading.engine}</p>
-          <p>Reading Version: {reading.reading_version}</p>
-          <p>Trace ID: {reading.trace_id}</p>
-        </div>
-      )}
+      <hr />
+
+      <h3>Core Metrics</h3>
+      <p>Phase Density: {reading.phase_density}</p>
+      <p>Harmonic Tension: {reading.harmonic_tension}</p>
+      <p>Resonance Level: {reading.resonance_level}</p>
+      <p>Structural Stability: {reading.structural_stability}</p>
+      <p>Volatility Index: {reading.analysis?.volatility_index}</p>
+      <p>Coherence Score: {reading.analysis?.coherence_score}</p>
+      <p>Phase Bias: {reading.analysis?.phase_bias}</p>
+
+      <div style={{ marginTop: 20, opacity: 0.6 }}>
+        <p>Engine: {reading.engine}</p>
+        <p>Reading Version: {reading.reading_version}</p>
+        <p>Trace ID: {reading.trace_id}</p>
+      </div>
     </div>
   )
 }
-
