@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react"
 import BhriguPhiHeader from "../components/BhriguPhiHeader"
-
-const VECTOR_TEXT = {
-  expansion: "Expansion phase. Structural growth window.",
-  contraction: "Contraction phase. Consolidation window."
-}
+import { deriveReading } from "../lib/reading-derive"
 
 export default function Reading() {
-  const [data, setData] = useState(null)
+  const [core, setCore] = useState(null)
+  const [derived, setDerived] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -17,10 +14,11 @@ export default function Reading() {
     fetch(`/api/frey-temporal${date ? `?date=${date}` : ""}`)
       .then(res => res.json())
       .then(json => {
-        setData(json)
+        setCore(json)
+        setDerived(deriveReading(json))
         setLoading(false)
       })
-      .catch(err => {
+      .catch(() => {
         setError("API error")
         setLoading(false)
       })
@@ -35,16 +33,16 @@ export default function Reading() {
         {loading && <p>Loading...</p>}
         {error && <p>{error}</p>}
 
-        {data && (
+        {core && derived && (
           <>
             <section>
-              <h2>Structural Metrics</h2>
-              <pre>{JSON.stringify(data, null, 2)}</pre>
+              <h2>Core Metrics</h2>
+              <pre>{JSON.stringify(core, null, 2)}</pre>
             </section>
 
             <section style={{ marginTop: "32px" }}>
-              <h2>Interpretation</h2>
-              <p>{VECTOR_TEXT[data.vector] || "No interpretation available."}</p>
+              <h2>Derived State</h2>
+              <pre>{JSON.stringify(derived, null, 2)}</pre>
             </section>
 
             <section style={{ marginTop: "32px" }}>
