@@ -23,7 +23,6 @@ function bar(value) {
 
 export default function Reading(props) {
   const force_ssr_marker = props?.force_ssr_marker ?? "SSR_GUARD_FALLBACK";
-
   const metrics = props?.metrics ?? {};
 
   const phase_density = metrics?.phase_density ?? 0;
@@ -32,6 +31,32 @@ export default function Reading(props) {
   const structural_stability = metrics?.structural_stability ?? 0;
   const volatility_index = metrics?.volatility_index ?? 0;
   const coherence_score = metrics?.coherence_score ?? 0;
+
+  const phase_signal =
+    phase_density >= 60
+      ? "Expansion"
+      : phase_density >= 40
+      ? "Equilibrium"
+      : "Contraction";
+
+  const tension_signal =
+    harmonic_tension >= 65
+      ? "High Load"
+      : harmonic_tension >= 40
+      ? "Balanced"
+      : "Low Pressure";
+
+  const stability_signal =
+    structural_stability >= 60
+      ? "Stable"
+      : structural_stability >= 40
+      ? "Transitional"
+      : "Unstable";
+
+  const composite_signal =
+    phase_density + structural_stability > 100
+      ? "Positive Structural Momentum"
+      : "Compression Phase";
 
   return (
     <div data-reading-surface="READING_V2_SURFACE_V0_1">
@@ -77,6 +102,14 @@ export default function Reading(props) {
         <div style={{ background: "#222", height: "6px" }}>
           <div style={{ ...bar(coherence_score), background: "#aaa", height: "6px" }} />
         </div>
+      </div>
+
+      <div style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid #333" }}>
+        <h3>Signal Line</h3>
+        <p>Phase: {phase_signal}</p>
+        <p>Tension: {tension_signal}</p>
+        <p>Stability: {stability_signal}</p>
+        <p style={{ opacity: 0.6 }}>Composite Signal: {composite_signal}</p>
       </div>
 
       <p>Engine: frey-temporal-core-v0.1</p>
