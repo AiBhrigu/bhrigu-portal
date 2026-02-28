@@ -1,119 +1,73 @@
-export const getServerSideProps = async () => {
-  return {
-    props: {
-      force_ssr_marker: "READING_V2_SURFACE_V0_1",
-      metrics: {
-        phase_density: 50,
-        harmonic_tension: 60,
-        resonance_level: 40,
-        structural_stability: 42,
-        volatility_index: 63,
-        coherence_score: 44
+import { composeReadingV2 } from "../lib/contracts/reading-compose-v2"
+
+export async function getServerSideProps(context) {
+  const { date } = context.query
+  const targetDate =
+    typeof date === "string" && date.length > 0
+      ? date
+      : new Date().toISOString().slice(0, 10)
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+
+  const response = await fetch(
+    `${baseUrl}/api/frey-temporal?date=${targetDate}`
+  )
+
+  if (!response.ok) {
+    return {
+      props: {
+        status: "api_error",
+        surface_marker: "READING_V2_SURFACE_V0_2"
       }
     }
-  };
-};
+  }
 
-function bar(value) {
-  const safe = typeof value === "number" ? value : 0;
+  const raw = await response.json()
+
+  const adapted = {
+    core: raw,
+    derived: raw.analysis || {}
+  }
+
+  const traceId = `trace_${Date.now()}`
+  const composed = composeReadingV2(adapted, traceId)
+
   return {
-    width: safe + "%"
-  };
+    props: {
+      snapshot_date: targetDate,
+      reading: composed,
+      surface_marker: "READING_V2_SURFACE_V0_2"
+    }
+  }
 }
 
-export default function Reading(props) {
-  const force_ssr_marker = props?.force_ssr_marker ?? "SSR_GUARD_FALLBACK";
-  const metrics = props?.metrics ?? {};
-
-  const phase_density = metrics?.phase_density ?? 0;
-  const harmonic_tension = metrics?.harmonic_tension ?? 0;
-  const resonance_level = metrics?.resonance_level ?? 0;
-  const structural_stability = metrics?.structural_stability ?? 0;
-  const volatility_index = metrics?.volatility_index ?? 0;
-  const coherence_score = metrics?.coherence_score ?? 0;
-
-  const phase_signal =
-    phase_density >= 60
-      ? "Expansion"
-      : phase_density >= 40
-      ? "Equilibrium"
-      : "Contraction";
-
-  const tension_signal =
-    harmonic_tension >= 65
-      ? "High Load"
-      : harmonic_tension >= 40
-      ? "Balanced"
-      : "Low Pressure";
-
-  const stability_signal =
-    structural_stability >= 60
-      ? "Stable"
-      : structural_stability >= 40
-      ? "Transitional"
-      : "Unstable";
-
-  const composite_signal =
-    phase_density + structural_stability > 100
-      ? "Positive Structural Momentum"
-      : "Compression Phase";
-
+export default function Reading({ snapshot_date, reading, surface_marker }) {
   return (
-    <div data-reading-surface="READING_V2_SURFACE_V0_1">
-      <h1>Reading v2 Surface</h1>
+    <div data-reading-surface="READING_V2_SURFACE_V0_2">
+      <h1>Reading v2 Canonical</h1>
 
-      <div style={{ marginBottom: "24px" }}>
-        <p>Phase Density</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(phase_density), background: "#d4af37", height: "8px" }} />
-        </div>
-      </div>
+      <section>
+        <h3>Snapshot Anchor</h3>
+        <p>{snapshot_date}</p>
+      </section>
 
-      <div style={{ marginBottom: "24px" }}>
-        <p>Harmonic Tension</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(harmonic_tension), background: "#b8860b", height: "8px" }} />
-        </div>
-      </div>
+      <section>
+        <h3>Structural Metrics</h3>
+        <pre>{JSON.stringify(reading?.meta_metrics || {}, null, 2)}</pre>
+      </section>
 
-      <div style={{ marginBottom: "24px" }}>
-        <p>Resonance Level</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(resonance_level), background: "#daa520", height: "8px" }} />
-        </div>
-      </div>
+      <section>
+        <h3>System State</h3>
+        <pre>{JSON.stringify(reading?.system_state || {}, null, 2)}</pre>
+      </section>
 
-      <div style={{ marginBottom: "24px" }}>
-        <p>Structural Stability</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(structural_stability), background: "#cd853f", height: "8px" }} />
-        </div>
-      </div>
+      <section>
+        <h3>Interpretation</h3>
+        <pre>{JSON.stringify(reading?.summary || {}, null, 2)}</pre>
+      </section>
 
-      <div style={{ marginBottom: "24px" }}>
-        <p>Volatility</p>
-        <div style={{ background: "#222", height: "6px" }}>
-          <div style={{ ...bar(volatility_index), background: "#888", height: "6px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Coherence</p>
-        <div style={{ background: "#222", height: "6px" }}>
-          <div style={{ ...bar(coherence_score), background: "#aaa", height: "6px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid #333" }}>
-        <h3>Signal Line</h3>
-        <p>Phase: {phase_signal}</p>
-        <p>Tension: {tension_signal}</p>
-        <p>Stability: {stability_signal}</p>
-        <p style={{ opacity: 0.6 }}>Composite Signal: {composite_signal}</p>
-      </div>
-
-      <p>Engine: frey-temporal-core-v0.1</p>
-      <div id="surface-marker">{force_ssr_marker}</div>
+      <div id="surface-marker">{surface_marker}</div>
     </div>
-  );
+  )
 }
