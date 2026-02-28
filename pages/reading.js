@@ -25,11 +25,11 @@ export async function getServerSideProps(context) {
 
   const raw = await response.json()
 
-  const adapted = {
-    core: raw,
-    derived: raw.analysis || {}
-  }
-
+const adapted = {
+  ...raw,
+  core: raw,
+  derived: raw.analysis || {}
+}
   const traceId = `trace_${Date.now()}`
   const composed = composeReadingV2(adapted, traceId)
 
