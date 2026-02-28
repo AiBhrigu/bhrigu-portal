@@ -1,68 +1,41 @@
-import { computeTemporalSnapshot } from "../lib/frey_temporal_snapshot"
-import { freyTemporalAnalysis } from "../lib/frey_temporal_analysis"
-import { composeReadingV2 } from "../lib/contracts/reading-compose-v2"
+export default function Reading({ data, date }) {
+  return (
+    <main style={{ padding: "60px 20px", maxWidth: 720, margin: "0 auto" }}>
+      <h1>Reading v2 Canonical</h1>
+      <p><strong>Snapshot Anchor:</strong> {date}</p>
+
+      <h3>Field Metrics</h3>
+      <ul>
+        <li>Phase Density: {data.phase_density}</li>
+        <li>Harmonic Tension: {data.harmonic_tension}</li>
+        <li>Resonance Level: {data.resonance_level}</li>
+        <li>Eclipse Proximity: {data.eclipse_proximity}</li>
+        <li>Structural Stability: {data.structural_stability}</li>
+      </ul>
+
+      <h3>Analytical Layer</h3>
+      <ul>
+        <li>Volatility Index: {data.analysis.volatility_index}</li>
+        <li>Coherence Score: {data.analysis.coherence_score}</li>
+        <li>Phase Bias: {data.analysis.phase_bias}</li>
+      </ul>
+    </main>
+  )
+}
 
 export async function getServerSideProps(context) {
-  const { date } = context.query
+  const date = context.query.date || new Date().toISOString().slice(0, 10)
 
-  const targetDate =
-    typeof date === "string" && date.length > 0
-      ? date
-      : new Date().toISOString().slice(0, 10)
+  const res = await fetch(
+    `http://localhost:3000/api/frey-temporal?date=${date}`
+  )
 
-  const snapshot = computeTemporalSnapshot(targetDate)
-  const analysis = freyTemporalAnalysis(snapshot)
-
-  const raw = {
-    engine: "frey-temporal-core-v0.1",
-    ...snapshot,
-    analysis
-  }
-
-  const adapted = {
-    ...raw,
-    core: raw,
-    derived: raw.analysis || {}
-  }
-
-  const traceId = `trace_${Date.now()}`
-  const composed = composeReadingV2(adapted, traceId)
+  const json = await res.json()
 
   return {
     props: {
-      snapshot_date: targetDate,
-      reading: composed,
-      surface_marker: "READING_V2_SURFACE_V0_4"
+      data: json,
+      date
     }
   }
-}
-
-export default function Reading({ snapshot_date, reading, surface_marker }) {
-  return (
-    <div data-reading-surface="READING_V2_SURFACE_V0_4">
-      <h1>Reading v2 Canonical</h1>
-
-      <section>
-        <h3>Snapshot Anchor</h3>
-        <p>{snapshot_date}</p>
-      </section>
-
-      <section>
-        <h3>Structural Metrics</h3>
-        <pre>{JSON.stringify(reading?.meta_metrics || {}, null, 2)}</pre>
-      </section>
-
-      <section>
-        <h3>System State</h3>
-        <pre>{JSON.stringify(reading?.system_state || {}, null, 2)}</pre>
-      </section>
-
-      <section>
-        <h3>Interpretation</h3>
-        <pre>{JSON.stringify(reading?.summary || "", null, 2)}</pre>
-      </section>
-
-      <div id="surface-marker">{surface_marker}</div>
-    </div>
-  )
 }
