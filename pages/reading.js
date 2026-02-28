@@ -24,11 +24,22 @@ export default function Reading({ data, date }) {
 }
 
 export async function getServerSideProps(context) {
-  const date = context.query.date || new Date().toISOString().slice(0, 10)
+  const date =
+    context.query.date || new Date().toISOString().slice(0, 10)
+
+  const protocol =
+    context.req.headers["x-forwarded-proto"] || "https"
+
+  const host = context.req.headers.host
+  const baseUrl = `${protocol}://${host}`
 
   const res = await fetch(
-    `http://localhost:3000/api/frey-temporal?date=${date}`
+    `${baseUrl}/api/frey-temporal?date=${date}`
   )
+
+  if (!res.ok) {
+    return { notFound: true }
+  }
 
   const json = await res.json()
 
