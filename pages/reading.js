@@ -1,6 +1,6 @@
 export default function Reading({ data, date }) {
   return (
-    <main style={{ padding: "60px 20px", maxWidth: 720, margin: "0 auto" }}>
+    <main data-reading-version="READING_BASELINE_V1_0" style={{ padding: "60px 20px", maxWidth: 720, margin: "0 auto" }}>
       <h1>Reading v2 Canonical</h1>
       <p><strong>Snapshot Anchor:</strong> {date}</p>
 
