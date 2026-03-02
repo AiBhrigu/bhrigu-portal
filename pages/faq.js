@@ -168,11 +168,13 @@ export default function FAQ() {
           margin: 0 auto;
           padding: 40px 18px 70px;
         }
+
         .hero {
           padding: 18px 0 8px;
           border-bottom: 1px solid rgba(255,255,255,0.08);
           margin-bottom: 18px;
         }
+
         .kicker {
           font-size: 12px;
           letter-spacing: 0.12em;
@@ -180,11 +182,13 @@ export default function FAQ() {
           opacity: 0.7;
           margin-bottom: 8px;
         }
+
         .subtitle {
           font-size: 16px;
           opacity: 0.85;
           max-width: 70ch;
         }
+
         .card {
           padding: 18px 16px;
           margin: 14px 0;
@@ -192,25 +196,31 @@ export default function FAQ() {
           border-radius: 14px;
           background: rgba(255,255,255,0.02);
         }
+
         h2 {
           margin: 0 0 10px;
           font-size: 18px;
         }
+
         p {
           margin: 8px 0;
           line-height: 1.55;
         }
+
         ul {
           margin: 10px 0 0;
           padding-left: 18px;
         }
+
         li {
           margin: 6px 0;
           line-height: 1.45;
         }
+
         .muted {
           opacity: 0.75;
         }
+
         .pre {
           padding: 10px 12px;
           border-radius: 12px;
@@ -218,12 +228,14 @@ export default function FAQ() {
           background: rgba(0,0,0,0.25);
           overflow-x: auto;
         }
+
         .nav {
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
           margin-top: 14px;
         }
+
         .btn {
           display: inline-flex;
           align-items: center;
@@ -235,23 +247,28 @@ export default function FAQ() {
           background: rgba(255,255,255,0.03);
           transition: all .12s ease;
         }
+
         .btn:hover {
           border-color: rgba(215,181,90,.6);
           transform: translateY(-1px);
         }
+
         .table {
           margin-top: 10px;
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 14px;
           overflow: hidden;
         }
+
         .row {
           display: grid;
-          grid-template-columns: 110px 1fr 220px;
-          gap: 12px;
-          padding: 12px;
+          grid-template-columns: 110px minmax(280px, 1.3fr) minmax(200px, 1fr);
+          gap: 18px;
+          padding: 16px;
           border-top: 1px solid rgba(255,255,255,0.06);
+          align-items: start;
         }
+
         .row.head {
           border-top: none;
           font-size: 12px;
@@ -260,6 +277,7 @@ export default function FAQ() {
           opacity: 0.75;
           background: rgba(255,255,255,0.02);
         }
+
         .tag {
           display: inline-flex;
           align-items: center;
@@ -272,16 +290,25 @@ export default function FAQ() {
           font-size: 12px;
           width: fit-content;
         }
+
         .footer {
           margin-top: 18px;
           padding-top: 14px;
           border-top: 1px solid rgba(255,255,255,0.08);
         }
+
         code {
           padding: 2px 6px;
           border-radius: 8px;
           border: 1px solid rgba(255,255,255,0.10);
           background: rgba(0,0,0,0.22);
+        }
+
+        @media (max-width: 768px) {
+          .row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
         }
       `}</style>
     </>
