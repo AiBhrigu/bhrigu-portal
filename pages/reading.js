@@ -1,24 +1,30 @@
 import { useMemo } from "react"
 
-export default function Reading({ engineData }) {
-  const baseState = engineData || null
+export default function Reading({ engineData, engine_status }) {
+  const isUnavailable = engine_status === "unavailable"
 
   const fieldTension = useMemo(() => {
-    if (!baseState) return 0
-    return (baseState.analysis.volatility_index - baseState.structural_stability)
-  }, [baseState])
+    if (isUnavailable) return null
+    return (engineData.analysis.volatility_index - engineData.structural_stability)
+  }, [engineData, isUnavailable])
 
   const resilience = useMemo(() => {
-    if (!baseState) return 0
-    return baseState.analysis.coherence_score * baseState.resonance_level
-  }, [baseState])
+    if (isUnavailable) return null
+    return engineData.analysis.coherence_score * engineData.resonance_level
+  }, [engineData, isUnavailable])
 
   return (
     <main>
-      <h1>{baseState ? baseState.engine : "Engine unavailable"}</h1>
-      {baseState && <pre>{JSON.stringify(baseState, null, 2)}</pre>}
-      <div>Field Tension: {fieldTension.toFixed(4)}</div>
-      <div>Resilience: {resilience.toFixed(4)}</div>
+      {isUnavailable ? (
+        <div>Temporal engine temporarily unavailable.</div>
+      ) : (
+        <>
+          <h1>{engineData.engine}</h1>
+          <pre>{JSON.stringify(engineData, null, 2)}</pre>
+          <div>Field Tension: {fieldTension?.toFixed(4)}</div>
+          <div>Resilience: {resilience?.toFixed(4)}</div>
+        </>
+      )}
     </main>
   )
 }
@@ -35,13 +41,19 @@ export async function getServerSideProps() {
     })
 
     if (!res.ok) {
-      return { props: { engineData: null } }
+      return { props: { engineData: null, engine_status: "unavailable" } }
     }
 
     const data = await res.json()
-    return { props: { engineData: data } }
+
+    return {
+      props: {
+        engineData: data,
+        engine_status: "live"
+      }
+    }
 
   } catch (e) {
-    return { props: { engineData: null } }
+    return { props: { engineData: null, engine_status: "unavailable" } }
   }
 }
