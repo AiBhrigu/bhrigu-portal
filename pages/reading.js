@@ -1,128 +1,41 @@
-export const getServerSideProps = async () => {
-  const metrics = {
-    phase_density: 50,
-    harmonic_tension: 60,
-    resonance_level: 40,
-    structural_stability: 42,
-    volatility_index: 63,
-    coherence_score: 44
-  };
+import { useMemo } from "react"
 
-  const phase_signal =
-    metrics.phase_density >= 60
-      ? "Expansion"
-      : metrics.phase_density >= 40
-      ? "Equilibrium"
-      : "Contraction";
+export default function Reading({ engineData }) {
+  const baseState = engineData
 
-  const tension_signal =
-    metrics.harmonic_tension >= 65
-      ? "High Load"
-      : metrics.harmonic_tension >= 40
-      ? "Balanced"
-      : "Low Pressure";
+  const fieldTension = useMemo(() => {
+    return (baseState.analysis.volatility_index - baseState.structural_stability)
+  }, [baseState])
 
-  const stability_signal =
-    metrics.structural_stability >= 60
-      ? "Stable"
-      : metrics.structural_stability >= 40
-      ? "Transitional"
-      : "Unstable";
+  const resilience = useMemo(() => {
+    return baseState.analysis.coherence_score * baseState.resonance_level
+  }, [baseState])
 
-  const composite_signal =
-    metrics.phase_density + metrics.structural_stability > 100
-      ? "Positive Structural Momentum"
-      : "Compression Phase";
+  return (
+    <main>
+      <h1>{baseState.engine}</h1>
+      <pre>{JSON.stringify(baseState, null, 2)}</pre>
+      <div>Field Tension: {fieldTension.toFixed(4)}</div>
+      <div>Resilience: {resilience.toFixed(4)}</div>
+    </main>
+  )
+}
+
+export async function getServerSideProps() {
+  const res = await fetch("http://127.0.0.1:8811/run-temporal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      engine: "frey-temporal-core-v0.1",
+      date: new Date().toISOString().slice(0, 10)
+    })
+  })
+
+  const data = await res.json()
 
   return {
     props: {
-      force_ssr_marker: "READING_V2_SURFACE_V0_1",
-      metrics,
-      signals: {
-        phase: phase_signal,
-        tension: tension_signal,
-        stability: stability_signal,
-        composite: composite_signal
-      }
+      engineData: data
     }
-  };
-};
-
-function bar(value) {
-  const safe = typeof value === "number" ? value : 0;
-  return {
-    width: safe + "%"
-  };
-}
-
-export default function Reading(props) {
-  const force_ssr_marker = props?.force_ssr_marker ?? "SSR_GUARD_FALLBACK";
-  const metrics = props?.metrics ?? {};
-  const signals = props?.signals ?? {};
-
-  const phase_density = metrics?.phase_density ?? 0;
-  const harmonic_tension = metrics?.harmonic_tension ?? 0;
-  const resonance_level = metrics?.resonance_level ?? 0;
-  const structural_stability = metrics?.structural_stability ?? 0;
-  const volatility_index = metrics?.volatility_index ?? 0;
-  const coherence_score = metrics?.coherence_score ?? 0;
-
-  return (
-    <div data-reading-surface="READING_V2_SURFACE_V0_1">
-      <h1>Reading v2 Surface</h1>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Phase Density</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(phase_density), background: "#d4af37", height: "8px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Harmonic Tension</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(harmonic_tension), background: "#b8860b", height: "8px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Resonance Level</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(resonance_level), background: "#daa520", height: "8px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Structural Stability</p>
-        <div style={{ background: "#222", height: "8px" }}>
-          <div style={{ ...bar(structural_stability), background: "#cd853f", height: "8px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Volatility</p>
-        <div style={{ background: "#222", height: "6px" }}>
-          <div style={{ ...bar(volatility_index), background: "#888", height: "6px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginBottom: "24px" }}>
-        <p>Coherence</p>
-        <div style={{ background: "#222", height: "6px" }}>
-          <div style={{ ...bar(coherence_score), background: "#aaa", height: "6px" }} />
-        </div>
-      </div>
-
-      <div style={{ marginTop: "32px", paddingTop: "16px", borderTop: "1px solid #333" }}>
-        <h3>Signal Line</h3>
-        <p>Phase: {signals.phase}</p>
-        <p>Tension: {signals.tension}</p>
-        <p>Stability: {signals.stability}</p>
-        <p style={{ opacity: 0.6 }}>Composite Signal: {signals.composite}</p>
-      </div>
-
-      <p>Engine: frey-temporal-core-v0.1</p>
-      <div id="surface-marker">{force_ssr_marker}</div>
-    </div>
-  );
+  }
 }
