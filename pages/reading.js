@@ -4,7 +4,7 @@ export async function getServerSideProps({ query }) {
 
   const date = query.date || "2025-01-26"
 
-  const res = await fetch(`http://localhost:3000/api/frey-temporal?date=${date}`)
+  const res = await fetch(`/api/frey-temporal?date=${date}`)
   const data = await res.json()
 
   return {
