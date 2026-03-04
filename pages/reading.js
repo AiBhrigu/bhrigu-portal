@@ -22,15 +22,12 @@ export async function getServerSideProps({ req, query }) {
     const host = req.headers.host
     const baseUrl = `${protocol}://${host}`
 
-    const date = query.date || null
+    const date =
+      query.date ||
+      new Date().toISOString().slice(0, 10)
 
     const res = await fetch(
-      `${baseUrl}/api/frey-temporal`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date })
-      }
+      `${baseUrl}/api/frey-temporal?date=${date}`
     )
 
     if (!res.ok) {
