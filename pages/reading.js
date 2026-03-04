@@ -1,15 +1,21 @@
 import { useState } from "react"
 
-export async function getServerSideProps({ query, req }) {
+export async function getServerSideProps({ query }) {
 
   const date = query.date || "2025-01-26"
 
-  const protocol = req.headers["x-forwarded-proto"] || "https"
-  const host = req.headers.host
-  const baseUrl = `://`
+  const { default: handler } = await import("./api/frey-temporal")
 
-  const res = await fetch(`/api/frey-temporal?date=`)
-  const data = await res.json()
+  const reqMock = { query: { date } }
+
+  let data = {}
+
+  const resMock = {
+    status() { return this },
+    json(obj) { data = obj }
+  }
+
+  await handler(reqMock, resMock)
 
   return {
     props: {
