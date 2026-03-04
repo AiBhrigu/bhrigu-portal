@@ -1,10 +1,14 @@
 import { useState } from "react"
 
-export async function getServerSideProps({ query }) {
+export async function getServerSideProps({ query, req }) {
 
   const date = query.date || "2025-01-26"
 
-  const res = await fetch(`/api/frey-temporal?date=${date}`)
+  const protocol = req.headers["x-forwarded-proto"] || "https"
+  const host = req.headers.host
+  const baseUrl = `://`
+
+  const res = await fetch(`/api/frey-temporal?date=`)
   const data = await res.json()
 
   return {
