@@ -1,52 +1,54 @@
-import React from "react"
+import { useState } from "react"
 
-export default function Reading({ engineData, engine_status }) {
-  const isUnavailable = engine_status === "unavailable"
+export async function getServerSideProps({ query }) {
 
-  return (
-    <main>
-      {isUnavailable ? (
-        <div>Temporal engine temporarily unavailable.</div>
-      ) : (
-        <pre>{JSON.stringify(engineData, null, 2)}</pre>
-      )}
-    </main>
-  )
-}
+  const date = query.date || "2025-01-26"
 
-export async function getServerSideProps({ req, query }) {
-  try {
-    const protocol =
-      req.headers["x-forwarded-proto"] || "http"
+  const res = await fetch(`http://localhost:3000/api/frey-temporal?date=${date}`)
+  const data = await res.json()
 
-    const host = req.headers.host
-    const baseUrl = `${protocol}://${host}`
-
-    const date =
-      query.date ||
-      new Date().toISOString().slice(0, 10)
-
-    const res = await fetch(
-      `${baseUrl}/api/frey-temporal?date=${date}`
-    )
-
-    if (!res.ok) {
-      return {
-        props: { engineData: null, engine_status: "unavailable" }
-      }
-    }
-
-    const data = await res.json()
-
-    return {
-      props: {
-        engineData: data,
-        engine_status: "live"
-      }
-    }
-  } catch (e) {
-    return {
-      props: { engineData: null, engine_status: "unavailable" }
+  return {
+    props: {
+      temporal: data
     }
   }
+}
+
+export default function Reading({ temporal }) {
+
+  const [readiness, setReadiness] = useState(0.62)
+
+  const fieldTension =
+    (temporal.harmonic_tension - readiness) *
+    temporal.phase_density *
+    temporal.structural_stability
+
+  return (
+    <main style={{maxWidth:720,margin:"80px auto",fontFamily:"system-ui"}}>
+
+      <h1>Frey Temporal Reading</h1>
+
+      <p>Date: {temporal.date}</p>
+
+      <h3>Core Metrics</h3>
+
+      <pre>
+{JSON.stringify(temporal, null, 2)}
+      </pre>
+
+      <h3>Derived Signal</h3>
+
+      <p>Field tension: {fieldTension.toFixed(4)}</p>
+
+      <input
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value={readiness}
+        onChange={(e)=>setReadiness(parseFloat(e.target.value))}
+      />
+
+    </main>
+  )
 }
