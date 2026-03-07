@@ -87,12 +87,17 @@ export const fileAccessSubmissionPersistenceAdapter =
   createFileAccessSubmissionPersistenceAdapter();
 
 function buildPersistencePaths(baseDir?: string): PersistencePaths {
-  const rootDir = baseDir ?? path.join(process.cwd(), "var", "access-submissions");
+  const defaultRootDir =
+    baseDir ??
+    process.env.ACCESS_SUBMISSIONS_DIR ??
+    (process.env.VERCEL
+      ? path.join(process.env.TMPDIR ?? "/tmp", "access-submissions")
+      : path.join(process.cwd(), "var", "access-submissions"));
 
   return {
-    rootDir,
-    recordsDir: path.join(rootDir, "records"),
-    indexFile: path.join(rootDir, "index.v1.json"),
+    rootDir: defaultRootDir,
+    recordsDir: path.join(defaultRootDir, "records"),
+    indexFile: path.join(defaultRootDir, "index.v1.json"),
   };
 }
 
