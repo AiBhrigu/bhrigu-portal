@@ -197,22 +197,26 @@ export default function AccessPage() {
 
           .shell {
             width: 100%;
-            max-width: 860px;
+            max-width: 980px;
             margin: 0 auto;
+            padding: 14px 0 40px;
           }
 
           .panel {
+            position: relative;
             border: 1px solid rgba(255,255,255,0.14);
-            background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.035));
-            box-shadow: 0 18px 48px rgba(0,0,0,0.18);
-            border-radius: 20px;
-            padding: 26px;
-            backdrop-filter: blur(12px);
+            background:
+              radial-gradient(circle at top left, rgba(255,255,255,0.065), transparent 34%),
+              linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03));
+            box-shadow: 0 24px 60px rgba(0,0,0,0.22);
+            border-radius: 22px;
+            padding: 28px;
+            backdrop-filter: blur(14px);
           }
 
           .stack {
             display: grid;
-            gap: 18px;
+            gap: 22px;
           }
 
           .muted {
@@ -237,45 +241,50 @@ export default function AccessPage() {
           }
 
           .heroTitle {
-            font-size: clamp(30px, 4vw, 46px);
-            line-height: 1.02;
-            letter-spacing: -0.04em;
+            font-size: clamp(34px, 4.8vw, 52px);
+            line-height: 1;
+            letter-spacing: -0.055em;
             margin: 0;
+            max-width: 760px;
           }
 
           .heroText {
             max-width: 720px;
-            font-size: 16px;
-            line-height: 1.72;
-            color: rgba(234,241,247,0.8);
+            font-size: 17px;
+            line-height: 1.8;
+            color: rgba(234,241,247,0.72);
             margin: 0;
           }
 
           .grid2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+            align-items: start;
           }
 
           .grid3 {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            align-items: start;
           }
 
           .field {
             display: grid;
-            gap: 8px;
+            gap: 10px;
             align-content: start;
+            min-width: 0;
           }
 
           .fieldLabel {
             min-height: 18px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: rgba(234,241,247,0.74);
+            color: rgba(234,241,247,0.58);
+            display: block;
           }
 
           .fieldControl,
@@ -283,37 +292,42 @@ export default function AccessPage() {
           .field select,
           .field input {
             width: 100%;
-            min-height: 50px;
-            border-radius: 16px;
+            min-height: 54px;
+            border-radius: 18px;
             border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(8,18,30,0.76);
-            color: #eaf1f7;
-            padding: 13px 15px;
+            background: linear-gradient(180deg, rgba(9,19,31,0.9), rgba(7,16,27,0.86));
+            color: #f5f8fc;
+            padding: 14px 16px;
             outline: none;
             box-sizing: border-box;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
-            transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+            box-shadow:
+              inset 0 1px 0 rgba(255,255,255,0.03),
+              0 10px 24px rgba(0,0,0,0.09);
+            transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
           }
 
           .field textarea {
-            min-height: 132px;
+            min-height: 146px;
             resize: none;
-            line-height: 1.55;
-            padding-top: 14px;
+            line-height: 1.66;
+            padding-top: 15px;
           }
 
           .field input:focus,
           .field textarea:focus,
           .field select:focus {
-            border-color: rgba(255,255,255,0.28);
-            background: rgba(10,22,35,0.92);
-            box-shadow: 0 0 0 4px rgba(255,255,255,0.035);
+            border-color: rgba(255,255,255,0.32);
+            background: linear-gradient(180deg, rgba(11,23,37,0.97), rgba(9,20,33,0.95));
+            box-shadow:
+              0 0 0 4px rgba(255,255,255,0.03),
+              0 16px 30px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
           }
 
           .actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 14px;
             align-items: center;
             justify-content: flex-start;
           }
@@ -329,11 +343,11 @@ export default function AccessPage() {
           .statusPanel {
             display: grid;
             gap: 8px;
-            min-height: 156px;
-            padding: 16px 18px;
-            border-radius: 18px;
+            min-height: 168px;
+            padding: 18px 20px;
+            border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.03);
+            background: linear-gradient(180deg, rgba(255,255,255,0.046), rgba(255,255,255,0.03));
           }
 
           .statusPanelEmpty {
@@ -363,12 +377,12 @@ export default function AccessPage() {
 
           .checkboxField {
             grid-template-columns: 20px minmax(0, 1fr);
-            gap: 12px;
+            gap: 14px;
             align-items: start;
-            padding: 16px 18px;
-            border-radius: 18px;
+            padding: 18px 20px;
+            border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.12);
-            background: rgba(255,255,255,0.035);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
           }
 
           .checkboxField input {
@@ -388,38 +402,39 @@ export default function AccessPage() {
           .btnPrimary,
           .btnSecondary,
           .btnGhost {
-            min-height: 46px;
+            min-height: 48px;
             border-radius: 999px;
-            padding: 12px 20px;
+            padding: 12px 24px;
             font-size: 14px;
             font-weight: 600;
-            letter-spacing: 0.01em;
+            letter-spacing: 0.03em;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
           }
 
           .btnPrimary {
-            border: 1px solid rgba(255,255,255,0.14);
-            background: rgba(255,255,255,0.94);
+            border: 1px solid rgba(255,255,255,0.22);
+            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(232,238,244,0.92));
             color: #091522;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.16);
           }
 
           .btnSecondary {
             border: 1px solid rgba(255,255,255,0.14);
-            background: rgba(255,255,255,0.06);
-            color: #eaf1f7;
+            background: linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.04));
+            color: #eef4f9;
           }
 
           .btnGhost {
-            border: 0;
-            background: transparent;
-            color: rgba(234,241,247,0.7);
-            padding-left: 0;
-            padding-right: 0;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+            color: rgba(234,241,247,0.8);
+            padding-left: 20px;
+            padding-right: 20px;
           }
 
           .progress {
@@ -445,11 +460,13 @@ export default function AccessPage() {
           }
 
           .notice {
-            min-height: 86px;
-            border-radius: 16px;
-            padding: 14px 16px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.045);
+            min-height: 96px;
+            border-radius: 20px;
+            padding: 18px 20px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background:
+              radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 38%),
+              linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.034));
             display: grid;
             align-content: center;
             box-sizing: border-box;
@@ -569,10 +586,10 @@ function HeaderBlock() {
   return (
     <section className="stack">
       <p className="sectionTitle">Structured Access</p>
-      <h1 className="heroTitle">Manual analytical requests with controlled review</h1>
+      <h1 className="heroTitle">A premium intake layer for serious analytical work</h1>
       <p className="heroText">
-        Use this page for structured analytical requests that require manual review,
-        scope confirmation, and a precise response path.
+        Use this page for requests that require careful review, deeper contextual handling,
+        and a deliberate analytical response path beyond the public interface.
       </p>
     </section>
   );
@@ -582,11 +599,12 @@ function IntroBlock() {
   return (
     <section className="panel stack" style={{ marginTop: 18 }}>
       <p className="muted">
-        Frey is the open exploration layer. Access is the reviewed intake layer for structured analytical work.
+        Frey is the open exploration layer. Access is the reviewed intake layer for structured, higher-trust analytical work.
       </p>
       <p className="muted">
-        Every submission is logged, reviewed manually, and confirmed only after scope, timing, and pricing are clarified.
+        Every submission is logged, reviewed manually, and confirmed only after scope, timing, and pricing are clarified with care.
       </p>
+      <p className="tiny">Manual review protects context quality, timing clarity, and final analytical precision.</p>
       <div className="actions">
         <Link href="/frey" className="btnGhost">Open Frey first</Link>
       </div>
@@ -598,7 +616,7 @@ function LoadingBlock() {
   return (
     <section className="panel stack" style={{ marginTop: 18 }}>
       <p className="sectionTitle">Loading</p>
-      <p className="muted">Preparing your access workspace.</p>
+      <p className="muted">Preparing your reviewed access workspace.</p>
     </section>
   );
 }
@@ -661,7 +679,7 @@ function RequestStep(props: {
     <section className="panel stack">
       <p className="sectionTitle">Request</p>
 
-      <div className="grid2">
+      <div className="grid2" data-access-row="two">
         <Field
           label="Name"
           value={formData.request.name}
@@ -801,7 +819,7 @@ function ScopeStep(props: {
     <section className="panel stack">
       <p className="sectionTitle">Scope</p>
 
-      <div className="grid3">
+      <div className="grid3" data-access-row="three">
         <SelectField
           label="Entities involved"
           value={formData.scope.entitiesCount}
@@ -1135,7 +1153,7 @@ function DynamicDateFields(props: {
   if (subjectType === "Person") {
     const p = formData.subjectPayload as PersonSubjectPayload;
     return (
-      <div className="grid2">
+      <div className="grid2" data-access-row="two">
         <Field label="Full name or identifier" value={p.fullNameOrIdentifier || ""} onChange={(value) =>
           updateFormData((prev) => ({
             ...prev,
@@ -1168,7 +1186,7 @@ function DynamicDateFields(props: {
     const p = formData.subjectPayload as RelationshipSubjectPayload;
     return (
       <div className="stack">
-        <div className="grid2">
+        <div className="grid2" data-access-row="two">
           <Field label="Person A name or identifier" value={p.personA?.name || ""} onChange={(value) =>
             updateFormData((prev) => ({
               ...prev,
@@ -1222,7 +1240,7 @@ function DynamicDateFields(props: {
   if (subjectType === "Project") {
     const p = formData.subjectPayload as ProjectSubjectPayload;
     return (
-      <div className="grid2">
+      <div className="grid2" data-access-row="two">
         <Field label="Project name" value={p.projectName || ""} onChange={(value) =>
           updateFormData((prev) => ({
             ...prev,
@@ -1248,7 +1266,7 @@ function DynamicDateFields(props: {
   if (subjectType === "Business / Organization") {
     const p = formData.subjectPayload as BusinessSubjectPayload;
     return (
-      <div className="grid2">
+      <div className="grid2" data-access-row="two">
         <Field label="Business or organization name" value={p.organizationName || ""} onChange={(value) =>
           updateFormData((prev) => ({
             ...prev,
@@ -1274,7 +1292,7 @@ function DynamicDateFields(props: {
   if (subjectType === "Event / Period") {
     const p = formData.subjectPayload as EventSubjectPayload;
     return (
-      <div className="grid2">
+      <div className="grid2" data-access-row="two">
         <Field label="Event title or identifier" value={p.eventTitle || ""} onChange={(value) =>
           updateFormData((prev) => ({
             ...prev,
@@ -1362,11 +1380,13 @@ function SelectField(props: { label: string; value: string; options: string[]; o
 function CheckboxRow(props: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <label className="field checkboxField">
-      <input
-        type="checkbox"
-        checked={props.checked}
-        onChange={(e) => props.onChange(e.target.checked)}
-      />
+      <span aria-hidden="true">
+        <input
+          type="checkbox"
+          checked={props.checked}
+          onChange={(e) => props.onChange(e.target.checked)}
+        />
+      </span>
       <span className="checkboxText">{props.label}</span>
     </label>
   );
@@ -1390,8 +1410,8 @@ function AccessNotices(props: {
     ? (
         <NoticeBlock
           tone="soft"
-          title="Connection lost"
-          message="Your draft remains saved on this device."
+          title="Connection held"
+          message="Your draft remains safely stored on this device while the connection recovers."
         />
       )
     : props.justRestored
@@ -1399,7 +1419,7 @@ function AccessNotices(props: {
         <NoticeBlock
           tone="soft"
           title="Connection restored"
-          message="You can continue your request."
+          message="You can continue your request without losing the current draft."
         />
       )
     : null;
