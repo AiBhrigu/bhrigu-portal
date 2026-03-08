@@ -391,12 +391,6 @@ export function useAccessStateController(): AccessStateController {
 
   useEffect(() => {
     if (restore.isRestoring) return;
-
-    setSubmission((prev) => recompute(prev));
-  }, [submission.formData, restore.isRestoring, recompute]);
-
-  useEffect(() => {
-    if (restore.isRestoring) return;
     if (!hasMeaningfulDraftData(submission.formData)) return;
 
     if (autosaveTimerRef.current) {
@@ -479,12 +473,16 @@ export function useAccessStateController(): AccessStateController {
 
   const updateFormData = useCallback(
     (updater: (prev: FormDataModel) => FormDataModel) => {
-      setSubmission((prev) => ({
-        ...prev,
-        formData: updater(prev.formData),
-      }));
+      setSubmission((prev) => {
+        const next = {
+          ...prev,
+          formData: updater(prev.formData),
+        };
+
+        return recompute(next);
+      });
     },
-    []
+    [recompute]
   );
 
   const setCurrentStep = useCallback((step: DraftCurrentStep) => {
