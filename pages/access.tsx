@@ -242,17 +242,17 @@ export default function AccessPage() {
 
           .heroTitle {
             font-size: clamp(34px, 4.8vw, 52px);
-            line-height: 1;
-            letter-spacing: -0.055em;
+            line-height: 0.98;
+            letter-spacing: -0.058em;
             margin: 0;
-            max-width: 760px;
+            max-width: 720px;
           }
 
           .heroText {
-            max-width: 720px;
+            max-width: 700px;
             font-size: 17px;
-            line-height: 1.8;
-            color: rgba(234,241,247,0.72);
+            line-height: 1.74;
+            color: rgba(234,241,247,0.76);
             margin: 0;
           }
 
@@ -402,39 +402,62 @@ export default function AccessPage() {
           .btnPrimary,
           .btnSecondary,
           .btnGhost {
-            min-height: 48px;
+            min-height: 50px;
             border-radius: 999px;
-            padding: 12px 24px;
+            padding: 12px 26px;
             font-size: 14px;
             font-weight: 600;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
             cursor: pointer;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
           }
 
           .btnPrimary {
-            border: 1px solid rgba(255,255,255,0.22);
-            background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(232,238,244,0.92));
+            border: 1px solid rgba(255,255,255,0.24);
+            background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(232,238,244,0.94));
             color: #091522;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.16);
+            box-shadow: 0 14px 30px rgba(0,0,0,0.18);
           }
 
           .btnSecondary {
-            border: 1px solid rgba(255,255,255,0.14);
-            background: linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.04));
+            border: 1px solid rgba(255,255,255,0.15);
+            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045));
             color: #eef4f9;
           }
 
           .btnGhost {
             border: 1px solid rgba(255,255,255,0.12);
-            background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
-            color: rgba(234,241,247,0.8);
+            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.024));
+            color: rgba(234,241,247,0.82);
             padding-left: 20px;
             padding-right: 20px;
+          }
+
+          .btnPrimary:hover,
+          .btnSecondary:hover,
+          .btnGhost:hover {
+            transform: translateY(-1px);
+          }
+
+          .btnPrimary:hover {
+            box-shadow: 0 18px 34px rgba(0,0,0,0.22);
+          }
+
+          .btnPrimary:focus-visible,
+          .btnSecondary:focus-visible,
+          .btnGhost:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(255,255,255,0.05);
+          }
+
+          .btnPrimary:active,
+          .btnSecondary:active,
+          .btnGhost:active {
+            transform: translateY(0);
           }
 
           .progress {
@@ -532,55 +555,56 @@ export default function AccessPage() {
 
           .formFrame {
             display: grid;
-            gap: 22px;
+            gap: 24px;
           }
 
           .formHero {
             display: grid;
-            gap: 10px;
-            padding-bottom: 10px;
+            gap: 12px;
+            padding-bottom: 14px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
           }
 
           .formTitle {
             margin: 0;
-            font-size: 28px;
-            line-height: 1.08;
-            letter-spacing: -0.04em;
+            font-size: 30px;
+            line-height: 1.04;
+            letter-spacing: -0.045em;
             color: rgba(247,250,253,0.98);
+            max-width: 720px;
           }
 
           .formLead {
             margin: 0;
-            max-width: 760px;
+            max-width: 720px;
             font-size: 15px;
-            line-height: 1.72;
-            color: rgba(234,241,247,0.74);
+            line-height: 1.76;
+            color: rgba(234,241,247,0.78);
           }
 
           .formSection {
             display: grid;
-            gap: 16px;
+            gap: 18px;
           }
 
           .formSectionHeader {
             display: grid;
-            gap: 6px;
+            gap: 7px;
           }
 
           .formSectionTitle {
             margin: 0;
             font-size: 12px;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            color: rgba(234,241,247,0.56);
+            color: rgba(234,241,247,0.58);
           }
 
           .formSectionText {
             margin: 0;
             font-size: 14px;
-            line-height: 1.62;
-            color: rgba(234,241,247,0.72);
+            line-height: 1.66;
+            color: rgba(234,241,247,0.74);
           }
 
           .grid2Asymmetric {
@@ -595,7 +619,7 @@ export default function AccessPage() {
             align-items: center;
             gap: 14px;
             justify-content: flex-start;
-            padding-top: 4px;
+            padding-top: 6px;
           }
 
           @media (max-width: 760px) {
@@ -621,7 +645,7 @@ export default function AccessPage() {
             }
 
             .formTitle {
-              font-size: 24px;
+              font-size: 25px;
             }
 
             .btnPrimary,
