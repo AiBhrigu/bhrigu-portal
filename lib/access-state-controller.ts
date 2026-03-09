@@ -290,7 +290,7 @@ export function useAccessStateController(): AccessStateController {
   const [restore, setRestore] = useState<AccessRestoreState>({
     showRestorePrompt: false,
     restoreDraft: null,
-    isRestoring: true,
+    isRestoring: false,
   });
 
   const [notices, setNotices] = useState<AccessUiNoticesState>({

@@ -794,7 +794,13 @@ function RequestStep(props: {
 
   return (
     <section className="panel" style={{ marginTop: 18 }}>
-      <div className="formFrame">
+      <form
+        className="formFrame"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onContinue();
+        }}
+      >
         <div className="formHero">
           <p className="sectionTitle">Request</p>
           <h2 className="formTitle">Build the request with clean structure before review</h2>
@@ -910,11 +916,11 @@ function RequestStep(props: {
         </div>
 
         <div className="submitRow">
-          <button type="button" className="btnPrimary" onClick={onContinue}>
+          <button type="submit" className="btnPrimary">
             Continue
           </button>
         </div>
-      </div>
+      </form>
     </section>
   );
 }
