@@ -59,10 +59,10 @@ export default function AccessPage() {
   return (
     <>
       <Head>
-        <title>Structured Access · BHRIGU</title>
+        <title>Access · Guided AI Analysis · BHRIGU</title>
         <meta
           name="description"
-          content="Structured access for manual analytical requests with controlled review."
+          content="Guided entry into deep AI analysis under the Φ-contour."
         />
       </Head>
 
@@ -530,9 +530,78 @@ export default function AccessPage() {
             gap: 8px;
           }
 
+          .formFrame {
+            display: grid;
+            gap: 22px;
+          }
+
+          .formHero {
+            display: grid;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+          }
+
+          .formTitle {
+            margin: 0;
+            font-size: 28px;
+            line-height: 1.08;
+            letter-spacing: -0.04em;
+            color: rgba(247,250,253,0.98);
+          }
+
+          .formLead {
+            margin: 0;
+            max-width: 760px;
+            font-size: 15px;
+            line-height: 1.72;
+            color: rgba(234,241,247,0.74);
+          }
+
+          .formSection {
+            display: grid;
+            gap: 16px;
+          }
+
+          .formSectionHeader {
+            display: grid;
+            gap: 6px;
+          }
+
+          .formSectionTitle {
+            margin: 0;
+            font-size: 12px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(234,241,247,0.56);
+          }
+
+          .formSectionText {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.62;
+            color: rgba(234,241,247,0.72);
+          }
+
+          .grid2Asymmetric {
+            display: grid;
+            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+            gap: 18px;
+            align-items: start;
+          }
+
+          .submitRow {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            justify-content: flex-start;
+            padding-top: 4px;
+          }
+
           @media (max-width: 760px) {
             .grid2,
-            .grid3 {
+            .grid3,
+            .grid2Asymmetric {
               grid-template-columns: 1fr;
             }
 
@@ -545,9 +614,14 @@ export default function AccessPage() {
               border-radius: 16px;
             }
 
-            .actions {
+            .actions,
+            .submitRow {
               flex-direction: column;
               align-items: stretch;
+            }
+
+            .formTitle {
+              font-size: 24px;
             }
 
             .btnPrimary,
@@ -584,13 +658,36 @@ export default function AccessPage() {
 
 function HeaderBlock() {
   return (
-    <section className="stack">
-      <p className="sectionTitle">Structured Access</p>
-      <h1 className="heroTitle">A premium intake layer for serious analytical work</h1>
-      <p className="heroText">
-        Use this page for requests that require careful review, deeper contextual handling,
-        and a deliberate analytical response path beyond the public interface.
-      </p>
+    <section className="heroFrame">
+      <div className="heroEyebrow">Structured Access</div>
+
+      <div className="heroSplit">
+        <div className="heroColumn">
+          <h1 className="heroTitle">A guided entry into deep AI analysis</h1>
+          <p className="heroText">
+            This is not instant chat and not a standard form. Access is the reviewed entry surface
+            for serious requests that need stronger context, temporal precision, and deeper analytical work.
+          </p>
+        </div>
+
+        <div className="heroRail">
+          <div className="heroCard">
+            <span className="heroCardLabel">Role model</span>
+            <span className="heroCardValue">Operator-held contour. AI-performed core work.</span>
+            <p className="heroCardText">
+              The operator guides entry quality and process integrity. The core analytical work is performed inside the AI contour.
+            </p>
+          </div>
+
+          <div className="heroCard">
+            <span className="heroCardLabel">Best fit</span>
+            <span className="heroCardValue">Requests where dates, events, context, and framing matter.</span>
+            <p className="heroCardText">
+              Use Access when the request should become a serious analytical object, not a casual prompt.
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -598,13 +695,33 @@ function HeaderBlock() {
 function IntroBlock() {
   return (
     <section className="panel stack" style={{ marginTop: 18 }}>
-      <p className="muted">
-        Frey is the open exploration layer. Access is the reviewed intake layer for structured, higher-trust analytical work.
+      <div className="introGrid">
+        <div className="introCard">
+          <span className="introCardTitle">Frey</span>
+          <p className="introCardBody">
+            Launch surface for orientation, first contact, and early exploration.
+          </p>
+        </div>
+
+        <div className="introCard">
+          <span className="introCardTitle">Access</span>
+          <p className="introCardBody">
+            Guided entry layer for <span className="introCardAccent">reviewed deep work</span> where the request must be shaped carefully before analysis begins.
+          </p>
+        </div>
+
+        <div className="introCard">
+          <span className="introCardTitle">Process</span>
+          <p className="introCardBody">
+            Requests are reviewed first. Scope, timing, and pricing are clarified after review, then the deeper AI work proceeds under the Φ-contour.
+          </p>
+        </div>
+      </div>
+
+      <p className="tiny">
+        The main path below is structured intake. A faster reviewed entry path can exist for mature requests, but the page keeps one nature: serious guided entry.
       </p>
-      <p className="muted">
-        Every submission is logged, reviewed manually, and confirmed only after scope, timing, and pricing are clarified with care.
-      </p>
-      <p className="tiny">Manual review protects context quality, timing clarity, and final analytical precision.</p>
+
       <div className="actions">
         <Link href="/frey" className="btnGhost">Open Frey first</Link>
       </div>
@@ -676,94 +793,127 @@ function RequestStep(props: {
   const { formData, updateFormData, onContinue } = props;
 
   return (
-    <section className="panel stack">
-      <p className="sectionTitle">Request</p>
+    <section className="panel" style={{ marginTop: 18 }}>
+      <div className="formFrame">
+        <div className="formHero">
+          <p className="sectionTitle">Request</p>
+          <h2 className="formTitle">Build the request with clean structure before review</h2>
+          <p className="formLead">
+            This is the main structured path. Dates, events, subject framing, and context quality affect analytical precision,
+            so the entry should be assembled carefully rather than rushed.
+          </p>
+        </div>
 
-      <div className="grid2" data-access-row="two">
-        <Field
-          label="Name"
-          value={formData.request.name}
-          onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              request: { ...prev.request, name: value },
-            }))
-          }
-        />
-        <Field
-          label="Email"
-          value={formData.request.email}
-          onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              request: { ...prev.request, email: value },
-            }))
-          }
-        />
-      </div>
+        <div className="formSection">
+          <div className="formSectionHeader">
+            <p className="formSectionTitle">Identity</p>
+            <p className="formSectionText">Primary contact fields for the request owner.</p>
+          </div>
 
-      <SelectField
-        label="Subject type"
-        value={formData.request.subjectType}
-        options={["", "Person", "Relationship", "Project", "Business / Organization", "Event / Period", "Mixed / Not sure"]}
-        onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            request: { ...prev.request, subjectType: value as SubjectType | "" },
-            subjectPayload: buildEmptySubjectPayload(value as SubjectType | ""),
-          }))
-        }
-      />
+          <div className="grid2">
+            <Field
+              label="Name"
+              value={formData.request.name}
+              onChange={(value) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  request: { ...prev.request, name: value },
+                }))
+              }
+            />
+            <Field
+              label="Email"
+              value={formData.request.email}
+              onChange={(value) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  request: { ...prev.request, email: value },
+                }))
+              }
+            />
+          </div>
+        </div>
 
-      <Field
-        label="Main question"
-        value={formData.request.mainQuestion}
-        onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            request: { ...prev.request, mainQuestion: value },
-          }))
-        }
-      />
+        <div className="formSection">
+          <div className="formSectionHeader">
+            <p className="formSectionTitle">Scope</p>
+            <p className="formSectionText">Define subject type, the main analytical ask, and the short request context.</p>
+          </div>
 
-      <TextAreaField
-        label="Short description"
-        value={formData.request.shortDescription}
-        onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            request: { ...prev.request, shortDescription: value },
-          }))
-        }
-      />
+          <div className="grid2">
+            <SelectField
+              label="Subject type"
+              value={formData.request.subjectType}
+              options={["", "Person", "Relationship", "Project", "Business / Organization", "Event / Period", "Mixed / Not sure"]}
+              onChange={(value) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  request: { ...prev.request, subjectType: value as SubjectType | "" },
+                  subjectPayload: buildEmptySubjectPayload(value as SubjectType | ""),
+                }))
+              }
+            />
+            <Field
+              label="Main question"
+              value={formData.request.mainQuestion}
+              onChange={(value) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  request: { ...prev.request, mainQuestion: value },
+                }))
+              }
+            />
+          </div>
 
-      <SelectField
-        label="Preferred depth"
-        value={formData.request.preferredDepth}
-        options={["", "Structured Snapshot", "Deep Phase Analysis", "Custom Analytical Work", "Not sure"]}
-        onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            request: { ...prev.request, preferredDepth: value as PreferredDepth | "" },
-          }))
-        }
-      />
+          <TextAreaField
+            label="Short description"
+            value={formData.request.shortDescription}
+            onChange={(value) =>
+              updateFormData((prev) => ({
+                ...prev,
+                request: { ...prev.request, shortDescription: value },
+              }))
+            }
+          />
+        </div>
 
-      <CheckboxRow
-        label="I understand that all requests are reviewed manually before confirmation, pricing, and processing."
-        checked={formData.consents.manualReviewAccepted}
-        onChange={(checked) =>
-          updateFormData((prev) => ({
-            ...prev,
-            consents: { ...prev.consents, manualReviewAccepted: checked },
-          }))
-        }
-      />
+        <div className="formSection">
+          <div className="formSectionHeader">
+            <p className="formSectionTitle">Review depth</p>
+            <p className="formSectionText">Choose the depth level and confirm manual review before continuing.</p>
+          </div>
 
-      <div className="actions">
-        <button type="button" className="btnPrimary" onClick={onContinue}>
-          Continue
-        </button>
+          <div className="grid2Asymmetric">
+            <SelectField
+              label="Preferred depth"
+              value={formData.request.preferredDepth}
+              options={["", "Structured Snapshot", "Deep Phase Analysis", "Custom Analytical Work", "Not sure"]}
+              onChange={(value) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  request: { ...prev.request, preferredDepth: value as PreferredDepth | "" },
+                }))
+              }
+            />
+
+            <CheckboxRow
+              label="I understand that all requests are reviewed manually before confirmation, pricing, and processing."
+              checked={formData.consents.manualReviewAccepted}
+              onChange={(checked) =>
+                updateFormData((prev) => ({
+                  ...prev,
+                  consents: { ...prev.consents, manualReviewAccepted: checked },
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="submitRow">
+          <button type="button" className="btnPrimary" onClick={onContinue}>
+            Continue
+          </button>
+        </div>
       </div>
     </section>
   );
