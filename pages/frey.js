@@ -1,56 +1,86 @@
 import { useMemo, useState } from "react";
 
-function band(value) {
-  if (typeof value !== "number") return "unknown";
-  if (value >= 0.75) return "high";
-  if (value >= 0.45) return "medium";
-  return "low";
-}
+const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 
 function buildInterpretation(result) {
-  if (!result) return null;
-
-  const density = band(result.phase_density);
-  const tension = band(result.harmonic_tension);
-  const resonance = band(result.resonance_level);
-  const eclipse = band(result.eclipse_proximity);
-  const stability = band(result.structural_stability);
-
-  let tone = "Balanced signal with moderate movement.";
-
-  if (stability === "high" && resonance === "high") {
-    tone = "Stable resonance window with strong alignment potential.";
-  } else if (tension === "high" && stability !== "high") {
-    tone = "High-pressure window. Move carefully and reduce unnecessary friction.";
-  } else if (density === "high" && resonance === "low") {
-    tone = "Dense field with low coherence. Good for observation, not force.";
-  } else if (eclipse === "high") {
-    tone = "Eclipse-sensitive window. Expect amplification, distortion, or accelerated shifts.";
+  if (!result) {
+    return {
+      marker: "Cosmographic Interpretation",
+      zones: [],
+      vector: null,
+    };
   }
 
+  const phase = Number(result.phase_density ?? 0);
+  const tension = Number(result.harmonic_tension ?? 0);
+  const resonance = Number(result.resonance_level ?? 0);
+  const stability = Number(result.structural_stability ?? 0);
+  const eclipse = Number(result.eclipse_proximity ?? 0);
+  const coherence = Number(result.analysis?.coherence_score ?? 0);
+  const volatility = Number(result.analysis?.volatility_index ?? 0);
+
+  const phaseState = phase >= 0.72
+    ? ["Dense structural alignment", "Phase holds shape, increases continuity, and favors directed consolidation."]
+    : phase >= 0.45
+    ? ["Eclipse-sensitive transition band", "Phase structure amplifies movement, compresses clarity, and intensifies directional shifts across the active field."]
+    : ["Open structural dispersion", "Phase remains permeable, with weaker containment and lower directional cohesion."];
+
+  const tensionState = tension >= 0.72 || volatility >= 0.68
+    ? ["Elevated internal load", "Pressure accumulates faster than release, raising distortion risk under acceleration."]
+    : tension >= 0.42 || volatility >= 0.48
+    ? ["Medium load with acceleration risk", "Baseline pressure stays moderate, yet distortion rises fast when motion exceeds structural pacing."]
+    : ["Low pressure band", "Friction stays reduced, allowing motion without heavy internal compression."];
+
+  const resonanceState = resonance >= 0.74 && coherence >= 0.68
+    ? ["High internal coherence", "Signal coupling holds across the field and supports sustained harmonic continuity."]
+    : resonance >= 0.45 || coherence >= 0.45
+    ? ["Moderate coherence under fluctuation", "Signal aligns in short stable bands, but resonance breaks when the field is forced beyond its internal rhythm."]
+    : ["Weak harmonic lock", "Coupling remains partial and coherence fragments under unstable movement."];
+
+  const stabilityState = stability >= 0.72
+    ? ["Supported core frame", "Structure remains well-supported and can hold motion without immediate edge-loss."]
+    : stability >= 0.45 || eclipse >= 0.7
+    ? ["Medium support with sensitive edges", "Core structure holds, while outer balance becomes vulnerable during amplified or fast-turning phases."]
+    : ["Fragile outer balance", "Support remains limited and weak edges lose alignment under excess push."];
+
+  const vector = tension >= 0.72 || stability < 0.4
+    ? "Mode: Hold structure"
+    : resonance >= 0.7 && stability >= 0.62
+    ? "Mode: Advance through the stable line"
+    : eclipse >= 0.72
+    ? "Mode: Reduce expansion at unstable edges"
+    : "Mode: Controlled advance";
+
   return {
-    tone,
-    rows: [
-      ["Phase density", density],
-      ["Harmonic tension", tension],
-      ["Resonance level", resonance],
-      ["Eclipse proximity", eclipse],
-      ["Structural stability", stability]
-    ]
+    marker: "Cosmographic Interpretation",
+    zones: [
+      { label: "Structural State", state: phaseState[0], effect: phaseState[1] },
+      { label: "Tension Profile", state: tensionState[0], effect: tensionState[1] },
+      { label: "Resonance Profile", state: resonanceState[0], effect: resonanceState[1] },
+      { label: "Stability", state: stabilityState[0], effect: stabilityState[1] },
+    ],
+    vector,
   };
 }
 
 export default function Frey() {
+  const [query, setQuery] = useState("");
   const [date, setDate] = useState("");
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
 
   async function runTemporal() {
     if (!date) return;
-    const res = await fetch(`/api/frey-temporal?date=${date}`);
-    const data = await res.json();
-    setResult(data);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/frey-temporal?date=${encodeURIComponent(date)}`);
+      const data = await res.json();
+      setResult(data);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -60,8 +90,15 @@ export default function Frey() {
         <div className="freyContent">
           <div className="freyMode">FREY · Query Interface</div>
 
-          <input className="freyInput" placeholder="Enter signal..." />
-          <button className="freyButton">Next</button>
+          <div className="freyCommandRow">
+            <input
+              className="freyInput"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Enter signal..."
+            />
+            <button className="freyButton" type="button">Next</button>
+          </div>
 
           <div className="freyDivider" />
 
@@ -76,27 +113,41 @@ export default function Frey() {
                 className="freyInput freyTemporalInput"
               />
 
-              <button onClick={runTemporal} className="freyButton freyTemporalButton">
-                Run Temporal
+              <button onClick={runTemporal} className="freyButton freyTemporalButton" type="button">
+                {loading ? "Running..." : "Run Temporal"}
               </button>
             </div>
 
-            {interpretation && (
+            {result && (
               <div className="freyInterpretation" data-frey-interpretation={MARKER}>
-                <div className="freyInterpretationTitle">Cosmographic Interpretation</div>
-                <div className="freyInterpretationTone">{interpretation.tone}</div>
-                <div className="freyInterpretationGrid">
-                  {interpretation.rows.map(([label, value]) => (
-                    <div key={label} className="freyInterpretationRow">
-                      <span className="freyInterpretationLabel">{label}</span>
-                      <span className="freyInterpretationValue">{value}</span>
+                <div className="freyInterpretationHeader">
+                  <div className="freyInterpretationTitle">{interpretation.marker}</div>
+                  <div className="freyInterpretationRule" />
+                </div>
+
+                <div className="freyInterpretationGridV14">
+                  {interpretation.zones.map((zone) => (
+                    <div key={zone.label} className="freyInterpretationZone">
+                      <div className="freyInterpretationZoneLabel">{zone.label}</div>
+                      <div className="freyInterpretationZoneBody">
+                        <div className="freyInterpretationState">{zone.state}</div>
+                        <div className="freyInterpretationEffect">{zone.effect}</div>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                <div className="freyOperationalVector">
+                  <div className="freyOperationalVectorTag">Operational Vector</div>
+                  <div className="freyOperationalVectorMode">{interpretation.vector}</div>
+                </div>
+
+                <details className="freyMetrics">
+                  <summary className="freyMetricsSummary">Raw Metrics</summary>
+                  <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>
+                </details>
               </div>
             )}
-
-            {result && <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>}
           </div>
         </div>
       </div>
@@ -109,6 +160,7 @@ export default function Frey() {
           justify-content: center;
           background: radial-gradient(circle at center, #0b1220 0%, #05070c 70%);
           position: relative;
+          padding: 24px;
         }
 
         .freyAxis {
@@ -119,151 +171,258 @@ export default function Frey() {
         }
 
         .freyMembrane {
-          width: 560px;
-          padding: 48px;
-          border-radius: 22px;
-          border: 1px solid rgba(255, 200, 120, 0.3);
+          width: min(100%, 720px);
+          padding: 40px;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 200, 120, 0.26);
           background: rgba(12, 16, 24, 0.92);
           backdrop-filter: blur(14px);
+          box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
         }
 
         .freyContent {
           display: flex;
           flex-direction: column;
-          gap: 20px;
-          text-align: center;
+          gap: 0;
+        }
+
+        .freyMode {
+          font-size: 12px;
+          line-height: 1;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: rgba(245, 239, 226, 0.88);
+          margin-bottom: 14px;
+        }
+
+        .freyCommandRow {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .freyInput {
+          width: 100%;
+          min-height: 54px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.18);
+          background: rgba(7, 11, 18, 0.9);
+          color: rgba(245, 247, 252, 0.96);
+          padding: 0 16px;
+          font-size: 15px;
+          outline: none;
+        }
+
+        .freyInput::placeholder {
+          color: rgba(184, 192, 214, 0.42);
+        }
+
+        .freyButton {
+          min-height: 54px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.22);
+          background: linear-gradient(180deg, rgba(255, 200, 120, 0.16), rgba(255, 200, 120, 0.06));
+          color: rgba(248, 244, 236, 0.96);
+          padding: 0 18px;
+          font-size: 13px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          font-weight: 600;
+          cursor: pointer;
         }
 
         .freyDivider {
-          margin-top: 28px;
-          border-top: 1px solid rgba(255, 200, 120, 0.2);
-          padding-top: 24px;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255, 200, 120, 0.18), rgba(255, 255, 255, 0.04));
+          margin-bottom: 20px;
         }
 
         .freyTemporalBlock {
-          margin-top: 6px;
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 18px;
         }
 
         .freyTemporalTitle {
-          font-size: 14px;
-          opacity: 0.7;
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(188, 197, 220, 0.52);
           margin-bottom: 14px;
         }
 
         .freyTemporalRow {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          max-width: 460px;
-          margin: 0 auto;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 10px;
         }
 
-        .freyInput {
-          padding: 12px 14px;
-          border-radius: 10px;
-          border: 1px solid rgba(255, 200, 120, 0.3);
-          background: rgba(10, 14, 20, 0.9);
-          color: #fff;
-        }
-
-        .freyButton {
-          padding: 10px 14px;
-          border-radius: 10px;
-          border: 1px solid rgba(255, 200, 120, 0.4);
-          background: rgba(255, 200, 120, 0.1);
-          color: #fff;
-          cursor: pointer;
-        }
-
-        .freyTemporalInput {
-          flex: 1;
-          height: 44px;
-        }
-
+        .freyTemporalInput,
         .freyTemporalButton {
-          flex: 0.618;
-          height: 44px;
-        }
-
-        .freyTemporalButton:hover {
-          background: rgba(255, 200, 120, 0.18);
+          margin-bottom: 0;
         }
 
         .freyInterpretation {
           margin-top: 18px;
-          padding: 16px;
-          border-radius: 14px;
-          border: 1px solid rgba(255, 200, 120, 0.24);
-          background: rgba(255, 200, 120, 0.06);
-          text-align: left;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding-top: 16px;
+        }
+
+        .freyInterpretationHeader {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
         }
 
         .freyInterpretationTitle {
-          font-size: 12px;
-          letter-spacing: 0.08em;
+          font-size: 10px;
+          line-height: 1;
           text-transform: uppercase;
-          opacity: 0.72;
-          margin-bottom: 8px;
+          letter-spacing: 0.18em;
+          color: rgba(188, 197, 220, 0.52);
+          white-space: nowrap;
         }
 
-        .freyInterpretationTone {
-          font-size: 14px;
-          line-height: 1.5;
-          margin-bottom: 12px;
+        .freyInterpretationRule {
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
         }
 
-        .freyInterpretationGrid {
+        .freyInterpretationGridV14 {
           display: grid;
-          gap: 8px;
-        }
-
-        .freyInterpretationRow {
-          display: flex;
-          justify-content: space-between;
           gap: 12px;
-          padding-top: 8px;
-          border-top: 1px solid rgba(255, 200, 120, 0.12);
         }
 
-        .freyInterpretationLabel {
-          opacity: 0.72;
+        .freyInterpretationZone {
+          display: grid;
+          grid-template-columns: 148px 1fr;
+          gap: 16px;
+          padding: 12px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .freyInterpretationValue {
-          text-transform: capitalize;
+        .freyInterpretationZone:last-child {
+          border-bottom: 0;
+        }
+
+        .freyInterpretationZoneLabel {
+          font-size: 10px;
+          line-height: 1.25;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(151, 160, 185, 0.48);
+          padding-top: 3px;
+        }
+
+        .freyInterpretationZoneBody {
+          display: grid;
+          gap: 4px;
+        }
+
+        .freyInterpretationState {
+          font-size: 15px;
+          line-height: 1.28;
+          color: rgba(245, 247, 252, 0.98);
+          font-weight: 500;
+          letter-spacing: 0.01em;
+        }
+
+        .freyInterpretationEffect {
+          font-size: 12px;
+          line-height: 1.34;
+          color: rgba(184, 192, 214, 0.74);
+        }
+
+        .freyOperationalVector {
+          margin-top: 14px;
+          border-radius: 18px;
+          border: 1px solid rgba(231, 202, 141, 0.18);
+          background: linear-gradient(180deg, rgba(231, 202, 141, 0.12), rgba(231, 202, 141, 0.06));
+          padding: 16px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .freyOperationalVectorTag {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(239, 222, 185, 0.68);
+        }
+
+        .freyOperationalVectorMode {
+          font-size: 17px;
+          line-height: 1.18;
+          color: rgba(255, 249, 236, 0.98);
+          font-weight: 650;
+          text-align: right;
+        }
+
+        .freyMetrics {
+          margin-top: 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyMetricsSummary {
+          cursor: pointer;
+          padding: 14px 16px;
+          list-style: none;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyMetricsSummary::-webkit-details-marker {
+          display: none;
         }
 
         .freyJson {
-          margin-top: 18px;
-          text-align: left;
+          margin: 0;
+          padding: 0 16px 16px;
+          opacity: 0.76;
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: rgba(214, 221, 240, 0.78);
           font-size: 12px;
-          overflow-x: auto;
+          line-height: 1.45;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 760px) {
           .freyMembrane {
-            width: 92%;
-            padding: 32px;
+            padding: 22px;
           }
-        }
 
-        @media (max-width: 520px) {
+          .freyCommandRow,
           .freyTemporalRow {
-            flex-direction: column;
+            grid-template-columns: 1fr;
           }
 
-          .freyTemporalButton {
-            width: 100%;
+          .freyInterpretationZone {
+            grid-template-columns: 1fr;
+            gap: 8px;
           }
 
-          .freyInterpretationRow {
+          .freyOperationalVector {
             flex-direction: column;
             align-items: flex-start;
+          }
+
+          .freyOperationalVectorMode {
+            text-align: left;
           }
         }
       `}</style>
     </div>
   );
 }
-
-const MARKER = "__FREY_INTERPRETATION_BIND_MINIMAL_V0_2__";
