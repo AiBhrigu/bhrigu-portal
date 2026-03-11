@@ -19,11 +19,13 @@ function buildInterpretation(result) {
   const coherence = Number(result.analysis?.coherence_score ?? 0);
   const volatility = Number(result.analysis?.volatility_index ?? 0);
 
-  const phaseState = phase >= 0.72
-    ? ["Dense structural alignment", "Phase holds shape, increases continuity, and favors directed consolidation."]
-    : phase >= 0.45
-    ? ["Eclipse-sensitive transition band", "Phase structure amplifies movement, compresses clarity, and intensifies directional shifts across the active field."]
-    : ["Open structural dispersion", "Phase remains permeable, with weaker containment and lower directional cohesion."];
+  const phaseState = phase >= 0.90
+    ? ["Dense structural alignment", "The regime stays densely formed, with high internal continuity and a strongly consolidated field structure."]
+    : phase >= 0.78
+    ? ["Eclipse-sensitive transition band", "The field remains transitional, with enough structural density to retain a defined but shifting regime contour."]
+    : phase >= 0.58
+    ? ["Eclipse-sensitive transition band", "The regime moves through a looser transition layer, where structural definition shifts more readily across nearby dates."]
+    : ["Open structural dispersion", "The field stays open and diffuse, with weaker formation density and low structural containment."];
 
   const tensionState = tension >= 0.72 || volatility >= 0.68
     ? ["Elevated internal load", "Pressure accumulates faster than release, raising distortion risk under acceleration."]
