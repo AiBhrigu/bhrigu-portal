@@ -2,6 +2,12 @@ import { useMemo, useState } from "react";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 
+function formatMetricLabel(label) {
+  return label
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function buildInterpretation(result) {
   if (!result) {
     return {
@@ -418,19 +424,19 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       data-frey-delta-primary={initialDate || ""}
                       data-frey-delta-secondary={initialCompareDate || ""}
                     >
-                      <div className="freyDeltaTitle">Cosmographic Delta</div>
+                      <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Cosmographic Delta</div>
 
                       <div className="freyDeltaGrid">
                         {deltaBlock.rows.map((row) => (
                           <div key={row.label} className="freyDeltaRow">
-                            <div className="freyDeltaMetric">{row.label}</div>
+                            <div className="freyDeltaMetric">{formatMetricLabel(row.label)}</div>
                             <div className="freyDeltaValue">{row.arrow} {row.value}</div>
                           </div>
                         ))}
                       </div>
 
                       <div className="freyDeltaRelation">
-                        <div className="freyDeltaRelationTag">Temporal relation</div>
+                        <div className="freyDeltaRelationTag">Temporal relation mode</div>
                         <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
                         <div className="freyDeltaRelationText">{deltaBlock.description}</div>
                       </div>
@@ -443,7 +449,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       data-frey-timeline="__FREY_TIMELINE_MODE_V0_1__"
                       data-frey-timeline-dates={timelineDates.join(',')}
                     >
-                      <div className="freyTimelineTitle">Timeline mode</div>
+                      <div className="freyTimelineTitle">Timeline evolution</div>
                       <div className="freyTimelineRow">
                         {timelineResults.map((item) => (
                           <button
@@ -453,7 +459,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                             onClick={() => runTimeline(timelineResults.map((entry) => entry.date))}
                           >
                             <span className="freyTimelineDate">{item.date}</span>
-                            <span className="freyTimelineVector">{item.vector}</span>
+                            <span className="freyTimelineVector">Mode: {item.vector}</span>
                           </button>
                         ))}
                       </div>
@@ -686,11 +692,20 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           margin-bottom: 10px;
         }
 
+        .freyDeltaBlock {
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
         .freyDeltaGrid {
           display: grid;
           grid-template-columns: 1fr;
           gap: 8px;
           margin-bottom: 12px;
+        }
+
+        .freyDeltaMetric {
+          text-transform: none;
+          letter-spacing: 0.01em;
         }
 
         .freyDeltaRow {
@@ -751,6 +766,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 10px;
+        }
+
+        @media (max-width: 820px) {
+          .freyTimelineRow {
+            grid-template-columns: 1fr;
+          }
         }
 
         .freyTimelineChip {
