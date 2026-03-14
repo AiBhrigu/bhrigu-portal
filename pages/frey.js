@@ -20,7 +20,11 @@ function buildInterpretation(result) {
   const volatility = Number(result.analysis?.volatility_index ?? 0);
 
   const phaseState = phase >= 0.90
-    ? ["Dense structural alignment", "The regime stays densely formed, with high internal continuity and a strongly consolidated field structure."]
+    ? stability >= 0.8376 && volatility <= 0.4675
+      ? ["Stabilized dense core", "The dense regime stays internally settled, with strong formation continuity and very low structural agitation."]
+      : stability <= 0.6360 || volatility >= 0.6495
+      ? ["Compressed dense regime", "The dense regime stays structurally compact, while internal compression rises and reduces the ease of structural pacing."]
+      : ["Structured dense formation", "The dense regime remains well-formed, while internal movement stays contained within a stable structural arrangement."]
     : phase >= 0.78
     ? ["Eclipse-sensitive transition band", "The field remains transitional, with enough structural density to retain a defined but shifting regime contour."]
     : phase >= 0.58
