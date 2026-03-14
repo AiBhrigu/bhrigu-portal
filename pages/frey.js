@@ -338,7 +338,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
       <div className="freyAxis" />
       <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
         <div className="freyContent">
-          <div className="freyMode">FREY · Query Interface</div>
+          <div
+            className="freyMode"
+            data-frey-grant-demo="__FREY_GRANT_DEMO_LOCK_V0_1__"
+            data-frey-grant-demo-state="LOCKED"
+          >
+            FREY · Grant Demo Lock
+          </div>
 
           <div className="freyCommandRow">
             <input
@@ -348,6 +354,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               placeholder="Enter signal..."
             />
             <button className="freyButton" type="button">Next</button>
+          </div>
+
+          <div className="freyGrantDemoBar">
+            <div className="freyGrantDemoTitle">Grant demo surface</div>
+            <div className="freyGrantDemoMeta">Query · Snapshots · Compare · Delta · Timeline</div>
           </div>
 
           <div className="freyDivider" />
@@ -581,6 +592,29 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           text-transform: uppercase;
           font-weight: 600;
           cursor: pointer;
+        }
+
+        .freyGrantDemoBar {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 16px;
+          padding: 12px 14px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.14);
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .freyGrantDemoTitle {
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255, 240, 220, 0.84);
+        }
+
+        .freyGrantDemoMeta {
+          font-size: 12px;
+          color: rgba(220, 224, 236, 0.74);
         }
 
         .freyDivider {
