@@ -1,6 +1,6 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import { useAccessStateController } from "../lib/access-state-controller";
 import type {
@@ -24,8 +24,54 @@ import type {
   AccessSubmissionModel,
 } from "../lib/access-models";
 
-export default function AccessPage() {
+type AccessBridgeContext = {
+  primary_date: string;
+  secondary_date: string;
+  signal_class: string;
+  structural_state: string;
+  operational_vector: string;
+  delta_mode: string;
+  timeline_mode: string;
+};
+
+type AccessBridgePrefill = {
+  subjectType: SubjectType | "";
+  mainQuestion: string;
+  shortDescription: string;
+  preferredDepth: PreferredDepth | "";
+};
+
+export async function getServerSideProps({ query }: { query: Record<string, string | string[] | undefined> }) {
+  const rawCtx = Array.isArray(query?.ctx) ? query.ctx[0] : query?.ctx;
+  const {
+    decodeFreyAccessBridgeCtx,
+    buildFreyAccessBridgePrefill,
+  } = await import("../lib/frey-access-bridge.js");
+
+  const initialBridgeCtx = decodeFreyAccessBridgeCtx(rawCtx);
+  const initialBridgePrefill = buildFreyAccessBridgePrefill(initialBridgeCtx);
+
+  return {
+    props: {
+      initialBridgeCtx,
+      initialBridgePrefill,
+      initialBridgeEncoded: typeof rawCtx === "string" ? rawCtx : "",
+    },
+  };
+}
+
+
+export default function AccessPage({
+  initialBridgeCtx = null,
+  initialBridgePrefill = null,
+  initialBridgeEncoded = "",
+}: {
+  initialBridgeCtx?: AccessBridgeContext | null;
+  initialBridgePrefill?: AccessBridgePrefill | null;
+  initialBridgeEncoded?: string;
+}) {
   const controller = useAccessStateController();
+  const bridgeAppliedRef = useRef(false);
 
   const {
     submission,
@@ -56,6 +102,46 @@ export default function AccessPage() {
     return "Submit request";
   }, [submitAttempt.status]);
 
+  useEffect(() => {
+    if (bridgeAppliedRef.current) return;
+    if (!initialBridgePrefill) return;
+    if (restore.isRestoring || restore.showRestorePrompt) return;
+
+    const request = submission.formData.request;
+    const hasExistingInput = Boolean(
+      request.name ||
+      request.email ||
+      request.subjectType ||
+      request.mainQuestion ||
+      request.shortDescription ||
+      request.preferredDepth
+    );
+
+    if (hasExistingInput) {
+      bridgeAppliedRef.current = true;
+      return;
+    }
+
+    updateFormData((prev) => ({
+      ...prev,
+      request: {
+        ...prev.request,
+        subjectType: initialBridgePrefill.subjectType,
+        mainQuestion: initialBridgePrefill.mainQuestion,
+        shortDescription: initialBridgePrefill.shortDescription,
+        preferredDepth: initialBridgePrefill.preferredDepth,
+      },
+    }));
+
+    bridgeAppliedRef.current = true;
+  }, [
+    initialBridgePrefill,
+    restore.isRestoring,
+    restore.showRestorePrompt,
+    submission.formData.request,
+    updateFormData,
+  ]);
+
   return (
     <>
       <Head>
@@ -70,6 +156,7 @@ export default function AccessPage() {
         <section className="shell">
           <HeaderBlock />
           <IntroBlock />
+          <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
 
           <AccessNotices
             draftSavedVisible={notices.draftSavedVisible}
@@ -96,6 +183,8 @@ export default function AccessPage() {
                     <RequestStep
                       formData={submission.formData}
                       updateFormData={updateFormData}
+                      bridgeCtx={initialBridgeCtx}
+                      bridgeEncoded={initialBridgeEncoded}
                       onContinue={() => {
                         clearSubmitError();
                         continueFromRequest();
@@ -809,12 +898,57 @@ function FormProgress(props: {
   );
 }
 
+function AccessBridgeContextBlock(props: {
+  bridgeCtx: AccessBridgeContext | null | undefined;
+}) {
+  const { bridgeCtx } = props;
+
+  if (!bridgeCtx) return null;
+
+  return (
+    <section
+      className="panel"
+      style={{ marginTop: 18 }}
+      data-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
+      data-access-signal={bridgeCtx.signal_class || ""}
+      data-access-vector={bridgeCtx.operational_vector || ""}
+    >
+      <div className="stack">
+        <div>
+          <p className="sectionTitle">Frey context transfer</p>
+          <h2 className="formTitle" style={{ marginTop: 0 }}>Deterministic context received from Frey</h2>
+          <p className="muted">
+            Signal · {bridgeCtx.signal_class || "stabilize"} · Structural state · {bridgeCtx.structural_state || "n/a"} · Operational vector · {bridgeCtx.operational_vector || "orient"}
+          </p>
+        </div>
+
+        <div className="grid3">
+          <div className="field">
+            <p className="formSectionTitle">Primary date</p>
+            <p className="tiny">{bridgeCtx.primary_date || "Not set"}</p>
+          </div>
+          <div className="field">
+            <p className="formSectionTitle">Secondary date</p>
+            <p className="tiny">{bridgeCtx.secondary_date || "Not set"}</p>
+          </div>
+          <div className="field">
+            <p className="formSectionTitle">Transfer mode</p>
+            <p className="tiny">{bridgeCtx.delta_mode || bridgeCtx.timeline_mode || "Direct context"}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function RequestStep(props: {
   formData: FormDataModel;
   updateFormData: (updater: (prev: FormDataModel) => FormDataModel) => void;
+  bridgeCtx?: AccessBridgeContext | null;
+  bridgeEncoded?: string;
   onContinue: () => void;
 }) {
-  const { formData, updateFormData, onContinue } = props;
+  const { formData, updateFormData, bridgeCtx, bridgeEncoded, onContinue } = props;
 
   return (
     <section className="panel" style={{ marginTop: 18 }}>
@@ -833,6 +967,30 @@ function RequestStep(props: {
             so the entry should be assembled carefully rather than rushed.
           </p>
         </div>
+
+        {bridgeCtx && (
+          <div
+            className="formSection"
+            data-access-bridge-request="__FREY_ACCESS_BRIDGE_V0_1__"
+            data-access-bridge-signal={bridgeCtx.signal_class || ""}
+          >
+            <div className="formSectionHeader">
+              <p className="formSectionTitle">Frey bridge packet</p>
+              <p className="formSectionText">
+                The request was opened from a deterministic Frey context transfer. Review and refine before final submission.
+              </p>
+            </div>
+
+            <input type="hidden" name="frey_ctx" value={bridgeEncoded || ""} readOnly />
+
+            <p className="tiny">
+              {bridgeCtx.primary_date ? `Primary date: ${bridgeCtx.primary_date}. ` : ""}
+              {bridgeCtx.secondary_date ? `Secondary date: ${bridgeCtx.secondary_date}. ` : ""}
+              {bridgeCtx.delta_mode ? `Delta mode: ${bridgeCtx.delta_mode}. ` : ""}
+              {bridgeCtx.timeline_mode ? `Timeline mode: ${bridgeCtx.timeline_mode}.` : ""}
+            </p>
+          </div>
+        )}
 
         <div className="formSection">
           <div className="formSectionHeader">

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
@@ -228,6 +229,26 @@ export async function getServerSideProps({ query }) {
     });
   }
 
+
+  const initialInterpretation = buildInterpretation(initialResult);
+  const initialDeltaBlock = buildDeltaBlock(initialResult, initialCompareResult);
+  const {
+    buildFreyAccessCtxPacket,
+    buildFreyAccessHref,
+  } = await import("../lib/frey-access-bridge.js");
+
+  const initialAccessCtx = buildFreyAccessCtxPacket({
+    primary_date: initialDate,
+    secondary_date: initialCompareDate,
+    signal_class: initialSignalBind?.signal_class || "",
+    structural_state: initialInterpretation?.zones?.[0]?.state || "",
+    operational_vector: initialSignalBind?.operational_vector_shift?.primary_mode || "",
+    delta_mode: initialDeltaBlock?.mode || "",
+    timeline_mode: initialTimelineResults.length > 0 ? "active" : "",
+  });
+
+  const initialAccessHref = buildFreyAccessHref(initialAccessCtx);
+
   return {
     props: {
       initialDate,
@@ -238,6 +259,8 @@ export async function getServerSideProps({ query }) {
       initialTimelineResults,
       initialQueryMarker,
       initialSignalBind,
+      initialAccessCtx,
+      initialAccessHref,
     },
   };
 }
@@ -300,8 +323,8 @@ function buildTimelineVector(result) {
   return "Controlled advance";
 }
 
-export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker }) {
-  const [query, setQuery] = useState("");
+export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref }) {
+  const [query, setQuery] = useState(initialSignalBind?.raw_query || "");
   const [date, setDate] = useState(initialDate);
   const [result, setResult] = useState(initialResult);
   const [compareDate, setCompareDate] = useState(initialCompareDate || "");
@@ -322,17 +345,49 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
   const deltaBlock = useMemo(() => buildDeltaBlock(result, compareResult), [result, compareResult]);
 
+  function buildFreyUrl(next) {
+    const params = new URLSearchParams();
+    const nextQuery = typeof next?.query === "string" ? next.query.trim() : "";
+    const nextDate = typeof next?.date === "string" ? next.date : "";
+    const nextCompareDate = typeof next?.compareDate === "string" ? next.compareDate : "";
+    const nextTimelineDates = Array.isArray(next?.timelineDates) ? next.timelineDates : [];
+
+    if (nextQuery) params.set("q", nextQuery);
+    if (nextDate) params.set("d", nextDate);
+    if (nextCompareDate) params.set("d2", nextCompareDate);
+
+    const normalizedTimeline = nextTimelineDates
+      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
+      .slice(0, 5)
+      .join(",");
+
+    if (normalizedTimeline) params.set("tl", normalizedTimeline);
+
+    const qs = params.toString();
+    return qs ? `/frey?${qs}` : "/frey";
+  }
+
+  function runSignal() {
+    if (typeof window !== "undefined") {
+      window.location.assign(
+        buildFreyUrl({ query, date, compareDate, timelineDates })
+      );
+    }
+  }
+
   function runSnapshot(nextDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
     if (typeof window !== "undefined") {
-      window.location.assign(`/frey?d=${encodeURIComponent(nextDate)}`);
+      window.location.assign(buildFreyUrl({ query, date: nextDate }));
     }
   }
 
   function runCompare() {
     if (!date || !compareDate) return;
     if (typeof window !== "undefined") {
-      window.location.assign(`/frey?d=${encodeURIComponent(date)}&d2=${encodeURIComponent(compareDate)}`);
+      window.location.assign(
+        buildFreyUrl({ query, date, compareDate, timelineDates })
+      );
     }
   }
 
@@ -344,16 +399,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
       .join(',');
     if (!normalized) return;
     if (typeof window !== "undefined") {
-      const primary = date ? `d=${encodeURIComponent(date)}&` : '';
-      const secondary = compareDate ? `d2=${encodeURIComponent(compareDate)}&` : '';
-      window.location.assign(`/frey?${primary}${secondary}tl=${encodeURIComponent(normalized)}`);
+      window.location.assign(
+        buildFreyUrl({ query, date, compareDate, timelineDates: normalized.split(',') })
+      );
     }
   }
 
   function runTemporal() {
     if (!date) return;
     if (typeof window !== "undefined") {
-      window.location.assign(`/frey?d=${encodeURIComponent(date)}`);
+      window.location.assign(buildFreyUrl({ query, date, compareDate, timelineDates }));
     }
   }
 
@@ -378,7 +433,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter signal..."
             />
-            <button className="freyButton" type="button">Next</button>
+            <button className="freyButton" type="button" onClick={runSignal}>Next</button>
           </div>
 
           <div
@@ -539,6 +594,27 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   <div className="freyOperationalVectorTag">Operational Vector</div>
                   <div className="freyOperationalVectorMode">{interpretation.vector}</div>
                 </div>
+
+                {initialAccessCtx && (
+                  <div
+                    className="freyGrantDemoBar"
+                    data-frey-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
+                    data-frey-access-signal={initialAccessCtx.signal_class || ""}
+                    data-frey-access-vector={initialAccessCtx.operational_vector || ""}
+                  >
+                    <div className="freyGrantDemoTitle">Access bridge ready</div>
+                    <div className="freyGrantDemoMeta">
+                      Signal · {initialAccessCtx.signal_class || "stabilize"} · Vector · {initialAccessCtx.operational_vector || "orient"}
+                    </div>
+                    <Link
+                      href={initialAccessHref}
+                      className="freyButton freyTemporalButton"
+                      style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginTop: 12 }}
+                    >
+                      Request deep analysis
+                    </Link>
+                  </div>
+                )}
 
                 <details className="freyMetrics">
                   <summary className="freyMetricsSummary">Raw Metrics</summary>
