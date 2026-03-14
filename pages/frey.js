@@ -342,8 +342,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
             className="freyMode"
             data-frey-grant-demo="__FREY_GRANT_DEMO_LOCK_V0_1__"
             data-frey-grant-demo-state="LOCKED"
+            data-frey-presentation-lock="__FREY_PRESENTATION_LOCK_V0_1__"
           >
-            FREY · Grant Demo Lock
+            FREY · Presentation Lock
           </div>
 
           <div className="freyCommandRow">
@@ -356,9 +357,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
             <button className="freyButton" type="button">Next</button>
           </div>
 
-          <div className="freyGrantDemoBar">
-            <div className="freyGrantDemoTitle">Grant demo surface</div>
-            <div className="freyGrantDemoMeta">Query · Snapshots · Compare · Delta · Timeline</div>
+          <div
+            className="freyGrantDemoBar"
+            data-frey-presentation-lock="__FREY_PRESENTATION_LOCK_V0_1__"
+            data-frey-presentation-state="PRESENTATION_READY"
+          >
+            <div className="freyGrantDemoTitle">Presentation-ready surface</div>
+            <div className="freyGrantDemoMeta">Query · Snapshots · Compare · Delta · Timeline · Locked for demo flow</div>
           </div>
 
           <div className="freyDivider" />
@@ -615,6 +620,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyGrantDemoMeta {
           font-size: 12px;
           color: rgba(220, 224, 236, 0.74);
+        }
+
+        .freyGrantDemoBar {
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
         }
 
         .freyDivider {
