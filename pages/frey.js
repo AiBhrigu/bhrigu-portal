@@ -153,12 +153,60 @@ export async function getServerSideProps({ query }) {
     initialCompareResult = payload2;
   }
 
+  const rawTimeline = Array.isArray(query?.tl) ? query.tl[0] : query?.tl;
+  const initialTimelineDates =
+    typeof rawTimeline === "string" && rawTimeline.trim()
+      ? rawTimeline
+          .split(",")
+          .map((part) => part.trim())
+          .filter((part) => /^\d{4}-\d{2}-\d{2}$/.test(part))
+          .slice(0, 5)
+      : ["1971-10-13", "1984-05-07", "2026-03-14"];
+
+  const initialTimelineResults = [];
+  for (const timelineDate of initialTimelineDates) {
+    const { default: handler } = await import("./api/frey-temporal");
+    let payload3 = null;
+    const req3 = { method: "GET", query: { date: timelineDate } };
+    const res3 = {
+      statusCode: 200,
+      headers: {},
+      setHeader(name, value) {
+        this.headers[name] = value;
+      },
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        payload3 = data;
+        return data;
+      },
+      end() {
+        return null;
+      },
+    };
+
+    await handler(req3, res3);
+
+    if (!payload3 || payload3.error) {
+      throw new Error("FREY_TIMELINE_MODE_SSR_FAILED");
+    }
+
+    initialTimelineResults.push({
+      date: timelineDate,
+      vector: buildTimelineVector(payload3),
+    });
+  }
+
   return {
     props: {
       initialDate,
       initialResult,
       initialCompareDate,
       initialCompareResult,
+      initialTimelineDates,
+      initialTimelineResults,
       initialQueryMarker,
     },
   };
@@ -209,12 +257,27 @@ function buildDeltaBlock(primary, secondary) {
   };
 }
 
-export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialQueryMarker }) {
+
+function buildTimelineVector(result) {
+  const phase = Number(result?.phase_density ?? 0);
+  const tension = Number(result?.harmonic_tension ?? 0);
+  const resonance = Number(result?.resonance_level ?? 0);
+  const stability = Number(result?.structural_stability ?? 0);
+
+  if (tension >= 0.72 || stability < 0.4) return "Hold structure";
+  if (resonance >= 0.7 && stability >= 0.62) return "Stable line";
+  if (phase >= 0.9) return "Dense phase";
+  return "Controlled advance";
+}
+
+export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker }) {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState(initialDate);
   const [result, setResult] = useState(initialResult);
   const [compareDate, setCompareDate] = useState(initialCompareDate || "");
   const [compareResult, setCompareResult] = useState(initialCompareResult);
+  const [timelineDates, setTimelineDates] = useState(initialTimelineDates || []);
+  const [timelineResults, setTimelineResults] = useState(initialTimelineResults || []);
   const [loading, setLoading] = useState(false);
 
   const SNAPSHOT_DATES = [
@@ -240,6 +303,20 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     if (!date || !compareDate) return;
     if (typeof window !== "undefined") {
       window.location.assign(`/frey?d=${encodeURIComponent(date)}&d2=${encodeURIComponent(compareDate)}`);
+    }
+  }
+
+  function runTimeline(nextDates) {
+    if (!Array.isArray(nextDates) || !nextDates.length) return;
+    const normalized = nextDates
+      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
+      .slice(0, 5)
+      .join(',');
+    if (!normalized) return;
+    if (typeof window !== "undefined") {
+      const primary = date ? `d=${encodeURIComponent(date)}&` : '';
+      const secondary = compareDate ? `d2=${encodeURIComponent(compareDate)}&` : '';
+      window.location.assign(`/frey?${primary}${secondary}tl=${encodeURIComponent(normalized)}`);
     }
   }
 
@@ -356,6 +433,29 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         <div className="freyDeltaRelationTag">Temporal relation</div>
                         <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
                         <div className="freyDeltaRelationText">{deltaBlock.description}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {timelineResults && timelineResults.length > 0 && (
+                    <div
+                      className="freyTimelineBlock"
+                      data-frey-timeline="__FREY_TIMELINE_MODE_V0_1__"
+                      data-frey-timeline-dates={timelineDates.join(',')}
+                    >
+                      <div className="freyTimelineTitle">Timeline mode</div>
+                      <div className="freyTimelineRow">
+                        {timelineResults.map((item) => (
+                          <button
+                            key={item.date}
+                            type="button"
+                            className={`freyTimelineChip${initialDate === item.date ? " isActive" : ""}`}
+                            onClick={() => runTimeline(timelineResults.map((entry) => entry.date))}
+                          >
+                            <span className="freyTimelineDate">{item.date}</span>
+                            <span className="freyTimelineVector">{item.vector}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -629,6 +729,55 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           font-size: 12px;
           color: rgba(220, 224, 236, 0.78);
           line-height: 1.5;
+        }
+
+        .freyTimelineBlock {
+          margin-top: 12px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.12);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyTimelineTitle {
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(188, 197, 220, 0.58);
+          margin-bottom: 10px;
+        }
+
+        .freyTimelineRow {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyTimelineChip {
+          border-radius: 14px;
+          border: 1px solid rgba(255, 200, 120, 0.12);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 10px;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .freyTimelineChip.isActive {
+          border-color: rgba(255, 200, 120, 0.42);
+          background: rgba(255, 200, 120, 0.10);
+        }
+
+        .freyTimelineDate {
+          display: block;
+          font-size: 11px;
+          color: rgba(248, 244, 236, 0.94);
+          margin-bottom: 6px;
+        }
+
+        .freyTimelineVector {
+          display: block;
+          font-size: 11px;
+          color: rgba(220, 224, 236, 0.78);
         }
 
         .freyTemporalInput,
