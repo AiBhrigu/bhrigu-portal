@@ -164,6 +164,51 @@ export async function getServerSideProps({ query }) {
   };
 }
 
+
+function buildDeltaBlock(primary, secondary) {
+  if (!primary || !secondary) {
+    return null;
+  }
+
+  const metrics = [
+    ["phase_density", Number((secondary.phase_density ?? 0) - (primary.phase_density ?? 0))],
+    ["harmonic_tension", Number((secondary.harmonic_tension ?? 0) - (primary.harmonic_tension ?? 0))],
+    ["resonance_level", Number((secondary.resonance_level ?? 0) - (primary.resonance_level ?? 0))],
+    ["structural_stability", Number((secondary.structural_stability ?? 0) - (primary.structural_stability ?? 0))],
+  ];
+
+  const direction = (value) => (value > 0 ? "UP" : value < 0 ? "DOWN" : "FLAT");
+  const fmt = (value) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}`;
+
+  const resonanceDelta = metrics[2][1];
+  const tensionDelta = metrics[1][1];
+  const stabilityDelta = metrics[3][1];
+
+  let mode = "Balanced temporal shift";
+  let description = "The compared dates remain within a moderate structural reconfiguration band.";
+
+  if (resonanceDelta >= 0.20 && stabilityDelta >= 0.08) {
+    mode = "Acceleration of structural resonance";
+    description = "The field moves from a more constrained configuration toward a clearer expansion window.";
+  } else if (tensionDelta <= -0.20 && stabilityDelta >= 0.05) {
+    mode = "Collapse of harmonic tension";
+    description = "The field descends toward a more stable basin with lower internal strain.";
+  } else if (tensionDelta >= 0.20 && stabilityDelta <= -0.08) {
+    mode = "Escalation into unstable load";
+    description = "The compared dates show rising pressure with weaker structural support.";
+  }
+
+  return {
+    rows: metrics.map(([label, value]) => ({
+      label,
+      arrow: direction(value),
+      value: fmt(value),
+    })),
+    mode,
+    description,
+  };
+}
+
 export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialQueryMarker }) {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState(initialDate);
@@ -182,6 +227,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
   const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
+  const deltaBlock = useMemo(() => buildDeltaBlock(result, compareResult), [result, compareResult]);
 
   function runSnapshot(nextDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
@@ -276,16 +322,44 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </div>
 
               {result && compareResult && (
-                <div className="freyCompareGrid">
-                  <div className="freyCompareCard">
-                    <div className="freyCompareLabel">Primary · {initialDate}</div>
-                    <div className="freyCompareMode">{interpretation.vector}</div>
+                <>
+                  <div className="freyCompareGrid">
+                    <div className="freyCompareCard">
+                      <div className="freyCompareLabel">Primary · {initialDate}</div>
+                      <div className="freyCompareMode">{interpretation.vector}</div>
+                    </div>
+                    <div className="freyCompareCard">
+                      <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
+                      <div className="freyCompareMode">{compareInterpretation.vector}</div>
+                    </div>
                   </div>
-                  <div className="freyCompareCard">
-                    <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
-                    <div className="freyCompareMode">{compareInterpretation.vector}</div>
-                  </div>
-                </div>
+
+                  {deltaBlock && (
+                    <div
+                      className="freyDeltaBlock"
+                      data-frey-delta="__FREY_MULTI_DATE_ANALYSIS_V0_1__"
+                      data-frey-delta-primary={initialDate || ""}
+                      data-frey-delta-secondary={initialCompareDate || ""}
+                    >
+                      <div className="freyDeltaTitle">Cosmographic Delta</div>
+
+                      <div className="freyDeltaGrid">
+                        {deltaBlock.rows.map((row) => (
+                          <div key={row.label} className="freyDeltaRow">
+                            <div className="freyDeltaMetric">{row.label}</div>
+                            <div className="freyDeltaValue">{row.arrow} {row.value}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="freyDeltaRelation">
+                        <div className="freyDeltaRelationTag">Temporal relation</div>
+                        <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
+                        <div className="freyDeltaRelationText">{deltaBlock.description}</div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -494,6 +568,67 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyCompareMode {
           font-size: 14px;
           color: rgba(248, 244, 236, 0.94);
+        }
+
+        .freyDeltaBlock {
+          margin-top: 12px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.12);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyDeltaTitle {
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(188, 197, 220, 0.58);
+          margin-bottom: 10px;
+        }
+
+        .freyDeltaGrid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .freyDeltaRow {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+          padding-bottom: 6px;
+        }
+
+        .freyDeltaMetric {
+          font-size: 12px;
+          color: rgba(245, 247, 252, 0.80);
+        }
+
+        .freyDeltaValue {
+          font-size: 12px;
+          color: rgba(255, 240, 220, 0.96);
+        }
+
+        .freyDeltaRelationTag {
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(188, 197, 220, 0.58);
+          margin-bottom: 6px;
+        }
+
+        .freyDeltaRelationMode {
+          font-size: 14px;
+          color: rgba(248, 244, 236, 0.96);
+          margin-bottom: 6px;
+        }
+
+        .freyDeltaRelationText {
+          font-size: 12px;
+          color: rgba(220, 224, 236, 0.78);
+          line-height: 1.5;
         }
 
         .freyTemporalInput,
