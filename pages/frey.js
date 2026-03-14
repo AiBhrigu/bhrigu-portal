@@ -445,6 +445,29 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
             <div className="freyGrantDemoMeta">Query · Snapshots · Compare · Delta · Timeline · Locked for demo flow</div>
           </div>
 
+          {initialAccessCtx && (
+            <div
+              className="freyGrantDemoBar"
+              data-frey-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
+              data-frey-access-signal={initialAccessCtx.signal_class || ""}
+              data-frey-access-vector={initialAccessCtx.operational_vector || ""}
+            >
+              <div className="freyGrantDemoTitle">Access bridge ready</div>
+              <div className="freyGrantDemoMeta">
+                Signal · {initialAccessCtx.signal_class || "stabilize"} · Vector · {initialAccessCtx.operational_vector || "orient"}
+              </div>
+              <span className="freySsrBridgeMarker">__FREY_ACCESS_BRIDGE_V0_1__</span>
+              <Link
+                href={initialAccessHref}
+                className="freyButton freyTemporalButton"
+                style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none", marginTop: 12 }}
+              >
+                Request deep analysis
+              </Link>
+            </div>
+          )}
+
+
           <div className="freyDivider" />
 
           <div className="freyTemporalBlock" data-frey-temporal="V0_7" data-frey-query-marker={initialQueryMarker}>
@@ -731,6 +754,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyGrantDemoBar {
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .freySsrBridgeMarker {
+          position: absolute;
+          left: -9999px;
+          width: 1px;
+          height: 1px;
+          overflow: hidden;
         }
 
         .freyDivider {
