@@ -69,30 +69,78 @@ function buildInterpretation(result) {
   };
 }
 
-export default function Frey() {
+export async function getServerSideProps({ query }) {
+  const rawDate = Array.isArray(query?.d) ? query.d[0] : query?.d;
+  const initialDate =
+    typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+      ? rawDate
+      : "";
+
+  let initialResult = null;
+  let initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:EMPTY";
+
+  if (initialDate) {
+    const { default: handler } = await import("./api/frey-temporal");
+
+    let payload = null;
+    const req = { method: "GET", query: { date: initialDate } };
+    const res = {
+      statusCode: 200,
+      headers: {},
+      setHeader(name, value) {
+        this.headers[name] = value;
+      },
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        payload = data;
+        return data;
+      },
+      end() {
+        return null;
+      },
+    };
+
+    await handler(req, res);
+
+    if (!payload || payload.error) {
+      throw new Error("FREY_QUERY_INTERFACE_MINI_SSR_FAILED");
+    }
+
+    initialResult = payload;
+    initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:" + initialDate;
+  }
+
+  return {
+    props: {
+      initialDate,
+      initialResult,
+      initialQueryMarker,
+    },
+  };
+}
+
+export default function Frey({ initialDate, initialResult, initialQueryMarker }) {
   const [query, setQuery] = useState("");
-  const [date, setDate] = useState("");
-  const [result, setResult] = useState(null);
+  const [date, setDate] = useState(initialDate);
+  const [result, setResult] = useState(initialResult);
   const [loading, setLoading] = useState(false);
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
 
-  async function runTemporal() {
+  function runTemporal() {
     if (!date) return;
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/frey-temporal?date=${encodeURIComponent(date)}`);
-      const data = await res.json();
-      setResult(data);
-    } finally {
-      setLoading(false);
+    if (typeof window !== "undefined") {
+      window.location.assign(`/frey?d=${encodeURIComponent(date)}`);
     }
   }
 
   return (
     <div className="freyRoot">
       <div className="freyAxis" />
-      <div className="freyMembrane" data-frey-bind={MARKER}>
+      <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
         <div className="freyContent">
           <div className="freyMode">FREY · Query Interface</div>
 
@@ -108,7 +156,7 @@ export default function Frey() {
 
           <div className="freyDivider" />
 
-          <div className="freyTemporalBlock" data-frey-temporal="V0_7">
+          <div className="freyTemporalBlock" data-frey-temporal="V0_7" data-frey-query-marker={initialQueryMarker}>
             <div className="freyTemporalTitle">Temporal Snapshot</div>
 
             <div className="freyTemporalRow">
