@@ -128,7 +128,22 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
   const [result, setResult] = useState(initialResult);
   const [loading, setLoading] = useState(false);
 
+  const SNAPSHOT_DATES = [
+    "2026-03-14",
+    "2025-01-26",
+    "2000-01-01",
+    "1984-05-07",
+    "1971-10-13",
+  ];
+
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
+
+  function runSnapshot(nextDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
+    if (typeof window !== "undefined") {
+      window.location.assign(`/frey?d=${encodeURIComponent(nextDate)}`);
+    }
+  }
 
   function runTemporal() {
     if (!date) return;
@@ -158,6 +173,23 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
 
           <div className="freyTemporalBlock" data-frey-temporal="V0_7" data-frey-query-marker={initialQueryMarker}>
             <div className="freyTemporalTitle">Temporal Snapshot</div>
+
+            <div
+              className="freySnapshotRow"
+              data-frey-snapshots="__FREY_TEMPORAL_SNAPSHOTS_V0_1__"
+              data-frey-snapshot-active={initialDate || ""}
+            >
+              {SNAPSHOT_DATES.map((snapshotDate) => (
+                <button
+                  key={snapshotDate}
+                  type="button"
+                  className={`freySnapshotChip${initialDate === snapshotDate ? " isActive" : ""}`}
+                  onClick={() => runSnapshot(snapshotDate)}
+                >
+                  {snapshotDate}
+                </button>
+              ))}
+            </div>
 
             <div className="freyTemporalRow">
               <input
@@ -306,6 +338,32 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
           text-transform: uppercase;
           color: rgba(188, 197, 220, 0.52);
           margin-bottom: 14px;
+        }
+
+        .freySnapshotRow {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .freySnapshotChip {
+          min-height: 34px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 200, 120, 0.18);
+          background: rgba(255, 255, 255, 0.03);
+          color: rgba(245, 247, 252, 0.88);
+          padding: 0 12px;
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+
+        .freySnapshotChip.isActive {
+          border-color: rgba(255, 200, 120, 0.42);
+          background: rgba(255, 200, 120, 0.10);
+          color: rgba(255, 248, 236, 0.98);
         }
 
         .freyTemporalRow {
