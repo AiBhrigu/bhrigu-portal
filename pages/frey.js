@@ -75,6 +75,16 @@ function buildInterpretation(result) {
   };
 }
 
+function buildBoundTimelineDates(primaryDate, compareDate) {
+  if (!primaryDate && !compareDate) {
+    return ["1971-10-13", "1984-05-07", "2026-03-14"];
+  }
+  if (primaryDate && compareDate) {
+    return [primaryDate, compareDate];
+  }
+  return [primaryDate || compareDate].filter(Boolean);
+}
+
 export async function getServerSideProps({ query }) {
   const rawDate = Array.isArray(query?.d) ? query.d[0] : query?.d;
   const initialDate =
@@ -160,14 +170,19 @@ export async function getServerSideProps({ query }) {
   }
 
   const rawTimeline = Array.isArray(query?.tl) ? query.tl[0] : query?.tl;
-  const initialTimelineDates =
+  const explicitTimelineDates =
     typeof rawTimeline === "string" && rawTimeline.trim()
       ? rawTimeline
           .split(",")
           .map((part) => part.trim())
           .filter((part) => /^\d{4}-\d{2}-\d{2}$/.test(part))
           .slice(0, 5)
-      : ["1971-10-13", "1984-05-07", "2026-03-14"];
+      : [];
+
+  const initialTimelineDates =
+    explicitTimelineDates.length > 0
+      ? explicitTimelineDates
+      : buildBoundTimelineDates(initialDate, initialCompareDate);
 
   const initialTimelineResults = [];
   for (const timelineDate of initialTimelineDates) {
@@ -465,7 +480,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       data-frey-timeline="__FREY_TIMELINE_MODE_V0_1__"
                       data-frey-timeline-dates={timelineDates.join(',')}
                     >
-                      <div className="freyTimelineTitle">Timeline evolution</div>
+                      <div
+                        className="freyTimelineTitle"
+                        data-frey-timeline-bind="__FREY_TIMELINE_BIND_TO_COMPARE_V0_1__"
+                        data-frey-timeline-primary={initialDate || ""}
+                        data-frey-timeline-secondary={initialCompareDate || ""}
+                      >
+                        Timeline bound to compare
+                      </div>
                       <div className="freyTimelineRow">
                         {timelineResults.map((item) => (
                           <button
