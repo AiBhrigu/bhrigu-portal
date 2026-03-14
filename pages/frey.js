@@ -102,6 +102,10 @@ export async function getServerSideProps({ query }) {
   let initialCompareResult = null;
   let initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:EMPTY";
 
+  const rawSignalQuery = Array.isArray(query?.q) ? query.q[0] : query?.q;
+  const { bindFreySignal } = await import("../lib/frey-signal-binder.js");
+  const initialSignalBind = bindFreySignal(rawSignalQuery);
+
   if (initialDate) {
     const { default: handler } = await import("./api/frey-temporal");
 
@@ -134,6 +138,10 @@ export async function getServerSideProps({ query }) {
 
     initialResult = payload;
     initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:" + initialDate;
+  }
+
+  if (rawSignalQuery && initialSignalBind?.marker) {
+    initialQueryMarker = initialQueryMarker + "|" + initialSignalBind.marker;
   }
 
   if (initialCompareDate) {
@@ -229,6 +237,7 @@ export async function getServerSideProps({ query }) {
       initialTimelineDates,
       initialTimelineResults,
       initialQueryMarker,
+      initialSignalBind,
     },
   };
 }
