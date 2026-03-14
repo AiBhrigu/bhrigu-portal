@@ -76,7 +76,14 @@ export async function getServerSideProps({ query }) {
       ? rawDate
       : "";
 
+  const rawCompareDate = Array.isArray(query?.d2) ? query.d2[0] : query?.d2;
+  const initialCompareDate =
+    typeof rawCompareDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawCompareDate)
+      ? rawCompareDate
+      : "";
+
   let initialResult = null;
+  let initialCompareResult = null;
   let initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:EMPTY";
 
   if (initialDate) {
@@ -113,19 +120,56 @@ export async function getServerSideProps({ query }) {
     initialQueryMarker = "__FREY_QUERY_INTERFACE_MINI_V0_1__:" + initialDate;
   }
 
+  if (initialCompareDate) {
+    const { default: handler } = await import("./api/frey-temporal");
+
+    let payload2 = null;
+    const req2 = { method: "GET", query: { date: initialCompareDate } };
+    const res2 = {
+      statusCode: 200,
+      headers: {},
+      setHeader(name, value) {
+        this.headers[name] = value;
+      },
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(data) {
+        payload2 = data;
+        return data;
+      },
+      end() {
+        return null;
+      },
+    };
+
+    await handler(req2, res2);
+
+    if (!payload2 || payload2.error) {
+      throw new Error("FREY_COMPARE_MODE_SSR_FAILED");
+    }
+
+    initialCompareResult = payload2;
+  }
+
   return {
     props: {
       initialDate,
       initialResult,
+      initialCompareDate,
+      initialCompareResult,
       initialQueryMarker,
     },
   };
 }
 
-export default function Frey({ initialDate, initialResult, initialQueryMarker }) {
+export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialQueryMarker }) {
   const [query, setQuery] = useState("");
   const [date, setDate] = useState(initialDate);
   const [result, setResult] = useState(initialResult);
+  const [compareDate, setCompareDate] = useState(initialCompareDate || "");
+  const [compareResult, setCompareResult] = useState(initialCompareResult);
   const [loading, setLoading] = useState(false);
 
   const SNAPSHOT_DATES = [
@@ -137,11 +181,19 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
   ];
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
+  const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
 
   function runSnapshot(nextDate) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
     if (typeof window !== "undefined") {
       window.location.assign(`/frey?d=${encodeURIComponent(nextDate)}`);
+    }
+  }
+
+  function runCompare() {
+    if (!date || !compareDate) return;
+    if (typeof window !== "undefined") {
+      window.location.assign(`/frey?d=${encodeURIComponent(date)}&d2=${encodeURIComponent(compareDate)}`);
     }
   }
 
@@ -202,6 +254,39 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
               <button onClick={runTemporal} className="freyButton freyTemporalButton" type="button">
                 {loading ? "Running..." : "Run Temporal"}
               </button>
+            </div>
+
+            <div
+              className="freyCompareBlock"
+              data-frey-compare="__FREY_COMPARE_MODE_V0_1__"
+              data-frey-compare-primary={initialDate || ""}
+              data-frey-compare-secondary={initialCompareDate || ""}
+            >
+              <div className="freyCompareRow">
+                <input
+                  type="date"
+                  value={compareDate}
+                  onChange={(e) => setCompareDate(e.target.value)}
+                  className="freyInput freyTemporalInput"
+                />
+
+                <button onClick={runCompare} className="freyButton freyTemporalButton" type="button">
+                  Compare
+                </button>
+              </div>
+
+              {result && compareResult && (
+                <div className="freyCompareGrid">
+                  <div className="freyCompareCard">
+                    <div className="freyCompareLabel">Primary · {initialDate}</div>
+                    <div className="freyCompareMode">{interpretation.vector}</div>
+                  </div>
+                  <div className="freyCompareCard">
+                    <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
+                    <div className="freyCompareMode">{compareInterpretation.vector}</div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {result && (
@@ -370,6 +455,45 @@ export default function Frey({ initialDate, initialResult, initialQueryMarker })
           display: grid;
           grid-template-columns: 1fr auto;
           gap: 10px;
+        }
+
+        .freyCompareBlock {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .freyCompareRow {
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 10px;
+        }
+
+        .freyCompareGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 12px;
+        }
+
+        .freyCompareCard {
+          border-radius: 16px;
+          border: 1px solid rgba(255, 200, 120, 0.12);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyCompareLabel {
+          font-size: 10px;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: rgba(188, 197, 220, 0.58);
+          margin-bottom: 8px;
+        }
+
+        .freyCompareMode {
+          font-size: 14px;
+          color: rgba(248, 244, 236, 0.94);
         }
 
         .freyTemporalInput,
