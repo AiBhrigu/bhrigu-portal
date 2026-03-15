@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
@@ -7,6 +7,8 @@ const COMPARE_LEAKAGE_FIX_MARKER = "__FREY_COMPARE_LEAKAGE_SURFACE_FIX_V0_1__";
 const C1_SINGLE_CONVERSATIONAL_MARKER = "__FREY_C1_SINGLE_CONVERSATIONAL_V0_1__";
 const C1_1_RESULT_STACK_POLISH_MARKER = "__FREY_C1_1_RESULT_STACK_POLISH_V0_1__";
 const C1_2_RESULT_TAIL_CLEAR_MARKER = "__FREY_C1_2_RESULT_TAIL_CLEAR_V0_1__";
+const C1_3_COMPARE_AUTO_OPEN_MARKER = "__FREY_C1_3_COMPARE_AUTO_OPEN_V0_1__";
+const C1_3_INTERPRETATION_SPACING_MARKER = "__FREY_C1_3_INTERPRETATION_SPACING_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -406,6 +408,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [compareResult, setCompareResult] = useState(initialCompareResult);
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
+  const compareExpandRef = useRef(null);
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
   const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
@@ -487,6 +490,19 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const hasResult = Boolean(result);
   const hasCompare = Boolean(result && compareResult);
   const hasTimeline = Array.isArray(initialTimelineResults) && initialTimelineResults.length > 0;
+
+  useEffect(() => {
+    if (!hasCompare || typeof window === "undefined") return;
+    const node = compareExpandRef.current;
+    if (!node) return;
+    node.open = true;
+    const raf = window.requestAnimationFrame(() => {
+      const rect = node.getBoundingClientRect();
+      const targetTop = Math.max(window.scrollY + rect.top - 96, 0);
+      window.scrollTo({ top: targetTop, behavior: "smooth" });
+    });
+    return () => window.cancelAnimationFrame(raf);
+  }, [hasCompare, initialCompareDate]);
 
   return (
     <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
@@ -583,13 +599,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     </details>
 
                     <div className="freyConversationResultTail">
-                      <details className="freyInlineExpandBlock" data-frey-interpretation={MARKER}>
+                      <details className="freyInlineExpandBlock" data-frey-interpretation={MARKER} data-frey-interpretation-clean={C1_3_INTERPRETATION_SPACING_MARKER}>
                         <summary className="freyInlineExpandSummary">Interpretation layers</summary>
                         <div className="freyInterpretation freyInterpretationResult">
-                          <div className="freyInterpretationHeader">
-                            <div className="freyInterpretationTitle">Interpretation layers</div>
-                            <div className="freyInterpretationRule" />
-                          </div>
 
                           <div className="freyInterpretationGridV14">
                             {interpretation.zones.map((zone) => (
@@ -622,7 +634,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               <div className="freyResultControls">
                 <div className="freyResultControlsLabel">Expand controls</div>
                 <div className="freyExpandStack">
-                  <details className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-expand-state={hasCompare ? "active" : "ready"}>
+                  <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
                     <summary className="freyExpandSummary">Compare</summary>
 
                     <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
@@ -1513,6 +1525,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: none;
         }
 
+        .freyInlineExpandBlock[open] > .freyInlineExpandSummary {
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
         .freyConversationOperatorNoteCompact {
           border: 0;
           background: transparent;
@@ -1531,7 +1547,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyConversationBlock .freyInterpretationResult {
           margin-top: 0;
-          padding-top: 0;
+          padding: 2px 16px 16px;
           border-top: 0;
         }
 
