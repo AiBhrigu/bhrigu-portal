@@ -761,7 +761,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyRootResult {
           align-items: flex-start;
           padding-top: 84px;
-          padding-bottom: clamp(92px, 11vh, 120px);
+          padding-bottom: clamp(64px, 8vh, 84px);
         }
 
         .freyAxis {
@@ -1342,7 +1342,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 16px;
           margin-top: 18px;
-          margin-bottom: 184px;
+          margin-bottom: 84px;
           padding-bottom: 40px;
         }
 
@@ -1560,11 +1560,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyResultControls {
           display: grid;
           gap: 12px;
-          padding-bottom: clamp(44px, 6vh, 60px);
+          padding-bottom: clamp(20px, 3vh, 28px);
         }
 
+        /* __FREY_C1_5_2_RESULT_TAIL_SPACE_REDUCTION_V0_3__ */
         .freyBottomNavClearance {
-          height: clamp(36px, 4.8vh, 52px);
+          height: clamp(12px, 2.2vh, 20px);
           pointer-events: none;
         }
 
@@ -1578,11 +1579,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         @media (max-width: 760px) {
           .freyRootResult {
             padding-top: 72px;
-            padding-bottom: clamp(104px, 13vh, 132px);
+            padding-bottom: clamp(72px, 9vh, 92px);
           }
 
           .freyResultFlow {
-            margin-bottom: clamp(84px, 10vh, 112px);
+            margin-bottom: clamp(56px, 7vh, 76px);
             padding-bottom: 36px;
           }
 
@@ -1614,11 +1615,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           }
 
           .freyResultControls {
-            padding-bottom: clamp(56px, 7vh, 76px);
+            padding-bottom: clamp(24px, 4vh, 32px);
           }
 
           .freyBottomNavClearance {
-            height: clamp(44px, 5.5vh, 64px);
+            height: clamp(16px, 2.6vh, 24px);
           }
         }
       `}</style>
