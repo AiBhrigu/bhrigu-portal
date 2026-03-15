@@ -10,6 +10,7 @@ const C1_2_RESULT_TAIL_CLEAR_MARKER = "__FREY_C1_2_RESULT_TAIL_CLEAR_V0_1__";
 const C1_3_COMPARE_AUTO_OPEN_MARKER = "__FREY_C1_3_COMPARE_AUTO_OPEN_V0_1__";
 const C1_3_INTERPRETATION_SPACING_MARKER = "__FREY_C1_3_INTERPRETATION_SPACING_V0_1__";
 const C1_4_BOTTOM_NAV_DETACH_MARKER = "__FREY_C1_4_BOTTOM_NAV_DETACH_V0_1__";
+const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -738,7 +739,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     Request deep analysis
                   </Link>
                 </div>
-                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} aria-hidden="true" />
+                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} aria-hidden="true" />
               </>
               )}
             </div>
@@ -1392,7 +1393,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 10px;
           padding: 16px 18px;
-          margin-bottom: 28px;
+          margin-bottom: 36px;
           border-radius: 18px;
           border: 1px solid rgba(255, 200, 120, 0.14);
           background: linear-gradient(180deg, rgba(255, 200, 120, 0.08), rgba(255, 255, 255, 0.02));
@@ -1559,11 +1560,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyResultControls {
           display: grid;
           gap: 12px;
-          padding-bottom: 120px;
+          padding-bottom: 152px;
         }
 
         .freyBottomNavClearance {
-          height: 124px;
+          height: 156px;
           pointer-events: none;
         }
 
@@ -1613,11 +1614,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           }
 
           .freyResultControls {
-            padding-bottom: 136px;
+            padding-bottom: 168px;
           }
 
           .freyBottomNavClearance {
-            height: 140px;
+            height: 176px;
           }
         }
       `}</style>
