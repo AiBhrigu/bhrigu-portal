@@ -5,6 +5,7 @@ const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
 const COMPARE_LEAKAGE_FIX_MARKER = "__FREY_COMPARE_LEAKAGE_SURFACE_FIX_V0_1__";
 const C1_SINGLE_CONVERSATIONAL_MARKER = "__FREY_C1_SINGLE_CONVERSATIONAL_V0_1__";
+const C1_1_RESULT_STACK_POLISH_MARKER = "__FREY_C1_1_RESULT_STACK_POLISH_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -487,10 +488,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const hasTimeline = Array.isArray(initialTimelineResults) && initialTimelineResults.length > 0;
 
   return (
-    <div className="freyRoot">
+    <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
       <div className="freyAxis" />
       <div
-        className="freyMembrane"
+        className={`freyMembrane${hasResult ? " isResult" : ""}`}
         data-frey-bind={MARKER}
         data-frey-query-fix={QUERY_BIND_FIX_MARKER}
         data-frey-compare-leakage-fix={COMPARE_LEAKAGE_FIX_MARKER}
@@ -525,6 +526,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 data-frey-c1={C1_SINGLE_CONVERSATIONAL_MARKER}
                 data-frey-response-surface={C1_SINGLE_CONVERSATIONAL_MARKER}
                 data-frey-response-state={responseSurface.ui_state}
+                data-frey-c1-1={C1_1_RESULT_STACK_POLISH_MARKER}
               >
                 <div className="freyConversationHeader">
                   <div className="freyConversationHeaderText">
@@ -572,36 +574,43 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       </div>
                     </div>
 
-                    <div className="freyConversationOperatorNote">
-                      <div className="freyConversationOperatorLabel">Primary reading</div>
-                      <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
-                    </div>
-
-                    <div className="freyInterpretation freyInterpretationResult" data-frey-interpretation={MARKER}>
-                      <div className="freyInterpretationHeader">
-                        <div className="freyInterpretationTitle">Interpretation layers</div>
-                        <div className="freyInterpretationRule" />
+                    <details className="freyInlineExpandBlock" open data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_1__">
+                      <summary className="freyInlineExpandSummary">Primary reading</summary>
+                      <div className="freyConversationOperatorNote freyConversationOperatorNoteCompact">
+                        <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
                       </div>
+                    </details>
 
-                      <div className="freyInterpretationGridV14">
-                        {interpretation.zones.map((zone) => (
-                          <div key={zone.label} className="freyInterpretationZone">
-                            <div className="freyInterpretationZoneLabel">{zone.label}</div>
-                            <div className="freyInterpretationZoneBody">
-                              <div className="freyInterpretationState">{zone.state}</div>
-                              <div className="freyInterpretationEffect">{zone.effect}</div>
-                            </div>
+                    <div className="freyConversationResultTail">
+                      <details className="freyInlineExpandBlock" data-frey-interpretation={MARKER}>
+                        <summary className="freyInlineExpandSummary">Interpretation layers</summary>
+                        <div className="freyInterpretation freyInterpretationResult">
+                          <div className="freyInterpretationHeader">
+                            <div className="freyInterpretationTitle">Interpretation layers</div>
+                            <div className="freyInterpretationRule" />
                           </div>
-                        ))}
-                      </div>
 
-                      <div className="freyOperationalVector">
-                        <div className="freyOperationalVectorTag">Operational Vector</div>
-                        <div className="freyOperationalVectorMode">{interpretation.vector}</div>
-                      </div>
+                          <div className="freyInterpretationGridV14">
+                            {interpretation.zones.map((zone) => (
+                              <div key={zone.label} className="freyInterpretationZone">
+                                <div className="freyInterpretationZoneLabel">{zone.label}</div>
+                                <div className="freyInterpretationZoneBody">
+                                  <div className="freyInterpretationState">{zone.state}</div>
+                                  <div className="freyInterpretationEffect">{zone.effect}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
 
-                      <details className="freyMetrics">
-                        <summary className="freyMetricsSummary">Raw Metrics</summary>
+                          <div className="freyOperationalVector">
+                            <div className="freyOperationalVectorTag">Operational Vector</div>
+                            <div className="freyOperationalVectorMode">{interpretation.vector}</div>
+                          </div>
+                        </div>
+                      </details>
+
+                      <details className="freyInlineExpandBlock freyMetricsExpand" data-frey-raw-metrics="__FREY_RAW_METRICS_RESULT_ONLY_V0_1__">
+                        <summary className="freyInlineExpandSummary">Raw metrics</summary>
                         <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>
                       </details>
                     </div>
@@ -672,9 +681,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     </div>
                   </details>
 
-                  {hasTimeline && (
-                    <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__">
-                      <summary className="freyExpandSummary">Timeline</summary>
+                  <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" data-frey-expand-state={hasTimeline ? "active" : "empty"}>
+                    <summary className="freyExpandSummary">Timeline</summary>
+                    {hasTimeline ? (
                       <div className="freyTimelineBlock">
                         <div className="freyTimelineRow">
                           {initialTimelineResults.map((entry) => (
@@ -688,8 +697,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                           ))}
                         </div>
                       </div>
-                    </details>
-                  )}
+                    ) : (
+                      <div className="freyExpandEmpty">Timeline appears after date-based runs.</div>
+                    )}
+                  </details>
                 </div>
               </div>
 
@@ -729,6 +740,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           padding: 24px;
         }
 
+        .freyRootResult {
+          align-items: flex-start;
+          padding-top: 84px;
+          padding-bottom: 168px;
+        }
+
         .freyAxis {
           position: absolute;
           width: 1px;
@@ -744,6 +761,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           background: rgba(12, 16, 24, 0.92);
           backdrop-filter: blur(14px);
           box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+        }
+
+        .freyMembrane.isResult {
+          width: min(100%, 760px);
         }
 
         .freyContent {
@@ -1303,6 +1324,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 16px;
           margin-top: 18px;
+          margin-bottom: 80px;
         }
 
         .freyResultBlock {
@@ -1373,7 +1395,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyConversationBlock {
           display: grid;
-          gap: 16px;
+          gap: 14px;
           padding: 20px;
         }
 
@@ -1406,7 +1428,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyConversationLead {
           font-size: 15px;
-          line-height: 1.6;
+          line-height: 1.55;
           color: rgba(226, 232, 244, 0.88);
         }
 
@@ -1461,6 +1483,43 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           gap: 10px;
         }
 
+        .freyConversationResultTail {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyInlineExpandBlock {
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyInlineExpandSummary {
+          cursor: pointer;
+          list-style: none;
+          padding: 14px 16px;
+          font-size: 10px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(238, 227, 204, 0.78);
+        }
+
+        .freyInlineExpandSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyConversationOperatorNoteCompact {
+          border: 0;
+          background: transparent;
+          padding: 0 16px 16px;
+        }
+
+        .freyMetricsExpand .freyJson {
+          padding-top: 0;
+        }
+
         .freyConversationOperatorText {
           font-size: 13px;
           line-height: 1.6;
@@ -1478,7 +1537,19 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           gap: 10px;
         }
 
+        .freyExpandEmpty {
+          padding: 0 16px 16px;
+          font-size: 13px;
+          line-height: 1.5;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
         @media (max-width: 760px) {
+          .freyRootResult {
+            padding-top: 72px;
+            padding-bottom: 152px;
+          }
+
           .freyMembrane {
             padding: 22px;
           }
@@ -1510,5 +1581,6 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     </div>
   );
 }
+
 
 
