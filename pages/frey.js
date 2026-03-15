@@ -739,7 +739,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     Request deep analysis
                   </Link>
                 </div>
-                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} data-frey-bottom-nav-trim="__FREY_C1_5_BOTTOM_NAV_TRIM_V0_2__" aria-hidden="true" />
+                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} data-frey-bottom-nav-trim="__FREY_C1_5_BOTTOM_NAV_TRIM_V0_2__" data-frey-bottom-nav-dynamic="__FREY_C1_5_1_DYNAMIC_BOTTOM_CLEARANCE_V0_1__" aria-hidden="true" />
               </>
               )}
             </div>
@@ -761,7 +761,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyRootResult {
           align-items: flex-start;
           padding-top: 84px;
-          padding-bottom: 208px;
+          padding-bottom: clamp(92px, 11vh, 120px);
         }
 
         .freyAxis {
@@ -1560,11 +1560,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyResultControls {
           display: grid;
           gap: 12px;
-          padding-bottom: 104px;
+          padding-bottom: clamp(44px, 6vh, 60px);
         }
 
         .freyBottomNavClearance {
-          height: 104px;
+          height: clamp(36px, 4.8vh, 52px);
           pointer-events: none;
         }
 
@@ -1578,11 +1578,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         @media (max-width: 760px) {
           .freyRootResult {
             padding-top: 72px;
-            padding-bottom: 232px;
+            padding-bottom: clamp(104px, 13vh, 132px);
           }
 
           .freyResultFlow {
-            margin-bottom: 196px;
+            margin-bottom: clamp(84px, 10vh, 112px);
             padding-bottom: 36px;
           }
 
@@ -1614,11 +1614,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           }
 
           .freyResultControls {
-            padding-bottom: 168px;
+            padding-bottom: clamp(56px, 7vh, 76px);
           }
 
           .freyBottomNavClearance {
-            height: 176px;
+            height: clamp(44px, 5.5vh, 64px);
           }
         }
       `}</style>
