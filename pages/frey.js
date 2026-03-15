@@ -9,6 +9,7 @@ const C1_1_RESULT_STACK_POLISH_MARKER = "__FREY_C1_1_RESULT_STACK_POLISH_V0_1__"
 const C1_2_RESULT_TAIL_CLEAR_MARKER = "__FREY_C1_2_RESULT_TAIL_CLEAR_V0_1__";
 const C1_3_COMPARE_AUTO_OPEN_MARKER = "__FREY_C1_3_COMPARE_AUTO_OPEN_V0_1__";
 const C1_3_INTERPRETATION_SPACING_MARKER = "__FREY_C1_3_INTERPRETATION_SPACING_V0_1__";
+const C1_4_BOTTOM_NAV_DETACH_MARKER = "__FREY_C1_4_BOTTOM_NAV_DETACH_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -498,7 +499,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     node.open = true;
     const raf = window.requestAnimationFrame(() => {
       const rect = node.getBoundingClientRect();
-      const targetTop = Math.max(window.scrollY + rect.top - 96, 0);
+      const targetTop = Math.max(window.scrollY + rect.top - 144, 0);
       window.scrollTo({ top: targetTop, behavior: "smooth" });
     });
     return () => window.cancelAnimationFrame(raf);
@@ -718,6 +719,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </div>
 
               {initialAccessCtx && (
+                <>
                 <div
                   className="freyEscalationBlock"
                   data-frey-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
@@ -736,6 +738,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     Request deep analysis
                   </Link>
                 </div>
+                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} aria-hidden="true" />
+              </>
               )}
             </div>
           )}
@@ -756,7 +760,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyRootResult {
           align-items: flex-start;
           padding-top: 84px;
-          padding-bottom: 168px;
+          padding-bottom: 208px;
         }
 
         .freyAxis {
@@ -1337,8 +1341,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 16px;
           margin-top: 18px;
-          margin-bottom: 132px;
-          padding-bottom: 18px;
+          margin-bottom: 184px;
+          padding-bottom: 40px;
         }
 
         .freyResultBlock {
@@ -1352,7 +1356,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyExpandStack {
           display: grid;
-          gap: 12px;
+          gap: 14px;
         }
 
         .freyExpandBlock {
@@ -1500,7 +1504,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyConversationResultTail {
           display: grid;
-          gap: 10px;
+          gap: 12px;
+          padding-bottom: 28px;
         }
 
         .freyInlineExpandBlock {
@@ -1553,7 +1558,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyResultControls {
           display: grid;
-          gap: 10px;
+          gap: 12px;
+          padding-bottom: 120px;
+        }
+
+        .freyBottomNavClearance {
+          height: 124px;
+          pointer-events: none;
         }
 
         .freyExpandEmpty {
@@ -1566,12 +1577,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         @media (max-width: 760px) {
           .freyRootResult {
             padding-top: 72px;
-            padding-bottom: 168px;
+            padding-bottom: 232px;
           }
 
           .freyResultFlow {
-            margin-bottom: 156px;
-            padding-bottom: 20px;
+            margin-bottom: 196px;
+            padding-bottom: 36px;
           }
 
           .freyMembrane {
@@ -1599,6 +1610,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
           .freyOperationalVectorMode {
             text-align: left;
+          }
+
+          .freyResultControls {
+            padding-bottom: 136px;
+          }
+
+          .freyBottomNavClearance {
+            height: 140px;
           }
         }
       `}</style>
