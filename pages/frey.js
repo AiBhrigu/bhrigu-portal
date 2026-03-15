@@ -6,6 +6,7 @@ const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
 const COMPARE_LEAKAGE_FIX_MARKER = "__FREY_COMPARE_LEAKAGE_SURFACE_FIX_V0_1__";
 const C1_SINGLE_CONVERSATIONAL_MARKER = "__FREY_C1_SINGLE_CONVERSATIONAL_V0_1__";
 const C1_1_RESULT_STACK_POLISH_MARKER = "__FREY_C1_1_RESULT_STACK_POLISH_V0_1__";
+const C1_2_RESULT_TAIL_CLEAR_MARKER = "__FREY_C1_2_RESULT_TAIL_CLEAR_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -520,7 +521,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           </div>
 
           {hasResult && (
-            <div className="freyResultFlow">
+            <div className="freyResultFlow" data-frey-result-tail-clear={C1_2_RESULT_TAIL_CLEAR_MARKER}>
               <section
                 className="freyConversationBlock freyResultBlock"
                 data-frey-c1={C1_SINGLE_CONVERSATIONAL_MARKER}
@@ -574,7 +575,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       </div>
                     </div>
 
-                    <details className="freyInlineExpandBlock" open data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_1__">
+                    <details className="freyInlineExpandBlock" data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_1__" data-frey-primary-reading-state="collapsed">
                       <summary className="freyInlineExpandSummary">Primary reading</summary>
                       <div className="freyConversationOperatorNote freyConversationOperatorNoteCompact">
                         <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
@@ -1324,7 +1325,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 16px;
           margin-top: 18px;
-          margin-bottom: 80px;
+          margin-bottom: 132px;
+          padding-bottom: 18px;
         }
 
         .freyResultBlock {
@@ -1374,6 +1376,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 10px;
           padding: 16px 18px;
+          margin-bottom: 28px;
           border-radius: 18px;
           border: 1px solid rgba(255, 200, 120, 0.14);
           background: linear-gradient(180deg, rgba(255, 200, 120, 0.08), rgba(255, 255, 255, 0.02));
@@ -1547,7 +1550,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         @media (max-width: 760px) {
           .freyRootResult {
             padding-top: 72px;
-            padding-bottom: 152px;
+            padding-bottom: 168px;
+          }
+
+          .freyResultFlow {
+            margin-bottom: 156px;
+            padding-bottom: 20px;
           }
 
           .freyMembrane {
