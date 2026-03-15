@@ -739,7 +739,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     Request deep analysis
                   </Link>
                 </div>
-                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} aria-hidden="true" />
+                <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} data-frey-bottom-nav-trim="__FREY_C1_5_BOTTOM_NAV_TRIM_V0_2__" aria-hidden="true" />
               </>
               )}
             </div>
@@ -1393,7 +1393,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 10px;
           padding: 16px 18px;
-          margin-bottom: 36px;
+          margin-bottom: 24px;
           border-radius: 18px;
           border: 1px solid rgba(255, 200, 120, 0.14);
           background: linear-gradient(180deg, rgba(255, 200, 120, 0.08), rgba(255, 255, 255, 0.02));
@@ -1560,11 +1560,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyResultControls {
           display: grid;
           gap: 12px;
-          padding-bottom: 152px;
+          padding-bottom: 104px;
         }
 
         .freyBottomNavClearance {
-          height: 156px;
+          height: 104px;
           pointer-events: none;
         }
 
