@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
+const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -77,13 +78,11 @@ function buildInterpretation(result) {
 }
 
 function buildBoundTimelineDates(primaryDate, compareDate) {
-  if (!primaryDate && !compareDate) {
-    return ["1971-10-13", "1984-05-07", "2026-03-14"];
-  }
-  if (primaryDate && compareDate) {
-    return [primaryDate, compareDate];
-  }
-  return [primaryDate || compareDate].filter(Boolean);
+  return [];
+}
+
+function getTodayIsoDate() {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function buildResponseSurface(result, activeDate, uiState, errorMessage) {
@@ -424,11 +423,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }
 
   function runSignal() {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery && !date) {
+      setUiError("Enter a signal or select a date.");
+      return;
+    }
+    const resolvedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate();
     setUiError("");
     setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
-        buildFreyUrl({ query, date, compareDate, timelineDates })
+        buildFreyUrl({ query: trimmedQuery, date: resolvedDate, compareDate: "", timelineDates: [] })
       );
     }
   }
@@ -496,7 +501,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   return (
     <div className="freyRoot">
       <div className="freyAxis" />
-      <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
+      <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-fix={QUERY_BIND_FIX_MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
         <div className="freyContent">
           <div
             className="freyMode"
