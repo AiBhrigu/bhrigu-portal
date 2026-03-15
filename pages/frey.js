@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
+const COMPARE_LEAKAGE_FIX_MARKER = "__FREY_COMPARE_LEAKAGE_SURFACE_FIX_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -377,19 +378,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [result, setResult] = useState(initialResult);
   const [compareDate, setCompareDate] = useState(initialCompareDate || "");
   const [compareResult, setCompareResult] = useState(initialCompareResult);
-  const [timelineDates, setTimelineDates] = useState(initialTimelineDates || []);
-  const [timelineResults, setTimelineResults] = useState(initialTimelineResults || []);
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
-
-
-  const SNAPSHOT_DATES = [
-    "2026-03-14",
-    "2025-01-26",
-    "2000-01-01",
-    "1984-05-07",
-    "1971-10-13",
-  ];
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
   const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
@@ -438,18 +428,6 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     }
   }
 
-  function runSnapshot(nextDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
-      setUiError("Select a valid date.");
-      return;
-    }
-    setUiError("");
-    setLoading(true);
-    if (typeof window !== "undefined") {
-      window.location.assign(buildFreyUrl({ query, date: nextDate }));
-    }
-  }
-
   function runCompare() {
     if (!date || !compareDate) {
       setUiError("Set both dates for compare mode.");
@@ -459,29 +437,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
-        buildFreyUrl({ query, date, compareDate, timelineDates })
-      );
-    }
-  }
-
-  function runTimeline(nextDates) {
-    if (!Array.isArray(nextDates) || !nextDates.length) {
-      setUiError("Set at least one timeline date.");
-      return;
-    }
-    const normalized = nextDates
-      .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
-      .slice(0, 5)
-      .join(',');
-    if (!normalized) {
-      setUiError("Set at least one valid timeline date.");
-      return;
-    }
-    setUiError("");
-    setLoading(true);
-    if (typeof window !== "undefined") {
-      window.location.assign(
-        buildFreyUrl({ query, date, compareDate, timelineDates: normalized.split(',') })
+        buildFreyUrl({ query, date, compareDate, timelineDates: [] })
       );
     }
   }
@@ -494,14 +450,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     setUiError("");
     setLoading(true);
     if (typeof window !== "undefined") {
-      window.location.assign(buildFreyUrl({ query, date, compareDate, timelineDates }));
+      window.location.assign(buildFreyUrl({ query, date, compareDate, timelineDates: [] }));
     }
   }
 
   return (
     <div className="freyRoot">
       <div className="freyAxis" />
-      <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-fix={QUERY_BIND_FIX_MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
+      <div className="freyMembrane" data-frey-bind={MARKER} data-frey-query-fix={QUERY_BIND_FIX_MARKER} data-frey-compare-leakage-fix={COMPARE_LEAKAGE_FIX_MARKER} data-frey-query-bind="__FREY_QUERY_INTERFACE_MINI_V0_1__" data-frey-query-date={initialDate || ""}>
         <div className="freyContent">
           <div
             className="freyMode"
@@ -559,24 +515,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           <div className="freyTemporalBlock" data-frey-temporal="V0_7" data-frey-query-marker={initialQueryMarker}>
             <div className="freyTemporalTitle">Temporal Snapshot</div>
 
-            <div
-              className="freySnapshotRow"
-              data-frey-snapshots="__FREY_TEMPORAL_SNAPSHOTS_V0_1__"
-              data-frey-snapshot-active={initialDate || ""}
-            >
-              {SNAPSHOT_DATES.map((snapshotDate) => (
-                <button
-                  key={snapshotDate}
-                  type="button"
-                  className={`freySnapshotChip${initialDate === snapshotDate ? " isActive" : ""}`}
-                  onClick={() => runSnapshot(snapshotDate)}
-                >
-                  {snapshotDate}
-                </button>
-              ))}
-            </div>
-
-            <div className="freyTemporalRow">
+                        <div className="freyTemporalRow">
               <input
                 type="date"
                 value={date}
@@ -647,36 +586,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     </div>
                   )}
 
-                  {timelineResults && timelineResults.length > 0 && (
-                    <div
-                      className="freyTimelineBlock"
-                      data-frey-timeline="__FREY_TIMELINE_MODE_V0_1__"
-                      data-frey-timeline-dates={timelineDates.join(',')}
-                    >
-                      <div
-                        className="freyTimelineTitle"
-                        data-frey-timeline-bind="__FREY_TIMELINE_BIND_TO_COMPARE_V0_1__"
-                        data-frey-timeline-primary={initialDate || ""}
-                        data-frey-timeline-secondary={initialCompareDate || ""}
-                      >
-                        Timeline bound to compare
-                      </div>
-                      <div className="freyTimelineRow">
-                        {timelineResults.map((item) => (
-                          <button
-                            key={item.date}
-                            type="button"
-                            className={`freyTimelineChip${initialDate === item.date ? " isActive" : ""}`}
-                            onClick={() => runTimeline(timelineResults.map((entry) => entry.date))}
-                          >
-                            <span className="freyTimelineDate">{item.date}</span>
-                            <span className="freyTimelineVector">Mode: {item.vector}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </>
+                                  </>
               )}
             </div>
 
