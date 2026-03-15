@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
 const COMPARE_LEAKAGE_FIX_MARKER = "__FREY_COMPARE_LEAKAGE_SURFACE_FIX_V0_1__";
+const C1_SINGLE_CONVERSATIONAL_MARKER = "__FREY_C1_SINGLE_CONVERSATIONAL_V0_1__";
 
 function formatMetricLabel(label) {
   return label
@@ -75,6 +76,29 @@ function buildInterpretation(result) {
       { label: "Stability", state: stabilityState[0], effect: stabilityState[1] },
     ],
     vector,
+  };
+}
+
+function buildConversationalResponse(responseSurface, interpretation) {
+  if (!responseSurface || !interpretation) {
+    return {
+      title: "Frey conversational response",
+      lead: "",
+      summary: "",
+      operator_note: "",
+    };
+  }
+
+  const structural = interpretation.zones?.[0];
+  const tension = interpretation.zones?.[1];
+  const resonance = interpretation.zones?.[2];
+  const stability = interpretation.zones?.[3];
+
+  return {
+    title: interpretation.vector || "Mode: Controlled advance",
+    lead: structural?.effect || "Run Frey to receive a structured reading.",
+    summary: [tension?.state, resonance?.state, stability?.state].filter(Boolean).join(" · "),
+    operator_note: [tension?.effect, resonance?.effect, stability?.effect].filter(Boolean).join(" "),
   };
 }
 
@@ -389,6 +413,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     () => buildResponseSurface(result, date || initialDate, responseUiState, uiError),
     [result, date, initialDate, responseUiState, uiError]
   );
+  const conversationalResponse = useMemo(
+    () => buildConversationalResponse(responseSurface, interpretation),
+    [responseSurface, interpretation]
+  );
 
   function buildFreyUrl(next) {
     const params = new URLSearchParams();
@@ -492,26 +520,36 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
           {hasResult && (
             <div className="freyResultFlow">
-              <div
-                className="freyResponseSurface freyResultBlock"
-                data-frey-response-surface="__FREY_MINIMAL_RESPONSE_SURFACE_V0_1__"
+              <section
+                className="freyConversationBlock freyResultBlock"
+                data-frey-c1={C1_SINGLE_CONVERSATIONAL_MARKER}
+                data-frey-response-surface={C1_SINGLE_CONVERSATIONAL_MARKER}
                 data-frey-response-state={responseSurface.ui_state}
               >
-                <div className="freyResponseHeader">
-                  <div className="freyResponseTitle">Result block</div>
+                <div className="freyConversationHeader">
+                  <div className="freyConversationHeaderText">
+                    <div className="freyConversationEyebrow">Frey conversational response</div>
+                    <div className="freyConversationTitle">{conversationalResponse.title}</div>
+                  </div>
                   <div className="freyResponseState">{responseSurface.ui_state}</div>
                 </div>
 
-                <div className="freyResponseGrid">
-                  <div className="freyResponseMetric">
-                    <div className="freyResponseLabel">Active Date</div>
-                    <div className="freyResponseValue">{responseSurface.active_date || "n/a"}</div>
+                <div className="freyConversationLead">{conversationalResponse.lead}</div>
+
+                <div className="freyConversationMetaRow">
+                  <div className="freyConversationMetaCard">
+                    <div className="freyConversationMetaLabel">Active Date</div>
+                    <div className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</div>
                   </div>
-                  <div className="freyResponseMetric">
-                    <div className="freyResponseLabel">Engine</div>
-                    <div className="freyResponseValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
+                  <div className="freyConversationMetaCard">
+                    <div className="freyConversationMetaLabel">Engine</div>
+                    <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
                   </div>
                 </div>
+
+                {conversationalResponse.summary && (
+                  <div className="freyConversationBand">{conversationalResponse.summary}</div>
+                )}
 
                 {responseSurface.ui_state === "error" && (
                   <div className="freyResponseError">{responseSurface.error || "Unable to run Frey."}</div>
@@ -519,144 +557,140 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
                 {responseSurface.ui_state === "success" && responseSurface.metrics && (
                   <>
-                    <div className="freyResponseGrid">
-                      {Object.entries(responseSurface.metrics).map(([key, value]) => (
-                        <div key={key} className="freyResponseMetric">
-                          <div className="freyResponseLabel">{formatMetricLabel(key)}</div>
-                          <div className="freyResponseValue">{typeof value === "number" ? value.toFixed(4) : String(value)}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="freyResponseSummary">
-                      <div className="freyResponseSummaryTitle">Compact Summary</div>
-                      <div className="freyResponseSummaryGrid">
-                        <div className="freyResponseMetric">
-                          <div className="freyResponseLabel">Intensity</div>
-                          <div className="freyResponseValue">{responseSurface.compact_summary?.intensity_band || "n/a"}</div>
-                        </div>
-                        <div className="freyResponseMetric">
-                          <div className="freyResponseLabel">Stability</div>
-                          <div className="freyResponseValue">{responseSurface.compact_summary?.stability_band || "n/a"}</div>
-                        </div>
-                        <div className="freyResponseMetric">
-                          <div className="freyResponseLabel">Resonance</div>
-                          <div className="freyResponseValue">{responseSurface.compact_summary?.resonance_band || "n/a"}</div>
-                        </div>
+                    <div className="freyConversationMetricRow">
+                      <div className="freyConversationMetric">
+                        <div className="freyConversationMetricLabel">Intensity</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.intensity_band || "n/a"}</div>
+                      </div>
+                      <div className="freyConversationMetric">
+                        <div className="freyConversationMetricLabel">Stability</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.stability_band || "n/a"}</div>
+                      </div>
+                      <div className="freyConversationMetric">
+                        <div className="freyConversationMetricLabel">Resonance</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.resonance_band || "n/a"}</div>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
 
-              <div className="freyInterpretation freyInterpretationResult" data-frey-interpretation={MARKER}>
-                <div className="freyInterpretationHeader">
-                  <div className="freyInterpretationTitle">{interpretation.marker}</div>
-                  <div className="freyInterpretationRule" />
-                </div>
+                    <div className="freyConversationOperatorNote">
+                      <div className="freyConversationOperatorLabel">Primary reading</div>
+                      <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
+                    </div>
 
-                <div className="freyInterpretationGridV14">
-                  {interpretation.zones.map((zone) => (
-                    <div key={zone.label} className="freyInterpretationZone">
-                      <div className="freyInterpretationZoneLabel">{zone.label}</div>
-                      <div className="freyInterpretationZoneBody">
-                        <div className="freyInterpretationState">{zone.state}</div>
-                        <div className="freyInterpretationEffect">{zone.effect}</div>
+                    <div className="freyInterpretation freyInterpretationResult" data-frey-interpretation={MARKER}>
+                      <div className="freyInterpretationHeader">
+                        <div className="freyInterpretationTitle">Interpretation layers</div>
+                        <div className="freyInterpretationRule" />
                       </div>
-                    </div>
-                  ))}
-                </div>
 
-                <div className="freyOperationalVector">
-                  <div className="freyOperationalVectorTag">Operational Vector</div>
-                  <div className="freyOperationalVectorMode">{interpretation.vector}</div>
-                </div>
-
-                <details className="freyMetrics">
-                  <summary className="freyMetricsSummary">Raw Metrics</summary>
-                  <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>
-                </details>
-              </div>
-
-              <div className="freyExpandStack">
-                <details className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-expand-state={hasCompare ? "active" : "ready"}>
-                  <summary className="freyExpandSummary">Compare</summary>
-
-                  <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
-                    <div className="freyCompareRow">
-                      <input
-                        type="date"
-                        value={compareDate}
-                        onChange={(e) => setCompareDate(e.target.value)}
-                        className="freyInput freyTemporalInput"
-                      />
-
-                      <button onClick={runCompare} className="freyButton freyTemporalButton" type="button">
-                        Compare
-                      </button>
-                    </div>
-
-                    {hasCompare && (
-                      <>
-                        <div className="freyCompareGrid">
-                          <div className="freyCompareCard">
-                            <div className="freyCompareLabel">Primary · {initialDate}</div>
-                            <div className="freyCompareMode">{interpretation.vector}</div>
-                          </div>
-                          <div className="freyCompareCard">
-                            <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
-                            <div className="freyCompareMode">{compareInterpretation.vector}</div>
-                          </div>
-                        </div>
-
-                        {deltaBlock && (
-                          <div
-                            className="freyDeltaBlock"
-                            data-frey-delta="__FREY_MULTI_DATE_ANALYSIS_V0_1__"
-                            data-frey-delta-primary={initialDate || ""}
-                            data-frey-delta-secondary={initialCompareDate || ""}
-                          >
-                            <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Cosmographic Delta</div>
-
-                            <div className="freyDeltaGrid">
-                              {deltaBlock.rows.map((row) => (
-                                <div key={row.label} className="freyDeltaRow">
-                                  <div className="freyDeltaMetric">{formatMetricLabel(row.label)}</div>
-                                  <div className="freyDeltaValue">{row.arrow} {row.value}</div>
-                                </div>
-                              ))}
+                      <div className="freyInterpretationGridV14">
+                        {interpretation.zones.map((zone) => (
+                          <div key={zone.label} className="freyInterpretationZone">
+                            <div className="freyInterpretationZoneLabel">{zone.label}</div>
+                            <div className="freyInterpretationZoneBody">
+                              <div className="freyInterpretationState">{zone.state}</div>
+                              <div className="freyInterpretationEffect">{zone.effect}</div>
                             </div>
-
-                            <div className="freyDeltaRelation">
-                              <div className="freyDeltaRelationTag">Temporal relation mode</div>
-                              <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
-                              <div className="freyDeltaRelationText">{deltaBlock.description}</div>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </details>
-
-                {hasTimeline && (
-                  <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" open>
-                    <summary className="freyExpandSummary">Timeline</summary>
-                    <div className="freyTimelineBlock">
-                      <div className="freyTimelineRow">
-                        {initialTimelineResults.map((entry) => (
-                          <div
-                            key={entry.date}
-                            className={`freyTimelineChip${entry.date === initialDate ? " isActive" : ""}`}
-                          >
-                            <div className="freyTimelineDate">{entry.date}</div>
-                            <div className="freyTimelineVector">{entry.vector}</div>
                           </div>
                         ))}
                       </div>
+
+                      <div className="freyOperationalVector">
+                        <div className="freyOperationalVectorTag">Operational Vector</div>
+                        <div className="freyOperationalVectorMode">{interpretation.vector}</div>
+                      </div>
+
+                      <details className="freyMetrics">
+                        <summary className="freyMetricsSummary">Raw Metrics</summary>
+                        <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>
+                      </details>
+                    </div>
+                  </>
+                )}
+              </section>
+
+              <div className="freyResultControls">
+                <div className="freyResultControlsLabel">Expand controls</div>
+                <div className="freyExpandStack">
+                  <details className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-expand-state={hasCompare ? "active" : "ready"}>
+                    <summary className="freyExpandSummary">Compare</summary>
+
+                    <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
+                      <div className="freyCompareRow">
+                        <input
+                          type="date"
+                          value={compareDate}
+                          onChange={(e) => setCompareDate(e.target.value)}
+                          className="freyInput freyTemporalInput"
+                        />
+
+                        <button onClick={runCompare} className="freyButton freyTemporalButton" type="button">
+                          Compare
+                        </button>
+                      </div>
+
+                      {hasCompare && (
+                        <>
+                          <div className="freyCompareGrid">
+                            <div className="freyCompareCard">
+                              <div className="freyCompareLabel">Primary · {initialDate}</div>
+                              <div className="freyCompareMode">{interpretation.vector}</div>
+                            </div>
+                            <div className="freyCompareCard">
+                              <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
+                              <div className="freyCompareMode">{compareInterpretation.vector}</div>
+                            </div>
+                          </div>
+
+                          {deltaBlock && (
+                            <div
+                              className="freyDeltaBlock"
+                              data-frey-delta="__FREY_MULTI_DATE_ANALYSIS_V0_1__"
+                              data-frey-delta-primary={initialDate || ""}
+                              data-frey-delta-secondary={initialCompareDate || ""}
+                            >
+                              <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Cosmographic Delta</div>
+
+                              <div className="freyDeltaGrid">
+                                {deltaBlock.rows.map((row) => (
+                                  <div key={row.label} className="freyDeltaRow">
+                                    <div className="freyDeltaMetric">{formatMetricLabel(row.label)}</div>
+                                    <div className="freyDeltaValue">{row.arrow} {row.value}</div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              <div className="freyDeltaRelation">
+                                <div className="freyDeltaRelationTag">Temporal relation mode</div>
+                                <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
+                                <div className="freyDeltaRelationText">{deltaBlock.description}</div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   </details>
-                )}
+
+                  {hasTimeline && (
+                    <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__">
+                      <summary className="freyExpandSummary">Timeline</summary>
+                      <div className="freyTimelineBlock">
+                        <div className="freyTimelineRow">
+                          {initialTimelineResults.map((entry) => (
+                            <div
+                              key={entry.date}
+                              className={`freyTimelineChip${entry.date === initialDate ? " isActive" : ""}`}
+                            >
+                              <div className="freyTimelineDate">{entry.date}</div>
+                              <div className="freyTimelineVector">{entry.vector}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </details>
+                  )}
+                </div>
               </div>
 
               {initialAccessCtx && (
@@ -1337,6 +1371,113 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           color: rgba(214, 221, 240, 0.78);
         }
 
+        .freyConversationBlock {
+          display: grid;
+          gap: 16px;
+          padding: 20px;
+        }
+
+        .freyConversationHeader {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .freyConversationHeaderText {
+          display: grid;
+          gap: 8px;
+        }
+
+        .freyConversationEyebrow {
+          font-size: 10px;
+          line-height: 1;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(188, 197, 220, 0.58);
+        }
+
+        .freyConversationTitle {
+          font-size: 24px;
+          line-height: 1.2;
+          color: rgba(255, 249, 236, 0.98);
+          font-weight: 620;
+        }
+
+        .freyConversationLead {
+          font-size: 15px;
+          line-height: 1.6;
+          color: rgba(226, 232, 244, 0.88);
+        }
+
+        .freyConversationMetaRow {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyConversationMetaCard,
+        .freyConversationMetric,
+        .freyConversationOperatorNote {
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px 14px;
+        }
+
+        .freyConversationMetaLabel,
+        .freyConversationMetricLabel,
+        .freyConversationOperatorLabel,
+        .freyResultControlsLabel {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+          margin-bottom: 8px;
+        }
+
+        .freyConversationMetaValue,
+        .freyConversationMetricValue {
+          color: rgba(245, 239, 226, 0.96);
+          font-size: 15px;
+          line-height: 1.35;
+        }
+
+        .freyConversationBand {
+          border-radius: 999px;
+          border: 1px solid rgba(255, 200, 120, 0.16);
+          background: rgba(255, 200, 120, 0.08);
+          padding: 10px 14px;
+          font-size: 11px;
+          line-height: 1.4;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.92);
+        }
+
+        .freyConversationMetricRow {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyConversationOperatorText {
+          font-size: 13px;
+          line-height: 1.6;
+          color: rgba(214, 221, 240, 0.82);
+        }
+
+        .freyConversationBlock .freyInterpretationResult {
+          margin-top: 0;
+          padding-top: 0;
+          border-top: 0;
+        }
+
+        .freyResultControls {
+          display: grid;
+          gap: 10px;
+        }
+
         @media (max-width: 760px) {
           .freyMembrane {
             padding: 22px;
@@ -1345,7 +1486,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           .freyCommandRow,
           .freyTemporalRow,
           .freyResponseGrid,
-          .freyResponseSummaryGrid {
+          .freyResponseSummaryGrid,
+          .freyConversationMetaRow,
+          .freyConversationMetricRow {
             grid-template-columns: 1fr;
           }
 
@@ -1367,4 +1510,5 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     </div>
   );
 }
+
 
