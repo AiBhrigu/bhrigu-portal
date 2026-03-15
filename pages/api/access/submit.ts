@@ -13,6 +13,10 @@ import {
 import {
   fileAccessSubmissionPersistenceAdapter,
 } from "../../../lib/access-submit-persistence";
+import {
+  buildAccessTriageV01,
+  sanitizeFreyCtxInput,
+} from "../../../lib/access-triage.js";
 
 const persistenceAdapter: AccessSubmissionPersistenceAdapter =
   fileAccessSubmissionPersistenceAdapter;
@@ -51,11 +55,32 @@ export default async function handler(
 
     const requestId = generateAccessRequestId(new Date());
     const submittedAt = new Date().toISOString();
-    const record = buildStoredAccessSubmissionRecord(
+    const freyCtx = sanitizeFreyCtxInput((req.body as { frey_ctx?: unknown })?.frey_ctx);
+    const triage = buildAccessTriageV01({
+      freyCtx,
+      request: validation.data.request,
+      normalizedDates: validation.data.normalizedDates,
+    });
+
+    const baseRecord = buildStoredAccessSubmissionRecord(
       requestId,
       submittedAt,
       validation.data
     );
+
+    const record = {
+      ...baseRecord,
+      freyCtx,
+      triage,
+      priority_band: triage.priority_band,
+      route_hint: triage.route_hint,
+      operatorPacket: {
+        ...baseRecord.operatorPacket,
+        triage,
+        priority_band: triage.priority_band,
+        route_hint: triage.route_hint,
+      },
+    };
 
     try {
       await persistenceAdapter.save(record);
@@ -111,3 +136,4 @@ function logAccessSubmitError(kind: string, error: unknown, meta?: Record<string
         : error,
   });
 }
+

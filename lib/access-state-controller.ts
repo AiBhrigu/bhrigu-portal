@@ -78,6 +78,7 @@ export interface SubmitRequestPayload {
     draftDurationMs: number | null;
     correctionRequested: boolean;
   };
+  frey_ctx?: string | null;
 }
 
 export interface AccessStateController {
@@ -194,6 +195,20 @@ export function detectAccessEntrySource(): AccessEntrySource {
   }
 }
 
+function readFreyCtxFromLocation(): string | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const url = new URL(window.location.href);
+    const ctx = url.searchParams.get("ctx");
+    if (!ctx) return null;
+    const normalized = ctx.trim();
+    return normalized ? normalized.slice(0, 4096) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildSubmitRequestPayload(
   submission: AccessSubmissionModel
 ): SubmitRequestPayload {
@@ -201,6 +216,7 @@ export function buildSubmitRequestPayload(
     submission.formData,
     submission.normalizedDates
   );
+  const freyCtx = readFreyCtxFromLocation();
 
   return {
     request: submission.formData.request,
@@ -222,6 +238,7 @@ export function buildSubmitRequestPayload(
       draftDurationMs: submission.temporalMeta.draft_duration_ms,
       correctionRequested: submission.temporalMeta.correction_requested,
     },
+    frey_ctx: freyCtx,
   };
 }
 
