@@ -86,6 +86,55 @@ function buildBoundTimelineDates(primaryDate, compareDate) {
   return [primaryDate || compareDate].filter(Boolean);
 }
 
+function buildResponseSurface(result, activeDate, uiState, errorMessage) {
+  const normalizedState = uiState || (result ? "success" : "idle");
+  const phase = Number(result?.phase_density ?? 0);
+  const tension = Number(result?.harmonic_tension ?? 0);
+  const resonance = Number(result?.resonance_level ?? 0);
+  const stability = Number(result?.structural_stability ?? 0);
+  const eclipse = Number(result?.eclipse_proximity ?? 0);
+
+  const intensityBand =
+    tension >= 0.72 ? "high" :
+    tension >= 0.42 ? "medium" :
+    "low";
+
+  const stabilityBand =
+    stability >= 0.72 ? "supported" :
+    stability >= 0.45 ? "sensitive" :
+    "fragile";
+
+  const resonanceBand =
+    resonance >= 0.74 ? "high" :
+    resonance >= 0.45 ? "medium" :
+    "low";
+
+  return {
+    ui_state: normalizedState,
+    active_date: activeDate || result?.date || "",
+    engine: result?.engine || "frey-temporal-core-v0.1",
+    engine_version: result?.meta?.engine_version || result?.engine || "",
+    metrics: result
+      ? {
+          phase_density: phase,
+          harmonic_tension: tension,
+          resonance_level: resonance,
+          eclipse_proximity: eclipse,
+          structural_stability: stability,
+        }
+      : null,
+    compact_summary: result
+      ? {
+          intensity_band: intensityBand,
+          stability_band: stabilityBand,
+          resonance_band: resonanceBand,
+        }
+      : null,
+    error: errorMessage || "",
+  };
+}
+
+
 export async function getServerSideProps({ query }) {
   const rawDate = Array.isArray(query?.d) ? query.d[0] : query?.d;
   const initialDate =
@@ -332,6 +381,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [timelineDates, setTimelineDates] = useState(initialTimelineDates || []);
   const [timelineResults, setTimelineResults] = useState(initialTimelineResults || []);
   const [loading, setLoading] = useState(false);
+  const [uiError, setUiError] = useState("");
+
 
   const SNAPSHOT_DATES = [
     "2026-03-14",
@@ -344,6 +395,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
   const compareInterpretation = useMemo(() => buildInterpretation(compareResult), [compareResult]);
   const deltaBlock = useMemo(() => buildDeltaBlock(result, compareResult), [result, compareResult]);
+  const responseUiState = uiError ? "error" : loading ? "loading" : result ? "success" : "idle";
+  const responseSurface = useMemo(
+    () => buildResponseSurface(result, date || initialDate, responseUiState, uiError),
+    [result, date, initialDate, responseUiState, uiError]
+  );
 
   function buildFreyUrl(next) {
     const params = new URLSearchParams();
@@ -368,6 +424,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }
 
   function runSignal() {
+    setUiError("");
+    setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
         buildFreyUrl({ query, date, compareDate, timelineDates })
@@ -376,14 +434,24 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }
 
   function runSnapshot(nextDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
+      setUiError("Select a valid date.");
+      return;
+    }
+    setUiError("");
+    setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(buildFreyUrl({ query, date: nextDate }));
     }
   }
 
   function runCompare() {
-    if (!date || !compareDate) return;
+    if (!date || !compareDate) {
+      setUiError("Set both dates for compare mode.");
+      return;
+    }
+    setUiError("");
+    setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
         buildFreyUrl({ query, date, compareDate, timelineDates })
@@ -392,12 +460,20 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }
 
   function runTimeline(nextDates) {
-    if (!Array.isArray(nextDates) || !nextDates.length) return;
+    if (!Array.isArray(nextDates) || !nextDates.length) {
+      setUiError("Set at least one timeline date.");
+      return;
+    }
     const normalized = nextDates
       .filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value))
       .slice(0, 5)
       .join(',');
-    if (!normalized) return;
+    if (!normalized) {
+      setUiError("Set at least one valid timeline date.");
+      return;
+    }
+    setUiError("");
+    setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
         buildFreyUrl({ query, date, compareDate, timelineDates: normalized.split(',') })
@@ -406,7 +482,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }
 
   function runTemporal() {
-    if (!date) return;
+    if (!date) {
+      setUiError("Select an active date.");
+      return;
+    }
+    setUiError("");
+    setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(buildFreyUrl({ query, date, compareDate, timelineDates }));
     }
@@ -590,6 +671,67 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       </div>
                     </div>
                   )}
+                </>
+              )}
+            </div>
+
+            <div className="freyResponseSurface" data-frey-response-surface="__FREY_MINIMAL_RESPONSE_SURFACE_V0_1__" data-frey-response-state={responseSurface.ui_state}>
+              <div className="freyResponseHeader">
+                <div className="freyResponseTitle">Minimal Response Surface</div>
+                <div className="freyResponseState">{responseSurface.ui_state}</div>
+              </div>
+
+              <div className="freyResponseGrid">
+                <div className="freyResponseMetric">
+                  <div className="freyResponseLabel">Active Date</div>
+                  <div className="freyResponseValue">{responseSurface.active_date || "n/a"}</div>
+                </div>
+                <div className="freyResponseMetric">
+                  <div className="freyResponseLabel">Engine</div>
+                  <div className="freyResponseValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
+                </div>
+              </div>
+
+              {responseSurface.ui_state === "idle" && (
+                <div className="freyResponseNote">Awaiting a date-bound Frey run.</div>
+              )}
+
+              {responseSurface.ui_state === "loading" && (
+                <div className="freyResponseNote">Computing temporal snapshot...</div>
+              )}
+
+              {responseSurface.ui_state === "error" && (
+                <div className="freyResponseError">{responseSurface.error || "Unable to run Frey."}</div>
+              )}
+
+              {responseSurface.ui_state === "success" && responseSurface.metrics && (
+                <>
+                  <div className="freyResponseGrid">
+                    {Object.entries(responseSurface.metrics).map(([key, value]) => (
+                      <div key={key} className="freyResponseMetric">
+                        <div className="freyResponseLabel">{formatMetricLabel(key)}</div>
+                        <div className="freyResponseValue">{typeof value === "number" ? value.toFixed(4) : String(value)}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="freyResponseSummary">
+                    <div className="freyResponseSummaryTitle">Compact Summary</div>
+                    <div className="freyResponseSummaryGrid">
+                      <div className="freyResponseMetric">
+                        <div className="freyResponseLabel">Intensity</div>
+                        <div className="freyResponseValue">{responseSurface.compact_summary?.intensity_band || "n/a"}</div>
+                      </div>
+                      <div className="freyResponseMetric">
+                        <div className="freyResponseLabel">Stability</div>
+                        <div className="freyResponseValue">{responseSurface.compact_summary?.stability_band || "n/a"}</div>
+                      </div>
+                      <div className="freyResponseMetric">
+                        <div className="freyResponseLabel">Resonance</div>
+                        <div className="freyResponseValue">{responseSurface.compact_summary?.resonance_band || "n/a"}</div>
+                      </div>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -987,6 +1129,92 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           margin-bottom: 0;
         }
 
+
+        .freyResponseSurface {
+          margin-top: 18px;
+          margin-bottom: 18px;
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          background: rgba(255, 255, 255, 0.03);
+          padding: 16px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .freyResponseHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .freyResponseTitle {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(245, 239, 226, 0.86);
+        }
+
+        .freyResponseState {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(215, 182, 111, 0.9);
+        }
+
+        .freyResponseGrid,
+        .freyResponseSummaryGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyResponseMetric {
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyResponseLabel {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+          margin-bottom: 8px;
+        }
+
+        .freyResponseValue {
+          color: rgba(245, 239, 226, 0.96);
+          font-size: 15px;
+          line-height: 1.3;
+          word-break: break-word;
+        }
+
+        .freyResponseSummary {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyResponseSummaryTitle {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyResponseNote {
+          color: rgba(214, 221, 240, 0.76);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .freyResponseError {
+          color: rgba(255, 162, 162, 0.96);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
         .freyInterpretation {
           margin-top: 18px;
           border-top: 1px solid rgba(255, 255, 255, 0.06);
@@ -1126,7 +1354,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           }
 
           .freyCommandRow,
-          .freyTemporalRow {
+          .freyTemporalRow,
+          .freyResponseGrid,
+          .freyResponseSummaryGrid {
             grid-template-columns: 1fr;
           }
 
