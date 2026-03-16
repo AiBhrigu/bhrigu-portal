@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-const { buildFreyConversationalInterpretation } = require("../lib/frey-conversational-mapper.js");
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
@@ -421,9 +420,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     () => buildResponseSurface(result, date || initialDate, responseUiState, uiError),
     [result, date, initialDate, responseUiState, uiError]
   );
-  const c1Conversation = useMemo(
-    () => buildFreyConversationalInterpretation(result),
-    [result]
+  const conversationalResponse = useMemo(
+    () => buildConversationalResponse(responseSurface, interpretation),
+    [responseSurface, interpretation]
   );
 
   function buildFreyUrl(next) {
@@ -543,58 +542,63 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
             <div className="freyResultFlow" data-frey-result-tail-clear={C1_2_RESULT_TAIL_CLEAR_MARKER}>
               <section
                 className="freyConversationBlock freyResultBlock"
-                data-frey-c1="__FREY_C1_SINGLE_CONVERSATIONAL_V0_2__"
-                data-frey-c1-contract={c1Conversation?.contract?.signature || "idle"}
-                data-frey-c1-zone={c1Conversation?.contract?.zoneSubtype || "idle"}
-                data-frey-c1-tension={c1Conversation?.contract?.tensionBand || "idle"}
-                data-frey-c1-resonance={c1Conversation?.contract?.resonanceBand || "idle"}
-                data-frey-c1-stability={c1Conversation?.contract?.stabilityBand || "idle"}
+                data-frey-c1={C1_SINGLE_CONVERSATIONAL_MARKER}
+                data-frey-response-surface={C1_SINGLE_CONVERSATIONAL_MARKER}
                 data-frey-response-state={responseSurface.ui_state}
                 data-frey-c1-1={C1_1_RESULT_STACK_POLISH_MARKER}
               >
                 <div className="freyConversationHeader">
                   <div className="freyConversationHeaderText">
-                    <div className="freyConversationEyebrow">Frey Interpretation</div>
-                    <div className="freyConversationTitle">{c1Conversation?.state || "Awaiting signal"}</div>
+                    <div className="freyConversationEyebrow">Frey conversational response</div>
+                    <div className="freyConversationTitle">{conversationalResponse.title}</div>
                   </div>
                   <div className="freyResponseState">{responseSurface.ui_state}</div>
                 </div>
+
+                <div className="freyConversationLead">{conversationalResponse.lead}</div>
+
+                <div className="freyConversationMetaRow">
+                  <div className="freyConversationMetaCard">
+                    <div className="freyConversationMetaLabel">Active Date</div>
+                    <div className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</div>
+                  </div>
+                  <div className="freyConversationMetaCard">
+                    <div className="freyConversationMetaLabel">Engine</div>
+                    <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
+                  </div>
+                </div>
+
+                {conversationalResponse.summary && (
+                  <div className="freyConversationBand">{conversationalResponse.summary}</div>
+                )}
 
                 {responseSurface.ui_state === "error" && (
                   <div className="freyResponseError">{responseSurface.error || "Unable to run Frey."}</div>
                 )}
 
-                {responseSurface.ui_state === "success" && c1Conversation && (
+                {responseSurface.ui_state === "success" && responseSurface.metrics && (
                   <>
                     <div className="freyConversationMetricRow">
                       <div className="freyConversationMetric">
                         <div className="freyConversationMetricLabel">Intensity</div>
-                        <div className="freyConversationMetricValue">{c1Conversation.contract.tensionBand}</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.intensity_band || "n/a"}</div>
                       </div>
                       <div className="freyConversationMetric">
                         <div className="freyConversationMetricLabel">Stability</div>
-                        <div className="freyConversationMetricValue">{c1Conversation.contract.stabilityBand}</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.stability_band || "n/a"}</div>
                       </div>
                       <div className="freyConversationMetric">
                         <div className="freyConversationMetricLabel">Resonance</div>
-                        <div className="freyConversationMetricValue">{c1Conversation.contract.resonanceBand}</div>
+                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.resonance_band || "n/a"}</div>
                       </div>
                     </div>
 
-                    <div className="freyC1Triplet">
-                      <div className="freyC1Row">
-                        <div className="freyC1Label">State</div>
-                        <div className="freyC1Value">{c1Conversation.state}</div>
+                    <details className="freyInlineExpandBlock" data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_1__" data-frey-primary-reading-state="collapsed">
+                      <summary className="freyInlineExpandSummary">Primary reading</summary>
+                      <div className="freyConversationOperatorNote freyConversationOperatorNoteCompact">
+                        <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
                       </div>
-                      <div className="freyC1Row">
-                        <div className="freyC1Label">Meaning</div>
-                        <div className="freyC1Value">{c1Conversation.meaning}</div>
-                      </div>
-                      <div className="freyC1Row">
-                        <div className="freyC1Label">Direction</div>
-                        <div className="freyC1Value">{c1Conversation.direction}</div>
-                      </div>
-                    </div>
+                    </details>
 
                     <div className="freyConversationResultTail">
                       <details className="freyInlineExpandBlock" data-frey-interpretation={MARKER} data-frey-interpretation-clean={C1_3_INTERPRETATION_SPACING_MARKER}>
@@ -1503,34 +1507,6 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: grid;
           gap: 12px;
           padding-bottom: 28px;
-        }
-
-        .freyC1Triplet {
-          display: grid;
-          gap: 10px;
-        }
-
-        .freyC1Row {
-          display: grid;
-          gap: 6px;
-          padding: 14px 16px;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(255, 255, 255, 0.025);
-        }
-
-        .freyC1Label {
-          font-size: 10px;
-          line-height: 1;
-          letter-spacing: 0.16em;
-          text-transform: uppercase;
-          color: rgba(255, 244, 222, 0.58);
-        }
-
-        .freyC1Value {
-          font-size: 14px;
-          line-height: 1.6;
-          color: rgba(255, 244, 222, 0.96);
         }
 
         .freyInlineExpandBlock {
