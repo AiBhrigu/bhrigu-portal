@@ -102,7 +102,7 @@ function buildConversationalResponse(responseSurface, interpretation) {
 
   return {
     title: interpretation.vector || "Mode: Controlled advance",
-    lead: structural?.effect || "Run Frey to receive a structured reading.",
+    lead: structural?.effect || "Deterministic reading becomes visible after the run.",
     summary: [tension?.state, resonance?.state, stability?.state].filter(Boolean).join(" · "),
     operator_note: [tension?.effect, resonance?.effect, stability?.effect].filter(Boolean).join(" "),
   };
@@ -410,6 +410,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [compareResult, setCompareResult] = useState(initialCompareResult);
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
+  const [entryOpen, setEntryOpen] = useState(false);
+  const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
   const interpretation = useMemo(() => buildInterpretation(result), [result]);
@@ -450,7 +452,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   function runSignal() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery && !date) {
-      setUiError("Enter a signal or select a date.");
+      setUiError("Mark a signal trace or select a date.");
       return;
     }
     const resolvedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate();
@@ -520,23 +522,60 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         data-frey-surface-state={hasResult ? "result" : "idle"}
       >
         <div className="freyContent">
-          <div className="freyEntryBlock">
-            <div className="freyCommandRow freyCommandRowPrimary">
-              <input
-                className="freyInput"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Enter signal..."
-              />
-              <button className="freyButton freyButtonPrimary" type="button" onClick={runSignal}>
-                {loading ? "Running..." : "Run Frey"}
-              </button>
-            </div>
+          {!hasResult && (
+            <div
+              className="freyEntryBlock"
+              data-frey-main-entry-canon="__FREY_MAIN_ENTRY_CANON_V0_1__"
+              data-frey-main-entry-local="__FREY_MAIN_ENTRY_LOCAL_SPEC_V0_1__"
+            >
+              {!entryOpen ? (
+                <button
+                  className="freyThresholdButton"
+                  type="button"
+                  aria-label="Activate Frey signal gate"
+                  onClick={() => {
+                    if (!query.trim()) setQuery(entryTraceSeed);
+                    setEntryOpen(true);
+                  }}
+                >
+                  <span className="freyThresholdField" aria-hidden="true">
+                    <span className="freyThresholdBody" />
+                    <span className="freyThresholdVoid" />
+                    <span className="freyThresholdGlow freyThresholdGlowLeft" />
+                    <span className="freyThresholdGlow freyThresholdGlowRight" />
+                    <span className="freyThresholdSeam" />
+                    <span className="freyThresholdCore" />
+                  </span>
+                </button>
+              ) : (
+                <div className="freySignalSurface">
+                  <div className="freySignalHeader">
+                    <div className="freySignalEyebrow">Signal Trace</div>
+                    <button className="freyGhostButton" type="button" onClick={() => setEntryOpen(false)}>
+                      Reseal
+                    </button>
+                  </div>
 
-            {uiError && !hasResult && (
-              <div className="freyInlineError">{uiError}</div>
-            )}
-          </div>
+                  <textarea
+                    className="freySignalTextarea"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Mark signal trace..."
+                  />
+
+                  <div className="freySignalActions">
+                    <button className="freyButton freyButtonPrimary" type="button" onClick={runSignal}>
+                      {loading ? "Running..." : "Run Frey"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {uiError && !hasResult && (
+                <div className="freyInlineError">{uiError}</div>
+              )}
+            </div>
+          )}
 
           {hasResult && (
             <div className="freyResultFlow" data-frey-result-tail-clear={C1_2_RESULT_TAIL_CLEAR_MARKER}>
@@ -549,7 +588,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               >
                 <div className="freyConversationHeader">
                   <div className="freyConversationHeaderText">
-                    <div className="freyConversationEyebrow">Frey conversational response</div>
+                    <div className="freyConversationEyebrow">Frey signal reading</div>
                     <div className="freyConversationTitle">{conversationalResponse.title}</div>
                   </div>
                   <div className="freyResponseState">{responseSurface.ui_state}</div>
@@ -772,23 +811,250 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyMembrane {
-          width: min(100%, 720px);
+          width: min(100%, 920px);
+          min-height: min(76vh, 760px);
           padding: 40px;
-          border-radius: 24px;
-          border: 1px solid rgba(255, 200, 120, 0.26);
-          background: rgba(12, 16, 24, 0.92);
-          backdrop-filter: blur(14px);
-          box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+          border-radius: 40px;
+          border: 1px solid rgba(255, 200, 120, 0.18);
+          background:
+            radial-gradient(circle at 50% 48%, rgba(22, 52, 125, 0.14), transparent 32%),
+            rgba(7, 10, 18, 0.84);
+          backdrop-filter: blur(18px);
+          box-shadow: 0 26px 92px rgba(0, 0, 0, 0.38);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .freyMembrane::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(90deg, transparent calc(50% - 0.5px), rgba(255, 255, 255, 0.08) 50%, transparent calc(50% + 0.5px)),
+            linear-gradient(180deg, transparent calc(50% - 0.5px), rgba(255, 255, 255, 0.12) 50%, transparent calc(50% + 0.5px));
+          pointer-events: none;
+          opacity: 0.74;
         }
 
         .freyMembrane.isResult {
-          width: min(100%, 760px);
+          width: min(100%, 780px);
+          min-height: auto;
+          border-radius: 34px;
         }
 
         .freyContent {
+          position: relative;
+          z-index: 1;
           display: flex;
           flex-direction: column;
           gap: 0;
+          min-height: inherit;
+        }
+
+        .freyEntryBlock {
+          flex: 1;
+          min-height: 560px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
+
+        .freyThresholdButton {
+          appearance: none;
+          border: 0;
+          padding: 0;
+          margin: 0;
+          background: transparent;
+          cursor: pointer;
+        }
+
+        .freyThresholdField {
+          position: relative;
+          display: block;
+          width: 220px;
+          height: 270px;
+        }
+
+        .freyThresholdBody {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 126px;
+          height: 220px;
+          transform: translate(-50%, -50%);
+          border-radius: 40px;
+          background: radial-gradient(circle at 50% 50%, rgba(4, 7, 13, 0.98), rgba(4, 7, 13, 0.94) 56%, rgba(4, 7, 13, 0.08) 100%);
+          animation: freyThresholdBreath 5.8s ease-in-out infinite;
+        }
+
+        .freyThresholdVoid {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 102px;
+          height: 198px;
+          transform: translate(-50%, -50%);
+          border-radius: 34px;
+          background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95), rgba(2, 4, 8, 0.985) 72%, rgba(0, 0, 0, 0.02) 100%);
+          box-shadow: 0 0 56px rgba(0, 0, 0, 0.60);
+          animation: freyThresholdVoid 5.2s ease-in-out infinite;
+        }
+
+        .freyThresholdGlow {
+          position: absolute;
+          top: 50%;
+          width: 16px;
+          height: 154px;
+          border-radius: 999px;
+          transform: translateY(-50%);
+          background: linear-gradient(180deg, rgba(146, 183, 255, 0.00), rgba(122, 161, 255, 0.10), rgba(146, 183, 255, 0.00));
+          filter: blur(2px);
+          animation: freyThresholdGlow 4.6s ease-in-out infinite;
+        }
+
+        .freyThresholdGlowLeft {
+          left: calc(50% - 14px);
+        }
+
+        .freyThresholdGlowRight {
+          left: calc(50% + 12px);
+          animation-delay: 0.16s;
+        }
+
+        .freyThresholdSeam {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 2px;
+          height: 154px;
+          transform: translate(-50%, -50%);
+          border-radius: 999px;
+          background: linear-gradient(180deg, rgba(255, 226, 180, 0.00), rgba(233, 204, 149, 0.34), rgba(255, 226, 180, 0.00));
+          animation: freyThresholdSeam 4.2s ease-in-out infinite;
+        }
+
+        .freyThresholdCore {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 42px;
+          height: 42px;
+          transform: translate(-50%, -50%);
+          border-radius: 999px;
+          background: radial-gradient(circle at 40% 34%, rgba(255, 246, 228, 0.98), rgba(233, 204, 149, 0.70) 30%, rgba(106, 151, 255, 0.26) 60%, rgba(18, 36, 84, 0.08) 100%);
+          box-shadow: 0 0 10px rgba(233, 204, 149, 0.08), 0 0 24px rgba(65, 104, 190, 0.08);
+          animation: freyThresholdCore 4.8s ease-in-out infinite;
+        }
+
+        .freyThresholdCore::after {
+          content: "";
+          position: absolute;
+          inset: 8px;
+          border-radius: 999px;
+          background: radial-gradient(circle at 42% 36%, rgba(255, 251, 242, 0.98), rgba(255, 228, 176, 0.54) 42%, rgba(255, 228, 176, 0.00) 100%);
+          animation: freyThresholdCoreInner 3.6s ease-in-out infinite;
+        }
+
+        .freySignalSurface {
+          width: min(100%, 560px);
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
+          padding: 28px;
+          border-radius: 30px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: linear-gradient(180deg, rgba(12, 15, 24, 0.56), rgba(7, 10, 18, 0.76));
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 40px rgba(0, 0, 0, 0.18);
+        }
+
+        .freySignalHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .freySignalEyebrow {
+          font-size: 11px;
+          letter-spacing: 0.32em;
+          text-transform: uppercase;
+          color: rgba(255, 245, 226, 0.64);
+        }
+
+        .freyGhostButton {
+          min-height: 40px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          border-radius: 16px;
+          background: transparent;
+          color: rgba(245, 247, 252, 0.86);
+          padding: 0 14px;
+          font-size: 12px;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          cursor: pointer;
+        }
+
+        .freySignalTextarea {
+          width: 100%;
+          min-height: 164px;
+          resize: none;
+          border-radius: 24px;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(4, 7, 13, 0.92);
+          color: rgba(245, 247, 252, 0.96);
+          padding: 18px 18px;
+          font-size: 24px;
+          line-height: 1.25;
+          outline: none;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+        }
+
+        .freySignalTextarea::placeholder {
+          color: rgba(184, 192, 214, 0.16);
+        }
+
+        .freySignalActions {
+          display: flex;
+          justify-content: flex-end;
+        }
+
+        @keyframes freyThresholdBreath {
+          0%, 100% { opacity: 0.84; transform: translate(-50%, -50%) scaleY(0.985); }
+          50% { opacity: 0.98; transform: translate(-50%, -50%) scaleY(1.02); }
+        }
+
+        @keyframes freyThresholdVoid {
+          0%, 100% { opacity: 0.74; }
+          50% { opacity: 0.94; }
+        }
+
+        @keyframes freyThresholdGlow {
+          0%, 100% { opacity: 0.10; }
+          50% { opacity: 0.26; }
+        }
+
+        @keyframes freyThresholdSeam {
+          0%, 100% { opacity: 0.12; }
+          50% { opacity: 0.34; }
+        }
+
+        @keyframes freyThresholdCore {
+          0%, 100% {
+            opacity: 0.82;
+            transform: translate(-50%, -50%) scale(0.94);
+            box-shadow: 0 0 10px rgba(233, 204, 149, 0.08), 0 0 24px rgba(65, 104, 190, 0.08);
+          }
+          50% {
+            opacity: 0.98;
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow: 0 0 18px rgba(233, 204, 149, 0.14), 0 0 40px rgba(65, 104, 190, 0.14);
+          }
+        }
+
+        @keyframes freyThresholdCoreInner {
+          0%, 100% { opacity: 0.76; transform: scale(0.96); }
+          50% { opacity: 1; transform: scale(1.04); }
         }
 
         .freyMode {
