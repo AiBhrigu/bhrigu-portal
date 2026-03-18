@@ -512,7 +512,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
       {!hasResult && !entryOpen ? <div className="freyAxis" style={{ opacity: 0.18 }} /> : null}
       <div
-        className={`freyMembrane${hasResult ? " isResult" : ""}`}
+        className={`freyMembrane${hasResult ? " isResult" : ""}${entryOpen ? " isEntryOpen" : ""}`}
         data-frey-bind={MARKER}
         data-frey-query-fix={QUERY_BIND_FIX_MARKER}
         data-frey-compare-leakage-fix={COMPARE_LEAKAGE_FIX_MARKER}
@@ -825,7 +825,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           overflow: hidden;
         }
 
-        .freyMembrane::before {
+        .freyMembrane:not(.isResult):not(.isEntryOpen)::before {
           content: "";
           position: absolute;
           inset: 0;
@@ -902,6 +902,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyThresholdGlow {
+          display: none;
+
           position: absolute;
           top: 50%;
           width: 16px;
@@ -918,11 +920,15 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyThresholdGlowRight {
+          display: none;
+
           left: calc(50% + 12px);
           animation-delay: 0.16s;
         }
 
         .freyThresholdSeam {
+          display: none;
+
           position: absolute;
           left: 50%;
           top: 50%;
