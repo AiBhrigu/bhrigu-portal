@@ -811,8 +811,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyMembrane {
-          width: min(100%, 920px);
-          min-height: min(76vh, 760px);
+          width: min(100%, 860px);
+          min-height: min(68vh, 640px);
           padding: 40px;
           border-radius: 40px;
           border: 1px solid rgba(255, 200, 120, 0.18);
@@ -853,7 +853,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyEntryBlock {
           flex: 1;
-          min-height: 560px;
+          min-height: 460px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -872,16 +872,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyThresholdField {
           position: relative;
           display: block;
-          width: 220px;
-          height: 270px;
+          width: 200px;
+          height: 246px;
         }
 
         .freyThresholdBody {
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 126px;
-          height: 220px;
+          width: 118px;
+          height: 202px;
           transform: translate(-50%, -50%);
           border-radius: 40px;
           background: radial-gradient(circle at 50% 50%, rgba(4, 7, 13, 0.98), rgba(4, 7, 13, 0.94) 56%, rgba(4, 7, 13, 0.08) 100%);
@@ -892,8 +892,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           position: absolute;
           left: 50%;
           top: 50%;
-          width: 102px;
-          height: 198px;
+          width: 94px;
+          height: 182px;
           transform: translate(-50%, -50%);
           border-radius: 34px;
           background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.95), rgba(2, 4, 8, 0.985) 72%, rgba(0, 0, 0, 0.02) 100%);
@@ -905,7 +905,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           position: absolute;
           top: 50%;
           width: 16px;
-          height: 154px;
+          height: 146px;
           border-radius: 999px;
           transform: translateY(-50%);
           background: linear-gradient(180deg, rgba(146, 183, 255, 0.00), rgba(122, 161, 255, 0.10), rgba(146, 183, 255, 0.00));
@@ -931,7 +931,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           transform: translate(-50%, -50%);
           border-radius: 999px;
           background: linear-gradient(180deg, rgba(255, 226, 180, 0.00), rgba(233, 204, 149, 0.34), rgba(255, 226, 180, 0.00));
-          animation: freyThresholdSeam 4.2s ease-in-out infinite;
+          opacity: 0.18;
+          animation: none;
         }
 
         .freyThresholdCore {
@@ -957,12 +958,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freySignalSurface {
-          width: min(100%, 560px);
+          width: min(100%, 500px);
           display: flex;
           flex-direction: column;
-          gap: 18px;
-          padding: 28px;
-          border-radius: 30px;
+          gap: 14px;
+          padding: 22px;
+          border-radius: 28px;
           border: 1px solid rgba(255, 255, 255, 0.08);
           background: linear-gradient(180deg, rgba(12, 15, 24, 0.56), rgba(7, 10, 18, 0.76));
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 40px rgba(0, 0, 0, 0.18);
@@ -972,7 +973,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 16px;
+          gap: 12px;
         }
 
         .freySignalEyebrow {
@@ -997,14 +998,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freySignalTextarea {
           width: 100%;
-          min-height: 164px;
+          min-height: 144px;
           resize: none;
           border-radius: 24px;
           border: 1px solid rgba(255, 255, 255, 0.06);
           background: rgba(4, 7, 13, 0.92);
           color: rgba(245, 247, 252, 0.96);
-          padding: 18px 18px;
-          font-size: 24px;
+          padding: 16px 16px;
+          font-size: 20px;
           line-height: 1.25;
           outline: none;
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
