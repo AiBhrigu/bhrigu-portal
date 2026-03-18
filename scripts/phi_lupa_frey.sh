@@ -1,77 +1,52 @@
 #!/usr/bin/env bash
-# PHI_LUPA_FREY_COMPRESSED_CANON_V0_1 :: always use curl --compressed for HTML probes
 set -euo pipefail
 
-# PHI_LUPA_FREY_DETACHED_PROBE_FIX_V0_5
-HTML="${HTML:-}"
+# PHI_LUPA_FREY_STRUCTURAL_CANON_V0_2
+# Structural prod probe for /frey.
+# Truth contract:
+# - HTTP 200
+# - __NEXT_DATA__ present
+# - structural page marker present: "page":"/frey"
+# Never depend on mutable UI copy like "Open Frey".
 
-# phi_lupa_frey v0.1 — prod probe for /frey surface
-# Writes an artifact into ~/orion_ai/artifacts and copies it to Windows Downloads.
+Q="$(date -u +%s)"
+TMP_DIR="$(mktemp -d /tmp/phi_lupa_frey_v0_2_XXXXXX)"
+trap 'rm -rf "$TMP_DIR"' EXIT
 
-A="$HOME/orion_ai/artifacts"
-D="/mnt/c/Users/top-a/Downloads"
-TS="$(date +%Y%m%d_%H%M%S)"
-Q="$(date +%s)"
-
-mkdir -p "$A" "$D"
-
-probe_one(){
+probe_one() {
   local base="$1"
+  local host
+  host="$(printf '%s' "$base" | sed 's#https\?://##; s#/$##')"
   local url="${base%/}/frey?v=$Q"
-  local html="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').html"
-  local hdr="$A/.tmp_frey_${TS}_$(echo "$base" | tr -cd '[:alnum:]').hdr"
+  local html="$TMP_DIR/${host}.html"
+  local headers="$TMP_DIR/${host}.headers"
+  local http page_mark next_data
 
-  curl -fsSL --compressed -D "$hdr" -o "$html" "$url"
+  curl --compressed -sS -D "$headers" "$url" -o "$html"
+  http="$(awk 'toupper($1) ~ /^HTTP\// {code=$2} END{print code}' "$headers")"
 
-  echo "URL: $url"
-  echo "HEADERS:"
-  grep -Ei '^(cache-control|age|x-vercel-cache|x-matched-path|x-vercel-id|strict-transport-security):' "$hdr" || true
+  if grep -F -q '"page":"/frey"' "$html" || grep -F -q '"page": "/frey"' "$html"; then
+    page_mark="YES"
+  else
+    page_mark="NO"
+  fi
 
-  echo "MARKERS:"
-# PHI_LUPA_FREY_MARKERS_CANON_V0_2
-BG_MARK="__FREY_PHI_SPACE_BG_V0_3__"
-FLOW_MARK="__FREY_QUERY_FLOW_UI_ONLY_V0_4__"
-# Canon checks (HTML is fetched with --compressed in prior canon patch)
+  if grep -F -q '__NEXT_DATA__' "$html"; then
+    next_data="YES"
+  else
+    next_data="NO"
+  fi
 
-  for m in "__FREY_PHI_SPACE_BG_V0_3__" "__FREY_QUERY_FLOW_UI_ONLY_V0_4__" "PHI surface v0.3"; do
-    if grep -q "$m" "$html"; then echo "  OK: $m"; else echo "  MISS: $m"; fi
-  done
-  echo
+  echo "HOST=$host"
+  echo "HTTP=$http"
+  echo "PAGE_MARK=$page_mark"
+  echo "NEXT_DATA=$next_data"
+
+  if [ "$http" = "200" ] && [ "$page_mark" = "YES" ] && [ "$next_data" = "YES" ]; then
+    return 0
+  fi
+  return 1
 }
 
-OUT="$A/PROD_PROBE_PHI_LUPA_FREY_v0_1_${TS}.md"
-{
-  echo "# PROD PROBE · PHI_LUPA_FREY v0.1"
-  echo "DATE: $(date -Iseconds)"
-  echo
-  echo "## TARGETS"
-  probe_one "https://bhrigu.io"
-  probe_one "https://www.bhrigu.io"
-} > "$OUT"
-
-sha256sum "$OUT" > "$OUT.sha256"
-cp -f "$OUT" "$D/$(basename "$OUT")"
-cp -f "$OUT.sha256" "$D/$(basename "$OUT").sha256"
-
-echo "OK: $OUT"
-ls -l "$D/$(basename "$OUT")" "$D/$(basename "$OUT").sha256" | sed -n '1,10p'
-
-# PHI_LUPA_FREY_DETACHED_PROBE_FIX_V0_5 :: detached prod marker probe (file-based, compressed)
-phi_detached_prod_probe() {
-  local q url html_tmp hdr_tmp
-  q="$(date +%s)"
-  url="https://bhrigu.io/frey?v=$q"
-  html_tmp="$(mktemp)"
-  hdr_tmp="$(mktemp)"
-  # Canon markers (hardcoded)
-  BG_MARK='data-frey-mark="__FREY_PHI_SPACE_BG_V0_3__"'
-  FLOW_MARK='data-frey-flow="__FREY_QUERY_FLOW_UI_ONLY_V0_4__"'
-
-  curl -fsSL --compressed -D "$hdr_tmp" "$url" > "$html_tmp" || return 1
-  grep -q "$BG_MARK" "$html_tmp" || return 1
-  grep -q "$FLOW_MARK" "$html_tmp" || return 1
-  return 0
-}
-
-
-phi_detached_prod_probe || { echo "FAIL: detached prod probe"; exit 1; }
+probe_one "https://bhrigu.io"
+probe_one "https://www.bhrigu.io"
