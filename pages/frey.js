@@ -510,7 +510,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   return (
     <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
-      <div className="freyAxis" />
+      {!hasResult && !entryOpen ? <div className="freyAxis" style={{ opacity: 0.18 }} /> : null}
       <div
         className={`freyMembrane${hasResult ? " isResult" : ""}`}
         data-frey-bind={MARKER}
