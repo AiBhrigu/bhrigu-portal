@@ -2,7 +2,12 @@ import { useState } from "react"
 
 export async function getServerSideProps({ query }) {
 
-  const date = query.date || "2025-01-26"
+  const rawDate = Array.isArray(query?.d)
+    ? query.d[0]
+    : (query?.d ?? (Array.isArray(query?.date) ? query.date[0] : query?.date))
+  const date = typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
+    ? rawDate
+    : new Date().toISOString().slice(0, 10)
 
   const { default: handler } = await import("./api/frey-temporal")
 
