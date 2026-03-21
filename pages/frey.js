@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EXPORT_GUIDE_LINES, buildFreyExportPayload, buildFreyExportText, mapResultToMinimalVoice } from "../lib/frey-export-minimal";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
@@ -16,6 +17,29 @@ function formatMetricLabel(label) {
   return label
     .replaceAll("_", " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildMinimalVoiceBridge(minimalVoice) {
+  if (!minimalVoice) return "";
+
+  const state = String(minimalVoice.state || "").toLowerCase();
+  const tensionBand = String(minimalVoice.contract?.tensionBand || "").toLowerCase();
+  const resonanceBand = String(minimalVoice.contract?.resonanceBand || "").toLowerCase();
+  const stabilityBand = String(minimalVoice.contract?.stabilityBand || "").toLowerCase();
+
+  if (state.includes("instability") || stabilityBand.includes("fragile") || stabilityBand.includes("sensitive")) {
+    return "Outer stability is weakening faster than the core can compensate.";
+  }
+
+  if (state.includes("compression") || state.includes("compressed") || tensionBand.includes("elevated")) {
+    return "Pressure is accumulating faster than release inside the active frame.";
+  }
+
+  if (state.includes("coherence") || resonanceBand.includes("high") || resonanceBand.includes("moderate")) {
+    return "Signal alignment still holds, but only inside a narrower stable corridor.";
+  }
+
+  return "The field keeps its core line, but edge behavior now needs tighter pacing.";
 }
 
 function buildInterpretation(result) {
@@ -410,7 +434,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [compareResult, setCompareResult] = useState(initialCompareResult);
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
-  const [entryOpen, setEntryOpen] = useState(false);
+  const [entryOpen, setEntryOpen] = useState(false); // __FREY_IDLE_PROD_CANON_V0_3__
   const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
@@ -527,6 +551,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               className="freyEntryBlock"
               data-frey-main-entry-canon="__FREY_MAIN_ENTRY_CANON_V0_1__"
               data-frey-main-entry-local="__FREY_MAIN_ENTRY_LOCAL_SPEC_V0_1__"
+              data-frey-idle-prod-canon="__FREY_IDLE_ENTRY_VISIBLE_V0_3__"
             >
               {!entryOpen ? (
                 <button
@@ -552,7 +577,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   <div className="freySignalHeader">
                     <div className="freySignalEyebrow">Signal Trace</div>
                     <button className="freyGhostButton" type="button" onClick={() => setEntryOpen(false)}>
-                      Reseal
+                      RESEAL
                     </button>
                   </div>
 
@@ -571,9 +596,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 </div>
               )}
 
-              {uiError && !hasResult && (
+              {uiError && !hasResult ? (
                 <div className="freyInlineError">{uiError}</div>
-              )}
+              ) : null}
             </div>
           )}
 
@@ -632,7 +657,38 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       </div>
                     </div>
 
-                    <details className="freyInlineExpandBlock" data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_1__" data-frey-primary-reading-state="collapsed">
+                    {(() => {
+                      const minimalVoice = mapResultToMinimalVoice(result);
+                      if (!minimalVoice) return null;
+                      const minimalVoiceBridge = buildMinimalVoiceBridge(minimalVoice);
+                      return (
+                        <section
+                          className="freyVoiceMinimal freyResultBlock"
+                          data-frey-voice-minimal="__FREY_C1_CANONICAL_MINIMAL_VOICE_V0_5__"
+                          data-frey-voice-zone={minimalVoice.contract.zoneSubtype}
+                          data-frey-voice-tension={minimalVoice.contract.tensionBand}
+                          data-frey-voice-resonance={minimalVoice.contract.resonanceBand}
+                          data-frey-voice-stability={minimalVoice.contract.stabilityBand}
+                        >
+                          <div className="freyVoiceMinimalHalo" aria-hidden="true" />
+                          <div className="freyVoiceMinimalEyebrow">Frey Interpretation</div>
+                          <div className="freyVoiceMinimalState">{minimalVoice.state}</div>
+                          <div className="freyVoiceMinimalBridge">{minimalVoiceBridge}</div>
+                          <div className="freyVoiceMinimalBody">
+                            <div className="freyVoiceMinimalRow">
+                              <div className="freyVoiceMinimalLabel">Meaning</div>
+                              <div className="freyVoiceMinimalValue">{minimalVoice.meaning}</div>
+                            </div>
+                            <div className="freyVoiceMinimalRow">
+                              <div className="freyVoiceMinimalLabel">Direction</div>
+                              <div className="freyVoiceMinimalValue freyVoiceMinimalValueStrong">{minimalVoice.direction}</div>
+                            </div>
+                          </div>
+                        </section>
+                      );
+                    })()}
+
+                    <details className="freyInlineExpandBlock" data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_2__" data-frey-primary-reading-state="open" open>
                       <summary className="freyInlineExpandSummary">Primary reading</summary>
                       <div className="freyConversationOperatorNote freyConversationOperatorNoteCompact">
                         <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
@@ -674,9 +730,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
               <div className="freyResultControls">
                 <div className="freyResultControlsLabel">Expand controls</div>
+                <div className="freyResultControlsHint" data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__">Open Compare to enter any date and compute Cosmographic Delta.</div>
                 <div className="freyExpandStack">
                   <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
-                    <summary className="freyExpandSummary">Compare</summary>
+                    <summary className="freyExpandSummary">Compare another date</summary>
 
                     <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
                       <div className="freyCompareRow">
@@ -736,7 +793,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
 
                   <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" data-frey-expand-state={hasTimeline ? "active" : "empty"}>
-                    <summary className="freyExpandSummary">Timeline</summary>
+                    <summary className="freyExpandSummary">Timeline around active date</summary>
                     {hasTimeline ? (
                       <div className="freyTimelineBlock">
                         <div className="freyTimelineRow">
@@ -757,6 +814,48 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
                 </div>
               </div>
+
+
+              {responseSurface.ui_state === "success" && (() => {
+                const primaryDateValue = typeof primaryDate !== "undefined" ? primaryDate : (typeof selectedDate !== "undefined" ? selectedDate : null);
+                const compareDateValue = typeof secondaryDate !== "undefined" ? secondaryDate : (typeof initialCompareDate !== "undefined" ? initialCompareDate : null);
+                const compareResultValue = typeof compareResult !== "undefined" ? compareResult : null;
+                const minimalVoice = mapResultToMinimalVoice(result);
+                const exportPayload = buildFreyExportPayload({
+                  mode: hasCompare ? "compare" : "single",
+                  url: typeof window !== "undefined" ? window.location.href : "",
+                  primaryDate: primaryDateValue,
+                  compareDate: compareDateValue,
+                  primaryResult: result,
+                  compareResult: compareResultValue,
+                  freyVoice: minimalVoice,
+                });
+                const copyText = buildFreyExportText(exportPayload);
+                const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
+                return (
+                  <details className="freyExportBlock freyResultBlock" data-frey-export="__FREY_EXPORT_LAYER_V0_2__" data-frey-export-mode={hasCompare ? "compare" : "single"}>
+                    <summary className="freyExportSummary">AI Export</summary>
+                    <div className="freyExportInner">
+                      <div className="freyExportTop">
+                        <div className="freyExportEyebrow">Portable snapshot</div>
+                        <button
+                          type="button"
+                          className="freyExportCopyButton"
+                          onClick={() => { if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(copyText); }}
+                        >
+                          {copyLabel}
+                        </button>
+                      </div>
+                      <pre className="freyExportPre">{copyText}</pre>
+                      <div className="freyExportGuide">
+                        {EXPORT_GUIDE_LINES.map((line) => (
+                          <div key={line} className="freyExportGuideLine">{line}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </details>
+                );
+              })()}
 
               {initialAccessCtx && (
                 <>
@@ -790,17 +889,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyRoot {
           min-height: 100vh;
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
           background: radial-gradient(circle at center, #0b1220 0%, #05070c 70%);
           position: relative;
-          padding: 24px;
+          padding: clamp(40px, 9vh, 96px) 24px 24px;
         }
 
         .freyRootResult {
           align-items: flex-start;
-          padding-top: 84px;
-          padding-bottom: clamp(64px, 8vh, 84px);
+          padding-top: clamp(28px, 4vh, 44px);
+          padding-bottom: clamp(56px, 7vh, 72px);
         }
 
         .freyAxis {
@@ -837,7 +936,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyMembrane.isResult {
-          width: min(100%, 780px);
+          width: min(100%, 840px);
           min-height: auto;
           border-radius: 34px;
         }
@@ -975,6 +1074,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 0 40px rgba(0, 0, 0, 0.18);
         }
 
+        .freySignalSurfaceIdle {
+          width: min(100%, 640px);
+          padding: 28px;
+          border-radius: 32px;
+          border: 1px solid rgba(255, 200, 120, 0.18);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(255, 214, 148, 0.08), transparent 42%),
+            linear-gradient(180deg, rgba(14, 18, 28, 0.82), rgba(7, 10, 18, 0.92));
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 80px rgba(0, 0, 0, 0.28);
+        }
+
         .freySignalHeader {
           display: flex;
           align-items: center;
@@ -986,7 +1096,21 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           font-size: 11px;
           letter-spacing: 0.32em;
           text-transform: uppercase;
-          color: rgba(255, 245, 226, 0.64);
+          color: rgba(255, 245, 226, 0.72);
+        }
+
+        .freySignalLead {
+          font-size: 20px;
+          line-height: 1.35;
+          color: rgba(245, 247, 252, 0.96);
+          max-width: 24ch;
+        }
+
+        .freySignalHint {
+          font-size: 14px;
+          line-height: 1.55;
+          color: rgba(214, 220, 236, 0.74);
+          max-width: 48ch;
         }
 
         .freyGhostButton {
@@ -1234,8 +1358,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyCompareMode {
-          font-size: 14px;
-          color: rgba(248, 244, 236, 0.94);
+          font-size: 15px;
+          color: rgba(248, 244, 236, 0.96);
         }
 
         .freyDeltaBlock {
@@ -1425,8 +1549,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyResponseValue {
           color: rgba(245, 239, 226, 0.96);
-          font-size: 15px;
-          line-height: 1.3;
+          font-size: 16px;
+          line-height: 1.38;
           word-break: break-word;
         }
 
@@ -1443,9 +1567,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseNote {
-          color: rgba(214, 221, 240, 0.76);
-          font-size: 13px;
-          line-height: 1.45;
+          color: rgba(214, 221, 240, 0.82);
+          font-size: 14px;
+          line-height: 1.58;
         }
 
         .freyResponseError {
@@ -1514,17 +1638,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationState {
-          font-size: 15px;
-          line-height: 1.28;
+          font-size: 17px;
+          line-height: 1.32;
           color: rgba(245, 247, 252, 0.98);
           font-weight: 500;
           letter-spacing: 0.01em;
         }
 
         .freyInterpretationEffect {
-          font-size: 12px;
-          line-height: 1.34;
-          color: rgba(184, 192, 214, 0.74);
+          font-size: 14px;
+          line-height: 1.62;
+          color: rgba(192, 200, 222, 0.86);
         }
 
         .freyOperationalVector {
@@ -1662,6 +1786,888 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           background: transparent;
         }
 
+        .freyExportBlock {
+          margin-top: 26px;
+          margin-bottom: 10px;
+          border: 1px solid rgba(255, 244, 222, 0.08);
+          background: rgba(255, 244, 222, 0.018);
+          box-shadow: none;
+          display: grid;
+          gap: 0;
+          overflow: hidden;
+        }
+
+        .freyExportSummary {
+          list-style: none;
+          cursor: pointer;
+          padding: 12px 14px;
+          font-size: 10px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.62);
+        }
+
+        .freyExportSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyExportInner {
+          display: grid;
+          gap: 10px;
+          padding: 0 14px 14px;
+        }
+
+        .freyExportTop {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .freyExportEyebrow,
+        .freyVoiceMinimalHalo {
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 86px;
+          background: radial-gradient(ellipse at top, rgba(231, 202, 141, 0.18), rgba(231, 202, 141, 0.08) 46%, rgba(231, 202, 141, 0) 78%);
+          pointer-events: none;
+          opacity: 0.9;
+        }
+
+        .freyVoiceMinimalEyebrow {
+          font-size: 12px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.68);
+          justify-self: center;
+        }
+
+        .freyExportCopyButton {
+          appearance: none;
+          border: 1px solid rgba(255, 244, 222, 0.16);
+          background: transparent;
+          color: rgba(255, 244, 222, 0.9);
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 8px 10px;
+          cursor: pointer;
+        }
+
+        .freyExportPre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+          font-size: 12px;
+          line-height: 1.5;
+          color: rgba(255, 244, 222, 0.92);
+          background: rgba(0, 0, 0, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 12px;
+          overflow-x: auto;
+        }
+
+        .freyExportGuide {
+          display: grid;
+          gap: 4px;
+        }
+
+        .freyExportGuideLine,
+        .freyVoiceMinimalValue {
+          font-size: 15px;
+          line-height: 1.7;
+          color: rgba(255, 244, 222, 0.94);
+        }
+
+        .freyVoiceMinimal {
+          position: relative;
+          overflow: hidden;
+          margin-top: 24px;
+          margin-bottom: 24px;
+          padding: 22px 22px 20px;
+          border: 1px solid rgba(255, 244, 222, 0.18);
+          border-radius: 18px;
+          background: linear-gradient(180deg, rgba(255, 244, 222, 0.10) 0%, rgba(255, 244, 222, 0.05) 28%, rgba(255, 244, 222, 0.02) 100%);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 18px 36px rgba(255, 244, 222, 0.025);
+          display: grid;
+          gap: 16px;
+          text-align: center;
+        }
+
+        .freyVoiceMinimal > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .freyVoiceMinimalBody {
+          display: grid;
+          gap: 10px;
+          text-align: left;
+        }
+
+        .freyVoiceMinimalState {
+          font-size: 26px;
+          line-height: 1.12;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.98);
+          max-width: 18ch;
+          margin: 0 auto;
+        }
+
+        .freyVoiceMinimalBridge {
+          font-size: 15px;
+          line-height: 1.68;
+          color: rgba(255, 244, 222, 0.88);
+          max-width: 58ch;
+          margin: 0 auto;
+        }
+
+        .freyVoiceMinimalRow {
+          display: grid;
+          gap: 4px;
+          padding: 0 0 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .freyVoiceMinimalRow:last-child {
+          border-bottom: 0;
+          padding-bottom: 0;
+        }
+
+        .freyVoiceMinimalLabel {
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.54);
+        }
+
+        .freyVoiceMinimalValueStrong {
+          color: rgba(255, 244, 222, 0.96);
+        }
+
+
+        .freyResponseSurface {
+          margin-top: 18px;
+          margin-bottom: 18px;
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          background: rgba(255, 255, 255, 0.03);
+          padding: 16px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .freyResponseHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .freyResponseTitle {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(245, 239, 226, 0.86);
+        }
+
+        .freyResponseState {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(215, 182, 111, 0.9);
+        }
+
+        .freyResponseGrid,
+        .freyResponseSummaryGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyResponseMetric {
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyResponseLabel {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+          margin-bottom: 8px;
+        }
+
+        .freyResponseValue {
+          color: rgba(245, 239, 226, 0.96);
+          font-size: 16px;
+          line-height: 1.38;
+          word-break: break-word;
+        }
+
+        .freyResponseSummary {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyResponseSummaryTitle {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyResponseNote {
+          color: rgba(214, 221, 240, 0.82);
+          font-size: 14px;
+          line-height: 1.58;
+        }
+
+        .freyResponseError {
+          color: rgba(255, 162, 162, 0.96);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .freyInterpretation {
+          margin-top: 18px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding-top: 16px;
+        }
+
+        .freyInterpretationHeader {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .freyInterpretationTitle {
+          font-size: 10px;
+          line-height: 1;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(188, 197, 220, 0.52);
+          white-space: nowrap;
+        }
+
+        .freyInterpretationRule {
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+        }
+
+        .freyInterpretationGridV14 {
+          display: grid;
+          gap: 12px;
+        }
+
+        .freyInterpretationZone {
+          display: grid;
+          grid-template-columns: 148px 1fr;
+          gap: 16px;
+          padding: 12px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .freyInterpretationZone:last-child {
+          border-bottom: 0;
+        }
+
+        .freyInterpretationZoneLabel {
+          font-size: 10px;
+          line-height: 1.25;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(151, 160, 185, 0.48);
+          padding-top: 3px;
+        }
+
+        .freyInterpretationZoneBody {
+          display: grid;
+          gap: 4px;
+        }
+
+        .freyInterpretationState {
+          font-size: 17px;
+          line-height: 1.32;
+          color: rgba(245, 247, 252, 0.98);
+          font-weight: 500;
+          letter-spacing: 0.01em;
+        }
+
+        .freyInterpretationEffect {
+          font-size: 14px;
+          line-height: 1.62;
+          color: rgba(192, 200, 222, 0.86);
+        }
+
+        .freyOperationalVector {
+          margin-top: 14px;
+          border-radius: 18px;
+          border: 1px solid rgba(231, 202, 141, 0.18);
+          background: linear-gradient(180deg, rgba(231, 202, 141, 0.12), rgba(231, 202, 141, 0.06));
+          padding: 16px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .freyOperationalVectorTag {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(239, 222, 185, 0.68);
+        }
+
+        .freyOperationalVectorMode {
+          font-size: 17px;
+          line-height: 1.18;
+          color: rgba(255, 249, 236, 0.98);
+          font-weight: 650;
+          text-align: right;
+        }
+
+        .freyMetrics {
+          margin-top: 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyMetricsSummary {
+          cursor: pointer;
+          padding: 14px 16px;
+          list-style: none;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyMetricsSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyJson {
+          margin: 0;
+          padding: 0 16px 16px;
+          opacity: 0.76;
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: rgba(214, 221, 240, 0.78);
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+
+        .freyEntryBlock {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyCommandRowPrimary {
+          margin-bottom: 0;
+        }
+
+        .freyButtonPrimary {
+          min-width: 168px;
+        }
+
+        .freyInlineError {
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 120, 120, 0.18);
+          background: rgba(120, 18, 22, 0.16);
+          color: rgba(255, 214, 214, 0.92);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .freyResultFlow {
+          display: grid;
+          gap: 16px;
+          margin-top: 18px;
+          margin-bottom: 84px;
+          padding-bottom: 40px;
+        }
+
+        .freyResultBlock {
+          border-color: rgba(255, 200, 120, 0.16);
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .freyInterpretationResult {
+          margin-top: 0;
+        }
+
+        .freyExpandStack {
+          display: grid;
+          gap: 14px;
+        }
+
+        .freyExpandBlock {
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyExpandSummary {
+          cursor: pointer;
+          list-style: none;
+          padding: 14px 16px;
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(238, 227, 204, 0.78);
+        }
+
+        .freyExpandSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyCompareBlockSecondary {
+          margin-top: 0;
+          padding: 0 16px 16px;
+          border: 0;
+          background: transparent;
+        }
+
+        .freyVoiceMinimalHalo {
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 86px;
+          background: radial-gradient(ellipse at top, rgba(231, 202, 141, 0.18), rgba(231, 202, 141, 0.08) 46%, rgba(231, 202, 141, 0) 78%);
+          pointer-events: none;
+          opacity: 0.9;
+        }
+
+        .freyVoiceMinimalEyebrow {
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.58);
+        }
+
+        .freyExportCopyButton {
+          appearance: none;
+          border: 1px solid rgba(255, 244, 222, 0.16);
+          background: transparent;
+          color: rgba(255, 244, 222, 0.9);
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 8px 10px;
+          cursor: pointer;
+        }
+
+        .freyExportPre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-break: break-word;
+          font-size: 12px;
+          line-height: 1.5;
+          color: rgba(255, 244, 222, 0.92);
+          background: rgba(0, 0, 0, 0.18);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 12px;
+          overflow-x: auto;
+        }
+
+        .freyExportGuide {
+          display: grid;
+          gap: 4px;
+        }
+
+        .freyExportGuideLine,
+        .freyVoiceMinimalValue {
+          font-size: 15px;
+          line-height: 1.7;
+          color: rgba(255, 244, 222, 0.94);
+        }
+
+        .freyVoiceMinimal {
+          position: relative;
+          overflow: hidden;
+          margin-top: 24px;
+          margin-bottom: 24px;
+          padding: 22px 22px 20px;
+          border: 1px solid rgba(255, 244, 222, 0.18);
+          border-radius: 18px;
+          background: linear-gradient(180deg, rgba(255, 244, 222, 0.10) 0%, rgba(255, 244, 222, 0.05) 28%, rgba(255, 244, 222, 0.02) 100%);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 18px 36px rgba(255, 244, 222, 0.025);
+          display: grid;
+          gap: 16px;
+          text-align: center;
+        }
+
+        .freyVoiceMinimal > * {
+          position: relative;
+          z-index: 1;
+        }
+
+        .freyVoiceMinimalBody {
+          display: grid;
+          gap: 10px;
+          text-align: left;
+        }
+
+        .freyVoiceMinimalState {
+          font-size: 26px;
+          line-height: 1.12;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.98);
+          max-width: 18ch;
+          margin: 0 auto;
+        }
+
+        .freyVoiceMinimalBridge {
+          font-size: 15px;
+          line-height: 1.68;
+          color: rgba(255, 244, 222, 0.88);
+          max-width: 58ch;
+          margin: 0 auto;
+        }
+
+        .freyVoiceMinimalRow {
+          display: grid;
+          gap: 4px;
+          padding: 0 0 12px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .freyVoiceMinimalRow:last-child {
+          border-bottom: 0;
+          padding-bottom: 0;
+        }
+
+        .freyVoiceMinimalLabel {
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.14em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.54);
+        }
+
+        .freyVoiceMinimalValueStrong {
+          color: rgba(255, 244, 222, 0.96);
+        }
+
+
+        .freyResponseSurface {
+          margin-top: 18px;
+          margin-bottom: 18px;
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.10);
+          background: rgba(255, 255, 255, 0.03);
+          padding: 16px;
+          display: grid;
+          gap: 12px;
+        }
+
+        .freyResponseHeader {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+
+        .freyResponseTitle {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(245, 239, 226, 0.86);
+        }
+
+        .freyResponseState {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(215, 182, 111, 0.9);
+        }
+
+        .freyResponseGrid,
+        .freyResponseSummaryGrid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .freyResponseMetric {
+          border-radius: 12px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          padding: 12px;
+        }
+
+        .freyResponseLabel {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+          margin-bottom: 8px;
+        }
+
+        .freyResponseValue {
+          color: rgba(245, 239, 226, 0.96);
+          font-size: 16px;
+          line-height: 1.38;
+          word-break: break-word;
+        }
+
+        .freyResponseSummary {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyResponseSummaryTitle {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyResponseNote {
+          color: rgba(214, 221, 240, 0.82);
+          font-size: 14px;
+          line-height: 1.58;
+        }
+
+        .freyResponseError {
+          color: rgba(255, 162, 162, 0.96);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .freyInterpretation {
+          margin-top: 18px;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding-top: 16px;
+        }
+
+        .freyInterpretationHeader {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 14px;
+        }
+
+        .freyInterpretationTitle {
+          font-size: 10px;
+          line-height: 1;
+          text-transform: uppercase;
+          letter-spacing: 0.18em;
+          color: rgba(188, 197, 220, 0.52);
+          white-space: nowrap;
+        }
+
+        .freyInterpretationRule {
+          flex: 1;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.03));
+        }
+
+        .freyInterpretationGridV14 {
+          display: grid;
+          gap: 12px;
+        }
+
+        .freyInterpretationZone {
+          display: grid;
+          grid-template-columns: 148px 1fr;
+          gap: 16px;
+          padding: 12px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .freyInterpretationZone:last-child {
+          border-bottom: 0;
+        }
+
+        .freyInterpretationZoneLabel {
+          font-size: 10px;
+          line-height: 1.25;
+          letter-spacing: 0.16em;
+          text-transform: uppercase;
+          color: rgba(151, 160, 185, 0.48);
+          padding-top: 3px;
+        }
+
+        .freyInterpretationZoneBody {
+          display: grid;
+          gap: 4px;
+        }
+
+        .freyInterpretationState {
+          font-size: 17px;
+          line-height: 1.32;
+          color: rgba(245, 247, 252, 0.98);
+          font-weight: 500;
+          letter-spacing: 0.01em;
+        }
+
+        .freyInterpretationEffect {
+          font-size: 14px;
+          line-height: 1.62;
+          color: rgba(192, 200, 222, 0.86);
+        }
+
+        .freyOperationalVector {
+          margin-top: 14px;
+          border-radius: 18px;
+          border: 1px solid rgba(231, 202, 141, 0.18);
+          background: linear-gradient(180deg, rgba(231, 202, 141, 0.12), rgba(231, 202, 141, 0.06));
+          padding: 16px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .freyOperationalVectorTag {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(239, 222, 185, 0.68);
+        }
+
+        .freyOperationalVectorMode {
+          font-size: 17px;
+          line-height: 1.18;
+          color: rgba(255, 249, 236, 0.98);
+          font-weight: 650;
+          text-align: right;
+        }
+
+        .freyMetrics {
+          margin-top: 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyMetricsSummary {
+          cursor: pointer;
+          padding: 14px 16px;
+          list-style: none;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.16em;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyMetricsSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyJson {
+          margin: 0;
+          padding: 0 16px 16px;
+          opacity: 0.76;
+          white-space: pre-wrap;
+          word-break: break-word;
+          color: rgba(214, 221, 240, 0.78);
+          font-size: 12px;
+          line-height: 1.45;
+        }
+
+
+        .freyEntryBlock {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyCommandRowPrimary {
+          margin-bottom: 0;
+        }
+
+        .freyButtonPrimary {
+          min-width: 168px;
+        }
+
+        .freyInlineError {
+          padding: 12px 14px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 120, 120, 0.18);
+          background: rgba(120, 18, 22, 0.16);
+          color: rgba(255, 214, 214, 0.92);
+          font-size: 13px;
+          line-height: 1.45;
+        }
+
+        .freyResultFlow {
+          display: grid;
+          gap: 16px;
+          margin-top: 18px;
+          margin-bottom: 84px;
+          padding-bottom: 40px;
+        }
+
+        .freyResultBlock {
+          border-color: rgba(255, 200, 120, 0.16);
+          background: rgba(255, 255, 255, 0.03);
+        }
+
+        .freyInterpretationResult {
+          margin-top: 0;
+        }
+
+        .freyExpandStack {
+          display: grid;
+          gap: 14px;
+        }
+
+        .freyExpandBlock {
+          border-radius: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          background: rgba(255, 255, 255, 0.02);
+          overflow: hidden;
+        }
+
+        .freyExpandSummary {
+          cursor: pointer;
+          list-style: none;
+          padding: 14px 16px;
+          font-size: 11px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(238, 227, 204, 0.78);
+        }
+
+        .freyExpandSummary::-webkit-details-marker {
+          display: none;
+        }
+
+        .freyCompareBlockSecondary {
+          margin-top: 0;
+          padding: 0 16px 16px;
+          border: 0;
+          background: transparent;
+        }
+
+        .freyResultControlsHint {
+          margin: 0 0 12px;
+          font-size: 14px;
+          line-height: 1.58;
+          color: rgba(220, 184, 116, 0.9);
+        }
+
         .freyEscalationBlock {
           display: grid;
           gap: 10px;
@@ -1681,9 +2687,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyEscalationText {
-          font-size: 13px;
-          line-height: 1.5;
-          color: rgba(214, 221, 240, 0.78);
+          font-size: 14px;
+          line-height: 1.62;
+          color: rgba(214, 221, 240, 0.84);
         }
 
         .freyConversationBlock {
@@ -1713,16 +2719,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyConversationTitle {
-          font-size: 24px;
-          line-height: 1.2;
+          font-size: 26px;
+          line-height: 1.18;
           color: rgba(255, 249, 236, 0.98);
           font-weight: 620;
         }
 
         .freyConversationLead {
-          font-size: 15px;
-          line-height: 1.55;
-          color: rgba(226, 232, 244, 0.88);
+          font-size: 16px;
+          line-height: 1.64;
+          color: rgba(226, 232, 244, 0.9);
         }
 
         .freyConversationMetaRow {
@@ -1754,8 +2760,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyConversationMetaValue,
         .freyConversationMetricValue {
           color: rgba(245, 239, 226, 0.96);
-          font-size: 15px;
-          line-height: 1.35;
+          font-size: 16px;
+          line-height: 1.4;
         }
 
         .freyConversationBand {
@@ -1793,7 +2799,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           list-style: none;
           padding: 14px 16px;
-          font-size: 10px;
+          font-size: 11px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -1819,9 +2825,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyConversationOperatorText {
-          font-size: 13px;
-          line-height: 1.6;
-          color: rgba(214, 221, 240, 0.82);
+          font-size: 16px;
+          line-height: 1.76;
+          color: rgba(214, 221, 240, 0.92);
         }
 
         .freyConversationBlock .freyInterpretationResult {
@@ -1899,6 +2905,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     </div>
   );
 }
+
 
 
 
