@@ -842,15 +842,21 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 const copyText = buildFreyExportText(exportPayload);
                 const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
                 const copyFeedbackLabel = exportCopied ? "Copied" : copyLabel;
+                const exportHelpText = hasCompare
+                  ? "Compare export includes both dates and the active delta."
+                  : "Single-date export is ready for direct AI handoff.";
                 return (
                   <details className="freyExportBlock freyResultBlock" data-frey-export="__FREY_EXPORT_LAYER_V0_2__" data-frey-export-mode={hasCompare ? "compare" : "single"}>
                     <summary className="freyExportSummary">AI Export</summary>
                     <div className="freyExportInner">
                       <div className="freyExportTop">
-                        <div className="freyExportEyebrow">Portable snapshot</div>
+                        <div className="freyExportMeta">
+                          <div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">Portable snapshot</div>
+                          <div className="freyExportHelp">{exportHelpText}</div>
+                        </div>
                         <button
                           type="button"
-                          className="freyExportCopyButton"
+                          className={`freyExportCopyButton${exportCopied ? " isCopied" : ""}`}
                           data-frey-copy-feedback={exportCopied ? "copied" : "idle"}
                           onClick={() => {
                             if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(copyText);
@@ -1880,6 +1886,53 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           word-break: break-word;
           font-size: 12px;
           line-height: 1.5;
+        }
+
+        .freyExportTop {
+          align-items: flex-start;
+        }
+
+        .freyExportMeta {
+          display: grid;
+          gap: 4px;
+          min-width: 0;
+        }
+
+        .freyExportEyebrow {
+          position: static;
+          inset: auto;
+          height: auto;
+          background: none;
+          filter: none;
+          opacity: 1;
+          pointer-events: auto;
+          font-size: 10px;
+          line-height: 1;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: rgba(255, 244, 222, 0.68);
+          justify-self: start;
+        }
+
+        .freyExportHelp {
+          font-size: 12px;
+          line-height: 1.45;
+          color: rgba(255, 244, 222, 0.58);
+          max-width: 420px;
+        }
+
+        .freyExportCopyButton:hover,
+        .freyExportCopyButton:focus-visible {
+          border-color: rgba(255, 244, 222, 0.34);
+          background: rgba(255, 244, 222, 0.07);
+          outline: none;
+        }
+
+        .freyExportCopyButton.isCopied {
+          border-color: rgba(231, 202, 141, 0.46);
+          background: rgba(231, 202, 141, 0.12);
+          color: rgba(255, 244, 222, 0.98);
+        }
           color: rgba(255, 244, 222, 0.92);
           background: rgba(0, 0, 0, 0.18);
           border: 1px solid rgba(255, 255, 255, 0.06);
