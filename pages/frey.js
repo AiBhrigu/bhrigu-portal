@@ -435,6 +435,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
   const [entryOpen, setEntryOpen] = useState(false); // __FREY_IDLE_PROD_CANON_V0_3__
+  const [exportCopied, setExportCopied] = useState(false);
   const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
@@ -840,6 +841,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 });
                 const copyText = buildFreyExportText(exportPayload);
                 const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
+                const copyFeedbackLabel = exportCopied ? "Copied" : copyLabel;
                 return (
                   <details className="freyExportBlock freyResultBlock" data-frey-export="__FREY_EXPORT_LAYER_V0_2__" data-frey-export-mode={hasCompare ? "compare" : "single"}>
                     <summary className="freyExportSummary">AI Export</summary>
@@ -849,9 +851,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         <button
                           type="button"
                           className="freyExportCopyButton"
-                          onClick={() => { if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(copyText); }}
+                          data-frey-copy-feedback={exportCopied ? "copied" : "idle"}
+                          onClick={() => {
+                            if (typeof navigator !== "undefined" && navigator.clipboard) navigator.clipboard.writeText(copyText);
+                            setExportCopied(true);
+                            if (typeof window !== "undefined") {
+                              window.setTimeout(() => setExportCopied(false), 1400);
+                            }
+                          }}
                         >
-                          {copyLabel}
+                          {copyFeedbackLabel}
                         </button>
                       </div>
                       <pre className="freyExportPre">{copyText}</pre>
