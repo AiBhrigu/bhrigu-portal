@@ -730,7 +730,15 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
               <div className="freyResultControls">
                 <div className="freyResultControlsLabel">Expand controls</div>
-                <div className="freyResultControlsHint" data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__">Open Compare to enter any date and compute Cosmographic Delta.</div>
+                <div
+                  className="freyResultControlsHint"
+                  data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__"
+                  data-frey-compare-state={hasCompare ? "active" : "ready"}
+                >
+                  {hasCompare
+                    ? "Compare active · Review both dates below."
+                    : "Open Compare to enter any date and compute Cosmographic Delta."}
+                </div>
                 <div className="freyExpandStack">
                   <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
                     <summary className="freyExpandSummary">Compare another date</summary>
