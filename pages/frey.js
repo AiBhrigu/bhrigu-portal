@@ -817,7 +817,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         </div>
                       </div>
                     ) : (
-                      <div className="freyExpandEmpty">Timeline appears after date-based runs.</div>
+                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">Timeline is not expanded in this run.</div>
                     )}
                   </details>
                 </div>
