@@ -14,39 +14,39 @@ function mapCosmographer(temporal) {
   const r = band(Number(temporal?.resonance_level ?? 0))
   const d = band(Number(temporal?.phase_density ?? 0))
 
-  let structural = "Moderate structure. Balanced state."
-  if (s === "HIGH" && c === "HIGH") structural = "Stable baseline. High coherence."
-  else if (s === "HIGH" && c === "MID") structural = "Stable structure. Moderate coherence."
-  else if (s === "HIGH" && c === "LOW") structural = "Stable but internally inconsistent."
-  else if (s === "MID" && c === "HIGH") structural = "Structurally forming. Coherent direction."
-  else if (s === "MID" && c === "LOW") structural = "Weak structure. Low internal coherence."
-  else if (s === "LOW" && c === "HIGH") structural = "Unstable base. Coherent but fragile."
-  else if (s === "LOW" && c === "MID") structural = "Unstable structure. Partial coherence."
-  else if (s === "LOW" && c === "LOW") structural = "Structurally unstable. Low coherence."
+  let structural = "Balanced. Stable enough."
+  if (s === "HIGH" && c === "HIGH") structural = "Stable. Coherent."
+  else if (s === "HIGH" && c === "MID") structural = "Stable. Moderate coherence."
+  else if (s === "HIGH" && c === "LOW") structural = "Stable. Internally mixed."
+  else if (s === "MID" && c === "HIGH") structural = "Forming. Coherent."
+  else if (s === "MID" && c === "LOW") structural = "Weak structure. Low coherence."
+  else if (s === "LOW" && c === "HIGH") structural = "Fragile base. Coherent."
+  else if (s === "LOW" && c === "MID") structural = "Unstable. Partial coherence."
+  else if (s === "LOW" && c === "LOW") structural = "Unstable. Incoherent."
 
   let tension = "Moderate tension. Balanced field."
   if (t === "HIGH" && v === "HIGH") tension = "High pressure. Unstable field."
-  else if (t === "HIGH" && v === "MID") tension = "High tension. Controlled instability."
-  else if (t === "HIGH" && v === "LOW") tension = "High tension. Localized stress."
-  else if (t === "MID" && v === "HIGH") tension = "Moderate tension. Wide instability."
-  else if (t === "MID" && v === "LOW") tension = "Moderate tension. Stable containment."
-  else if (t === "LOW" && v === "HIGH") tension = "Low tension. Chaotic dispersion."
+  else if (t === "HIGH" && v === "MID") tension = "High tension. Controlled spread."
+  else if (t === "HIGH" && v === "LOW") tension = "High tension. Local stress."
+  else if (t === "MID" && v === "HIGH") tension = "Moderate tension. Wide spread."
+  else if (t === "MID" && v === "LOW") tension = "Moderate tension. Contained."
+  else if (t === "LOW" && v === "HIGH") tension = "Low tension. Diffuse instability."
   else if (t === "LOW" && v === "MID") tension = "Low tension. Mild instability."
   else if (t === "LOW" && v === "LOW") tension = "Low tension. Stable field."
 
-  let resonance = "Moderate resonance. Balanced field."
+  let resonance = "Moderate alignment."
   if (r === "HIGH" && d === "HIGH") resonance = "Strong alignment. Dense support."
   else if (r === "HIGH" && d === "MID") resonance = "Strong resonance. Moderate support."
   else if (r === "HIGH" && d === "LOW") resonance = "Strong resonance. Thin support."
-  else if (r === "MID" && d === "HIGH") resonance = "Moderate alignment. Dense structure."
+  else if (r === "MID" && d === "HIGH") resonance = "Aligned. Dense structure."
   else if (r === "MID" && d === "LOW") resonance = "Moderate resonance. Weak support."
   else if (r === "LOW" && d === "HIGH") resonance = "Low resonance. Dense but misaligned."
   else if (r === "LOW" && d === "MID") resonance = "Weak alignment. Moderate structure."
   else if (r === "LOW" && d === "LOW") resonance = "Weak resonance. Low support."
 
-  let direction = "Act"
+  let direction = "Move"
   if (s === "LOW") direction = "Stabilize"
-  else if (t === "HIGH" && r === "LOW") direction = "Wait"
+  else if (t === "HIGH" && r === "LOW") direction = "Hold"
   else if (r === "HIGH" && s === "HIGH") direction = "Expand"
 
   return { structural, tension, resonance, direction }
@@ -71,6 +71,7 @@ export async function getServerSideProps({ query }) {
   }
 
   await handler(reqMock, resMock)
+
   return { props: { temporal: data } }
 }
 
@@ -91,6 +92,7 @@ export default function Reading({ temporal }) {
   return (
     <main style={{ maxWidth: 720, margin: "80px auto", fontFamily: "system-ui" }}>
       <h1>Frey Temporal Reading</h1>
+
       <p>Date: {temporal.date}</p>
 
       <h3>Structural State</h3>
@@ -102,54 +104,47 @@ export default function Reading({ temporal }) {
       <h3>Resonance Field</h3>
       <p>Resonance: {temporal.resonance_level}</p>
 
-      <div style={{ marginTop: 24, textAlign: "center" }}>
+      <div style={{ marginTop: 28, paddingTop: 22, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
         <button
           type="button"
-          onClick={() => setCosmoActive((v) => !v)}
+          onClick={() => setCosmoActive(v => !v)}
           style={{
-            border: "1px solid rgba(255,255,255,0.16)",
+            border: "1px solid rgba(255,255,255,0.12)",
             background: "transparent",
             color: "inherit",
-            padding: "10px 14px",
+            padding: "9px 14px",
             borderRadius: 999,
             cursor: "pointer",
-            opacity: 0.82
+            opacity: 0.72,
+            letterSpacing: "0.04em"
           }}
         >
-          Interpret this signal
+          Unfold interpretation
         </button>
       </div>
 
       {cosmoActive && (
-        <section style={{ marginTop: 24 }}>
-          <h3>Cosmographer</h3>
-
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.68 }}>
-              Structural State
-            </div>
-            <p>{cosmo.structural}</p>
+        <section style={{ marginTop: 26 }}>
+          <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.56 }}>
+            Structural State
           </div>
+          <p style={{ marginTop: 10, fontSize: 18, lineHeight: 1.5 }}>{cosmo.structural}</p>
 
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.68 }}>
-              Tension Field
-            </div>
-            <p>{cosmo.tension}</p>
+          <div style={{ marginTop: 22, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.56 }}>
+            Tension Field
           </div>
+          <p style={{ marginTop: 10, fontSize: 18, lineHeight: 1.5 }}>{cosmo.tension}</p>
 
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.68 }}>
-              Resonance Field
-            </div>
-            <p>{cosmo.resonance}</p>
+          <div style={{ marginTop: 22, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.56 }}>
+            Resonance Field
           </div>
+          <p style={{ marginTop: 10, fontSize: 18, lineHeight: 1.5 }}>{cosmo.resonance}</p>
 
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.68 }}>
+          <div style={{ marginTop: 28, paddingTop: 18, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+            <div style={{ fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase", opacity: 0.56 }}>
               Direction Vector
             </div>
-            <p>→ {cosmo.direction}</p>
+            <p style={{ marginTop: 12, fontSize: 30, lineHeight: 1.15, fontWeight: 600 }}>→ {cosmo.direction}</p>
           </div>
         </section>
       )}
