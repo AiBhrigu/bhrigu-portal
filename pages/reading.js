@@ -67,6 +67,7 @@ export async function getServerSideProps({ query }) {
 
 export default function Reading({ temporal }) {
   const [cosmoActive, setCosmoActive] = useState(false)
+  const [selectedIntent, setSelectedIntent] = useState(null)
 
   if (!temporal || !temporal.date) {
     return (
@@ -126,8 +127,112 @@ export default function Reading({ temporal }) {
     letterSpacing: "0.01em"
   }
 
+  const intentWrap = {
+    marginTop: 52,
+    paddingTop: 34,
+    borderTop: "1px solid rgba(255,255,255,0.08)"
+  }
+
+  const intentGrid = {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: 12,
+    marginTop: 20
+  }
+
+  const intentButton = (active) => ({
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 48,
+    padding: "12px 14px",
+    borderRadius: 18,
+    border: active ? "1px solid rgba(255,255,255,0.22)" : "1px solid rgba(255,255,255,0.10)",
+    background: active ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
+    color: "inherit",
+    cursor: "pointer",
+    fontSize: 14,
+    letterSpacing: "0.01em",
+    textAlign: "center"
+  })
+
+  const responseCell = {
+    marginTop: 22,
+    padding: "22px 22px 24px",
+    borderRadius: 24,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.02)"
+  }
+
+  const responseLabel = {
+    fontSize: 12,
+    letterSpacing: "0.10em",
+    textTransform: "uppercase",
+    opacity: 0.52,
+    margin: 0
+  }
+
+  const responseTitle = {
+    fontSize: 28,
+    lineHeight: 1.14,
+    marginTop: 16,
+    marginBottom: 0,
+    fontWeight: 620,
+    letterSpacing: "-0.02em"
+  }
+
+  const responseLine = {
+    fontSize: 18,
+    lineHeight: 1.45,
+    marginTop: 16,
+    marginBottom: 0,
+    opacity: 0.92
+  }
+
+  const placeholder = {
+    fontSize: 16,
+    lineHeight: 1.5,
+    marginTop: 16,
+    marginBottom: 0,
+    opacity: 0.58
+  }
+
+  const intents = {
+    structure: {
+      label: "Structural condition",
+      summary: cosmo.structural,
+      anchor: `Anchor: Structural State ${fmt(temporal.structural_stability, 3)}.`,
+      implication: "Read this signal through form integrity, not through expansion."
+    },
+    tension: {
+      label: "Tension pattern",
+      summary: cosmo.tension,
+      anchor: `Anchor: Tension Field ${fmt(temporal.harmonic_tension, 4)}.`,
+      implication: "Read this signal through pressure behavior, not through narrative projection."
+    },
+    resonance: {
+      label: "Resonance quality",
+      summary: cosmo.resonance,
+      anchor: `Anchor: Resonance Field ${fmt(temporal.resonance_level, 4)}.`,
+      implication: "Read this signal through alignment strength, not through emotional amplification."
+    },
+    direction: {
+      label: "Direction vector",
+      summary: `→ ${cosmo.direction}`,
+      anchor: "Anchor: current reading remains single-state.",
+      implication: "Treat this as the bounded next move inside the present field."
+    }
+  }
+
+  const activeCell = selectedIntent ? intents[selectedIntent] : null
+
   return (
-    <main data-reading-surface="READING_SURFACE_MICRO_POLISH_V0_2" style={shell}>
+    <main
+      data-reading-surface="READING_SURFACE_MICRO_POLISH_V0_2"
+      data-cosmographer-direction-gate="COSMOGRAPHER_DIRECTION_GATE_V0_1"
+      style={shell}
+    >
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
         Frey Temporal Reading
       </h1>
@@ -189,8 +294,43 @@ export default function Reading({ temporal }) {
               → {cosmo.direction}
             </p>
           </div>
+
+          <div style={intentWrap}>
+            <p style={label}>Interpret this signal</p>
+
+            <div style={intentGrid}>
+              <button type="button" onClick={() => setSelectedIntent("structure")} style={intentButton(selectedIntent === "structure")}>
+                Structural condition
+              </button>
+              <button type="button" onClick={() => setSelectedIntent("tension")} style={intentButton(selectedIntent === "tension")}>
+                Tension pattern
+              </button>
+              <button type="button" onClick={() => setSelectedIntent("resonance")} style={intentButton(selectedIntent === "resonance")}>
+                Resonance quality
+              </button>
+              <button type="button" onClick={() => setSelectedIntent("direction")} style={intentButton(selectedIntent === "direction")}>
+                Direction vector
+              </button>
+            </div>
+
+            <div style={responseCell}>
+              <p style={responseLabel}>Cosmographer</p>
+
+              {activeCell ? (
+                <>
+                  <p style={responseTitle}>{activeCell.label}</p>
+                  <p style={responseLine}>{activeCell.summary}</p>
+                  <p style={responseLine}>{activeCell.anchor}</p>
+                  <p style={responseLine}>{activeCell.implication}</p>
+                </>
+              ) : (
+                <p style={placeholder}>Select one bounded direction to read the present signal.</p>
+              )}
+            </div>
+          </div>
         </section>
       )}
     </main>
   )
 }
+
