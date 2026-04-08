@@ -1,10 +1,9 @@
-import { useState } from "react"
-
 export async function getServerSideProps({ query }) {
 
   const rawDate = Array.isArray(query?.d)
     ? query.d[0]
     : (query?.d ?? (Array.isArray(query?.date) ? query.date[0] : query?.date))
+
   const date = typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
     ? rawDate
     : new Date().toISOString().slice(0, 10)
@@ -31,12 +30,14 @@ export async function getServerSideProps({ query }) {
 
 export default function Reading({ temporal }) {
 
-  const [readiness, setReadiness] = useState(0.62)
-
-  const fieldTension =
-    (temporal.harmonic_tension - readiness) *
-    temporal.phase_density *
-    temporal.structural_stability
+  if (!temporal || !temporal.date) {
+    return (
+      <main style={{maxWidth:720,margin:"80px auto",fontFamily:"system-ui"}}>
+        <h1>Frey Temporal Reading</h1>
+        <p>Temporal engine unavailable.</p>
+      </main>
+    )
+  }
 
   return (
     <main style={{maxWidth:720,margin:"80px auto",fontFamily:"system-ui"}}>
@@ -45,24 +46,14 @@ export default function Reading({ temporal }) {
 
       <p>Date: {temporal.date}</p>
 
-      <h3>Core Metrics</h3>
+      <h3>Structural State</h3>
+      <p>Stability: {temporal.structural_stability}</p>
 
-      <pre>
-{JSON.stringify(temporal, null, 2)}
-      </pre>
+      <h3>Tension Field</h3>
+      <p>Tension: {temporal.harmonic_tension}</p>
 
-      <h3>Derived Signal</h3>
-
-      <p>Field tension: {fieldTension.toFixed(4)}</p>
-
-      <input
-        type="range"
-        min="0"
-        max="1"
-        step="0.01"
-        value={readiness}
-        onChange={(e)=>setReadiness(parseFloat(e.target.value))}
-      />
+      <h3>Resonance Field</h3>
+      <p>Resonance: {temporal.resonance_level}</p>
 
     </main>
   )
