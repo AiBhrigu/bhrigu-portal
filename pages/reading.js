@@ -70,7 +70,7 @@ export default function Reading({ temporal }) {
 
   if (!temporal || !temporal.date) {
     return (
-      <main style={{ maxWidth: 820, margin: "80px auto", padding: "0 24px", fontFamily: "system-ui" }}>
+      <main style={{ maxWidth: 820, margin: "80px auto", padding: "0 24px 84px", fontFamily: "system-ui" }}>
         <h1>Frey Temporal Reading</h1>
         <p>Temporal engine unavailable.</p>
       </main>
@@ -82,7 +82,7 @@ export default function Reading({ temporal }) {
   const shell = {
     maxWidth: 820,
     margin: "80px auto",
-    padding: "0 24px",
+    padding: "0 24px 84px",
     fontFamily: "system-ui"
   }
 
@@ -90,21 +90,23 @@ export default function Reading({ temporal }) {
     fontSize: 14,
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    opacity: 0.68,
+    opacity: 0.66,
     margin: 0
   }
 
-  const metric = {
-    fontSize: 18,
-    lineHeight: 1.45,
+  const metricValue = {
+    fontSize: 20,
+    lineHeight: 1.35,
     marginTop: 10,
     marginBottom: 0,
-    opacity: 0.92
+    opacity: 0.92,
+    fontVariantNumeric: "tabular-nums",
+    letterSpacing: "-0.01em"
   }
 
   const unfoldWrap = {
-    marginTop: 28,
-    paddingTop: 24,
+    marginTop: 40,
+    paddingTop: 32,
     borderTop: "1px solid rgba(255,255,255,0.08)"
   }
 
@@ -112,41 +114,42 @@ export default function Reading({ temporal }) {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 180,
-    padding: "10px 18px",
+    minWidth: 168,
+    padding: "9px 18px",
     borderRadius: 999,
     border: "1px solid rgba(255,255,255,0.10)",
     background: "transparent",
     color: "inherit",
     cursor: "pointer",
-    opacity: 0.82,
-    fontSize: 16
+    opacity: 0.74,
+    fontSize: 15,
+    letterSpacing: "0.01em"
   }
 
   return (
-    <main style={shell}>
+    <main data-reading-surface="READING_SURFACE_MICRO_POLISH_V0_2" style={shell}>
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
         Frey Temporal Reading
       </h1>
 
       <section style={{ marginTop: 42 }}>
         <p style={label}>Date Anchor</p>
-        <p style={{ ...metric, fontSize: 22 }}>{temporal.date}</p>
+        <p style={{ ...metricValue, fontSize: 22 }}>{temporal.date}</p>
       </section>
 
       <section style={{ marginTop: 38 }}>
         <p style={label}>Structural State</p>
-        <p style={metric}>Stability: {fmt(temporal.structural_stability, 3)}</p>
+        <p style={metricValue}>{fmt(temporal.structural_stability, 3)}</p>
       </section>
 
       <section style={{ marginTop: 34 }}>
         <p style={label}>Tension Field</p>
-        <p style={metric}>Tension: {fmt(temporal.harmonic_tension, 4)}</p>
+        <p style={metricValue}>{fmt(temporal.harmonic_tension, 4)}</p>
       </section>
 
       <section style={{ marginTop: 34 }}>
         <p style={label}>Resonance Field</p>
-        <p style={metric}>Resonance: {fmt(temporal.resonance_level, 4)}</p>
+        <p style={metricValue}>{fmt(temporal.resonance_level, 4)}</p>
       </section>
 
       <section style={unfoldWrap}>
@@ -158,7 +161,7 @@ export default function Reading({ temporal }) {
       </section>
 
       {cosmoActive && (
-        <section style={{ marginTop: 56, paddingTop: 8 }}>
+        <section style={{ marginTop: 64, paddingTop: 10 }}>
           <div style={{ marginTop: 24 }}>
             <p style={label}>Structural State</p>
             <p style={{ fontSize: 24, lineHeight: 1.28, marginTop: 18, marginBottom: 0, fontWeight: 560 }}>
