@@ -22,137 +22,174 @@ export default function FAQ() {
         </header>
 
         <section className="card">
-          <h2>Start in 1 minute</h2>
-          <ol className="ol">
-            <li><strong>Open Frey</strong> → ask one link (human↔human / human↔project / human↔asset).</li>
-            <li><strong>Add time</strong> (date / month / window).</li>
-            <li><strong>Read the output</strong> as: phases → windows → support/tension → next step.</li>
-          </ol>
+          <h2>What is this field?</h2>
+          <p>
+            This field is a structured way of reading relation, rhythm,
+            transition, and boundary across time.
+          </p>
+          <p className="muted">
+            It does not reduce reality to one domain. It holds structure,
+            cycles, resonance, and signal as a readable field within a
+            constrained research interface.
+          </p>
+        </section>
 
+        <section className="card">
+          <h2>What is a reading?</h2>
+          <p>
+            A reading is not a verdict. It is a held interpretive frame
+            around a surfaced pattern.
+          </p>
+          <p className="muted">
+            It helps make structure legible without claiming final certainty,
+            and it belongs to a distinct reading surface rather than remaining
+            only an entry interaction.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>What is a signal?</h2>
+          <p>
+            A signal is a meaningful structural indication within a time-bound field.
+          </p>
+          <p className="muted">
+            It may show pressure, support, transition, resonance, or the
+            absence of strong alignment.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>What is a time anchor?</h2>
+          <p>
+            A time anchor is the point through which the field is entered
+            for observation.
+          </p>
+          <p className="muted">
+            It stabilizes the reading frame so movement across time can be
+            interpreted coherently rather than treated as an unbounded impression.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>What does Frey do here?</h2>
+          <p>
+            Frey is the threshold surface of the field.
+          </p>
+          <p className="muted">
+            It serves as the public interface for orientation, first contact,
+            and early temporal exploration. Its role is to open the path clearly
+            and hold the first structured contact with the field.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>Where does the reading happen?</h2>
+          <p>
+            The reading happens on a distinct reading surface.
+          </p>
+          <p className="muted">
+            Frey opens the threshold, while reading holds the surfaced pattern
+            in a clearer interpretive frame.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>When does deeper access begin?</h2>
+          <p>
+            Deeper access begins when a request moves beyond early exploration
+            and enters reviewed entry.
+          </p>
+          <p>
+            Access begins where the request must be shaped carefully before
+            analysis starts, especially when dates, events, context, and
+            framing materially affect precision.
+          </p>
+          <p className="muted">
+            All deeper work begins with manual review. Scope, timing, and
+            pricing are clarified after review, not before it.
+          </p>
           <div className="nav">
-            <Link href="/frey" className="btn">Open Frey</Link>
-            <Link href="/reading" className="btn">Reading</Link>
-            <Link href="/map" className="btn">Map</Link>
-            <Link href="/services" className="btn">Services</Link>
-            <Link href="/cosmography" className="btn">Cosmography</Link>
+            <Link href="/access" className="btn">Continue to Access</Link>
           </div>
-
-          <p className="muted">
-            If unsure where to begin — start with “me ↔ project” and a 3–12 month window.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>What is cosmography?</h2>
-          <p>
-            Cosmography is a structural method for describing reality through
-            position, rhythm, cycles and correlation across layers of experience.
-          </p>
-          <p className="muted">
-            It is not a belief system or a discipline. It may use inputs from different
-            domains without being reduced to any single one of them.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>What is Frey?</h2>
-          <p>
-            Frey is the operational interface to the cosmographic engine.
-            It maps how entities relate across time and phases.
-          </p>
-          <ul>
-            <li>Provides structured period maps — not isolated answers.</li>
-            <li>Supports research, navigation and decision-making.</li>
-            <li>Works through a query-first interaction model.</li>
-          </ul>
-        </section>
-
-        <section className="card">
-          <h2>What can Frey analyze?</h2>
-          <p>
-            Any process involving time, interaction or choice:
-            relationships, projects, capital, creativity, systems, cycles.
-          </p>
-          <p className="muted">
-            Frey structures inquiry. Interpretation remains human.
-          </p>
-        </section>
-
-        <section className="card">
-          <h2>Core interaction pattern</h2>
-          <pre className="pre">
-(Entity A) × (Entity B) × (Time context) → structured interaction map
-          </pre>
         </section>
 
         <section className="card">
           <h2>Is this prediction?</h2>
+          <p>No.</p>
           <p>
-            Frey works with tendencies, windows and transitions in time.
-            It does not issue absolute verdicts.
-          </p>
-          <ul>
-            <li>Shows supportive / tense / neutral phases.</li>
-            <li>Highlights natural vs costly action windows.</li>
-            <li>If no strong signal exists — it states that explicitly.</li>
-          </ul>
-        </section>
-
-        <section className="card">
-          <h2>Access layers</h2>
-
-          <div className="table">
-            <div className="row head">
-              <div>Layer</div>
-              <div>Capability</div>
-              <div>Typical use</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Free</div>
-              <div>
-                Observation mode: structured outputs, period maps,
-                readable explanations and baseline analytics.
-              </div>
-              <div>exploration, research, learning</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Pro</div>
-              <div>
-                Operational mode: deeper comparisons, parameter control,
-                repeated scenario analysis.
-              </div>
-              <div>ongoing work, decision cycles</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">API</div>
-              <div>
-                Programmatic integration, automation, scaling and embedding.
-              </div>
-              <div>systems, applications, pipelines</div>
-            </div>
-
-            <div className="row">
-              <div className="tag">Research</div>
-              <div>
-                Experimental layers and controlled R&D access.
-              </div>
-              <div>validation, deep testing</div>
-            </div>
-          </div>
-        </section>
-
-        <section className="card">
-          <h2>What is intentionally restricted?</h2>
-          <p>
-            X₄-SEED — Deep-Space Harmonic Line.
-            This contour remains protected as core research infrastructure.
+            The field works with tendencies, timing, phases, and structural
+            transitions.
           </p>
           <p className="muted">
-            All practical user-facing capabilities remain available through public layers.
+            It does not issue absolute verdicts, and when no strong signal is
+            present, that boundary should remain explicit.
           </p>
+        </section>
+
+        <section className="card">
+          <h2>What does ORION hold beneath the surface?</h2>
+          <p>
+            ORION names the analytical depth beneath the portal surface.
+          </p>
+          <p className="muted">
+            It is a boundary reference for the engine layer, not a public
+            dashboard, not a public API, and not an onboarding surface.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>Why are some layers bounded?</h2>
+          <p>
+            Because trust, safety, research integrity, and long-term maintenance
+            require real boundaries.
+          </p>
+          <p className="muted">
+            The public layer is intentionally constrained: outputs stay
+            surface-first, internals remain sealed, and the system favors
+            clarity and reproducibility over hype or premature exposure.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>What is not public here?</h2>
+          <p>
+            Not everything beneath the portal surface is public.
+          </p>
+          <p className="muted">
+            There is no public API, no exposed dashboard layer, no live
+            instruments on the cosmography surface, and no unrestricted
+            access to internal systems.
+          </p>
+        </section>
+
+        <section className="card">
+          <h2>Where can the public path go next?</h2>
+          <p>
+            The public path continues through distinct surfaces, each with
+            a different role.
+          </p>
+          <p className="muted">
+            Frey is the threshold for first contact and early exploration.
+            Reading is the interpretive surface. ORION is the boundary
+            reference for analytical depth. Access is the reviewed entry
+            path for serious requests. The GitHub mirror exposes selected
+            public layers without revealing the full internal stack.
+          </p>
+
+          <div className="nav">
+            <Link href="/frey" className="btn">Frey</Link>
+            <Link href="/reading" className="btn">Reading</Link>
+            <Link href="/orion" className="btn">ORION</Link>
+            <Link href="/access" className="btn">Access</Link>
+            <a
+              href="https://github.com/AiBhrigu"
+              className="btn"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub Mirror
+            </a>
+          </div>
         </section>
 
         <footer className="footer">
