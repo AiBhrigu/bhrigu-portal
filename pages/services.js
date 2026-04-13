@@ -46,9 +46,9 @@ export default function Services() {
             <div className="tags"><span className="tag">Rigor</span><span className="tag">Repro</span><span className="tag">Docs</span></div>
           </div>
           <div className="card">
-            <h2>Pilot / partnership</h2>
-            <p>For grants and aligned investors: fund the surface expansion, not the hype.</p>
-            <div className="tags"><span className="tag">Grant-fit</span><span className="tag">Investor</span><span className="tag">Roadmap</span></div>
+            <h2>Public support</h2>
+            <p>Quiet support for research, architecture, infrastructure, and public surface continuity.</p>
+            <div className="tags"><span className="tag">Support</span><span className="tag">Continuity</span><span className="tag">Public</span></div>
           </div>
         </section>
 

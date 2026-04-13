@@ -126,7 +126,7 @@ export default function Home() {
             <li><b>Surface-only public outputs.</b> Internals are not exposed.</li>
             <li><b>No financial advice.</b> This is a research interface, not a trading product.</li>
           </ul>
-          <p className="muted">If you are evaluating support (grant/investor), start at <Link href="/start">/start</Link>.</p>
+          <p className="muted">For quiet public support, see <Link href="/support">/support</Link>.</p>
         </section>
       </main>
 
