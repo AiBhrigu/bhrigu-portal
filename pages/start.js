@@ -61,12 +61,12 @@ export default function Start() {
     <>
       <Head>
         <title>Start · BHRIGU</title>
-        <meta name="description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
+        <meta name="description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and where the public path continues." />
 <meta property="og:title" content="Start · BHRIGU" />
-        <meta property="og:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
+        <meta property="og:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and where the public path continues." />
         <meta property="og:url" content="https://www.bhrigu.io/start" />
         <meta name="twitter:title" content="Start · BHRIGU" />
-        <meta name="twitter:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and what support enables next." />
+        <meta name="twitter:description" content="A fast path through BHRIGU: what to read first, how Frey is constrained, and where the public path continues." />
       <meta name="phi-surface" content="PHI_SURFACE_V0_3" />
       </Head>
       <main className="wrap">
@@ -104,21 +104,16 @@ export default function Start() {
           </div>
         </section>
 
-        
 <section className="trust">
   <h2>Investors / partners</h2>
   <p className="muted">Investors / partners overview: /investors.</p>
+  <p className="muted">Quiet public support: <Link href="/support">/support</Link>. <span style={{display:"none"}}><span data-mark="START_SUPPORT_DRIFT_V0_1" style={{display:"none"}} aria-hidden="true"></span></span></p>
   <div style={{ display: "none" }} aria-hidden="true"></div>
 </section>
 
-      
                   {/*  */}
-      
 
 <PortalFooterNav termsHref="/faq" next={[{href:"/reading",label:"/reading"}]} note="Canon: start → reading." />
-      
-
-<p className="muted">For investors / partners: /investors. <span style={{display:"none"}}><span data-mark="IA_START_TO_INVESTORS_V0_2" style={{display:"none"}} aria-hidden="true"></span></span></p>
 </main>
 
       <style jsx>{`
