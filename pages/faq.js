@@ -171,15 +171,18 @@ export default function FAQ() {
           <p className="muted">
             Frey is the threshold for first contact and early exploration.
             Reading is the interpretive surface. ORION is the boundary
-            reference for analytical depth. Access is the reviewed entry
-            path for serious requests. The GitHub mirror exposes selected
-            public layers without revealing the full internal stack.
+            reference for analytical depth. Support is the quiet public
+            support route for maintaining research, architecture,
+            infrastructure, and the public surface. Access is the reviewed
+            entry path for serious requests. The GitHub mirror exposes
+            selected public layers without revealing the full internal stack.
           </p>
 
           <div className="nav">
             <Link href="/frey" className="btn">Frey</Link>
             <Link href="/reading" className="btn">Reading</Link>
             <Link href="/orion" className="btn">ORION</Link>
+            <Link href="/support" className="btn">Support</Link>
             <Link href="/access" className="btn">Access</Link>
             <a
               href="https://github.com/AiBhrigu"
