@@ -4,7 +4,6 @@ import Link from "next/link";
 export default function Map() {
   return (
     <main style={{ maxWidth: 880, margin: "0 auto", padding: "80px 20px" }}>
-
       <h1>Portal Navigation Surface</h1>
 
       <p>
@@ -26,6 +25,11 @@ export default function Map() {
         <li><Link href="/dao">DAO</Link></li>
       </ul>
 
+      <h2>Quiet Support</h2>
+      <ul>
+        <li><Link href="/support">Support</Link></li>
+      </ul>
+
       <h2>Access & Capital</h2>
       <ul>
         <li><Link href="/investors">Investors</Link></li>
@@ -36,7 +40,6 @@ export default function Map() {
       <p>
         The map maintains structural clarity across the portal.
       </p>
-
     </main>
   );
 }
