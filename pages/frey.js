@@ -436,6 +436,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [uiError, setUiError] = useState("");
   const [entryOpen, setEntryOpen] = useState(false); // __FREY_IDLE_PROD_CANON_V0_3__
   const [exportCopied, setExportCopied] = useState(false);
+  const [activeDateEditOpen, setActiveDateEditOpen] = useState(false);
   const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
@@ -513,6 +514,20 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(buildFreyUrl({ query, date, compareDate, timelineDates: [] }));
+    }
+  }
+
+  function runActiveDateDirectEdit(nextDate) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
+      return;
+    }
+    setDate(nextDate);
+    setUiError("");
+    setLoading(true);
+    if (typeof window !== "undefined") {
+      window.location.assign(
+        buildFreyUrl({ query, date: nextDate, compareDate: "", timelineDates: [] })
+      );
     }
   }
 
@@ -623,10 +638,48 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 <div className="freyConversationLead">{conversationalResponse.lead}</div>
 
                 <div className="freyConversationMetaRow">
-                  <div className="freyConversationMetaCard">
-                    <div className="freyConversationMetaLabel">Active Date</div>
-                    <div className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</div>
-                  </div>
+                  {!hasCompare ? (
+                    <div
+                      className="freyConversationMetaCard freyConversationMetaCardEditable"
+                      data-frey-active-date-direct-edit="__FREY_ACTIVE_DATE_DIRECT_EDIT_V0_1__"
+                    >
+                      <div className="freyConversationMetaLabel">Active Date</div>
+                      {!activeDateEditOpen ? (
+                        <button
+                          className="freyConversationMetaTrigger"
+                          type="button"
+                          onClick={() => setActiveDateEditOpen(true)}
+                          aria-expanded={activeDateEditOpen ? "true" : "false"}
+                        >
+                          <span className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</span>
+                          <span className="freyConversationMetaHint">Click to edit</span>
+                        </button>
+                      ) : (
+                        <div className="freyConversationMetaInline">
+                          <input
+                            type="date"
+                            value={date || responseSurface.active_date || ""}
+                            onChange={(e) => runActiveDateDirectEdit(e.target.value)}
+                            className="freyInput freyConversationMetaInlineInput"
+                            autoFocus
+                          />
+                          <div className="freyConversationMetaHint">Pick a date to reload the deterministic result.</div>
+                          <button
+                            className="freyGhostButton freyConversationMetaClose"
+                            type="button"
+                            onClick={() => setActiveDateEditOpen(false)}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="freyConversationMetaCard">
+                      <div className="freyConversationMetaLabel">Active Date</div>
+                      <div className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</div>
+                    </div>
+                  )}
                   <div className="freyConversationMetaCard">
                     <div className="freyConversationMetaLabel">Engine</div>
                     <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
@@ -2832,6 +2885,47 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           color: rgba(245, 239, 226, 0.96);
           font-size: 16px;
           line-height: 1.4;
+        }
+
+        .freyConversationMetaCardEditable {
+          display: grid;
+          gap: 8px;
+        }
+
+        .freyConversationMetaTrigger {
+          appearance: none;
+          border: 0;
+          background: transparent;
+          padding: 0;
+          margin: 0;
+          display: grid;
+          gap: 8px;
+          text-align: left;
+          color: inherit;
+          cursor: pointer;
+        }
+
+        .freyConversationMetaInline {
+          display: grid;
+          gap: 10px;
+        }
+
+        .freyConversationMetaInlineInput {
+          min-height: 48px;
+          padding: 0 12px;
+        }
+
+        .freyConversationMetaHint {
+          font-size: 12px;
+          line-height: 1.5;
+          color: rgba(184, 192, 214, 0.72);
+        }
+
+        .freyConversationMetaClose {
+          justify-self: start;
+          min-height: 38px;
+          border-radius: 12px;
+          padding: 0 12px;
         }
 
         .freyConversationBand {
