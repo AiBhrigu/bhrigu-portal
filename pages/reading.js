@@ -37,6 +37,90 @@ function mapCosmographer(temporal) {
   return { structural, tension, resonance, direction }
 }
 
+function mapNavigator(temporal) {
+  const s = band(Number(temporal?.structural_stability ?? 0))
+  const c = band(Number(temporal?.analysis?.coherence_score ?? 0))
+  const t = band(Number(temporal?.harmonic_tension ?? 0))
+  const v = band(Number(temporal?.analysis?.volatility_index ?? 0))
+  const r = band(Number(temporal?.resonance_level ?? 0))
+
+  const lowSignal = t === "LOW" && v === "LOW" && c !== "LOW"
+  let primaryBand = "ALIGNMENT"
+  if (lowSignal) primaryBand = "LOW_SIGNAL"
+  else if (s === "LOW") primaryBand = "STABILIZATION"
+  else if (t === "HIGH" && r === "LOW") primaryBand = "CONTAINMENT"
+  else if (t === "HIGH") primaryBand = "CONCENTRATION"
+  else if (r === "HIGH" && s === "HIGH" && c === "HIGH") primaryBand = "OPENING"
+
+  let modulation = "CLARITY"
+  if (primaryBand === "LOW_SIGNAL") modulation = "SOFTENING"
+  else if (s === "LOW") modulation = "FRAGILITY"
+  else if (t === "HIGH" || v === "HIGH") modulation = "PRESSURE"
+
+  const payload = {
+    primaryBand,
+    modulation,
+    formula: "Align first, then move",
+    origin: "This day continues a field that is still asking for better internal agreement.",
+    gate: "Today\'s pivot is alignment before acceleration.",
+    vector: "If the line is brought into order now, the near arc tends toward clearer direction and less inner resistance.",
+    action: "Bring the main line into order.",
+    boundary: "Do not move before alignment."
+  }
+
+  if (primaryBand === "LOW_SIGNAL") {
+    payload.formula = "Hold the quiet line"
+    payload.origin = "This day carries a quieter field, where pressure is low and meaning does not need force."
+    payload.gate = "Today\'s pivot is not expansion but clean attention to what already stands."
+    payload.vector = "If the line stays simple, the near arc tends toward steadier clarity without extra strain."
+    payload.action = "Keep one light steady line."
+    payload.boundary = "Do not force a turning point."
+    return payload
+  }
+
+  if (primaryBand === "STABILIZATION") {
+    payload.formula = "Stabilize before extension"
+    payload.origin = "This day arrives through a thinner support layer, where structure asks for protection before movement."
+    payload.gate = "Today\'s pivot is keeping the base coherent instead of asking it to carry more weight."
+    payload.vector = "If the base is reinforced now, the near arc tends toward firmer support and less internal scatter."
+    payload.action = "Reinforce the main base."
+    payload.boundary = "Do not widen the field yet."
+    return payload
+  }
+
+  if (primaryBand === "CONTAINMENT") {
+    payload.formula = "Hold the line, reduce pressure"
+    payload.origin = "This day continues a hotter field, where pressure rises faster than support."
+    payload.gate = "Today\'s pivot is containment, not scale."
+    payload.vector = "If pressure is held instead of amplified, the near arc tends toward steadier control."
+    payload.action = "Reduce load on the main line."
+    payload.boundary = "Do not turn pressure into speed."
+    return payload
+  }
+
+  if (primaryBand === "CONCENTRATION") {
+    payload.formula = "One line, less noise"
+    payload.origin = "This day enters through a dense signal field, where too many fronts quickly blur the center."
+    payload.gate = "Today\'s pivot is choosing the one line that can actually carry the day."
+    payload.vector = "If the field is narrowed now, the near arc tends toward clearer movement and less wasted friction."
+    payload.action = "Choose one leading line."
+    payload.boundary = "Do not open new fronts."
+    return payload
+  }
+
+  if (primaryBand === "OPENING") {
+    payload.formula = "Open from stable ground"
+    payload.origin = "This day arrives with strong coherence and enough support for measured outward motion."
+    payload.gate = "Today\'s pivot is controlled opening, not raw push."
+    payload.vector = "If the base stays visible, the near arc tends toward cleaner expansion with less drag."
+    payload.action = "Extend one prepared line."
+    payload.boundary = "Do not outrun the base."
+    return payload
+  }
+
+  return payload
+}
+
 function fmt(v, digits = 4) {
   const n = Number(v)
   return Number.isFinite(n) ? n.toFixed(digits) : "—"
@@ -79,6 +163,7 @@ export default function Reading({ temporal }) {
   }
 
   const cosmo = mapCosmographer(temporal)
+  const navigator = mapNavigator(temporal)
 
   const shell = {
     maxWidth: 820,
@@ -125,6 +210,59 @@ export default function Reading({ temporal }) {
     opacity: 0.74,
     fontSize: 15,
     letterSpacing: "0.01em"
+  }
+
+  const navigatorWrap = {
+    marginTop: 52,
+    paddingTop: 34,
+    borderTop: "1px solid rgba(255,255,255,0.08)"
+  }
+
+  const formulaWrap = {
+    marginTop: 18,
+    padding: "20px 22px 22px",
+    borderRadius: 24,
+    border: "1px solid rgba(255,255,255,0.12)",
+    background: "rgba(255,255,255,0.03)"
+  }
+
+  const formulaLine = {
+    fontSize: 34,
+    lineHeight: 1.08,
+    marginTop: 14,
+    marginBottom: 0,
+    fontWeight: 650,
+    letterSpacing: "-0.03em"
+  }
+
+  const navGrid = {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: 14,
+    marginTop: 22
+  }
+
+  const navCard = {
+    padding: "18px 20px 20px",
+    borderRadius: 22,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.02)"
+  }
+
+  const navLabel = {
+    fontSize: 12,
+    letterSpacing: "0.10em",
+    textTransform: "uppercase",
+    opacity: 0.52,
+    margin: 0
+  }
+
+  const navText = {
+    fontSize: 18,
+    lineHeight: 1.45,
+    marginTop: 12,
+    marginBottom: 0,
+    opacity: 0.94
   }
 
   const intentWrap = {
@@ -231,6 +369,7 @@ export default function Reading({ temporal }) {
     <main
       data-reading-surface="READING_SURFACE_MICRO_POLISH_V0_2"
       data-cosmographer-direction-gate="COSMOGRAPHER_DIRECTION_GATE_V0_1"
+      data-reading-daily-navigator-foundation="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1"
       style={shell}
     >
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
@@ -295,6 +434,37 @@ export default function Reading({ temporal }) {
             </p>
           </div>
 
+          <div style={navigatorWrap} data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1">
+            <p style={label}>Formula of the Day</p>
+            <div style={formulaWrap}>
+              <p style={responseLabel}>Daily Navigator</p>
+              <p style={formulaLine}>{navigator.formula}</p>
+            </div>
+
+            <div style={navGrid}>
+              <div style={navCard}>
+                <p style={navLabel}>Origin</p>
+                <p style={navText}>{navigator.origin}</p>
+              </div>
+              <div style={navCard}>
+                <p style={navLabel}>Current Gate</p>
+                <p style={navText}>{navigator.gate}</p>
+              </div>
+              <div style={navCard}>
+                <p style={navLabel}>Vector</p>
+                <p style={navText}>{navigator.vector}</p>
+              </div>
+              <div style={navCard}>
+                <p style={navLabel}>Right Action</p>
+                <p style={navText}>{navigator.action}</p>
+              </div>
+              <div style={navCard}>
+                <p style={navLabel}>Boundary</p>
+                <p style={navText}>{navigator.boundary}</p>
+              </div>
+            </div>
+          </div>
+
           <div style={intentWrap}>
             <p style={label}>Interpret this signal</p>
 
@@ -333,4 +503,3 @@ export default function Reading({ temporal }) {
     </main>
   )
 }
-
