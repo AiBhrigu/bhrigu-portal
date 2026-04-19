@@ -62,7 +62,7 @@ function mapNavigator(temporal) {
     modulation,
     formula: "Align first, then move",
     origin: "This day continues a field that is still asking for better internal agreement.",
-    gate: "Today\'s pivot is alignment before acceleration.",
+    gate: "Today's pivot is alignment before acceleration.",
     vector: "If the line is brought into order now, the near arc tends toward clearer direction and less inner resistance.",
     action: "Bring the main line into order.",
     boundary: "Do not move before alignment."
@@ -71,7 +71,7 @@ function mapNavigator(temporal) {
   if (primaryBand === "LOW_SIGNAL") {
     payload.formula = "Hold the quiet line"
     payload.origin = "This day carries a quieter field, where pressure is low and meaning does not need force."
-    payload.gate = "Today\'s pivot is not expansion but clean attention to what already stands."
+    payload.gate = "Today's pivot is not expansion but clean attention to what already stands."
     payload.vector = "If the line stays simple, the near arc tends toward steadier clarity without extra strain."
     payload.action = "Keep one light steady line."
     payload.boundary = "Do not force a turning point."
@@ -81,7 +81,7 @@ function mapNavigator(temporal) {
   if (primaryBand === "STABILIZATION") {
     payload.formula = "Stabilize before extension"
     payload.origin = "This day arrives through a thinner support layer, where structure asks for protection before movement."
-    payload.gate = "Today\'s pivot is keeping the base coherent instead of asking it to carry more weight."
+    payload.gate = "Today's pivot is keeping the base coherent instead of asking it to carry more weight."
     payload.vector = "If the base is reinforced now, the near arc tends toward firmer support and less internal scatter."
     payload.action = "Reinforce the main base."
     payload.boundary = "Do not widen the field yet."
@@ -91,7 +91,7 @@ function mapNavigator(temporal) {
   if (primaryBand === "CONTAINMENT") {
     payload.formula = "Hold the line, reduce pressure"
     payload.origin = "This day continues a hotter field, where pressure rises faster than support."
-    payload.gate = "Today\'s pivot is containment, not scale."
+    payload.gate = "Today's pivot is containment, not scale."
     payload.vector = "If pressure is held instead of amplified, the near arc tends toward steadier control."
     payload.action = "Reduce load on the main line."
     payload.boundary = "Do not turn pressure into speed."
@@ -101,7 +101,7 @@ function mapNavigator(temporal) {
   if (primaryBand === "CONCENTRATION") {
     payload.formula = "One line, less noise"
     payload.origin = "This day enters through a dense signal field, where too many fronts quickly blur the center."
-    payload.gate = "Today\'s pivot is choosing the one line that can actually carry the day."
+    payload.gate = "Today's pivot is choosing the one line that can actually carry the day."
     payload.vector = "If the field is narrowed now, the near arc tends toward clearer movement and less wasted friction."
     payload.action = "Choose one leading line."
     payload.boundary = "Do not open new fronts."
@@ -111,7 +111,7 @@ function mapNavigator(temporal) {
   if (primaryBand === "OPENING") {
     payload.formula = "Open from stable ground"
     payload.origin = "This day arrives with strong coherence and enough support for measured outward motion."
-    payload.gate = "Today\'s pivot is controlled opening, not raw push."
+    payload.gate = "Today's pivot is controlled opening, not raw push."
     payload.vector = "If the base stays visible, the near arc tends toward cleaner expansion with less drag."
     payload.action = "Extend one prepared line."
     payload.boundary = "Do not outrun the base."
@@ -396,6 +396,37 @@ export default function Reading({ temporal }) {
         <p style={metricValue}>{fmt(temporal.resonance_level, 4)}</p>
       </section>
 
+      <section style={navigatorWrap} data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1">
+        <p style={label}>Formula of the Day</p>
+        <div style={formulaWrap}>
+          <p style={responseLabel}>Daily Navigator</p>
+          <p style={formulaLine}>{navigator.formula}</p>
+        </div>
+
+        <div style={navGrid}>
+          <div style={navCard}>
+            <p style={navLabel}>Origin</p>
+            <p style={navText}>{navigator.origin}</p>
+          </div>
+          <div style={navCard}>
+            <p style={navLabel}>Current Gate</p>
+            <p style={navText}>{navigator.gate}</p>
+          </div>
+          <div style={navCard}>
+            <p style={navLabel}>Vector</p>
+            <p style={navText}>{navigator.vector}</p>
+          </div>
+          <div style={navCard}>
+            <p style={navLabel}>Right Action</p>
+            <p style={navText}>{navigator.action}</p>
+          </div>
+          <div style={navCard}>
+            <p style={navLabel}>Boundary</p>
+            <p style={navText}>{navigator.boundary}</p>
+          </div>
+        </div>
+      </section>
+
       <section style={unfoldWrap}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button type="button" onClick={() => setCosmoActive(v => !v)} style={gate}>
@@ -432,37 +463,6 @@ export default function Reading({ temporal }) {
             <p style={{ fontSize: 64, lineHeight: 1, marginTop: 22, marginBottom: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
               → {cosmo.direction}
             </p>
-          </div>
-
-          <div style={navigatorWrap} data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1">
-            <p style={label}>Formula of the Day</p>
-            <div style={formulaWrap}>
-              <p style={responseLabel}>Daily Navigator</p>
-              <p style={formulaLine}>{navigator.formula}</p>
-            </div>
-
-            <div style={navGrid}>
-              <div style={navCard}>
-                <p style={navLabel}>Origin</p>
-                <p style={navText}>{navigator.origin}</p>
-              </div>
-              <div style={navCard}>
-                <p style={navLabel}>Current Gate</p>
-                <p style={navText}>{navigator.gate}</p>
-              </div>
-              <div style={navCard}>
-                <p style={navLabel}>Vector</p>
-                <p style={navText}>{navigator.vector}</p>
-              </div>
-              <div style={navCard}>
-                <p style={navLabel}>Right Action</p>
-                <p style={navText}>{navigator.action}</p>
-              </div>
-              <div style={navCard}>
-                <p style={navLabel}>Boundary</p>
-                <p style={navText}>{navigator.boundary}</p>
-              </div>
-            </div>
           </div>
 
           <div style={intentWrap}>
