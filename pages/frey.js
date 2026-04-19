@@ -140,6 +140,12 @@ function getTodayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function formatHumanDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return value || "";
+  const [year, month, day] = value.split("-");
+  return `${day}.${month}.${year}`;
+}
+
 function buildResponseSurface(result, activeDate, uiState, errorMessage) {
   const normalizedState = uiState || (result ? "success" : "idle");
   const phase = Number(result?.phase_density ?? 0);
@@ -437,6 +443,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [entryOpen, setEntryOpen] = useState(false); // __FREY_IDLE_PROD_CANON_V0_3__
   const [exportCopied, setExportCopied] = useState(false);
   const [activeDateEditOpen, setActiveDateEditOpen] = useState(false);
+  const [activeDateDraft, setActiveDateDraft] = useState(initialDate || "");
   const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
@@ -517,16 +524,38 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     }
   }
 
-  function runActiveDateDirectEdit(nextDate) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(nextDate)) {
+  function openActiveDateEditor() {
+    const currentDate = /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? date
+      : (/^\d{4}-\d{2}-\d{2}$/.test(responseSurface.active_date) ? responseSurface.active_date : "");
+    setActiveDateDraft(currentDate);
+    setActiveDateEditOpen(true);
+  }
+
+  function closeActiveDateEditor() {
+    const currentDate = /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? date
+      : (/^\d{4}-\d{2}-\d{2}$/.test(responseSurface.active_date) ? responseSurface.active_date : "");
+    setActiveDateDraft(currentDate);
+    setActiveDateEditOpen(false);
+  }
+
+  function applyActiveDateDirectEdit() {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(activeDateDraft)) {
+      setUiError("Select a valid active date.");
       return;
     }
-    setDate(nextDate);
+    if (activeDateDraft === date) {
+      setActiveDateEditOpen(false);
+      return;
+    }
+    setDate(activeDateDraft);
+    setActiveDateEditOpen(false);
     setUiError("");
     setLoading(true);
     if (typeof window !== "undefined") {
       window.location.assign(
-        buildFreyUrl({ query, date: nextDate, compareDate: "", timelineDates: [] })
+        buildFreyUrl({ query, date: activeDateDraft, compareDate: "", timelineDates: [] })
       );
     }
   }
@@ -641,43 +670,60 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   {!hasCompare ? (
                     <div
                       className="freyConversationMetaCard freyConversationMetaCardEditable"
-                      data-frey-active-date-direct-edit="__FREY_ACTIVE_DATE_DIRECT_EDIT_V0_1__"
+                      data-frey-active-date-direct-edit="__FREY_ACTIVE_DATE_DIRECT_EDIT_V0_2__"
                     >
                       <div className="freyConversationMetaLabel">Active Date</div>
                       {!activeDateEditOpen ? (
                         <button
                           className="freyConversationMetaTrigger"
                           type="button"
-                          onClick={() => setActiveDateEditOpen(true)}
+                          onClick={openActiveDateEditor}
                           aria-expanded={activeDateEditOpen ? "true" : "false"}
                         >
-                          <span className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</span>
+                          <span className="freyConversationMetaValue">
+                            {responseSurface.active_date ? formatHumanDate(responseSurface.active_date) : "n/a"}
+                          </span>
                           <span className="freyConversationMetaHint">Click to edit</span>
                         </button>
                       ) : (
                         <div className="freyConversationMetaInline">
                           <input
                             type="date"
-                            value={date || responseSurface.active_date || ""}
-                            onChange={(e) => runActiveDateDirectEdit(e.target.value)}
+                            value={activeDateDraft}
+                            onChange={(e) => setActiveDateDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") applyActiveDateDirectEdit();
+                              if (e.key === "Escape") closeActiveDateEditor();
+                            }}
                             className="freyInput freyConversationMetaInlineInput"
                             autoFocus
                           />
-                          <div className="freyConversationMetaHint">Pick a date to reload the deterministic result.</div>
-                          <button
-                            className="freyGhostButton freyConversationMetaClose"
-                            type="button"
-                            onClick={() => setActiveDateEditOpen(false)}
-                          >
-                            Close
-                          </button>
+                          <div className="freyConversationMetaHint">Edit the date, then apply to reload the deterministic result.</div>
+                          <div className="freyConversationMetaActionRow">
+                            <button
+                              className="freyGhostButton freyConversationMetaClose"
+                              type="button"
+                              onClick={closeActiveDateEditor}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className="freyButton freyConversationMetaApply"
+                              type="button"
+                              onClick={applyActiveDateDirectEdit}
+                            >
+                              Apply
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="freyConversationMetaCard">
                       <div className="freyConversationMetaLabel">Active Date</div>
-                      <div className="freyConversationMetaValue">{responseSurface.active_date || "n/a"}</div>
+                      <div className="freyConversationMetaValue">
+                        {responseSurface.active_date ? formatHumanDate(responseSurface.active_date) : "n/a"}
+                      </div>
                     </div>
                   )}
                   <div className="freyConversationMetaCard">
@@ -2921,11 +2967,22 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           color: rgba(184, 192, 214, 0.72);
         }
 
+        .freyConversationMetaActionRow {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+
         .freyConversationMetaClose {
-          justify-self: start;
           min-height: 38px;
           border-radius: 12px;
           padding: 0 12px;
+        }
+
+        .freyConversationMetaApply {
+          min-height: 38px;
+          border-radius: 12px;
+          padding: 0 14px;
         }
 
         .freyConversationBand {
