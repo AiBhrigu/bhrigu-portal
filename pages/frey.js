@@ -666,11 +666,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
                 <div className="freyConversationLead">{conversationalResponse.lead}</div>
 
-                <div className="freyConversationMetaRow">
-                  {!hasCompare ? (
+                <div
+                  className="freyConversationMetaBand"
+                  data-frey-unified-meta-band="__FREY_TRUE_UNIFIED_META_BAND_V0_1__"
+                >
+                  <div className="freyConversationMetaBandPrimary">
                     <div
-                      className="freyConversationMetaCard freyConversationMetaCardEditable"
-                      data-frey-active-date-direct-edit="__FREY_ACTIVE_DATE_DIRECT_EDIT_V0_2__"
+                      className="freyConversationMetaBandCell freyConversationMetaBandCellActive"
+                      data-frey-compare-primary-edit-restore="__FREY_COMPARE_PRIMARY_EDIT_RESTORE_V0_1__"
                     >
                       <div className="freyConversationMetaLabel">Active Date</div>
                       {!activeDateEditOpen ? (
@@ -718,17 +721,23 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         </div>
                       )}
                     </div>
-                  ) : (
-                    <div className="freyConversationMetaCard">
-                      <div className="freyConversationMetaLabel">Active Date</div>
+                
+                    <div
+                      className="freyConversationMetaBandCell freyConversationMetaBandCellAnchor"
+                      data-frey-anchor-a1="__FREY_ANCHOR_A1_V0_1__"
+                    >
+                      <div className="freyConversationMetaLabel">Anchor</div>
                       <div className="freyConversationMetaValue">
                         {responseSurface.active_date ? formatHumanDate(responseSurface.active_date) : "n/a"}
                       </div>
                     </div>
-                  )}
-                  <div className="freyConversationMetaCard">
-                    <div className="freyConversationMetaLabel">Engine</div>
-                    <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
+                  </div>
+                
+                  <div className="freyConversationMetaBandSecondary">
+                    <div className="freyConversationMetaBandCell freyConversationMetaBandCellEngine">
+                      <div className="freyConversationMetaLabel">Engine</div>
+                      <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
+                    </div>
                   </div>
                 </div>
 
@@ -3122,6 +3131,90 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
             height: clamp(16px, 2.6vh, 24px);
           }
         }
+      /* __FREY_TRUE_UNIFIED_META_BAND_V0_1__ */
+      .freyConversationMetaBand {
+        margin-top: 8px;
+        display: grid;
+        gap: 8px;
+        padding: 12px 14px 10px;
+        border: 1px solid rgba(207, 168, 98, 0.14);
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(11, 15, 29, 0.94) 0%, rgba(8, 12, 24, 0.9) 100%),
+          rgba(255, 255, 255, 0.01);
+      }
+      .freyConversationMetaBandPrimary {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 14px;
+        align-items: start;
+      }
+      .freyConversationMetaBandSecondary {
+        display: block;
+        padding-top: 8px;
+        border-top: 1px solid rgba(207, 168, 98, 0.12);
+      }
+      .freyConversationMetaBandCell {
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
+        background: transparent;
+      }
+      .freyConversationMetaBandCellEngine {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .freyConversationMetaBandCellEngine .freyConversationMetaLabel {
+        margin: 0;
+        min-width: fit-content;
+      }
+      .freyConversationMetaBandCellEngine .freyConversationMetaValue {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.45;
+        color: rgba(224, 214, 192, 0.8);
+      }
+      .freyConversationMetaBand .freyConversationMetaTrigger {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        color: inherit;
+      }
+      .freyConversationMetaBand .freyConversationMetaLabel {
+        margin-bottom: 4px;
+      }
+      .freyConversationMetaBand .freyConversationMetaValue {
+        margin-top: 0;
+      }
+      .freyConversationMetaBand .freyConversationMetaHint {
+        margin-top: 0;
+        font-size: 11px;
+      }
+      .freyConversationMetaBand .freyConversationMetaInline {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      @media (max-width: 980px) {
+        .freyConversationMetaBandPrimary {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 10px;
+        }
+        .freyConversationMetaBandSecondary {
+          padding-top: 6px;
+        }
+      }
+
       `}</style>
     </div>
   );
