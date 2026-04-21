@@ -427,6 +427,24 @@ export default function Reading({ temporal }) {
         </div>
       </section>
 
+            <div
+              data-reading-nav-action-cell-live="READING_NAVIGATOR_ACTION_CELL_LIVE_LAYER_V0_1"
+              data-reading-nav-action-cell="READING_NAVIGATOR_ACTION_CELL_V0_1"
+              style={{
+                marginTop: 16,
+                marginBottom: 16,
+                padding: "14px 16px",
+                borderRadius: 16,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.03)"
+              }}
+            >
+              <p style={label}>Next step</p>
+              <p style={{ fontSize: 16, lineHeight: 1.5, marginTop: 6, marginBottom: 0, opacity: 0.78 }}>
+                Choose one lens below to continue this reading.
+              </p>
+            </div>
+
       <section style={unfoldWrap}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button type="button" onClick={() => setCosmoActive(v => !v)} style={gate}>
