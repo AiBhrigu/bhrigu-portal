@@ -397,7 +397,7 @@ export default function Reading({ temporal }) {
       </section>
 
       <section style={navigatorWrap} data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1">
-        <p style={label}>Formula of the Day</p>
+        <p style={label}>Navigator Line</p>
         <div style={formulaWrap}>
           <p style={responseLabel}>Daily Navigator</p>
           <p style={formulaLine}>{navigator.formula}</p>
