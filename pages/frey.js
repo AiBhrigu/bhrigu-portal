@@ -12,6 +12,8 @@ const C1_3_COMPARE_AUTO_OPEN_MARKER = "__FREY_C1_3_COMPARE_AUTO_OPEN_V0_1__";
 const C1_3_INTERPRETATION_SPACING_MARKER = "__FREY_C1_3_INTERPRETATION_SPACING_V0_1__";
 const C1_4_BOTTOM_NAV_DETACH_MARKER = "__FREY_C1_4_BOTTOM_NAV_DETACH_V0_1__";
 const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";
+const ANCHOR_STORAGE_KEY = "frey.anchor.v1";
+const ANCHOR_STORAGE_SCHEMA_VERSION = "v1";
 
 function formatMetricLabel(label) {
   return label
@@ -444,6 +446,8 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const [exportCopied, setExportCopied] = useState(false);
   const [activeDateEditOpen, setActiveDateEditOpen] = useState(false);
   const [activeDateDraft, setActiveDateDraft] = useState(initialDate || "");
+  const [persistedAnchorDate, setPersistedAnchorDate] = useState("");
+  const [anchorStorageReady, setAnchorStorageReady] = useState(false);
   const entryTraceSeed = `Temporal Snapshot · ${/^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate()}`;
   const compareExpandRef = useRef(null);
 
@@ -455,10 +459,52 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     () => buildResponseSurface(result, date || initialDate, responseUiState, uiError),
     [result, date, initialDate, responseUiState, uiError]
   );
+  const compareActive = /^\d{4}-\d{2}-\d{2}$/.test(compareDate || "");
+  const anchorDisplayDate = compareActive
+    ? responseSurface.active_date
+    : (persistedAnchorDate || responseSurface.active_date);
   const conversationalResponse = useMemo(
     () => buildConversationalResponse(responseSurface, interpretation),
     [responseSurface, interpretation]
   );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (compareActive) {
+      setPersistedAnchorDate("");
+      setAnchorStorageReady(true);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(ANCHOR_STORAGE_KEY);
+      if (!raw) {
+        setPersistedAnchorDate("");
+        setAnchorStorageReady(true);
+        return;
+      }
+
+      const parsed = JSON.parse(raw);
+      const isValid = parsed
+        && parsed.schema_version === ANCHOR_STORAGE_SCHEMA_VERSION
+        && /^\d{4}-\d{2}-\d{2}$/.test(parsed.anchor_date || "");
+
+      if (!isValid) {
+        window.localStorage.removeItem(ANCHOR_STORAGE_KEY);
+        setPersistedAnchorDate("");
+        setAnchorStorageReady(true);
+        return;
+      }
+
+      setPersistedAnchorDate(parsed.anchor_date);
+      setAnchorStorageReady(true);
+    } catch (_error) {
+      try { window.localStorage.removeItem(ANCHOR_STORAGE_KEY); } catch (_removeError) {}
+      setPersistedAnchorDate("");
+      setAnchorStorageReady(true);
+    }
+  }, [compareActive]);
 
   function buildFreyUrl(next) {
     const params = new URLSearchParams();
@@ -558,6 +604,39 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         buildFreyUrl({ query, date: activeDateDraft, compareDate: "", timelineDates: [] })
       );
     }
+  }
+
+  function setCurrentDateAsAnchor() {
+    if (compareActive || typeof window === "undefined") return;
+    const currentDate = /^\d{4}-\d{2}-\d{2}$/.test(responseSurface.active_date || "")
+      ? responseSurface.active_date
+      : (/^\d{4}-\d{2}-\d{2}$/.test(date || "") ? date : "");
+    if (!currentDate) return;
+
+    const record = {
+      anchor_date: currentDate,
+      written_at: new Date().toISOString(),
+      schema_version: ANCHOR_STORAGE_SCHEMA_VERSION,
+      origin: "manual_set",
+    };
+
+    try {
+      window.localStorage.setItem(ANCHOR_STORAGE_KEY, JSON.stringify(record));
+      setPersistedAnchorDate(currentDate);
+      setAnchorStorageReady(true);
+    } catch (_error) {
+      setPersistedAnchorDate("");
+      setAnchorStorageReady(true);
+    }
+  }
+
+  function resetAnchorPersistence() {
+    if (compareActive || typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(ANCHOR_STORAGE_KEY);
+    } catch (_error) {}
+    setPersistedAnchorDate("");
+    setAnchorStorageReady(true);
   }
 
   const hasResult = Boolean(result);
@@ -725,10 +804,38 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     <div
                       className="freyConversationMetaBandCell freyConversationMetaBandCellAnchor"
                       data-frey-anchor-a1="__FREY_ANCHOR_A1_V0_1__"
+                      data-frey-anchor-a2="__FREY_ANCHOR_A2_SINGLE_STORAGE_V0_1__"
                     >
                       <div className="freyConversationMetaLabel">Anchor</div>
                       <div className="freyConversationMetaValue">
-                        {responseSurface.active_date ? formatHumanDate(responseSurface.active_date) : "n/a"}
+                        {anchorDisplayDate ? formatHumanDate(anchorDisplayDate) : "n/a"}
+                      </div>
+                      <div className="freyConversationMetaHint">
+                        {compareActive
+                          ? "Compare ignores anchor memory."
+                          : persistedAnchorDate
+                          ? "Quiet continuity memory"
+                          : anchorStorageReady
+                          ? "Mirroring Active Date"
+                          : "Loading continuity memory"}
+                      </div>
+                      <div className="freyConversationMetaActionRow">
+                        <button
+                          className="freyGhostButton freyConversationMetaClose"
+                          type="button"
+                          onClick={setCurrentDateAsAnchor}
+                          disabled={compareActive}
+                        >
+                          Set current
+                        </button>
+                        <button
+                          className="freyGhostButton freyConversationMetaClose"
+                          type="button"
+                          onClick={resetAnchorPersistence}
+                          disabled={compareActive || !persistedAnchorDate}
+                        >
+                          Reset
+                        </button>
                       </div>
                     </div>
                   </div>
