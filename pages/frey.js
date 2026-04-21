@@ -463,6 +463,24 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const anchorDisplayDate = compareActive
     ? responseSurface.active_date
     : (persistedAnchorDate || responseSurface.active_date);
+  const hasPersistedAnchor = Boolean(persistedAnchorDate);
+  const anchorMatchesActive = Boolean(
+    !compareActive
+    && hasPersistedAnchor
+    && /^\d{4}-\d{2}-\d{2}$/.test(responseSurface.active_date || "")
+    && persistedAnchorDate === responseSurface.active_date
+  );
+  const showSetCurrent = !compareActive && anchorStorageReady && (!hasPersistedAnchor || !anchorMatchesActive);
+  const showReset = !compareActive && anchorStorageReady && hasPersistedAnchor;
+  const anchorStatusLine = compareActive
+    ? "Compare ignores anchor memory."
+    : !anchorStorageReady
+    ? "Loading continuity memory"
+    : !hasPersistedAnchor
+    ? "Mirroring Active Date"
+    : anchorMatchesActive
+    ? "Current matches Anchor"
+    : "Quiet continuity memory";
   const conversationalResponse = useMemo(
     () => buildConversationalResponse(responseSurface, interpretation),
     [responseSurface, interpretation]
@@ -810,33 +828,32 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       <div className="freyConversationMetaValue">
                         {anchorDisplayDate ? formatHumanDate(anchorDisplayDate) : "n/a"}
                       </div>
-                      <div className="freyConversationMetaHint">
-                        {compareActive
-                          ? "Compare ignores anchor memory."
-                          : persistedAnchorDate
-                          ? "Quiet continuity memory"
-                          : anchorStorageReady
-                          ? "Mirroring Active Date"
-                          : "Loading continuity memory"}
-                      </div>
-                      <div className="freyConversationMetaActionRow">
-                        <button
-                          className="freyGhostButton freyConversationMetaClose"
-                          type="button"
-                          onClick={setCurrentDateAsAnchor}
-                          disabled={compareActive}
+                      <div className="freyConversationMetaHint">{anchorStatusLine}</div>
+                      {(showSetCurrent || showReset) && (
+                        <div
+                          className="freyConversationMetaActionRow"
+                          data-frey-anchor-a2-visibility="__FREY_ANCHOR_ACTION_VISIBILITY_POLISH_V0_2__"
                         >
-                          Set current
-                        </button>
-                        <button
-                          className="freyGhostButton freyConversationMetaClose"
-                          type="button"
-                          onClick={resetAnchorPersistence}
-                          disabled={compareActive || !persistedAnchorDate}
-                        >
-                          Reset
-                        </button>
-                      </div>
+                          {showSetCurrent && (
+                            <button
+                              className="freyGhostButton freyConversationMetaClose"
+                              type="button"
+                              onClick={setCurrentDateAsAnchor}
+                            >
+                              Set current
+                            </button>
+                          )}
+                          {showReset && (
+                            <button
+                              className="freyGhostButton freyConversationMetaClose"
+                              type="button"
+                              onClick={resetAnchorPersistence}
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 
