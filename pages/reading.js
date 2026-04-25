@@ -274,6 +274,22 @@ export default function Reading({ temporal }) {
     letterSpacing: "-0.03em"
   }
 
+  const continuityCue = {
+    display: "inline-flex",
+    alignItems: "center",
+    width: "fit-content",
+    marginBottom: 12,
+    padding: "5px 10px",
+    borderRadius: 999,
+    border: "1px solid rgba(255,255,255,0.10)",
+    background: "rgba(255,255,255,0.025)",
+    opacity: 0.54,
+    fontSize: 11,
+    lineHeight: 1,
+    letterSpacing: "0.08em",
+    textTransform: "uppercase"
+  }
+
   const navGrid = {
     display: "grid",
     gridTemplateColumns: "1fr",
@@ -442,6 +458,14 @@ export default function Reading({ temporal }) {
         data-reading-personal-mode={readingMode}
       >
         <p style={label}>Navigator Line</p>
+        {readingMode === "personal" && (
+          <span
+            data-reading-personal-continuity-cue="A5_READING_PERSONAL_VISIBLE_CUE_V0_1"
+            style={continuityCue}
+          >
+            Continuity linked
+          </span>
+        )}
         <div style={formulaWrap}>
           <p style={responseLabel}>{navigatorModeLabel}</p>
           <p style={formulaLine}>{navigator.formula}</p>
