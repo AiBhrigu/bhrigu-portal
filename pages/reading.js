@@ -1,4 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+const ANCHOR_STORAGE_KEY = "frey.anchor.v1"
+const ANCHOR_STORAGE_SCHEMA_VERSION = "v1"
 
 function band(v) {
   if (v <= 0.33) return "LOW"
@@ -152,6 +155,33 @@ export async function getServerSideProps({ query }) {
 export default function Reading({ temporal }) {
   const [cosmoActive, setCosmoActive] = useState(false)
   const [selectedIntent, setSelectedIntent] = useState(null)
+  const [readingMode, setReadingMode] = useState("general")
+
+  useEffect(() => {
+    if (!temporal?.date) {
+      setReadingMode("general")
+      return
+    }
+
+    if (typeof window === "undefined") return
+
+    let nextMode = "general"
+
+    try {
+      const raw = window.localStorage.getItem(ANCHOR_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        const isValid = parsed
+          && parsed.schema_version === ANCHOR_STORAGE_SCHEMA_VERSION
+          && /^\d{4}-\d{2}-\d{2}$/.test(parsed.anchor_date || "")
+          && parsed.anchor_date === temporal.date
+
+        if (isValid) nextMode = "personal"
+      }
+    } catch (_error) {}
+
+    setReadingMode(nextMode)
+  }, [temporal?.date])
 
   if (!temporal || !temporal.date) {
     return (
@@ -164,6 +194,15 @@ export default function Reading({ temporal }) {
 
   const cosmo = mapCosmographer(temporal)
   const navigator = mapNavigator(temporal)
+  const navigatorModeLabel = readingMode === "personal" ? "Daily Navigator · Personal" : "Daily Navigator"
+  const actionStepText = readingMode === "personal"
+    ? "Choose one lens below to continue this continuity-bound reading."
+    : "Choose one lens below to continue this reading."
+  const intentLabel = readingMode === "personal" ? "Interpret this signal in continuity" : "Interpret this signal"
+  const cosmographerLabel = readingMode === "personal" ? "Cosmographer · Personal" : "Cosmographer"
+  const placeholderText = readingMode === "personal"
+    ? "Select one bounded direction to continue the present signal in personal mode."
+    : "Select one bounded direction to read the present signal."
 
   const shell = {
     maxWidth: 820,
@@ -370,6 +409,7 @@ export default function Reading({ temporal }) {
       data-reading-surface="READING_SURFACE_MICRO_POLISH_V0_2"
       data-cosmographer-direction-gate="COSMOGRAPHER_DIRECTION_GATE_V0_1"
       data-reading-daily-navigator-foundation="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1"
+      data-reading-personal-mode-plumbing="A4_READING_PERSONAL_MODE_PLUMBING_V0_1"
       style={shell}
     >
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
@@ -396,10 +436,14 @@ export default function Reading({ temporal }) {
         <p style={metricValue}>{fmt(temporal.resonance_level, 4)}</p>
       </section>
 
-      <section style={navigatorWrap} data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1">
+      <section
+        style={navigatorWrap}
+        data-reading-navigator-mode="READING_DAILY_NAVIGATOR_FOUNDATION_V0_1"
+        data-reading-personal-mode={readingMode}
+      >
         <p style={label}>Navigator Line</p>
         <div style={formulaWrap}>
-          <p style={responseLabel}>Daily Navigator</p>
+          <p style={responseLabel}>{navigatorModeLabel}</p>
           <p style={formulaLine}>{navigator.formula}</p>
         </div>
 
@@ -427,23 +471,24 @@ export default function Reading({ temporal }) {
         </div>
       </section>
 
-            <div
-              data-reading-nav-action-cell-live="READING_NAVIGATOR_ACTION_CELL_LIVE_LAYER_V0_1"
-              data-reading-nav-action-cell="READING_NAVIGATOR_ACTION_CELL_V0_1"
-              style={{
-                marginTop: 16,
-                marginBottom: 16,
-                padding: "14px 16px",
-                borderRadius: 16,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.03)"
-              }}
-            >
-              <p style={label}>Next step</p>
-              <p style={{ fontSize: 16, lineHeight: 1.5, marginTop: 6, marginBottom: 0, opacity: 0.78 }}>
-                Choose one lens below to continue this reading.
-              </p>
-            </div>
+      <div
+        data-reading-nav-action-cell-live="READING_NAVIGATOR_ACTION_CELL_LIVE_LAYER_V0_1"
+        data-reading-nav-action-cell="READING_NAVIGATOR_ACTION_CELL_V0_1"
+        data-reading-personal-mode={readingMode}
+        style={{
+          marginTop: 16,
+          marginBottom: 16,
+          padding: "14px 16px",
+          borderRadius: 16,
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: "rgba(255,255,255,0.03)"
+        }}
+      >
+        <p style={label}>Next step</p>
+        <p style={{ fontSize: 16, lineHeight: 1.5, marginTop: 6, marginBottom: 0, opacity: 0.78 }}>
+          {actionStepText}
+        </p>
+      </div>
 
       <section style={unfoldWrap}>
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -483,8 +528,11 @@ export default function Reading({ temporal }) {
             </p>
           </div>
 
-          <div style={intentWrap}>
-            <p style={label}>Interpret this signal</p>
+          <div
+            style={intentWrap}
+            data-reading-personal-mode={readingMode}
+          >
+            <p style={label}>{intentLabel}</p>
 
             <div style={intentGrid}>
               <button type="button" onClick={() => setSelectedIntent("structure")} style={intentButton(selectedIntent === "structure")}>
@@ -501,8 +549,8 @@ export default function Reading({ temporal }) {
               </button>
             </div>
 
-            <div style={responseCell}>
-              <p style={responseLabel}>Cosmographer</p>
+            <div style={responseCell} data-reading-personal-mode={readingMode}>
+              <p style={responseLabel}>{cosmographerLabel}</p>
 
               {activeCell ? (
                 <>
@@ -512,7 +560,7 @@ export default function Reading({ temporal }) {
                   <p style={responseLine}>{activeCell.implication}</p>
                 </>
               ) : (
-                <p style={placeholder}>Select one bounded direction to read the present signal.</p>
+                <p style={placeholder}>{placeholderText}</p>
               )}
             </div>
           </div>
@@ -521,3 +569,4 @@ export default function Reading({ temporal }) {
     </main>
   )
 }
+
