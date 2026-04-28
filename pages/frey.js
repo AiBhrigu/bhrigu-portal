@@ -114,7 +114,7 @@ function buildInterpretation(result) {
 function buildConversationalResponse(responseSurface, interpretation) {
   if (!responseSurface || !interpretation) {
     return {
-      title: "Frey conversational response",
+      title: "⌬ Cosmographer · Relation Lens",
       lead: "",
       summary: "",
       operator_note: "",
@@ -473,14 +473,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   const showSetCurrent = !compareActive && anchorStorageReady && (!hasPersistedAnchor || !anchorMatchesActive);
   const showReset = !compareActive && anchorStorageReady && hasPersistedAnchor;
   const anchorStatusLine = compareActive
-    ? "Compare ignores anchor memory."
+    ? "Compare reads structural difference; anchor stays quiet."
     : !anchorStorageReady
-    ? "Loading continuity memory"
+    ? "Loading personal axis"
     : !hasPersistedAnchor
-    ? "Mirroring Active Date"
+    ? "Anchor mirrors Active Date"
     : anchorMatchesActive
-    ? "Current matches Anchor"
-    : "Quiet continuity memory";
+    ? "Active Date matches Anchor"
+    : "Quiet personal axis";
   const conversationalResponse = useMemo(
     () => buildConversationalResponse(responseSurface, interpretation),
     [responseSurface, interpretation]
@@ -755,7 +755,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               >
                 <div className="freyConversationHeader">
                   <div className="freyConversationHeaderText">
-                    <div className="freyConversationEyebrow">Frey signal reading</div>
+                    <div className="freyConversationEyebrow">⌬ Cosmographer · Relation Lens</div>
                     <div className="freyConversationTitle">{conversationalResponse.title}</div>
                   </div>
                   <div className="freyResponseState">{responseSurface.ui_state}</div>
@@ -772,7 +772,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       className="freyConversationMetaBandCell freyConversationMetaBandCellActive"
                       data-frey-compare-primary-edit-restore="__FREY_COMPARE_PRIMARY_EDIT_RESTORE_V0_1__"
                     >
-                      <div className="freyConversationMetaLabel">Active Date</div>
+                      <div className="freyConversationMetaLabel">◉ Active Date · Reading Point</div>
                       {!activeDateEditOpen ? (
                         <button
                           className="freyConversationMetaTrigger"
@@ -824,7 +824,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       data-frey-anchor-a1="__FREY_ANCHOR_A1_V0_1__"
                       data-frey-anchor-a2="__FREY_ANCHOR_A2_SINGLE_STORAGE_V0_1__"
                     >
-                      <div className="freyConversationMetaLabel">Anchor</div>
+                      <div className="freyConversationMetaLabel">⌖ Anchor · Personal Axis</div>
                       <div className="freyConversationMetaValue">
                         {anchorDisplayDate ? formatHumanDate(anchorDisplayDate) : "n/a"}
                       </div>
@@ -962,7 +962,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </section>
 
               <div className="freyResultControls">
-                <div className="freyResultControlsLabel">Expand controls</div>
+                <div className="freyResultControlsLabel">Navigation Layer</div>
                 <div
                   className="freyResultControlsHint"
                   data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__"
@@ -970,11 +970,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 >
                   {hasCompare
                     ? "Compare active · Review both dates below."
-                    : "Open Compare to enter any date and compute Cosmographic Delta."}
+                    : "Open Compare to enter any date and compute Δ Structural Difference."}
                 </div>
                 <div className="freyExpandStack">
                   <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
-                    <summary className="freyExpandSummary">Compare another date</summary>
+                    <summary className="freyExpandSummary">Δ Compare · Structural Difference</summary>
 
                     <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
                       <div className="freyCompareRow">
@@ -994,11 +994,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         <>
                           <div className="freyCompareGrid">
                             <div className="freyCompareCard">
-                              <div className="freyCompareLabel">Primary · {initialDate}</div>
+                              <div className="freyCompareLabel">◉ Active Date · {initialDate}</div>
                               <div className="freyCompareMode">{interpretation.vector}</div>
                             </div>
                             <div className="freyCompareCard">
-                              <div className="freyCompareLabel">Secondary · {initialCompareDate}</div>
+                              <div className="freyCompareLabel">Δ Compare Date · {initialCompareDate}</div>
                               <div className="freyCompareMode">{compareInterpretation.vector}</div>
                             </div>
                           </div>
@@ -1010,7 +1010,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               data-frey-delta-primary={initialDate || ""}
                               data-frey-delta-secondary={initialCompareDate || ""}
                             >
-                              <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Cosmographic Delta</div>
+                              <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Δ Structural Difference</div>
 
                               <div className="freyDeltaGrid">
                                 {deltaBlock.rows.map((row) => (
@@ -1022,7 +1022,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               </div>
 
                               <div className="freyDeltaRelation">
-                                <div className="freyDeltaRelationTag">Temporal relation mode</div>
+                                <div className="freyDeltaRelationTag">⌬ Relation mode</div>
                                 <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
                                 <div className="freyDeltaRelationText">{deltaBlock.description}</div>
                               </div>
@@ -1034,7 +1034,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
 
                   <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" data-frey-expand-state={hasTimeline ? "active" : "empty"}>
-                    <summary className="freyExpandSummary">Timeline around active date</summary>
+                    <summary className="freyExpandSummary">↔ Timeline · Nearby Movement</summary>
                     {hasTimeline ? (
                       <div className="freyTimelineBlock">
                         <div className="freyTimelineRow">
@@ -1050,7 +1050,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         </div>
                       </div>
                     ) : (
-                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">Timeline is not expanded in this run.</div>
+                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">Nearby movement appears after date-based runs.</div>
                     )}
                   </details>
                 </div>
