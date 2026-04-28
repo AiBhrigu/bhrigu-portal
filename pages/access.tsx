@@ -273,6 +273,30 @@ export default function AccessPage({
             </>
           )}
         </section>
+      {/* ACCESS_CLARITY_INFOGRAPHIC_V0_1 */}
+      <section
+        data-access-clarity-infographic="v0_1"
+        aria-label="Private Structural Reading clarity infographic"
+        style={{
+          margin: "32px 0",
+          border: "1px solid rgba(230, 196, 120, 0.22)",
+          borderRadius: "24px",
+          overflow: "hidden",
+          background: "rgba(7, 10, 18, 0.72)",
+          boxShadow: "0 24px 80px rgba(0, 0, 0, 0.28)",
+        }}
+      >
+        <img
+          src="/access-clarity-infographic-v0-1.svg"
+          alt="Private Structural Reading access flow: what to send, what happens next, what you receive, and what this is not."
+          style={{
+            display: "block",
+            width: "100%",
+            height: "auto",
+          }}
+        />
+      </section>
+
 
         <style jsx>{`
           .accessPage {
