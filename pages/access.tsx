@@ -273,9 +273,9 @@ export default function AccessPage({
             </>
           )}
         </section>
-      {/* ACCESS_CLARITY_INFOGRAPHIC_V0_1 */}
+      {/* ACCESS_CLARITY_INFOGRAPHIC_DEEPTECH_V0_2 */}
       <section
-        data-access-clarity-infographic="v0_1"
+        data-access-clarity-infographic="deeptech_v0_2"
         aria-label="Private Structural Reading clarity infographic"
         style={{
           margin: "32px 0",
@@ -287,8 +287,8 @@ export default function AccessPage({
         }}
       >
         <img
-          src="/access-clarity-infographic-v0-1.svg"
-          alt="Private Structural Reading access flow: what to send, what happens next, what you receive, and what this is not."
+          src="/access-clarity-infographic-deeptech-v0-2.png"
+          alt="Private Structural Reading access clarity infographic: what to send, what happens next, what you receive, and what this is not."
           style={{
             display: "block",
             width: "100%",
