@@ -859,20 +859,82 @@ function IntroBlock() {
         The main path below is structured intake. A faster reviewed entry path can exist for mature requests, but the page keeps one nature: serious guided entry.
       </p>
 
-      <p className="tiny" data-access-pdf-sample-copy="ACCESS_USER_EXAMPLE_PDF_V0_1">
-        Private Structural Reading is manual and reviewed. View a one-page sample before submitting a request.
-      </p>
-
-      <div className="actions" data-access-pdf-sample="ACCESS_USER_EXAMPLE_PDF_V0_1">
-        <a
-          href="/access-private-structural-reading-sample-v0-1.pdf"
-          className="btnSecondary"
-          target="_blank"
-          rel="noopener noreferrer"
+      <div
+        data-access-pdf-sample="ACCESS_USER_EXAMPLE_PDF_V0_6"
+        style={{
+          display: "grid",
+          gap: 14,
+          padding: "18px 20px",
+          border: "1px solid rgba(230, 196, 120, 0.22)",
+          borderRadius: 20,
+          background: "linear-gradient(180deg, rgba(230,196,120,0.08), rgba(255,255,255,0.03))",
+        }}
+      >
+        <p
+          data-access-pdf-sample-copy="ACCESS_USER_EXAMPLE_PDF_V0_6"
+          style={{
+            margin: 0,
+            fontSize: 13,
+            lineHeight: 1.62,
+            color: "rgba(234,241,247,0.72)",
+          }}
         >
-          View sample PDF
-        </a>
-        <Link href="/frey" className="btnGhost">Open Frey first</Link>
+          Private Structural Reading is manual and reviewed. View a one-page sample before submitting a request.
+        </p>
+
+        <div
+          data-access-pdf-actions="ACCESS_USER_EXAMPLE_PDF_ACTIONS_V0_6"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <a
+            href="/access-private-structural-reading-sample-v0-1.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-access-pdf-link="ACCESS_USER_EXAMPLE_PDF_V0_6"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 44,
+              padding: "10px 18px",
+              borderRadius: 999,
+              border: "1px solid rgba(230,196,120,0.42)",
+              background: "rgba(230,196,120,0.08)",
+              color: "#e0aa57",
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+            }}
+          >
+            View sample PDF
+          </a>
+          <Link
+            href="/frey"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 44,
+              padding: "10px 18px",
+              borderRadius: 999,
+              border: "1px solid rgba(255,255,255,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              color: "rgba(234,241,247,0.82)",
+              textDecoration: "none",
+              fontSize: 14,
+              fontWeight: 600,
+              letterSpacing: "0.02em",
+            }}
+          >
+            Open Frey first
+          </Link>
+        </div>
       </div>
     </section>
   );
@@ -924,12 +986,41 @@ function FormProgress(props: {
   const active = props.formState === "success" ? "submitted" : props.currentStep;
 
   return (
-    <nav className="progress" aria-label="Request progress">
-      {items.map((item) => (
-        <span key={item} className={`progressStep ${active === item ? "progressStepActive" : ""}`}>
-          {labelForStep(item)}
-        </span>
-      ))}
+    <nav
+      className="progress"
+      aria-label="Request progress"
+      data-access-progress="ACCESS_PROGRESS_INLINE_LAYOUT_V0_6"
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 8,
+        margin: "22px 0",
+      }}
+    >
+      {items.map((item) => {
+        const isActive = active === item;
+        return (
+          <span
+            key={item}
+            className={`progressStep ${isActive ? "progressStepActive" : ""}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "8px 12px",
+              borderRadius: 999,
+              border: isActive
+                ? "1px solid rgba(255,255,255,0.2)"
+                : "1px solid rgba(255,255,255,0.1)",
+              color: isActive ? "#eaf1f7" : "rgba(234,241,247,0.6)",
+              fontSize: 12,
+              background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
+            }}
+          >
+            {labelForStep(item)}
+          </span>
+        );
+      })}
     </nav>
   );
 }
