@@ -859,7 +859,19 @@ function IntroBlock() {
         The main path below is structured intake. A faster reviewed entry path can exist for mature requests, but the page keeps one nature: serious guided entry.
       </p>
 
-      <div className="actions">
+      <p className="tiny" data-access-pdf-sample-copy="ACCESS_USER_EXAMPLE_PDF_V0_1">
+        Private Structural Reading is manual and reviewed. View a one-page sample before submitting a request.
+      </p>
+
+      <div className="actions" data-access-pdf-sample="ACCESS_USER_EXAMPLE_PDF_V0_1">
+        <a
+          href="/access-private-structural-reading-sample-v0-1.pdf"
+          className="btnSecondary"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          View sample PDF
+        </a>
         <Link href="/frey" className="btnGhost">Open Frey first</Link>
       </div>
     </section>
