@@ -1,6 +1,6 @@
 import Head from 'next/head';
 
-const downloads = [
+const coreDownloads = [
   {
     label: 'EN Brief Publication v4',
     href: '/publications/frey/bhrigu-frey-en-brief-v4.pdf',
@@ -12,6 +12,25 @@ const downloads = [
   {
     label: 'RU v2 Aligned Text',
     href: '/publications/frey/bhrigu-frey-ru-v2-aligned.pdf',
+  },
+];
+
+const posterDownloads = [
+  {
+    label: 'EN Approved Poster Pack v5 - Visual Guide PDF',
+    href: '/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf',
+  },
+  {
+    label: 'EN Approved Poster Pack v5 - ZIP',
+    href: '/publications/frey/bhrigu-frey-en-approved-poster-pack-v5.zip',
+  },
+  {
+    label: 'EN Approved Poster Pack v5 - SHA256',
+    href: '/publications/frey/bhrigu-frey-en-approved-poster-pack-v5.sha256',
+  },
+  {
+    label: 'EN Approved Poster Pack v5 - Report',
+    href: '/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-report.md',
   },
 ];
 
@@ -56,7 +75,12 @@ export default function FreyGuidePage() {
         />
       </Head>
 
-      <main className="freyGuide" data-frey-guide="FREY_GUIDE_PUBLIC_ROUTE_V0_1">
+      <main
+        className="freyGuide"
+        data-frey-guide="FREY_GUIDE_PUBLIC_ROUTE_V0_1"
+        data-frey-downloads="FREY_GUIDE_APPROVED_DOWNLOADS_V0_1"
+        data-frey-poster-pack="FREY_GUIDE_APPROVED_POSTER_PACK_V5"
+      >
         <section className="hero">
           <p className="eyebrow">BHRIGU / FREY GUIDE</p>
           <h1>A guide to structured temporal reading</h1>
@@ -119,15 +143,32 @@ export default function FreyGuidePage() {
           </p>
         </section>
 
-        <section className="panel downloadsPanel" data-frey-downloads="FREY_GUIDE_APPROVED_DOWNLOADS_V0_1">
+        <section className="panel downloadsPanel">
           <p className="eyebrow">PUBLICATION MATERIALS</p>
           <h2>Download the approved guide materials</h2>
           <p>
-            These files are the visually approved repaired public pack: English
-            brief, English full article, and Russian v2 aligned text.
+            These files preserve the public-safe Frey publication layer:
+            English brief, English full article, and Russian v2 aligned text.
           </p>
           <div className="downloads">
-            {downloads.map((item) => (
+            {coreDownloads.map((item) => (
+              <a className="download" href={item.href} key={item.href}>
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="panel downloadsPanel">
+          <p className="eyebrow">APPROVED VISUAL PACK</p>
+          <h2>Poster Pack v5</h2>
+          <p>
+            This approved visual guide pack is attached as a public reference
+            asset after visual approval. Technical proofs, broken article
+            layouts, old mixed packs, and route-drift versions are excluded.
+          </p>
+          <div className="downloads">
+            {posterDownloads.map((item) => (
               <a className="download" href={item.href} key={item.href}>
                 {item.label}
               </a>
