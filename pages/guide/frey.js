@@ -1,6 +1,19 @@
 import Head from 'next/head';
 
-const downloads = [];
+const downloads = [
+  {
+    label: 'EN Brief Publication v4',
+    href: '/publications/frey/bhrigu-frey-en-brief-v4.pdf',
+  },
+  {
+    label: 'EN Full Article v4',
+    href: '/publications/frey/bhrigu-frey-en-full-article-v4.pdf',
+  },
+  {
+    label: 'RU v2 Aligned Text',
+    href: '/publications/frey/bhrigu-frey-ru-v2-aligned.pdf',
+  },
+];
 
 const routeNodes = [
   {
@@ -106,23 +119,20 @@ export default function FreyGuidePage() {
           </p>
         </section>
 
-        <section className="panel">
-          <h2>Publication assets</h2>
-          {downloads.length > 0 ? (
-            <div className="downloads">
-              {downloads.map((item) => (
-                <a className="download" href={item.href} key={item.href}>
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          ) : (
-            <p>
-              PDF assets are not attached on this route yet. They can be added
-              after source files are placed in the repository with passing
-              checksums.
-            </p>
-          )}
+        <section className="panel downloadsPanel" data-frey-downloads="FREY_GUIDE_APPROVED_DOWNLOADS_V0_1">
+          <p className="eyebrow">PUBLICATION MATERIALS</p>
+          <h2>Download the approved guide materials</h2>
+          <p>
+            These files are the visually approved repaired public pack: English
+            brief, English full article, and Russian v2 aligned text.
+          </p>
+          <div className="downloads">
+            {downloads.map((item) => (
+              <a className="download" href={item.href} key={item.href}>
+                {item.label}
+              </a>
+            ))}
+          </div>
         </section>
 
         <section className="boundary">
@@ -277,6 +287,16 @@ export default function FreyGuidePage() {
           padding: 10px 14px;
           background: rgba(226, 180, 92, 0.08);
           font-size: 0.92rem;
+        }
+
+        .downloadsPanel {
+          border-color: rgba(226, 180, 92, 0.34);
+        }
+
+        .download {
+          display: inline-flex;
+          align-items: center;
+          min-height: 44px;
         }
 
         .boundary {
