@@ -1,27 +1,6 @@
 import Head from 'next/head';
 
-const downloads = [
-  {
-    "label": "EN Brief Publication v4",
-    "href": "/publications/frey/bhrigu-frey-en-brief-v4.pdf"
-  },
-  {
-    "label": "EN Full Article v4",
-    "href": "/publications/frey/bhrigu-frey-en-full-article-v4.pdf"
-  },
-  {
-    "label": "RU v2 Aligned Text",
-    "href": "/publications/frey/bhrigu-frey-ru-v2-aligned.pdf"
-  },
-  {
-    "label": "EN Visual Guide v4",
-    "href": "/publications/frey/bhrigu-frey-en-visual-guide-v4.pdf"
-  },
-  {
-    "label": "EN Publication Report v4",
-    "href": "/publications/frey/bhrigu-frey-en-publication-report-v4.pdf"
-  }
-];
+const downloads = [];
 
 const routeNodes = [
   {
@@ -64,7 +43,7 @@ export default function FreyGuidePage() {
         />
       </Head>
 
-      <main className="freyGuide" data-frey-guide="FREY_GUIDE_PUBLIC_ROUTE_V0_1" data-frey-downloads="FREY_GUIDE_DOWNLOADS_V0_1">
+      <main className="freyGuide" data-frey-guide="FREY_GUIDE_PUBLIC_ROUTE_V0_1">
         <section className="hero">
           <p className="eyebrow">BHRIGU / FREY GUIDE</p>
           <h1>A guide to structured temporal reading</h1>
@@ -127,21 +106,23 @@ export default function FreyGuidePage() {
           </p>
         </section>
 
-        <section className="panel downloadsPanel">
-          <p className="eyebrow">PUBLICATION MATERIALS</p>
-          <h2>Download the guide materials</h2>
-          <p>
-            These files preserve the current public-safe Frey publication layer:
-            English overview, full English article, and the Russian v2 text
-            aligned to the same route canon.
-          </p>
-          <div className="downloads">
-            {downloads.map((item) => (
-              <a className="download" href={item.href} key={item.href}>
-                {item.label}
-              </a>
-            ))}
-          </div>
+        <section className="panel">
+          <h2>Publication assets</h2>
+          {downloads.length > 0 ? (
+            <div className="downloads">
+              {downloads.map((item) => (
+                <a className="download" href={item.href} key={item.href}>
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p>
+              PDF assets are not attached on this route yet. They can be added
+              after source files are placed in the repository with passing
+              checksums.
+            </p>
+          )}
         </section>
 
         <section className="boundary">
@@ -296,16 +277,6 @@ export default function FreyGuidePage() {
           padding: 10px 14px;
           background: rgba(226, 180, 92, 0.08);
           font-size: 0.92rem;
-        }
-
-        .downloadsPanel {
-          border-color: rgba(226, 180, 92, 0.34);
-        }
-
-        .download {
-          display: inline-flex;
-          align-items: center;
-          min-height: 44px;
         }
 
         .boundary {
