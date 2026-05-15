@@ -186,6 +186,42 @@ export default function Reading({ temporal }) {
   if (!temporal || !temporal.date) {
     return (
       <main style={{ maxWidth: 820, margin: "80px auto", padding: "0 24px 84px", fontFamily: "system-ui" }}>
+        <section
+          data-frey-guide-link="FREY_GUIDE_LINK_PLACEMENT_V0_3"
+          style={{
+            width: 'min(1040px, 100%)',
+            margin: '18px auto',
+            border: '1px solid rgba(226, 180, 92, 0.28)',
+            borderRadius: '20px',
+            padding: '16px 18px',
+            background: 'rgba(9, 12, 20, 0.68)',
+            boxShadow: '0 18px 42px rgba(0, 0, 0, 0.18)',
+          }}
+        >
+          <p
+            style={{
+              margin: '0 0 8px',
+              color: '#d8ad62',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Guide
+          </p>
+          <a
+            href="/guide/frey"
+            style={{
+              color: '#f7d08a',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            Learn how to read a Frey response.
+          </a>
+        </section>
+
         <h1>Frey Temporal Reading</h1>
         <p>Temporal engine unavailable.</p>
       </main>
@@ -428,6 +464,42 @@ export default function Reading({ temporal }) {
       data-reading-personal-mode-plumbing="A4_READING_PERSONAL_MODE_PLUMBING_V0_1"
       style={shell}
     >
+        <section
+          data-frey-guide-link="FREY_GUIDE_LINK_PLACEMENT_V0_3"
+          style={{
+            width: 'min(1040px, 100%)',
+            margin: '18px auto',
+            border: '1px solid rgba(226, 180, 92, 0.28)',
+            borderRadius: '20px',
+            padding: '16px 18px',
+            background: 'rgba(9, 12, 20, 0.68)',
+            boxShadow: '0 18px 42px rgba(0, 0, 0, 0.18)',
+          }}
+        >
+          <p
+            style={{
+              margin: '0 0 8px',
+              color: '#d8ad62',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              letterSpacing: '0.16em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Guide
+          </p>
+          <a
+            href="/guide/frey"
+            style={{
+              color: '#f7d08a',
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            Learn how to read a Frey response.
+          </a>
+        </section>
+
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
         Frey Temporal Reading
       </h1>
