@@ -676,41 +676,6 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   return (
     <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
-        <section
-          data-frey-guide-link="FREY_GUIDE_LINK_PLACEMENT_V0_3"
-          style={{
-            width: 'min(1040px, 100%)',
-            margin: '18px auto',
-            border: '1px solid rgba(226, 180, 92, 0.28)',
-            borderRadius: '20px',
-            padding: '16px 18px',
-            background: 'rgba(9, 12, 20, 0.68)',
-            boxShadow: '0 18px 42px rgba(0, 0, 0, 0.18)',
-          }}
-        >
-          <p
-            style={{
-              margin: '0 0 8px',
-              color: '#d8ad62',
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-            }}
-          >
-            Guide
-          </p>
-          <a
-            href="/guide/frey"
-            style={{
-              color: '#f7d08a',
-              fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            New to Frey? Read the guide.
-          </a>
-        </section>
 
       {!hasResult && !entryOpen ? <div className="freyAxis" style={{ opacity: 0.18 }} /> : null}
       <div
