@@ -157,6 +157,27 @@ export default function AccessPage({
           <HeaderBlock />
           <IntroBlock />
           <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
+            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">
+              <p className="sectionTitle" id="crypto-astro-research-surface">
+                Crypto-Astro Research Surface
+              </p>
+              <p className="muted">
+                Crypto-Astro is currently available as a public-safe static proof surface. It presents the reviewed boundary of the Crypto-Astro contour: proof state, research framing, CCI bridge language, and static surface context.
+              </p>
+              <p className="muted">
+                This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
+              </p>
+              <div className="actions">
+                <a
+                  className="btnSecondary"
+                  href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Open Crypto-Astro proof route
+                </a>
+              </div>
+            </section>
 
           <AccessNotices
             draftSavedVisible={notices.draftSavedVisible}
