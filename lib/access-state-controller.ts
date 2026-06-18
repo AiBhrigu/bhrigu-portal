@@ -312,7 +312,7 @@ export function useAccessStateController(): AccessStateController {
 
   const [notices, setNotices] = useState<AccessUiNoticesState>({
     draftSavedVisible: false,
-    isOffline: typeof navigator !== "undefined" ? !navigator.onLine : false,
+    isOffline: false,
     justRestored: false,
   });
 
@@ -474,6 +474,12 @@ export function useAccessStateController(): AccessStateController {
 
       persistDraft(submission, currentStep, submitAttempt);
     };
+    setNotices((prev) => ({
+      ...prev,
+      isOffline: !window.navigator.onLine,
+      justRestored: false,
+    }));
+
 
     window.addEventListener("offline", onOffline);
     window.addEventListener("online", onOnline);

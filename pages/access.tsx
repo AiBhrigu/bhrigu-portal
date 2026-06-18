@@ -177,6 +177,21 @@ export default function AccessPage({
                   Open Crypto-Astro proof route
                 </a>
               </div>
+
+              <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
+                <div className="eyebrow">Request a Crypto-Astro Snapshot</div>
+                <div>
+                  Submit a manual or synthetic snapshot context: asset / ticker, UTC snapshot time,
+                  observation window, research focus, output language.
+                </div>
+                <div>
+                  Research context only: no trading signal, no prediction, no financial advice,
+                  no live market feed, no wallet or exchange connection.
+                </div>
+                <div>
+                  Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
+                </div>
+              </div>
             </section>
 
           <AccessNotices
@@ -570,6 +585,34 @@ export default function AccessPage({
             padding-left: 20px;
             padding-right: 20px;
           }
+          .accessBridgeNote {
+            margin-top: 18px;
+            padding: 18px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028));
+            color: rgba(234,241,247,0.78);
+          }
+
+          .accessBridgeNote .eyebrow {
+            margin: 0 0 10px;
+            color: #d8ad62;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+          }
+
+          .accessBridgeNote div {
+            margin: 0;
+            font-size: 13px;
+            line-height: 1.62;
+          }
+
+          .accessBridgeNote div + div {
+            margin-top: 10px;
+          }
+
 
           .btnPrimary:hover,
           .btnSecondary:hover,
