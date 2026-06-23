@@ -192,6 +192,23 @@ export default function AccessPage({
                   Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
                 </div>
               </div>
+
+              <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
+                <div className="eyebrow">Crypto-Astro Local Proof Base</div>
+                <div>
+                  Automation-backed local proof loops are now complete for BTC, ETH, and SOL sample corridors.
+                </div>
+                <div>
+                  Each corridor passes through operator job creation, asset-aware analytic payload generation,
+                  safe-summary review, and manual gated delivery preparation.
+                </div>
+                <div>
+                  This is not a live automated client service, trading signal, price target, or financial advice.
+                </div>
+                <div>
+                  Access remains operator-gated while the production surface is prepared.
+                </div>
+              </div>
             </section>
 
           <AccessNotices
