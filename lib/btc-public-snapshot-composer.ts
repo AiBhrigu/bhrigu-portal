@@ -13,7 +13,24 @@ import {
 } from "./btc-public-output-contract";
 import type { BtcSourceBundle } from "./btc-public-static-source";
 
-const UNSAFE_TRADING_PATTERN = /\b(buy|sell|hold|entry|exit|leverage|long|short|price\s*target|guarantee(?:d)?|profit|trade\s+now|should\s+i)\b/i;
+const ACTIONABLE_TRADING_PATTERNS: readonly RegExp[] = [
+  /\bshould\s+i\s+(?:buy|sell|hold|trade)\b/i,
+  /\bshould\s+i\s+(?:go|open)\s+(?:long|short)\b/i,
+  /\b(?:tell|advise|recommend)\s+me\s+(?:when|whether)\s+(?:to\s+)?(?:buy|sell|hold|enter|exit|trade)\b/i,
+  /\b(?:give|provide)\s+(?:me\s+)?(?:an?\s+)?(?:entry(?:\s+and\s+exit)?|exit|trade|price\s*target|trading\s+strategy)\b/i,
+  /\bwhat\s+leverage\s+should\s+i\s+use\b/i,
+  /\b(?:guaranteed?|risk[-\s]?free)\s+(?:profit|return|strategy)\b/i,
+  /\bwhat\s+price\s*target\s+should\s+i\s+trade\b/i,
+  /\btell\s+me\s+exactly\s+what\s+trade\s+to\s+make\b/i,
+  /^(?:please\s+)?(?:buy|sell|hold)\b/i,
+  /^(?:please\s+)?(?:go|open)\s+(?:long|short)\b/i,
+  /\b(?:best|exact)\s+(?:entry|exit|trade)\b/i,
+  /\b(?:entry|exit)\s+(?:point|level|price)\b/i,
+];
+
+export function requiresTradingReframe(question: string): boolean {
+  return ACTIONABLE_TRADING_PATTERNS.some((pattern) => pattern.test(question));
+}
 const LENS_RULES: Array<[BtcQuestionLens, RegExp]> = [
   ["market_gravity", /\b(dominance|gravity|bitcoin\s+share|btc\s+share|market\s+cap\s+rank)\b/i],
   ["market_structure", /\b(structure|regime|liquidity|breadth|rotation|stablecoin|tvl|volume)\b/i],
@@ -112,8 +129,8 @@ function temporalFromStatic(bundle: BtcSourceBundle): TemporalContextResult {
     metrics: null,
     analysis: null,
     limitation: state.trim().length > 0
-      ? "The published temporal lane is validated as a bounded state, but no numeric aspect values are published in this snapshot."
-      : "No bounded temporal context is available for this request.",
+      ? "Approved bounded static temporal state from the published snapshot; numeric temporal metrics are unavailable for this request."
+      : "Bounded temporal context is unavailable for this request.",
   };
 }
 
@@ -147,7 +164,7 @@ export function sanitizeTemporalResult(value: unknown): TemporalContextResult | 
     state: "available_bounded",
     metrics: metrics as TemporalMetrics,
     analysis,
-    limitation: "Bounded deterministic cosmographic metric only; not scientific ephemerides, predictive market timing, or a trading signal.",
+    limitation: "Approved bounded static temporal context; no live ephemerides feed and no predictive timing claim.",
   };
 }
 
@@ -190,11 +207,11 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
     return { ok: false, code: "invalid_input", message: "Date must be a real UTC date in YYYY-MM-DD format." };
   }
 
-  const safeReframed = UNSAFE_TRADING_PATTERN.test(compact);
+  const safeReframed = requiresTradingReframe(compact);
   const normalized = safeReframed
     ? "Explain what changed in the BTC field, why it matters, and what conditions to watch, without trading instructions."
     : compact;
-  const lens = classifyQuestionLens(safeReframed ? compact.replace(UNSAFE_TRADING_PATTERN, "") : compact);
+  const lens = classifyQuestionLens(compact);
 
   let temporal = temporalFromStatic(bundle);
   try {
@@ -280,7 +297,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
         ? "The verified source is older than 72 hours; strong current-state language is suppressed."
         : "The verified source is within the 72-hour product window.",
       question_limit: safeReframed
-        ? "The original question requested trading or outcome guidance and was reframed to observable context."
+        ? "The original question requested actionable trading or outcome guidance and was converted to observable context."
         : "The field read is limited to the selected deterministic question lens.",
       temporal_limit: temporal.limitation,
       source_limit: "Static reviewed public artifacts only; no live adapter and no provider call during the user request.",

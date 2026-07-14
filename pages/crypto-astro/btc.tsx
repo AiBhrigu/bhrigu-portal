@@ -47,15 +47,14 @@ function numericPressure(result: BtcPublicSnapshot): string {
 export default function BtcSnapshotPage({ result, failure, initialQuestion, initialDate }: PageProps) {
   return <>
     <Head>
-      <title>BHRIGU BTC Field Read</title>
+      <title>BTC Field Read</title>
       <meta name="description" content="One coherent, source-bound Cosmographer read of the current BTC market and bounded temporal field." />
     </Head>
     <main className="page">
       <section className="hero module">
-        <p className="eyebrow">BHRIGU · BTC public field read</p>
-        <h1>BHRIGU BTC Field Read</h1>
-        <p className="lead">Ask one BTC question. BHRIGU combines reviewed market facts, bounded temporal context, source proof, and Cosmographer navigation into one coherent read.</p>
-        <p className="boundary">Read-only context · no live feed · no trading signal · no price forecast · private or identifying input is not required.</p>
+        <p className="eyebrow">Crypto-Astro · first live corridor</p>
+        <h1>BTC Field Read</h1>
+        <p className="lead">Ask one BTC question. This source-bound corridor combines reviewed market facts, approved bounded temporal context, source proof, and Cosmographer navigation into one coherent read.</p>
       </section>
 
       <section className="module" aria-labelledby="btc-question-title">
@@ -84,7 +83,7 @@ export default function BtcSnapshotPage({ result, failure, initialQuestion, init
       {result && <>
         <section className="module result" aria-labelledby="result-title">
           <div className="resultHead"><div><p className="eyebrow">{result.asset.symbol} · {result.market_snapshot.freshness}</p><h2 id="result-title">One coherent Cosmographer read</h2></div><span>{result.request_id}</span></div>
-          {result.question.safe_reframed && <p className="reframe">Trading instruction removed. The question was reframed to observable public context.</p>}
+          {result.question.safe_reframed && <p className="reframe">Direct trading guidance was removed. The question was converted to observable BTC field context.</p>}
           <p className="question"><strong>Question lens:</strong> {result.question.lens}<br />{result.question.normalized}</p>
 
           <div className="readFlow">
