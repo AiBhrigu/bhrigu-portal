@@ -176,6 +176,9 @@ export default function AccessPage({
                 >
                   Open Crypto-Astro proof route
                 </a>
+                <Link className="btnSecondary" href="/crypto-astro/btc">
+                  Run BTC Snapshot
+                </Link>
               </div>
 
               <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
