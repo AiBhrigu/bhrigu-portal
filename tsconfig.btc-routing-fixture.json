@@ -17,6 +17,7 @@
     "lib/btc-narrative-template-catalog.ts",
     "lib/btc-deterministic-narrative-router.ts",
     "lib/btc-watch-condition-router.ts",
+    "lib/btc-public-display-labels.ts",
     "tests/btc-routing-fixture.ts"
   ]
 }
