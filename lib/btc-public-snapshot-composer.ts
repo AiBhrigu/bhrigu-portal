@@ -17,6 +17,7 @@ import {
   routeBtcDeterministicNarrative,
   type BtcNarrativeFacts,
 } from "./btc-deterministic-narrative-router";
+import { routeBtcWatchConditions } from "./btc-watch-condition-router";
 import type { BtcSourceBundle } from "./btc-public-static-source";
 
 const ACTIONABLE_TRADING_PATTERNS: readonly RegExp[] = [
@@ -175,29 +176,6 @@ export function sanitizeTemporalResult(value: unknown): TemporalContextResult | 
   };
 }
 
-function buildWatchConditions(lens: BtcQuestionLens, bundle: BtcSourceBundle): string[] {
-  const snapshot = bundle.snapshot;
-  const market = bundle.marketField.vectors.M_market;
-  const dominance = snapshot.market_reality.btc_dominance_pct;
-  const watches = [
-    `Watch BTC dominance at ${dominance.toFixed(2)}% (${dominanceBand(dominance)} gravity band); movement away from this band would change the market-gravity read.`,
-    `Watch liquidity state ${snapshot.liquidity_tvl.liquidity_context_state} beside stablecoin share ${snapshot.market_reality.stablecoin_share_pct.toFixed(2)}%; together they frame available market participation.`,
-  ];
-  if (lens === "market_structure" || lens === "general") {
-    watches.push(`Watch alt breadth at ${snapshot.altcoin_rotation.alt_breadth_24h_pct.toFixed(1)}% across the stated top-250 universe as the relative participation condition.`);
-  }
-  if (lens === "market_gravity") {
-    watches.push(`Watch whether BTC remains market rank ${snapshot.public_samples.assets.BTC.market_cap_rank} in the published sample.`);
-  }
-  if (lens === "pressure_context" || lens === "temporal_context") {
-    watches.push("Keep bounded temporal pressure separate from trading timing, entries, exits, and price instructions.");
-  }
-  if (market.liquidity_health && watches.length < 4) {
-    watches.push(`Watch the published market-vector liquidity health state: ${market.liquidity_health}.`);
-  }
-  return watches.slice(0, 4);
-}
-
 export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: ComposeInput): Promise<ComposeResult> {
   const raw = typeof input.question === "string" ? input.question : "";
   const compact = normalizeQuestion(raw);
@@ -349,6 +327,26 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
     return { ok: false, code: "internal_composition_error", message: "Deterministic narrative routing failed the public contract." };
   }
 
+  const watched = routeBtcWatchConditions({
+    schema_version: "btc_watch_condition_router_input_v0_1",
+    watch_profile: geometry.watch_profile,
+    dominance_pct: btcGravity.dominance_pct,
+    dominance_band: btcGravity.dominance_band,
+    market_cap_rank: btcGravity.market_cap_rank,
+    regime_label: marketStructure.regime_label,
+    liquidity_state: marketStructure.liquidity_state,
+    stablecoin_share_pct: marketStructure.stablecoin_share_pct,
+    alt_breadth_24h_pct: marketStructure.alt_breadth_24h_pct,
+    pressure_label: aspectPressure.label,
+    harmonic_tension: aspectPressure.harmonic_tension,
+    temporal_state: temporalContext.state,
+    observation_date: temporalContext.observation_date,
+    freshness: marketSnapshot.freshness,
+  });
+  if (watched.ok === false) {
+    return { ok: false, code: "internal_composition_error", message: "Deterministic watch-condition routing failed the public contract." };
+  }
+
   const value: BtcPublicSnapshot = {
     request_id: requestId,
     asset: BTC_ASSET,
@@ -359,7 +357,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
     market_structure: marketStructure,
     aspect_pressure: aspectPressure,
     temporal_context: temporalContext,
-    watch_conditions: buildWatchConditions(lens, bundle),
+    watch_conditions: [...watched.value],
     cosmographer_read: routed.value,
     source_proof: {
       schema_version: proof.schema_version,
