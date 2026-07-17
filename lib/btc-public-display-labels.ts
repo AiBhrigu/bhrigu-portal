@@ -154,3 +154,18 @@ export function formatBtcWatchConditionForDisplay(value: unknown): string {
   for (const [raw, label] of replacements) formatted = formatted.split(raw).join(label);
   return /\b[a-z]+(?:_[a-z0-9]+)+\b/.test(formatted) ? BTC_PUBLIC_DISPLAY_FALLBACK : formatted;
 }
+
+export function formatBtcNarrativeReadForDisplay(value: unknown): string {
+  if (typeof value !== "string" || value.trim().length === 0 || value.length > 1600) return BTC_PUBLIC_DISPLAY_FALLBACK;
+  const replacements: ReadonlyArray<readonly [string, string]> = [
+    ["the temporal state is static_state_only", "the temporal state is Static temporal context only"],
+    ["the temporal state is available_bounded", "the temporal state is Bounded temporal metrics available"],
+    ["the temporal state is unavailable", "the temporal context is unavailable"],
+    ["Temporal state static_state_only", "Temporal state Static temporal context only"],
+    ["Temporal state available_bounded", "Temporal state Bounded temporal metrics available"],
+    ["Temporal state unavailable", "Temporal context unavailable"],
+  ];
+  let formatted = value;
+  for (const [raw, label] of replacements) formatted = formatted.split(raw).join(label);
+  return /\b[a-z]+(?:_[a-z0-9]+)+\b/.test(formatted) ? BTC_PUBLIC_DISPLAY_FALLBACK : formatted;
+}
