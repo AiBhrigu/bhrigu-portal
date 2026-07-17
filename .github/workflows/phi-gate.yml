@@ -41,6 +41,9 @@ jobs:
           fi
           echo "OK"
 
+      - name: Verify BTC deterministic routing
+        run: npm run verify:btc-routing
+
       - name: Build
         run: npm run build
 
