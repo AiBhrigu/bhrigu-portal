@@ -6,6 +6,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "types": [],
     "rootDir": ".",
     "outDir": ".tmp/btc-routing-fixture",
     "noEmitOnError": true
