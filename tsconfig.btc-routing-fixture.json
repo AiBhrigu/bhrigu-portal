@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": ".",
+    "outDir": ".tmp/btc-routing-fixture",
+    "noEmitOnError": true
+  },
+  "include": [
+    "lib/btc-public-output-contract.ts",
+    "lib/btc-question-geometry.ts",
+    "lib/btc-narrative-template-catalog.ts",
+    "lib/btc-deterministic-narrative-router.ts",
+    "lib/btc-watch-condition-router.ts",
+    "tests/btc-routing-fixture.ts"
+  ]
+}
