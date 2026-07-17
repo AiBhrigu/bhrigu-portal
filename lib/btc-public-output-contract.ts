@@ -1,10 +1,20 @@
+import {
+  guardBtcQuestionGeometry,
+  type BtcQuestionGeometry,
+} from "./btc-question-geometry";
+import {
+  guardBtcNarrativeRouterOutput,
+  type BtcNarrativeRouterOutput,
+  type BtcNarrativeSectionFactPayload,
+} from "./btc-deterministic-narrative-router";
+
 export const BTC_PUBLIC_SCHEMA = "bhrigu_btc_public_snapshot_v0_1" as const;
 export const BTC_ASSET = { id: "bitcoin", symbol: "BTC", label: "Bitcoin" } as const;
 
 export const BTC_PUBLIC_REQUIRED_FIELDS = [
   "request_id", "asset", "question", "observation_time_utc", "market_snapshot",
   "btc_gravity", "market_structure", "aspect_pressure", "temporal_context",
-  "watch_conditions", "source_proof", "uncertainty", "boundary",
+  "watch_conditions", "cosmographer_read", "source_proof", "uncertainty", "boundary",
   "generated_at_utc", "deeper_access_route",
 ] as const;
 
@@ -79,6 +89,7 @@ export type BtcPublicSnapshot = {
     normalized: string;
     lens: BtcQuestionLens;
     safe_reframed: boolean;
+    geometry: BtcQuestionGeometry;
   };
   observation_time_utc: string;
   market_snapshot: {
@@ -124,6 +135,7 @@ export type BtcPublicSnapshot = {
     limitation: string;
   };
   watch_conditions: string[];
+  cosmographer_read: BtcNarrativeRouterOutput;
   source_proof: {
     schema_version: "crypto_astro_snapshot_proof_public_v0_1";
     source_mode: "static_public_snapshot";
@@ -282,6 +294,43 @@ function isTemporalAnalysis(value: unknown): value is TemporalAnalysis {
   });
 }
 
+function narrativePayloadMatchesSnapshot(payload: BtcNarrativeSectionFactPayload, snapshot: BtcPublicSnapshot): boolean {
+  switch (payload.section_id) {
+    case "what_changed":
+      return payload.price_usd === snapshot.market_snapshot.price_usd
+        && payload.change_24h_pct === snapshot.market_snapshot.change_24h_pct
+        && payload.change_7d_pct === snapshot.market_snapshot.change_7d_pct
+        && payload.change_30d_pct === snapshot.market_snapshot.change_30d_pct
+        && payload.market_cap_change_24h_pct === snapshot.market_snapshot.market_cap_change_24h_pct;
+    case "why_it_matters":
+      return payload.dominance_pct === snapshot.btc_gravity.dominance_pct
+        && payload.dominance_band === snapshot.btc_gravity.dominance_band
+        && payload.market_cap_rank === snapshot.btc_gravity.market_cap_rank
+        && payload.market_context_label === snapshot.btc_gravity.market_context_label;
+    case "current_structure":
+      return payload.regime_label === snapshot.market_structure.regime_label
+        && payload.field_score === snapshot.market_structure.field_score
+        && payload.direction_bias === snapshot.market_structure.direction_bias
+        && payload.liquidity_state === snapshot.market_structure.liquidity_state;
+    case "dominant_pressures":
+      return payload.pressure_band === snapshot.aspect_pressure.pressure_band
+        && payload.harmonic_tension === snapshot.aspect_pressure.harmonic_tension
+        && payload.evidence_mode === snapshot.aspect_pressure.evidence_mode
+        && payload.pressure_label === snapshot.aspect_pressure.label
+        && payload.stablecoin_share_pct === snapshot.market_structure.stablecoin_share_pct
+        && payload.temporal_state === snapshot.temporal_context.state;
+    case "relative_market_field":
+      return payload.dominance_pct === snapshot.btc_gravity.dominance_pct
+        && payload.alt_breadth_24h_pct === snapshot.market_structure.alt_breadth_24h_pct
+        && payload.stablecoin_share_pct === snapshot.market_structure.stablecoin_share_pct;
+    case "temporal_context":
+      return payload.temporal_state === snapshot.temporal_context.state
+        && payload.observation_date === snapshot.temporal_context.observation_date
+        && payload.source_generated_at_utc === snapshot.market_snapshot.source_generated_at_utc
+        && payload.temporal_limitation === snapshot.temporal_context.limitation;
+  }
+}
+
 export function guardBtcPublicSnapshot(value: unknown): value is BtcPublicSnapshot {
   if (!isRecord(value) || hasUnsafeSerializableValue(value)) return false;
   if (!hasExactKeys(value, BTC_PUBLIC_REQUIRED_FIELDS)) return false;
@@ -290,12 +339,15 @@ export function guardBtcPublicSnapshot(value: unknown): value is BtcPublicSnapsh
   if (!isRecord(value.asset) || !hasExactKeys(value.asset, ["id", "symbol", "label"])) return false;
   if (value.asset.id !== BTC_ASSET.id || value.asset.symbol !== BTC_ASSET.symbol || value.asset.label !== BTC_ASSET.label) return false;
 
-  if (!isRecord(value.question) || !hasExactKeys(value.question, ["raw", "normalized", "lens", "safe_reframed"])) return false;
+  if (!isRecord(value.question) || !hasExactKeys(value.question, ["raw", "normalized", "lens", "safe_reframed", "geometry"])) return false;
   if (typeof value.question.raw !== "string" || value.question.raw.length > 280) return false;
   const compactRawQuestion = value.question.raw.trim().replace(/\s+/g, " ");
   if (compactRawQuestion.length < 8 || compactRawQuestion.length > 280) return false;
   if (!isNonEmptyString(value.question.normalized, 280) || value.question.normalized.trim().length < 8) return false;
   if (!BTC_QUESTION_LENSES.includes(value.question.lens as BtcQuestionLens) || typeof value.question.safe_reframed !== "boolean") return false;
+  if (!guardBtcQuestionGeometry(value.question.geometry)) return false;
+  if (value.question.geometry.lens !== value.question.lens) return false;
+  if (value.question.geometry.safety_overlay !== (value.question.safe_reframed ? "observable_context_only" : "standard_public_context")) return false;
 
   if (!isUtcTimestamp(value.observation_time_utc)) return false;
 
@@ -356,6 +408,13 @@ export function guardBtcPublicSnapshot(value: unknown): value is BtcPublicSnapsh
   if (!Array.isArray(value.watch_conditions) || value.watch_conditions.length < 1 || value.watch_conditions.length > 4) return false;
   if (!value.watch_conditions.every((item) => isNonEmptyString(item, 600))) return false;
 
+  if (!guardBtcNarrativeRouterOutput(value.cosmographer_read)) return false;
+  if (value.cosmographer_read.lens !== value.question.lens) return false;
+  if (value.cosmographer_read.focus_axis !== value.question.geometry.focus_axis) return false;
+  if (value.cosmographer_read.narrative_profile !== value.question.geometry.narrative_profile) return false;
+  if (value.cosmographer_read.watch_profile !== value.question.geometry.watch_profile) return false;
+  if (value.cosmographer_read.safety_overlay !== value.question.geometry.safety_overlay) return false;
+
   if (!isRecord(value.source_proof) || !hasExactKeys(value.source_proof, ["schema_version", "source_mode", "generated_at_utc", "sources"])) return false;
   if (value.source_proof.schema_version !== "crypto_astro_snapshot_proof_public_v0_1" || value.source_proof.source_mode !== "static_public_snapshot") return false;
   if (!isUtcTimestamp(value.source_proof.generated_at_utc) || !Array.isArray(value.source_proof.sources) || value.source_proof.sources.length !== REQUIRED_PROOF_LABELS.size) return false;
@@ -368,6 +427,9 @@ export function guardBtcPublicSnapshot(value: unknown): value is BtcPublicSnapsh
 
   if (!isBoundary(value.boundary)) return false;
   if (!isUtcTimestamp(value.generated_at_utc) || !isAccessRoute(value.deeper_access_route)) return false;
+
+  const typedValue = value as unknown as BtcPublicSnapshot;
+  if (!typedValue.cosmographer_read.sections.every((section) => narrativePayloadMatchesSnapshot(section.fact_payload, typedValue))) return false;
 
   try {
     const serialized = JSON.stringify(value);
