@@ -3,6 +3,7 @@ import { BTC_ASSET, guardBtcPublicSnapshot, type BtcPublicBoundary, type BtcPubl
 import { deriveBtcQuestionGeometry, type BtcQuestionGeometry } from '../lib/btc-question-geometry';
 import { guardBtcNarrativeSection, routeBtcDeterministicNarrative, type BtcNarrativeFacts, type BtcNarrativeRouterInput } from '../lib/btc-deterministic-narrative-router';
 import { routeBtcWatchConditions, type BtcWatchConditionRouterInput } from '../lib/btc-watch-condition-router';
+import { BTC_PUBLIC_DISPLAY_FALLBACK, BTC_PROOF_SOURCE_LABELS, formatBtcDominanceBandLabel, formatBtcFocusAxisLabel, formatBtcFreshnessLabel, formatBtcMarketContextLabel, formatBtcObservationDate, formatBtcProofSourceLabel, formatBtcQuestionLensLabel, formatBtcSafetyOverlayLabel, formatBtcTemporalStateLabel, formatBtcUtcTimestamp, formatBtcWatchConditionForDisplay, getBtcReadRolePresentation } from '../lib/btc-public-display-labels';
 
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
 function clone<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
@@ -79,5 +80,54 @@ const sourceBefore = JSON.stringify(snapshot.market_snapshot); const proofBefore
 assert(guardBtcPublicSnapshot(snapshot), 'Valid public snapshot rejected'); const mutated = clone(snapshot); const changed = mutated.cosmographer_read.sections.find(s => s.section_id === 'what_changed'); assert(changed && changed.fact_payload.section_id === 'what_changed', 'what_changed payload missing'); changed.fact_payload.price_usd += 1; assert(!guardBtcPublicSnapshot(mutated), 'Mutated public fact payload accepted');
 assert(JSON.stringify(snapshot.market_snapshot) === sourceBefore, 'Source facts mutated'); assert(JSON.stringify(snapshot.source_proof) === proofBefore, 'Proof mutated'); assert(JSON.stringify(snapshot.boundary) === boundaryBefore, 'Boundary mutated');
 
-const report = { schema_version: 'btc_routing_fixture_report_v0_1', head_sha: process.env.GITHUB_SHA ?? 'LOCAL', questions_tested: CASES.length, lenses_passed: CASES.length, unique_geometries: new Set(geometryJson).size, unique_narrative_profiles: profileSet.size, unique_primary_orders: primarySet.size, unique_watch_profiles: watchProfileSet.size, unique_watch_outputs: watchOutputSet.size, determinism: 'PASS', fail_closed: 'PASS', source_mutation: 'NO', proof_mutation: 'NO', boundary_mutation: 'NO' } as const;
+const displayPairs: readonly [string, string][] = [
+  ['market_gravity', formatBtcQuestionLensLabel('market_gravity')],
+  ['market_structure', formatBtcQuestionLensLabel('market_structure')],
+  ['pressure_context', formatBtcQuestionLensLabel('pressure_context')],
+  ['temporal_context', formatBtcQuestionLensLabel('temporal_context')],
+  ['general', formatBtcQuestionLensLabel('general')],
+  ['gravity', formatBtcFocusAxisLabel('gravity')],
+  ['structure', formatBtcFocusAxisLabel('structure')],
+  ['pressure', formatBtcFocusAxisLabel('pressure')],
+  ['temporal', formatBtcFocusAxisLabel('temporal')],
+  ['overview', formatBtcFocusAxisLabel('overview')],
+  ['FRESH', formatBtcFreshnessLabel('FRESH')],
+  ['STALE_LIMITED', formatBtcFreshnessLabel('STALE_LIMITED')],
+  ['available_bounded', formatBtcTemporalStateLabel('available_bounded')],
+  ['static_state_only', formatBtcTemporalStateLabel('static_state_only')],
+  ['unavailable', formatBtcTemporalStateLabel('unavailable')],
+  ['high', formatBtcDominanceBandLabel('high')],
+  ['balanced', formatBtcDominanceBandLabel('balanced')],
+  ['lower', formatBtcDominanceBandLabel('lower')],
+  ['standard_public_context', formatBtcSafetyOverlayLabel('standard_public_context')],
+  ['observable_context_only', formatBtcSafetyOverlayLabel('observable_context_only')],
+  ['low_movement', formatBtcMarketContextLabel('low_movement')],
+];
+for (const [raw, label] of displayPairs) {
+  assert(label !== raw, `Public label equals raw enum: ${raw}`);
+  assert(!label.includes('_'), `Public label exposes machine underscore: ${label}`);
+  assert(label !== BTC_PUBLIC_DISPLAY_FALLBACK, `Supported public label fell back: ${raw}`);
+}
+assert(new Set(CASES.map(item => formatBtcQuestionLensLabel(item.lens))).size === 5, 'Expected five distinct reader-facing question labels');
+assert(formatBtcQuestionLensLabel('unknown') === BTC_PUBLIC_DISPLAY_FALLBACK, 'Unknown lens exposed');
+assert(formatBtcMarketContextLabel('unknown_machine_enum') === BTC_PUBLIC_DISPLAY_FALLBACK, 'Unknown market context exposed');
+assert(formatBtcProofSourceLabel('unknown_source') === BTC_PUBLIC_DISPLAY_FALLBACK, 'Unknown proof source exposed');
+for (const label of labels) {
+  const publicLabel = formatBtcProofSourceLabel(label);
+  assert(publicLabel === BTC_PROOF_SOURCE_LABELS[label], `Proof source label mismatch: ${label}`);
+  assert(!publicLabel.includes('_'), `Proof source label exposes underscore: ${label}`);
+}
+const primaryRole = getBtcReadRolePresentation('primary');
+const supportingRole = getBtcReadRolePresentation('supporting');
+assert(primaryRole.className !== supportingRole.className, 'Primary and supporting classes match');
+assert(primaryRole.badge !== supportingRole.badge, 'Primary and supporting badges match');
+assert(primaryRole.dataRole !== supportingRole.dataRole, 'Primary and supporting data roles match');
+const timestampLabel = formatBtcUtcTimestamp('2026-07-12T22:05:46Z');
+assert(timestampLabel === formatBtcUtcTimestamp('2026-07-12T22:05:46Z'), 'Timestamp display is nondeterministic');
+assert(formatBtcObservationDate('2026-07-12') === '12 Jul 2026', 'Observation date display mismatch');
+const publicWatch = formatBtcWatchConditionForDisplay('Temporal state static_state_only and source freshness state FRESH remain bounded to the published sample and reserve posture.');
+assert(!publicWatch.includes('_') && !publicWatch.includes('FRESH') && !publicWatch.includes('published sample') && !publicWatch.includes('reserve posture'), 'Watch display exposes internal wording');
+assert(publicWatch === formatBtcWatchConditionForDisplay('Temporal state static_state_only and source freshness state FRESH remain bounded to the published sample and reserve posture.'), 'Watch display is nondeterministic');
+
+const report = { schema_version: 'btc_routing_fixture_report_v0_1', head_sha: process.env.GITHUB_SHA ?? 'LOCAL', questions_tested: CASES.length, lenses_passed: CASES.length, unique_geometries: new Set(geometryJson).size, unique_narrative_profiles: profileSet.size, unique_primary_orders: primarySet.size, unique_watch_profiles: watchProfileSet.size, unique_watch_outputs: watchOutputSet.size, determinism: 'PASS', fail_closed: 'PASS', source_mutation: 'NO', proof_mutation: 'NO', boundary_mutation: 'NO', display_labels: 'PASS', raw_enum_guard: 'PASS', role_hierarchy: 'PASS' } as const;
 console.log(JSON.stringify(report));
