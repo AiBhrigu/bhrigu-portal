@@ -5,12 +5,18 @@ import {
   TEMPORAL_ANALYSIS_KEYS,
   TEMPORAL_METRIC_KEYS,
   guardBtcPublicSnapshot,
+  type BtcPublicBoundary,
   type BtcPublicSnapshot,
   type BtcQuestionLens,
   type TemporalAnalysis,
   type TemporalMetrics,
   type TemporalState,
 } from "./btc-public-output-contract";
+import { deriveBtcQuestionGeometry } from "./btc-question-geometry";
+import {
+  routeBtcDeterministicNarrative,
+  type BtcNarrativeFacts,
+} from "./btc-deterministic-narrative-router";
 import type { BtcSourceBundle } from "./btc-public-static-source";
 
 const ACTIONABLE_TRADING_PATTERNS: readonly RegExp[] = [
@@ -31,6 +37,7 @@ const ACTIONABLE_TRADING_PATTERNS: readonly RegExp[] = [
 export function requiresTradingReframe(question: string): boolean {
   return ACTIONABLE_TRADING_PATTERNS.some((pattern) => pattern.test(question));
 }
+
 const LENS_RULES: Array<[BtcQuestionLens, RegExp]> = [
   ["market_gravity", /\b(dominance|gravity|bitcoin\s+share|btc\s+share|market\s+cap\s+rank)\b/i],
   ["market_structure", /\b(structure|regime|liquidity|breadth|rotation|stablecoin|tvl|volume)\b/i],
@@ -212,6 +219,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
     ? "Explain what changed in the BTC field, why it matters, and what conditions to watch, without trading instructions."
     : compact;
   const lens = classifyQuestionLens(compact);
+  const geometry = deriveBtcQuestionGeometry(lens, safeReframed);
 
   let temporal = temporalFromStatic(bundle);
   try {
@@ -238,54 +246,121 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
     timeline_mode: "",
   });
 
+  const marketSnapshot: BtcPublicSnapshot["market_snapshot"] = {
+    price_usd: btc.price_usd,
+    change_24h_pct: btc.market_24h_change_pct,
+    change_7d_pct: btc.market_7d_change_pct,
+    change_30d_pct: btc.market_30d_change_pct,
+    total_market_cap_usd: snapshot.market_reality.total_market_cap_usd,
+    volume_24h_usd: snapshot.market_reality.volume_24h_usd,
+    market_cap_change_24h_pct: snapshot.market_reality.market_cap_change_24h_pct,
+    source_generated_at_utc: snapshot.generated_at_utc,
+    freshness: bundle.freshness,
+  };
+
+  const btcGravity: BtcPublicSnapshot["btc_gravity"] = {
+    dominance_pct: snapshot.market_reality.btc_dominance_pct,
+    dominance_band: dominanceBand(snapshot.market_reality.btc_dominance_pct),
+    market_cap_rank: btc.market_cap_rank,
+    market_context_label: btc.market_context_label,
+    score: btc.score,
+  };
+
+  const marketStructure: BtcPublicSnapshot["market_structure"] = {
+    regime_label: marketField.field_output.regime_label,
+    field_score: marketField.field_output.market_field_score,
+    direction_bias: marketField.field_output.direction_bias,
+    liquidity_state: snapshot.liquidity_tvl.liquidity_context_state,
+    stablecoin_share_pct: snapshot.market_reality.stablecoin_share_pct,
+    alt_breadth_24h_pct: snapshot.altcoin_rotation.alt_breadth_24h_pct,
+    context_only: true,
+  };
+
+  const aspectPressure: BtcPublicSnapshot["aspect_pressure"] = {
+    state: temporal.state,
+    pressure_band: band,
+    harmonic_tension: harmonic,
+    evidence_mode: band ? "bounded_numeric_metric" : "no_numeric_aspect_claim",
+    label: band ? `${band} bounded pressure` : "No numeric aspect claim",
+  };
+
+  const temporalContext: BtcPublicSnapshot["temporal_context"] = {
+    state: temporal.state,
+    label: "bounded_cosmographic_metric",
+    observation_date: observationDate,
+    metrics: temporal.metrics,
+    analysis: temporal.analysis,
+    limitation: temporal.limitation,
+  };
+
+  const boundary: BtcPublicBoundary = {
+    read_only: true,
+    static_public_snapshot: true,
+    no_live_adapter_claim: true,
+    no_true_live_feed_claim: true,
+    no_trading_signal: true,
+    no_forecast: true,
+    no_price_target: true,
+    no_investment_recommendation: true,
+    backend_api_closed: true,
+    runtime_closed: true,
+    payment_closed: true,
+    orion_core_protected: true,
+    formula_weights_exposed: false,
+  };
+
+  const narrativeFacts: BtcNarrativeFacts = {
+    price_usd: marketSnapshot.price_usd,
+    change_24h_pct: marketSnapshot.change_24h_pct,
+    change_7d_pct: marketSnapshot.change_7d_pct,
+    change_30d_pct: marketSnapshot.change_30d_pct,
+    market_cap_change_24h_pct: marketSnapshot.market_cap_change_24h_pct,
+    source_generated_at_utc: marketSnapshot.source_generated_at_utc,
+    freshness: marketSnapshot.freshness,
+    dominance_pct: btcGravity.dominance_pct,
+    dominance_band: btcGravity.dominance_band,
+    market_cap_rank: btcGravity.market_cap_rank,
+    market_context_label: btcGravity.market_context_label,
+    regime_label: marketStructure.regime_label,
+    field_score: marketStructure.field_score,
+    direction_bias: marketStructure.direction_bias,
+    liquidity_state: marketStructure.liquidity_state,
+    stablecoin_share_pct: marketStructure.stablecoin_share_pct,
+    alt_breadth_24h_pct: marketStructure.alt_breadth_24h_pct,
+    pressure_band: aspectPressure.pressure_band,
+    harmonic_tension: aspectPressure.harmonic_tension,
+    evidence_mode: aspectPressure.evidence_mode,
+    pressure_label: aspectPressure.label,
+    temporal_state: temporalContext.state,
+    observation_date: temporalContext.observation_date,
+    temporal_limitation: temporalContext.limitation,
+  };
+
+  const routed = routeBtcDeterministicNarrative({
+    schema_version: "btc_deterministic_narrative_router_input_v0_1",
+    geometry,
+    question_lens: lens,
+    safe_reframed: safeReframed,
+    facts: narrativeFacts,
+    public_boundary: boundary,
+    template_catalog_version: "btc_narrative_template_catalog_v0_1",
+  });
+  if (routed.ok === false) {
+    return { ok: false, code: "internal_composition_error", message: "Deterministic narrative routing failed the public contract." };
+  }
+
   const value: BtcPublicSnapshot = {
     request_id: requestId,
     asset: BTC_ASSET,
-    question: { raw, normalized, lens, safe_reframed: safeReframed },
+    question: { raw, normalized, lens, safe_reframed: safeReframed, geometry },
     observation_time_utc: `${observationDate}T00:00:00.000Z`,
-    market_snapshot: {
-      price_usd: btc.price_usd,
-      change_24h_pct: btc.market_24h_change_pct,
-      change_7d_pct: btc.market_7d_change_pct,
-      change_30d_pct: btc.market_30d_change_pct,
-      total_market_cap_usd: snapshot.market_reality.total_market_cap_usd,
-      volume_24h_usd: snapshot.market_reality.volume_24h_usd,
-      market_cap_change_24h_pct: snapshot.market_reality.market_cap_change_24h_pct,
-      source_generated_at_utc: snapshot.generated_at_utc,
-      freshness: bundle.freshness,
-    },
-    btc_gravity: {
-      dominance_pct: snapshot.market_reality.btc_dominance_pct,
-      dominance_band: dominanceBand(snapshot.market_reality.btc_dominance_pct),
-      market_cap_rank: btc.market_cap_rank,
-      market_context_label: btc.market_context_label,
-      score: btc.score,
-    },
-    market_structure: {
-      regime_label: marketField.field_output.regime_label,
-      field_score: marketField.field_output.market_field_score,
-      direction_bias: marketField.field_output.direction_bias,
-      liquidity_state: snapshot.liquidity_tvl.liquidity_context_state,
-      stablecoin_share_pct: snapshot.market_reality.stablecoin_share_pct,
-      alt_breadth_24h_pct: snapshot.altcoin_rotation.alt_breadth_24h_pct,
-      context_only: true,
-    },
-    aspect_pressure: {
-      state: temporal.state,
-      pressure_band: band,
-      harmonic_tension: harmonic,
-      evidence_mode: band ? "bounded_numeric_metric" : "no_numeric_aspect_claim",
-      label: band ? `${band} bounded pressure` : "No numeric aspect claim",
-    },
-    temporal_context: {
-      state: temporal.state,
-      label: "bounded_cosmographic_metric",
-      observation_date: observationDate,
-      metrics: temporal.metrics,
-      analysis: temporal.analysis,
-      limitation: temporal.limitation,
-    },
+    market_snapshot: marketSnapshot,
+    btc_gravity: btcGravity,
+    market_structure: marketStructure,
+    aspect_pressure: aspectPressure,
+    temporal_context: temporalContext,
     watch_conditions: buildWatchConditions(lens, bundle),
+    cosmographer_read: routed.value,
     source_proof: {
       schema_version: proof.schema_version,
       source_mode: proof.source_mode,
@@ -302,21 +377,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
       temporal_limit: temporal.limitation,
       source_limit: "Static reviewed public artifacts only; no live adapter and no provider call during the user request.",
     },
-    boundary: {
-      read_only: true,
-      static_public_snapshot: true,
-      no_live_adapter_claim: true,
-      no_true_live_feed_claim: true,
-      no_trading_signal: true,
-      no_forecast: true,
-      no_price_target: true,
-      no_investment_recommendation: true,
-      backend_api_closed: true,
-      runtime_closed: true,
-      payment_closed: true,
-      orion_core_protected: true,
-      formula_weights_exposed: false,
-    },
+    boundary,
     generated_at_utc: now.toISOString(),
     deeper_access_route: buildFreyAccessHref(accessPacket) || "/access",
   };
