@@ -3,6 +3,8 @@ import Link from "next/link";
 import type { GetServerSideProps } from "next";
 import { BTC_SOURCE_URLS, loadBtcStaticSource } from "../../lib/btc-public-static-source";
 import { composeBtcPublicSnapshot } from "../../lib/btc-public-snapshot-composer";
+import { renderBtcNarrativeRead } from "../../lib/btc-narrative-template-catalog";
+import type { BtcNarrativeSectionFactPayload } from "../../lib/btc-deterministic-narrative-router";
 import type { BtcPublicSnapshot, BtcFailureCode } from "../../lib/btc-public-output-contract";
 
 type FailureProps = { code: BtcFailureCode; message: string; last_verified_at_utc?: string };
@@ -25,23 +27,30 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async ({ query 
 const money = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: value >= 1000 ? 0 : 2 }).format(value);
 const pct = (value: number) => `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 
-function momentumRead(result: BtcPublicSnapshot): string {
-  const changes = [result.market_snapshot.change_24h_pct, result.market_snapshot.change_7d_pct, result.market_snapshot.change_30d_pct];
-  if (changes.every((value) => value > 0)) return "Price direction is aligned across the published 24-hour, 7-day, and 30-day horizons.";
-  if (changes.every((value) => value < 0)) return "Downward pressure is aligned across the published 24-hour, 7-day, and 30-day horizons.";
-  return "The published horizons are mixed, so the BTC field is not moving as one uniform momentum block.";
-}
+const SECTION_TITLES: Record<BtcNarrativeSectionFactPayload["section_id"], string> = {
+  what_changed: "WHAT CHANGED",
+  why_it_matters: "WHY IT MATTERS",
+  current_structure: "CURRENT STRUCTURE",
+  dominant_pressures: "DOMINANT PRESSURES",
+  relative_market_field: "RELATIVE MARKET FIELD",
+  temporal_context: "TEMPORAL CONTEXT",
+};
 
-function gravityRead(result: BtcPublicSnapshot): string {
-  if (result.btc_gravity.dominance_band === "high") return "BTC is the dominant gravity center in the current public market field.";
-  if (result.btc_gravity.dominance_band === "lower") return "BTC gravity is lower relative to the broader public market field, so relative participation outside BTC carries more structural weight.";
-  return "BTC leadership and broader market participation are in a balanced gravity relationship.";
-}
-
-function numericPressure(result: BtcPublicSnapshot): string {
-  return result.aspect_pressure.harmonic_tension === null
-    ? "No numeric aspect value is published."
-    : `Harmonic tension ${result.aspect_pressure.harmonic_tension.toFixed(4)}.`;
+function factText(payload: BtcNarrativeSectionFactPayload): string {
+  switch (payload.section_id) {
+    case "what_changed":
+      return `BTC is ${money(payload.price_usd)}. Published change: 24h ${pct(payload.change_24h_pct)}, 7d ${pct(payload.change_7d_pct)}, 30d ${pct(payload.change_30d_pct)}. Total market-cap change over 24h is ${pct(payload.market_cap_change_24h_pct)}.`;
+    case "why_it_matters":
+      return `BTC dominance is ${payload.dominance_pct.toFixed(2)}% in the ${payload.dominance_band} band, with market rank #${payload.market_cap_rank}. Published context: ${payload.market_context_label}.`;
+    case "current_structure":
+      return `Regime: ${payload.regime_label}. Field score: ${payload.field_score.toFixed(1)}. Direction bias: ${payload.direction_bias}. Liquidity state: ${payload.liquidity_state}.`;
+    case "dominant_pressures":
+      return `Bounded pressure: ${payload.pressure_label}. Temporal state: ${payload.temporal_state}. ${payload.harmonic_tension === null ? "No numeric aspect value is published." : `Harmonic tension ${payload.harmonic_tension.toFixed(4)}.`} Stablecoin share is ${payload.stablecoin_share_pct.toFixed(2)}%.`;
+    case "relative_market_field":
+      return `BTC dominance is ${payload.dominance_pct.toFixed(2)}%, alt breadth is ${payload.alt_breadth_24h_pct.toFixed(1)}% across the stated universe, and stablecoin share is ${payload.stablecoin_share_pct.toFixed(2)}%.`;
+    case "temporal_context":
+      return `Temporal state: ${payload.temporal_state}. Selected temporal date: ${payload.observation_date}. Market source snapshot: ${payload.source_generated_at_utc}.`;
+  }
 }
 
 export default function BtcSnapshotPage({ result, failure, initialQuestion, initialDate }: PageProps) {
@@ -84,62 +93,20 @@ export default function BtcSnapshotPage({ result, failure, initialQuestion, init
         <section className="module result" aria-labelledby="result-title">
           <div className="resultHead"><div><p className="eyebrow">{result.asset.symbol} · {result.market_snapshot.freshness}</p><h2 id="result-title">One coherent Cosmographer read</h2></div><span>{result.request_id}</span></div>
           {result.question.safe_reframed && <p className="reframe">Direct trading guidance was removed. The question was converted to observable BTC field context.</p>}
-          <p className="question"><strong>Question lens:</strong> {result.question.lens}<br />{result.question.normalized}</p>
+          <p className="question"><strong>Question lens:</strong> {result.question.lens}<br /><strong>Focus axis:</strong> {result.question.geometry.focus_axis}<br />{result.question.normalized}</p>
 
           <div className="readFlow">
-            <section className="readSection" aria-labelledby="what-changed-title">
-              <span className="step">01</span>
-              <div>
-                <h3 id="what-changed-title">WHAT CHANGED</h3>
-                <div className="factBlock"><span>FACTS</span><p>BTC is {money(result.market_snapshot.price_usd)}. Published change: 24h {pct(result.market_snapshot.change_24h_pct)}, 7d {pct(result.market_snapshot.change_7d_pct)}, 30d {pct(result.market_snapshot.change_30d_pct)}. Total market-cap change over 24h is {pct(result.market_snapshot.market_cap_change_24h_pct)}.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>{momentumRead(result)}</p></div>
-              </div>
-            </section>
-
-            <section className="readSection" aria-labelledby="why-matters-title">
-              <span className="step">02</span>
-              <div>
-                <h3 id="why-matters-title">WHY IT MATTERS</h3>
-                <div className="factBlock"><span>FACTS</span><p>BTC dominance is {result.btc_gravity.dominance_pct.toFixed(2)}% in the {result.btc_gravity.dominance_band} band, with market rank #{result.btc_gravity.market_cap_rank}. Published context: {result.btc_gravity.market_context_label}.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>{gravityRead(result)} This frames how strongly the wider field should be read through BTC leadership rather than through isolated asset moves.</p></div>
-              </div>
-            </section>
-
-            <section className="readSection" aria-labelledby="current-structure-title">
-              <span className="step">03</span>
-              <div>
-                <h3 id="current-structure-title">CURRENT STRUCTURE</h3>
-                <div className="factBlock"><span>FACTS</span><p>Regime: {result.market_structure.regime_label}. Field score: {result.market_structure.field_score.toFixed(1)}. Direction bias: {result.market_structure.direction_bias}. Liquidity state: {result.market_structure.liquidity_state}.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>The current structure is defined by the published regime and direction bias, while liquidity determines how broadly that structure can be expressed across the market.</p></div>
-              </div>
-            </section>
-
-            <section className="readSection" aria-labelledby="dominant-pressures-title">
-              <span className="step">04</span>
-              <div>
-                <h3 id="dominant-pressures-title">DOMINANT PRESSURES</h3>
-                <div className="factBlock"><span>FACTS</span><p>Bounded pressure: {result.aspect_pressure.label}. Temporal state: {result.aspect_pressure.state}. {numericPressure(result)} Stablecoin share is {result.market_structure.stablecoin_share_pct.toFixed(2)}%.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>The dominant pressure is the interaction of BTC gravity, liquidity conditions, stablecoin positioning, and the bounded temporal state. None of these elements is converted into a buy, sell, entry, or exit instruction.</p></div>
-              </div>
-            </section>
-
-            <section className="readSection" aria-labelledby="relative-field-title">
-              <span className="step">05</span>
-              <div>
-                <h3 id="relative-field-title">RELATIVE MARKET FIELD</h3>
-                <div className="factBlock"><span>FACTS</span><p>BTC dominance is {result.btc_gravity.dominance_pct.toFixed(2)}%, alt breadth is {result.market_structure.alt_breadth_24h_pct.toFixed(1)}% across the stated universe, and stablecoin share is {result.market_structure.stablecoin_share_pct.toFixed(2)}%.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>Read BTC dominance and alt breadth together: dominance shows where market gravity is concentrated, while breadth shows how widely participation is distributed around that center.</p></div>
-              </div>
-            </section>
-
-            <section className="readSection" aria-labelledby="temporal-context-title">
-              <span className="step">06</span>
-              <div>
-                <h3 id="temporal-context-title">TEMPORAL CONTEXT</h3>
-                <div className="factBlock"><span>FACTS</span><p>Temporal state: {result.temporal_context.state}. Selected temporal date: {result.temporal_context.observation_date}. Market source snapshot: {result.market_snapshot.source_generated_at_utc}.</p></div>
-                <div className="readBlock"><span>COSMOGRAPHER READ</span><p>{result.temporal_context.limitation}</p></div>
-              </div>
-            </section>
+            {result.cosmographer_read.sections.map((section) => {
+              const titleId = `${section.section_id}-title`;
+              return <section className="readSection" aria-labelledby={titleId} key={section.section_id}>
+                <span className="step">{String(section.order).padStart(2, "0")}</span>
+                <div>
+                  <h3 id={titleId}>{SECTION_TITLES[section.section_id]}</h3>
+                  <div className="factBlock"><span>FACTS</span><p>{factText(section.fact_payload)}</p></div>
+                  <div className="readBlock"><span>{section.role === "primary" ? "PRIMARY COSMOGRAPHER READ" : "SUPPORTING COSMOGRAPHER READ"}</span><p>{renderBtcNarrativeRead(section.read_template_id, section.fact_payload)}</p></div>
+                </div>
+              </section>;
+            })}
           </div>
 
           <div className="watch"><h3>WATCH CONDITIONS</h3><ol>{result.watch_conditions.map((item) => <li key={item}>{item}</li>)}</ol></div>
