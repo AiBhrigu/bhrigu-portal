@@ -47,6 +47,8 @@ const LENSES: readonly BtcQuestionLens[] = ["market_gravity", "market_structure"
 const TEMPORAL: readonly TemporalState[] = ["available_bounded", "static_state_only", "unavailable"];
 const BOUNDARY_KEYS = ["read_only", "static_public_snapshot", "no_live_adapter_claim", "no_true_live_feed_claim", "no_trading_signal", "no_forecast", "no_price_target", "no_investment_recommendation", "backend_api_closed", "runtime_closed", "payment_closed", "orion_core_protected", "formula_weights_exposed"] as const;
 const FACT_KEYS = ["price_usd", "change_24h_pct", "change_7d_pct", "change_30d_pct", "market_cap_change_24h_pct", "source_generated_at_utc", "freshness", "dominance_pct", "dominance_band", "market_cap_rank", "market_context_label", "regime_label", "field_score", "direction_bias", "liquidity_state", "stablecoin_share_pct", "alt_breadth_24h_pct", "pressure_band", "harmonic_tension", "evidence_mode", "pressure_label", "temporal_state", "observation_date", "temporal_limitation"] as const;
+const GEOMETRY_KEYS = ["schema_version", "lens", "focus_axis", "primary_sections", "supporting_sections", "suppressed_sections", "watch_profile", "narrative_profile", "safety_overlay", "route_version"] as const;
+const INPUT_KEYS = ["schema_version", "geometry", "question_lens", "safe_reframed", "facts", "public_boundary", "template_catalog_version"] as const;
 
 function rec(v: unknown): v is Record<string, unknown> { return Boolean(v) && typeof v === "object" && !Array.isArray(v); }
 function exact(v: Record<string, unknown>, keys: readonly string[]): boolean { const actual = Object.keys(v); return actual.length === keys.length && keys.every((k) => Object.prototype.hasOwnProperty.call(v, k)); }
@@ -78,6 +80,23 @@ function guardFacts(v: unknown): v is BtcNarrativeFacts {
   return TEMPORAL.includes(v.temporal_state as TemporalState) && date(v.observation_date) && text(v.temporal_limitation);
 }
 
+function guardGeometryPartition(v: unknown): v is BtcQuestionGeometry {
+  if (!rec(v) || !exact(v, GEOMETRY_KEYS)) return false;
+  if (v.schema_version !== "btc_question_geometry_v0_1" || v.route_version !== "btc_question_geometry_route_v0_1") return false;
+  if (!Array.isArray(v.primary_sections) || v.primary_sections.length !== 2 || !Array.isArray(v.supporting_sections) || !Array.isArray(v.suppressed_sections)) return false;
+  const partition = [...v.primary_sections, ...v.supporting_sections, ...v.suppressed_sections];
+  return partition.length === BTC_SECTION_IDS.length
+    && new Set(partition).size === BTC_SECTION_IDS.length
+    && partition.every((item) => BTC_SECTION_IDS.includes(item as BtcSectionId));
+}
+
+function guardEnvelope(v: unknown): v is BtcNarrativeRouterInput {
+  return rec(v) && exact(v, INPUT_KEYS)
+    && v.schema_version === "btc_deterministic_narrative_router_input_v0_1"
+    && v.template_catalog_version === "btc_narrative_template_catalog_v0_1"
+    && typeof v.safe_reframed === "boolean";
+}
+
 function payload(id: BtcSectionId, f: BtcNarrativeFacts): BtcNarrativeSectionFactPayload {
   switch (id) {
     case "what_changed": return { section_id: id, price_usd: f.price_usd, change_24h_pct: f.change_24h_pct, change_7d_pct: f.change_7d_pct, change_30d_pct: f.change_30d_pct, market_cap_change_24h_pct: f.market_cap_change_24h_pct };
@@ -95,7 +114,17 @@ function guardPayload(v: unknown, id?: BtcSectionId): v is BtcNarrativeSectionFa
     case "what_changed": return exact(v, ["section_id", "price_usd", "change_24h_pct", "change_7d_pct", "change_30d_pct", "market_cap_change_24h_pct"]) && finite(v.price_usd) && (v.price_usd as number) >= 0 && [v.change_24h_pct, v.change_7d_pct, v.change_30d_pct, v.market_cap_change_24h_pct].every(finite);
     case "why_it_matters": return exact(v, ["section_id", "dominance_pct", "dominance_band", "market_cap_rank", "market_context_label"]) && range(v.dominance_pct, 0, 100) && ["high", "balanced", "lower"].includes(v.dominance_band as string) && Number.isInteger(v.market_cap_rank) && (v.market_cap_rank as number) > 0 && text(v.market_context_label, 160);
     case "current_structure": return exact(v, ["section_id", "regime_label", "field_score", "direction_bias", "liquidity_state"]) && text(v.regime_label, 160) && finite(v.field_score) && text(v.direction_bias, 160) && text(v.liquidity_state, 160);
-    case "dominant_pressures": return exact(v, ["section_id", "pressure_band", "harmonic_tension", "evidence_mode", "pressure_label", "stablecoin_share_pct", "temporal_state"]) && (v.pressure_band === null || ["elevated", "moderate", "low"].includes(v.pressure_band as string)) && (v.harmonic_tension === null || range(v.harmonic_tension, 0, 1)) && ["bounded_numeric_metric", "no_numeric_aspect_claim"].includes(v.evidence_mode as string) && text(v.pressure_label, 160) && range(v.stablecoin_share_pct, 0, 100) && TEMPORAL.includes(v.temporal_state as TemporalState) && ((v.pressure_band === null) === (v.harmonic_tension === null));
+    case "dominant_pressures": {
+      const hasPressure = v.pressure_band !== null;
+      return exact(v, ["section_id", "pressure_band", "harmonic_tension", "evidence_mode", "pressure_label", "stablecoin_share_pct", "temporal_state"])
+        && (v.pressure_band === null || ["elevated", "moderate", "low"].includes(v.pressure_band as string))
+        && (v.harmonic_tension === null || range(v.harmonic_tension, 0, 1))
+        && ["bounded_numeric_metric", "no_numeric_aspect_claim"].includes(v.evidence_mode as string)
+        && text(v.pressure_label, 160) && range(v.stablecoin_share_pct, 0, 100)
+        && TEMPORAL.includes(v.temporal_state as TemporalState)
+        && hasPressure === (v.harmonic_tension !== null)
+        && hasPressure === (v.evidence_mode === "bounded_numeric_metric");
+    }
     case "relative_market_field": return exact(v, ["section_id", "dominance_pct", "alt_breadth_24h_pct", "stablecoin_share_pct"]) && range(v.dominance_pct, 0, 100) && range(v.alt_breadth_24h_pct, 0, 100) && range(v.stablecoin_share_pct, 0, 100);
     case "temporal_context": return exact(v, ["section_id", "temporal_state", "observation_date", "source_generated_at_utc", "temporal_limitation"]) && TEMPORAL.includes(v.temporal_state as TemporalState) && date(v.observation_date) && timestamp(v.source_generated_at_utc) && text(v.temporal_limitation);
     default: return false;
@@ -103,11 +132,11 @@ function guardPayload(v: unknown, id?: BtcSectionId): v is BtcNarrativeSectionFa
 }
 
 export function guardBtcNarrativeRouterInput(v: unknown): v is BtcNarrativeRouterInput {
-  if (!rec(v) || !exact(v, ["schema_version", "geometry", "question_lens", "safe_reframed", "facts", "public_boundary", "template_catalog_version"])) return false;
-  if (v.schema_version !== "btc_deterministic_narrative_router_input_v0_1" || v.template_catalog_version !== "btc_narrative_template_catalog_v0_1") return false;
-  if (!guardBtcQuestionGeometry(v.geometry) || !LENSES.includes(v.question_lens as BtcQuestionLens) || typeof v.safe_reframed !== "boolean") return false;
-  const overlay = v.safe_reframed ? "observable_context_only" : "standard_public_context";
-  return v.question_lens === v.geometry.lens && v.geometry.safety_overlay === overlay && guardFacts(v.facts) && guardBoundary(v.public_boundary);
+  if (!guardEnvelope(v)) return false;
+  return guardBtcQuestionGeometry(v.geometry) && LENSES.includes(v.question_lens as BtcQuestionLens)
+    && v.question_lens === v.geometry.lens
+    && v.geometry.safety_overlay === (v.safe_reframed ? "observable_context_only" : "standard_public_context")
+    && guardFacts(v.facts) && guardBoundary(v.public_boundary);
 }
 
 export function guardBtcNarrativeSection(v: unknown): v is BtcNarrativeSection {
@@ -134,20 +163,30 @@ export function guardBtcNarrativeRouterOutput(v: unknown): v is BtcNarrativeRout
 }
 
 export function routeBtcDeterministicNarrative(input: BtcNarrativeRouterInput): BtcNarrativeRouterResult {
-  if (!guardBtcNarrativeRouterInput(input)) return { ok: false, code: "invalid_router_input", message: "Narrative router input failed the locked typed contract." };
+  if (!guardEnvelope(input)) return { ok: false, code: "invalid_router_input", message: "Narrative router envelope failed." };
+  if (!guardGeometryPartition(input.geometry)) return { ok: false, code: "geometry_partition_invalid", message: "Question geometry partition is invalid." };
+  if (!LENSES.includes(input.question_lens as BtcQuestionLens) || !LENSES.includes(input.geometry.lens as BtcQuestionLens)) return { ok: false, code: "invalid_router_input", message: "Question lens is unsupported." };
   if (input.question_lens !== input.geometry.lens) return { ok: false, code: "geometry_lens_mismatch", message: "Question lens and geometry lens do not match." };
+  if (!BTC_SAFETY_OVERLAYS.includes(input.geometry.safety_overlay as BtcSafetyOverlay) || input.geometry.safety_overlay !== (input.safe_reframed ? "observable_context_only" : "standard_public_context")) return { ok: false, code: "safety_overlay_invalid", message: "Safety overlay does not match the reframe state." };
+  if (!BTC_GEOMETRY_FOCUS_AXES.includes(input.geometry.focus_axis as BtcGeometryFocusAxis)) return { ok: false, code: "geometry_partition_invalid", message: "Focus axis is unsupported." };
+  if (!BTC_NARRATIVE_PROFILES.includes(input.geometry.narrative_profile as BtcNarrativeProfile)) return { ok: false, code: "unsupported_narrative_profile", message: "Narrative profile is unsupported." };
+  if (!BTC_WATCH_PROFILES.includes(input.geometry.watch_profile as BtcWatchProfile)) return { ok: false, code: "unsupported_watch_profile", message: "Watch profile is unsupported." };
+  if (!guardFacts(input.facts)) return { ok: false, code: "fact_projection_mismatch", message: "Narrative facts failed the typed projection contract." };
   if (!guardBoundary(input.public_boundary)) return { ok: false, code: "public_boundary_invalid", message: "Public safety boundary is invalid." };
+
   const ids = [...input.geometry.primary_sections, ...input.geometry.supporting_sections];
   const sections: BtcNarrativeSection[] = [];
   for (let i = 0; i < ids.length; i += 1) {
     const id = ids[i];
+    if (!BTC_SECTION_IDS.includes(id)) return { ok: false, code: "unsupported_section_id", message: "Section id is unsupported." };
     const role: "primary" | "supporting" = i < input.geometry.primary_sections.length ? "primary" : "supporting";
     const fact_payload = payload(id, input.facts);
-    const read_template_id = selectBtcReadTemplateId(input.geometry.narrative_profile, id, role);
     if (!guardPayload(fact_payload, id)) return { ok: false, code: "section_payload_mismatch", message: "Narrative fact projection failed." };
+    const read_template_id = selectBtcReadTemplateId(input.geometry.narrative_profile, id, role);
     if (!read_template_id) return { ok: false, code: "unsupported_template_id", message: "No closed template exists for the routed section." };
     sections.push({ section_id: id, role, order: i + 1, fact_payload, read_template_id });
   }
+
   const value: BtcNarrativeRouterOutput = {
     schema_version: "btc_deterministic_narrative_v0_1", route_version: input.geometry.route_version,
     lens: input.question_lens, focus_axis: input.geometry.focus_axis, narrative_profile: input.geometry.narrative_profile,
