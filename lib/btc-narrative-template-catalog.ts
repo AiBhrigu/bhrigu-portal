@@ -84,6 +84,12 @@ function pressureSummary(payload: Extract<BtcNarrativeSectionFactPayload, { sect
   return `The bounded temporal pressure band is ${payload.pressure_band}, with harmonic tension ${payload.harmonic_tension.toFixed(4)}.`;
 }
 
+function temporalStateSummary(value: Extract<BtcNarrativeSectionFactPayload, { section_id: "temporal_context" }>["temporal_state"]): string {
+  if (value === "available_bounded") return "bounded temporal metrics available";
+  if (value === "static_state_only") return "static temporal context only";
+  return "temporal context unavailable";
+}
+
 export function renderBtcNarrativeRead(
   templateId: BtcReadTemplateId,
   payload: BtcNarrativeSectionFactPayload,
@@ -106,7 +112,7 @@ export function renderBtcNarrativeRead(
       return `The ${payload.regime_label} regime and ${payload.direction_bias} direction bias define the current structure; liquidity state ${payload.liquidity_state} limits how broadly it can be expressed.`;
     case "structure_participation_read_v0_1":
       if (payload.section_id !== "relative_market_field") break;
-      return `Alt breadth at ${payload.alt_breadth_24h_pct.toFixed(1)}% and stablecoin share at ${payload.stablecoin_share_pct.toFixed(2)}% describe the width and reserve posture of current participation.`;
+      return `Alt breadth at ${payload.alt_breadth_24h_pct.toFixed(1)}% and stablecoin share at ${payload.stablecoin_share_pct.toFixed(2)}% describe the width and available reserve context of current participation.`;
     case "pressure_interaction_read_v0_1":
       if (payload.section_id !== "dominant_pressures") break;
       return `${pressureSummary(payload)} The read remains contextual and is not converted into an entry, exit, target, or trading instruction.`;
@@ -115,7 +121,7 @@ export function renderBtcNarrativeRead(
       return `${payload.temporal_limitation} The temporal lane is used only to bound pressure context.`;
     case "temporal_state_read_v0_1":
       if (payload.section_id !== "temporal_context") break;
-      return `For ${payload.observation_date}, the temporal state is ${payload.temporal_state}. ${payload.temporal_limitation}`;
+      return `For ${payload.observation_date}, the temporal state is ${temporalStateSummary(payload.temporal_state)}. ${payload.temporal_limitation}`;
     case "temporal_pressure_read_v0_1":
       if (payload.section_id !== "dominant_pressures") break;
       return `${pressureSummary(payload)} It is interpreted only as bounded context for the selected temporal date.`;
