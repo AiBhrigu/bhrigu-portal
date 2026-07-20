@@ -1,3 +1,5 @@
+declare const process: { stdout: { write(value: string): void }; exit(code: number): never };
+
 import type { BtcPublicBoundary } from "../lib/btc-public-output-contract";
 import {
   BTC_SOURCE_URLS,
@@ -158,7 +160,7 @@ async function run(): Promise<void> {
     status: 200,
     json: async () => clone(incompatiblePayloads.get(String(input))),
   })) as typeof fetch;
-  const incompatible = await loadBtcStaticSource({ incompatibleFetch, now: new Date("2026-07-20T00:00:00Z") } as never);
+  const incompatible = await loadBtcStaticSource({ fetchImpl: incompatibleFetch, now: new Date("2026-07-20T00:00:00Z") });
   assert(incompatible.ok === false && incompatible.code === "snapshot_incompatible", "Timestamp incompatibility did not fail closed");
 
   process.stdout.write("BTC_SOURCE_CONTRACT_V0_2_FIXTURE=PASS\n");
