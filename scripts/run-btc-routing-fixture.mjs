@@ -16,6 +16,7 @@ try {
   run(tscPath, ["-p", "tsconfig.btc-routing-fixture.json"]);
   run(process.execPath, [join(outputDir, "tests", "btc-routing-fixture.js")]);
   run(process.execPath, [join(outputDir, "tests", "btc-source-contract-fixture.js")]);
+  run(process.execPath, [join(outputDir, "tests", "btc-safe-reframe-geometry-fixture.js")]);
 } finally {
   rmSync(outputDir, { recursive: true, force: true });
 }
