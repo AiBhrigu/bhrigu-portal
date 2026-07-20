@@ -1,0 +1,115 @@
+name: BTC Field Read PR Visual
+
+on:
+  pull_request:
+    paths:
+      - "pages/crypto-astro/btc.tsx"
+      - "lib/btc-public-static-source.ts"
+      - "lib/btc-public-snapshot-composer.ts"
+      - "lib/btc-question-geometry.ts"
+      - "tests/btc-*.ts"
+      - "scripts/run-btc-routing-fixture.mjs"
+      - "tsconfig.btc-routing-fixture.json"
+      - ".github/workflows/btc-field-read-pr-visual.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  btc-field-read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:btc-routing
+      - run: npm run build
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Start production preview
+        run: |
+          npm run start -- -p 3000 >/tmp/btc-field-read.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-field-read.log
+          exit 1
+      - name: Verify form, reads, failures, and viewports
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, time
+          from pathlib import Path
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          questions = [
+            'What changed in the BTC field and why does it matter?',
+            'What does BTC dominance mean for the wider market?',
+            'What do liquidity, breadth, and pressure show now?',
+            'How does the selected date change the observation context?',
+            'Which BTC conditions should I watch?',
+          ]
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'): options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+          report={'checks':{},'reads':[],'failures':[]}
+          try:
+            driver.set_window_size(1440,1000)
+            driver.get('http://127.0.0.1:3000/crypto-astro/btc')
+            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            text=driver.find_element(By.TAG_NAME,'body').text
+            report['checks']['form_visible']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
+            report['checks']['five_examples']=len(driver.find_elements(By.CSS_SELECTOR,'.examples a'))==5
+            report['checks']['natural_language_help']='Write naturally' in text
+            report['checks']['direct_action_reframe_help']='converted into observable research context' in text
+            driver.save_screenshot('artifacts/desktop-btc-question-form.png')
+
+            for question in questions:
+              driver.get('http://127.0.0.1:3000/crypto-astro/btc?q='+quote(question))
+              WebDriverWait(driver,30).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+              body=driver.find_element(By.TAG_NAME,'body').text
+              ok='One coherent Cosmographer read' in body and 'BTC Field Read unavailable' not in body
+              form=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
+              report['reads'].append({'question':question,'complete_read':ok,'form_visible':form})
+            report['checks']['five_complete_reads']=all(x['complete_read'] and x['form_visible'] for x in report['reads'])
+            driver.save_screenshot('artifacts/desktop-btc-generated-read.png')
+
+            driver.get('http://127.0.0.1:3000/crypto-astro/btc?q=short')
+            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            body=driver.find_element(By.TAG_NAME,'body').text
+            report['checks']['input_failure_distinct']='Adjust the question or date' in body
+            report['checks']['form_on_input_failure']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
+
+            driver.set_window_size(390,844)
+            driver.get('http://127.0.0.1:3000/crypto-astro/btc')
+            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            report['checks']['mobile_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+            report['checks']['mobile_form_visible']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
+            report['checks']['mobile_examples_visible']=len(driver.find_elements(By.CSS_SELECTOR,'.examples a'))==5
+            driver.save_screenshot('artifacts/mobile-btc-question-form.png')
+
+            severe=[e for e in driver.get_log('browser') if e.get('level')=='SEVERE' and 'favicon' not in e.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+            report['failures']=[k for k,v in report['checks'].items() if not v]
+            assert not report['failures'], report['failures']
+          finally:
+            driver.quit()
+            Path('artifacts/btc-field-read-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          PY
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-field-read-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
