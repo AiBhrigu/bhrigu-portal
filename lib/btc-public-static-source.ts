@@ -74,27 +74,56 @@ export type SnapshotProof = {
   boundary: BtcPublicBoundary;
 };
 
-export type MarketFieldSnapshot = {
-  schema_version: "crypto_astro_market_field_public_v0_1";
+type PreparedMembrane = {
+  state: "prepared_inactive";
+  public_input: false;
+  disclosure: "status_only";
+};
+
+type SealedContext = {
+  state: string;
+  observation_window: string;
+  phase_context: string;
+  provenance: string;
+  pipeline: "sealed";
+};
+
+export type PublicMarketFieldSnapshot = {
+  schema_version: "crypto_astro_market_field_public_v0_2";
+  snapshot_mode: "public_safe_market_field";
   updated_at_utc: string;
   source_mode: "static_public_snapshot";
   derived_from: "site/crypto-astro/data/crypto_astro_snapshot.public.json";
   derived_status: "DERIVED_FROM_CANONICAL_SNAPSHOT";
   vectors: {
+    A_membrane: PreparedMembrane;
+    E_membrane: PreparedMembrane;
     M_market: {
       liquidity_health?: string;
+      [key: string]: unknown;
     };
-    CT_temporal: {
-      state: string;
-    };
+    CT_context: SealedContext;
   };
   field_output: {
     market_field_score: number;
     regime_label: string;
     direction_bias: string;
+    [key: string]: unknown;
   };
   cosmographer_read: Record<string, unknown>;
   boundary: BtcPublicBoundary;
+  [key: string]: unknown;
+};
+
+/**
+ * Internal compatibility view for the existing deterministic composer.
+ * CT_temporal is synthesized only after the sealed v0_2 packet passes validation;
+ * it is never accepted from or exposed by the public packet.
+ */
+export type MarketFieldSnapshot = PublicMarketFieldSnapshot & {
+  vectors: PublicMarketFieldSnapshot["vectors"] & {
+    CT_temporal: { state: string };
+  };
 };
 
 export type BtcSourceBundle = {
@@ -194,6 +223,24 @@ function validProofItem(value: unknown): value is SourceProofItem {
     && (value.bytes as number) > 0;
 }
 
+function validPreparedMembrane(value: unknown): value is PreparedMembrane {
+  return isRecord(value)
+    && hasExactKeys(value, ["state", "public_input", "disclosure"])
+    && value.state === "prepared_inactive"
+    && value.public_input === false
+    && value.disclosure === "status_only";
+}
+
+function validSealedContext(value: unknown): value is SealedContext {
+  return isRecord(value)
+    && hasExactKeys(value, ["state", "observation_window", "phase_context", "provenance", "pipeline"])
+    && nonEmptyString(value.state, 160)
+    && nonEmptyString(value.observation_window, 160)
+    && nonEmptyString(value.phase_context, 160)
+    && nonEmptyString(value.provenance, 160)
+    && value.pipeline === "sealed";
+}
+
 export function validateCanonicalSnapshot(value: unknown): value is CanonicalSnapshot {
   if (!isRecord(value)) return false;
   if (value.schema_version !== "crypto_astro_snapshot_public_v0_1" || value.source_mode !== "static_public_snapshot") return false;
@@ -234,16 +281,18 @@ export function validateSnapshotProof(value: unknown): value is SnapshotProof {
   return hasBoundary(value.boundary);
 }
 
-export function validateMarketField(value: unknown): value is MarketFieldSnapshot {
+export function validateMarketField(value: unknown): value is PublicMarketFieldSnapshot {
   if (!isRecord(value)) return false;
-  if (value.schema_version !== "crypto_astro_market_field_public_v0_1" || value.source_mode !== "static_public_snapshot") return false;
+  if (value.schema_version !== "crypto_astro_market_field_public_v0_2" || value.snapshot_mode !== "public_safe_market_field" || value.source_mode !== "static_public_snapshot") return false;
   if (value.derived_from !== "site/crypto-astro/data/crypto_astro_snapshot.public.json" || value.derived_status !== "DERIVED_FROM_CANONICAL_SNAPSHOT") return false;
   if (!utcTimestamp(value.updated_at_utc)) return false;
 
-  if (!isRecord(value.vectors) || !isRecord(value.vectors.M_market) || !isRecord(value.vectors.CT_temporal)) return false;
+  if (!isRecord(value.vectors)) return false;
+  if (!validPreparedMembrane(value.vectors.A_membrane) || !validPreparedMembrane(value.vectors.E_membrane)) return false;
+  if (!isRecord(value.vectors.M_market) || !validSealedContext(value.vectors.CT_context)) return false;
   const marketVector = value.vectors.M_market;
   if (Object.prototype.hasOwnProperty.call(marketVector, "liquidity_health") && !nonEmptyString(marketVector.liquidity_health, 160)) return false;
-  if (!nonEmptyString(value.vectors.CT_temporal.state, 160)) return false;
+  if (Object.prototype.hasOwnProperty.call(value.vectors, "CT_temporal")) return false;
 
   if (!isRecord(value.field_output)) return false;
   if (!finiteNumber(value.field_output.market_field_score)) return false;
@@ -335,11 +384,20 @@ export async function loadBtcStaticSource(options: { fetchImpl?: typeof fetch; n
       last_verified_at_utc: snapshot.generated_at_utc,
     };
   }
+
+  const normalizedMarketField: MarketFieldSnapshot = {
+    ...marketField,
+    vectors: {
+      ...marketField.vectors,
+      CT_temporal: { state: marketField.vectors.CT_context.state },
+    },
+  };
+
   return {
     ok: true,
     snapshot,
     proof,
-    marketField,
+    marketField: normalizedMarketField,
     freshness: freshness.state,
     age_hours: freshness.ageHours,
   };
