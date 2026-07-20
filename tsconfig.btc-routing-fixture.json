@@ -13,11 +13,13 @@
   },
   "include": [
     "lib/btc-public-output-contract.ts",
+    "lib/btc-public-static-source.ts",
     "lib/btc-question-geometry.ts",
     "lib/btc-narrative-template-catalog.ts",
     "lib/btc-deterministic-narrative-router.ts",
     "lib/btc-watch-condition-router.ts",
     "lib/btc-public-display-labels.ts",
-    "tests/btc-routing-fixture.ts"
+    "tests/btc-routing-fixture.ts",
+    "tests/btc-source-contract-fixture.ts"
   ]
 }
