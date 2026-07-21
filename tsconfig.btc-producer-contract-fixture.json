@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": [],
+    "rootDir": ".",
+    "outDir": ".tmp/btc-producer-contract-fixture",
+    "noEmitOnError": true
+  },
+  "include": [
+    "lib/btc-public-output-contract.ts",
+    "lib/btc-public-static-source.ts",
+    "tests/btc-producer-contract-fixture.ts"
+  ]
+}
