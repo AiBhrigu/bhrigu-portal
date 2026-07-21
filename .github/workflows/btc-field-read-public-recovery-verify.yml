@@ -1,0 +1,93 @@
+name: BTC Field Read Public Recovery Verify
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/btc-field-read-public-recovery-verify.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  public-recovery:
+    name: Verify Pages v0.2 and five public BTC reads
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify public producer packet and BTC Field Read responses
+        env:
+          VERIFY_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          verify_id = os.environ['VERIFY_ID']
+          headers = {
+              'User-Agent': 'ORION-Phi-Public-Recovery-Verify/1.0',
+              'Accept': 'application/json,text/html;q=0.9,*/*;q=0.8',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+          }
+
+          def fetch(url):
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  body = response.read().decode('utf-8', errors='replace')
+                  return response.status, body
+
+          packet_url = (
+              'https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/'
+              f'market_field_snapshot.public.v0_1.json?verify={urllib.parse.quote(verify_id)}'
+          )
+          status, body = fetch(packet_url)
+          assert status == 200, f'PAGES_PACKET_HTTP={status}'
+          packet = json.loads(body)
+          assert packet.get('schema_version') == 'crypto_astro_market_field_public_v0_2', packet.get('schema_version')
+          assert packet.get('updated_at_utc') == '2026-07-21T12:40:11Z', packet.get('updated_at_utc')
+          assert packet.get('boundary', {}).get('orion_core_protected') is True
+          assert packet.get('boundary', {}).get('formula_weights_exposed') is False
+          print('PUBLIC_MARKET_FIELD_SCHEMA=crypto_astro_market_field_public_v0_2')
+          print(f"PUBLIC_MARKET_FIELD_UPDATED_AT={packet['updated_at_utc']}")
+
+          questions = [
+              'What changed in the BTC field and why does it matter?',
+              'What does BTC dominance mean for the wider market?',
+              'What do liquidity, breadth, and pressure show now?',
+              'How does the selected date change the observation context?',
+              'Which BTC conditions should I watch?',
+          ]
+          required = (
+              'One coherent Cosmographer read',
+              'FACTS',
+              'COSMOGRAPHER READ',
+              'WATCH CONDITIONS',
+          )
+          forbidden = (
+              'BTC Field Read unavailable',
+              'source_schema_invalid',
+              'Published market artifacts failed the locked public schema',
+          )
+
+          passed = 0
+          for index, question in enumerate(questions, start=1):
+              query = urllib.parse.urlencode({'q': question, 'verify': verify_id})
+              url = f'https://www.bhrigu.io/crypto-astro/btc?{query}'
+              read_status, html = fetch(url)
+              assert read_status == 200, f'QUESTION_{index}_HTTP={read_status}'
+              missing = [token for token in required if token not in html]
+              blocked = [token for token in forbidden if token in html]
+              assert not missing, f'QUESTION_{index}_MISSING={missing}'
+              assert not blocked, f'QUESTION_{index}_FORBIDDEN={blocked}'
+              passed += 1
+              print(f'BTC_FIELD_READ_QUESTION_{index}=PASS')
+
+          assert passed == 5
+          print('BTC_FIELD_READ_PUBLIC_QUESTIONS=5_OF_5_PASS')
+          print('ORION_CORE_EXPOSURE=NO')
+          print('FREY_ROUTE_MUTATION=NO')
+          PY
