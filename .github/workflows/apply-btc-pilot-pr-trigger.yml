@@ -1,0 +1,39 @@
+name: Apply BTC Pilot PR Trigger
+
+on:
+  push:
+    branches:
+      - agent/btc-first-controlled-public-request-pilot-v0-1
+    paths:
+      - .github/workflows/apply-btc-pilot-pr-trigger.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-first-controlled-public-request-pilot-v0-1
+          fetch-depth: 0
+      - name: Convert verifier to pull-request trigger
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          target=Path('.github/workflows/btc-first-controlled-public-request-pilot.yml')
+          text=target.read_text()
+          old='''on:\n  push:\n    branches:\n      - agent/btc-first-controlled-public-request-pilot-v0-1\n    paths:\n      - .github/workflows/btc-first-controlled-public-request-pilot.yml\n'''
+          new='''on:\n  pull_request:\n    branches: [master]\n    paths:\n      - .github/workflows/btc-first-controlled-public-request-pilot.yml\n'''
+          if old not in text:
+            raise SystemExit('expected trigger block not found')
+          target.write_text(text.replace(old,new,1))
+          Path('.github/workflows/apply-btc-pilot-pr-trigger.yml').unlink()
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .github/workflows/btc-first-controlled-public-request-pilot.yml .github/workflows/apply-btc-pilot-pr-trigger.yml
+          git commit -m "test: prepare controlled pilot PR verifier"
+          git push origin HEAD:agent/btc-first-controlled-public-request-pilot-v0-1
