@@ -23,8 +23,8 @@ jobs:
           fetch-depth: 0
       - name: Apply locked three-zone Phi composition
         run: |
-          set +e
-          python3 - <<'PY' >/tmp/btc-strict-phi-apply.log 2>&1
+          exec > >(tee /tmp/btc-strict-phi-run.log) 2>&1
+          python3 - <<'PY'
           import base64, gzip, hashlib
           from pathlib import Path
           root=Path('.github/btc-strict-phi')
@@ -46,17 +46,16 @@ jobs:
           Path('pages/crypto-astro/btc.tsx').write_bytes(page_bytes)
           Path('.github/workflows/btc-field-read-pr-visual.yml').write_bytes(visual_bytes)
           PY
-          status=$?
-          set -e
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          if [ "$status" -ne 0 ]; then
-            cp /tmp/btc-strict-phi-apply.log BTC_STRICT_PHI_APPLY_ERROR.log
-            git add BTC_STRICT_PHI_APPLY_ERROR.log
-            git commit -m "Update strict Phi apply diagnostic" || true
-            git push origin HEAD:${BRANCH}
-            exit "$status"
-          fi
           git add pages/crypto-astro/btc.tsx .github/workflows/btc-field-read-pr-visual.yml
+          git status --short
           git commit -m "Recompose BTC field to strict three-zone Phi canon"
           git push origin HEAD:${BRANCH}
+      - name: Upload apply log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-strict-phi-apply-log-${{ github.run_number }}
+          path: /tmp/btc-strict-phi-run.log
+          if-no-files-found: error
