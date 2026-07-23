@@ -57,9 +57,6 @@ jobs:
             git push origin HEAD:${BRANCH}
             exit "$status"
           fi
-          git rm -r .github/btc-strict-phi
-          git rm .github/workflows/btc-strict-phi-apply.yml
-          git rm -f BTC_STRICT_PHI_APPLY_ERROR.log || true
           git add pages/crypto-astro/btc.tsx .github/workflows/btc-field-read-pr-visual.yml
           git commit -m "Recompose BTC field to strict three-zone Phi canon"
           git push origin HEAD:${BRANCH}
