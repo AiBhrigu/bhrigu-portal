@@ -22,7 +22,6 @@
     "lib/btc-public-language-contract.ts",
     "lib/btc-public-question-bridge.ts",
     "lib/btc-existing-glyph-canon.ts",
-    "lib/btc-public-snapshot-composer.ts",
     "lib/btc-market-envelope.ts",
     "tests/btc-routing-fixture.ts",
     "tests/btc-source-contract-fixture.ts",
