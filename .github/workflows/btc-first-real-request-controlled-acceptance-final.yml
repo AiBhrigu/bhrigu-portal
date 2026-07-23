@@ -1,0 +1,109 @@
+name: BTC First Real Request Controlled Acceptance Final
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/btc-first-real-request-controlled-acceptance-final.yml
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance-final:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install acceptance dependencies
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2 requests==2.32.4
+      - name: Run corrected controlled production acceptance
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import hashlib, json, math, re, statistics, time
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import parse_qs, urlparse
+          import requests
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          REQUEST_ID='BTC-REQ-0001-CONTROLLED'
+          MASTER_SHA='b91827266ce57acae3954c2ec523119c81f2118e'
+          BASE='https://www.bhrigu.io/crypto-astro/btc'
+          PRODUCER='https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json'
+          QUESTION='What changed in the BTC field since the previous accepted snapshot, why does it matter, what confirms or weakens it, and what should I watch next?'
+          started=datetime.now(timezone.utc)
+          report={'node':'BTC_PERSONAL_FIELD_FIRST_REAL_REQUEST_CONTROLLED_ACCEPTANCE_SCOPE_v0_1','request_id':REQUEST_ID,'master_sha':MASTER_SHA,'question':QUESTION,'started_at_utc':started.isoformat().replace('+00:00','Z'),'checks':{},'measurements':{},'accepted_output':{},'artifacts':{},'failures':[],'harness_correction':'watch assertion is case-insensitive and matches the rendered sentence beginning with Watch the next accepted Snapshot Delta.'}
+
+          def norm(value): return re.sub(r'\s+',' ',value or '').strip()
+          def texts(driver,selector): return [norm(node.text) for node in driver.find_elements(By.CSS_SELECTOR,selector)]
+          def collect(value,key,out=None):
+            out=[] if out is None else out
+            if isinstance(value,dict):
+              for k,v in value.items():
+                if k==key: out.append(v)
+                collect(v,key,out)
+            elif isinstance(value,list):
+              for item in value: collect(item,key,out)
+            return out
+          def numeric(values,expected):
+            return any(isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(float(v)) and abs(float(v)-float(expected))<=max(1e-8,abs(float(expected))*1e-10) for v in values)
+          def sha(path):
+            data=Path(path).read_bytes(); return {'sha256':hashlib.sha256(data).hexdigest(),'bytes':len(data)}
+
+          session=requests.Session(); session.headers.update({'User-Agent':'BHRIGU-first-real-request-acceptance-final/0.1'})
+          producer_response=session.get(PRODUCER,timeout=30); producer_response.raise_for_status(); producer=producer_response.json()
+          generated=producer['generated_at_utc']; age=(started-datetime.fromisoformat(generated.replace('Z','+00:00'))).total_seconds()/3600
+          report['measurements'].update({'producer_generated_at_utc':generated,'producer_age_hours':round(age,3),'producer_freshness_status':producer.get('freshness_status')})
+          report['checks']['producer_fresh']=producer_response.status_code==200 and producer.get('freshness_status')=='FRESH' and 0<=age<=72
+          latencies=[]
+          for i in range(5):
+            t=time.perf_counter(); response=session.get(BASE,params={'q':QUESTION,'acceptance_final':f'{REQUEST_ID}-{i}'},timeout=30); latencies.append(time.perf_counter()-t); report['checks'][f'http_{i+1}_200']=response.status_code==200
+          report['measurements']['http_latency_seconds']=[round(v,3) for v in latencies]; report['measurements']['http_median_seconds']=round(statistics.median(latencies),3); report['measurements']['http_max_seconds']=round(max(latencies),3)
+          report['checks']['http_max_under_5s']=max(latencies)<5
+
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'): options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs',{'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+          wait=lambda selector: WebDriverWait(driver,45).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
+          signature=lambda:{'primary':texts(driver,'.phiPlane .primaryModule h3'),'metrics':texts(driver,'.metricRibbon dl>div'),'executive':texts(driver,'.executivePrimary'),'context':texts(driver,'.executiveContext'),'memory':texts(driver,'.memoryAxis tbody tr'),'evidence':texts(driver,'.evidenceStack>details>summary')}
+          try:
+            driver.set_window_size(1440,1100); driver.get(BASE); wait('form textarea[name="q"]')
+            report['checks']['root_no_read']=not driver.find_elements(By.CSS_SELECTOR,'.reading')
+            textarea=driver.find_element(By.CSS_SELECTOR,'form textarea[name="q"]'); textarea.clear(); textarea.send_keys(QUESTION)
+            t=time.perf_counter(); driver.find_element(By.CSS_SELECTOR,'form button').click(); WebDriverWait(driver,45).until(lambda d:'q=' in d.current_url and len(d.find_elements(By.CSS_SELECTOR,'.reading'))==1); time.sleep(.2)
+            report['measurements']['form_submit_seconds']=round(time.perf_counter()-t,3); report['checks']['form_submit_under_8s']=report['measurements']['form_submit_seconds']<8
+            all_text=driver.execute_script('return document.body.textContent || ""'); lower=all_text.lower(); visible=driver.find_element(By.TAG_NAME,'body').text; next_data=driver.execute_script("const n=document.getElementById('__NEXT_DATA__');return n?JSON.parse(n.textContent):null")
+            primary=texts(driver,'.phiPlane .primaryModule h3'); memory=texts(driver,'.memoryAxis tbody tr')
+            report['accepted_output']={'url':driver.current_url,'observation':norm(driver.find_element(By.CSS_SELECTOR,'.observation b').text),'primary_modules':primary,'executive_title':norm(driver.find_element(By.CSS_SELECTOR,'.executivePrimary h3').text),'executive_lead':norm(driver.find_element(By.CSS_SELECTOR,'.executiveLead').text),'memory_rows':memory,'reading_zones':len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')),'modules':len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule')),'metric_cells':len(driver.find_elements(By.CSS_SELECTOR,'.metricRibbon dl>div')),'evidence_disclosures':len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details')),'history_rows':len(driver.find_elements(By.CSS_SELECTOR,'.historyTableWrap tbody tr')),'exact_memory_rows':len(driver.find_elements(By.CSS_SELECTOR,'.exactMemoryTableWrap tbody tr')),'source_links':len(driver.find_elements(By.CSS_SELECTOR,'.sourceProof a'))}
+            Path('artifacts/BTC-REQ-0001-accepted-output.txt').write_text(visible+'\n',encoding='utf-8'); Path('artifacts/BTC-REQ-0001-accepted-output.html').write_text(driver.page_source,encoding='utf-8'); driver.save_screenshot('artifacts/BTC-REQ-0001-accepted-desktop.png')
+            report['checks']['question_round_trip']=parse_qs(urlparse(driver.current_url).query).get('q',[None])[0]==QUESTION
+            report['checks']['three_zones']=report['accepted_output']['reading_zones']==3; report['checks']['five_modules']=report['accepted_output']['modules']==5; report['checks']['two_primary']=len(primary)==2; report['checks']['route']=set(primary)=={'MARKET STRUCTURE','CHANGE / EVENT MEMORY'}
+            report['checks']['six_metrics']=report['accepted_output']['metric_cells']==6; report['checks']['eight_memory']=len(memory)==8; report['checks']['three_evidence']=report['accepted_output']['evidence_disclosures']==3; report['checks']['two_history']=report['accepted_output']['history_rows']==2; report['checks']['eight_exact_memory']=report['accepted_output']['exact_memory_rows']==8; report['checks']['source_links']=report['accepted_output']['source_links']>=6
+            report['checks']['all_question_dimensions']=all(label in lower for label in ('what changed','what confirms it','what weakens it','watch next','uncertainty boundary'))
+            report['checks']['change_facts']='btc dominance' in lower and 'stablecoin share' in lower; report['checks']['watch_next']='watch the next accepted snapshot delta' in lower; report['checks']['uncertainty']='uncertainty boundary' in lower; report['checks']['clean_render']=not any(token in all_text for token in ('undefined','NaN','[object Object]'))
+            output=lower.replace(QUESTION.lower(),''); report['checks']['safe_boundary']=all(term in output for term in ('no trading signal','no forecast','no price target','orion protected')); report['checks']['no_actionable_instruction']=not any(term in output for term in ('you should buy','you should sell','entry price','stop-loss','guaranteed return','price target is'))
+            expected={'price_usd':producer['public_samples']['assets']['BTC']['price_usd'],'btc_dominance_pct':producer['market_reality']['btc_dominance_pct'],'defi_tvl_usd':producer['liquidity_tvl']['defi_tvl_usd'],'alt_breadth_24h_pct':producer['altcoin_rotation']['alt_breadth_24h_pct'],'market_field_score':producer['field_output']['market_field_score']}
+            report['checks']['binding_timestamp']=generated in collect(next_data,'source_generated_at_utc')
+            for key,value in expected.items(): report['checks'][f'binding_{key}']=numeric(collect(next_data,key),value)
+            first=signature(); accepted_url=driver.current_url; driver.get(accepted_url+'&repeat_final=1'); wait('.reading'); time.sleep(.15); report['checks']['deterministic']=first==signature()
+            driver.set_window_size(390,844); driver.get(accepted_url+'&mobile_final=1'); wait('.reading'); time.sleep(.15); report['checks']['mobile_complete']=len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone'))==3; report['checks']['mobile_no_overflow']=not bool(driver.execute_script('return document.documentElement.scrollWidth>window.innerWidth+1')); driver.save_screenshot('artifacts/BTC-REQ-0001-accepted-mobile.png')
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]; report['browser_severe']=severe; report['checks']['browser_clean']=not severe
+          finally: driver.quit()
+          for path in Path('artifacts').iterdir():
+            if path.is_file(): report['artifacts'][path.name]=sha(path)
+          report['failures']=[key for key,value in report['checks'].items() if value is not True]; report['classification']='ACCEPTED' if not report['failures'] else 'REJECTED'; report['completed_at_utc']=datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          Path('artifacts/BTC_FIRST_REAL_REQUEST_CONTROLLED_ACCEPTANCE_FINAL_REPORT.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          if report['failures']: raise SystemExit('Acceptance failures: '+', '.join(report['failures']))
+          PY
+      - name: Upload final controlled acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-first-real-request-controlled-acceptance-final
+          path: artifacts/
+          if-no-files-found: error
