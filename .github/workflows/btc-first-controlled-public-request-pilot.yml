@@ -1,9 +1,8 @@
 name: BTC First Controlled Public Request Pilot
 
 on:
-  push:
-    branches:
-      - agent/btc-first-controlled-public-request-pilot-v0-1
+  pull_request:
+    branches: [master]
     paths:
       - .github/workflows/btc-first-controlled-public-request-pilot.yml
 
@@ -169,7 +168,6 @@ jobs:
             return scenario,visible,all_text,next_data
 
           try:
-            # Real form path: root -> submit -> complete read.
             driver.set_window_size(1440,1000)
             driver.get(BASE)
             wait('form textarea[name="q"]')
@@ -210,7 +208,6 @@ jobs:
             report['checks']['general_no_render_tokens']=not any(token in gen_all for token in ('undefined','NaN','[object Object]'))
             report['checks']['general_public_boundary_present']='no trading signal' in gen_all.lower() and 'no forecast' in gen_all.lower() and 'no price target' in gen_all.lower()
 
-            # Verify rendered props remain bound to the producer snapshot.
             expected_values={
               'source_generated_at_utc':generated,
               'price_usd':producer['public_samples']['assets']['BTC']['price_usd'],
