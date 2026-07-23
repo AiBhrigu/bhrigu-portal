@@ -21,41 +21,24 @@ jobs:
         with:
           ref: agent/btc-desktop-semantic-compression-v0-1
           fetch-depth: 0
-      - name: Apply locked three-zone Phi composition
+      - name: Apply locked three-zone Phi page
         run: |
-          exec > >(tee /tmp/btc-strict-phi-run.log) 2>&1
           python3 - <<'PY'
           import base64, gzip, hashlib
           from pathlib import Path
           root=Path('.github/btc-strict-phi')
           page_files=sorted(root.glob('fixed-*.txt'))
-          visual_files=sorted(root.glob('visual-*.txt'))
           page=''.join(path.read_text().strip() for path in page_files)
-          visual=''.join(path.read_text().strip() for path in visual_files)
-          print('page_files', [p.name for p in page_files])
-          print('page_chars', len(page), hashlib.sha256(page.encode()).hexdigest())
-          print('visual_files', [p.name for p in visual_files])
-          print('visual_chars', len(visual), hashlib.sha256(visual.encode()).hexdigest())
           assert len(page_files)==5 and len(page)==14304
           assert hashlib.sha256(page.encode()).hexdigest()=='014689f08b20889511d1d6cd082ddf602675d659b10ec25ff86231acd7e02156'
           page_bytes=gzip.decompress(base64.b64decode(page, validate=True))
-          visual_bytes=gzip.decompress(base64.b64decode(visual, validate=True))
           assert hashlib.sha256(page_bytes).hexdigest()=='9eca47a19a9657172a746514aa9e5b68935f3647a7a3fc86a7bf74a87252340f'
-          print('page_decoded', len(page_bytes), hashlib.sha256(page_bytes).hexdigest())
-          print('visual_decoded', len(visual_bytes), hashlib.sha256(visual_bytes).hexdigest())
           Path('pages/crypto-astro/btc.tsx').write_bytes(page_bytes)
-          Path('.github/workflows/btc-field-read-pr-visual.yml').write_bytes(visual_bytes)
           PY
+          git rm -r .github/btc-strict-phi
+          git rm -f BTC_STRICT_PHI_APPLY_ERROR.log || true
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add pages/crypto-astro/btc.tsx .github/workflows/btc-field-read-pr-visual.yml
-          git status --short
+          git add pages/crypto-astro/btc.tsx
           git commit -m "Recompose BTC field to strict three-zone Phi canon"
           git push origin HEAD:${BRANCH}
-      - name: Upload apply log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: btc-strict-phi-apply-log-${{ github.run_number }}
-          path: /tmp/btc-strict-phi-run.log
-          if-no-files-found: error
