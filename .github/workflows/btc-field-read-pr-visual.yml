@@ -39,7 +39,7 @@ jobs:
           done
           cat /tmp/btc-field-read.log
           exit 1
-      - name: Verify commercial hierarchy, Φ-field, formatting and overlay clearance
+      - name: Verify strict Φ composition, evidence and overlay clearance
         run: |
           mkdir -p artifacts
           python3 - <<'PY'
@@ -68,7 +68,6 @@ jobs:
             return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};',selector)
 
           try:
-            # Production baseline before the PR repair.
             for label,width,height in [('1440x900',1440,900),('1920x1080',1920,1080)]:
               driver.set_window_size(width,height)
               driver.get(public_url)
@@ -88,55 +87,80 @@ jobs:
               driver.get('http://127.0.0.1:3000/crypto-astro/btc?q='+quote(item))
               wait_for('.reading')
               body=driver.find_element(By.TAG_NAME,'body').text
-              complete='BTC Field Read unavailable' not in body and driver.find_element(By.CSS_SELECTOR,'.currentMetrics').is_displayed()
+              complete='BTC Field Read unavailable' not in body and driver.find_element(By.CSS_SELECTOR,'.metricRibbon').is_displayed()
               report['reads'].append({'question':item,'complete_read':complete})
             report['checks']['five_complete_reads']=all(item['complete_read'] for item in report['reads'])
 
             for label,width,height in [('1440x900',1440,900),('1920x1080',1920,1080)]:
               driver.set_window_size(width,height)
               driver.get(local_url)
-              wait_for('#current-metrics-title')
               wait_for('#executive-read-title')
               wait_for('#phi-field-title')
+              wait_for('#evidence-title')
               body=driver.find_element(By.TAG_NAME,'body').text
 
-              # Required report order.
-              order_selectors=['.readingQuestion','.currentMetrics','.executiveRead','.phiSection','.memorySynthesis','.evidenceStack','.closingField']
-              order=[driver.execute_script('return document.querySelector(arguments[0]).offsetTop',selector) for selector in order_selectors]
-              report['checks'][f'{label}_report_order']=order==sorted(order)
+              zones=driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')
+              report['checks'][f'{label}_exactly_three_zones']=len(zones)==3
+              zone_tops=[driver.execute_script('return arguments[0].offsetTop',zone) for zone in zones]
+              report['checks'][f'{label}_zone_order']=zone_tops==sorted(zone_tops)
 
-              reading=rect('.readingQuestion')
-              executive=rect('.executiveRead')
-              report['measurements'][f'{label}_executive_distance']=executive['bottom']-reading['top']
-              report['checks'][f'{label}_executive_without_long_scroll']=(executive['bottom']-reading['top'])<=height
+              driver.execute_script('document.querySelector(".zoneObservation").scrollIntoView({block:"start"})')
+              time.sleep(.15)
+              zone1=rect('.zoneObservation')
+              report['measurements'][f'{label}_zone1_height']=zone1['height']
+              report['checks'][f'{label}_executive_without_long_scroll']=zone1['height']<=height*1.12
+              report['checks'][f'{label}_metric_ribbon_continuous']=len(driver.find_elements(By.CSS_SELECTOR,'.metricRibbon>dl>div'))==6
 
-              stage=rect('.phiComposition')
-              primary_field=rect('.primaryField')
-              support_field=rect('.supportField')
-              ratio=primary_field['width']/support_field['width']
-              report['measurements'][f'{label}_phi_ratio']=ratio
-              report['measurements'][f'{label}_phi_height']=stage['height']
-              report['checks'][f'{label}_phi_attention_ratio']=1.59<=ratio<=1.65
-              report['checks'][f'{label}_phi_compact']=stage['height']<=650
-
-              nodes=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleNode')
-              primaries=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .modulePrimary')
-              unavailable=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleUnavailable')
-              report['checks'][f'{label}_five_nodes']=len(nodes)==5
-              report['checks'][f'{label}_exactly_two_primary']=len(primaries)==2
-              node_rects=[driver.execute_script('const r=arguments[0].getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}',node) for node in nodes]
-              report['checks'][f'{label}_nodes_one_composition']=all(r['top']>=stage['top']-1 and r['bottom']<=stage['bottom']+1 and r['left']>=stage['left']-1 and r['right']<=stage['right']+1 for r in node_rects)
-              support_columns=driver.execute_script('return new Set([...document.querySelectorAll(".supportField .moduleNode")].map(n=>Math.round(n.getBoundingClientRect().left))).size')
-              report['measurements'][f'{label}_support_columns']=support_columns
-              report['checks'][f'{label}_no_long_node_rail']=support_columns>=2
-              primary_border=driver.execute_script('return getComputedStyle(document.querySelector(".modulePrimary")).borderColor')
-              support_border=driver.execute_script('return getComputedStyle(document.querySelector(".moduleSupport")).borderColor')
-              report['checks'][f'{label}_primary_visually_stronger']=primary_border!=support_border
-              report['checks'][f'{label}_unavailable_distinct']=len(unavailable)==0 or all(float(node.value_of_css_property('opacity'))<0.8 for node in unavailable)
-
-              report['checks'][f'{label}_eight_memory_metrics']=len(driver.find_elements(By.CSS_SELECTOR,'.memoryStrip article'))==8
-              report['checks'][f'{label}_progressive_evidence']=len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details'))==4
+              executive_primary=rect('.executivePrimary')
+              executive_context=rect('.executiveContext')
+              executive_ratio=executive_primary['width']/executive_context['width']
+              report['measurements'][f'{label}_executive_phi_ratio']=executive_ratio
+              report['checks'][f'{label}_executive_phi_ratio']=1.57<=executive_ratio<=1.67
               report['checks'][f'{label}_single_executive_read']=len(driver.find_elements(By.ID,'executive-read-title'))==1
+              driver.save_screenshot(f'artifacts/after-desktop-zone1-{label}.png')
+
+              driver.execute_script('document.querySelector(".zonePhi").scrollIntoView({block:"start"})')
+              time.sleep(.15)
+              plane=rect('.phiPlane')
+              primary_field=rect('.primaryField')
+              support_band=rect('.supportBand')
+              phi_ratio=primary_field['width']/support_band['width']
+              report['measurements'][f'{label}_phi_ratio']=phi_ratio
+              report['measurements'][f'{label}_phi_height']=plane['height']
+              report['checks'][f'{label}_real_phi_division']=1.57<=phi_ratio<=1.67
+              report['checks'][f'{label}_phi_compact']=plane['height']<=720
+
+              modules=driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule')
+              primaries=driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule')
+              supports=driver.find_elements(By.CSS_SELECTOR,'.phiPlane .supportModule')
+              unavailable=driver.find_elements(By.CSS_SELECTOR,'.phiPlane .supportUnavailable')
+              report['checks'][f'{label}_five_modules']=len(modules)==5
+              report['checks'][f'{label}_exactly_two_primary']=len(primaries)==2
+              report['checks'][f'{label}_three_supporting_or_unavailable']=len(supports)==3
+              module_rects=[driver.execute_script('const r=arguments[0].getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}',module) for module in modules]
+              report['checks'][f'{label}_one_phi_composition']=all(r['top']>=plane['top']-1 and r['bottom']<=plane['bottom']+1 and r['left']>=plane['left']-1 and r['right']<=plane['right']+1 for r in module_rects)
+
+              support_columns=driver.execute_script('return new Set([...document.querySelectorAll(".supportBand .supportModule")].map(n=>Math.round(n.getBoundingClientRect().left))).size')
+              report['measurements'][f'{label}_support_columns']=support_columns
+              report['checks'][f'{label}_no_long_support_rail']=support_columns>=2
+              primary_size=float(driver.execute_script('return parseFloat(getComputedStyle(document.querySelector(".primaryModule h3")).fontSize)'))
+              support_size=float(driver.execute_script('return parseFloat(getComputedStyle(document.querySelector(".supportModule h3")).fontSize)'))
+              report['measurements'][f'{label}_primary_type_size']=primary_size
+              report['measurements'][f'{label}_support_type_size']=support_size
+              report['checks'][f'{label}_primary_hierarchy_by_type']=primary_size>support_size
+              report['checks'][f'{label}_unavailable_distinct']=len(unavailable)==0 or all(float(node.value_of_css_property('opacity'))<0.7 for node in unavailable)
+
+              btc_radius=driver.execute_script('return getComputedStyle(document.querySelector(".btcAxis")).borderRadius')
+              report['measurements'][f'{label}_btc_axis_radius']=btc_radius
+              report['checks'][f'{label}_btc_axis_not_circle']=btc_radius in ('0px','')
+              report['checks'][f'{label}_direction_line_visible']=driver.find_element(By.CSS_SELECTOR,'.fieldDirection i').is_displayed()
+              report['checks'][f'{label}_eight_memory_metrics']=len(driver.find_elements(By.CSS_SELECTOR,'.memoryAxis tbody tr'))==8
+              report['checks'][f'{label}_three_evidence_disclosures']=len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details'))==3
+
+              rejected_selectors=['.metricGrid','.executiveGrid','.moduleNode','.btcCore','.memoryStrip']
+              rejected_count=sum(len(driver.find_elements(By.CSS_SELECTOR,selector)) for selector in rejected_selectors)
+              report['measurements'][f'{label}_rejected_selector_count']=rejected_count
+              report['checks'][f'{label}_no_rejected_dashboard_patterns']=rejected_count==0
 
               visible=body.replace('1.61803398875','')
               raw_decimals=re.findall(r'(?<![A-Za-z0-9])\d+\.\d{3,}(?![A-Za-z0-9])',visible)
@@ -146,13 +170,8 @@ jobs:
               report['checks'][f'{label}_no_raw_number_leakage']=not raw_decimals and not raw_integers
               report['checks'][f'{label}_plain_public_labels']=all(token not in visible for token in ['FULL_COMPARABLE','PRIMARY READ','SUPPORTING CONTEXT','INSUFFICIENT_EVIDENCE'])
               report['checks'][f'{label}_no_horizontal_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
-
-              driver.execute_script('document.querySelector(".readingQuestion").scrollIntoView({block:"start"})')
-              driver.save_screenshot(f'artifacts/after-desktop-report-{label}.png')
-              driver.execute_script('document.querySelector(".phiSection").scrollIntoView({block:"start"})')
               driver.save_screenshot(f'artifacts/after-desktop-phi-{label}.png')
 
-              # Simulate the external PREV / Up / NEXT browser overlay.
               driver.execute_script('''
                 const old=document.getElementById('simulated-browser-overlay'); if(old) old.remove();
                 const overlay=document.createElement('div'); overlay.id='simulated-browser-overlay';
@@ -162,14 +181,13 @@ jobs:
               time.sleep(.2)
               overlay=rect('#simulated-browser-overlay')
               quiet=rect('.closingField')
-              evidence=rect('.evidenceStack')
+              evidence=rect('.zoneEvidence')
               report['checks'][f'{label}_overlay_only_quiet_field']=evidence['bottom']<=overlay['top']+1 and quiet['top']<=overlay['top']+1 and quiet['bottom']>=overlay['bottom']-1
               sticky=driver.execute_script('return [...document.querySelectorAll("body *")].filter(e=>e.id!=="simulated-browser-overlay"&&["fixed","sticky"].includes(getComputedStyle(e).position)&&e.getBoundingClientRect().bottom>=window.innerHeight-4).length')
               report['checks'][f'{label}_no_site_bottom_sticky']=sticky==0
               driver.save_screenshot(f'artifacts/after-desktop-overlay-{label}.png')
               driver.execute_script('document.getElementById("simulated-browser-overlay").remove()')
 
-            # Keyboard focus visibility.
             driver.set_window_size(1440,900)
             driver.get(local_url)
             wait_for('textarea[name="q"]')
@@ -178,21 +196,18 @@ jobs:
             report['measurements']['keyboard_focus']=focus
             report['checks']['keyboard_focus_visible']=focus['tag'] in ['TEXTAREA','INPUT','BUTTON','SUMMARY','A'] and focus['outline']!='none' and focus['width']!='0px'
 
-            # Invalid input remains distinct.
             driver.get('http://127.0.0.1:3000/crypto-astro/btc?q=short')
             wait_for('#btc-question-title')
             invalid=driver.find_element(By.TAG_NAME,'body').text
             report['checks']['input_failure_distinct']='Adjust the question or date' in invalid
 
-            # Mobile smoke only: preserve stacking, safe area and no overflow.
             driver.set_window_size(390,844)
             driver.get(local_url)
             wait_for('.reading')
             report['checks']['mobile_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
-            report['checks']['mobile_five_nodes']=len(driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleNode'))==5
-            report['checks']['mobile_stacked_phi']=driver.execute_script('const p=document.querySelector(".phiComposition"),s=getComputedStyle(p);return s.gridTemplateColumns.split(" ").length===1 || p.getBoundingClientRect().width<=390')
+            report['checks']['mobile_five_modules']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule'))==5
             report['checks']['mobile_safe_field']=rect('.closingField')['height']>=128
-            driver.execute_script('document.querySelector(".phiSection").scrollIntoView({block:"start"})')
+            driver.execute_script('document.querySelector(".zonePhi").scrollIntoView({block:"start"})')
             driver.save_screenshot('artifacts/after-mobile-smoke-390x844.png')
 
             severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
@@ -208,6 +223,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-desktop-visual-repair-pr-${{ github.event.pull_request.number }}
+          name: btc-strict-phi-visual-pr-${{ github.event.pull_request.number }}
           path: artifacts/
           if-no-files-found: error
