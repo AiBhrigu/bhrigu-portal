@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/tmp/apply_btc_desktop.py", line 27, in <module>
+    text, count = re.subn(pattern, formatter, text, count=1, flags=re.S)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/__init__.py", line 197, in subn
+    return _compile(pattern, flags).subn(repl, string, count)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/__init__.py", line 334, in _compile_template
+    return _sre.template(pattern, _parser.parse_template(repl, pattern))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/re/_parser.py", line 1075, in parse_template
+    raise s.error('bad escape %s' % this, len(this)) from None
+re.error: bad escape \w at position 763 (line 12, column 64)
