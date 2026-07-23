@@ -1,0 +1,131 @@
+name: BTC Temporal Post-Merge Public Verify
+
+on:
+  push:
+    branches:
+      - agent/btc-first-real-request-readiness-recon-v0-1
+    paths:
+      - .github/workflows/btc-temporal-post-merge-public-verify.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install verifier dependencies
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2 requests==2.32.4
+      - name: Verify public temporal route and future boundary
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import hashlib, json, time, traceback
+          from datetime import datetime, timezone, timedelta
+          from pathlib import Path
+          from urllib.parse import urlencode
+          import requests
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          root='https://www.bhrigu.io/crypto-astro/btc'
+          today=datetime.now(timezone.utc).date().isoformat()
+          tomorrow=(datetime.now(timezone.utc).date()+timedelta(days=1)).isoformat()
+          report={'merge_sha':'b91827266ce57acae3954c2ec523119c81f2118e','checks':{},'measurements':{'today_utc':today,'tomorrow_utc':tomorrow},'scenarios':{},'artifacts':{},'failures':[]}
+          driver=None
+
+          def wait_for(selector, timeout=50):
+            return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
+
+          def open_case(name, question, date=None):
+            params={'q':question,'verify':'b91827266ce57acae3954c2ec523119c81f2118e'}
+            if date is not None: params['d']=date
+            url=root+'?'+urlencode(params)
+            driver.get(url)
+            wait_for('main')
+            time.sleep(.18)
+            body=driver.find_element(By.TAG_NAME,'body').text
+            primary=[node.text.split('\n')[0] for node in driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule h3')]
+            result={'url':url,'question':question,'date':date,'primary_modules':primary,'reading_zones':len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')),'failure_visible':len(driver.find_elements(By.CSS_SELECTOR,'.failure'))==1}
+            report['scenarios'][name]=result
+            return result,body
+
+          try:
+            headers={'User-Agent':'Mozilla/5.0 BTC-Temporal-Public-Verify/1.0','Cache-Control':'no-cache','Pragma':'no-cache'}
+            for name,url in [('root',root),('query',root+'?'+urlencode({'q':'How does the selected date change the observation context?','d':today,'verify':'b91827266ce57acae3954c2ec523119c81f2118e'}))]:
+              response=requests.get(url,headers=headers,timeout=40,allow_redirects=True)
+              report['checks'][f'{name}_http_200']=response.status_code==200
+              report[f'{name}_http']={'url':response.url,'status':response.status_code,'headers':dict(response.headers),'length':len(response.text)}
+              Path(f'artifacts/{name}.html').write_text(response.text)
+
+            options=webdriver.ChromeOptions()
+            for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+              options.add_argument(arg)
+            options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+            driver=webdriver.Chrome(options=options)
+            driver.set_window_size(1440,900)
+
+            temporal,temporal_body=open_case('public_temporal_example','How does the selected date change the observation context?',today)
+            expected={'TEMPORAL CONTEXT','CHANGE / EVENT MEMORY'}
+            report['checks']['temporal_complete']=temporal['reading_zones']==3
+            report['checks']['temporal_exactly_two_primary']=len(temporal['primary_modules'])==2
+            report['checks']['temporal_route']=set(temporal['primary_modules'])==expected
+            report['checks']['temporal_observation_today']=datetime.fromisoformat(today).strftime('%d %b %Y') in temporal_body
+            driver.execute_script('document.querySelector(".zonePhi").scrollIntoView({block:"start"})')
+            time.sleep(.15)
+            driver.save_screenshot('artifacts/public-temporal-route.png')
+
+            memory,memory_body=open_case('memory_control','What changed since the previous accepted snapshot?')
+            report['checks']['memory_complete']=memory['reading_zones']==3
+            report['checks']['memory_change_primary']='CHANGE / EVENT MEMORY' in memory['primary_modules']
+            report['checks']['memory_not_temporal_primary']='TEMPORAL CONTEXT' not in memory['primary_modules']
+
+            future,future_body=open_case('future_tomorrow','How does the selected date change temporal pressure?',tomorrow)
+            report['checks']['tomorrow_rejected']=future['failure_visible'] and future['reading_zones']==0
+            report['checks']['tomorrow_message']='on or before the current UTC date' in future_body
+            driver.execute_script('document.querySelector(".failure").scrollIntoView({block:"start"})')
+            time.sleep(.15)
+            driver.save_screenshot('artifacts/public-future-rejected.png')
+
+            fixed,fixed_body=open_case('future_2030','How does the selected date change temporal pressure?','2030-01-01')
+            report['checks']['fixed_2030_rejected']=fixed['failure_visible'] and fixed['reading_zones']==0
+            report['checks']['fixed_2030_message']='on or before the current UTC date' in fixed_body
+
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+          except Exception as exc:
+            report['checks']['verifier_execution']=False
+            report['exception']=repr(exc)
+            report['traceback']=traceback.format_exc()
+          finally:
+            if driver is not None: driver.quit()
+
+          for path in sorted(Path('artifacts').glob('*')):
+            if path.is_file(): report['artifacts'][path.name]={'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'bytes':path.stat().st_size}
+          report['failures']=[key for key,value in report['checks'].items() if not value]
+          Path('artifacts/public-temporal-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          assert not report['failures'], report['failures']
+          PY
+      - name: Upload public temporal proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-temporal-post-merge-public-proof
+          path: artifacts/
+          if-no-files-found: error
+      - name: Publish compact report
+        if: always()
+        run: |
+          if [ ! -f artifacts/public-temporal-report.json ]; then
+            printf '{"checks":{"report_created":false},"failures":["report_created"]}\n' > artifacts/public-temporal-report.json
+          fi
+          cp artifacts/public-temporal-report.json BTC_TEMPORAL_POST_MERGE_PUBLIC_VERIFY_REPORT.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add BTC_TEMPORAL_POST_MERGE_PUBLIC_VERIFY_REPORT.json
+          git commit -m "Record BTC temporal post-merge public proof" || exit 0
+          git push origin HEAD:agent/btc-first-real-request-readiness-recon-v0-1
