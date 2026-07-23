@@ -1,0 +1,55 @@
+name: BTC Envelope Golden Rail Rescue
+
+on:
+  push:
+    branches:
+      - agent/btc-personal-field-market-envelope-v0-1
+    paths:
+      - .github/workflows/btc-envelope-golden-rail-rescue.yml
+
+permissions:
+  contents: write
+
+env:
+  BRANCH: agent/btc-personal-field-market-envelope-v0-1
+
+jobs:
+  rescue:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-personal-field-market-envelope-v0-1
+          fetch-depth: 0
+      - name: Apply geometry repair and remove temporary workflows
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('pages/crypto-astro/btc.tsx')
+          text = path.read_text()
+          changes = 0
+          pairs = [
+            ('.btc{min-height:220px;display:grid;place-content:center;text-align:center;', '.btc{align-self:start;min-height:360px;display:grid;place-content:center;text-align:center;'),
+            ('.nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px}', '.nodes{display:grid;grid-template-columns:1fr;gap:8px}'),
+            ('.btc{min-height:170px}.envelope{padding:18px 13px}.nodes{grid-template-columns:1fr 1fr}', '.btc{min-height:170px}.envelope{padding:18px 13px}.nodes{grid-template-columns:1fr}'),
+          ]
+          for old,new in pairs:
+            count=text.count(old)
+            if count > 1:
+              raise SystemExit(f'non-bounded replacement count for {old!r}: {count}')
+            if count == 1:
+              text=text.replace(old,new)
+              changes += 1
+          if changes < 2:
+            raise SystemExit(f'expected at least two geometry changes, got {changes}')
+          path.write_text(text)
+          PY
+          git rm .github/workflows/btc-envelope-golden-rail-repair.yml
+          git rm .github/workflows/btc-envelope-golden-rail-rescue.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/crypto-astro/btc.tsx
+          git commit -m "Lock BTC golden anchor and module rail geometry"
+          git push origin HEAD:${BRANCH}
