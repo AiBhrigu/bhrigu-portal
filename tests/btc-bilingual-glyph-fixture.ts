@@ -5,7 +5,6 @@ import { classifyQuestionLens, requiresTradingReframe } from "../lib/btc-public-
 import {
   BTC_BILINGUAL_EXAMPLE_ROUTES,
   BTC_PUBLIC_LANGUAGE_CONTRACT_SCHEMA,
-  canonicalizeBtcQuestionForRouter,
   formatBtcModuleLabel,
   formatBtcObservationDate,
   formatBtcProofSource,
@@ -13,6 +12,7 @@ import {
   getBtcExampleRoutes,
   resolveBtcPublicLocale,
 } from "../lib/btc-public-language-contract";
+import { canonicalizeBtcQuestionForRouter } from "../lib/btc-public-question-bridge";
 import {
   BTC_EXISTING_GLYPH_BINDING,
   BTC_EXISTING_GLYPH_CLASSES,
