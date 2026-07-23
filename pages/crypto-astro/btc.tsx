@@ -805,7 +805,7 @@ export default function Page({
       </main>
       <style jsx global>{`
         :global(*){box-sizing:border-box}
-        :global(html){scroll-padding-bottom:calc(clamp(128px,12vh,168px) + env(safe-area-inset-bottom))}
+        :global(html){scroll-padding-top:calc(84px + env(safe-area-inset-top));scroll-padding-bottom:calc(clamp(128px,12vh,168px) + env(safe-area-inset-bottom))}
         :global(html,body){margin:0;background:#050a12;color:#e8eef6;font-family:Inter,system-ui,sans-serif;overflow-x:hidden}
         :global(a){color:#b7d2ff}
         :global(code){overflow-wrap:anywhere}
@@ -953,6 +953,9 @@ export default function Page({
           .watchEvidence{grid-template-columns:1fr}
         }
         @media(max-width:800px){
+          /* BTC_MOBILE_SCROLL_CLEARANCE_V0_1 */
+          :global(html){scroll-padding-top:calc(76px + env(safe-area-inset-top));}
+          .questionPanel,.readingZone,.readingZone [id],.phiModule,.btcAxis,.memoryAxis,.evidenceStack>details{scroll-margin-top:calc(76px + env(safe-area-inset-top));scroll-margin-bottom:calc(96px + env(safe-area-inset-bottom));}
           main{padding-inline:12px}
           .questionPanel>header,.zoneHeading,.memoryAxis>header{display:grid}
           .observation,.zoneHeading>p{text-align:left}
