@@ -26,7 +26,15 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run verify:btc-routing
+      - name: Verify routing with diagnostic artifact
+        run: |
+          mkdir -p artifacts
+          set +e
+          npm run verify:btc-routing >artifacts/routing-fixture.log 2>&1
+          status=$?
+          set -e
+          cat artifacts/routing-fixture.log
+          exit "$status"
       - name: Build with diagnostic artifact
         run: |
           mkdir -p artifacts
