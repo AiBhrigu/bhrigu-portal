@@ -18,7 +18,7 @@ permissions:
 jobs:
   btc-field-read:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,68 +39,166 @@ jobs:
           done
           cat /tmp/btc-field-read.log
           exit 1
-      - name: Verify form, reads, failures, and viewports
+      - name: Verify commercial hierarchy, Φ-field, formatting and overlay clearance
         run: |
           mkdir -p artifacts
           python3 - <<'PY'
-          import json, time
+          import json, re, time
           from pathlib import Path
           from urllib.parse import quote
           from selenium import webdriver
           from selenium.webdriver.common.by import By
+          from selenium.webdriver.common.keys import Keys
           from selenium.webdriver.support.ui import WebDriverWait
 
-          questions = [
-            'What changed in the BTC field and why does it matter?',
-            'What does BTC dominance mean for the wider market?',
-            'What do liquidity, breadth, and pressure show now?',
-            'How does the selected date change the observation context?',
-            'Which BTC conditions should I watch?',
-          ]
+          question='What changed in the BTC field and why does it matter?'
+          local_url='http://127.0.0.1:3000/crypto-astro/btc?q='+quote(question)
+          public_url='https://www.bhrigu.io/crypto-astro/btc?q='+quote(question)
           options=webdriver.ChromeOptions()
-          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'): options.add_argument(arg)
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+            options.add_argument(arg)
           options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
           driver=webdriver.Chrome(options=options)
-          report={'checks':{},'reads':[],'failures':[]}
+          report={'checks':{},'measurements':{},'reads':[],'failures':[]}
+
+          def wait_for(selector, timeout=40):
+            return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
+
+          def rect(selector):
+            return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};',selector)
+
           try:
-            driver.set_window_size(1440,1000)
-            driver.get('http://127.0.0.1:3000/crypto-astro/btc')
-            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
-            text=driver.find_element(By.TAG_NAME,'body').text
-            report['checks']['form_visible']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
-            report['checks']['five_examples']=len(driver.find_elements(By.CSS_SELECTOR,'.examples a'))==5
-            report['checks']['natural_language_help']='Write naturally' in text
-            report['checks']['direct_action_reframe_help']='converted into observable research context' in text
-            driver.save_screenshot('artifacts/desktop-btc-question-form.png')
+            # Production baseline before the PR repair.
+            for label,width,height in [('1440x900',1440,900),('1920x1080',1920,1080)]:
+              driver.set_window_size(width,height)
+              driver.get(public_url)
+              wait_for('#btc-question-title')
+              driver.save_screenshot(f'artifacts/before-desktop-{label}.png')
+              report['checks'][f'before_{label}_captured']=True
 
-            for question in questions:
-              driver.get('http://127.0.0.1:3000/crypto-astro/btc?q='+quote(question))
-              WebDriverWait(driver,30).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            questions=[
+              question,
+              'What does BTC dominance mean for the wider market?',
+              'What do liquidity, breadth, and pressure show now?',
+              'How does the selected date change the observation context?',
+              'Which BTC conditions should I watch?',
+            ]
+            for item in questions:
+              driver.set_window_size(1440,900)
+              driver.get('http://127.0.0.1:3000/crypto-astro/btc?q='+quote(item))
+              wait_for('.reading')
               body=driver.find_element(By.TAG_NAME,'body').text
-              ok='One coherent Cosmographer read' in body and 'BTC Field Read unavailable' not in body
-              form=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
-              report['reads'].append({'question':question,'complete_read':ok,'form_visible':form})
-            report['checks']['five_complete_reads']=all(x['complete_read'] and x['form_visible'] for x in report['reads'])
-            driver.save_screenshot('artifacts/desktop-btc-generated-read.png')
+              complete='BTC Field Read unavailable' not in body and driver.find_element(By.CSS_SELECTOR,'.currentMetrics').is_displayed()
+              report['reads'].append({'question':item,'complete_read':complete})
+            report['checks']['five_complete_reads']=all(item['complete_read'] for item in report['reads'])
 
+            for label,width,height in [('1440x900',1440,900),('1920x1080',1920,1080)]:
+              driver.set_window_size(width,height)
+              driver.get(local_url)
+              wait_for('#current-metrics-title')
+              wait_for('#executive-read-title')
+              wait_for('#phi-field-title')
+              body=driver.find_element(By.TAG_NAME,'body').text
+
+              # Required report order.
+              order_selectors=['.readingQuestion','.currentMetrics','.executiveRead','.phiSection','.memorySynthesis','.evidenceStack','.closingField']
+              order=[driver.execute_script('return document.querySelector(arguments[0]).offsetTop',selector) for selector in order_selectors]
+              report['checks'][f'{label}_report_order']=order==sorted(order)
+
+              reading=rect('.readingQuestion')
+              executive=rect('.executiveRead')
+              report['measurements'][f'{label}_executive_distance']=executive['bottom']-reading['top']
+              report['checks'][f'{label}_executive_without_long_scroll']=(executive['bottom']-reading['top'])<=height
+
+              stage=rect('.phiComposition')
+              primary_field=rect('.primaryField')
+              support_field=rect('.supportField')
+              ratio=primary_field['width']/support_field['width']
+              report['measurements'][f'{label}_phi_ratio']=ratio
+              report['measurements'][f'{label}_phi_height']=stage['height']
+              report['checks'][f'{label}_phi_attention_ratio']=1.59<=ratio<=1.65
+              report['checks'][f'{label}_phi_compact']=stage['height']<=650
+
+              nodes=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleNode')
+              primaries=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .modulePrimary')
+              unavailable=driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleUnavailable')
+              report['checks'][f'{label}_five_nodes']=len(nodes)==5
+              report['checks'][f'{label}_exactly_two_primary']=len(primaries)==2
+              node_rects=[driver.execute_script('const r=arguments[0].getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right}',node) for node in nodes]
+              report['checks'][f'{label}_nodes_one_composition']=all(r['top']>=stage['top']-1 and r['bottom']<=stage['bottom']+1 and r['left']>=stage['left']-1 and r['right']<=stage['right']+1 for r in node_rects)
+              support_columns=driver.execute_script('return new Set([...document.querySelectorAll(".supportField .moduleNode")].map(n=>Math.round(n.getBoundingClientRect().left))).size')
+              report['measurements'][f'{label}_support_columns']=support_columns
+              report['checks'][f'{label}_no_long_node_rail']=support_columns>=2
+              primary_border=driver.execute_script('return getComputedStyle(document.querySelector(".modulePrimary")).borderColor')
+              support_border=driver.execute_script('return getComputedStyle(document.querySelector(".moduleSupport")).borderColor')
+              report['checks'][f'{label}_primary_visually_stronger']=primary_border!=support_border
+              report['checks'][f'{label}_unavailable_distinct']=len(unavailable)==0 or all(float(node.value_of_css_property('opacity'))<0.8 for node in unavailable)
+
+              report['checks'][f'{label}_eight_memory_metrics']=len(driver.find_elements(By.CSS_SELECTOR,'.memoryStrip article'))==8
+              report['checks'][f'{label}_progressive_evidence']=len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details'))==4
+              report['checks'][f'{label}_single_executive_read']=len(driver.find_elements(By.ID,'executive-read-title'))==1
+
+              visible=body.replace('1.61803398875','')
+              raw_decimals=re.findall(r'(?<![A-Za-z0-9])\d+\.\d{3,}(?![A-Za-z0-9])',visible)
+              raw_integers=re.findall(r'(?<![A-Za-z0-9])\d{8,}(?![A-Za-z0-9])',visible)
+              report['measurements'][f'{label}_raw_decimals']=raw_decimals
+              report['measurements'][f'{label}_raw_integers']=raw_integers
+              report['checks'][f'{label}_no_raw_number_leakage']=not raw_decimals and not raw_integers
+              report['checks'][f'{label}_plain_public_labels']=all(token not in visible for token in ['FULL_COMPARABLE','PRIMARY READ','SUPPORTING CONTEXT','INSUFFICIENT_EVIDENCE'])
+              report['checks'][f'{label}_no_horizontal_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+
+              driver.execute_script('document.querySelector(".readingQuestion").scrollIntoView({block:"start"})')
+              driver.save_screenshot(f'artifacts/after-desktop-report-{label}.png')
+              driver.execute_script('document.querySelector(".phiSection").scrollIntoView({block:"start"})')
+              driver.save_screenshot(f'artifacts/after-desktop-phi-{label}.png')
+
+              # Simulate the external PREV / Up / NEXT browser overlay.
+              driver.execute_script('''
+                const old=document.getElementById('simulated-browser-overlay'); if(old) old.remove();
+                const overlay=document.createElement('div'); overlay.id='simulated-browser-overlay';
+                Object.assign(overlay.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'0',width:'320px',height:'64px',background:'rgba(120,120,120,.72)',borderRadius:'18px 18px 0 0',zIndex:'999999',pointerEvents:'none'});
+                document.body.appendChild(overlay); window.scrollTo(0,document.body.scrollHeight);
+              ''')
+              time.sleep(.2)
+              overlay=rect('#simulated-browser-overlay')
+              quiet=rect('.closingField')
+              evidence=rect('.evidenceStack')
+              report['checks'][f'{label}_overlay_only_quiet_field']=evidence['bottom']<=overlay['top']+1 and quiet['top']<=overlay['top']+1 and quiet['bottom']>=overlay['bottom']-1
+              sticky=driver.execute_script('return [...document.querySelectorAll("body *")].filter(e=>e.id!=="simulated-browser-overlay"&&["fixed","sticky"].includes(getComputedStyle(e).position)&&e.getBoundingClientRect().bottom>=window.innerHeight-4).length')
+              report['checks'][f'{label}_no_site_bottom_sticky']=sticky==0
+              driver.save_screenshot(f'artifacts/after-desktop-overlay-{label}.png')
+              driver.execute_script('document.getElementById("simulated-browser-overlay").remove()')
+
+            # Keyboard focus visibility.
+            driver.set_window_size(1440,900)
+            driver.get(local_url)
+            wait_for('textarea[name="q"]')
+            driver.find_element(By.TAG_NAME,'body').send_keys(Keys.TAB)
+            focus=driver.execute_script('const e=document.activeElement,s=getComputedStyle(e);return {tag:e.tagName,outline:s.outlineStyle,width:s.outlineWidth};')
+            report['measurements']['keyboard_focus']=focus
+            report['checks']['keyboard_focus_visible']=focus['tag'] in ['TEXTAREA','INPUT','BUTTON','SUMMARY','A'] and focus['outline']!='none' and focus['width']!='0px'
+
+            # Invalid input remains distinct.
             driver.get('http://127.0.0.1:3000/crypto-astro/btc?q=short')
-            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
-            body=driver.find_element(By.TAG_NAME,'body').text
-            report['checks']['input_failure_distinct']='Adjust the question or date' in body
-            report['checks']['form_on_input_failure']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
+            wait_for('#btc-question-title')
+            invalid=driver.find_element(By.TAG_NAME,'body').text
+            report['checks']['input_failure_distinct']='Adjust the question or date' in invalid
 
+            # Mobile smoke only: preserve stacking, safe area and no overflow.
             driver.set_window_size(390,844)
-            driver.get('http://127.0.0.1:3000/crypto-astro/btc')
-            WebDriverWait(driver,20).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            driver.get(local_url)
+            wait_for('.reading')
             report['checks']['mobile_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
-            report['checks']['mobile_form_visible']=driver.find_element(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"]').is_displayed()
-            report['checks']['mobile_examples_visible']=len(driver.find_elements(By.CSS_SELECTOR,'.examples a'))==5
-            driver.save_screenshot('artifacts/mobile-btc-question-form.png')
+            report['checks']['mobile_five_nodes']=len(driver.find_elements(By.CSS_SELECTOR,'.phiComposition .moduleNode'))==5
+            report['checks']['mobile_stacked_phi']=driver.execute_script('const p=document.querySelector(".phiComposition"),s=getComputedStyle(p);return s.gridTemplateColumns.split(" ").length===1 || p.getBoundingClientRect().width<=390')
+            report['checks']['mobile_safe_field']=rect('.closingField')['height']>=128
+            driver.execute_script('document.querySelector(".phiSection").scrollIntoView({block:"start"})')
+            driver.save_screenshot('artifacts/after-mobile-smoke-390x844.png')
 
-            severe=[e for e in driver.get_log('browser') if e.get('level')=='SEVERE' and 'favicon' not in e.get('message','').lower()]
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
             report['checks']['browser_severe_none']=not severe
             report['browser_severe']=severe
-            report['failures']=[k for k,v in report['checks'].items() if not v]
+            report['failures']=[key for key,value in report['checks'].items() if not value]
             assert not report['failures'], report['failures']
           finally:
             driver.quit()
@@ -110,6 +208,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-field-read-pr-${{ github.event.pull_request.number }}
+          name: btc-desktop-visual-repair-pr-${{ github.event.pull_request.number }}
           path: artifacts/
           if-no-files-found: error
