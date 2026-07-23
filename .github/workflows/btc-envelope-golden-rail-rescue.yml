@@ -1,10 +1,11 @@
 name: BTC Envelope Golden Rail Rescue
 
 on:
-  push:
-    branches:
-      - agent/btc-personal-field-market-envelope-v0-1
+  pull_request:
+    types: [reopened]
+    branches: [master]
     paths:
+      - pages/crypto-astro/btc.tsx
       - .github/workflows/btc-envelope-golden-rail-rescue.yml
 
 permissions:
@@ -15,7 +16,7 @@ env:
 
 jobs:
   rescue:
-    if: github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.ref == 'agent/btc-personal-field-market-envelope-v0-1'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -23,7 +24,7 @@ jobs:
         with:
           ref: agent/btc-personal-field-market-envelope-v0-1
           fetch-depth: 0
-      - name: Apply geometry repair and remove temporary workflows
+      - name: Apply geometry repair and remove temporary workflow
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -46,7 +47,6 @@ jobs:
             raise SystemExit(f'expected at least two geometry changes, got {changes}')
           path.write_text(text)
           PY
-          git rm .github/workflows/btc-envelope-golden-rail-repair.yml
           git rm .github/workflows/btc-envelope-golden-rail-rescue.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
