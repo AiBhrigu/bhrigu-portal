@@ -26,7 +26,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   return{props:{result:composed.value,failure:null,envelope:market.ok===true?market.value:null,envelopeFailure:market.ok===true?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate}};
 };
 
-const compact=(value:number,decimals:number)=>value.toFixed(decimals).replace(/\.0+$|(?<=\.[0-9]*?)0+$/g,"").replace(/\.$/,"");
+const compact=(value:number,decimals:number)=>{const fixed=value.toFixed(decimals);return fixed.includes(".")?fixed.replace(/\.?0+$/,""):fixed};
 const money=(value:number,signed=false)=>{
   const absolute=Math.abs(value);
   const divisor=absolute>=1e12?1e12:absolute>=1e9?1e9:absolute>=1e6?1e6:absolute>=1e3?1e3:1;
