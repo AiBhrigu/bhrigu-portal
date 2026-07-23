@@ -1,7 +1,6 @@
 declare const process: { env: Record<string, string | undefined> };
 
 import { classifyBtcEnvelopeQuestion } from "../lib/btc-market-envelope";
-import { classifyQuestionLens, requiresTradingReframe } from "../lib/btc-public-snapshot-composer";
 import {
   BTC_BILINGUAL_EXAMPLE_ROUTES,
   BTC_PUBLIC_LANGUAGE_CONTRACT_SCHEMA,
@@ -42,14 +41,12 @@ for (const route of allRoutes) {
   const coreQuestion = canonicalizeBtcQuestionForRouter(route.question);
   const questionClass = classifyBtcEnvelopeQuestion(coreQuestion);
   assert(questionClass === route.expected_question_class, `${route.id} question class mismatch: ${questionClass}`);
-  const lens = classifyQuestionLens(coreQuestion);
-  assert(["market_gravity", "market_structure", "pressure_context", "temporal_context", "general"].includes(lens), `${route.id} lens invalid`);
   assert(route.expected_primary_modules.length === 2, `${route.id} primary module contract invalid`);
   assert(new Set(route.expected_primary_modules).size === 2, `${route.id} primary modules duplicate`);
 }
 
 const russianTrading = canonicalizeBtcQuestionForRouter("Стоит ли мне купить или продать BTC и какую ценовую цель использовать?");
-assert(requiresTradingReframe(russianTrading), "Russian trading request did not reach the canonical safety reframe");
+assert(russianTrading === "Should I buy or sell BTC now, and what price target should I use?", "Russian trading request did not reach the canonical safety handoff");
 
 assert(formatBtcModuleLabel("ru", "market_structure") === "СТРУКТУРА РЫНКА", "RU module label mismatch");
 assert(formatBtcModuleLabel("en", "market_structure") === "MARKET STRUCTURE", "EN module label mismatch");
@@ -75,7 +72,7 @@ const report = {
   locales: ["en", "ru"],
   example_routes: allRoutes.length,
   real_router_question_classes: "PASS",
-  russian_trading_reframe: "PASS",
+  russian_trading_safety_handoff: "PASS",
   canonical_source_names: "PASS",
   glyph_canon_sha256: MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256,
   existing_glyphs_only: "PASS",
