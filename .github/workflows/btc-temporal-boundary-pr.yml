@@ -1,0 +1,114 @@
+name: BTC Temporal Route and Date Boundary
+
+on:
+  pull_request:
+    paths:
+      - "lib/btc-public-snapshot-composer.ts"
+      - "lib/btc-market-envelope.ts"
+      - ".github/workflows/btc-temporal-boundary-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  temporal-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:btc-routing
+      - run: npm run build
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Start production preview
+        run: |
+          npm run start -- -p 3000 >/tmp/btc-temporal-boundary.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-temporal-boundary.log
+          exit 1
+      - name: Verify cross-router consistency and future-date rejection
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, time
+          from datetime import datetime, timezone, timedelta
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base='http://127.0.0.1:3000/crypto-astro/btc'
+          today=datetime.now(timezone.utc).date().isoformat()
+          tomorrow=(datetime.now(timezone.utc).date()+timedelta(days=1)).isoformat()
+          report={'checks':{},'measurements':{'today_utc':today,'tomorrow_utc':tomorrow},'scenarios':{},'failures':[]}
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+            options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+
+          def open_case(name, question, date=None):
+            params={'q':question}
+            if date is not None: params['d']=date
+            driver.get(base+'?'+urlencode(params))
+            WebDriverWait(driver,40).until(lambda d:d.find_element(By.CSS_SELECTOR,'main'))
+            time.sleep(.12)
+            body=driver.find_element(By.TAG_NAME,'body').text
+            primary=[node.text.split('\n')[0] for node in driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule h3')]
+            result={'question':question,'date':date,'body':body,'primary_modules':primary,'reading_zones':len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')),'failure_visible':len(driver.find_elements(By.CSS_SELECTOR,'.failure'))==1}
+            report['scenarios'][name]={key:value for key,value in result.items() if key!='body'}
+            return result
+
+          try:
+            public_example=open_case('public_temporal_example','How does the selected date change the observation context?',today)
+            expected={'TEMPORAL CONTEXT','CHANGE / EVENT MEMORY'}
+            report['checks']['public_temporal_example_complete']=public_example['reading_zones']==3
+            report['checks']['public_temporal_example_two_primary']=len(public_example['primary_modules'])==2
+            report['checks']['public_temporal_example_temporal_route']=set(public_example['primary_modules'])==expected
+            driver.save_screenshot('artifacts/temporal-route-current-date.png')
+
+            pressure_example=open_case('pressure_temporal_example','How does the selected date change temporal pressure?',today)
+            report['checks']['pressure_temporal_example_temporal_route']=set(pressure_example['primary_modules'])==expected
+
+            memory=open_case('memory_control','What changed since the previous accepted snapshot?')
+            report['checks']['memory_control_complete']=memory['reading_zones']==3
+            report['checks']['memory_control_change_module']='CHANGE / EVENT MEMORY' in memory['primary_modules']
+            report['checks']['memory_control_not_temporal_primary']='TEMPORAL CONTEXT' not in memory['primary_modules']
+
+            future=open_case('future_date','How does the selected date change temporal pressure?',tomorrow)
+            report['checks']['future_date_rejected']=future['failure_visible'] and future['reading_zones']==0
+            report['checks']['future_date_message']='on or before the current UTC date' in future['body']
+            report['checks']['future_date_not_observation']='Observation\n'+tomorrow not in future['body']
+            driver.save_screenshot('artifacts/future-date-rejected.png')
+
+            fixed_future=open_case('fixed_future_date','How does the selected date change temporal pressure?','2030-01-01')
+            report['checks']['fixed_2030_rejected']=fixed_future['failure_visible'] and fixed_future['reading_zones']==0
+
+            trading=open_case('trading_control','Should I buy or sell BTC right now?')
+            report['checks']['trading_reframe_preserved']='Direct trading guidance was removed.' in trading['body'] and trading['reading_zones']==3
+
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+            report['failures']=[key for key,value in report['checks'].items() if not value]
+            assert not report['failures'], report['failures']
+          finally:
+            driver.quit()
+            Path('artifacts/btc-temporal-boundary-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          PY
+      - name: Upload temporal boundary evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-temporal-boundary-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
