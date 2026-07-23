@@ -36,8 +36,21 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run verify:btc-routing
-      - run: npm run build
+      - name: Verify deterministic BTC routing contracts
+        run: |
+          mkdir -p artifacts
+          set +e
+          npm run verify:btc-routing > artifacts/routing.log 2>&1
+          code=$?
+          cat artifacts/routing.log
+          exit "$code"
+      - name: Build production surface
+        run: |
+          set +e
+          npm run build > artifacts/build.log 2>&1
+          code=$?
+          cat artifacts/build.log
+          exit "$code"
       - name: Install browser driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
       - name: Start production preview
@@ -47,12 +60,11 @@ jobs:
             curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
             sleep 1
           done
+          cp /tmp/btc-field-read.log artifacts/preview.log
           cat /tmp/btc-field-read.log
           exit 1
       - name: Verify bilingual membrane, native glyph binding, Φ geometry and mobile clearance
-        run: |
-          mkdir -p artifacts
-          python3 scripts/verify-btc-bilingual-surface.py
+        run: python3 scripts/verify-btc-bilingual-surface.py
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
