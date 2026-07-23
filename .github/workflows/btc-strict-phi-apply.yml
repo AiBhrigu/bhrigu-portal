@@ -28,7 +28,7 @@ jobs:
           import base64, gzip, hashlib
           from pathlib import Path
           root=Path('.github/btc-strict-phi')
-          page_files=sorted(root.glob('page-*.txt'))
+          page_files=sorted(root.glob('fixed-*.txt'))
           visual_files=sorted(root.glob('visual-*.txt'))
           page=''.join(path.read_text().strip() for path in page_files)
           visual=''.join(path.read_text().strip() for path in visual_files)
@@ -36,8 +36,11 @@ jobs:
           print('page_chars', len(page), hashlib.sha256(page.encode()).hexdigest())
           print('visual_files', [p.name for p in visual_files])
           print('visual_chars', len(visual), hashlib.sha256(visual.encode()).hexdigest())
+          assert len(page_files)==5 and len(page)==14304
+          assert hashlib.sha256(page.encode()).hexdigest()=='014689f08b20889511d1d6cd082ddf602675d659b10ec25ff86231acd7e02156'
           page_bytes=gzip.decompress(base64.b64decode(page, validate=True))
           visual_bytes=gzip.decompress(base64.b64decode(visual, validate=True))
+          assert hashlib.sha256(page_bytes).hexdigest()=='9eca47a19a9657172a746514aa9e5b68935f3647a7a3fc86a7bf74a87252340f'
           print('page_decoded', len(page_bytes), hashlib.sha256(page_bytes).hexdigest())
           print('visual_decoded', len(visual_bytes), hashlib.sha256(visual_bytes).hexdigest())
           Path('pages/crypto-astro/btc.tsx').write_bytes(page_bytes)
@@ -50,7 +53,7 @@ jobs:
           if [ "$status" -ne 0 ]; then
             cp /tmp/btc-strict-phi-apply.log BTC_STRICT_PHI_APPLY_ERROR.log
             git add BTC_STRICT_PHI_APPLY_ERROR.log
-            git commit -m "Capture strict Phi apply diagnostic"
+            git commit -m "Update strict Phi apply diagnostic" || true
             git push origin HEAD:${BRANCH}
             exit "$status"
           fi
