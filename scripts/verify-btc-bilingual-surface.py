@@ -45,6 +45,14 @@ try:
   accepted_timestamp=producer_payload['generated_at_utc']
   report['measurements']['accepted_timestamp']=accepted_timestamp
 
+  driver.set_window_size(1440,900)
+  driver.get(f'{base}?lang=ru')
+  wait_for('#btc-question-title')
+  explicit_body=driver.find_element(By.TAG_NAME,'body').text
+  report['checks']['explicit_ru_selector_active']=driver.find_element(By.TAG_NAME,'main').get_attribute('data-locale')=='ru'
+  report['checks']['explicit_ru_static_surface']=all(token in explicit_body for token in ['Чтение поля BTC','Задайте один вопрос о поле BTC','Проверенные примеры маршрутов'])
+  report['checks']['explicit_ru_option_current']=driver.find_element(By.CSS_SELECTOR,'.languageSelector a[data-locale-option="ru"]').get_attribute('aria-current')=='true'
+
   for locale,routes in [('en',en),('ru',ru)]:
     for route_id,question,expected in routes:
       url=f'{base}?lang={locale}&q={quote(question)}'
@@ -74,6 +82,10 @@ try:
       report['checks'][f'{key}_source_proof']=len(driver.find_elements(By.CSS_SELECTOR,'.sourceProof .sourceRows li'))>=7
       report['checks'][f'{key}_proof_hash']=len(driver.find_element(By.CSS_SELECTOR,'.sourceProof').get_attribute('data-current-snapshot-sha'))==64
       report['checks'][f'{key}_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+      if locale=='ru' and route_id=='general_change':
+        report['checks']['ru_surface_localized']=all(token in body for token in ['Итоговое чтение Космографа','Пятимодульное Φ-поле','Принятая память изменений','Доказательства и закрытие'])
+        report['checks']['canonical_proof_names_preserved']=all(token in driver.page_source for token in ['CoinGecko','DefiLlama','Snapshot Registry','Snapshot Delta'])
+        driver.save_screenshot('artifacts/bilingual-glyph-desktop-ru.png')
 
     report['checks'][f'{locale}_five_example_links']=len(driver.find_elements(By.CSS_SELECTOR,'.exampleRouteList a'))==5
     report['checks'][f'{locale}_two_language_options']=len(driver.find_elements(By.CSS_SELECTOR,'.languageSelector a'))==2
@@ -83,12 +95,6 @@ try:
   wait_for('.reading')
   report['checks']['ru_auto_detected']=driver.find_element(By.TAG_NAME,'main').get_attribute('data-locale')=='ru'
   report['checks']['ru_auto_detected_source']=driver.find_element(By.TAG_NAME,'main').get_attribute('data-locale-source')=='detected'
-
-  explicit='What changed in the BTC field and why does it matter?'
-  driver.get(f'{base}?lang=ru&q={quote(explicit)}')
-  wait_for('.reading')
-  explicit_body=driver.find_element(By.TAG_NAME,'body').text
-  report['checks']['explicit_ru_overrides_question_language']='Итоговое чтение Космографа' in explicit_body
 
   trading='Стоит ли мне купить или продать BTC и какую ценовую цель использовать?'
   driver.get(f'{base}?lang=ru&q={quote(trading)}')
@@ -139,13 +145,6 @@ try:
   report['checks']['no_rejected_dashboard_patterns']=sum(len(driver.find_elements(By.CSS_SELECTOR,s)) for s in ['.metricGrid','.executiveGrid','.moduleNode','.btcCore','.memoryStrip'])==0
   report['checks']['canonical_names_visible']=all(name in driver.page_source for name in ['CoinGecko','DefiLlama','Snapshot Registry','Snapshot Delta'])
   driver.save_screenshot('artifacts/bilingual-glyph-desktop-en.png')
-
-  driver.get(f'{base}?lang=ru&q={quote(ru[0][1])}')
-  wait_for('#executive-read-title')
-  ru_body=driver.find_element(By.TAG_NAME,'body').text
-  report['checks']['ru_surface_localized']=all(token in ru_body for token in ['Итоговое чтение Космографа','Пятимодульное Φ-поле','Принятая память изменений','Доказательства и закрытие'])
-  report['checks']['canonical_proof_names_preserved']=all(token in driver.page_source for token in ['CoinGecko','DefiLlama','Snapshot Registry','Snapshot Delta'])
-  driver.save_screenshot('artifacts/bilingual-glyph-desktop-ru.png')
 
   driver.set_window_size(390,844)
   driver.get(f'{base}?lang=ru&q={quote(ru[0][1])}')
