@@ -834,36 +834,36 @@ export default function Page({
         .failure{padding:24px 0;border-bottom:1px solid #ff8c8c4d}
         .failure p,.failure li{color:#aebccc;line-height:1.6}
         .reading{display:block}
-        .readingZone{padding:clamp(30px,5vw,64px) 0;border-bottom:1px solid #ffffff20}
+        .readingZone{padding:28px 0;border-bottom:1px solid #ffffff20}
         .readingHeader{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr);gap:clamp(24px,4vw,52px);align-items:end}
         .readingHeader>div>span,.readingHeader dt{font-size:10px;color:#8193a8;letter-spacing:.12em;text-transform:uppercase}
-        .readingHeader h2{margin:7px 0 0;font-size:clamp(28px,4vw,48px);letter-spacing:-.035em;line-height:1.06}
+        .readingHeader h2{margin:5px 0 0;font-size:clamp(28px,3.4vw,40px);letter-spacing:-.035em;line-height:1.02}
         .readingHeader dl{margin:0;border-top:1px solid #ffffff20}
-        .readingHeader dl div{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:9px 0;border-bottom:1px solid #ffffff12}
+        .readingHeader dl div{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:7px 0;border-bottom:1px solid #ffffff12}
         .readingHeader dd{margin:0;color:#dbe5ed;text-align:right}
         .reframe{margin:18px 0 0;border-left:2px solid #9bb6cc;padding:8px 12px;color:#aebccc}
-        .metricRibbon{margin-top:28px;border-block:1px solid #ffffff20}
-        .metricRibbon>header{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;padding:14px 0;border-bottom:1px solid #ffffff12}
+        .metricRibbon{margin-top:20px;border-block:1px solid #ffffff20}
+        .metricRibbon>header{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;padding:10px 0;border-bottom:1px solid #ffffff12}
         .metricRibbon>header .eyebrow{grid-column:1/-1}
         .metricRibbon>header h3{margin:0;font-size:18px}
         .metricRibbon>header time{color:#8193a8;font-size:11px}
         .metricRibbon>dl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:0}
-        .metricRibbon>dl>div{min-width:0;padding:15px 12px;border-left:1px solid #ffffff12}
+        .metricRibbon>dl>div{min-width:0;padding:10px 12px;border-left:1px solid #ffffff12}
         .metricRibbon>dl>div:first-child{border-left:0;padding-left:0}
         .metricRibbon dt{font-size:9px;color:#8193a8;letter-spacing:.1em;text-transform:uppercase}
-        .metricRibbon dd{margin:5px 0 3px;font-size:clamp(18px,2vw,25px);font-weight:800;color:#eef3f7}
+        .metricRibbon dd{margin:4px 0 2px;font-size:clamp(18px,1.7vw,22px);font-weight:800;color:#eef3f7}
         .metricRibbon small{display:block;color:#91a3b8;line-height:1.4;overflow-wrap:anywhere}
-        .executiveField{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr);gap:clamp(28px,4vw,56px);margin-top:34px}
+        .executiveField{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr);gap:clamp(24px,3vw,40px);margin-top:22px}
         .executivePrimary{padding-right:clamp(12px,2vw,28px)}
-        .executivePrimary h3{margin:8px 0 12px;font-size:clamp(34px,5vw,64px);letter-spacing:-.05em;line-height:.98;color:#f2f5f7}
-        .executiveLead{max-width:760px;margin:0;color:#c4d0da;font-size:clamp(16px,1.8vw,21px);line-height:1.5}
-        .executivePrimary dl{margin:28px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:24px}
+        .executivePrimary h3{margin:6px 0 8px;font-size:clamp(34px,4vw,50px);letter-spacing:-.05em;line-height:1;color:#f2f5f7}
+        .executiveLead{max-width:760px;margin:0;color:#c4d0da;font-size:clamp(16px,1.5vw,18px);line-height:1.4}
+        .executivePrimary dl{margin:18px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:18px}
         .executivePrimary dl div{border-top:1px solid #ffffff20;padding-top:11px}
         .executivePrimary dt,.executiveContext dt{font-size:9px;color:#93a7bb;letter-spacing:.1em;text-transform:uppercase}
-        .executivePrimary dd,.executiveContext dd{margin:7px 0 0;color:#c1ccd6;line-height:1.5}
+        .executivePrimary dd,.executiveContext dd{margin:5px 0 0;color:#c1ccd6;line-height:1.4}
         .executiveContext{border-left:1px solid #ffffff20;padding-left:clamp(20px,3vw,38px)}
         .executiveContext dl{margin:0}
-        .executiveContext dl div{padding:12px 0;border-bottom:1px solid #ffffff14}
+        .executiveContext dl div{padding:8px 0;border-bottom:1px solid #ffffff14}
         .zoneHeading{display:flex;justify-content:space-between;gap:24px;align-items:end}
         .zoneHeading h2{margin:7px 0 0;font-size:clamp(28px,4vw,46px);letter-spacing:-.035em}
         .zoneHeading>p{max-width:440px;margin:0;color:#8193a8;text-align:right;line-height:1.5}
