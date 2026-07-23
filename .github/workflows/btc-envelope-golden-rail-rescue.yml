@@ -24,13 +24,13 @@ jobs:
         with:
           ref: agent/btc-personal-field-market-envelope-v0-1
           fetch-depth: 0
-      - name: Apply geometry repair and remove temporary workflow
+      - name: Apply geometry repair across both CSS scopes and remove workflow
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('pages/crypto-astro/btc.tsx')
           text = path.read_text()
-          changes = 0
+          replacements = 0
           pairs = [
             ('.btc{min-height:220px;display:grid;place-content:center;text-align:center;', '.btc{align-self:start;min-height:360px;display:grid;place-content:center;text-align:center;'),
             ('.nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px}', '.nodes{display:grid;grid-template-columns:1fr;gap:8px}'),
@@ -38,13 +38,12 @@ jobs:
           ]
           for old,new in pairs:
             count=text.count(old)
-            if count > 1:
-              raise SystemExit(f'non-bounded replacement count for {old!r}: {count}')
-            if count == 1:
-              text=text.replace(old,new)
-              changes += 1
-          if changes < 2:
-            raise SystemExit(f'expected at least two geometry changes, got {changes}')
+            if count not in (1,2):
+              raise SystemExit(f'unexpected synchronized replacement count for {old!r}: {count}')
+            text=text.replace(old,new)
+            replacements += count
+          if replacements < 4:
+            raise SystemExit(f'expected synchronized geometry repair, got {replacements} replacements')
           path.write_text(text)
           PY
           git rm .github/workflows/btc-envelope-golden-rail-rescue.yml
