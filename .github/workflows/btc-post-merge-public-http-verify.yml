@@ -1,0 +1,85 @@
+name: BTC Post-Merge Public HTTP Verify
+
+on:
+  push:
+    branches:
+      - agent/btc-desktop-semantic-compression-v0-1
+    paths:
+      - .github/workflows/btc-post-merge-public-http-verify.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2 requests==2.32.4
+      - name: Verify production root and supplied query route
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, time
+          from pathlib import Path
+          from urllib.parse import quote
+          import requests
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          root='https://www.bhrigu.io/crypto-astro/btc'
+          question='What changed in the BTC field and why does it matter?'
+          query=root+'?q='+quote(question)
+          report={'root':{},'query':{},'checks':{},'failures':[]}
+          session=requests.Session()
+          headers={'User-Agent':'Mozilla/5.0 BTC-Public-Verify/1.0','Cache-Control':'no-cache','Pragma':'no-cache'}
+          for name,url in [('root',root),('query',query)]:
+            response=session.get(url,headers=headers,timeout=40,allow_redirects=True)
+            report[name]={'url':response.url,'status':response.status_code,'headers':dict(response.headers),'length':len(response.text)}
+            Path(f'artifacts/{name}.html').write_text(response.text)
+            Path(f'artifacts/{name}-headers.json').write_text(json.dumps(dict(response.headers),indent=2,sort_keys=True)+'\n')
+            report['checks'][f'{name}_http_200']=response.status_code==200
+
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+            options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+          try:
+            driver.set_window_size(1440,900)
+            driver.get(root+'#post-merge-635205fac67fd757f5bad79da73f57053577ab5c')
+            WebDriverWait(driver,40).until(lambda d:d.find_element(By.ID,'btc-question-title'))
+            root_text=driver.find_element(By.TAG_NAME,'body').text
+            report['checks']['root_new_shell']='Market Cosmographer · BTC corridor' in root_text and 'Observation date · UTC' in root_text
+            driver.save_screenshot('artifacts/public-root-1440x900.png')
+
+            driver.get(query+'&verify=635205fac67fd757f5bad79da73f57053577ab5c')
+            WebDriverWait(driver,60).until(lambda d:d.find_element(By.CSS_SELECTOR,'.reading'))
+            text=driver.find_element(By.TAG_NAME,'body').text
+            required=['Executive Cosmographer Read','Five-module Φ-field','Accepted Change Memory','Open technical evidence only when needed','Market Structure','Liquidity Membrane','Change / Event Memory','Temporal Context','Cosmographer Review']
+            report['checks']['query_new_read']=all(value in text for value in required)
+            report['checks']['query_three_zones']=len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone'))==3
+            report['checks']['query_five_modules']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule'))==5
+            report['checks']['query_two_primary']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule'))==2
+            report['checks']['query_no_horizontal_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+            driver.save_screenshot('artifacts/public-query-1440x900.png')
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+          finally:
+            driver.quit()
+
+          report['failures']=[key for key,value in report['checks'].items() if not value]
+          Path('artifacts/public-http-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          assert not report['failures'], report['failures']
+          PY
+      - name: Upload public HTTP proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-post-merge-public-http-proof
+          path: artifacts/
+          if-no-files-found: error
