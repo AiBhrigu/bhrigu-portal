@@ -26,7 +26,13 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   return{props:{result:composed.value,failure:null,envelope:market.ok===true?market.value:null,envelopeFailure:market.ok===true?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate}};
 };
 
-const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:v>=1e9?"compact":"standard",maximumFractionDigits:v>=1e3?1:2}).format(v);
+const money=(value:number)=>{
+  const absolute=Math.abs(value);
+  const scaled=absolute>=1e12?absolute/1e12:absolute>=1e9?absolute/1e9:absolute>=1e6?absolute/1e6:absolute>=1e3?absolute/1e3:absolute;
+  const suffix=absolute>=1e12?"T":absolute>=1e9?"B":absolute>=1e6?"M":absolute>=1e3?"K":"";
+  const digits=suffix?(scaled>=100?0:scaled>=10?1:2):2;
+  return `${value<0?"-":""}$${scaled.toFixed(digits)}${suffix}`;
+};
 const pct=(v:number)=>`${v>=0?"+":""}${v.toFixed(2)}%`;
 const metricValue=(m:BtcMetricDelta)=>m.display_delta??m.transition??m.direction;
 const examples=["What changed in the BTC field and why does it matter?","What does BTC dominance mean for the wider market?","What do liquidity, breadth, and pressure show now?","How does the selected date change the observation context?","Which BTC conditions should I watch?"] as const;
