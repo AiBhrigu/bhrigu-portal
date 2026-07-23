@@ -8,7 +8,7 @@ on:
       - .github/workflows/btc-post-merge-public-http-verify.yml
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   verify:
@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p artifacts
           python3 - <<'PY'
-          import json, time
+          import hashlib, json, time, traceback
           from pathlib import Path
           from urllib.parse import quote
           import requests
@@ -33,22 +33,23 @@ jobs:
           root='https://www.bhrigu.io/crypto-astro/btc'
           question='What changed in the BTC field and why does it matter?'
           query=root+'?q='+quote(question)
-          report={'root':{},'query':{},'checks':{},'failures':[]}
-          session=requests.Session()
-          headers={'User-Agent':'Mozilla/5.0 BTC-Public-Verify/1.0','Cache-Control':'no-cache','Pragma':'no-cache'}
-          for name,url in [('root',root),('query',query)]:
-            response=session.get(url,headers=headers,timeout=40,allow_redirects=True)
-            report[name]={'url':response.url,'status':response.status_code,'headers':dict(response.headers),'length':len(response.text)}
-            Path(f'artifacts/{name}.html').write_text(response.text)
-            Path(f'artifacts/{name}-headers.json').write_text(json.dumps(dict(response.headers),indent=2,sort_keys=True)+'\n')
-            report['checks'][f'{name}_http_200']=response.status_code==200
-
-          options=webdriver.ChromeOptions()
-          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
-            options.add_argument(arg)
-          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
-          driver=webdriver.Chrome(options=options)
+          report={'root':{},'query':{},'checks':{},'failures':[],'artifacts':{}}
+          driver=None
           try:
+            session=requests.Session()
+            headers={'User-Agent':'Mozilla/5.0 BTC-Public-Verify/1.0','Cache-Control':'no-cache','Pragma':'no-cache'}
+            for name,url in [('root',root),('query',query)]:
+              response=session.get(url,headers=headers,timeout=40,allow_redirects=True)
+              report[name]={'url':response.url,'status':response.status_code,'headers':dict(response.headers),'length':len(response.text)}
+              Path(f'artifacts/{name}.html').write_text(response.text)
+              Path(f'artifacts/{name}-headers.json').write_text(json.dumps(dict(response.headers),indent=2,sort_keys=True)+'\n')
+              report['checks'][f'{name}_http_200']=response.status_code==200
+
+            options=webdriver.ChromeOptions()
+            for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+              options.add_argument(arg)
+            options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+            driver=webdriver.Chrome(options=options)
             driver.set_window_size(1440,900)
             driver.get(root+'#post-merge-635205fac67fd757f5bad79da73f57053577ab5c')
             WebDriverWait(driver,40).until(lambda d:d.find_element(By.ID,'btc-question-title'))
@@ -69,9 +70,17 @@ jobs:
             severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
             report['checks']['browser_severe_none']=not severe
             report['browser_severe']=severe
+          except Exception as exc:
+            report['checks']['verifier_execution']=False
+            report['exception']=repr(exc)
+            report['traceback']=traceback.format_exc()
           finally:
-            driver.quit()
+            if driver is not None:
+              driver.quit()
 
+          for path in sorted(Path('artifacts').glob('*')):
+            if path.is_file():
+              report['artifacts'][path.name]={'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'bytes':path.stat().st_size}
           report['failures']=[key for key,value in report['checks'].items() if not value]
           Path('artifacts/public-http-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
           assert not report['failures'], report['failures']
@@ -83,3 +92,15 @@ jobs:
           name: btc-post-merge-public-http-proof
           path: artifacts/
           if-no-files-found: error
+      - name: Publish compact verifier report
+        if: always()
+        run: |
+          if [ ! -f artifacts/public-http-report.json ]; then
+            printf '{"checks":{"report_created":false},"failures":["report_created"]}\n' > artifacts/public-http-report.json
+          fi
+          cp artifacts/public-http-report.json BTC_POST_MERGE_PUBLIC_HTTP_REPORT.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add BTC_POST_MERGE_PUBLIC_HTTP_REPORT.json
+          git commit -m "Record BTC post-merge public HTTP proof" || exit 0
+          git push origin HEAD:agent/btc-desktop-semantic-compression-v0-1
