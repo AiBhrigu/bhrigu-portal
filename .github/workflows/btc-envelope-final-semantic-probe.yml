@@ -1,0 +1,111 @@
+name: BTC Envelope Final Semantic Probe
+
+on:
+  push:
+    branches:
+      - agent/btc-personal-field-market-envelope-v0-1
+    paths:
+      - .github/workflows/btc-envelope-final-semantic-probe.yml
+
+permissions:
+  contents: write
+
+env:
+  BRANCH: agent/btc-personal-field-market-envelope-v0-1
+
+jobs:
+  probe:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-personal-field-market-envelope-v0-1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:btc-routing
+      - run: npm run build
+      - name: Start production preview
+        run: |
+          npm run start -- -p 3000 >/tmp/btc-envelope-final-probe.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-envelope-final-probe.log
+          exit 1
+      - run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Verify semantic golden field at desktop and mobile
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          q = quote('What changed in the BTC field and why does it matter?')
+          url = 'http://127.0.0.1:3000/crypto-astro/btc?q=' + q
+          options = webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+            options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver = webdriver.Chrome(options=options)
+          report = {'checks': {}, 'measurements': {}}
+          try:
+            for label, width, height in [('desktop',1440,1100),('mobile',390,844)]:
+              driver.set_window_size(width,height)
+              driver.get(url)
+              heading = WebDriverWait(driver,30).until(lambda d:d.find_element(By.ID,'market-envelope-title'))
+              driver.execute_script("arguments[0].scrollIntoView({block:'start'});", heading)
+              WebDriverWait(driver,10).until(lambda d:'BTC Market Cosmographer Field' in d.find_element(By.TAG_NAME,'body').text)
+              driver.save_screenshot(f'artifacts/{label}-btc-market-envelope.png')
+              body = driver.find_element(By.TAG_NAME,'body').text.upper()
+              btc = driver.find_element(By.CSS_SELECTOR,'.envelope .btc')
+              nodes = driver.find_elements(By.CSS_SELECTOR,'.envelope .nodes article')
+              primary = driver.find_elements(By.CSS_SELECTOR,'.envelope .nodes article.primary')
+              report['checks'][f'{label}_envelope_visible'] = heading.is_displayed()
+              report['checks'][f'{label}_btc_anchor_visible'] = btc.is_displayed() and 'CENTRAL GRAVITY' in btc.text.upper()
+              report['checks'][f'{label}_five_nodes'] = len(nodes) == 5
+              report['checks'][f'{label}_two_primary'] = len(primary) == 2
+              report['checks'][f'{label}_memory_visible'] = 'ACCEPTED SNAPSHOT MEMORY' in body and 'WHAT CHANGED' in body
+              report['checks'][f'{label}_history_visible'] = 'VERIFIED HISTORY' in body
+              report['checks'][f'{label}_no_overflow'] = driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+              if label == 'desktop':
+                ratio = driver.execute_script('const a=document.querySelector(".envelope .btc").getBoundingClientRect().width; const b=document.querySelector(".envelope .nodes").getBoundingClientRect().width; return a/b;')
+                rail_columns = driver.execute_script('const n=[...document.querySelectorAll(".envelope .nodes article")]; return new Set(n.map(x=>Math.round(x.getBoundingClientRect().left))).size;')
+                report['measurements']['desktop_field_ratio'] = ratio
+                report['measurements']['desktop_module_rail_columns'] = rail_columns
+                report['checks']['desktop_phi_ratio'] = 1.60 <= ratio <= 1.64
+                report['checks']['desktop_single_module_rail'] = rail_columns == 1
+            severe=[e for e in driver.get_log('browser') if e.get('level')=='SEVERE' and 'favicon' not in e.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+            report['failures']=[k for k,v in report['checks'].items() if not v]
+            assert not report['failures'], report
+          finally:
+            driver.quit()
+            Path('artifacts/btc-envelope-final-semantic-probe.json').write_text(json.dumps(report,indent=2)+'\n')
+          PY
+      - name: Upload final semantic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-envelope-final-semantic-probe-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+      - name: Remove one-time workflow with run anchor
+        if: always()
+        run: |
+          git rm .github/workflows/btc-envelope-final-semantic-probe.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git commit -m "Remove BTC envelope final semantic probe · RUN=${{ github.run_id }}"
+          git push origin HEAD:${BRANCH}
