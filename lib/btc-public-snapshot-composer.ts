@@ -82,11 +82,13 @@ export function classifyQuestionLens(question: string): BtcQuestionLens {
 }
 
 export function normalizeObservationDate(input: string | undefined, now = new Date()): string | null {
+  const currentUtcDate = now.toISOString().slice(0, 10);
   const raw = input?.trim();
-  if (!raw) return now.toISOString().slice(0, 10);
+  if (!raw) return currentUtcDate;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
   const date = new Date(`${raw}T00:00:00.000Z`);
   if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== raw) return null;
+  if (raw > currentUtcDate) return null;
   return raw;
 }
 
@@ -189,7 +191,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
   }
   const observationDate = normalizeObservationDate(input.date, now);
   if (!observationDate) {
-    return { ok: false, code: "invalid_input", message: "Date must be a real UTC date in YYYY-MM-DD format." };
+    return { ok: false, code: "invalid_input", message: "Date must be a real UTC date on or before the current UTC date in YYYY-MM-DD format." };
   }
 
   const safeReframed = requiresTradingReframe(compact);

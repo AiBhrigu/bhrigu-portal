@@ -332,19 +332,20 @@ export function classifyBtcEnvelopeQuestion(
   question: string,
 ): BtcEnvelopeQuestionClass {
   const normalized = question.toLowerCase();
+  // Keep precedence aligned with LENS_RULES in btc-public-snapshot-composer.ts.
   if (/dominance|gravity|leadership/.test(normalized)) return "btc_gravity";
   if (/liquid|tvl|stablecoin|dex/.test(normalized)) return "liquidity";
   if (/breadth|rotation|altcoin|participation|eth/.test(normalized)) {
     return "market_participation_rotation";
   }
-  if (/changed|change|memory|previous|delta|since/.test(normalized)) {
-    return "change_memory";
-  }
-  if (/temporal|pressure|date|phase|tension/.test(normalized)) {
-    return "temporal_pressure";
-  }
   if (/structure|regime|field score|market cap/.test(normalized)) {
     return "market_structure";
+  }
+  if (/temporal|pressure|date|phase|tension|timing|cycle|window|observation context/.test(normalized)) {
+    return "temporal_pressure";
+  }
+  if (/changed|change|memory|previous|delta|since/.test(normalized)) {
+    return "change_memory";
   }
   return "general_btc_field";
 }
