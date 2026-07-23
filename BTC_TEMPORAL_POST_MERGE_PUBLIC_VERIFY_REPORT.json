@@ -1,0 +1,123 @@
+{
+  "merge_sha": "b91827266ce57acae3954c2ec523119c81f2118e",
+  "checks": {
+    "root_http_200": true,
+    "query_http_200": true,
+    "temporal_complete": true,
+    "temporal_exactly_two_primary": true,
+    "temporal_route": true,
+    "temporal_observation_today": true,
+    "memory_complete": true,
+    "memory_change_primary": true,
+    "memory_not_temporal_primary": true,
+    "tomorrow_rejected": true,
+    "tomorrow_message": true,
+    "fixed_2030_rejected": true,
+    "fixed_2030_message": true,
+    "browser_severe_none": true
+  },
+  "measurements": {
+    "today_utc": "2026-07-23",
+    "tomorrow_utc": "2026-07-24"
+  },
+  "scenarios": {
+    "public_temporal_example": {
+      "url": "https://www.bhrigu.io/crypto-astro/btc?q=How+does+the+selected+date+change+the+observation+context%3F&verify=b91827266ce57acae3954c2ec523119c81f2118e&d=2026-07-23",
+      "question": "How does the selected date change the observation context?",
+      "date": "2026-07-23",
+      "primary_modules": [
+        "CHANGE / EVENT MEMORY",
+        "TEMPORAL CONTEXT"
+      ],
+      "reading_zones": 3,
+      "failure_visible": false
+    },
+    "memory_control": {
+      "url": "https://www.bhrigu.io/crypto-astro/btc?q=What+changed+since+the+previous+accepted+snapshot%3F&verify=b91827266ce57acae3954c2ec523119c81f2118e",
+      "question": "What changed since the previous accepted snapshot?",
+      "date": null,
+      "primary_modules": [
+        "MARKET STRUCTURE",
+        "CHANGE / EVENT MEMORY"
+      ],
+      "reading_zones": 3,
+      "failure_visible": false
+    },
+    "future_tomorrow": {
+      "url": "https://www.bhrigu.io/crypto-astro/btc?q=How+does+the+selected+date+change+temporal+pressure%3F&verify=b91827266ce57acae3954c2ec523119c81f2118e&d=2026-07-24",
+      "question": "How does the selected date change temporal pressure?",
+      "date": "2026-07-24",
+      "primary_modules": [],
+      "reading_zones": 0,
+      "failure_visible": true
+    },
+    "future_2030": {
+      "url": "https://www.bhrigu.io/crypto-astro/btc?q=How+does+the+selected+date+change+temporal+pressure%3F&verify=b91827266ce57acae3954c2ec523119c81f2118e&d=2030-01-01",
+      "question": "How does the selected date change temporal pressure?",
+      "date": "2030-01-01",
+      "primary_modules": [],
+      "reading_zones": 0,
+      "failure_visible": true
+    }
+  },
+  "artifacts": {
+    "public-future-rejected.png": {
+      "sha256": "de5603f5a5ed64b294a1dd6eb66e00fc2e25b08e9f4dadbb5b832d57ae8c50ba",
+      "bytes": 93142
+    },
+    "public-temporal-route.png": {
+      "sha256": "50cbb4c6bffb49c60b867f7bb0788a290a039d0a1b9612b25ce8cefe7a89c08d",
+      "bytes": 90156
+    },
+    "query.html": {
+      "sha256": "fe015a8af4a3d14628e36969100eb52427db11f55e9596d2c9b7d013fef89dac",
+      "bytes": 66333
+    },
+    "root.html": {
+      "sha256": "db8352d10f0f51a5d14661e68f4bdd1fd7dd313e9c9111cabd26cc95557ef09c",
+      "bytes": 32735
+    }
+  },
+  "failures": [],
+  "root_http": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 18:30:06 GMT",
+      "Etag": "W/\"13a7u2le2bgp96\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "iad1::iad1::4rxr4-1784831406502-a3a01631a272",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 32730
+  },
+  "query_http": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc?q=How+does+the+selected+date+change+the+observation+context%3F&d=2026-07-23&verify=b91827266ce57acae3954c2ec523119c81f2118e",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 18:30:07 GMT",
+      "Etag": "W/\"zuglcvsdm41f2i\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "iad1::iad1::wd4xt-1784831406885-1c08b1e0e079",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 66186
+  },
+  "browser_severe": []
+}
