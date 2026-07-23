@@ -954,8 +954,8 @@ export default function Page({
         }
         @media(max-width:800px){
           /* BTC_MOBILE_SCROLL_CLEARANCE_V0_1 */
-          :global(html){scroll-padding-top:calc(76px + env(safe-area-inset-top));}
-          .questionPanel,.readingZone,.readingZone [id],.phiModule,.btcAxis,.memoryAxis,.evidenceStack>details{scroll-margin-top:calc(76px + env(safe-area-inset-top));scroll-margin-bottom:calc(96px + env(safe-area-inset-bottom));}
+          :global(html){scroll-padding-top:calc(108px + env(safe-area-inset-top));}
+          .questionPanel,.questionPanel [id],.readingZone,.readingZone [id],.phiModule,.btcAxis,.memoryAxis,.evidenceStack>details{scroll-margin-top:calc(108px + env(safe-area-inset-top));scroll-margin-bottom:calc(96px + env(safe-area-inset-bottom));}
           main{padding-inline:12px}
           .questionPanel>header,.zoneHeading,.memoryAxis>header{display:grid}
           .observation,.zoneHeading>p{text-align:left}
