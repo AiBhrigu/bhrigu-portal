@@ -30,6 +30,7 @@ jobs:
           start = workflow.index("          python3 - <<'PY'\n") + len("          python3 - <<'PY'\n")
           end = workflow.index("\n          PY\n", start)
           script = textwrap.dedent(workflow[start:end])
+          script = script.replace("re.subn(pattern, formatter, text, count=1, flags=re.S)", "re.subn(pattern, lambda _: formatter, text, count=1, flags=re.S)")
           Path('/tmp/apply_btc_desktop.py').write_text(script)
           PY
           set +e
