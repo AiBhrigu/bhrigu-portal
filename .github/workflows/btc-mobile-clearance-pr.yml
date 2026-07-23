@@ -1,0 +1,148 @@
+name: BTC Mobile Scroll Clearance
+
+on:
+  pull_request:
+    paths:
+      - "pages/crypto-astro/btc.tsx"
+      - ".github/workflows/btc-mobile-clearance-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-clearance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:btc-routing
+      - run: npm run build
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Start production preview
+        run: |
+          npm run start -- -p 3000 >/tmp/btc-mobile-clearance.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-mobile-clearance.log
+          exit 1
+      - name: Verify mobile sticky-header and overlay target clearance
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, time
+          from pathlib import Path
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          question='What changed in the BTC field and why does it matter?'
+          url='http://127.0.0.1:3000/crypto-astro/btc?q='+quote(question)
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+            options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+          report={'checks':{},'measurements':{},'targets':[],'failures':[]}
+
+          def wait_for(selector, timeout=40):
+            return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
+
+          def rect(selector):
+            return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};',selector)
+
+          def add_overlay(width):
+            driver.execute_script('''
+              const old=document.getElementById('simulated-mobile-overlay'); if(old) old.remove();
+              const overlay=document.createElement('div'); overlay.id='simulated-mobile-overlay';
+              Object.assign(overlay.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'0',width:Math.min(320,arguments[0]-24)+'px',height:'64px',background:'rgba(120,120,120,.76)',borderRadius:'18px 18px 0 0',zIndex:'999999',pointerEvents:'none'});
+              document.body.appendChild(overlay);
+            ''',width)
+
+          targets=[
+            ('question','#btc-question-title'),
+            ('executive','#executive-read-title'),
+            ('phi','#phi-field-title'),
+            ('btc_axis','.btcAxis'),
+            ('memory','#memory-title'),
+            ('evidence','#evidence-title'),
+            ('module_evidence','.evidenceStack>details:nth-child(1)>summary'),
+            ('history','.evidenceStack>details:nth-child(2)>summary'),
+            ('source_proof','.evidenceStack>details:nth-child(3)>summary'),
+          ]
+
+          try:
+            for label,width,height in [('390x844',390,844),('412x915',412,915)]:
+              driver.set_window_size(width,height)
+              driver.get(url)
+              wait_for('.reading')
+              wait_for('.bh-header')
+              add_overlay(width)
+              header=rect('.bh-header')
+              overlay=rect('#simulated-mobile-overlay')
+              scroll_top=float(driver.execute_script('return parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0'))
+              scroll_bottom=float(driver.execute_script('return parseFloat(getComputedStyle(document.documentElement).scrollPaddingBottom)||0'))
+              report['measurements'][f'{label}_header_height']=header['height']
+              report['measurements'][f'{label}_scroll_padding_top']=scroll_top
+              report['measurements'][f'{label}_scroll_padding_bottom']=scroll_bottom
+              report['checks'][f'{label}_top_padding_clears_header']=scroll_top>=header['height']+8
+              report['checks'][f'{label}_bottom_padding_clears_overlay']=scroll_bottom>=overlay['height']+24
+              report['checks'][f'{label}_no_horizontal_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+              report['checks'][f'{label}_three_zones']=len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone'))==3
+              report['checks'][f'{label}_five_modules']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule'))==5
+              report['checks'][f'{label}_two_primary']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule'))==2
+
+              for target_name,selector in targets:
+                wait_for(selector)
+                driver.execute_script('document.querySelector(arguments[0]).scrollIntoView({block:"start"})',selector)
+                time.sleep(.12)
+                start_rect=rect(selector)
+                header_now=rect('.bh-header')
+                start_ok=start_rect['top']>=header_now['bottom']+6
+
+                driver.execute_script('document.querySelector(arguments[0]).scrollIntoView({block:"end"})',selector)
+                time.sleep(.12)
+                end_rect=rect(selector)
+                overlay_now=rect('#simulated-mobile-overlay')
+                end_ok=end_rect['bottom']<=overlay_now['top']-6
+
+                report['targets'].append({'viewport':label,'target':target_name,'selector':selector,'start_top':start_rect['top'],'header_bottom':header_now['bottom'],'end_bottom':end_rect['bottom'],'overlay_top':overlay_now['top'],'top_clear':start_ok,'bottom_clear':end_ok})
+                report['checks'][f'{label}_{target_name}_top_clear']=start_ok
+                report['checks'][f'{label}_{target_name}_bottom_clear']=end_ok
+
+                if target_name in ('phi','btc_axis','evidence'):
+                  driver.save_screenshot(f'artifacts/mobile-{label}-{target_name}.png')
+
+              driver.execute_script('window.scrollTo(0,document.body.scrollHeight)')
+              time.sleep(.15)
+              quiet=rect('.closingField')
+              evidence=rect('.zoneEvidence')
+              overlay_final=rect('#simulated-mobile-overlay')
+              report['checks'][f'{label}_final_overlay_only_quiet_field']=evidence['bottom']<=overlay_final['top']+1 and quiet['top']<=overlay_final['top']+1 and quiet['bottom']>=overlay_final['bottom']-1
+              driver.save_screenshot(f'artifacts/mobile-{label}-closing-overlay.png')
+              driver.execute_script('document.getElementById("simulated-mobile-overlay").remove()')
+
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+            report['failures']=[key for key,value in report['checks'].items() if not value]
+            assert not report['failures'], report['failures']
+          finally:
+            driver.quit()
+            Path('artifacts/btc-mobile-clearance-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          PY
+      - name: Upload mobile clearance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-mobile-clearance-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
