@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p artifacts
           python3 - <<'PY'
-          import hashlib, json, time, traceback
+          import hashlib, json, traceback
           from pathlib import Path
           from urllib.parse import quote
           import requests
@@ -51,20 +51,26 @@ jobs:
             options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
             driver=webdriver.Chrome(options=options)
             driver.set_window_size(1440,900)
+
             driver.get(root+'#post-merge-635205fac67fd757f5bad79da73f57053577ab5c')
             WebDriverWait(driver,40).until(lambda d:d.find_element(By.ID,'btc-question-title'))
-            root_text=driver.find_element(By.TAG_NAME,'body').text
-            report['checks']['root_new_shell']='Market Cosmographer · BTC corridor' in root_text and 'Observation date · UTC' in root_text
+            report['checks']['root_new_shell']=(
+              len(driver.find_elements(By.CSS_SELECTOR,'.hero'))==1
+              and len(driver.find_elements(By.CSS_SELECTOR,'.questionPanel'))==1
+              and len(driver.find_elements(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"] textarea[name="q"]'))==1
+              and len(driver.find_elements(By.CSS_SELECTOR,'form[action="/crypto-astro/btc"] input[name="d"]'))==1
+            )
             driver.save_screenshot('artifacts/public-root-1440x900.png')
 
             driver.get(query+'&verify=635205fac67fd757f5bad79da73f57053577ab5c')
             WebDriverWait(driver,60).until(lambda d:d.find_element(By.CSS_SELECTOR,'.reading'))
-            text=driver.find_element(By.TAG_NAME,'body').text
-            required=['Executive Cosmographer Read','Five-module Φ-field','Accepted Change Memory','Open technical evidence only when needed','Market Structure','Liquidity Membrane','Change / Event Memory','Temporal Context','Cosmographer Review']
-            report['checks']['query_new_read']=all(value in text for value in required)
+            semantic_titles=['#executive-read-title','#phi-field-title','#memory-title','#evidence-title']
+            report['checks']['query_new_read']=all(len(driver.find_elements(By.CSS_SELECTOR,selector))==1 for selector in semantic_titles)
             report['checks']['query_three_zones']=len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone'))==3
             report['checks']['query_five_modules']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule'))==5
             report['checks']['query_two_primary']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule'))==2
+            report['checks']['query_eight_memory_metrics']=len(driver.find_elements(By.CSS_SELECTOR,'.memoryAxis tbody tr'))==8
+            report['checks']['query_three_evidence_disclosures']=len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details'))==3
             report['checks']['query_no_horizontal_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
             driver.save_screenshot('artifacts/public-query-1440x900.png')
             severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
