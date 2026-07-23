@@ -1,0 +1,252 @@
+{
+  "merge_sha": "f2b50701eff61bd4e80be9355b6012ee6e24ee2e",
+  "checks": {
+    "root_http_200": true,
+    "query_http_200": true,
+    "390x844_top_padding": true,
+    "390x844_bottom_padding": true,
+    "390x844_no_overflow": true,
+    "390x844_three_zones": true,
+    "390x844_five_modules": true,
+    "390x844_two_primary": true,
+    "390x844_question_top": true,
+    "390x844_question_bottom": true,
+    "390x844_phi_top": true,
+    "390x844_phi_bottom": true,
+    "390x844_btc_axis_top": true,
+    "390x844_btc_axis_bottom": true,
+    "390x844_memory_top": true,
+    "390x844_memory_bottom": true,
+    "390x844_evidence_top": true,
+    "390x844_evidence_bottom": true,
+    "390x844_source_proof_top": true,
+    "390x844_source_proof_bottom": true,
+    "390x844_final_quiet_field": true,
+    "412x915_top_padding": true,
+    "412x915_bottom_padding": true,
+    "412x915_no_overflow": true,
+    "412x915_three_zones": true,
+    "412x915_five_modules": true,
+    "412x915_two_primary": true,
+    "412x915_question_top": true,
+    "412x915_question_bottom": true,
+    "412x915_phi_top": true,
+    "412x915_phi_bottom": true,
+    "412x915_btc_axis_top": true,
+    "412x915_btc_axis_bottom": true,
+    "412x915_memory_top": true,
+    "412x915_memory_bottom": true,
+    "412x915_evidence_top": true,
+    "412x915_evidence_bottom": true,
+    "412x915_source_proof_top": true,
+    "412x915_source_proof_bottom": true,
+    "412x915_final_quiet_field": true,
+    "browser_severe_none": true
+  },
+  "measurements": {
+    "390x844_header_height": 92.796875,
+    "390x844_scroll_padding_top": 108.0,
+    "390x844_scroll_padding_bottom": 128.0,
+    "412x915_header_height": 92.796875,
+    "412x915_scroll_padding_top": 108.0,
+    "412x915_scroll_padding_bottom": 128.0
+  },
+  "targets": [
+    {
+      "viewport": "390x844",
+      "target": "question",
+      "top": 215.625,
+      "header_bottom": 92.796875,
+      "bottom": 477.21875,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "390x844",
+      "target": "phi",
+      "top": 216.4375,
+      "header_bottom": 92.796875,
+      "bottom": 476.625,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "390x844",
+      "target": "btc_axis",
+      "top": 215.90625,
+      "header_bottom": 92.796875,
+      "bottom": 476.90625,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "390x844",
+      "target": "memory",
+      "top": 215.609375,
+      "header_bottom": 92.796875,
+      "bottom": 476.609375,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "390x844",
+      "target": "evidence",
+      "top": 215.796875,
+      "header_bottom": 92.796875,
+      "bottom": 476.984375,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "390x844",
+      "target": "source_proof",
+      "top": 463.984375,
+      "header_bottom": 92.796875,
+      "bottom": 572.984375,
+      "overlay_top": 637,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "question",
+      "top": 216.234375,
+      "header_bottom": 92.796875,
+      "bottom": 547.828125,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "phi",
+      "top": 216.28125,
+      "header_bottom": 92.796875,
+      "bottom": 548.46875,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "btc_axis",
+      "top": 215.953125,
+      "header_bottom": 92.796875,
+      "bottom": 547.953125,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "memory",
+      "top": 215.96875,
+      "header_bottom": 92.796875,
+      "bottom": 547.96875,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "evidence",
+      "top": 216.15625,
+      "header_bottom": 92.796875,
+      "bottom": 548.34375,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    },
+    {
+      "viewport": "412x915",
+      "target": "source_proof",
+      "top": 535.34375,
+      "header_bottom": 92.796875,
+      "bottom": 644.34375,
+      "overlay_top": 708,
+      "top_clear": true,
+      "bottom_clear": true
+    }
+  ],
+  "failures": [],
+  "artifacts": {
+    "public-mobile-390x844-btc_axis.png": {
+      "sha256": "cb547f4cd527e430cd2943484f09320c65c466b878baa7c0f2108e7239f7eafc",
+      "bytes": 50390
+    },
+    "public-mobile-390x844-closing.png": {
+      "sha256": "9e8577557d508d7802698affb2f7e08d438e55a88c8891e7d4b5710727145d64",
+      "bytes": 50510
+    },
+    "public-mobile-390x844-phi.png": {
+      "sha256": "9b66b60986742133d3248765749447ca205b553fd71b801b901edb32cd42fbe0",
+      "bytes": 57151
+    },
+    "public-mobile-412x915-btc_axis.png": {
+      "sha256": "781deb153fcffb1ffe318e7bc08517b639e28e2d8498bc1ff3fbd9116eba7c23",
+      "bytes": 62752
+    },
+    "public-mobile-412x915-closing.png": {
+      "sha256": "5bc0f12f0c89b2d13db19c0b56fb6e9173962569ac9ecfa1d00409785c2b2280",
+      "bytes": 57662
+    },
+    "public-mobile-412x915-phi.png": {
+      "sha256": "6cc48796b37591d75678d4abf84b4e36fb0327a5d70511a4ad9d15d0b821cbba",
+      "bytes": 70327
+    },
+    "query.html": {
+      "sha256": "769a69ff6a987a6d58ebe294c6f21892b9dcdd20eadceef898155b6f804f2163",
+      "bytes": 67030
+    },
+    "root.html": {
+      "sha256": "f63a8336cfd71bf6960ee2fbf9de795e39893c39a83dc0b9472af38a413fb321",
+      "bytes": 32735
+    }
+  },
+  "root_http": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 18:08:54 GMT",
+      "Etag": "W/\"zd0c4qucw6p96\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "sfo1::iad1::v4fp9-1784830133928-52c4e7b7dc1c",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 32730
+  },
+  "query_http": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc?q=What%20changed%20in%20the%20BTC%20field%20and%20why%20does%20it%20matter%3F&verify=f2b50701eff61bd4e80be9355b6012ee6e24ee2e",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 18:08:54 GMT",
+      "Etag": "W/\"127xg6f6tem1flq\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "sfo1::iad1::lfv5j-1784830134325-1275773b329a",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 66878
+  },
+  "browser_severe": []
+}
