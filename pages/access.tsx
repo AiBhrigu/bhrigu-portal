@@ -162,7 +162,7 @@ export default function AccessPage({
                 Crypto-Astro Research Surface
               </p>
               <p className="muted">
-                Crypto-Astro is currently available as a public-safe static proof surface. It presents the reviewed boundary of the Crypto-Astro contour: proof state, research framing, CCI bridge language, and static surface context.
+                Crypto-Astro is available as a public-safe, source-bound research surface. It provides a verified static market snapshot, visible source proof, accepted change memory, and the BTC Field Read corridor.
               </p>
               <p className="muted">
                 This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
@@ -177,7 +177,7 @@ export default function AccessPage({
                   Open Crypto-Astro proof route
                 </a>
                 <Link className="btnSecondary" href="/crypto-astro/btc">
-                  Run BTC Snapshot
+                  Run BTC Field Read
                 </Link>
               </div>
 
@@ -199,17 +199,10 @@ export default function AccessPage({
               <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
                 <div className="eyebrow">Crypto-Astro Local Proof Base</div>
                 <div>
-                  Automation-backed local proof loops are now complete for BTC, ETH, and SOL sample corridors.
-                </div>
-                <div>
-                  Each corridor passes through operator job creation, asset-aware analytic payload generation,
-                  safe-summary review, and manual gated delivery preparation.
+                  The public BTC corridor is live verified. Deeper delivery remains operator-gated while intake durability, operator retrieval and delivery policy are separately proven.
                 </div>
                 <div>
                   This is not a live automated client service, trading signal, price target, or financial advice.
-                </div>
-                <div>
-                  Access remains operator-gated while the production surface is prepared.
                 </div>
               </div>
             </section>
