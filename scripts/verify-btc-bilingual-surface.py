@@ -40,6 +40,9 @@ def rect(selector):
 def css(selector, prop):
   return driver.execute_script('return getComputedStyle(document.querySelector(arguments[0])).getPropertyValue(arguments[1]).trim()',selector,prop)
 
+def dom_text(selector):
+  return driver.execute_script('return document.querySelector(arguments[0]).textContent.trim()',selector)
+
 try:
   producer_payload=json.loads(urlopen(producer,timeout=30).read().decode('utf-8'))
   accepted_timestamp=producer_payload['generated_at_utc']
@@ -48,9 +51,12 @@ try:
   driver.set_window_size(1440,900)
   driver.get(f'{base}?lang=ru')
   wait_for('#btc-question-title')
-  explicit_body=driver.find_element(By.TAG_NAME,'body').text
   report['checks']['explicit_ru_selector_active']=driver.find_element(By.TAG_NAME,'main').get_attribute('data-locale')=='ru'
-  report['checks']['explicit_ru_static_surface']=all(token in explicit_body for token in ['Чтение поля BTC','Задайте один вопрос о поле BTC','Проверенные примеры маршрутов'])
+  report['checks']['explicit_ru_static_surface']=(
+    dom_text('.hero h1')=='Чтение поля BTC'
+    and dom_text('#btc-question-title')=='Задайте один вопрос о поле BTC'
+    and dom_text('.exampleRoutes .eyebrow')=='Проверенные примеры маршрутов'
+  )
   report['checks']['explicit_ru_option_current']=driver.find_element(By.CSS_SELECTOR,'.languageSelector a[data-locale-option="ru"]').get_attribute('aria-current')=='true'
 
   for locale,routes in [('en',en),('ru',ru)]:
@@ -83,7 +89,12 @@ try:
       report['checks'][f'{key}_proof_hash']=len(driver.find_element(By.CSS_SELECTOR,'.sourceProof').get_attribute('data-current-snapshot-sha'))==64
       report['checks'][f'{key}_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
       if locale=='ru' and route_id=='general_change':
-        report['checks']['ru_surface_localized']=all(token in body for token in ['Итоговое чтение Космографа','Пятимодульное Φ-поле','Принятая память изменений','Доказательства и закрытие'])
+        report['checks']['ru_surface_localized']=(
+          dom_text('.executivePrimary .eyebrow')=='Итоговое чтение Космографа'
+          and dom_text('#phi-field-title')=='Пятимодульное Φ-поле'
+          and dom_text('.memoryAxis .eyebrow')=='Принятая память изменений'
+          and dom_text('.zoneEvidence .eyebrow')=='Доказательства и закрытие'
+        )
         report['checks']['canonical_proof_names_preserved']=all(token in driver.page_source for token in ['CoinGecko','DefiLlama','Snapshot Registry','Snapshot Delta'])
         driver.save_screenshot('artifacts/bilingual-glyph-desktop-ru.png')
 
