@@ -37,7 +37,10 @@ export const getServerSideProps:GetServerSideProps<Props>=async({query})=>{
  if(composed.ok===false)return{props:{...empty,initialQuestion,failure:{code:composed.code,message:composed.message,last_verified_at_utc:null}}};
  const result:BtcPublicSnapshot={...composed.value,question:{...composed.value.question,raw:initialQuestion,normalized:normalizeBtcDisplayQuestion(initialQuestion)}};
  const market=await loadBtcMarketEnvelope(coreQuestion,{temporal:{state:result.temporal_context.state,label:result.temporal_context.label,harmonic_tension:result.aspect_pressure.harmonic_tension}});
- return{props:{result,failure:null,envelope:market.ok?market.value:null,envelopeFailure:market.ok?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate,locale:resolved.locale,localeSource:resolved.source}};
+ if(market.ok===false){
+  return{props:{result,failure:null,envelope:null,envelopeFailure:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate,locale:resolved.locale,localeSource:resolved.source}};
+ }
+ return{props:{result,failure:null,envelope:market.value,envelopeFailure:null,initialQuestion,initialDate,locale:resolved.locale,localeSource:resolved.source}};
 };
 
 function BoundedFallback({locale,result,envelopeFailure}:{locale:BtcPublicLocale;result:BtcPublicSnapshot;envelopeFailure:EnvelopeFailure|null}){
