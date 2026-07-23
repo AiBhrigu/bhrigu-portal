@@ -19,11 +19,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const empty:Props={result:null,failure:null,envelope:null,envelopeFailure:null,initialQuestion:"",initialDate};
   if(!initialQuestion)return{props:empty};
   const source=await loadBtcStaticSource();
-  if(!source.ok)return{props:{...empty,initialQuestion,failure:{code:source.code,message:source.message,last_verified_at_utc:source.last_verified_at_utc??null}}};
+  if(source.ok===false)return{props:{...empty,initialQuestion,failure:{code:source.code,message:source.message,last_verified_at_utc:source.last_verified_at_utc??null}}};
   const composed=await composeBtcPublicSnapshot(source,{question:initialQuestion,date:initialDate||undefined});
-  if(!composed.ok)return{props:{...empty,initialQuestion,failure:{code:composed.code,message:composed.message,last_verified_at_utc:null}}};
+  if(composed.ok===false)return{props:{...empty,initialQuestion,failure:{code:composed.code,message:composed.message,last_verified_at_utc:null}}};
   const market=await loadBtcMarketEnvelope(initialQuestion,{temporal:{state:composed.value.temporal_context.state,label:composed.value.temporal_context.label,harmonic_tension:composed.value.aspect_pressure.harmonic_tension}});
-  return{props:{result:composed.value,failure:null,envelope:market.ok?market.value:null,envelopeFailure:market.ok?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate}};
+  return{props:{result:composed.value,failure:null,envelope:market.ok===true?market.value:null,envelopeFailure:market.ok===true?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate}};
 };
 
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:v>=1e9?"compact":"standard",maximumFractionDigits:v>=1e3?1:2}).format(v);
