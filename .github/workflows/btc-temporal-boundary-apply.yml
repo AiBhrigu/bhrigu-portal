@@ -1,0 +1,114 @@
+name: Apply BTC Temporal Boundary Repair
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'agent/btc-first-real-request-readiness-recon-v0-1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-first-real-request-readiness-recon-v0-1
+          fetch-depth: 0
+      - name: Apply temporal route and future-date repair
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          composer=Path('lib/btc-public-snapshot-composer.ts')
+          text=composer.read_text()
+          old='''export function normalizeObservationDate(input: string | undefined, now = new Date()): string | null {
+            const raw = input?.trim();
+            if (!raw) return now.toISOString().slice(0, 10);
+            if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return null;
+            const date = new Date(`${raw}T00:00:00.000Z`);
+            if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== raw) return null;
+            return raw;
+          }'''.replace('          ','')
+          new='''export function normalizeObservationDate(input: string | undefined, now = new Date()): string | null {
+            const currentUtcDate = now.toISOString().slice(0, 10);
+            const raw = input?.trim();
+            if (!raw) return currentUtcDate;
+            if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(raw)) return null;
+            const date = new Date(`${raw}T00:00:00.000Z`);
+            if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== raw) return null;
+            if (raw > currentUtcDate) return null;
+            return raw;
+          }'''.replace('          ','')
+          if new not in text:
+            if text.count(old)!=1:
+              raise SystemExit(f'composer date boundary insertion point count={text.count(old)}')
+            text=text.replace(old,new)
+          old_message='Date must be a real UTC date in YYYY-MM-DD format.'
+          new_message='Date must be a real UTC date on or before the current UTC date in YYYY-MM-DD format.'
+          if new_message not in text:
+            if text.count(old_message)!=1:
+              raise SystemExit(f'composer date message count={text.count(old_message)}')
+            text=text.replace(old_message,new_message)
+          composer.write_text(text)
+
+          envelope=Path('lib/btc-market-envelope.ts')
+          text=envelope.read_text()
+          old='''export function classifyBtcEnvelopeQuestion(
+            question: string,
+          ): BtcEnvelopeQuestionClass {
+            const normalized = question.toLowerCase();
+            if (/dominance|gravity|leadership/.test(normalized)) return "btc_gravity";
+            if (/liquid|tvl|stablecoin|dex/.test(normalized)) return "liquidity";
+            if (/breadth|rotation|altcoin|participation|eth/.test(normalized)) {
+              return "market_participation_rotation";
+            }
+            if (/changed|change|memory|previous|delta|since/.test(normalized)) {
+              return "change_memory";
+            }
+            if (/temporal|pressure|date|phase|tension/.test(normalized)) {
+              return "temporal_pressure";
+            }
+            if (/structure|regime|field score|market cap/.test(normalized)) {
+              return "market_structure";
+            }
+            return "general_btc_field";
+          }'''.replace('          ','')
+          new='''export function classifyBtcEnvelopeQuestion(
+            question: string,
+          ): BtcEnvelopeQuestionClass {
+            const normalized = question.toLowerCase();
+            // Keep precedence aligned with LENS_RULES in btc-public-snapshot-composer.ts.
+            if (/dominance|gravity|leadership/.test(normalized)) return "btc_gravity";
+            if (/liquid|tvl|stablecoin|dex/.test(normalized)) return "liquidity";
+            if (/breadth|rotation|altcoin|participation|eth/.test(normalized)) {
+              return "market_participation_rotation";
+            }
+            if (/structure|regime|field score|market cap/.test(normalized)) {
+              return "market_structure";
+            }
+            if (/temporal|pressure|date|phase|tension|timing|cycle|window|observation context/.test(normalized)) {
+              return "temporal_pressure";
+            }
+            if (/changed|change|memory|previous|delta|since/.test(normalized)) {
+              return "change_memory";
+            }
+            return "general_btc_field";
+          }'''.replace('          ','')
+          if new not in text:
+            if text.count(old)!=1:
+              raise SystemExit(f'envelope classifier insertion point count={text.count(old)}')
+            text=text.replace(old,new)
+          envelope.write_text(text)
+
+          for report in ('BTC_FIRST_REAL_REQUEST_READINESS_RECON_REPORT.json','BTC_FIRST_REAL_REQUEST_READINESS_RECON_CLOSURE.json'):
+            Path(report).unlink(missing_ok=True)
+          PY
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A lib/btc-public-snapshot-composer.ts lib/btc-market-envelope.ts BTC_FIRST_REAL_REQUEST_READINESS_RECON_REPORT.json BTC_FIRST_REAL_REQUEST_READINESS_RECON_CLOSURE.json
+          git commit -m "Repair BTC temporal routing and date boundary" || exit 0
+          git push origin HEAD:agent/btc-first-real-request-readiness-recon-v0-1
