@@ -19,8 +19,10 @@
     "lib/btc-deterministic-narrative-router.ts",
     "lib/btc-watch-condition-router.ts",
     "lib/btc-public-display-labels.ts",
+    "lib/btc-market-envelope.ts",
     "tests/btc-routing-fixture.ts",
     "tests/btc-source-contract-fixture.ts",
-    "tests/btc-safe-reframe-geometry-fixture.ts"
+    "tests/btc-safe-reframe-geometry-fixture.ts",
+    "tests/btc-market-envelope-fixture.ts"
   ]
 }
