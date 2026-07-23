@@ -7,14 +7,14 @@
       "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
       "Content-Encoding": "gzip",
       "Content-Type": "text/html; charset=utf-8",
-      "Date": "Thu, 23 Jul 2026 17:31:41 GMT",
+      "Date": "Thu, 23 Jul 2026 17:34:25 GMT",
       "Etag": "W/\"p3o0kc67hiokq\"",
       "Server": "Vercel",
       "Strict-Transport-Security": "max-age=63072000",
       "X-Matched-Path": "/crypto-astro/btc",
       "X-Powered-By": "Next.js",
       "X-Vercel-Cache": "MISS",
-      "X-Vercel-Id": "cle1::iad1::5ldjr-1784827901083-4f467057ddee",
+      "X-Vercel-Id": "pdx1::iad1::47qdh-1784828065271-bde164cde3ff",
       "Transfer-Encoding": "chunked"
     },
     "length": 31850
@@ -27,14 +27,14 @@
       "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
       "Content-Encoding": "gzip",
       "Content-Type": "text/html; charset=utf-8",
-      "Date": "Thu, 23 Jul 2026 17:31:41 GMT",
-      "Etag": "W/\"17utanawnfm1evu\"",
+      "Date": "Thu, 23 Jul 2026 17:34:25 GMT",
+      "Etag": "W/\"hhtuuj9huv1evu\"",
       "Server": "Vercel",
       "Strict-Transport-Security": "max-age=63072000",
       "X-Matched-Path": "/crypto-astro/btc",
       "X-Powered-By": "Next.js",
       "X-Vercel-Cache": "MISS",
-      "X-Vercel-Id": "cle1::iad1::pjvpw-1784827901162-ddd6bfbb4b21",
+      "X-Vercel-Id": "pdx1::iad1::48s8g-1784828065548-ec34fd381bde",
       "Transfer-Encoding": "chunked"
     },
     "length": 65946
@@ -42,18 +42,17 @@
   "checks": {
     "root_http_200": true,
     "query_http_200": true,
-    "root_new_shell": false,
-    "query_new_read": false,
+    "root_new_shell": true,
+    "query_new_read": true,
     "query_three_zones": true,
     "query_five_modules": true,
     "query_two_primary": true,
+    "query_eight_memory_metrics": true,
+    "query_three_evidence_disclosures": true,
     "query_no_horizontal_overflow": true,
     "browser_severe_none": true
   },
-  "failures": [
-    "root_new_shell",
-    "query_new_read"
-  ],
+  "failures": [],
   "artifacts": {
     "public-query-1440x900.png": {
       "sha256": "3e9d6f7cf9648774623bef858544dd0782982c517338b38304ddb24e8b812003",
@@ -64,15 +63,15 @@
       "bytes": 71629
     },
     "query-headers.json": {
-      "sha256": "f48853ff38a8b16e77b5c1bb2eabae80437511990141ed8ae5c8ec810224b6b8",
-      "bytes": 519
+      "sha256": "fac346d5aa0df3a7caeb66ca9adec7325acf5e4e60ce394e0f809081ae63cc5b",
+      "bytes": 518
     },
     "query.html": {
-      "sha256": "4e014159818dbbd5e250e987de328567c4b756a917de92791eb72c52318dcd1b",
+      "sha256": "a9d2ee2c673bc06578e0bee8ba1e57b9c9134abf9eaa4e77bda92150c09f7aca",
       "bytes": 66098
     },
     "root-headers.json": {
-      "sha256": "69c1b4802ff914d7efee98574e1b31178702cfcfa9152d3cd1d76e237872ea38",
+      "sha256": "b67683442e9a01c192982f8aa0628c93e02756bd16bba35b7846395b9a5ad401",
       "bytes": 517
     },
     "root.html": {
