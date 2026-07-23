@@ -27,7 +27,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify:btc-routing
-      - run: npm run build
+      - name: Build with diagnostic artifact
+        run: |
+          mkdir -p artifacts
+          set +e
+          npm run build >artifacts/build.log 2>&1
+          status=$?
+          set -e
+          tail -n 80 artifacts/build.log
+          exit "$status"
       - name: Install browser driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
       - name: Start production preview
