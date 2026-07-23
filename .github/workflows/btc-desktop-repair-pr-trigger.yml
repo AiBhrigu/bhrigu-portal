@@ -32,9 +32,22 @@ jobs:
           script = textwrap.dedent(workflow[start:end])
           Path('/tmp/apply_btc_desktop.py').write_text(script)
           PY
-          python3 /tmp/apply_btc_desktop.py
+          set +e
+          python3 /tmp/apply_btc_desktop.py >/tmp/btc-desktop-apply.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            cp /tmp/btc-desktop-apply.log BTC_DESKTOP_APPLY_ERROR.log
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add BTC_DESKTOP_APPLY_ERROR.log
+            git commit -m "Capture BTC desktop repair failure"
+            git push origin HEAD:${BRANCH}
+            exit "$status"
+          fi
           git rm .github/workflows/btc-desktop-repair-apply.yml
           git rm .github/workflows/btc-desktop-repair-pr-trigger.yml
+          git rm -f BTC_DESKTOP_APPLY_ERROR.log || true
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add pages/crypto-astro/btc.tsx
