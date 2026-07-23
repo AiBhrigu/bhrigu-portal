@@ -1,0 +1,114 @@
+{
+  "node": "BTC_PERSONAL_FIELD_FIRST_CONTROLLED_PUBLIC_REQUEST_PILOT_SCOPE_v0_1",
+  "status": "PASS",
+  "classification": {
+    "controlled_public_request": "READY",
+    "unsupervised_english_public_request": "READY",
+    "multilingual_output": "NOT_IMPLEMENTED_NOT_ADVERTISED",
+    "commercial_launch": "NOT_ASSESSED"
+  },
+  "anchors": {
+    "repo": "AiBhrigu/bhrigu-portal",
+    "master_sha": "b91827266ce57acae3954c2ec523119c81f2118e",
+    "service_branch": "agent/btc-first-controlled-public-request-pilot-v0-1",
+    "evidence_pr": 37,
+    "evidence_pr_merged": false,
+    "workflow_run_id": 30035206985,
+    "phi_gate_run_id": 30035207081,
+    "artifact_id": 8574953330,
+    "artifact_name": "btc-first-controlled-public-request-pilot",
+    "artifact_digest": "sha256:3aa94ce829d6cb7b46422db111510217c8bb91080ad9ef3f72320c1259248963",
+    "public_surface": "https://www.bhrigu.io/crypto-astro/btc",
+    "producer_snapshot_generated_at_utc": "2026-07-23T13:44:09Z"
+  },
+  "verified_pass": {
+    "producer_http_200": true,
+    "producer_freshness_status": "FRESH",
+    "producer_age_hours_at_pilot": 5.053,
+    "public_http_samples": 7,
+    "public_http_samples_all_200": true,
+    "http_latency_median_seconds": 0.257,
+    "http_latency_p95_seconds": 0.78,
+    "http_latency_max_seconds": 0.78,
+    "root_form_present": true,
+    "interactive_form_submit_complete": true,
+    "general_three_zone_read": true,
+    "five_module_field": true,
+    "exactly_two_primary_modules": true,
+    "six_current_metric_cells": true,
+    "eight_memory_rows": true,
+    "two_verified_history_rows": true,
+    "eight_exact_memory_rows": true,
+    "source_proof_links": 10,
+    "executive_comprehension_labels": true,
+    "producer_binding_source_timestamp": true,
+    "producer_binding_btc_price": true,
+    "producer_binding_btc_dominance": true,
+    "producer_binding_defi_tvl": true,
+    "producer_binding_alt_breadth_24h": true,
+    "producer_binding_market_field_score": true,
+    "general_route": [
+      "MARKET STRUCTURE",
+      "CHANGE / EVENT MEMORY"
+    ],
+    "liquidity_route": [
+      "MARKET STRUCTURE",
+      "LIQUIDITY MEMBRANE"
+    ],
+    "temporal_route": [
+      "TEMPORAL CONTEXT",
+      "CHANGE / EVENT MEMORY"
+    ],
+    "russian_unicode_input_preserved": true,
+    "trading_request_safe_reframe": true,
+    "actionable_trading_instruction_absent": true,
+    "future_date_rejected": true,
+    "invalid_short_question_rejected": true,
+    "semantic_output_deterministic": true,
+    "mobile_horizontal_overflow": false,
+    "browser_severe_errors": false,
+    "phi_gate": "PASS"
+  },
+  "observed_read": {
+    "executive_state": "Mixed signals",
+    "executive_lead": "BTC gravity, participation, liquidity, or accepted memory are not moving as one field; the split is the analytical fact.",
+    "change_1": "BTC dominance 56.71% to 56.61% (-0.1 pp)",
+    "change_2": "Stablecoin share 13.3% to 13.44% (+0.15 pp)",
+    "watch_next": "Next accepted Snapshot Delta after 2026-07-23T13:44:09Z"
+  },
+  "non_blocking_observation": {
+    "russian_input": "accepted_and_preserved",
+    "analytical_surface_language": "EN",
+    "assessment": "Multilingual output was not advertised and is outside this pilot scope."
+  },
+  "screenshot_hashes": {
+    "interactive_general_desktop": "sha256:f434ffe983ab15e4095598839131d26f493f679db72a6fa1e6f368e67cb1a4cc",
+    "liquidity": "sha256:c60300b3884727fc3c4b2ca6fb15a2b4dc9b239cc942d43d5bd5c32e8240652b",
+    "temporal_current": "sha256:7534b0ef45fa3b1fe0eddc144b2c7b3f7d391343ed1e1a232de08a57e43cca6e",
+    "future_rejected": "sha256:b7858269f31980318a18457a7b1bf06f405332585d1d92c11a65d354812d8925",
+    "invalid_short": "sha256:bdd0029eae7dc8e668e699686b28c33b80a68580817c26e0f54017ad5ee4565f"
+  },
+  "cleanup": {
+    "draft_pr_closed_without_merge": true,
+    "temporary_workflow_removed": true,
+    "master_changed": false,
+    "operator_action": "NONE"
+  },
+  "boundary": {
+    "no_runtime_change": true,
+    "no_data_change": true,
+    "no_source_change": true,
+    "no_snapshot_change": true,
+    "no_memory_change": true,
+    "no_methodology_change": true,
+    "no_visual_change": true,
+    "no_public_url_change": true,
+    "no_payment": true,
+    "no_auth": true,
+    "no_forecast": true,
+    "no_trading_signal": true,
+    "no_price_target": true,
+    "no_orion_exposure": true
+  },
+  "next_safe_node": "BTC_PERSONAL_FIELD_FIRST_REAL_REQUEST_CONTROLLED_ACCEPTANCE_SCOPE_v0_1"
+}
