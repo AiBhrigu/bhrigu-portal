@@ -1,0 +1,47 @@
+name: BTC Envelope Style Scope Repair
+
+on:
+  push:
+    branches:
+      - agent/btc-personal-field-market-envelope-v0-1
+    paths:
+      - .github/workflows/btc-envelope-style-scope-repair.yml
+
+permissions:
+  contents: write
+
+env:
+  BRANCH: agent/btc-personal-field-market-envelope-v0-1
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-personal-field-market-envelope-v0-1
+          fetch-depth: 0
+      - name: Bind semantic golden-field CSS to the Envelope component
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('pages/crypto-astro/btc.tsx')
+          text = path.read_text()
+          start_old = 'function Envelope({e}:{e:BtcMarketEnvelope}){const cls=e.synthesis.state.toLowerCase().replace("_","-");return <section className="card envelope" aria-labelledby="market-envelope-title">'
+          start_new = 'function Envelope({e}:{e:BtcMarketEnvelope}){const cls=e.synthesis.state.toLowerCase().replace("_","-");return <><section className="card envelope" aria-labelledby="market-envelope-title">'
+          end_old = '  <aside><h3>INACTIVE BY PRODUCT BOUNDARY</h3><p>{e.inactive_modules.join(" · ")}</p></aside>\n</section>}'
+          end_new = '''  <aside><h3>INACTIVE BY PRODUCT BOUNDARY</h3><p>{e.inactive_modules.join(" · ")}</p></aside>\n</section><style jsx>{`\n.envelope{min-width:0;overflow:hidden;border:1px solid #f0cb7038;border-radius:24px;padding:clamp(18px,3vw,30px);background:radial-gradient(circle at 0 0,#f3ce6b1b,transparent 35%),radial-gradient(circle at 100% 0,#75a8ff17,transparent 35%),#0a1019;color:#e8eef6}\n.envelope *{box-sizing:border-box;min-width:0}.envelope p,.envelope li{color:#aebccc;line-height:1.58;overflow-wrap:anywhere}.envelope h2{margin:8px 0 15px;font-size:clamp(26px,4vw,40px);letter-spacing:-.025em}.envelope h3{margin:0;color:#f0cb70;font-size:13px;letter-spacing:.08em}.envelope h4{margin:14px 0 5px;color:#d6c07d;font-size:11px}.eyebrow{margin:0;color:#f0cb70;font:800 11px/1.3 system-ui;letter-spacing:.15em;text-transform:uppercase}.lead{font-size:clamp(15px,2vw,19px)}\n.split{display:flex;justify-content:space-between;gap:12px;align-items:start}.state{display:inline-flex;border:1px solid #ffffff2b;border-radius:999px;padding:8px 10px;font-size:10px;letter-spacing:.09em;white-space:nowrap}.confirmation{color:#98dfb2}.divergence{color:#f0cb70}.insufficient-evidence{color:#e5abab}\n.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0}.metrics>div{display:grid;gap:4px;border:1px solid #ffffff17;border-radius:14px;padding:12px;background:#00000022}.metrics span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8193a8}.metrics strong{font-size:20px;color:#f0d17a}.metrics small{color:#91a3b8;line-height:1.4;overflow-wrap:anywhere}\n.gold{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px;border:1px solid #f0cb7033;border-radius:20px;padding:14px;background:#02080f88}.btc{min-height:220px;display:grid;place-content:center;text-align:center;border:1px solid #f0cb705c;border-radius:18px;background:radial-gradient(circle,#f0cb7024,transparent 62%)}.btc strong{font-size:70px;color:#f0cb70}.btc span{font-size:10px;letter-spacing:.15em}.btc small{color:#8193a8}.nodes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.nodes article{border:1px solid #ffffff19;border-radius:14px;padding:10px;overflow:hidden}.nodes article.primary{border-color:#f0cb7075;background:#f0cb7012}.nodes article.unavailable{opacity:.55}.nodes header{display:flex;justify-content:space-between;gap:8px}.nodes i,.nodes em{font-size:9px;color:#91a2b5}.nodes h3{margin:8px 0 5px}.nodes b{font-size:10px}.nodes ul{padding-left:15px;font-size:10px}.phi{text-align:right;font-size:11px}\n.columns{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px}.columns>section,.review>section,.history,aside{border:1px solid #ffffff18;border-radius:17px;padding:15px;background:#00000022;overflow:hidden}.deltas{display:grid;grid-template-columns:1fr 1fr;gap:7px}.deltas>div{display:grid;border-top:1px solid #ffffff15;padding-top:7px}.deltas span{font-size:9px;text-transform:uppercase;color:#8193a8;overflow-wrap:anywhere}.deltas b{color:#f0cb70}.deltas small{color:#7f91a6;overflow-wrap:anywhere}.review{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.review ul,.review ol,.columns ul{padding-left:18px}.history{margin-top:12px}.scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:100%;min-width:820px;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #ffffff15;padding:9px 7px;font-size:11px;vertical-align:top}th{color:#d8b85e;font-size:9px}.method{border-left:3px solid #f0cb70;padding-left:10px}.hashes{display:grid;gap:6px;font-size:10px}.hashes code,.envelope code{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.envelope details{max-width:100%;overflow:hidden}.envelope summary{cursor:pointer;color:#f0cb70;font-weight:800}.envelope aside{margin-top:12px}\n@media(max-width:800px){.split{display:grid}.metrics,.review{grid-template-columns:1fr 1fr}.gold,.columns{grid-template-columns:1fr}.btc{min-height:170px}.envelope{padding:18px 13px}.nodes{grid-template-columns:1fr 1fr}}\n@media(max-width:480px){.metrics,.review,.nodes,.deltas{grid-template-columns:1fr}.btc strong{font-size:55px}.state{white-space:normal}.phi{text-align:left}}\n`}</style></>}'''
+          if text.count(start_old) != 1:
+              raise SystemExit(f'Envelope start count={text.count(start_old)}')
+          if text.count(end_old) != 1:
+              raise SystemExit(f'Envelope end count={text.count(end_old)}')
+          path.write_text(text.replace(start_old,start_new).replace(end_old,end_new))
+          PY
+          git rm .github/workflows/btc-envelope-style-scope-repair.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/crypto-astro/btc.tsx
+          git commit -m "Scope golden-field styles to BTC envelope component"
+          git push origin HEAD:${BRANCH}
