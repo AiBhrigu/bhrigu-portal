@@ -1,0 +1,41 @@
+name: Repair BTC Desktop Number Formatter
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [master]
+
+permissions:
+  contents: write
+
+env:
+  BRANCH: agent/btc-desktop-semantic-compression-v0-1
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'agent/btc-desktop-semantic-compression-v0-1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-desktop-semantic-compression-v0-1
+          fetch-depth: 0
+      - name: Replace unsupported lookbehind and remove workflow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('pages/crypto-astro/btc.tsx')
+          text=path.read_text()
+          old='const compact=(value:number,decimals:number)=>value.toFixed(decimals).replace(/\\.0+$|(?<=\\.[0-9]*?)0+$/g,"").replace(/\\.$/,"");'
+          new='const compact=(value:number,decimals:number)=>{const fixed=value.toFixed(decimals);return fixed.includes(".")?fixed.replace(/\\.?0+$/,""):fixed};'
+          if text.count(old)!=1:
+            raise SystemExit(f'formatter anchor count={text.count(old)}')
+          path.write_text(text.replace(old,new))
+          PY
+          git rm .github/workflows/btc-desktop-formatter-fix.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/crypto-astro/btc.tsx
+          git commit -m "Use deterministic BTC public number formatter"
+          git push origin HEAD:${BRANCH}
