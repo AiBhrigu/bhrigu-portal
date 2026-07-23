@@ -1,74 +1,980 @@
 import Head from "next/head";
-import Link from "next/link";
 import type { GetServerSideProps } from "next";
-import { BTC_SOURCE_URLS, loadBtcStaticSource } from "../../lib/btc-public-static-source";
+import { loadBtcStaticSource } from "../../lib/btc-public-static-source";
 import { composeBtcPublicSnapshot } from "../../lib/btc-public-snapshot-composer";
 import { renderBtcNarrativeRead } from "../../lib/btc-narrative-template-catalog";
 import type { BtcNarrativeSectionFactPayload } from "../../lib/btc-deterministic-narrative-router";
-import { loadBtcMarketEnvelope, type BtcMarketEnvelope, type BtcMarketEnvelopeFailure, type BtcMetricDelta } from "../../lib/btc-market-envelope";
-import { formatBtcDominanceBandLabel, formatBtcFocusAxisLabel, formatBtcFreshnessLabel, formatBtcMarketContextLabel, formatBtcObservationDate, formatBtcProofSourceLabel, formatBtcProofStatusLabel, formatBtcQuestionLensLabel, formatBtcSafetyOverlayLabel, formatBtcTemporalStateLabel, formatBtcUtcTimestamp, formatBtcWatchConditionForDisplay, getBtcReadRolePresentation } from "../../lib/btc-public-display-labels";
+import {
+  loadBtcMarketEnvelope,
+  type BtcMarketEnvelope,
+  type BtcMarketEnvelopeFailure,
+  type BtcMetricDelta,
+} from "../../lib/btc-market-envelope";
+import {
+  formatBtcDominanceBandLabel,
+  formatBtcFocusAxisLabel,
+  formatBtcMarketContextLabel,
+  formatBtcObservationDate,
+  formatBtcProofSourceLabel,
+  formatBtcProofStatusLabel,
+  formatBtcQuestionLensLabel,
+  formatBtcSafetyOverlayLabel,
+  formatBtcTemporalStateLabel,
+  formatBtcUtcTimestamp,
+  formatBtcWatchConditionForDisplay,
+  getBtcReadRolePresentation,
+} from "../../lib/btc-public-display-labels";
 import type { BtcFailureCode, BtcPublicSnapshot } from "../../lib/btc-public-output-contract";
 
-type Failure = { code: BtcFailureCode; message: string; last_verified_at_utc: string | null };
-type EnvelopeFailure = { code: BtcMarketEnvelopeFailure["code"]; message: string; last_verified_at_utc: string | null };
-type Props = { result: BtcPublicSnapshot | null; failure: Failure | null; envelope: BtcMarketEnvelope | null; envelopeFailure: EnvelopeFailure | null; initialQuestion: string; initialDate: string };
-const first = (v: string | string[] | undefined) => Array.isArray(v) ? v[0] ?? "" : v ?? "";
+type Failure = {
+  code: BtcFailureCode;
+  message: string;
+  last_verified_at_utc: string | null;
+};
+
+type EnvelopeFailure = {
+  code: BtcMarketEnvelopeFailure["code"];
+  message: string;
+  last_verified_at_utc: string | null;
+};
+
+type Props = {
+  result: BtcPublicSnapshot | null;
+  failure: Failure | null;
+  envelope: BtcMarketEnvelope | null;
+  envelopeFailure: EnvelopeFailure | null;
+  initialQuestion: string;
+  initialDate: string;
+};
+
+const first = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
-  const initialQuestion=first(query.q), initialDate=first(query.d);
-  const empty:Props={result:null,failure:null,envelope:null,envelopeFailure:null,initialQuestion:"",initialDate};
-  if(!initialQuestion)return{props:empty};
-  const source=await loadBtcStaticSource();
-  if(source.ok===false)return{props:{...empty,initialQuestion,failure:{code:source.code,message:source.message,last_verified_at_utc:source.last_verified_at_utc??null}}};
-  const composed=await composeBtcPublicSnapshot(source,{question:initialQuestion,date:initialDate||undefined});
-  if(composed.ok===false)return{props:{...empty,initialQuestion,failure:{code:composed.code,message:composed.message,last_verified_at_utc:null}}};
-  const market=await loadBtcMarketEnvelope(initialQuestion,{temporal:{state:composed.value.temporal_context.state,label:composed.value.temporal_context.label,harmonic_tension:composed.value.aspect_pressure.harmonic_tension}});
-  return{props:{result:composed.value,failure:null,envelope:market.ok===true?market.value:null,envelopeFailure:market.ok===true?null:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},initialQuestion,initialDate}};
+  const initialQuestion = first(query.q);
+  const initialDate = first(query.d);
+  const empty: Props = {
+    result: null,
+    failure: null,
+    envelope: null,
+    envelopeFailure: null,
+    initialQuestion: "",
+    initialDate,
+  };
+
+  if (!initialQuestion) return { props: empty };
+
+  const source = await loadBtcStaticSource();
+  if (source.ok === false) {
+    return {
+      props: {
+        ...empty,
+        initialQuestion,
+        failure: {
+          code: source.code,
+          message: source.message,
+          last_verified_at_utc: source.last_verified_at_utc ?? null,
+        },
+      },
+    };
+  }
+
+  const composed = await composeBtcPublicSnapshot(source, {
+    question: initialQuestion,
+    date: initialDate || undefined,
+  });
+  if (composed.ok === false) {
+    return {
+      props: {
+        ...empty,
+        initialQuestion,
+        failure: {
+          code: composed.code,
+          message: composed.message,
+          last_verified_at_utc: null,
+        },
+      },
+    };
+  }
+
+  const market = await loadBtcMarketEnvelope(initialQuestion, {
+    temporal: {
+      state: composed.value.temporal_context.state,
+      label: composed.value.temporal_context.label,
+      harmonic_tension: composed.value.aspect_pressure.harmonic_tension,
+    },
+  });
+
+  return {
+    props: {
+      result: composed.value,
+      failure: null,
+      envelope: market.ok === true ? market.value : null,
+      envelopeFailure:
+        market.ok === true
+          ? null
+          : {
+              code: market.code,
+              message: market.message,
+              last_verified_at_utc: market.last_verified_at_utc ?? null,
+            },
+      initialQuestion,
+      initialDate,
+    },
+  };
 };
 
-const money=(value:number)=>{
-  const absolute=Math.abs(value);
-  const scaled=absolute>=1e12?absolute/1e12:absolute>=1e9?absolute/1e9:absolute>=1e6?absolute/1e6:absolute>=1e3?absolute/1e3:absolute;
-  const suffix=absolute>=1e12?"T":absolute>=1e9?"B":absolute>=1e6?"M":absolute>=1e3?"K":"";
-  const digits=suffix?(scaled>=100?0:scaled>=10?1:2):2;
-  return `${value<0?"-":""}$${scaled.toFixed(digits)}${suffix}`;
+const compact = (value: number, decimals: number) => {
+  const fixed = value.toFixed(decimals);
+  return fixed.includes(".") ? fixed.replace(/\.?0+$/, "") : fixed;
 };
-const pct=(v:number)=>`${v>=0?"+":""}${v.toFixed(2)}%`;
-const metricValue=(m:BtcMetricDelta)=>m.display_delta??m.transition??m.direction;
-const examples=["What changed in the BTC field and why does it matter?","What does BTC dominance mean for the wider market?","What do liquidity, breadth, and pressure show now?","How does the selected date change the observation context?","Which BTC conditions should I watch?"] as const;
-const titles:Record<BtcNarrativeSectionFactPayload["section_id"],string>={what_changed:"ROLLING MARKET CONTEXT",why_it_matters:"WHY IT MATTERS",current_structure:"CURRENT STRUCTURE",dominant_pressures:"DOMINANT PRESSURES",relative_market_field:"RELATIVE MARKET FIELD",temporal_context:"TEMPORAL CONTEXT"};
-function facts(p:BtcNarrativeSectionFactPayload){switch(p.section_id){case"what_changed":return`BTC ${money(p.price_usd)} · 24h ${pct(p.change_24h_pct)} · 7d ${pct(p.change_7d_pct)} · 30d ${pct(p.change_30d_pct)} · total-cap 24h ${pct(p.market_cap_change_24h_pct)}.`;case"why_it_matters":return`Dominance ${p.dominance_pct.toFixed(2)}% · ${formatBtcDominanceBandLabel(p.dominance_band)} · rank #${p.market_cap_rank} · ${formatBtcMarketContextLabel(p.market_context_label)}.`;case"current_structure":return`${p.regime_label} · field ${p.field_score.toFixed(1)} · ${p.direction_bias} · ${p.liquidity_state}.`;case"dominant_pressures":return`${p.pressure_label} · ${formatBtcTemporalStateLabel(p.temporal_state)} · ${p.harmonic_tension===null?"numeric pressure unavailable":`tension ${p.harmonic_tension.toFixed(4)}`} · stablecoin share ${p.stablecoin_share_pct.toFixed(2)}%.`;case"relative_market_field":return`BTC dominance ${p.dominance_pct.toFixed(2)}% · alt breadth ${p.alt_breadth_24h_pct.toFixed(1)}% · stablecoin share ${p.stablecoin_share_pct.toFixed(2)}%.`;case"temporal_context":return`${formatBtcTemporalStateLabel(p.temporal_state)} · observation ${formatBtcObservationDate(p.observation_date)} · market source ${formatBtcUtcTimestamp(p.source_generated_at_utc)}.`;}}
 
-function Envelope({e}:{e:BtcMarketEnvelope}){const cls=e.synthesis.state.toLowerCase().replace("_","-");return <><section className="card envelope" aria-labelledby="market-envelope-title">
-  <header className="split"><div><p className="eyebrow">BTC · whole-market analytical envelope</p><h2 id="market-envelope-title">BTC Market Cosmographer Field</h2></div><b className={`state ${cls}`}>{e.synthesis.state.replace("_"," ")}</b></header>
-  <p className="lead">BTC is the gravity anchor. Market structure, liquidity, accepted Change Memory and bounded temporal context form the envelope.</p>
-  <div className="metrics"><div><span>BTC</span><strong>{money(e.current.price_usd)}</strong><small>24h {pct(e.current.change_24h_pct)} · 7d {pct(e.current.change_7d_pct)} · 30d {pct(e.current.change_30d_pct)}</small></div><div><span>Dominance</span><strong>{e.current.btc_dominance_pct.toFixed(2)}%</strong><small>Total cap {money(e.current.total_market_cap_usd)}</small></div><div><span>Market Field</span><strong>{e.current.market_field_score.toFixed(1)}</strong><small>{e.current.regime} · {e.current.direction_bias}</small></div><div><span>Liquidity</span><strong>{money(e.current.defi_tvl_usd)}</strong><small>DEX 24h {money(e.current.dex_volume_24h_usd)}</small></div><div><span>Participation</span><strong>{e.current.alt_breadth_24h_pct.toFixed(1)}%</strong><small>7d {e.current.alt_breadth_7d_pct.toFixed(1)}% · ETH {e.current.eth_rotation_anchor_pct.toFixed(2)}%</small></div><div><span>Stablecoins</span><strong>{e.current.stablecoin_share_pct.toFixed(2)}%</strong><small>{money(e.current.stablecoin_cap_usd)}</small></div></div>
-  <section className="gold"><div className="btc"><strong>BTC</strong><span>CENTRAL GRAVITY</span><small>{e.question_class.replace(/_/g," ")}</small></div><div className="nodes">{e.phi_geometry.nodes.map(n=><article key={n.id} className={n.role}><header><i>{n.index}</i><em>{n.role}</em></header><h3>{n.label}</h3><b>{n.state}</b><ul>{n.evidence.slice(0,3).map(x=><li key={x}>{x}</li>)}</ul></article>)}</div></section>
-  <p className="phi">Φ {e.phi_geometry.phi_constant} · primary {e.phi_geometry.primary_field_pct}% · support {e.phi_geometry.support_field_pct}%</p>
-  <div className="columns"><section><p className="eyebrow">Accepted Snapshot Memory</p><h3>WHAT CHANGED</h3><p>{e.memory.comparison_status} · {e.memory.comparable_metric_count} comparable · {e.memory.unavailable_metrics.length} unavailable</p><div className="deltas">{e.memory.metrics.map(m=><div key={m.metric_id}><span>{m.metric_id.replace(/_/g," ")}</span><b>{metricValue(m)}</b><small>{m.previous_value} → {m.current_value}</small></div>)}</div><p>{e.memory.transition_interpretation}</p></section><section><p className="eyebrow">Cross-module synthesis</p><h3>COSMOGRAPHER REVIEW</h3><b className={`state ${cls}`}>{e.synthesis.state.replace("_"," ")}</b><h4>Why this matters</h4><p>{e.synthesis.why_this_matters}</p><h4>Confirmation</h4><ul>{e.synthesis.confirming_modules.length?e.synthesis.confirming_modules.map(x=><li key={x}>{x}</li>):<li>No multi-module confirmation is asserted.</li>}</ul><h4>Divergence / weakening</h4><ul>{e.synthesis.contradicting_or_weakening_modules.length?e.synthesis.contradicting_or_weakening_modules.map(x=><li key={x}>{x}</li>):<li>No contradiction is asserted.</li>}</ul></section></div>
-  <div className="review"><section><h3>REMAINED STABLE</h3><ul>{e.synthesis.remained_stable.length?e.synthesis.remained_stable.map(x=><li key={x}>{x}</li>):<li>No stable comparable transition is asserted.</li>}</ul></section><section><h3>WATCH NEXT</h3><ol>{e.synthesis.watch_next.map(x=><li key={x}>{x}</li>)}</ol></section><section><h3>UNCERTAINTY</h3><ul>{e.synthesis.uncertainty.map(x=><li key={x}>{x}</li>)}</ul></section></div>
-  <section className="history"><p className="eyebrow">Immutable accepted evidence</p><h3>VERIFIED HISTORY</h3>{e.verified_history.available?<><p>{e.verified_history.observation_window}</p><div className="scroll"><table><thead><tr><th>Checkpoint</th><th>BTC</th><th>Dominance</th><th>Breadth 24h/7d</th><th>Stable share</th><th>Field / regime</th><th>Commit</th></tr></thead><tbody>{e.verified_history.checkpoints.map(c=><tr key={c.snapshot_id}><td>{c.role}<br/><small>{formatBtcUtcTimestamp(c.accepted_at_utc)}</small></td><td>{money(c.btc_price_usd)}</td><td>{c.btc_dominance_pct.toFixed(2)}%</td><td>{c.alt_breadth_24h_pct.toFixed(1)}% / {c.alt_breadth_7d_pct.toFixed(1)}%</td><td>{c.stablecoin_share_pct.toFixed(2)}%</td><td>{c.market_field_score.toFixed(1)}<br/><small>{c.regime}</small></td><td><code>{c.commit_sha.slice(0,12)}</code></td></tr>)}</tbody></table></div></>:<p>Historical comparison is suppressed because an immutable accepted checkpoint could not be verified.</p>}<p className="method">{e.verified_history.methodology_repair_disclosure}</p></section>
-  <details><summary>SOURCE PROOF · MEMORY + MARKET ENVELOPE</summary><p><a href={e.source_proof.registry_url}>Snapshot Registry</a> · <a href={e.source_proof.delta_url}>Snapshot Delta</a> · <a href={e.source_proof.previous_snapshot_url}>Previous immutable snapshot</a></p><div className="hashes"><code>current snapshot · {e.source_proof.current_snapshot_sha256}</code><code>previous snapshot · {e.source_proof.previous_snapshot_sha256}</code><code>current proof · {e.source_proof.current_proof_sha256}</code><code>previous proof · {e.source_proof.previous_proof_sha256}</code><code>current bindings · {e.source_proof.current_bindings_sha256}</code><code>previous bindings · {e.source_proof.previous_bindings_sha256}</code></div></details>
-  <aside><h3>INACTIVE BY PRODUCT BOUNDARY</h3><p>{e.inactive_modules.join(" · ")}</p></aside>
-</section><style jsx>{`
-.envelope{min-width:0;overflow:hidden;border:1px solid #f0cb7038;border-radius:24px;padding:clamp(18px,3vw,30px);background:radial-gradient(circle at 0 0,#f3ce6b1b,transparent 35%),radial-gradient(circle at 100% 0,#75a8ff17,transparent 35%),#0a1019;color:#e8eef6}
-.envelope *{box-sizing:border-box;min-width:0}.envelope p,.envelope li{color:#aebccc;line-height:1.58;overflow-wrap:anywhere}.envelope h2{margin:8px 0 15px;font-size:clamp(26px,4vw,40px);letter-spacing:-.025em}.envelope h3{margin:0;color:#f0cb70;font-size:13px;letter-spacing:.08em}.envelope h4{margin:14px 0 5px;color:#d6c07d;font-size:11px}.eyebrow{margin:0;color:#f0cb70;font:800 11px/1.3 system-ui;letter-spacing:.15em;text-transform:uppercase}.lead{font-size:clamp(15px,2vw,19px)}
-.split{display:flex;justify-content:space-between;gap:12px;align-items:start}.state{display:inline-flex;border:1px solid #ffffff2b;border-radius:999px;padding:8px 10px;font-size:10px;letter-spacing:.09em;white-space:nowrap}.confirmation{color:#98dfb2}.divergence{color:#f0cb70}.insufficient-evidence{color:#e5abab}
-.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0}.metrics>div{display:grid;gap:4px;border:1px solid #ffffff17;border-radius:14px;padding:12px;background:#00000022}.metrics span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8193a8}.metrics strong{font-size:20px;color:#f0d17a}.metrics small{color:#91a3b8;line-height:1.4;overflow-wrap:anywhere}
-.gold{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px;border:1px solid #f0cb7033;border-radius:20px;padding:14px;background:#02080f88}.btc{align-self:start;min-height:360px;display:grid;place-content:center;text-align:center;border:1px solid #f0cb705c;border-radius:18px;background:radial-gradient(circle,#f0cb7024,transparent 62%)}.btc strong{font-size:70px;color:#f0cb70}.btc span{font-size:10px;letter-spacing:.15em}.btc small{color:#8193a8}.nodes{display:grid;grid-template-columns:1fr;gap:8px}.nodes article{border:1px solid #ffffff19;border-radius:14px;padding:10px;overflow:hidden}.nodes article.primary{border-color:#f0cb7075;background:#f0cb7012}.nodes article.unavailable{opacity:.55}.nodes header{display:flex;justify-content:space-between;gap:8px}.nodes i,.nodes em{font-size:9px;color:#91a2b5}.nodes h3{margin:8px 0 5px}.nodes b{font-size:10px}.nodes ul{padding-left:15px;font-size:10px}.phi{text-align:right;font-size:11px}
-.columns{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px}.columns>section,.review>section,.history,aside{border:1px solid #ffffff18;border-radius:17px;padding:15px;background:#00000022;overflow:hidden}.deltas{display:grid;grid-template-columns:1fr 1fr;gap:7px}.deltas>div{display:grid;border-top:1px solid #ffffff15;padding-top:7px}.deltas span{font-size:9px;text-transform:uppercase;color:#8193a8;overflow-wrap:anywhere}.deltas b{color:#f0cb70}.deltas small{color:#7f91a6;overflow-wrap:anywhere}.review{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.review ul,.review ol,.columns ul{padding-left:18px}.history{margin-top:12px}.scroll{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}table{width:100%;min-width:820px;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #ffffff15;padding:9px 7px;font-size:11px;vertical-align:top}th{color:#d8b85e;font-size:9px}.method{border-left:3px solid #f0cb70;padding-left:10px}.hashes{display:grid;gap:6px;font-size:10px}.hashes code,.envelope code{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word}.envelope details{max-width:100%;overflow:hidden}.envelope summary{cursor:pointer;color:#f0cb70;font-weight:800}.envelope aside{margin-top:12px}
-@media(max-width:800px){.split{display:grid}.metrics,.review{grid-template-columns:1fr 1fr}.gold,.columns{grid-template-columns:1fr}.btc{min-height:170px}.envelope{padding:18px 13px}.nodes{grid-template-columns:1fr}}
-@media(max-width:480px){.metrics,.review,.nodes,.deltas{grid-template-columns:1fr}.btc strong{font-size:55px}.state{white-space:normal}.phi{text-align:left}}
-`}</style></>}
+const money = (value: number, signed = false) => {
+  const absolute = Math.abs(value);
+  const divisor =
+    absolute >= 1e12 ? 1e12 : absolute >= 1e9 ? 1e9 : absolute >= 1e6 ? 1e6 : absolute >= 1e3 ? 1e3 : 1;
+  const suffix = divisor === 1e12 ? "T" : divisor === 1e9 ? "B" : divisor === 1e6 ? "M" : divisor === 1e3 ? "K" : "";
+  const scaled = absolute / divisor;
+  const digits = suffix ? (scaled >= 100 ? 0 : 2) : 2;
+  const sign = value < 0 ? "−" : signed && value > 0 ? "+" : "";
+  return `${sign}$${compact(scaled, digits)}${suffix}`;
+};
 
-export default function Page({result,failure,envelope,envelopeFailure,initialQuestion,initialDate}:Props){const inputFailure=failure?.code==="invalid_input",date=initialDate?`&d=${encodeURIComponent(initialDate)}`:"";return <><Head><title>BTC Field Read · Market Cosmographer</title><meta name="description" content="BTC-centric, whole-market-aware Cosmographer field using static accepted evidence and Snapshot Memory."/></Head><main>
-  <section className="card hero"><p className="eyebrow">Market Cosmographer · first commercial-grade corridor</p><h1>BTC Field Read</h1><p className="lead">Ask one BTC question. BTC remains the product anchor; the whole market becomes its analytical envelope.</p></section>
-  <section className="card" aria-labelledby="btc-question-title"><h2 id="btc-question-title">Ask one BTC field question</h2><p className="help">Write naturally. Ordinary BTC questions are accepted. Requests for direct action are converted into observable research context rather than rejected.</p><form method="get" action="/crypto-astro/btc"><label>Question<textarea name="q" minLength={8} maxLength={280} required defaultValue={initialQuestion} placeholder="What changed in the BTC field, why does it matter, and what conditions should I watch?"/></label><label>Optional temporal observation date (UTC)<input name="d" type="date" defaultValue={initialDate}/></label><button>Run BTC Field Read</button></form><div className="examples"><span>Try an example</span><div>{examples.map(q=><a key={q} href={`/crypto-astro/btc?q=${encodeURIComponent(q)}${date}`}>{q}</a>)}</div></div><p className="muted">The selected date controls the bounded temporal lane only. Do not include wallet addresses, keys, account details, or identifying information.</p></section>
-  {failure&&<section className="card fail" role="alert"><p className="eyebrow">{inputFailure?"Question check":"Source-bound failure"}</p><h2>{inputFailure?"Adjust the question or date":"BTC Field Read unavailable"}</h2><p>{failure.message}</p><p className="muted">{inputFailure?"Correct the question or date and run the read again.":"A source, proof, freshness, or contract check prevented this read."}</p>{failure.last_verified_at_utc&&<p>Last verified: {formatBtcUtcTimestamp(failure.last_verified_at_utc)}</p>}<details><summary>Technical details</summary><code>{failure.code}</code></details></section>}
-  {result&&<><section className="card"><p className="eyebrow">{result.asset.symbol} · {formatBtcFreshnessLabel(result.market_snapshot.freshness)}</p><h2>One coherent Cosmographer read</h2><div className="summary"><div><span>Observation</span><b>{formatBtcObservationDate(result.temporal_context.observation_date)}</b></div><div><span>Evidence</span><b>{result.source_proof.sources.length} reviewed</b></div><div><span>Regime</span><b>{result.market_structure.regime_label}</b></div><div><span>Status</span><b>{formatBtcFreshnessLabel(result.market_snapshot.freshness)}</b></div></div>{result.question.safe_reframed&&<p className="reframe"><b>{formatBtcSafetyOverlayLabel(result.question.geometry.safety_overlay)}.</b> Direct trading guidance was removed.</p>}<p><b>Question lens:</b> {formatBtcQuestionLensLabel(result.question.lens)}<br/><b>Focus axis:</b> {formatBtcFocusAxisLabel(result.question.geometry.focus_axis)}<br/>{result.question.normalized}</p><div className="flow">{result.cosmographer_read.sections.map(sec=>{const role=getBtcReadRolePresentation(sec.role);return <section key={sec.section_id} className={role.className} data-role={role.dataRole}><i>{String(sec.order).padStart(2,"0")}</i><div><header><h3>{titles[sec.section_id]}</h3><em>{role.badge}</em></header><div className="fact"><b>FACTS</b><p>{facts(sec.fact_payload)}</p></div><div className="read"><b>COSMOGRAPHER READ</b><p>{renderBtcNarrativeRead(sec.read_template_id,sec.fact_payload)}</p></div></div></section>})}</div><section className="box"><h3>WATCH CONDITIONS</h3><ol>{result.watch_conditions.map(x=><li key={x}>{formatBtcWatchConditionForDisplay(x)}</li>)}</ol></section><section className="box"><h3>UNCERTAINTY</h3><p>{result.uncertainty.freshness}</p><p>{result.uncertainty.question_limit}</p><p>{result.uncertainty.temporal_limit}</p><p>{result.uncertainty.source_limit}</p></section><section className="box"><h3>BOUNDARY</h3><p>Read only · static accepted evidence · no live adapter claim · no trading signal · no forecast · no price target · no investment recommendation · no personal-memory claim · ORION protected.</p></section><Link className="access" href={result.deeper_access_route}>Request deeper operator-reviewed access</Link></section>
-  {envelope&&<Envelope e={envelope}/>} {envelopeFailure&&<section className="card fail" role="alert"><p className="eyebrow">Market envelope fail-closed</p><h2>Whole-market envelope unavailable</h2><p>{envelopeFailure.message}</p><p className="muted">The bounded BTC reader remains visible; confirmation, divergence, Change Memory and verified history are suppressed.</p><code>{envelopeFailure.code}</code></section>}
-  <details className="card proof"><summary>SOURCE PROOF · {result.source_proof.sources.length} reviewed sources</summary><p>CoinGecko attribution and the corrected DefiLlama non-double-counted TVL methodology are preserved.</p><p><a href={BTC_SOURCE_URLS.snapshot}>Canonical snapshot</a> · <a href={BTC_SOURCE_URLS.proof}>Proof</a> · <a href={BTC_SOURCE_URLS.marketField}>Market field</a></p>{result.source_proof.sources.map(src=><article key={src.label}><b>{formatBtcProofSourceLabel(src.label)}</b><span>{formatBtcProofStatusLabel(src.status)} · {formatBtcUtcTimestamp(src.fetched_at_utc)}</span><a href={src.url}>Open source</a><details><summary>SHA-256</summary><code>{src.sha256}</code></details></article>)}</details></>}
-</main><style jsx>{`
-:global(*){box-sizing:border-box}:global(html,body){margin:0;background:#050a12;color:#e8eef6;font-family:Inter,system-ui,sans-serif;overflow-x:hidden}:global(a){color:#a8c9ff}:global(code){overflow-wrap:anywhere}main{width:min(1120px,100%);margin:auto;padding:24px 14px 64px;display:grid;gap:18px}.card{min-width:0;border:1px solid #ffffff22;border-radius:24px;padding:clamp(18px,3vw,30px);background:linear-gradient(180deg,#ffffff0e,#ffffff07)}.hero,.envelope{background:radial-gradient(circle at 0 0,#f3ce6b1b,transparent 35%),radial-gradient(circle at 100% 0,#75a8ff17,transparent 35%),#ffffff06}.eyebrow{margin:0;color:#f0cb70;font:800 11px/1.3 system-ui;letter-spacing:.15em;text-transform:uppercase}h1{margin:10px 0 0;font-size:clamp(40px,7vw,72px);letter-spacing:-.055em}h2{margin:8px 0 15px;font-size:clamp(26px,4vw,40px)}h3{margin:0;color:#f0cb70;font-size:13px;letter-spacing:.08em}h4{margin:14px 0 5px;color:#d6c07d;font-size:11px}.lead,.muted,.help,.card p,.card li{color:#aebccc;line-height:1.58}.help{margin-top:-5px}form{display:grid;grid-template-columns:minmax(0,2fr) minmax(190px,.7fr) auto;gap:12px;align-items:end}label{display:grid;gap:7px;color:#bdc9d8;font-size:13px}textarea,input{width:100%;border:1px solid #ffffff27;border-radius:14px;padding:12px;background:#07111d;color:#f0f5fa;font:inherit}textarea{min-height:92px;resize:vertical}button,.access{border:1px solid #f0cb7077;border-radius:999px;padding:13px 17px;background:#f0cb7015;color:#f0cb70;font-weight:800;text-decoration:none;cursor:pointer}.examples{margin-top:15px}.examples>span{color:#d7b65c;font-size:10px;letter-spacing:.12em}.examples>div{display:flex;flex-wrap:wrap;gap:7px;margin-top:8px}.examples a{border:1px solid #9fc4ff2d;border-radius:999px;padding:8px 10px;text-decoration:none;font-size:12px}.fail{border-color:#ff8c8c55}.split{display:flex;justify-content:space-between;gap:12px;align-items:start}.state{display:inline-flex;border:1px solid #ffffff2b;border-radius:999px;padding:8px 10px;font-size:10px;letter-spacing:.09em}.confirmation{color:#98dfb2}.divergence{color:#f0cb70}.insufficient-evidence{color:#e5abab}.metrics,.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:15px 0}.summary{grid-template-columns:repeat(4,minmax(0,1fr))}.metrics div,.summary div{display:grid;gap:4px;border:1px solid #ffffff17;border-radius:14px;padding:12px;background:#00000022}.metrics span,.summary span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#8193a8}.metrics strong{font-size:20px;color:#f0d17a}.metrics small,.summary b{color:#91a3b8;line-height:1.4}.gold{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px;border:1px solid #f0cb7033;border-radius:20px;padding:14px;background:#02080f88}.btc{align-self:start;min-height:360px;display:grid;place-content:center;text-align:center;border:1px solid #f0cb705c;border-radius:18px;background:radial-gradient(circle,#f0cb7024,transparent 62%)}.btc strong{font-size:70px;color:#f0cb70}.btc span{font-size:10px;letter-spacing:.15em}.btc small{color:#8193a8}.nodes{display:grid;grid-template-columns:1fr;gap:8px}.nodes article{min-width:0;border:1px solid #ffffff19;border-radius:14px;padding:10px}.nodes article.primary{border-color:#f0cb7075;background:#f0cb7012}.nodes article.unavailable{opacity:.55}.nodes header{display:flex;justify-content:space-between}.nodes i,.nodes em{font-size:9px;color:#91a2b5}.nodes h3{margin:8px 0 5px}.nodes b{font-size:10px}.nodes ul{padding-left:15px;font-size:10px}.phi{text-align:right;font-size:11px}.columns{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(0,1fr);gap:12px}.columns>section,.review>section,.history,aside,.box{border:1px solid #ffffff18;border-radius:17px;padding:15px;background:#00000022}.deltas{display:grid;grid-template-columns:1fr 1fr;gap:7px}.deltas div{display:grid;border-top:1px solid #ffffff15;padding-top:7px}.deltas span{font-size:9px;text-transform:uppercase;color:#8193a8}.deltas b{color:#f0cb70}.deltas small{color:#7f91a6}.review{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.review ul,.review ol,.columns ul{padding-left:18px}.history{margin-top:12px}.scroll{overflow-x:auto}table{width:100%;min-width:820px;border-collapse:collapse}th,td{text-align:left;border-bottom:1px solid #ffffff15;padding:9px 7px;font-size:11px;vertical-align:top}th{color:#d8b85e;font-size:9px}.method{border-left:3px solid #f0cb70;padding-left:10px}.hashes{display:grid;gap:6px;font-size:10px}aside{margin-top:12px}.flow{border-top:1px solid #ffffff20}.flow>section{display:grid;grid-template-columns:34px minmax(0,1fr);gap:10px;padding:18px 8px;border-bottom:1px solid #ffffff18}.flow .readSectionPrimary{border-left:2px solid #f0cb70;background:linear-gradient(90deg,#f0cb7010,transparent)}.flow i{color:#71849a;font-size:11px}.flow header{display:flex;justify-content:space-between;gap:8px}.flow em{font-size:9px;color:#91a3b8}.fact,.read{border-radius:13px;padding:11px 13px;margin-top:8px}.fact{border:1px solid #ffffff17}.read{border-left:3px solid #f0cb70;background:#f0cb700d}.fact b,.read b{font-size:9px;letter-spacing:.12em}.fact p,.read p{margin:4px 0}.box{margin-top:12px}.reframe{border-left:3px solid #f0cb70;padding:10px;background:#f0cb700d}.access{display:inline-flex;margin-top:14px}.proof article{display:grid;gap:6px;border-top:1px solid #ffffff18;padding:10px 0}.proof span{color:#8496aa;font-size:11px}summary{cursor:pointer;color:#f0cb70;font-weight:800}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #9fc4ff;outline-offset:3px}
-@media(max-width:800px){form{grid-template-columns:1fr}button{width:100%}.split{display:grid}.metrics,.review{grid-template-columns:1fr 1fr}.summary{grid-template-columns:1fr 1fr}.gold,.columns{grid-template-columns:1fr}.btc{min-height:170px}.examples>div{display:grid}.examples a{border-radius:13px}.card{padding:18px 13px}.flow>section{grid-template-columns:24px minmax(0,1fr)}}@media(max-width:480px){.metrics,.review,.nodes,.deltas{grid-template-columns:1fr}.btc strong{font-size:55px}}
-`}</style></>}
+const pct = (value: number, decimals = 2, signed = true) =>
+  `${value < 0 ? "−" : signed && value > 0 ? "+" : ""}${compact(Math.abs(value), decimals)}%`;
+
+const plain = (value: string) =>
+  value.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+
+const stateLabel = (value: string) =>
+  ({
+    CONFIRMATION: "Confirmation",
+    DIVERGENCE: "Mixed signals",
+    INSUFFICIENT_EVIDENCE: "Evidence limited",
+    UP: "Strengthening",
+    DOWN: "Weakening",
+    UNCHANGED: "Stable",
+    BOUNDED: "Mixed",
+    UNAVAILABLE: "Unavailable",
+  })[value] ?? plain(value);
+
+const stateClass = (value: string) =>
+  value === "CONFIRMATION"
+    ? "directionConfirmation"
+    : value === "DIVERGENCE"
+      ? "directionDivergence"
+      : "directionLimited";
+
+const roleLabel = (value: string) =>
+  value === "primary"
+    ? "Primary for this question"
+    : value === "unavailable"
+      ? "Not available"
+      : "Supporting context";
+
+const memoryLabel = (id: string) =>
+  ({
+    btc_gravity_pct: "BTC dominance",
+    stablecoin_share_pct: "Stablecoin share",
+    alt_breadth_24h_pct: "Alt breadth · 24h",
+    alt_breadth_7d_pct: "Alt breadth · 7d",
+    market_field_score: "Market Field Score",
+    regime_label: "Regime",
+    defi_tvl_usd: "DeFi TVL",
+    liquidity_context_state: "Liquidity context",
+  })[id] ?? plain(id);
+
+const memoryValue = (metric: BtcMetricDelta, value: string) => {
+  const numeric = Number(value);
+  if (metric.type !== "NUMERIC" || !Number.isFinite(numeric)) return plain(value);
+  if (metric.unit === "usd") return money(numeric);
+  if (metric.unit === "percent") return `${compact(numeric, metric.metric_id.includes("breadth") ? 1 : 2)}%`;
+  if (metric.unit === "score_0_100") return compact(numeric, 1);
+  return compact(numeric, 2);
+};
+
+const memoryDelta = (metric: BtcMetricDelta) => {
+  if (metric.type !== "NUMERIC") {
+    return metric.transition === "UNCHANGED" ? "No change" : plain(metric.transition ?? metric.direction);
+  }
+
+  const numeric = Number(metric.display_delta);
+  if (!Number.isFinite(numeric)) return stateLabel(metric.direction);
+  if (metric.unit === "usd") return money(numeric, true);
+
+  const sign = numeric < 0 ? "−" : numeric > 0 ? "+" : "";
+  const value = compact(
+    Math.abs(numeric),
+    metric.metric_id.includes("breadth") || metric.unit === "score_0_100" ? 1 : 2,
+  );
+  return metric.unit === "percent" ? `${sign}${value} pp` : `${sign}${value} pts`;
+};
+
+const examples = [
+  "What changed in the BTC field and why does it matter?",
+  "What does BTC dominance mean for the wider market?",
+  "What do liquidity, breadth, and pressure show now?",
+  "How does the selected date change the observation context?",
+  "Which BTC conditions should I watch?",
+] as const;
+
+const titles: Record<BtcNarrativeSectionFactPayload["section_id"], string> = {
+  what_changed: "ROLLING MARKET CONTEXT",
+  why_it_matters: "WHY IT MATTERS",
+  current_structure: "CURRENT STRUCTURE",
+  dominant_pressures: "DOMINANT PRESSURES",
+  relative_market_field: "RELATIVE MARKET FIELD",
+  temporal_context: "TEMPORAL CONTEXT",
+};
+
+function facts(payload: BtcNarrativeSectionFactPayload) {
+  switch (payload.section_id) {
+    case "what_changed":
+      return `BTC ${money(payload.price_usd)} · 24h ${pct(payload.change_24h_pct)} · 7d ${pct(payload.change_7d_pct)} · 30d ${pct(payload.change_30d_pct)} · total-cap 24h ${pct(payload.market_cap_change_24h_pct)}.`;
+    case "why_it_matters":
+      return `Dominance ${compact(payload.dominance_pct, 2)}% · ${formatBtcDominanceBandLabel(payload.dominance_band)} · rank #${payload.market_cap_rank} · ${formatBtcMarketContextLabel(payload.market_context_label)}.`;
+    case "current_structure":
+      return `${payload.regime_label} · field ${compact(payload.field_score, 1)} · ${plain(payload.direction_bias)} · ${plain(payload.liquidity_state)}.`;
+    case "dominant_pressures":
+      return `${payload.pressure_label} · ${formatBtcTemporalStateLabel(payload.temporal_state)} · ${
+        payload.harmonic_tension === null ? "numeric pressure unavailable" : `tension ${compact(payload.harmonic_tension, 2)}`
+      } · stablecoin share ${compact(payload.stablecoin_share_pct, 2)}%.`;
+    case "relative_market_field":
+      return `BTC dominance ${compact(payload.dominance_pct, 2)}% · alt breadth ${compact(payload.alt_breadth_24h_pct, 1)}% · stablecoin share ${compact(payload.stablecoin_share_pct, 2)}%.`;
+    case "temporal_context":
+      return `${formatBtcTemporalStateLabel(payload.temporal_state)} · observation ${formatBtcObservationDate(payload.observation_date)} · market source ${formatBtcUtcTimestamp(payload.source_generated_at_utc)}.`;
+  }
+}
+
+const moduleSummary = (envelope: BtcMarketEnvelope, id: string) => {
+  if (id === "market_structure") {
+    return `Field ${compact(envelope.current.market_field_score, 1)} · dominance ${pct(envelope.current.btc_dominance_pct, 2, false)} · ${envelope.current.regime}`;
+  }
+  if (id === "liquidity_membrane") {
+    return `DeFi TVL ${money(envelope.current.defi_tvl_usd)} · DEX 24h ${money(envelope.current.dex_volume_24h_usd)} · stable share ${pct(envelope.current.stablecoin_share_pct, 2, false)}`;
+  }
+  if (id === "change_event_memory") {
+    return `${envelope.memory.comparable_metric_count} comparable metrics · ${stateLabel(envelope.synthesis.state)}`;
+  }
+  if (id === "temporal_context") {
+    const tension = envelope.current.bounded_temporal_context.harmonic_tension;
+    return `${plain(envelope.current.bounded_temporal_context.state)} · tension ${tension === null ? "unavailable" : compact(tension, 2)}`;
+  }
+  return `${stateLabel(envelope.synthesis.state)} · ${envelope.synthesis.why_this_matters}`;
+};
+
+function PrimaryModule({
+  envelope,
+  node,
+  position,
+}: {
+  envelope: BtcMarketEnvelope;
+  node: BtcMarketEnvelope["phi_geometry"]["nodes"][number];
+  position: "top" | "bottom";
+}) {
+  return (
+    <article className={`phiModule primaryModule primaryModule${position === "top" ? "Top" : "Bottom"}`} data-role={node.role}>
+      <div className="moduleIndex">{node.index}</div>
+      <div>
+        <p>{roleLabel(node.role)}</p>
+        <h3>{node.label}</h3>
+        <strong>{stateLabel(node.state)}</strong>
+        <span>{moduleSummary(envelope, node.id)}</span>
+      </div>
+    </article>
+  );
+}
+
+function SupportingModule({
+  envelope,
+  node,
+}: {
+  envelope: BtcMarketEnvelope;
+  node: BtcMarketEnvelope["phi_geometry"]["nodes"][number];
+}) {
+  return (
+    <article
+      className={`phiModule supportModule ${node.role === "unavailable" ? "supportUnavailable" : ""}`}
+      data-role={node.role}
+    >
+      <header>
+        <span>{node.index}</span>
+        <em>{roleLabel(node.role)}</em>
+      </header>
+      <h3>{node.label}</h3>
+      <strong>{stateLabel(node.state)}</strong>
+      <p>{moduleSummary(envelope, node.id)}</p>
+    </article>
+  );
+}
+
+function ZoneObservation({
+  envelope,
+  result,
+}: {
+  envelope: BtcMarketEnvelope;
+  result: BtcPublicSnapshot;
+}) {
+  const changed = envelope.memory.metrics
+    .filter((metric) => metric.direction !== "UNCHANGED" || metric.transition !== "UNCHANGED")
+    .slice(0, 2)
+    .map(
+      (metric) =>
+        `${memoryLabel(metric.metric_id)} ${memoryValue(metric, metric.previous_value)} → ${memoryValue(metric, metric.current_value)} (${memoryDelta(metric)})`,
+    );
+  const confirms = envelope.synthesis.confirming_modules[0]?.split(":")[0];
+  const weakens = envelope.synthesis.contradicting_or_weakening_modules[0]?.split(":")[0];
+
+  return (
+    <section className="readingZone zoneObservation" aria-labelledby="executive-read-title">
+      <header className="readingHeader">
+        <div>
+          <span>Question</span>
+          <h2>{result.question.normalized}</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>Observation</dt>
+            <dd>{formatBtcObservationDate(result.temporal_context.observation_date)}</dd>
+          </div>
+          <div>
+            <dt>Lens</dt>
+            <dd>{formatBtcQuestionLensLabel(result.question.lens)}</dd>
+          </div>
+          <div>
+            <dt>Focus</dt>
+            <dd>{formatBtcFocusAxisLabel(result.question.geometry.focus_axis)}</dd>
+          </div>
+        </dl>
+      </header>
+
+      {result.question.safe_reframed && (
+        <p className="reframe">
+          <b>{formatBtcSafetyOverlayLabel(result.question.geometry.safety_overlay)}.</b> Direct trading guidance was removed.
+        </p>
+      )}
+
+      <section className="metricRibbon" aria-labelledby="current-metrics-title">
+        <header>
+          <p className="eyebrow">Current verified metrics</p>
+          <h3 id="current-metrics-title">BTC and market envelope</h3>
+          <time>{formatBtcUtcTimestamp(envelope.current.source_generated_at_utc)}</time>
+        </header>
+        <dl>
+          <div>
+            <dt>BTC</dt>
+            <dd>{money(envelope.current.price_usd)}</dd>
+            <small>24h {pct(envelope.current.change_24h_pct)} · 7d {pct(envelope.current.change_7d_pct)} · 30d {pct(envelope.current.change_30d_pct)}</small>
+          </div>
+          <div>
+            <dt>Dominance</dt>
+            <dd>{pct(envelope.current.btc_dominance_pct, 2, false)}</dd>
+            <small>Total cap {money(envelope.current.total_market_cap_usd)}</small>
+          </div>
+          <div>
+            <dt>Market Field</dt>
+            <dd>{compact(envelope.current.market_field_score, 1)}</dd>
+            <small>{envelope.current.regime} · {plain(envelope.current.direction_bias)}</small>
+          </div>
+          <div>
+            <dt>Liquidity</dt>
+            <dd>{money(envelope.current.defi_tvl_usd)}</dd>
+            <small>DEX 24h {money(envelope.current.dex_volume_24h_usd)}</small>
+          </div>
+          <div>
+            <dt>Participation</dt>
+            <dd>{pct(envelope.current.alt_breadth_24h_pct, 1, false)}</dd>
+            <small>7d {pct(envelope.current.alt_breadth_7d_pct, 1, false)} · ETH {pct(envelope.current.eth_rotation_anchor_pct, 2, false)}</small>
+          </div>
+          <div>
+            <dt>Stablecoins</dt>
+            <dd>{pct(envelope.current.stablecoin_share_pct, 2, false)}</dd>
+            <small>{money(envelope.current.stablecoin_cap_usd)}</small>
+          </div>
+        </dl>
+      </section>
+
+      <section className="executiveField">
+        <div className="executivePrimary">
+          <p className="eyebrow">Executive Cosmographer Read</p>
+          <h3 id="executive-read-title">{stateLabel(envelope.synthesis.state)}</h3>
+          <p className="executiveLead">{envelope.synthesis.why_this_matters}</p>
+          <dl>
+            <div>
+              <dt>What changed</dt>
+              <dd>{changed[0] ?? "No comparable transition is asserted."}</dd>
+            </div>
+            <div>
+              <dt>What changed next</dt>
+              <dd>{changed[1] ?? "No second material transition is asserted."}</dd>
+            </div>
+          </dl>
+        </div>
+        <aside className="executiveContext">
+          <dl>
+            <div>
+              <dt>What confirms it</dt>
+              <dd>{confirms ? `${confirms} aligns with the routed structure.` : "No multi-module confirmation is asserted."}</dd>
+            </div>
+            <div>
+              <dt>What weakens it</dt>
+              <dd>{weakens ?? "No contradiction is asserted."}</dd>
+            </div>
+            <div>
+              <dt>Watch next</dt>
+              <dd>{envelope.synthesis.watch_next[0] ?? "Wait for the next accepted snapshot."}</dd>
+            </div>
+            <div>
+              <dt>Uncertainty boundary</dt>
+              <dd>{envelope.synthesis.uncertainty[0] ?? "The read remains bounded to accepted static evidence."}</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+    </section>
+  );
+}
+
+function ZonePhi({ envelope }: { envelope: BtcMarketEnvelope }) {
+  const primary = envelope.phi_geometry.nodes.filter((node) => node.role === "primary");
+  const support = envelope.phi_geometry.nodes.filter((node) => node.role !== "primary");
+
+  return (
+    <section className="readingZone zonePhi" aria-labelledby="phi-field-title">
+      <header className="zoneHeading">
+        <div>
+          <p className="eyebrow">Unified semantic field</p>
+          <h2 id="phi-field-title">Five-module Φ-field</h2>
+        </div>
+        <p>Two routed modules lead. Three remain supporting or unavailable.</p>
+      </header>
+
+      <div className="phiPlane">
+        <div className="primaryField">
+          <PrimaryModule envelope={envelope} node={primary[0]} position="top" />
+          <div className="btcAxis">
+            <span>BTC</span>
+            <b>Central gravity</b>
+            <small>{plain(envelope.question_class)}</small>
+          </div>
+          <PrimaryModule envelope={envelope} node={primary[1]} position="bottom" />
+        </div>
+        <div className="supportBand">
+          {support.map((node) => (
+            <SupportingModule key={node.id} envelope={envelope} node={node} />
+          ))}
+        </div>
+      </div>
+
+      <div className={`fieldDirection ${stateClass(envelope.synthesis.state)}`}>
+        <span>{stateLabel(envelope.synthesis.state)}</span>
+        <i aria-hidden="true" />
+        <p>{envelope.memory.transition_interpretation}</p>
+      </div>
+
+      <section className="memoryAxis" aria-labelledby="memory-title">
+        <header>
+          <div>
+            <p className="eyebrow">Accepted Change Memory</p>
+            <h3 id="memory-title">Previous → current</h3>
+          </div>
+          <p>{envelope.memory.comparable_metric_count} comparable · {envelope.memory.unavailable_metrics.length} unavailable</p>
+        </header>
+        <div className="memoryScale" aria-hidden="true">
+          <span>Previous accepted</span>
+          <i />
+          <span>Current accepted</span>
+        </div>
+        <div className="memoryTableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Previous</th>
+                <th>Change</th>
+                <th>Current</th>
+              </tr>
+            </thead>
+            <tbody>
+              {envelope.memory.metrics.map((metric) => (
+                <tr key={metric.metric_id}>
+                  <th>{memoryLabel(metric.metric_id)}</th>
+                  <td>{memoryValue(metric, metric.previous_value)}</td>
+                  <td>{memoryDelta(metric)}</td>
+                  <td>{memoryValue(metric, metric.current_value)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  );
+}
+
+function ZoneEvidence({
+  envelope,
+  result,
+}: {
+  envelope: BtcMarketEnvelope;
+  result: BtcPublicSnapshot;
+}) {
+  return (
+    <section className="readingZone zoneEvidence" aria-labelledby="evidence-title">
+      <header className="zoneHeading">
+        <div>
+          <p className="eyebrow">Evidence and closure</p>
+          <h2 id="evidence-title">Open technical evidence only when needed</h2>
+        </div>
+        <p>Analytical proof remains complete without repeating the executive read.</p>
+      </header>
+
+      <div className="evidenceStack">
+        <details>
+          <summary>Detailed module evidence</summary>
+          <ol className="moduleEvidenceList">
+            {result.cosmographer_read.sections.map((section) => {
+              const role = getBtcReadRolePresentation(section.role);
+              return (
+                <li key={section.section_id}>
+                  <header>
+                    <span>{String(section.order).padStart(2, "0")}</span>
+                    <h3>{titles[section.section_id]}</h3>
+                    <em>{role.badge === "PRIMARY READ" ? "Primary" : "Supporting"}</em>
+                  </header>
+                  <p><b>Facts.</b> {facts(section.fact_payload)}</p>
+                  <p><b>Cosmographer read.</b> {renderBtcNarrativeRead(section.read_template_id, section.fact_payload)}</p>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="watchEvidence">
+            <section>
+              <h3>Watch conditions</h3>
+              <ol>{result.watch_conditions.map((item) => <li key={item}>{formatBtcWatchConditionForDisplay(item)}</li>)}</ol>
+            </section>
+            <section>
+              <h3>Uncertainty</h3>
+              <p>{result.uncertainty.freshness}</p>
+              <p>{result.uncertainty.question_limit}</p>
+              <p>{result.uncertainty.temporal_limit}</p>
+              <p>{result.uncertainty.source_limit}</p>
+            </section>
+          </div>
+        </details>
+
+        <details>
+          <summary>Verified history</summary>
+          {envelope.verified_history.available ? (
+            <>
+              <p>{envelope.verified_history.observation_window}</p>
+              <div className="historyTableWrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Checkpoint</th>
+                      <th>BTC</th>
+                      <th>Dominance</th>
+                      <th>Breadth 24h / 7d</th>
+                      <th>Stable share</th>
+                      <th>Field / regime</th>
+                      <th>Commit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {envelope.verified_history.checkpoints.map((checkpoint) => (
+                      <tr key={checkpoint.snapshot_id}>
+                        <th>{plain(checkpoint.role)}<small>{formatBtcUtcTimestamp(checkpoint.accepted_at_utc)}</small></th>
+                        <td>{money(checkpoint.btc_price_usd)}</td>
+                        <td>{pct(checkpoint.btc_dominance_pct, 2, false)}</td>
+                        <td>{pct(checkpoint.alt_breadth_24h_pct, 1, false)} / {pct(checkpoint.alt_breadth_7d_pct, 1, false)}</td>
+                        <td>{pct(checkpoint.stablecoin_share_pct, 2, false)}</td>
+                        <td>{compact(checkpoint.market_field_score, 1)}<small>{checkpoint.regime}</small></td>
+                        <td><code>{checkpoint.commit_sha.slice(0, 12)}</code></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="methodNote">{envelope.verified_history.methodology_repair_disclosure}</p>
+            </>
+          ) : (
+            <p>Historical comparison is suppressed because an immutable accepted checkpoint could not be verified.</p>
+          )}
+        </details>
+
+        <details className="sourceProof">
+          <summary>Source proof, exact accepted values, hashes and boundaries</summary>
+          <p>
+            <a href={envelope.source_proof.registry_url}>Snapshot Registry</a> ·{" "}
+            <a href={envelope.source_proof.delta_url}>Snapshot Delta</a> ·{" "}
+            <a href={envelope.source_proof.previous_snapshot_url}>Previous immutable snapshot</a>
+          </p>
+
+          <section>
+            <h3>Reviewed sources</h3>
+            <ul className="sourceRows">
+              {result.source_proof.sources.map((source) => (
+                <li key={source.label}>
+                  <b>{formatBtcProofSourceLabel(source.label)}</b>
+                  <span>{formatBtcProofStatusLabel(source.status)} · {formatBtcUtcTimestamp(source.fetched_at_utc)}</span>
+                  <a href={source.url}>Open source</a>
+                  <code>{source.sha256}</code>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3>Exact accepted memory values and methodology</h3>
+            <div className="exactMemoryTableWrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Metric</th>
+                    <th>Previous exact</th>
+                    <th>Current exact</th>
+                    <th>Methodology</th>
+                    <th>Sources</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {envelope.memory.metrics.map((metric) => (
+                    <tr key={metric.metric_id}>
+                      <th>{metric.metric_id}</th>
+                      <td><code>{metric.previous_value}</code></td>
+                      <td><code>{metric.current_value}</code></td>
+                      <td><code>{metric.methodology_id}</code></td>
+                      <td><code>{metric.proof_sources.join(",")}</code></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <h3>Immutable hashes</h3>
+            <div className="hashList">
+              <code>current snapshot · {envelope.source_proof.current_snapshot_sha256}</code>
+              <code>previous snapshot · {envelope.source_proof.previous_snapshot_sha256}</code>
+              <code>current proof · {envelope.source_proof.current_proof_sha256}</code>
+              <code>previous proof · {envelope.source_proof.previous_proof_sha256}</code>
+              <code>current bindings · {envelope.source_proof.current_bindings_sha256}</code>
+              <code>previous bindings · {envelope.source_proof.previous_bindings_sha256}</code>
+            </div>
+          </section>
+
+          <section className="closingBoundary">
+            <h3>Public boundary</h3>
+            <p>Read only · static accepted evidence · no live adapter claim · no trading signal · no forecast · no price target · no investment recommendation · no personal-memory claim · ORION protected.</p>
+            <p><b>Inactive:</b> {envelope.inactive_modules.join(" · ")}</p>
+          </section>
+        </details>
+      </div>
+    </section>
+  );
+}
+
+function Envelope({
+  envelope,
+  result,
+}: {
+  envelope: BtcMarketEnvelope;
+  result: BtcPublicSnapshot;
+}) {
+  return (
+    <>
+      <ZoneObservation envelope={envelope} result={result} />
+      <ZonePhi envelope={envelope} />
+      <ZoneEvidence envelope={envelope} result={result} />
+    </>
+  );
+}
+
+export default function Page({
+  result,
+  failure,
+  envelope,
+  envelopeFailure,
+  initialQuestion,
+  initialDate,
+}: Props) {
+  const inputFailure = failure?.code === "invalid_input";
+  const date = initialDate ? `&d=${encodeURIComponent(initialDate)}` : "";
+
+  return (
+    <>
+      <Head>
+        <title>BTC Field Read · Market Cosmographer</title>
+        <meta
+          name="description"
+          content="BTC-centric, whole-market-aware Cosmographer field using static accepted evidence and Snapshot Memory."
+        />
+      </Head>
+      <main>
+        <section className="hero">
+          <p className="eyebrow">Market Cosmographer · BTC corridor</p>
+          <h1>BTC Field Read</h1>
+          <p>BTC remains the gravity anchor. The wider market forms the analytical envelope.</p>
+        </section>
+
+        <section className="questionPanel" aria-labelledby="btc-question-title">
+          <header>
+            <div>
+              <p className="eyebrow">Question and observation</p>
+              <h2 id="btc-question-title">Ask one BTC field question</h2>
+            </div>
+            {result && (
+              <div className="observation">
+                <span>Observation</span>
+                <b>{formatBtcObservationDate(result.temporal_context.observation_date)}</b>
+              </div>
+            )}
+          </header>
+          <form method="get" action="/crypto-astro/btc">
+            <label>
+              Question
+              <textarea
+                name="q"
+                minLength={8}
+                maxLength={280}
+                required
+                defaultValue={initialQuestion}
+                placeholder="What changed in the BTC field, why does it matter, and what conditions should I watch?"
+              />
+            </label>
+            <label>
+              Observation date · UTC
+              <input name="d" type="date" defaultValue={initialDate} />
+            </label>
+            <button>Run BTC Field Read</button>
+          </form>
+          <details className="examples">
+            <summary>Example questions</summary>
+            <div>
+              {examples.map((question) => (
+                <a key={question} href={`/crypto-astro/btc?q=${encodeURIComponent(question)}${date}`}>
+                  {question}
+                </a>
+              ))}
+            </div>
+          </details>
+          <p className="privacyNote">The date controls only the bounded temporal lane. Do not include wallet addresses, keys, account details, or identifying information.</p>
+        </section>
+
+        {failure && (
+          <section className="failure" role="alert">
+            <p className="eyebrow">{inputFailure ? "Question check" : "Source-bound failure"}</p>
+            <h2>{inputFailure ? "Adjust the question or date" : "BTC Field Read unavailable"}</h2>
+            <p>{failure.message}</p>
+            {failure.last_verified_at_utc && <p>Last verified: {formatBtcUtcTimestamp(failure.last_verified_at_utc)}</p>}
+            <details>
+              <summary>Technical details</summary>
+              <code>{failure.code}</code>
+            </details>
+          </section>
+        )}
+
+        {result && (
+          <section className="reading" aria-label="BTC Cosmographer reading">
+            {envelope ? (
+              <Envelope envelope={envelope} result={result} />
+            ) : (
+              <section className="readingZone failure">
+                <p className="eyebrow">Market envelope fail-closed</p>
+                <h2>Whole-market envelope unavailable</h2>
+                <p>{envelopeFailure?.message ?? "The analytical envelope could not be verified."}</p>
+                <p>The bounded BTC reader remains available, while Change Memory and cross-module synthesis stay suppressed.</p>
+                <details>
+                  <summary>Bounded reader evidence</summary>
+                  {result.cosmographer_read.sections.map((section) => (
+                    <article key={section.section_id}>
+                      <h3>{titles[section.section_id]}</h3>
+                      <p>{facts(section.fact_payload)}</p>
+                      <p>{renderBtcNarrativeRead(section.read_template_id, section.fact_payload)}</p>
+                    </article>
+                  ))}
+                </details>
+              </section>
+            )}
+          </section>
+        )}
+
+        <div className="closingField" aria-hidden="true"><span /></div>
+      </main>
+      <style jsx global>{`
+        :global(*){box-sizing:border-box}
+        :global(html){scroll-padding-bottom:calc(clamp(128px,12vh,168px) + env(safe-area-inset-bottom))}
+        :global(html,body){margin:0;background:#050a12;color:#e8eef6;font-family:Inter,system-ui,sans-serif;overflow-x:hidden}
+        :global(a){color:#b7d2ff}
+        :global(code){overflow-wrap:anywhere}
+        :global(:focus-visible){outline:2px solid #dbe6ef;outline-offset:3px}
+        main{width:min(1280px,100%);margin:auto;padding:28px 18px 0}
+        .hero{padding:clamp(24px,4vw,48px) 0;border-bottom:1px solid #ffffff20}
+        .hero h1{margin:8px 0 4px;font-size:clamp(42px,7vw,78px);letter-spacing:-.06em}
+        .hero p:last-child{max-width:720px;color:#aebccc;font-size:clamp(16px,2vw,20px)}
+        .eyebrow{margin:0;color:#93a7bb;font:800 11px/1.3 system-ui;letter-spacing:.15em;text-transform:uppercase}
+        .questionPanel{padding:24px 0;border-bottom:1px solid #ffffff20}
+        .questionPanel>header{display:flex;justify-content:space-between;gap:18px;align-items:start}
+        .questionPanel h2,.failure h2{margin:7px 0 14px;font-size:clamp(24px,3vw,36px)}
+        .observation{display:grid;gap:3px;text-align:right}
+        .observation span{font-size:10px;color:#8193a8;letter-spacing:.12em;text-transform:uppercase}
+        .observation b{color:#e8eef6}
+        form{display:grid;grid-template-columns:minmax(0,2fr) minmax(210px,.65fr) auto;gap:12px;align-items:end}
+        label{display:grid;gap:7px;color:#bdc9d8;font-size:13px}
+        textarea,input{width:100%;border:1px solid #ffffff27;border-radius:10px;padding:12px;background:#07111d;color:#f0f5fa;font:inherit}
+        textarea{min-height:76px;resize:vertical}
+        button{border:1px solid #dbe6ef70;border-radius:999px;padding:13px 18px;background:#dbe6ef0d;color:#e5edf4;font-weight:800;cursor:pointer}
+        .examples{margin-top:14px}
+        .examples summary{cursor:pointer;color:#c5d2dd;font-weight:700}
+        .examples>div{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+        .examples a{border-bottom:1px solid #9fc4ff42;padding:7px 2px;text-decoration:none;font-size:12px}
+        .privacyNote{margin-bottom:0;color:#8193a8;font-size:12px}
+        .failure{padding:24px 0;border-bottom:1px solid #ff8c8c4d}
+        .failure p,.failure li{color:#aebccc;line-height:1.6}
+        .reading{display:block}
+        .readingZone{padding:28px 0;border-bottom:1px solid #ffffff20}
+        .readingHeader{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr);gap:clamp(24px,4vw,52px);align-items:end}
+        .readingHeader>div>span,.readingHeader dt{font-size:10px;color:#8193a8;letter-spacing:.12em;text-transform:uppercase}
+        .readingHeader h2{margin:5px 0 0;font-size:clamp(28px,3.4vw,40px);letter-spacing:-.035em;line-height:1.02}
+        .readingHeader dl{margin:0;border-top:1px solid #ffffff20}
+        .readingHeader dl div{display:grid;grid-template-columns:92px 1fr;gap:12px;padding:7px 0;border-bottom:1px solid #ffffff12}
+        .readingHeader dd{margin:0;color:#dbe5ed;text-align:right}
+        .reframe{margin:18px 0 0;border-left:2px solid #9bb6cc;padding:8px 12px;color:#aebccc}
+        .metricRibbon{margin-top:20px;border-block:1px solid #ffffff20}
+        .metricRibbon>header{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;padding:10px 0;border-bottom:1px solid #ffffff12}
+        .metricRibbon>header .eyebrow{grid-column:1/-1}
+        .metricRibbon>header h3{margin:0;font-size:18px}
+        .metricRibbon>header time{color:#8193a8;font-size:11px}
+        .metricRibbon>dl{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));margin:0}
+        .metricRibbon>dl>div{min-width:0;padding:10px 12px;border-left:1px solid #ffffff12}
+        .metricRibbon>dl>div:first-child{border-left:0;padding-left:0}
+        .metricRibbon dt{font-size:9px;color:#8193a8;letter-spacing:.1em;text-transform:uppercase}
+        .metricRibbon dd{margin:4px 0 2px;font-size:clamp(18px,1.7vw,22px);font-weight:800;color:#eef3f7}
+        .metricRibbon small{display:block;color:#91a3b8;line-height:1.4;overflow-wrap:anywhere}
+        .executiveField{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr);gap:clamp(24px,3vw,40px);margin-top:22px}
+        .executivePrimary{padding-right:clamp(12px,2vw,28px)}
+        .executivePrimary h3{margin:6px 0 8px;font-size:clamp(34px,4vw,50px);letter-spacing:-.05em;line-height:1;color:#f2f5f7}
+        .executiveLead{max-width:760px;margin:0;color:#c4d0da;font-size:clamp(16px,1.5vw,18px);line-height:1.4}
+        .executivePrimary dl{margin:18px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:18px}
+        .executivePrimary dl div{border-top:1px solid #ffffff20;padding-top:11px}
+        .executivePrimary dt,.executiveContext dt{font-size:9px;color:#93a7bb;letter-spacing:.1em;text-transform:uppercase}
+        .executivePrimary dd,.executiveContext dd{margin:5px 0 0;color:#c1ccd6;line-height:1.4}
+        .executiveContext{border-left:1px solid #ffffff20;padding-left:clamp(20px,3vw,38px)}
+        .executiveContext dl{margin:0}
+        .executiveContext dl div{padding:8px 0;border-bottom:1px solid #ffffff14}
+        .zoneHeading{display:flex;justify-content:space-between;gap:24px;align-items:end}
+        .zoneHeading h2{margin:7px 0 0;font-size:clamp(28px,4vw,46px);letter-spacing:-.035em}
+        .zoneHeading>p{max-width:440px;margin:0;color:#8193a8;text-align:right;line-height:1.5}
+        .phiPlane{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(300px,38.196601125fr);gap:clamp(28px,4vw,56px);margin-top:34px;border-block:1px solid #ffffff20}
+        .primaryField{display:grid;grid-template-rows:auto auto auto;padding:0 clamp(20px,4vw,54px) 0 0}
+        .phiModule{min-width:0}
+        .primaryModule{display:grid;grid-template-columns:48px minmax(0,1fr);gap:18px;padding:22px 0}
+        .primaryModuleTop{border-bottom:1px solid #ffffff18}
+        .primaryModuleBottom{border-top:1px solid #ffffff18}
+        .moduleIndex{font-size:11px;color:#708396;letter-spacing:.1em;padding-top:5px}
+        .primaryModule p{margin:0;color:#8193a8;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+        .primaryModule h3{margin:5px 0 3px;font-size:clamp(22px,3vw,34px);letter-spacing:-.02em;color:#edf2f5}
+        .primaryModule strong{display:block;color:#d6e0e8;font-size:12px}
+        .primaryModule span{display:block;margin-top:8px;color:#91a3b8;line-height:1.45}
+        .btcAxis{position:relative;min-height:172px;display:grid;align-content:center;padding:28px 0}
+        .btcAxis::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:linear-gradient(90deg,#9bb6cc66,#ffffff22)}
+        .btcAxis span,.btcAxis b,.btcAxis small{position:relative;width:max-content;background:#050a12;padding-right:18px}
+        .btcAxis span{font-size:clamp(58px,8vw,104px);font-weight:900;letter-spacing:-.075em;line-height:.82;color:#f3f6f8}
+        .btcAxis b{margin-top:11px;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#b8c6d1}
+        .btcAxis small{margin-top:4px;color:#708396}
+        .supportBand{display:grid;grid-template-columns:1fr 1fr;align-content:stretch;border-left:1px solid #ffffff20;padding-left:clamp(20px,3vw,38px)}
+        .supportModule{padding:22px 16px;border-bottom:1px solid #ffffff18}
+        .supportModule:nth-child(odd){border-right:1px solid #ffffff18;padding-left:0}
+        .supportModule:nth-child(even){padding-right:0}
+        .supportModule:last-child{grid-column:1/-1;border-right:0;border-bottom:0;padding-left:0;padding-right:0}
+        .supportModule header{display:flex;justify-content:space-between;gap:10px}
+        .supportModule header span,.supportModule header em{font-size:9px;color:#708396}
+        .supportModule h3{margin:10px 0 4px;font-size:15px;color:#cbd6df}
+        .supportModule strong{font-size:11px;color:#aebdca}
+        .supportModule p{margin:8px 0 0;color:#8092a5;font-size:11px;line-height:1.45}
+        .supportUnavailable{opacity:.48}
+        .fieldDirection{display:grid;grid-template-columns:auto minmax(80px,1fr) minmax(0,2fr);gap:14px;align-items:center;padding:18px 0;border-bottom:1px solid #ffffff20}
+        .fieldDirection>span{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#b9c6d1}
+        .fieldDirection i{display:block;height:1px}
+        .fieldDirection p{margin:0;color:#8193a8;font-size:12px}
+        .directionConfirmation i{background:#9bb6cc}
+        .directionDivergence i{background:linear-gradient(90deg,#9bb6cc 0 43%,transparent 43% 57%,#9bb6cc 57% 100%)}
+        .directionLimited i{background:repeating-linear-gradient(90deg,#7f93a5 0 8px,transparent 8px 15px)}
+        .memoryAxis{padding-top:28px}
+        .memoryAxis>header{display:flex;justify-content:space-between;gap:20px;align-items:end}
+        .memoryAxis h3{margin:6px 0 0;font-size:24px}
+        .memoryAxis>header>p{margin:0;color:#8193a8}
+        .memoryScale{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;margin-top:18px;color:#708396;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+        .memoryScale i{height:1px;background:linear-gradient(90deg,#71869a,#d8e1e8);position:relative}
+        .memoryScale i::after{content:"";position:absolute;right:0;top:-3px;width:7px;height:7px;border-top:1px solid #d8e1e8;border-right:1px solid #d8e1e8;transform:rotate(45deg)}
+        .memoryTableWrap,.historyTableWrap,.exactMemoryTableWrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        table{width:100%;border-collapse:collapse}
+        .memoryAxis table{margin-top:12px}
+        th,td{text-align:left;border-bottom:1px solid #ffffff12;padding:9px 8px;font-size:11px;vertical-align:top}
+        th{color:#9fb0bf;font-weight:700}
+        td{color:#bdc8d1}
+        .memoryAxis th:first-child,.memoryAxis td:first-child{padding-left:0}
+        .memoryAxis th:last-child,.memoryAxis td:last-child{padding-right:0}
+        .memoryAxis tbody td:nth-child(3){color:#e4ebf0;font-weight:800}
+        .evidenceStack{margin-top:28px}
+        .evidenceStack>details{border-top:1px solid #ffffff20;padding:16px 0}
+        .evidenceStack>details:last-child{border-bottom:1px solid #ffffff20}
+        .evidenceStack>details>summary{cursor:pointer;color:#d5dfe7;font-weight:800;letter-spacing:.02em}
+        .evidenceStack p,.evidenceStack li{color:#aebccc;line-height:1.55}
+        .moduleEvidenceList{list-style:none;padding:0;margin:18px 0 0}
+        .moduleEvidenceList>li{padding:16px 0;border-top:1px solid #ffffff14}
+        .moduleEvidenceList header{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center}
+        .moduleEvidenceList header span,.moduleEvidenceList header em{font-size:9px;color:#718496}
+        .moduleEvidenceList h3{margin:0;color:#d8e1e8;font-size:13px;letter-spacing:.06em}
+        .watchEvidence{display:grid;grid-template-columns:61.803398875fr 38.196601125fr;gap:32px;border-top:1px solid #ffffff18;padding-top:18px}
+        .historyTableWrap table,.exactMemoryTableWrap table{min-width:860px;margin-top:12px}
+        .historyTableWrap small{display:block;margin-top:4px;color:#718496}
+        .methodNote{border-left:2px solid #9bb6cc;padding-left:12px}
+        .sourceProof>section{padding-top:18px;border-top:1px solid #ffffff14;margin-top:18px}
+        .sourceRows{list-style:none;margin:10px 0 0;padding:0}
+        .sourceRows li{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(180px,1fr) auto;gap:10px;padding:10px 0;border-top:1px solid #ffffff12}
+        .sourceRows code{grid-column:1/-1;color:#718496;font-size:10px}
+        .hashList{display:grid;gap:7px}
+        .hashList code,.sourceProof code{display:block;color:#718496;font-size:10px;white-space:normal;word-break:break-word}
+        .closingBoundary{padding-top:20px;border-top:1px solid #ffffff20;margin-top:20px}
+        .closingBoundary p{color:#8193a8}
+        .closingField{height:calc(clamp(128px,12vh,168px) + env(safe-area-inset-bottom));display:grid;place-items:start center;padding-top:48px}
+        .closingField span{display:block;width:min(420px,61.803%);height:1px;background:linear-gradient(90deg,transparent,#b9a56a66,transparent)}
+        @media(max-width:1080px){
+          .metricRibbon>dl{grid-template-columns:repeat(3,minmax(0,1fr))}
+          .metricRibbon>dl>div:nth-child(4){border-left:0;padding-left:0}
+          .phiPlane,.executiveField,.readingHeader{grid-template-columns:1fr}
+          .readingHeader dl{max-width:620px}
+          .executiveContext{border-left:0;border-top:1px solid #ffffff20;padding:18px 0 0}
+          .primaryField{padding-right:0}
+          .supportBand{border-left:0;border-top:1px solid #ffffff20;padding-left:0}
+          .watchEvidence{grid-template-columns:1fr}
+        }
+        @media(max-width:800px){
+          main{padding-inline:12px}
+          .questionPanel>header,.zoneHeading,.memoryAxis>header{display:grid}
+          .observation,.zoneHeading>p{text-align:left}
+          form{grid-template-columns:1fr}
+          .metricRibbon>dl{grid-template-columns:1fr 1fr}
+          .metricRibbon>dl>div:nth-child(odd){border-left:0;padding-left:0}
+          .executivePrimary dl{grid-template-columns:1fr}
+          .supportBand{grid-template-columns:1fr}
+          .supportModule,.supportModule:nth-child(odd),.supportModule:nth-child(even),.supportModule:last-child{grid-column:auto;border-right:0;padding-left:0;padding-right:0}
+          .fieldDirection{grid-template-columns:auto 1fr}.fieldDirection p{grid-column:1/-1}
+          .sourceRows li{grid-template-columns:1fr}.sourceRows code{grid-column:auto}
+        }
+        @media(max-width:520px){
+          .metricRibbon>dl{grid-template-columns:1fr}
+          .metricRibbon>dl>div{border-left:0;padding-left:0}
+          .readingHeader h2{font-size:30px}
+          .primaryModule{grid-template-columns:34px 1fr}
+          .btcAxis span{font-size:64px}
+          .memoryAxis table{min-width:620px}
+          .closingField{height:calc(128px + env(safe-area-inset-bottom))}
+        }
+      `}</style>
+    </>
+  );
+}
