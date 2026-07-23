@@ -1,0 +1,84 @@
+{
+  "root": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 17:31:41 GMT",
+      "Etag": "W/\"p3o0kc67hiokq\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "cle1::iad1::5ldjr-1784827901083-4f467057ddee",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 31850
+  },
+  "query": {
+    "url": "https://www.bhrigu.io/crypto-astro/btc?q=What%20changed%20in%20the%20BTC%20field%20and%20why%20does%20it%20matter%3F",
+    "status": 200,
+    "headers": {
+      "Age": "0",
+      "Cache-Control": "private, no-cache, no-store, max-age=0, must-revalidate",
+      "Content-Encoding": "gzip",
+      "Content-Type": "text/html; charset=utf-8",
+      "Date": "Thu, 23 Jul 2026 17:31:41 GMT",
+      "Etag": "W/\"17utanawnfm1evu\"",
+      "Server": "Vercel",
+      "Strict-Transport-Security": "max-age=63072000",
+      "X-Matched-Path": "/crypto-astro/btc",
+      "X-Powered-By": "Next.js",
+      "X-Vercel-Cache": "MISS",
+      "X-Vercel-Id": "cle1::iad1::pjvpw-1784827901162-ddd6bfbb4b21",
+      "Transfer-Encoding": "chunked"
+    },
+    "length": 65946
+  },
+  "checks": {
+    "root_http_200": true,
+    "query_http_200": true,
+    "root_new_shell": false,
+    "query_new_read": false,
+    "query_three_zones": true,
+    "query_five_modules": true,
+    "query_two_primary": true,
+    "query_no_horizontal_overflow": true,
+    "browser_severe_none": true
+  },
+  "failures": [
+    "root_new_shell",
+    "query_new_read"
+  ],
+  "artifacts": {
+    "public-query-1440x900.png": {
+      "sha256": "3e9d6f7cf9648774623bef858544dd0782982c517338b38304ddb24e8b812003",
+      "bytes": 74363
+    },
+    "public-root-1440x900.png": {
+      "sha256": "31a283b32fe2f5291984bca27cddc227410e978ed71723fa84e2b0ef56a7e2db",
+      "bytes": 71629
+    },
+    "query-headers.json": {
+      "sha256": "f48853ff38a8b16e77b5c1bb2eabae80437511990141ed8ae5c8ec810224b6b8",
+      "bytes": 519
+    },
+    "query.html": {
+      "sha256": "4e014159818dbbd5e250e987de328567c4b756a917de92791eb72c52318dcd1b",
+      "bytes": 66098
+    },
+    "root-headers.json": {
+      "sha256": "69c1b4802ff914d7efee98574e1b31178702cfcfa9152d3cd1d76e237872ea38",
+      "bytes": 517
+    },
+    "root.html": {
+      "sha256": "7a00db743ecf13bfb09c5d98d07896c3c480a4fa3fa05e453581091191d50528",
+      "bytes": 31855
+    }
+  },
+  "browser_severe": []
+}
