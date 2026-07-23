@@ -17,6 +17,7 @@ try {
   run(process.execPath, [join(outputDir, "tests", "btc-routing-fixture.js")]);
   run(process.execPath, [join(outputDir, "tests", "btc-source-contract-fixture.js")]);
   run(process.execPath, [join(outputDir, "tests", "btc-safe-reframe-geometry-fixture.js")]);
+  run(process.execPath, [join(outputDir, "tests", "btc-market-envelope-fixture.js")]);
 } finally {
   rmSync(outputDir, { recursive: true, force: true });
 }
