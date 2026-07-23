@@ -1,0 +1,41 @@
+name: BTC Money Hydration Repair
+
+on:
+  push:
+    branches:
+      - agent/btc-personal-field-market-envelope-v0-1
+    paths:
+      - .github/workflows/btc-money-hydration-repair.yml
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-personal-field-market-envelope-v0-1
+          fetch-depth: 0
+      - name: Replace non-deterministic compact currency formatter and remove workflow
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('pages/crypto-astro/btc.tsx')
+          text = path.read_text()
+          old = 'const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",notation:v>=1e9?"compact":"standard",maximumFractionDigits:v>=1e3?1:2}).format(v);'
+          new = '''const money=(value:number)=>{\n  const absolute=Math.abs(value);\n  const scaled=absolute>=1e12?absolute/1e12:absolute>=1e9?absolute/1e9:absolute>=1e6?absolute/1e6:absolute>=1e3?absolute/1e3:absolute;\n  const suffix=absolute>=1e12?"T":absolute>=1e9?"B":absolute>=1e6?"M":absolute>=1e3?"K":"";\n  const digits=suffix?(scaled>=100?0:scaled>=10?1:2):2;\n  return `${value<0?"-":""}$${scaled.toFixed(digits)}${suffix}`;\n};'''
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'exact money formatter replacement count: {count}')
+          path.write_text(text.replace(old, new))
+          PY
+          git rm .github/workflows/btc-money-hydration-repair.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/crypto-astro/btc.tsx
+          git commit -m "Make BTC currency rendering hydration-safe"
+          git push origin HEAD:agent/btc-personal-field-market-envelope-v0-1
