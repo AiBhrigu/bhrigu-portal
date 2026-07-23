@@ -1,0 +1,10 @@
+page_files ['page-00.txt', 'page-01.txt', 'page-02.txt', 'page-03.txt', 'page-04.txt']
+page_chars 20713 ef26aa58db97937e5b64196f36a4566596b7332d6dbd6a0f24dfa595bab48c2b
+visual_files ['visual-00.txt', 'visual-01.txt']
+visual_chars 5680 574d94e9108a9a6c4257f387cf2a2164c66a5851c923778451d6df2d3d9633f0
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+  File "/usr/lib/python3.12/base64.py", line 88, in b64decode
+    return binascii.a2b_base64(s, strict_mode=validate)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+binascii.Error: Invalid base64-encoded string: number of data characters (20713) cannot be 1 more than a multiple of 4
