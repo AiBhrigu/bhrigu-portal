@@ -7,7 +7,6 @@ import { loadBtcMarketEnvelope, type BtcMarketEnvelope, type BtcMarketEnvelopeFa
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../lib/btc-bilingual-surface-style";
 import { MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256 } from "../../lib/btc-existing-glyph-canon";
 import {
-  canonicalizeBtcQuestionForRouter,
   formatBtcFailureMessage,
   formatBtcNarrativeReadLocalized,
   formatBtcUtcTimestamp,
@@ -17,6 +16,7 @@ import {
   type BtcLocaleSource,
   type BtcPublicLocale,
 } from "../../lib/btc-public-language-contract";
+import { canonicalizeBtcQuestionForRouter } from "../../lib/btc-public-question-bridge";
 import { composeBtcPublicSnapshot } from "../../lib/btc-public-snapshot-composer";
 import { loadBtcStaticSource } from "../../lib/btc-public-static-source";
 import { renderBtcNarrativeRead } from "../../lib/btc-narrative-template-catalog";
