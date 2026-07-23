@@ -1,0 +1,148 @@
+name: BTC Mobile Post-Merge Public Verify
+
+on:
+  push:
+    branches:
+      - agent/btc-mobile-scroll-offset-overlay-clearance-v0-1
+    paths:
+      - .github/workflows/btc-mobile-post-merge-public-verify.yml
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2 requests==2.32.4
+      - name: Verify public mobile clearance
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import hashlib, json, traceback, time
+          from pathlib import Path
+          from urllib.parse import quote
+          import requests
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          root='https://www.bhrigu.io/crypto-astro/btc'
+          question='What changed in the BTC field and why does it matter?'
+          query=root+'?q='+quote(question)+'&verify=f2b50701eff61bd4e80be9355b6012ee6e24ee2e'
+          report={'merge_sha':'f2b50701eff61bd4e80be9355b6012ee6e24ee2e','checks':{},'measurements':{},'targets':[],'failures':[],'artifacts':{}}
+          driver=None
+
+          def wait_for(selector, timeout=50):
+            return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
+
+          def rect(selector):
+            return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width,height:r.height};',selector)
+
+          targets=[('question','#btc-question-title'),('phi','#phi-field-title'),('btc_axis','.btcAxis'),('memory','#memory-title'),('evidence','#evidence-title'),('source_proof','.evidenceStack>details:nth-child(3)>summary')]
+
+          try:
+            headers={'User-Agent':'Mozilla/5.0 BTC-Mobile-Public-Verify/1.0','Cache-Control':'no-cache','Pragma':'no-cache'}
+            for name,url in [('root',root),('query',query)]:
+              response=requests.get(url,headers=headers,timeout=40,allow_redirects=True)
+              report['checks'][f'{name}_http_200']=response.status_code==200
+              report[f'{name}_http']={'url':response.url,'status':response.status_code,'headers':dict(response.headers),'length':len(response.text)}
+              Path(f'artifacts/{name}.html').write_text(response.text)
+
+            options=webdriver.ChromeOptions()
+            for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+              options.add_argument(arg)
+            options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+            driver=webdriver.Chrome(options=options)
+
+            for label,width,height in [('390x844',390,844),('412x915',412,915)]:
+              driver.set_window_size(width,height)
+              driver.get(query)
+              wait_for('.reading')
+              wait_for('.bh-header')
+              driver.execute_script('''
+                const overlay=document.createElement('div'); overlay.id='simulated-mobile-overlay';
+                Object.assign(overlay.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'0',width:Math.min(320,arguments[0]-24)+'px',height:'64px',background:'rgba(120,120,120,.76)',borderRadius:'18px 18px 0 0',zIndex:'999999',pointerEvents:'none'});
+                document.body.appendChild(overlay);
+              ''',width)
+              header=rect('.bh-header')
+              overlay=rect('#simulated-mobile-overlay')
+              scroll_top=float(driver.execute_script('return parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop)||0'))
+              scroll_bottom=float(driver.execute_script('return parseFloat(getComputedStyle(document.documentElement).scrollPaddingBottom)||0'))
+              report['measurements'][f'{label}_header_height']=header['height']
+              report['measurements'][f'{label}_scroll_padding_top']=scroll_top
+              report['measurements'][f'{label}_scroll_padding_bottom']=scroll_bottom
+              report['checks'][f'{label}_top_padding']=scroll_top>=header['height']+8
+              report['checks'][f'{label}_bottom_padding']=scroll_bottom>=overlay['height']+24
+              report['checks'][f'{label}_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+              report['checks'][f'{label}_three_zones']=len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone'))==3
+              report['checks'][f'{label}_five_modules']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule'))==5
+              report['checks'][f'{label}_two_primary']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule'))==2
+
+              for target_name,selector in targets:
+                wait_for(selector)
+                driver.execute_script('document.querySelector(arguments[0]).scrollIntoView({block:"start"})',selector)
+                time.sleep(.12)
+                start_rect=rect(selector)
+                header_now=rect('.bh-header')
+                top_ok=start_rect['top']>=header_now['bottom']+6
+                driver.execute_script('document.querySelector(arguments[0]).scrollIntoView({block:"end"})',selector)
+                time.sleep(.12)
+                end_rect=rect(selector)
+                overlay_now=rect('#simulated-mobile-overlay')
+                bottom_ok=end_rect['bottom']<=overlay_now['top']-6
+                report['checks'][f'{label}_{target_name}_top']=top_ok
+                report['checks'][f'{label}_{target_name}_bottom']=bottom_ok
+                report['targets'].append({'viewport':label,'target':target_name,'top':start_rect['top'],'header_bottom':header_now['bottom'],'bottom':end_rect['bottom'],'overlay_top':overlay_now['top'],'top_clear':top_ok,'bottom_clear':bottom_ok})
+                if target_name in ('phi','btc_axis'):
+                  driver.save_screenshot(f'artifacts/public-mobile-{label}-{target_name}.png')
+
+              driver.execute_script('window.scrollTo(0,document.body.scrollHeight)')
+              time.sleep(.15)
+              quiet=rect('.closingField')
+              evidence=rect('.zoneEvidence')
+              overlay_final=rect('#simulated-mobile-overlay')
+              report['checks'][f'{label}_final_quiet_field']=evidence['bottom']<=overlay_final['top']+1 and quiet['top']<=overlay_final['top']+1 and quiet['bottom']>=overlay_final['bottom']-1
+              driver.save_screenshot(f'artifacts/public-mobile-{label}-closing.png')
+              driver.execute_script('document.getElementById("simulated-mobile-overlay").remove()')
+
+            severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
+            report['checks']['browser_severe_none']=not severe
+            report['browser_severe']=severe
+          except Exception as exc:
+            report['checks']['verifier_execution']=False
+            report['exception']=repr(exc)
+            report['traceback']=traceback.format_exc()
+          finally:
+            if driver is not None:
+              driver.quit()
+
+          for path in sorted(Path('artifacts').glob('*')):
+            if path.is_file():
+              report['artifacts'][path.name]={'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'bytes':path.stat().st_size}
+          report['failures']=[key for key,value in report['checks'].items() if not value]
+          Path('artifacts/public-mobile-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+          assert not report['failures'], report['failures']
+          PY
+      - name: Upload public mobile proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-mobile-post-merge-public-proof
+          path: artifacts/
+          if-no-files-found: error
+      - name: Publish compact verifier report
+        if: always()
+        run: |
+          if [ ! -f artifacts/public-mobile-report.json ]; then
+            printf '{"checks":{"report_created":false},"failures":["report_created"]}\n' > artifacts/public-mobile-report.json
+          fi
+          cp artifacts/public-mobile-report.json BTC_MOBILE_POST_MERGE_PUBLIC_VERIFY_REPORT.json
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add BTC_MOBILE_POST_MERGE_PUBLIC_VERIFY_REPORT.json
+          git commit -m "Record BTC mobile post-merge public proof" || exit 0
+          git push origin HEAD:agent/btc-mobile-scroll-offset-overlay-clearance-v0-1
