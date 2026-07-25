@@ -21,9 +21,9 @@ export const BTC_FOCUS_AXIS_LABELS: Record<BtcGeometryFocusAxis, string> = {
 };
 
 export const BTC_FRESHNESS_LABELS: Record<FreshnessState, string> = {
-  FRESH: "Verified current snapshot",
-  STALE_LIMITED: "Older verified snapshot · limited current-state claims",
-  UNAVAILABLE: "Verification status unavailable",
+  FRESH: "Current verified snapshot",
+  STALE_LIMITED: "Stale verified snapshot",
+  UNAVAILABLE: "Verified snapshot unavailable",
 };
 
 export const BTC_TEMPORAL_STATE_LABELS: Record<TemporalState, string> = {
@@ -144,7 +144,7 @@ export function formatBtcWatchConditionForDisplay(value: unknown): string {
     ["static_state_only", BTC_TEMPORAL_STATE_LABELS.static_state_only],
     ["available_bounded", BTC_TEMPORAL_STATE_LABELS.available_bounded],
     ["unavailable", BTC_TEMPORAL_STATE_LABELS.unavailable],
-    ["STALE_LIMITED", "Older verified snapshot"],
+    ["STALE_LIMITED", BTC_FRESHNESS_LABELS.STALE_LIMITED],
     ["FRESH", BTC_FRESHNESS_LABELS.FRESH],
     ["reserve posture", "available reserve context"],
     ["published sample", "verified public sample"],
