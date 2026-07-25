@@ -18,62 +18,14 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-      - name: Apply exact public identity patch
+      - name: Apply bounded public identity patch
         run: |
           python3 - <<'PY'
+          import re
           from pathlib import Path
 
           path = Path("pages/access.tsx")
           text = path.read_text(encoding="utf-8")
-          old = '''            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">
-              <p className="sectionTitle" id="crypto-astro-research-surface">
-                Crypto-Astro Research Surface
-              </p>
-              <p className="muted">
-                Crypto-Astro is available as a public-safe, source-bound research surface. It provides a verified static market snapshot, visible source proof, accepted change memory, and the BTC Field Read corridor.
-              </p>
-              <p className="muted">
-                This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
-              </p>
-              <div className="actions">
-                <a
-                  className="btnSecondary"
-                  href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Open Crypto-Astro proof route
-                </a>
-                <Link className="btnSecondary" href="/crypto-astro/btc">
-                  Run BTC Field Read
-                </Link>
-              </div>
-
-              <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
-                <div className="eyebrow">Request a Crypto-Astro Snapshot</div>
-                <div>
-                  Submit a manual or synthetic snapshot context: asset / ticker, UTC snapshot time,
-                  observation window, research focus, output language.
-                </div>
-                <div>
-                  Research context only: no trading signal, no prediction, no financial advice,
-                  no live market feed, no wallet or exchange connection.
-                </div>
-                <div>
-                  Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
-                </div>
-              </div>
-
-              <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
-                <div className="eyebrow">Crypto-Astro Local Proof Base</div>
-                <div>
-                  The public BTC corridor is live verified. Deeper delivery remains operator-gated while intake durability, operator retrieval and delivery policy are separately proven.
-                </div>
-                <div>
-                  This is not a live automated client service, trading signal, price target, or financial advice.
-                </div>
-              </div>
-            </section>'''
           new = '''            <section className="panel stack" aria-labelledby="market-cosmographer-research-surface">
               <p className="sectionTitle" id="market-cosmographer-research-surface">
                 Market Cosmographer · BTC Research Surface
@@ -124,20 +76,24 @@ jobs:
               </div>
             </section>'''
 
-          if old in text:
-              if text.count(old) != 1:
-                  raise SystemExit("old block is not unique")
-              text = text.replace(old, new, 1)
+          if 'id="market-cosmographer-research-surface"' not in text:
+              pattern = r'(?ms)^\s{12}<section className="panel stack" aria-labelledby="crypto-astro-research-surface">.*?^\s{12}</section>'
+              text, count = re.subn(pattern, new, text, count=1)
+              if count != 1:
+                  raise SystemExit(f"bounded block replacement count={count}")
               path.write_text(text, encoding="utf-8")
-          elif new not in text:
-              raise SystemExit("neither accepted old nor new block found")
 
-          assert 'href="/market-cosmographer"' in text
+          assert text.count('id="market-cosmographer-research-surface"') == 1
+          assert text.count('href="/market-cosmographer"') >= 1
           assert 'Open Market Cosmographer' in text
+          assert 'Market Cosmographer · BTC Research Surface' in text
+          assert 'accepted Snapshot Memory' in text
+          assert 'explicit freshness truth' in text
           assert 'Crypto-Astro Research Surface' not in text
           assert 'Open Crypto-Astro proof route' not in text
           assert 'Request a Crypto-Astro Snapshot' not in text
           assert 'Crypto-Astro Local Proof Base' not in text
+          assert 'href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"' in text
           assert 'data-crypto-astro-intake="snapshot"' in text
           assert 'data-crypto-astro-proof-base="btc-eth-sol"' in text
           PY
