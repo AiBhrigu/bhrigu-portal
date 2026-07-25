@@ -131,7 +131,7 @@ export type BtcSourceBundle = {
   snapshot: CanonicalSnapshot;
   proof: SnapshotProof;
   marketField: MarketFieldSnapshot;
-  freshness: FreshnessState;
+  freshness: Exclude<FreshnessState, "UNAVAILABLE">;
   age_hours: number;
 };
 
