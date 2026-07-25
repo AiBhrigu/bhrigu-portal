@@ -1,0 +1,73 @@
+name: Market Cosmographer Access Public Proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/market-cosmographer-access-public-proof-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify live access identity
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          import subprocess
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          url = "https://www.bhrigu.io/access"
+          body_path = Path("artifacts/access.html")
+          header_path = Path("artifacts/access.headers.txt")
+          meta = subprocess.check_output([
+              "curl", "--silent", "--show-error", "--max-time", "45",
+              "--dump-header", str(header_path), "--output", str(body_path),
+              "--write-out", "%{http_code}\n%{url_effective}\n%{num_redirects}\n", url,
+          ], text=True).splitlines()
+          body = body_path.read_text(encoding="utf-8", errors="replace")
+          checks = {
+              "http_200": int(meta[0]) == 200,
+              "no_redirect": int(meta[2]) == 0,
+              "path_preserved": urlparse(meta[1]).path == "/access",
+              "market_identity": "Market Cosmographer · BTC Research Surface" in body,
+              "canonical_description": "canonical BHRIGU public research surface for the BTC field" in body,
+              "snapshot_memory": "accepted Snapshot Memory" in body,
+              "freshness_truth": "explicit freshness truth" in body,
+              "canonical_cta": 'href="/market-cosmographer"' in body and "Open Market Cosmographer" in body,
+              "producer_proof_preserved": "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html" in body,
+              "producer_label": "Open source-proof surface" in body,
+              "snapshot_request_identity": "Request a Market Cosmographer Snapshot" in body,
+              "proof_base_identity": "Market Cosmographer Proof Base" in body,
+              "internal_intake_binding": 'data-crypto-astro-intake="snapshot"' in body,
+              "internal_proof_binding": 'data-crypto-astro-proof-base="btc-eth-sol"' in body,
+              "old_surface_absent": "Crypto-Astro Research Surface" not in body,
+              "old_cta_absent": "Run BTC Field Read" not in body,
+              "old_snapshot_label_absent": "Request a Crypto-Astro Snapshot" not in body,
+              "old_proof_label_absent": "Crypto-Astro Local Proof Base" not in body,
+          }
+          report = {
+              "url": url,
+              "http_code": int(meta[0]),
+              "effective_url": meta[1],
+              "redirect_count": int(meta[2]),
+              "checks": checks,
+              "failures": [name for name, passed in checks.items() if not passed],
+          }
+          Path("artifacts/market-cosmographer-access-public-proof.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          assert not report["failures"], report["failures"]
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: market-cosmographer-access-public-proof-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
