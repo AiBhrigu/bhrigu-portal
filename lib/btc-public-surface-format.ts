@@ -1,5 +1,6 @@
 import type { BtcNarrativeSectionFactPayload } from "./btc-deterministic-narrative-router";
 import type { BtcMarketEnvelope, BtcMetricDelta } from "./btc-market-envelope";
+import type { FreshnessState } from "./btc-public-output-contract";
 import {
   formatBtcDominanceBand,
   formatBtcMarketContext,
@@ -11,14 +12,43 @@ import {
   formatBtcRoleLabel,
   formatBtcStateLabel,
   formatBtcTemporalState,
+  formatBtcUtcTimestamp,
   type BtcPublicLocale,
 } from "./btc-public-language-contract";
 import { renderBtcNarrativeRead } from "./btc-narrative-template-catalog";
 
-export const compact = (value:number, decimals:number) => { const fixed=value.toFixed(decimals); return fixed.includes(".")?fixed.replace(/\.?0+$/,""):fixed; };
+export const compact = (value:number, decimals:number) => { const fixed=value.toFixed(decimals); return fixed.includes(".")?fixed.replace(/\.?0+$/ ,""):fixed; };
 export const money = (value:number, signed=false) => { const a=Math.abs(value); const d=a>=1e12?1e12:a>=1e9?1e9:a>=1e6?1e6:a>=1e3?1e3:1; const s=d===1e12?"T":d===1e9?"B":d===1e6?"M":d===1e3?"K":""; const n=a/d; return `${value<0?"−":signed&&value>0?"+":""}$${compact(n,s?(n>=100?0:2):2)}${s}`; };
 export const pct = (value:number, decimals=2, signed=true) => `${value<0?"−":signed&&value>0?"+":""}${compact(Math.abs(value),decimals)}%`;
 export const stateClass = (value:string) => value==="CONFIRMATION"?"directionConfirmation":value==="DIVERGENCE"?"directionDivergence":"directionLimited";
+
+export type BtcSnapshotTruthPresentation = {
+  stateLabel: string;
+  snapshotLine: string;
+  ageLine: string | null;
+  proofLine: string;
+};
+
+export function formatBtcSnapshotTruth(
+  locale: BtcPublicLocale,
+  state: FreshnessState,
+  generatedAtUtc: string | null,
+  ageHours: number | null,
+  proofAvailable: boolean,
+): BtcSnapshotTruthPresentation {
+  const stateLabel = locale === "ru"
+    ? state === "FRESH" ? "Актуальный проверенный снимок" : state === "STALE_LIMITED" ? "Устаревший проверенный снимок" : "Проверенный снимок недоступен"
+    : state === "FRESH" ? "Current verified snapshot" : state === "STALE_LIMITED" ? "Stale verified snapshot" : "Verified snapshot unavailable";
+  const timestamp = generatedAtUtc ? formatBtcUtcTimestamp(locale, generatedAtUtc) : (locale === "ru" ? "недоступен" : "unavailable");
+  const snapshotLine = `${locale === "ru" ? "Снимок" : "Snapshot"} · ${timestamp}`;
+  const ageLine = Number.isFinite(ageHours) && (ageHours as number) > 24
+    ? `${locale === "ru" ? "Возраст данных" : "Age"} · ${compact(ageHours as number, 1)} ${locale === "ru" ? "ч" : "hours"}`
+    : null;
+  const proofLine = proofAvailable
+    ? (locale === "ru" ? "Подтверждение источников доступно" : "Source proof available")
+    : (locale === "ru" ? "Подтверждение источников недоступно" : "Source proof unavailable");
+  return { stateLabel, snapshotLine, ageLine, proofLine };
+}
 
 export function memoryValue(locale:BtcPublicLocale, metric:BtcMetricDelta, value:string) {
   const n=Number(value); if(metric.type!=="NUMERIC"||!Number.isFinite(n)) return formatBtcPlain(locale,value);

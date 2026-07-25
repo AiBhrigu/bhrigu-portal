@@ -25,7 +25,7 @@ export const REQUIRED_PROOF_LABELS = [
 const MAX_FETCH_MS = 4000;
 const MAX_COMPATIBILITY_SECONDS = 300;
 const FUTURE_TOLERANCE_SECONDS = 300;
-const FRESH_HOURS = 72;
+const FRESH_HOURS = 24;
 const STALE_LIMITED_HOURS = 24 * 7;
 
 export type CanonicalSnapshot = {
@@ -131,7 +131,7 @@ export type BtcSourceBundle = {
   snapshot: CanonicalSnapshot;
   proof: SnapshotProof;
   marketField: MarketFieldSnapshot;
-  freshness: FreshnessState;
+  freshness: Exclude<FreshnessState, "UNAVAILABLE">;
   age_hours: number;
 };
 
