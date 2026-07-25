@@ -1,0 +1,128 @@
+name: Market Cosmographer Public HTTP Proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/market-cosmographer-public-http-proof-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-http-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical and legacy public surfaces
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import html
+          import json
+          import re
+          import subprocess
+          import time
+          from pathlib import Path
+          from urllib.parse import urlencode, urlparse
+
+          question = "What changed in the BTC field, why does it matter, and what should I watch next?"
+          query = urlencode({"lang": "en", "q": question})
+          roots = {
+              "canonical": "https://www.bhrigu.io/market-cosmographer",
+              "legacy": "https://www.bhrigu.io/crypto-astro/btc",
+          }
+          expected_paths = {
+              "canonical": "/market-cosmographer",
+              "legacy": "/crypto-astro/btc",
+          }
+          report = {"attempts": [], "checks": {}, "surfaces": {}, "failures": []}
+
+          def extract(pattern, body):
+              match = re.search(pattern, body, re.I | re.S)
+              return html.unescape(match.group(1)) if match else None
+
+          def fetch(label, root, attempt):
+              body_path = Path(f"artifacts/{label}-attempt-{attempt}.html")
+              header_path = Path(f"artifacts/{label}-attempt-{attempt}.headers.txt")
+              url = f"{root}?{query}"
+              meta = subprocess.check_output([
+                  "curl", "--silent", "--show-error", "--max-time", "45",
+                  "--dump-header", str(header_path), "--output", str(body_path),
+                  "--write-out", "%{http_code}\n%{url_effective}\n%{num_redirects}\n", url,
+              ], text=True).splitlines()
+              body = body_path.read_text(encoding="utf-8", errors="replace")
+              next_raw = extract(r'<script[^>]+id="__NEXT_DATA__"[^>]*>(.*?)</script>', body)
+              next_data = json.loads(next_raw) if next_raw else None
+              page_props = next_data.get("props", {}).get("pageProps") if next_data else None
+              canonical = extract(r'<link[^>]+rel="canonical"[^>]+href="([^"]+)"', body)
+              if canonical is None:
+                  canonical = extract(r'<link[^>]+href="([^"]+)"[^>]+rel="canonical"', body)
+              form_action = extract(r'<form[^>]+action="([^"]+)"', body)
+              title = extract(r'<title>(.*?)</title>', body)
+              return {
+                  "requested_url": url,
+                  "http_code": int(meta[0]),
+                  "effective_url": meta[1],
+                  "redirect_count": int(meta[2]),
+                  "effective_path": urlparse(meta[1]).path,
+                  "canonical": canonical,
+                  "form_action": form_action,
+                  "title": title,
+                  "has_market_cosmographer": "Market Cosmographer" in body,
+                  "has_btc_field_read": "BTC Field Read" in body,
+                  "has_old_shell_marker": "Crypto-Astro · first live corridor" in body,
+                  "next_page": next_data.get("page") if next_data else None,
+                  "page_props": page_props,
+                  "body_bytes": len(body.encode("utf-8")),
+              }
+
+          accepted = None
+          for attempt in range(1, 13):
+              surfaces = {label: fetch(label, root, attempt) for label, root in roots.items()}
+              checks = {}
+              for label, surface in surfaces.items():
+                  checks[f"{label}_http_200"] = surface["http_code"] == 200
+                  checks[f"{label}_no_redirect"] = surface["redirect_count"] == 0
+                  checks[f"{label}_path_preserved"] = surface["effective_path"] == expected_paths[label]
+                  checks[f"{label}_canonical_meta"] = surface["canonical"] == roots["canonical"]
+                  checks[f"{label}_form_routes_canonical"] = surface["form_action"] == "/market-cosmographer"
+                  checks[f"{label}_market_identity"] = surface["has_market_cosmographer"]
+                  checks[f"{label}_btc_field_read"] = surface["has_btc_field_read"]
+                  checks[f"{label}_old_shell_absent"] = not surface["has_old_shell_marker"]
+                  checks[f"{label}_ssr_page_props"] = isinstance(surface["page_props"], dict)
+              checks["canonical_legacy_page_props_equal"] = surfaces["canonical"]["page_props"] == surfaces["legacy"]["page_props"]
+              canonical_props = surfaces["canonical"]["page_props"] or {}
+              checks["source_context_present"] = bool(canonical_props.get("sourceContext", {}).get("generated_at_utc"))
+              checks["result_present"] = isinstance(canonical_props.get("result"), dict)
+              checks["envelope_present"] = isinstance(canonical_props.get("envelope"), dict)
+              failures = [name for name, passed in checks.items() if not passed]
+              report["attempts"].append({"attempt": attempt, "failures": failures})
+              if not failures:
+                  accepted = (surfaces, checks)
+                  break
+              if attempt < 12:
+                  time.sleep(10)
+
+          if accepted is None:
+              report["surfaces"] = surfaces
+              report["checks"] = checks
+              report["failures"] = failures
+          else:
+              report["surfaces"] = accepted[0]
+              report["checks"] = accepted[1]
+              report["failures"] = []
+
+          Path("artifacts/market-cosmographer-public-http-proof.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps({"checks": report["checks"], "failures": report["failures"]}, indent=2))
+          assert not report["failures"], report["failures"]
+          PY
+      - name: Upload public HTTP proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-cosmographer-public-http-proof-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
