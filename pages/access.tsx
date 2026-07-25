@@ -157,55 +157,55 @@ export default function AccessPage({
           <HeaderBlock />
           <IntroBlock />
           <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
-            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">
-              <p className="sectionTitle" id="crypto-astro-research-surface">
-                Crypto-Astro Research Surface
-              </p>
-              <p className="muted">
-                Crypto-Astro is available as a public-safe, source-bound research surface. It provides a verified static market snapshot, visible source proof, accepted change memory, and the BTC Field Read corridor.
-              </p>
-              <p className="muted">
-                This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
-              </p>
-              <div className="actions">
-                <a
-                  className="btnSecondary"
-                  href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Open Crypto-Astro proof route
-                </a>
-                <Link className="btnSecondary" href="/crypto-astro/btc">
-                  Run BTC Field Read
-                </Link>
-              </div>
+            <section className="panel stack" aria-labelledby="market-cosmographer-research-surface">
+    <p className="sectionTitle" id="market-cosmographer-research-surface">
+      Market Cosmographer · BTC Research Surface
+    </p>
+    <p className="muted">
+      Market Cosmographer is the canonical BHRIGU public research surface for the BTC field. It presents a source-bound market observation, visible source proof, accepted Snapshot Memory, explicit freshness truth, and the BTC Field Read corridor.
+    </p>
+    <p className="muted">
+      This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
+    </p>
+    <div className="actions">
+      <a
+        className="btnSecondary"
+        href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        Open source-proof surface
+      </a>
+      <Link className="btnSecondary" href="/market-cosmographer">
+        Open Market Cosmographer
+      </Link>
+    </div>
 
-              <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
-                <div className="eyebrow">Request a Crypto-Astro Snapshot</div>
-                <div>
-                  Submit a manual or synthetic snapshot context: asset / ticker, UTC snapshot time,
-                  observation window, research focus, output language.
-                </div>
-                <div>
-                  Research context only: no trading signal, no prediction, no financial advice,
-                  no live market feed, no wallet or exchange connection.
-                </div>
-                <div>
-                  Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
-                </div>
-              </div>
+    <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
+      <div className="eyebrow">Request a Market Cosmographer Snapshot</div>
+      <div>
+        Submit a manual or synthetic snapshot context: asset / ticker, UTC snapshot time,
+        observation window, research focus, output language.
+      </div>
+      <div>
+        Research context only: no trading signal, no prediction, no financial advice,
+        no live market feed, no wallet or exchange connection.
+      </div>
+      <div>
+        Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
+      </div>
+    </div>
 
-              <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
-                <div className="eyebrow">Crypto-Astro Local Proof Base</div>
-                <div>
-                  The public BTC corridor is live verified. Deeper delivery remains operator-gated while intake durability, operator retrieval and delivery policy are separately proven.
-                </div>
-                <div>
-                  This is not a live automated client service, trading signal, price target, or financial advice.
-                </div>
-              </div>
-            </section>
+    <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
+      <div className="eyebrow">Market Cosmographer Proof Base</div>
+      <div>
+        The canonical BTC corridor is live verified. Deeper delivery remains operator-gated while intake durability, operator retrieval and delivery policy are separately proven.
+      </div>
+      <div>
+        This is not a live automated client service, trading signal, price target, or financial advice.
+      </div>
+    </div>
+  </section>
 
           <AccessNotices
             draftSavedVisible={notices.draftSavedVisible}
