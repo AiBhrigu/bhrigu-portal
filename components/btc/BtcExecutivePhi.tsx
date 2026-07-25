@@ -1,7 +1,6 @@
 import type { BtcMarketEnvelope } from "../../lib/btc-market-envelope";
 import type { BtcPublicSnapshot } from "../../lib/btc-public-output-contract";
 import {
-  formatBtcEnvelopeUncertainty,
   formatBtcEnvelopeWatchNext,
   formatBtcFocusAxis,
   formatBtcMemoryLabel,
@@ -24,7 +23,12 @@ import { FieldAnchorGlyph, RelationGlyph } from "./BtcSurfaceGlyphs";
 
 type Node=BtcMarketEnvelope["phi_geometry"]["nodes"][number];
 function Module({locale,envelope,node,primary=false}:{locale:BtcPublicLocale;envelope:BtcMarketEnvelope;node:Node;primary?:boolean}){
-  return <article className={`phiModule ${primary?"primaryModule":"supportModule"} module-${node.id} ${node.role==="unavailable"?"supportUnavailable":""}`} data-role={node.role} data-module-id={node.id}><header><span className="moduleIndex">{node.index}</span><em>{formatBtcRoleLabel(locale,node.role)}</em></header><h3>{formatBtcModuleLabel(locale,node.id)}</h3><strong>{formatBtcStateLabel(locale,node.state)}</strong><p>{moduleSummary(locale,envelope,node.id)}</p></article>;
+ return <article className={`phiModule ${primary?"primaryModule":"supportModule"} module-${node.id} ${node.role==="unavailable"?"supportUnavailable":""}`} data-role={node.role} data-module-id={node.id}><header><span className="moduleIndex">{node.index}</span><em>{formatBtcRoleLabel(locale,node.role)}</em></header><h3>{formatBtcModuleLabel(locale,node.id)}</h3><strong>{formatBtcStateLabel(locale,node.state)}</strong><p>{moduleSummary(locale,envelope,node.id)}</p></article>;
+}
+
+function freshnessUncertainty(locale:BtcPublicLocale,freshness:BtcMarketEnvelope["current"]["source_freshness"]):string{
+ if(locale==="ru")return freshness==="FRESH"?"Принятый источник находится в пределах 24-часового окна актуальности.":"Принятый источник старше 24 часов; сильные утверждения о текущем состоянии подавлены.";
+ return freshness==="FRESH"?"Accepted source is within the 24-hour freshness window.":"Accepted source is older than 24 hours; strong current-state language is suppressed.";
 }
 
 export function BtcObservationZone({locale,envelope,result}:{locale:BtcPublicLocale;envelope:BtcMarketEnvelope;result:BtcPublicSnapshot}){
@@ -39,7 +43,7 @@ export function BtcObservationZone({locale,envelope,result}:{locale:BtcPublicLoc
   <div><dt>{c.participation}</dt><dd>{pct(envelope.current.alt_breadth_24h_pct,1,false)}</dd><small>7d {pct(envelope.current.alt_breadth_7d_pct,1,false)} · ETH {pct(envelope.current.eth_rotation_anchor_pct,2,false)}</small></div>
   <div><dt>{c.stablecoins}</dt><dd>{pct(envelope.current.stablecoin_share_pct,2,false)}</dd><small>{money(envelope.current.stablecoin_cap_usd)}</small></div>
  </dl></section>
- <section className="executiveField"><div className="executivePrimary"><p className="eyebrow">{c.executiveRead}</p><h3 id="executive-read-title">{formatBtcStateLabel(locale,envelope.synthesis.state)}</h3><p className="executiveLead">{formatBtcTransitionLead(locale,envelope.synthesis.state)}</p><dl><div><dt>{c.whatChanged}</dt><dd>{changed[0]??c.noTransition}</dd></div><div><dt>{c.whatChangedNext}</dt><dd>{changed[1]??c.noSecondTransition}</dd></div></dl></div><aside className="executiveContext"><dl><div><dt>{c.whatConfirms}</dt><dd>{confirms?(locale==="ru"?`${confirms} согласуется с маршрутизированной структурой.`:`${confirms} aligns with the routed structure.`):c.noConfirmation}</dd></div><div><dt>{c.whatWeakens}</dt><dd>{weakens??c.noContradiction}</dd></div><div><dt>{c.watchNext}</dt><dd>{formatBtcEnvelopeWatchNext(locale,envelope.current.source_generated_at_utc)}</dd></div><div><dt>{c.uncertaintyBoundary}</dt><dd>{formatBtcEnvelopeUncertainty(locale,envelope.current.source_freshness)}</dd></div></dl></aside></section></section>;
+ <section className="executiveField"><div className="executivePrimary"><p className="eyebrow">{c.executiveRead}</p><h3 id="executive-read-title">{formatBtcStateLabel(locale,envelope.synthesis.state)}</h3><p className="executiveLead">{formatBtcTransitionLead(locale,envelope.synthesis.state)}</p><dl><div><dt>{c.whatChanged}</dt><dd>{changed[0]??c.noTransition}</dd></div><div><dt>{c.whatChangedNext}</dt><dd>{changed[1]??c.noSecondTransition}</dd></div></dl></div><aside className="executiveContext"><dl><div><dt>{c.whatConfirms}</dt><dd>{confirms?(locale==="ru"?`${confirms} согласуется с маршрутизированной структурой.`:`${confirms} aligns with the routed structure.`):c.noConfirmation}</dd></div><div><dt>{c.whatWeakens}</dt><dd>{weakens??c.noContradiction}</dd></div><div><dt>{c.watchNext}</dt><dd>{formatBtcEnvelopeWatchNext(locale,envelope.current.source_generated_at_utc)}</dd></div><div><dt>{c.uncertaintyBoundary}</dt><dd>{freshnessUncertainty(locale,envelope.current.source_freshness)}</dd></div></dl></aside></section></section>;
 }
 
 export function BtcPhiZone({locale,envelope}:{locale:BtcPublicLocale;envelope:BtcMarketEnvelope}){
