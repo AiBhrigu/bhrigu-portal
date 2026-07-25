@@ -18,6 +18,7 @@ jobs:
         run: |
           mkdir -p artifacts
           python3 - <<'PY'
+          import copy
           import html
           import json
           import re
@@ -41,6 +42,22 @@ jobs:
           def extract(pattern, body):
               match = re.search(pattern, body, re.I | re.S)
               return html.unescape(match.group(1)) if match else None
+
+          def stable_page_props(value):
+              stable = copy.deepcopy(value)
+              if not isinstance(stable, dict):
+                  return stable
+              source_context = stable.get("sourceContext")
+              if isinstance(source_context, dict):
+                  source_context.pop("age_hours", None)
+              result = stable.get("result")
+              if isinstance(result, dict):
+                  result.pop("generated_at_utc", None)
+                  result.pop("request_id", None)
+              envelope = stable.get("envelope")
+              if isinstance(envelope, dict):
+                  envelope.pop("generated_at_utc", None)
+              return stable
 
           def fetch(label, root, attempt):
               body_path = Path(f"artifacts/{label}-attempt-{attempt}.html")
@@ -91,7 +108,7 @@ jobs:
                   checks[f"{label}_btc_field_read"] = surface["has_btc_field_read"]
                   checks[f"{label}_old_shell_absent"] = not surface["has_old_shell_marker"]
                   checks[f"{label}_ssr_page_props"] = isinstance(surface["page_props"], dict)
-              checks["canonical_legacy_page_props_equal"] = surfaces["canonical"]["page_props"] == surfaces["legacy"]["page_props"]
+              checks["canonical_legacy_stable_page_props_equal"] = stable_page_props(surfaces["canonical"]["page_props"]) == stable_page_props(surfaces["legacy"]["page_props"])
               canonical_props = surfaces["canonical"]["page_props"] or {}
               checks["source_context_present"] = bool(canonical_props.get("sourceContext", {}).get("generated_at_utc"))
               checks["result_present"] = isinstance(canonical_props.get("result"), dict)
