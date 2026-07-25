@@ -1,0 +1,101 @@
+name: BTC Route Sovereignty Public Proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/btc-route-sovereignty-public-proof-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify BTC route sovereignty on production
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          import re
+          import subprocess
+          import time
+          from pathlib import Path
+          from urllib.parse import urlparse
+
+          targets = {
+              "btc": "https://www.bhrigu.io/crypto-astro/btc?lang=en",
+              "market": "https://www.bhrigu.io/market-cosmographer",
+              "access": "https://www.bhrigu.io/access",
+          }
+          report = {"attempts": [], "surfaces": {}, "checks": {}, "failures": []}
+
+          def fetch(label, url, attempt):
+              body_path = Path(f"artifacts/{label}-attempt-{attempt}.html")
+              header_path = Path(f"artifacts/{label}-attempt-{attempt}.headers.txt")
+              meta = subprocess.check_output([
+                  "curl", "--silent", "--show-error", "--max-time", "45",
+                  "--dump-header", str(header_path), "--output", str(body_path),
+                  "--write-out", "%{http_code}\n%{url_effective}\n%{num_redirects}\n",
+                  "--header", "Cache-Control: no-cache",
+                  url,
+              ], text=True).splitlines()
+              body = body_path.read_text(encoding="utf-8", errors="replace")
+              return {
+                  "requested_url": url,
+                  "http_code": int(meta[0]),
+                  "effective_url": meta[1],
+                  "effective_path": urlparse(meta[1]).path,
+                  "redirect_count": int(meta[2]),
+                  "body_bytes": len(body.encode("utf-8")),
+                  "body": body,
+              }
+
+          accepted = None
+          for attempt in range(1, 13):
+              surfaces = {name: fetch(name, url, attempt) for name, url in targets.items()}
+              btc = surfaces["btc"]
+              market = surfaces["market"]
+              access = surfaces["access"]
+              checks = {
+                  "btc_http_200": btc["http_code"] == 200,
+                  "btc_no_redirect": btc["redirect_count"] == 0,
+                  "btc_path_preserved": btc["effective_path"] == "/crypto-astro/btc",
+                  "btc_identity_present": "BTC Field Read" in btc["body"],
+                  "btc_question_present": "Ask one BTC field question" in btc["body"],
+                  "btc_form_sovereign": bool(re.search(r'<form[^>]+action="/crypto-astro/btc"', btc["body"])),
+                  "btc_canonical_sovereign": bool(re.search(r'<link[^>]+rel="canonical"[^>]+href="https://www\.bhrigu\.io/crypto-astro/btc"', btc["body"]) or re.search(r'<link[^>]+href="https://www\.bhrigu\.io/crypto-astro/btc"[^>]+rel="canonical"', btc["body"])),
+                  "market_alias_absent": market["http_code"] == 404,
+                  "market_no_redirect": market["redirect_count"] == 0,
+                  "access_http_200": access["http_code"] == 200,
+                  "access_btc_link_restored": 'href="/crypto-astro/btc"' in access["body"],
+                  "access_btc_label_restored": "Run BTC Field Read" in access["body"],
+              }
+              failures = [name for name, passed in checks.items() if not passed]
+              report["attempts"].append({"attempt": attempt, "failures": failures})
+              if not failures:
+                  accepted = (surfaces, checks)
+                  break
+              if attempt < 12:
+                  time.sleep(10)
+
+          report["surfaces"] = accepted[0] if accepted else surfaces
+          for value in report["surfaces"].values():
+              value.pop("body", None)
+          report["checks"] = accepted[1] if accepted else checks
+          report["failures"] = [] if accepted else failures
+          Path("artifacts/btc-route-sovereignty-public-proof.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps({"checks": report["checks"], "failures": report["failures"]}, indent=2))
+          assert not report["failures"], report["failures"]
+          PY
+      - name: Upload public proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-route-sovereignty-public-proof-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
