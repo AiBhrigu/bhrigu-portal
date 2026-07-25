@@ -3,9 +3,6 @@ name: BTC Temporal Route and Date Boundary
 on:
   pull_request:
     paths:
-      - "pages/market-cosmographer.tsx"
-      - "pages/crypto-astro/btc.tsx"
-      - "components/btc/BtcQuestionMembrane.tsx"
       - "lib/btc-public-snapshot-composer.ts"
       - "lib/btc-market-envelope.ts"
       - ".github/workflows/btc-temporal-boundary-pr.yml"
@@ -32,7 +29,7 @@ jobs:
         run: |
           npm run start -- -p 3000 >/tmp/btc-temporal-boundary.log 2>&1 &
           for attempt in {1..30}; do
-            curl --fail --silent http://127.0.0.1:3000/market-cosmographer >/dev/null && exit 0
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
             sleep 1
           done
           cat /tmp/btc-temporal-boundary.log
@@ -49,7 +46,7 @@ jobs:
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
 
-          base='http://127.0.0.1:3000/market-cosmographer'
+          base='http://127.0.0.1:3000/crypto-astro/btc'
           today=datetime.now(timezone.utc).date().isoformat()
           tomorrow=(datetime.now(timezone.utc).date()+timedelta(days=1)).isoformat()
           report={'checks':{},'measurements':{'today_utc':today,'tomorrow_utc':tomorrow},'scenarios':{},'failures':[]}

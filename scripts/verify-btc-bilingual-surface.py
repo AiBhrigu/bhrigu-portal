@@ -1,15 +1,13 @@
 import json, re, time
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 from urllib.request import urlopen
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
-canonical_base='http://127.0.0.1:3000/market-cosmographer'
-legacy_base='http://127.0.0.1:3000/crypto-astro/btc'
-base=canonical_base
+base='http://127.0.0.1:3000/crypto-astro/btc'
 producer='https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json'
 en=[
   ('general_change','What changed in the BTC field, why does it matter, and what should I watch next?',{'market_structure','change_event_memory'}),
@@ -31,7 +29,7 @@ for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-sc
   options.add_argument(arg)
 options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
 driver=webdriver.Chrome(options=options)
-report={'checks':{},'measurements':{},'routes':[],'route_parity':{},'failures':[],'browser_severe':[]}
+report={'checks':{},'measurements':{},'routes':[],'failures':[],'browser_severe':[]}
 
 def wait_for(selector, timeout=45):
   return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
@@ -44,23 +42,6 @@ def css(selector, prop):
 
 def dom_text(selector):
   return driver.execute_script('return document.querySelector(arguments[0]).textContent.trim()',selector)
-
-def route_signature(root, question, locale='en'):
-  driver.set_window_size(1440,900)
-  driver.get(f'{root}?lang={locale}&q={quote(question)}')
-  wait_for('.reading')
-  signature={
-    'locale':driver.find_element(By.TAG_NAME,'main').get_attribute('data-locale'),
-    'source_generated_at_utc':driver.find_element(By.CSS_SELECTOR,'.metricRibbon').get_attribute('data-source-generated-at'),
-    'primary_modules':sorted(node.get_attribute('data-module-id') for node in driver.find_elements(By.CSS_SELECTOR,'.phiPlane .primaryModule')),
-    'zone_count':len(driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')),
-    'module_count':len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule')),
-    'memory_metric_count':len(driver.find_elements(By.CSS_SELECTOR,'.memoryAxis tbody tr')),
-    'proof_source_count':len(driver.find_elements(By.CSS_SELECTOR,'.sourceProof .sourceRows li')),
-    'proof_hash':driver.find_element(By.CSS_SELECTOR,'.sourceProof').get_attribute('data-current-snapshot-sha'),
-    'executive_state':dom_text('#executive-read-title'),
-  }
-  return signature, urlparse(driver.current_url).path
 
 try:
   producer_payload=json.loads(urlopen(producer,timeout=30).read().decode('utf-8'))
@@ -77,10 +58,6 @@ try:
     and dom_text('.exampleRoutes .eyebrow')=='Проверенные примеры маршрутов'
   )
   report['checks']['explicit_ru_option_current']=driver.find_element(By.CSS_SELECTOR,'.languageSelector a[data-locale-option="ru"]').get_attribute('aria-current')=='true'
-  report['checks']['canonical_form_action']=urlparse(driver.find_element(By.CSS_SELECTOR,'form[action]').get_attribute('action')).path=='/market-cosmographer'
-  report['checks']['canonical_language_links']=all(urlparse(item.get_attribute('href')).path=='/market-cosmographer' for item in driver.find_elements(By.CSS_SELECTOR,'.languageSelector a'))
-  report['checks']['canonical_example_links']=all(urlparse(item.get_attribute('href')).path=='/market-cosmographer' for item in driver.find_elements(By.CSS_SELECTOR,'.exampleRouteList a'))
-  report['checks']['canonical_meta_on_primary']=urlparse(driver.find_element(By.CSS_SELECTOR,'link[rel="canonical"]').get_attribute('href')).path=='/market-cosmographer'
 
   for locale,routes in [('en',en),('ru',ru)]:
     for route_id,question,expected in routes:
@@ -123,18 +100,6 @@ try:
 
     report['checks'][f'{locale}_five_example_links']=len(driver.find_elements(By.CSS_SELECTOR,'.exampleRouteList a'))==5
     report['checks'][f'{locale}_two_language_options']=len(driver.find_elements(By.CSS_SELECTOR,'.languageSelector a'))==2
-
-  parity_question=en[0][1]
-  canonical_signature,canonical_path=route_signature(canonical_base,parity_question)
-  legacy_signature,legacy_path=route_signature(legacy_base,parity_question)
-  report['route_parity']={'canonical':canonical_signature,'legacy':legacy_signature,'canonical_path':canonical_path,'legacy_path':legacy_path}
-  report['checks']['canonical_route_stays_canonical']=canonical_path=='/market-cosmographer'
-  report['checks']['legacy_route_not_redirected']=legacy_path=='/crypto-astro/btc'
-  report['checks']['canonical_legacy_analytical_parity']=canonical_signature==legacy_signature
-  report['checks']['legacy_canonical_meta']=urlparse(driver.find_element(By.CSS_SELECTOR,'link[rel="canonical"]').get_attribute('href')).path=='/market-cosmographer'
-  report['checks']['legacy_form_routes_forward']=urlparse(driver.find_element(By.CSS_SELECTOR,'form[action]').get_attribute('action')).path=='/market-cosmographer'
-  report['checks']['legacy_language_routes_forward']=all(urlparse(item.get_attribute('href')).path=='/market-cosmographer' for item in driver.find_elements(By.CSS_SELECTOR,'.languageSelector a'))
-  report['checks']['legacy_example_routes_forward']=all(urlparse(item.get_attribute('href')).path=='/market-cosmographer' for item in driver.find_elements(By.CSS_SELECTOR,'.exampleRouteList a'))
 
   detected='Что изменилось в поле BTC и почему это важно?'
   driver.get(f'{base}?q={quote(detected)}')

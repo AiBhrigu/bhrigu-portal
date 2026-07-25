@@ -3,9 +3,7 @@ name: BTC Mobile Scroll Clearance
 on:
   pull_request:
     paths:
-      - "pages/market-cosmographer.tsx"
       - "pages/crypto-astro/btc.tsx"
-      - "components/btc/BtcQuestionMembrane.tsx"
       - ".github/workflows/btc-mobile-clearance-pr.yml"
 
 permissions:
@@ -30,7 +28,7 @@ jobs:
         run: |
           npm run start -- -p 3000 >/tmp/btc-mobile-clearance.log 2>&1 &
           for attempt in {1..30}; do
-            curl --fail --silent http://127.0.0.1:3000/market-cosmographer >/dev/null && exit 0
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
             sleep 1
           done
           cat /tmp/btc-mobile-clearance.log
@@ -47,7 +45,7 @@ jobs:
           from selenium.webdriver.support.ui import WebDriverWait
 
           question='What changed in the BTC field and why does it matter?'
-          url='http://127.0.0.1:3000/market-cosmographer?q='+quote(question)
+          url='http://127.0.0.1:3000/crypto-astro/btc?q='+quote(question)
           options=webdriver.ChromeOptions()
           for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
             options.add_argument(arg)
