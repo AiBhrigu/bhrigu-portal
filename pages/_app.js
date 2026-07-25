@@ -7,7 +7,6 @@ import BhriguPhiHeader from "../components/BhriguPhiHeader"; // ATOM_BHRIGU_PORT
 
 // ATOM_BHRIGU_PORTAL_SEO_SURFACE_V4
 const BASE_URL = "https://www.bhrigu.io";
-const MARKET_COSMOGRAPHER_ROUTE = "/market-cosmographer";
 
 const ROUTE_META = {
   "/": {
@@ -69,14 +68,6 @@ const ROUTE_META = {
   "/archive": {
     "title": "Archive · BHRIGU",
     "desc": "Archive: preserved snapshots, milestone references, and stable surface artifacts."
-  },
-  "/market-cosmographer": {
-    "title": "Market Cosmographer · BTC Field Read · BHRIGU",
-    "desc": "A bilingual BTC-centric Market Cosmographer corridor bound to accepted market evidence, Snapshot Memory, source proof, and explicit freshness truth."
-  },
-  "/crypto-astro/btc": {
-    "title": "Market Cosmographer · BTC Field Read · BHRIGU",
-    "desc": "Compatibility route for the bilingual BTC-centric Market Cosmographer corridor."
   }
 };
 
@@ -87,18 +78,13 @@ function normalizePath(asPath) {
   return noQuery || "/";
 }
 
-function canonicalPath(pathname) {
-  return pathname === "/crypto-astro/btc" ? MARKET_COSMOGRAPHER_ROUTE : pathname;
-}
-
 function buildCanonical(pathname) {
-  const resolved = canonicalPath(pathname);
-  const p = resolved === "/" ? "" : resolved;
+  const p = pathname === "/" ? "/" : pathname;
   return `${BASE_URL}${p}`;
 }
 
 function getMeta(pathname) {
-  const hit = ROUTE_META[pathname] || ROUTE_META[canonicalPath(pathname)] || null;
+  const hit = ROUTE_META[pathname] || null;
   const title = (hit && hit.title) ? hit.title : "BHRIGU · Frey / ORION";
   const desc  = (hit && hit.desc)  ? hit.desc  : "A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces.";
   const canonical = buildCanonical(pathname);
@@ -111,15 +97,17 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
+  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '' : path);
+
 
   return (
     <>
       <Head>
-        <link rel="canonical" href={meta.canonical} key="canonical" />
+        <link rel="canonical" href={canonical} key="canonical" />
 
         <title>{meta.title}</title>
         <meta name="description" content={meta.desc} />
-        <meta property="og:type" content="website" />
+<meta property="og:type" content="website" />
         <meta key="og:title" property="og:title" content={meta.title} />
         <meta key="og:description" property="og:description" content={meta.desc} />
         <meta key="og:url" property="og:url" content={meta.canonical} />
