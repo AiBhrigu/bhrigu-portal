@@ -42,9 +42,13 @@ function applyFreshnessTruth(envelope:BtcMarketEnvelope,freshness:"FRESH"|"STALE
 export const getServerSideProps:GetServerSideProps<Props>=async({query})=>{
  const initialQuestion=first(query.q),initialDate=first(query.d),resolved=resolveBtcPublicLocale(first(query.lang),initialQuestion);
  const source=await loadBtcStaticSource();
- const sourceContext:SourceContext=source.ok
-  ?{state:source.freshness,generated_at_utc:source.snapshot.generated_at_utc,age_hours:source.age_hours,proof_available:true}
-  :{state:"UNAVAILABLE",generated_at_utc:source.last_verified_at_utc??null,age_hours:failureAgeHours(source.last_verified_at_utc??null),proof_available:false};
+ let sourceContext:SourceContext;
+ if(source.ok===false){
+  const lastVerified=source.last_verified_at_utc??null;
+  sourceContext={state:"UNAVAILABLE",generated_at_utc:lastVerified,age_hours:failureAgeHours(lastVerified),proof_available:false};
+ }else{
+  sourceContext={state:source.freshness,generated_at_utc:source.snapshot.generated_at_utc,age_hours:source.age_hours,proof_available:true};
+ }
  const empty:Props={result:null,failure:null,envelope:null,envelopeFailure:null,sourceContext,initialQuestion:"",initialDate,locale:resolved.locale,localeSource:resolved.source};
  if(!initialQuestion)return{props:empty};
  if(source.ok===false)return{props:{...empty,initialQuestion,failure:{code:source.code,message:source.message,last_verified_at_utc:source.last_verified_at_utc??null}}};
