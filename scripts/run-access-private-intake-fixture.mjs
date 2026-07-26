@@ -76,12 +76,13 @@ const body = {
 
 const validation = validateAccessSubmitPayload(body);
 assert(validation.ok, "synthetic proof payload must validate");
-const idempotency = buildAccessIdempotencySha256(validation.data);
-const requestId = buildAccessRequestId(validation.data, idempotency);
+const validated = validation.data;
+const idempotency = buildAccessIdempotencySha256(validated);
+const requestId = buildAccessRequestId(validated, idempotency);
 assert(/^BRG-20260726-[A-F0-9]{12}$/.test(requestId), "request id must be deterministic and bounded");
-assert(idempotency === buildAccessIdempotencySha256(validation.data), "idempotency hash must be stable");
+assert(idempotency === buildAccessIdempotencySha256(validated), "idempotency hash must be stable");
 const reviewToken = createAccessReviewToken(idempotency, true);
-const record = buildStoredAccessSubmissionRecord(requestId, "2026-07-26T12:01:00.000Z", validation.data);
+const record = buildStoredAccessSubmissionRecord(requestId, "2026-07-26T12:01:00.000Z", validated);
 const proposed = buildPrivateAccessEnvelope({ record, idempotencySha256: idempotency, reviewToken });
 assert(proposed.schema_version === ACCESS_PRIVATE_INTAKE_SCHEMA, "private schema must be locked");
 assert(proposed.immutable === true, "private record must be immutable");
@@ -106,7 +107,7 @@ const client: PrivateBlobClient = {
 async function main(): Promise<void> {
   const first = await savePrivateAccessSubmission(proposed, client);
   assert(first.created, "first write must create immutable record");
-  const retryRecord = buildStoredAccessSubmissionRecord(requestId, "2026-07-26T12:02:00.000Z", validation.data);
+  const retryRecord = buildStoredAccessSubmissionRecord(requestId, "2026-07-26T12:02:00.000Z", validated);
   const retryEnvelope = buildPrivateAccessEnvelope({ record: retryRecord, idempotencySha256: idempotency, reviewToken: "ignored-on-retry".padEnd(43, "x") });
   const second = await savePrivateAccessSubmission(retryEnvelope, client);
   assert(!second.created, "same payload retry must reuse the original immutable record");
@@ -168,11 +169,11 @@ async function main(): Promise<void> {
   assert(!reviewSource.includes("listAccessReviewRecords"), "operator review must expose no public list mode");
   assert(reviewSource.includes("noindex, nofollow, noarchive"), "operator review must be non-indexable");
 
-  process.stdout.write("ACCESS_PRIVATE_INTAKE_FIXTURE=PASS\\n");
+  process.stdout.write("ACCESS_PRIVATE_INTAKE_FIXTURE=PASS\n");
 }
 
 main().catch((error) => {
-  process.stderr.write(\`\${error instanceof Error ? error.stack || error.message : String(error)}\\n\`);
+  process.stderr.write(\`${error instanceof Error ? error.stack || error.message : String(error)}\n\`);
   process.exit(1);
 });
 `;
