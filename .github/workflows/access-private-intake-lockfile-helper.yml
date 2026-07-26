@@ -32,6 +32,9 @@ jobs:
           node-version: '20'
           cache: npm
 
+      - name: Prepare diagnostics
+        run: mkdir -p artifacts
+
       - name: Validate exact owner request, source ancestry, and target head
         id: source
         env:
@@ -57,13 +60,14 @@ jobs:
           echo HELPER_ONLY_MASTER_DELTA=PASS
 
       - name: Materialize exact package lock
+        id: lockfile
         run: |
           set -euo pipefail
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund 2>&1 | tee artifacts/lockfile.log
           git diff --name-only | sort > /tmp/changed.txt
           printf '%s\n' 'package-lock.json' > /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/changed.txt
-          node - <<'NODE'
+          node - <<'NODE' 2>&1 | tee -a artifacts/lockfile.log
           const lock = require('./package-lock.json');
           if (lock.lockfileVersion !== 3) throw new Error('lockfileVersion must remain 3');
           if (lock.packages?.['']?.dependencies?.['@vercel/blob'] !== '2.6.1') {
@@ -74,17 +78,29 @@ jobs:
           console.log('ACCESS_PRIVATE_INTAKE_LOCKFILE_CONTRACT=PASS');
           NODE
 
-      - name: Verify install, typed fixture, and production build
+      - name: Verify exact clean install
+        id: npm_ci
         run: |
           set -euo pipefail
-          npm ci
-          npm run verify:access-private-intake
-          npm run build
+          npm ci 2>&1 | tee artifacts/npm-ci.log
+
+      - name: Verify typed private intake fixture
+        id: fixture
+        run: |
+          set -euo pipefail
+          npm run verify:access-private-intake 2>&1 | tee artifacts/fixture.log
+
+      - name: Verify production build
+        id: build
+        run: |
+          set -euo pipefail
+          npm run build 2>&1 | tee artifacts/build.log
 
       - name: Commit only generated lockfile
+        id: commit
         run: |
           set -euo pipefail
-          git status --short
+          git status --short | tee artifacts/git-status.log
           test "$(git status --short | wc -l | tr -d ' ')" = "1"
           git status --short | grep -Eq '^ M package-lock.json$'
           git config user.name 'github-actions[bot]'
@@ -94,6 +110,7 @@ jobs:
           git push origin HEAD:agent/bhrigu-first-external-request-durable-private-intake-v0-1
 
       - name: Record accepted materialization
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -112,11 +129,43 @@ jobs:
           PRODUCTION_BUILD=PASS"
           gh issue close "${{ github.event.issue.number }}" --reason completed
 
-      - name: Record fail-closed result
+      - name: Upload diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: access-private-intake-lockfile-helper-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Record fail-closed phase diagnostics
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_OUTCOME: ${{ steps.source.outcome }}
+          LOCKFILE_OUTCOME: ${{ steps.lockfile.outcome }}
+          NPM_CI_OUTCOME: ${{ steps.npm_ci.outcome }}
+          FIXTURE_OUTCOME: ${{ steps.fixture.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          COMMIT_OUTCOME: ${{ steps.commit.outcome }}
         run: |
-          gh issue comment "${{ github.event.issue.number }}" --body "STATUS=FAIL_CLOSED
-          TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1
-          TARGET_WRITE_PERFORMED=NO_OR_UNVERIFIED"
+          set -euo pipefail
+          {
+            echo 'STATUS=FAIL_CLOSED'
+            echo 'TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1'
+            echo 'TARGET_WRITE_PERFORMED=NO_OR_UNVERIFIED'
+            echo "SOURCE_OUTCOME=$SOURCE_OUTCOME"
+            echo "LOCKFILE_OUTCOME=$LOCKFILE_OUTCOME"
+            echo "NPM_CI_OUTCOME=$NPM_CI_OUTCOME"
+            echo "FIXTURE_OUTCOME=$FIXTURE_OUTCOME"
+            echo "BUILD_OUTCOME=$BUILD_OUTCOME"
+            echo "COMMIT_OUTCOME=$COMMIT_OUTCOME"
+            for file in artifacts/lockfile.log artifacts/npm-ci.log artifacts/fixture.log artifacts/build.log artifacts/git-status.log; do
+              if [ -f "$file" ]; then
+                echo
+                echo "DIAGNOSTIC_FILE=$(basename "$file")"
+                tail -n 35 "$file" | sed -E 's/(TOKEN|API_KEY|AUTHORIZATION|SECRET)=[^[:space:]]+/\1=[REDACTED]/Ig'
+              fi
+            done
+          } > artifacts/issue-diagnostic.txt
+          gh issue comment "${{ github.event.issue.number }}" --body-file artifacts/issue-diagnostic.txt
