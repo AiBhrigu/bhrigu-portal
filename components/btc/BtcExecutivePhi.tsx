@@ -1,7 +1,7 @@
 import type { BtcMarketEnvelope } from "../../lib/btc-market-envelope";
 import type { BtcPublicSnapshot } from "../../lib/btc-public-output-contract";
+import { formatBtcQuestionExecutiveLead, formatBtcQuestionWatchNext } from "../../lib/btc-executive-question-language";
 import {
-  formatBtcEnvelopeWatchNext,
   formatBtcFocusAxis,
   formatBtcMemoryLabel,
   formatBtcModuleLabel,
@@ -12,7 +12,6 @@ import {
   formatBtcSafetyOverlay,
   formatBtcStateLabel,
   formatBtcTransitionInterpretation,
-  formatBtcTransitionLead,
   formatBtcUtcTimestamp,
   formatBtcWeakening,
   getBtcPublicCopy,
@@ -43,7 +42,7 @@ export function BtcObservationZone({locale,envelope,result}:{locale:BtcPublicLoc
   <div><dt>{c.participation}</dt><dd>{pct(envelope.current.alt_breadth_24h_pct,1,false)}</dd><small>7d {pct(envelope.current.alt_breadth_7d_pct,1,false)} · ETH {pct(envelope.current.eth_rotation_anchor_pct,2,false)}</small></div>
   <div><dt>{c.stablecoins}</dt><dd>{pct(envelope.current.stablecoin_share_pct,2,false)}</dd><small>{money(envelope.current.stablecoin_cap_usd)}</small></div>
  </dl></section>
- <section className="executiveField"><div className="executivePrimary"><p className="eyebrow">{c.executiveRead}</p><h3 id="executive-read-title">{formatBtcStateLabel(locale,envelope.synthesis.state)}</h3><p className="executiveLead">{formatBtcTransitionLead(locale,envelope.synthesis.state)}</p><dl><div><dt>{c.whatChanged}</dt><dd>{changed[0]??c.noTransition}</dd></div><div><dt>{c.whatChangedNext}</dt><dd>{changed[1]??c.noSecondTransition}</dd></div></dl></div><aside className="executiveContext"><dl><div><dt>{c.whatConfirms}</dt><dd>{confirms?(locale==="ru"?`${confirms} согласуется с маршрутизированной структурой.`:`${confirms} aligns with the routed structure.`):c.noConfirmation}</dd></div><div><dt>{c.whatWeakens}</dt><dd>{weakens??c.noContradiction}</dd></div><div><dt>{c.watchNext}</dt><dd>{formatBtcEnvelopeWatchNext(locale,envelope.current.source_generated_at_utc)}</dd></div><div><dt>{c.uncertaintyBoundary}</dt><dd>{freshnessUncertainty(locale,envelope.current.source_freshness)}</dd></div></dl></aside></section></section>;
+ <section className="executiveField"><div className="executivePrimary"><p className="eyebrow">{c.executiveRead}</p><h3 id="executive-read-title">{formatBtcStateLabel(locale,envelope.synthesis.state)}</h3><p className="executiveLead">{formatBtcQuestionExecutiveLead(locale,envelope.question_class,envelope.synthesis.state)}</p><dl><div><dt>{c.whatChanged}</dt><dd>{changed[0]??c.noTransition}</dd></div><div><dt>{c.whatChangedNext}</dt><dd>{changed[1]??c.noSecondTransition}</dd></div></dl></div><aside className="executiveContext"><dl><div><dt>{c.whatConfirms}</dt><dd>{confirms?(locale==="ru"?`${confirms} согласуется с маршрутизированной структурой.`:`${confirms} aligns with the routed structure.`):c.noConfirmation}</dd></div><div><dt>{c.whatWeakens}</dt><dd>{weakens??c.noContradiction}</dd></div><div><dt>{c.watchNext}</dt><dd>{formatBtcQuestionWatchNext(locale,envelope.question_class,envelope.current.source_generated_at_utc)}</dd></div><div><dt>{c.uncertaintyBoundary}</dt><dd>{freshnessUncertainty(locale,envelope.current.source_freshness)}</dd></div></dl></aside></section></section>;
 }
 
 export function BtcPhiZone({locale,envelope}:{locale:BtcPublicLocale;envelope:BtcMarketEnvelope}){

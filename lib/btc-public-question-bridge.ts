@@ -5,7 +5,7 @@ const RU_UNSAFE=/(купить|продать|покупать|продават�
 
 export function classifyRussianBtcQuestion(question:string):BtcExampleRouteId|"gravity"|"participation"|"general"{
   const q=question.toLowerCase();
-  if(/(доминир|гравитац|лидерств|доля\s+btc)/i.test(q))return"gravity";
+  if(/(доминир|доминац|гравитац|лидерств|доля\s+btc)/i.test(q))return"gravity";
   if(/(ликвид|tvl|стейблкоин|dex|объ[её]м)/i.test(q))return"liquidity";
   if(/(ширин|ротац|альткоин|участи|eth)/i.test(q))return"participation";
   if(/(структур|режим|field score|капитализац)/i.test(q))return"structure_confirmation";
