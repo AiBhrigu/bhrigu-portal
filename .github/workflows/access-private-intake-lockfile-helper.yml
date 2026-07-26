@@ -42,20 +42,24 @@ jobs:
         run: |
           set -euo pipefail
           SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
-          EXPECTED='SCHEMA=access_private_intake_lockfile_request_v0_1
-          SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
-          EXPECTED_TARGET_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
-          TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1'
-          test "$ISSUE_BODY" = "$EXPECTED"
+          mapfile -t REQUEST_LINES <<< "$ISSUE_BODY"
+          test "${#REQUEST_LINES[@]}" = "4"
+          test "${REQUEST_LINES[0]}" = "SCHEMA=access_private_intake_lockfile_request_v0_1"
+          test "${REQUEST_LINES[1]}" = "SOURCE_BASE_SHA=$SOURCE_BASE_SHA"
+          TARGET_HEAD_SHA="${REQUEST_LINES[2]#EXPECTED_TARGET_HEAD_SHA=}"
+          test "${REQUEST_LINES[2]}" = "EXPECTED_TARGET_HEAD_SHA=$TARGET_HEAD_SHA"
+          [[ "$TARGET_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test "${REQUEST_LINES[3]}" = "TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1"
           git fetch --no-tags origin master agent/bhrigu-first-external-request-durable-private-intake-v0-1
           CURRENT_MASTER_SHA=$(git rev-parse origin/master)
           git merge-base --is-ancestor "$SOURCE_BASE_SHA" "$CURRENT_MASTER_SHA"
           git diff --name-only "$SOURCE_BASE_SHA" "$CURRENT_MASTER_SHA" | sort > /tmp/master-delta.txt
           printf '%s\n' '.github/workflows/access-private-intake-lockfile-helper.yml' > /tmp/expected-master-delta.txt
           diff -u /tmp/expected-master-delta.txt /tmp/master-delta.txt
-          test "$(git rev-parse HEAD)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
-          test "$(git rev-parse origin/agent/bhrigu-first-external-request-durable-private-intake-v0-1)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
+          test "$(git rev-parse HEAD)" = "$TARGET_HEAD_SHA"
+          test "$(git rev-parse origin/agent/bhrigu-first-external-request-durable-private-intake-v0-1)" = "$TARGET_HEAD_SHA"
           echo "current_master_sha=$CURRENT_MASTER_SHA" >> "$GITHUB_OUTPUT"
+          echo "target_head_sha=$TARGET_HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo LOCKFILE_HELPER_REQUEST=PASS
           echo HELPER_ONLY_MASTER_DELTA=PASS
 
@@ -120,7 +124,7 @@ jobs:
           SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
           CURRENT_MASTER_SHA=${{ steps.source.outputs.current_master_sha }}
           TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1
-          PREVIOUS_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
+          PREVIOUS_HEAD_SHA=${{ steps.source.outputs.target_head_sha }}
           NEW_HEAD_SHA=$NEW_HEAD
           CHANGED_FILE=package-lock.json
           PACKAGE_LOCK_SHA256=$LOCK_SHA256
