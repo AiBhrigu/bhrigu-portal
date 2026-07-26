@@ -1,0 +1,286 @@
+name: Verify BHRIGU Private Intake Preview
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/access-private-intake-preview-proof.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-private-intake-preview-proof
+  cancel-in-progress: false
+
+jobs:
+  preview-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PREVIEW_BASE: https://bhrigu-portal-git-agent-bhrigu-first-7833dd-aibhrigus-projects.vercel.app
+      EXPECTED_PRODUCT_HEAD_SHA: 1994c6f06f0dcd13f6917725e153601bad38dd56
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lock verification-only scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' '.github/workflows/access-private-intake-preview-proof.yml' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo PRIVATE_INTAKE_PREVIEW_VERIFICATION_ONLY=PASS
+
+      - name: Install proof client
+        run: python3 -m pip install --disable-pip-version-check requests==2.32.4
+
+      - name: Run live private intake, retry, capability, and readiness proof
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import time
+          from pathlib import Path
+          from urllib.parse import parse_qs, urlencode, urljoin, urlparse
+
+          import requests
+
+          base = os.environ['PREVIEW_BASE'].rstrip('/')
+          expected_head = os.environ['EXPECTED_PRODUCT_HEAD_SHA']
+          api = f'{base}/api/access/submit'
+          proof_header = 'BTC-FIRST-EXTERNAL-REQUEST-DURABILITY-PROOF-V0-1'
+          synthetic_name = 'BHRIGU INTAKE PROOF'
+          synthetic_email = 'bhrigu-intake-proof@invalid.example'
+          synthetic_question = 'Prove durable private intake, idempotency, operator retrieval, and fail-closed delivery.'
+          anchor = '2026-07-26T12:00:00.000Z'
+          payload = {
+              'request': {
+                  'name': synthetic_name,
+                  'email': synthetic_email,
+                  'subjectType': 'Mixed / Not sure',
+                  'mainQuestion': synthetic_question,
+                  'shortDescription': 'Synthetic, non-personal durability proof.',
+                  'preferredDepth': 'Structured Snapshot',
+              },
+              'subjectPayload': {
+                  'primarySubject': 'BTC intake durability',
+                  'knownDatesRaw': '2026-07-26',
+              },
+              'normalizedDates': [],
+              'derived': {
+                  'anchorIntegrity': 'partial',
+                  'criticalMissingFields': [],
+                  'entitiesCount': '1',
+                  'timeScope': 'One date / one point',
+                  'sourceMaterialLevel': 'None',
+                  'likelyLevel': 'Level I',
+                  'manualEscalation': False,
+                  'manualEscalationReasons': [],
+              },
+              'requestVerification': {
+                  'clientConfirmed': True,
+                  'confirmedAt': anchor,
+              },
+              'requestTemporalMeta': {
+                  'accessEntryAt': anchor,
+                  'draftStartedAt': anchor,
+                  'dateConfirmationCompletedAt': anchor,
+                  'requestSubmittedAt': None,
+                  'accessEntrySource': '/access',
+                  'resumeCount': 0,
+                  'draftDurationMs': 1000,
+                  'correctionRequested': False,
+              },
+          }
+          headers = {
+              'Content-Type': 'application/json',
+              'x-bhrigu-intake-proof': proof_header,
+              'User-Agent': 'BHRIGU-Private-Intake-Preview-Proof/0.1',
+              'Cache-Control': 'no-cache',
+          }
+          report = {
+              'schema_version': 'bhrigu_private_intake_preview_proof_v0_1',
+              'preview_origin': base,
+              'expected_product_head_sha': expected_head,
+              'checks': {},
+              'measurements': {},
+              'failures': [],
+          }
+
+          def check(name, condition, detail=None):
+              passed = bool(condition)
+              report['checks'][name] = passed
+              if detail is not None:
+                  report['measurements'][name] = detail
+              if not passed:
+                  report['failures'].append(name)
+              return passed
+
+          def safe_json(response):
+              try:
+                  return response.json()
+              except Exception:
+                  return {'non_json_status': response.status_code, 'body_prefix': response.text[:240]}
+
+          def post_once(label):
+              started = time.perf_counter()
+              response = requests.post(api, json=payload, headers=headers, timeout=45, allow_redirects=False)
+              report['measurements'][f'{label}_latency_seconds'] = round(time.perf_counter() - started, 3)
+              report['measurements'][f'{label}_status'] = response.status_code
+              return response, safe_json(response)
+
+          first_response, first = post_once('first')
+          first_ok = check('first_submit_accepted', first_response.status_code in (200, 201), {
+              'status': first_response.status_code,
+              'error_code': first.get('errorCode'),
+              'error_message': first.get('errorMessage'),
+          })
+
+          if first_ok:
+              request_id = str(first.get('requestId') or '')
+              review_token = str(first.get('proofReviewToken') or '')
+              review_url = str(first.get('proofReviewUrl') or '')
+              record_sha = str(first.get('proofRecordSha256') or '')
+              delivery_configured = first.get('proofDeliveryConfigured')
+              parsed_review = urlparse(review_url)
+              review_query = parse_qs(parsed_review.query)
+
+              check('private_blob_storage_reported', first.get('storage') == 'vercel_private_blob')
+              check('request_id_bounded', request_id.startswith('BRG-20260726-') and len(request_id) == 25)
+              check('review_token_present', len(review_token) >= 43)
+              check('record_sha256_present', len(record_sha) == 64 and all(c in '0123456789abcdef' for c in record_sha.lower()))
+              check('review_url_same_origin', f'{parsed_review.scheme}://{parsed_review.netloc}' == base)
+              check('review_url_path', parsed_review.path == '/access-review')
+              check('review_url_request_binding', review_query.get('id', [''])[0] == request_id)
+              check('review_url_token_binding', review_query.get('token', [''])[0] == review_token)
+              check('delivery_readiness_boolean', isinstance(delivery_configured, bool), delivery_configured)
+
+              second_response, second = post_once('retry')
+              check('retry_http_200', second_response.status_code == 200, second_response.status_code)
+              check('retry_idempotent_flag', second.get('idempotentReplay') is True)
+              check('retry_same_request_id', second.get('requestId') == request_id)
+              check('retry_same_record_sha', second.get('proofRecordSha256') == record_sha)
+              check('retry_same_capability', second.get('proofReviewToken') == review_token)
+              check('retry_same_delivery_readiness', second.get('proofDeliveryConfigured') == delivery_configured)
+
+              missing = requests.get(
+                  f'{base}/access-review?{urlencode({"id": request_id, "proof": "missing"})}',
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              check('missing_token_denied_404', missing.status_code == 404, missing.status_code)
+              check('missing_token_no_record_leak', request_id not in missing.text and synthetic_email not in missing.text and synthetic_question not in missing.text)
+
+              wrong = requests.get(
+                  f'{base}/access-review?{urlencode({"id": request_id, "token": "x" * 43, "proof": "wrong"})}',
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              check('wrong_token_denied_404', wrong.status_code == 404, wrong.status_code)
+              check('wrong_token_no_record_leak', request_id not in wrong.text and synthetic_email not in wrong.text and synthetic_question not in wrong.text)
+
+              authorized = requests.Session()
+              exchange = authorized.get(
+                  review_url,
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              location = exchange.headers.get('location', '')
+              set_cookie = exchange.headers.get('set-cookie', '')
+              check('capability_exchange_redirect', exchange.status_code in (307, 308), exchange.status_code)
+              check('token_removed_from_location', bool(location) and 'token=' not in location and request_id in location, location)
+              check('host_cookie_name', '__Host-bhrigu-access-review=' in set_cookie)
+              check('host_cookie_path_root', 'Path=/' in set_cookie and 'Path=/access-review' not in set_cookie)
+              check('host_cookie_httponly', 'HttpOnly' in set_cookie)
+              check('host_cookie_secure', 'Secure' in set_cookie)
+              check('host_cookie_samesite_strict', 'SameSite=Strict' in set_cookie)
+
+              token_free_url = urljoin(base, location)
+              private_page = authorized.get(
+                  token_free_url,
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              check('authorized_private_review_200', private_page.status_code == 200, private_page.status_code)
+              check('authorized_request_visible', request_id in private_page.text)
+              check('authorized_non_personal_payload_visible', synthetic_name in private_page.text and synthetic_email in private_page.text and synthetic_question in private_page.text)
+              check('capability_not_rendered', review_token not in private_page.text)
+              cache_control = private_page.headers.get('cache-control', '').lower()
+              robots = private_page.headers.get('x-robots-tag', '').lower()
+              referrer = private_page.headers.get('referrer-policy', '').lower()
+              csp = private_page.headers.get('content-security-policy', '').lower()
+              check('private_review_no_store', 'no-store' in cache_control and 'private' in cache_control, cache_control)
+              check('private_review_noindex', 'noindex' in robots and 'nofollow' in robots, robots)
+              check('private_review_no_referrer', referrer == 'no-referrer', referrer)
+              check('private_review_no_frames', "frame-ancestors 'none'" in csp, csp)
+
+              anonymous = requests.get(
+                  token_free_url,
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              check('token_free_without_cookie_denied', anonymous.status_code == 404, anonymous.status_code)
+              check('anonymous_no_record_leak', request_id not in anonymous.text and synthetic_email not in anonymous.text and synthetic_question not in anonymous.text)
+
+              fresh = requests.Session()
+              for cookie in authorized.cookies:
+                  fresh.cookies.set(cookie.name, cookie.value, domain=cookie.domain, path=cookie.path)
+              fresh_url = f'{token_free_url}&proof_fresh={int(time.time())}'
+              time.sleep(2)
+              fresh_response = fresh.get(
+                  fresh_url,
+                  timeout=30,
+                  allow_redirects=False,
+                  headers={'Cache-Control': 'no-cache', 'Pragma': 'no-cache', 'User-Agent': headers['User-Agent']},
+              )
+              check('fresh_session_private_retrieval_200', fresh_response.status_code == 200, fresh_response.status_code)
+              check('fresh_session_same_immutable_record', request_id in fresh_response.text and synthetic_question in fresh_response.text)
+
+              report['measurements']['request_id'] = request_id
+              report['measurements']['record_sha256'] = record_sha
+              report['measurements']['review_token_sha256'] = hashlib.sha256(review_token.encode()).hexdigest()
+              report['measurements']['delivery_configured'] = delivery_configured
+
+              # Full readiness requires both durable private storage and mandatory
+              # real-request delivery configuration. No email is sent by this proof.
+              check('real_request_delivery_configured', delivery_configured is True, delivery_configured)
+
+          report['status'] = 'PASS' if not report['failures'] else 'FAIL'
+          Path('artifacts/private-intake-preview-proof.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          Path('artifacts/private-intake-preview-proof-summary.txt').write_text(
+              '\n'.join([
+                  f"STATUS={report['status']}",
+                  f"EXPECTED_PRODUCT_HEAD_SHA={expected_head}",
+                  f"FAILURES={','.join(report['failures']) or 'NONE'}",
+                  f"DELIVERY_CONFIGURED={report['measurements'].get('delivery_configured')}",
+              ]) + '\n',
+              encoding='utf-8',
+          )
+          if report['failures']:
+              raise SystemExit('PRIVATE_INTAKE_PREVIEW_PROOF_FAILURES=' + ','.join(report['failures']))
+          print('PRIVATE_INTAKE_PREVIEW_PROOF=PASS')
+          PY
+
+      - name: Upload preview proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-private-intake-preview-proof-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
