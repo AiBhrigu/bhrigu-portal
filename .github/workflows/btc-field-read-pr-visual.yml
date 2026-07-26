@@ -7,6 +7,7 @@ on:
       - "pages/crypto-astro/btc.tsx"
       - "components/btc/**"
       - "lib/btc-public-language-contract.ts"
+      - "lib/btc-executive-question-language.ts"
       - "lib/btc-public-question-bridge.ts"
       - "lib/btc-existing-glyph-canon.ts"
       - "lib/btc-bilingual-surface-style.ts"
