@@ -1,0 +1,119 @@
+name: BHRIGU Durable Private Intake PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/access-private-intake-pr.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'lib/access-private-intake.ts'
+      - 'lib/access-submit-delivery-runtime.ts'
+      - 'pages/api/access/submit.ts'
+      - 'pages/access-review.tsx'
+      - 'scripts/run-access-private-intake-fixture.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-durable-private-intake-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  durable-private-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Lock exact eight-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' \
+            '.github/workflows/access-private-intake-pr.yml' \
+            'lib/access-private-intake.ts' \
+            'lib/access-submit-delivery-runtime.ts' \
+            'package-lock.json' \
+            'package.json' \
+            'pages/access-review.tsx' \
+            'pages/api/access/submit.ts' \
+            'scripts/run-access-private-intake-fixture.mjs' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo ACCESS_PRIVATE_INTAKE_EXACT_SCOPE=PASS
+
+      - name: Install exact dependency graph
+        run: npm ci
+
+      - name: Run durable private intake fixture
+        run: npm run verify:access-private-intake
+
+      - name: Verify fail-closed source contract
+        run: |
+          set -euo pipefail
+          grep -Fq '"@vercel/blob": "2.6.1"' package.json
+          grep -Fq 'access: "private"' lib/access-private-intake.ts
+          grep -Fq 'allowOverwrite: false' lib/access-private-intake.ts
+          grep -Fq 'getAuthorizedPrivateAccessSubmission' pages/access-review.tsx
+          grep -Fq 'noindex, nofollow, noarchive' pages/access-review.tsx
+          grep -Fq 'savePrivateAccessSubmission' pages/api/access/submit.ts
+          grep -Fq 'resolveAccessDeliveryConfig' pages/api/access/submit.ts
+          ! grep -Fq 'fileAccessSubmissionPersistenceAdapter' pages/api/access/submit.ts
+          ! grep -Fq 'listAccessReviewRecords' pages/access-review.tsx
+          ! git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '(^pages/crypto-astro/|^lib/btc-|payment|subscription|forecast|trading|orion)' 
+          echo ACCESS_PRIVATE_INTAKE_FAIL_CLOSED_SOURCE=PASS
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Write evidence report
+        if: always()
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = {
+              'schema_version': 'bhrigu_durable_private_intake_pr_proof_v0_1',
+              'head_sha': os.environ['HEAD_SHA'],
+              'job_status': os.environ['JOB_STATUS'],
+              'exact_changed_files': 8,
+              'storage_provider': 'vercel_private_blob',
+              'immutable_record': True,
+              'idempotent_retry': True,
+              'operator_review_mode': 'capability_only',
+              'public_list_mode': False,
+              'operator_notification_required': True,
+              'client_acknowledgement_required': True,
+              'payment_opened': False,
+              'subscription_opened': False,
+          }
+          Path('artifacts/durable-private-intake-pr-proof.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-durable-private-intake-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
