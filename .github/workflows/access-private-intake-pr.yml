@@ -1,0 +1,184 @@
+name: BHRIGU Durable Private Intake PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/access-private-intake-pr.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'lib/access-private-intake.ts'
+      - 'lib/access-submit-delivery-runtime.ts'
+      - 'pages/api/access/submit.ts'
+      - 'pages/access-review.tsx'
+      - 'scripts/run-access-private-intake-fixture.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-durable-private-intake-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  durable-private-intake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Lock exact eight-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' \
+            '.github/workflows/access-private-intake-pr.yml' \
+            'lib/access-private-intake.ts' \
+            'lib/access-submit-delivery-runtime.ts' \
+            'package-lock.json' \
+            'package.json' \
+            'pages/access-review.tsx' \
+            'pages/api/access/submit.ts' \
+            'scripts/run-access-private-intake-fixture.mjs' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo ACCESS_PRIVATE_INTAKE_EXACT_SCOPE=PASS
+
+      - name: Install exact dependency graph
+        run: npm ci
+
+      - name: Compare production dependency audit with accepted base
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm audit --omit=dev --json > artifacts/npm-audit-head.json || true
+          BASE_DIR=$(mktemp -d)
+          git worktree add --detach "$BASE_DIR" "$BASE_SHA"
+          (cd "$BASE_DIR" && npm audit --omit=dev --json > "$GITHUB_WORKSPACE/artifacts/npm-audit-base.json" || true)
+          git worktree remove --force "$BASE_DIR"
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          base = json.loads(Path('artifacts/npm-audit-base.json').read_text())
+          head = json.loads(Path('artifacts/npm-audit-head.json').read_text())
+
+          def findings(payload):
+              out = set()
+              for package, item in (payload.get('vulnerabilities') or {}).items():
+                  for via in item.get('via') or []:
+                      if isinstance(via, dict):
+                          identity = via.get('source') or via.get('url') or via.get('title') or 'unknown'
+                          severity = via.get('severity') or item.get('severity') or 'unknown'
+                      else:
+                          identity = str(via)
+                          severity = item.get('severity') or 'unknown'
+                      out.add((package, str(identity), str(severity)))
+              return out
+
+          base_findings = findings(base)
+          head_findings = findings(head)
+          introduced = sorted(head_findings - base_findings)
+          metadata = head.get('metadata', {}).get('vulnerabilities', {})
+          critical = int(metadata.get('critical') or 0)
+          report = {
+              'schema_version': 'bhrigu_private_intake_dependency_audit_v0_1',
+              'base_findings': sorted(base_findings),
+              'head_findings': sorted(head_findings),
+              'introduced_findings': introduced,
+              'head_vulnerability_counts': metadata,
+              'critical_count': critical,
+              'status': 'PASS' if not introduced and critical == 0 else 'FAIL',
+          }
+          Path('artifacts/npm-audit-comparison.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          if introduced:
+              raise SystemExit(f'NEW_PRODUCTION_DEPENDENCY_VULNERABILITIES={introduced}')
+          if critical:
+              raise SystemExit(f'CRITICAL_PRODUCTION_DEPENDENCY_VULNERABILITIES={critical}')
+          print('ACCESS_PRIVATE_INTAKE_DEPENDENCY_AUDIT=PASS')
+          PY
+
+      - name: Run durable private intake fixture
+        run: npm run verify:access-private-intake
+
+      - name: Verify fail-closed source and browser-security contract
+        run: |
+          set -euo pipefail
+          grep -Fq '"@vercel/blob": "2.6.1"' package.json
+          grep -Fq 'access: "private"' lib/access-private-intake.ts
+          grep -Fq 'allowOverwrite: false' lib/access-private-intake.ts
+          grep -Fq 'getAuthorizedPrivateAccessSubmission' pages/access-review.tsx
+          grep -Fq 'noindex, nofollow, noarchive' pages/access-review.tsx
+          grep -Fq 'const COOKIE_NAME = "__Host-bhrigu-access-review"' pages/access-review.tsx
+          grep -Fq 'Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict' pages/access-review.tsx
+          ! grep -Fq 'Path=/access-review' pages/access-review.tsx
+          grep -Fq 'Referrer-Policy", "no-referrer"' pages/access-review.tsx
+          grep -Fq "frame-ancestors 'none'" pages/access-review.tsx
+          grep -Fq 'savePrivateAccessSubmission' pages/api/access/submit.ts
+          grep -Fq 'resolveAccessDeliveryConfig' pages/api/access/submit.ts
+          ! grep -Fq 'fileAccessSubmissionPersistenceAdapter' pages/api/access/submit.ts
+          ! grep -Fq 'listAccessReviewRecords' pages/access-review.tsx
+          ! git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -E '(^pages/crypto-astro/|^lib/btc-|payment|subscription|forecast|trading|orion)'
+          echo ACCESS_PRIVATE_INTAKE_FAIL_CLOSED_SOURCE=PASS
+          echo ACCESS_PRIVATE_REVIEW_HOST_COOKIE=PASS
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Write evidence report
+        if: always()
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          audit_path = Path('artifacts/npm-audit-comparison.json')
+          audit = json.loads(audit_path.read_text()) if audit_path.exists() else None
+          report = {
+              'schema_version': 'bhrigu_durable_private_intake_pr_proof_v0_1',
+              'head_sha': os.environ['HEAD_SHA'],
+              'job_status': os.environ['JOB_STATUS'],
+              'exact_changed_files': 8,
+              'storage_provider': 'vercel_private_blob',
+              'immutable_record': True,
+              'idempotent_retry': True,
+              'operator_review_mode': 'capability_only',
+              'host_cookie_path': '/',
+              'public_list_mode': False,
+              'operator_notification_required': True,
+              'client_acknowledgement_required': True,
+              'dependency_audit': audit,
+              'payment_opened': False,
+              'subscription_opened': False,
+          }
+          Path('artifacts/durable-private-intake-pr-proof.json').write_text(
+              json.dumps(report, indent=2, sort_keys=True) + '\n', encoding='utf-8'
+          )
+          PY
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-durable-private-intake-pr-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
