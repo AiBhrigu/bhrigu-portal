@@ -32,26 +32,33 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: Validate exact owner request and target head
+      - name: Validate exact owner request, source ancestry, and target head
+        id: source
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
         run: |
           set -euo pipefail
+          SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
           EXPECTED='SCHEMA=access_private_intake_lockfile_request_v0_1
-          SOURCE_MASTER_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
+          SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
           EXPECTED_TARGET_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
           TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1'
           test "$ISSUE_BODY" = "$EXPECTED"
           git fetch --no-tags origin master agent/bhrigu-first-external-request-durable-private-intake-v0-1
-          test "$(git rev-parse origin/master)" = "88a7c2b27652704cc089afb87bafae8b0a9dc4f1"
+          CURRENT_MASTER_SHA=$(git rev-parse origin/master)
+          git merge-base --is-ancestor "$SOURCE_BASE_SHA" "$CURRENT_MASTER_SHA"
+          git diff --name-only "$SOURCE_BASE_SHA" "$CURRENT_MASTER_SHA" | sort > /tmp/master-delta.txt
+          printf '%s\n' '.github/workflows/access-private-intake-lockfile-helper.yml' > /tmp/expected-master-delta.txt
+          diff -u /tmp/expected-master-delta.txt /tmp/master-delta.txt
           test "$(git rev-parse HEAD)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
           test "$(git rev-parse origin/agent/bhrigu-first-external-request-durable-private-intake-v0-1)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
+          echo "current_master_sha=$CURRENT_MASTER_SHA" >> "$GITHUB_OUTPUT"
           echo LOCKFILE_HELPER_REQUEST=PASS
+          echo HELPER_ONLY_MASTER_DELTA=PASS
 
       - name: Materialize exact package lock
         run: |
           set -euo pipefail
-          cp package-lock.json /tmp/package-lock.before.json
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
           git diff --name-only | sort > /tmp/changed.txt
           printf '%s\n' 'package-lock.json' > /tmp/expected.txt
@@ -93,6 +100,8 @@ jobs:
           NEW_HEAD=$(git rev-parse HEAD)
           LOCK_SHA256=$(sha256sum package-lock.json | awk '{print $1}')
           gh issue comment "${{ github.event.issue.number }}" --body "STATUS=PASS
+          SOURCE_BASE_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
+          CURRENT_MASTER_SHA=${{ steps.source.outputs.current_master_sha }}
           TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1
           PREVIOUS_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
           NEW_HEAD_SHA=$NEW_HEAD
