@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Lock verification-only scope
         env:
@@ -41,7 +43,6 @@ jobs:
         run: |
           mkdir -p artifacts/screenshots
           python3 - <<'PY'
-          import copy
           import hashlib
           import json
           import math
@@ -133,16 +134,6 @@ jobs:
 
           def near(a, b, rel=1e-10, abs_tol=1e-8):
               return isinstance(a,(int,float)) and not isinstance(a,bool) and math.isfinite(float(a)) and math.isclose(float(a),float(b),rel_tol=rel,abs_tol=abs_tol)
-
-          def nested_values(value, key, out=None):
-              out = [] if out is None else out
-              if isinstance(value, dict):
-                  for k, v in value.items():
-                      if k == key: out.append(v)
-                      nested_values(v, key, out)
-              elif isinstance(value, list):
-                  for item in value: nested_values(item, key, out)
-              return out
 
           def parse_page(response):
               soup = BeautifulSoup(response.text, 'html.parser')
@@ -238,10 +229,7 @@ jobs:
                       'temporal_limitation':result['temporal_context']['limitation'],
                   },
               }
-              for section in result['cosmographer_read']['sections']:
-                  if section['fact_payload'] != expected[section['section_id']]:
-                      return False
-              return True
+              return all(section['fact_payload'] == expected[section['section_id']] for section in result['cosmographer_read']['sections'])
 
           outputs = {}
           for scenario in scenarios:
@@ -298,10 +286,7 @@ jobs:
                       checks['public_boundaries_exact'] = all(result['boundary'].get(k) is True for k in ('read_only','static_public_snapshot','no_trading_signal','no_forecast','no_price_target','no_investment_recommendation','backend_api_closed','runtime_closed','payment_closed','orion_core_protected')) and result['boundary'].get('formula_weights_exposed') is False
                       checks['reading_present'] = 250 <= len(reading_text) <= 20000
                       checks['no_render_tokens'] = not any(token in reading_text for token in ('undefined','NaN','[object Object]'))
-                      if scenario['locale'] == 'ru':
-                          required_labels = ('Что изменилось','Что это подтверждает','Что это ослабляет','За чем наблюдать дальше','Граница неопределённости')
-                      else:
-                          required_labels = ('What changed','What confirms it','What weakens it','Watch next','Uncertainty boundary')
+                      required_labels = ('Что изменилось','Что это подтверждает','Что это ослабляет','За чем наблюдать дальше','Граница неопределённости') if scenario['locale'] == 'ru' else ('What changed','What confirms it','What weakens it','Watch next','Uncertainty boundary')
                       checks['comprehension_labels_present'] = all(label in body_text for label in required_labels)
                       if scenario.get('safe'):
                           checks['unsafe_guidance_absent'] = not any(phrase in reading_text.lower() for phrase in ('buy now','sell now','price target is','entry point is','exit point is','guaranteed return','купить сейчас','продать сейчас','точка входа','точка выхода','ценовая цель'))
@@ -355,14 +340,12 @@ jobs:
               report['pair_checks'][label] = pair
               if not pair['pass']: report['failures'].append(f'pair:{label}')
 
-          repeat_ok = outputs['03_en_change']['signature'] == outputs['21_en_change_repeat']['signature']
-          paraphrase_ok = outputs['05_en_gravity']['facts'] == outputs['22_en_gravity_paraphrase']['facts'] and outputs['05_en_gravity']['props']['envelope']['route'] == outputs['22_en_gravity_paraphrase']['props']['envelope']['route']
           report['global_checks'] = {
               'scenario_count_24': len(report['scenarios']) == 24,
               'semantic_pair_count_8': len(report['pair_checks']) == 8,
               'ru_en_fact_parity_8_of_8': all(v['pass'] for v in report['pair_checks'].values()),
-              'exact_repeat_deterministic': repeat_ok,
-              'gravity_paraphrase_stable': paraphrase_ok,
+              'exact_repeat_deterministic': outputs['03_en_change']['signature'] == outputs['21_en_change_repeat']['signature'],
+              'gravity_paraphrase_stable': outputs['05_en_gravity']['facts'] == outputs['22_en_gravity_paraphrase']['facts'] and outputs['05_en_gravity']['props']['envelope']['route'] == outputs['22_en_gravity_paraphrase']['props']['envelope']['route'],
               'all_scenarios_pass': not report['failures'],
           }
           if not all(report['global_checks'].values()):
