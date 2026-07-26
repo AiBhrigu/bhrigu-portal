@@ -71,7 +71,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({
         "Set-Cookie",
         `${COOKIE_NAME}=${encodeURIComponent(
           `${requestId}.${queryToken}`
-        )}; Path=/access-review; Max-Age=${COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict`
+        )}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict`
       );
       return {
         redirect: {
