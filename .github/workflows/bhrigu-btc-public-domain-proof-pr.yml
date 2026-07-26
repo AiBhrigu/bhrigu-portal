@@ -1,0 +1,119 @@
+name: BHRIGU BTC Public Domain Source Proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/bhrigu-btc-public-domain-proof-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  public-domain-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify production branch source and public BTC route
+        env:
+          EXPECTED_SOURCE_SHA: 9150ce3295e943f24b5f70dcfa26d63cd5165a21
+          EXPECTED_SNAPSHOT_TIMESTAMP: 2026-07-26T10:51:12Z
+          CUSTOM_DOMAIN: https://www.bhrigu.io
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          expected_sha = os.environ["EXPECTED_SOURCE_SHA"]
+          expected_prefix = expected_sha[:12]
+          expected_snapshot = os.environ["EXPECTED_SNAPSHOT_TIMESTAMP"]
+          base = os.environ["CUSTOM_DOMAIN"].rstrip("/")
+          run_id = os.environ["RUN_ID"]
+          report = {
+              "schema_version": "bhrigu_btc_public_domain_source_proof_v0_1",
+              "expected_source_sha": expected_sha,
+              "expected_snapshot_timestamp": expected_snapshot,
+              "attempts": [],
+              "status": "FAIL",
+          }
+
+          def fetch(url):
+              request = urllib.request.Request(
+                  url,
+                  headers={
+                      "Cache-Control": "no-cache",
+                      "Pragma": "no-cache",
+                      "User-Agent": "ORION-BHRIGU-Public-Source-Proof/0.1",
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return response.geturl(), response.status, response.read().decode("utf-8")
+
+          last = None
+          for attempt in range(36):
+              probe = urllib.parse.urlencode({"lang": "en", "__orion_probe": f"{run_id}-{attempt}"})
+              current_url = f"{base}/crypto-astro/btc?{probe}"
+              future_query = urllib.parse.urlencode({
+                  "lang": "en",
+                  "q": "How does the selected date change temporal pressure?",
+                  "d": "2030-01-01",
+                  "__orion_probe": f"{run_id}-{attempt}",
+              })
+              future_url = f"{base}/crypto-astro/btc?{future_query}"
+              try:
+                  final_current, current_status, current_html = fetch(current_url)
+                  final_future, future_status, future_html = fetch(future_url)
+                  checks = {
+                      "current_http_200": current_status == 200,
+                      "future_http_200": future_status == 200,
+                      "current_no_cross_route_redirect": urllib.parse.urlparse(final_current).path == "/crypto-astro/btc",
+                      "future_no_cross_route_redirect": urllib.parse.urlparse(final_future).path == "/crypto-astro/btc",
+                      "main_source_attribute": f'data-deployment-source-sha="{expected_sha}"' in current_html,
+                      "head_source_meta": f'name="btc-deployment-source-sha" content="{expected_sha}"' in current_html,
+                      "visible_source_prefix": expected_prefix in current_html,
+                      "legacy_shell_absent": "Crypto-Astro · first live corridor" not in current_html,
+                      "new_field_navigation_present": "BTC Field Read" in current_html and "Ask one BTC field question" in current_html,
+                      "snapshot_timestamp_present": expected_snapshot in current_html,
+                      "future_observation_present": "01 Jan 2030" in future_html,
+                      "future_no_forecast_boundary": "no forecast" in future_html.lower() and "no future price" in future_html.lower(),
+                      "future_snapshot_immutable": expected_snapshot in future_html,
+                  }
+                  last = {
+                      "attempt": attempt + 1,
+                      "current_final_url": final_current,
+                      "future_final_url": final_future,
+                      "checks": checks,
+                      "failures": [key for key, value in checks.items() if not value],
+                  }
+                  report["attempts"].append(last)
+                  if not last["failures"]:
+                      report["status"] = "PASS"
+                      break
+              except Exception as exc:
+                  last = {"attempt": attempt + 1, "error": str(exc)}
+                  report["attempts"].append(last)
+              if attempt < 35:
+                  time.sleep(5)
+
+          Path("artifacts/bhrigu-btc-public-domain-source-proof.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(last, indent=2, sort_keys=True))
+          if report["status"] != "PASS":
+              raise SystemExit("BHRIGU_BTC_PUBLIC_DOMAIN_SOURCE_ALIGNMENT=FAIL")
+          print(f"BHRIGU_BTC_PUBLIC_DOMAIN_SOURCE_ALIGNMENT=PASS source_sha={expected_sha}")
+          PY
+
+      - name: Upload public-domain proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-btc-public-domain-source-proof-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
