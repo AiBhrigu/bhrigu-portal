@@ -64,6 +64,26 @@ jobs:
           cp /tmp/btc-field-read.log artifacts/preview.log
           cat /tmp/btc-field-read.log
           exit 1
+      - name: Verify deployment source SHA binding
+        run: |
+          python3 - <<'PY'
+          import os
+          from urllib.request import urlopen
+
+          expected = os.environ["GITHUB_SHA"]
+          if len(expected) != 40:
+              raise SystemExit(f"invalid GITHUB_SHA: {expected!r}")
+          html = urlopen("http://127.0.0.1:3000/crypto-astro/btc?lang=en", timeout=20).read().decode("utf-8")
+          checks = {
+              "main_attribute": f'data-deployment-source-sha="{expected}"' in html,
+              "head_meta": f'name="btc-deployment-source-sha" content="{expected}"' in html,
+              "visible_short_sha": expected[:12] in html,
+          }
+          failures = [name for name, passed in checks.items() if not passed]
+          if failures:
+              raise SystemExit(f"deployment source SHA binding failed: {failures}")
+          print(f"BTC_DEPLOYMENT_SOURCE_SHA_BINDING=PASS source_sha={expected}")
+          PY
       - name: Verify bilingual membrane, native glyph binding, Φ geometry and mobile clearance
         run: python3 scripts/verify-btc-bilingual-surface.py
       - name: Upload evidence

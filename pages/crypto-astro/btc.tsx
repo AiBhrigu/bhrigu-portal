@@ -26,8 +26,13 @@ import { factLine, formatBtcSnapshotTruth, sectionTitle } from "../../lib/btc-pu
 type Failure={code:BtcFailureCode;message:string;last_verified_at_utc:string|null};
 type EnvelopeFailure={code:BtcMarketEnvelopeFailure["code"];message:string;last_verified_at_utc:string|null};
 type SourceContext={state:FreshnessState;generated_at_utc:string|null;age_hours:number|null;proof_available:boolean};
-type Props={result:BtcPublicSnapshot|null;failure:Failure|null;envelope:BtcMarketEnvelope|null;envelopeFailure:EnvelopeFailure|null;sourceContext:SourceContext;initialQuestion:string;initialDate:string;locale:BtcPublicLocale;localeSource:BtcLocaleSource};
+type Props={result:BtcPublicSnapshot|null;failure:Failure|null;envelope:BtcMarketEnvelope|null;envelopeFailure:EnvelopeFailure|null;sourceContext:SourceContext;initialQuestion:string;initialDate:string;locale:BtcPublicLocale;localeSource:BtcLocaleSource;deploymentSourceSha:string|null};
 const first=(v:string|string[]|undefined)=>Array.isArray(v)?v[0]??"":v??"";
+
+function deploymentSourceSha():string|null{
+ const value=process.env.VERCEL_GIT_COMMIT_SHA??process.env.GITHUB_SHA??null;
+ return value&&/^[0-9a-f]{40}$/i.test(value)?value:null;
+}
 
 function failureAgeHours(value:string|null):number|null{
  if(!value)return null;const generated=new Date(value).getTime(),now=Date.now();if(!Number.isFinite(generated)||generated>now)return null;return (now-generated)/3600000;
@@ -49,7 +54,7 @@ export const getServerSideProps:GetServerSideProps<Props>=async({query})=>{
  }else{
   sourceContext={state:source.freshness,generated_at_utc:source.snapshot.generated_at_utc,age_hours:source.age_hours,proof_available:true};
  }
- const empty:Props={result:null,failure:null,envelope:null,envelopeFailure:null,sourceContext,initialQuestion:"",initialDate,locale:resolved.locale,localeSource:resolved.source};
+ const empty:Props={result:null,failure:null,envelope:null,envelopeFailure:null,sourceContext,initialQuestion:"",initialDate,locale:resolved.locale,localeSource:resolved.source,deploymentSourceSha:deploymentSourceSha()};
  if(!initialQuestion)return{props:empty};
  if(source.ok===false)return{props:{...empty,initialQuestion,failure:{code:source.code,message:source.message,last_verified_at_utc:source.last_verified_at_utc??null}}};
  const coreQuestion=canonicalizeBtcQuestionForRouter(initialQuestion);const composed=await composeBtcPublicSnapshot(source,{question:coreQuestion,date:initialDate||undefined});
@@ -57,9 +62,9 @@ export const getServerSideProps:GetServerSideProps<Props>=async({query})=>{
  const result:BtcPublicSnapshot={...composed.value,question:{...composed.value.question,raw:initialQuestion,normalized:normalizeBtcDisplayQuestion(initialQuestion)}};
  const market=await loadBtcMarketEnvelope(coreQuestion,{temporal:{state:result.temporal_context.state,label:result.temporal_context.label,harmonic_tension:result.aspect_pressure.harmonic_tension}});
  if(market.ok===false){
-  return{props:{result,failure:null,envelope:null,envelopeFailure:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null},sourceContext,initialQuestion,initialDate,locale:resolved.locale,localeSource:resolved.source}};
+  return{props:{...empty,result,initialQuestion,envelopeFailure:{code:market.code,message:market.message,last_verified_at_utc:market.last_verified_at_utc??null}}};
  }
- return{props:{result,failure:null,envelope:applyFreshnessTruth(market.value,source.freshness),envelopeFailure:null,sourceContext,initialQuestion,initialDate,locale:resolved.locale,localeSource:resolved.source}};
+ return{props:{...empty,result,envelope:applyFreshnessTruth(market.value,source.freshness),initialQuestion}};
 };
 
 function BoundedFallback({locale,result,envelopeFailure}:{locale:BtcPublicLocale;result:BtcPublicSnapshot;envelopeFailure:EnvelopeFailure|null}){
@@ -69,7 +74,7 @@ function BoundedFallback({locale,result,envelopeFailure}:{locale:BtcPublicLocale
 export default function Page(p:Props){
  const c=getBtcPublicCopy(p.locale),inputFailure=p.failure?.code==="invalid_input";
  const truth=formatBtcSnapshotTruth(p.locale,p.sourceContext.state,p.sourceContext.generated_at_utc,p.sourceContext.age_hours,p.sourceContext.proof_available);
- return<><Head><title>{c.pageTitle}</title><meta name="description" content={c.metaDescription}/><meta name="btc-glyph-canon-sha256" content={MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256}/></Head><style dangerouslySetInnerHTML={{__html:BTC_BILINGUAL_SURFACE_CSS}}/><style dangerouslySetInnerHTML={{__html:"html{scroll-behavior:auto!important}"}}/><main lang={p.locale} data-locale={p.locale} data-locale-source={p.localeSource}><section className="hero"><p className="eyebrow">{c.heroEyebrow}</p><h1>{c.heroTitle}</h1><p>{c.heroLead}</p></section><BtcFieldNavigation locale={p.locale}/><section className="snapshotTruthStrip" data-freshness-state={p.sourceContext.state} data-source-generated-at={p.sourceContext.generated_at_utc??""} aria-label={truth.stateLabel}><strong>{truth.stateLabel}</strong><p>{truth.snapshotLine}</p>{truth.ageLine&&<p>{truth.ageLine}</p>}<p>{truth.proofLine}</p></section><BtcQuestionMembrane locale={p.locale} initialQuestion={p.initialQuestion} initialDate={p.initialDate} result={p.result}/>
+ return<><Head><title>{c.pageTitle}</title><meta name="description" content={c.metaDescription}/><meta name="btc-glyph-canon-sha256" content={MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256}/><meta name="btc-deployment-source-sha" content={p.deploymentSourceSha??""}/></Head><style dangerouslySetInnerHTML={{__html:BTC_BILINGUAL_SURFACE_CSS}}/><style dangerouslySetInnerHTML={{__html:"html{scroll-behavior:auto!important}"}}/><main lang={p.locale} data-locale={p.locale} data-locale-source={p.localeSource} data-deployment-source-sha={p.deploymentSourceSha??""}><section className="hero"><p className="eyebrow">{c.heroEyebrow}</p><h1>{c.heroTitle}</h1><p>{c.heroLead}</p></section><BtcFieldNavigation locale={p.locale}/><section className="snapshotTruthStrip" data-freshness-state={p.sourceContext.state} data-source-generated-at={p.sourceContext.generated_at_utc??""} aria-label={truth.stateLabel}><strong>{truth.stateLabel}</strong><p>{truth.snapshotLine}</p>{truth.ageLine&&<p>{truth.ageLine}</p>}<p>{truth.proofLine}</p>{p.deploymentSourceSha&&<p>{p.locale==="ru"?"Источник публикации":"Deployment source"} · <code>{p.deploymentSourceSha.slice(0,12)}</code></p>}</section><BtcQuestionMembrane locale={p.locale} initialQuestion={p.initialQuestion} initialDate={p.initialDate} result={p.result}/>
  {p.failure&&<section className="failure" role="alert"><p className="eyebrow">{inputFailure?c.questionCheck:c.sourceFailure}</p><h2>{inputFailure?c.adjustQuestion:c.fieldUnavailable}</h2><p>{formatBtcFailureMessage(p.locale,p.failure.code,p.failure.message)}</p>{p.failure.last_verified_at_utc&&<p>{c.lastVerified}: {formatBtcUtcTimestamp(p.locale,p.failure.last_verified_at_utc)}</p>}<details><summary>{c.technicalDetails}</summary><code>{p.failure.code}</code></details></section>}
  {p.result&&<section className="reading" aria-label={p.locale==="ru"?"Чтение Космографа BTC":"BTC Cosmographer reading"}>{p.envelope?<><BtcObservationZone locale={p.locale} envelope={p.envelope} result={p.result}/><BtcPhiZone locale={p.locale} envelope={p.envelope}/><BtcEvidenceZone locale={p.locale} envelope={p.envelope} result={p.result}/></>:<BoundedFallback locale={p.locale} result={p.result} envelopeFailure={p.envelopeFailure}/>}</section>}<div className="closingField" aria-hidden="true"><span/></div></main></>;
 }
