@@ -66,11 +66,27 @@ export default async function handler(
 
     const proofHeader = req.headers["x-bhrigu-intake-proof"];
     const syntheticProof = isSyntheticAccessProof(validation.data, proofHeader);
+    let deliveryConfigured = false;
 
     // A real client request must never be accepted before both mandatory
     // delivery destinations are configured. Synthetic proof deliberately skips
-    // external email while exercising the exact storage and private retrieval path.
-    if (!syntheticProof) resolveAccessDeliveryConfig();
+    // external email while reporting only a non-secret readiness boolean.
+    if (syntheticProof) {
+      try {
+        resolveAccessDeliveryConfig();
+        deliveryConfigured = true;
+      } catch (error) {
+        if (
+          !(error instanceof AccessDeliveryError) ||
+          error.code !== "delivery_not_configured"
+        ) {
+          throw error;
+        }
+      }
+    } else {
+      resolveAccessDeliveryConfig();
+      deliveryConfigured = true;
+    }
 
     const idempotencySha256 = buildAccessIdempotencySha256(validation.data);
     requestId = buildAccessRequestId(validation.data, idempotencySha256);
@@ -145,8 +161,13 @@ export default async function handler(
 
     if (syntheticProof) {
       response.proofReviewToken = envelope.review_token;
-      response.proofReviewUrl = buildReviewUrl(req, envelope.record.requestId, envelope.review_token);
+      response.proofReviewUrl = buildReviewUrl(
+        req,
+        envelope.record.requestId,
+        envelope.review_token
+      );
       response.proofRecordSha256 = envelope.record_sha256;
+      response.proofDeliveryConfigured = deliveryConfigured;
     }
 
     return res.status(created ? 201 : 200).json(response);
@@ -186,8 +207,12 @@ function buildReviewUrl(
   reviewToken: string
 ): string {
   const forwardedProto = firstHeader(req.headers["x-forwarded-proto"]);
-  const protocol = forwardedProto || (process.env.NODE_ENV === "production" ? "https" : "http");
-  const host = firstHeader(req.headers["x-forwarded-host"]) || req.headers.host || "localhost:3000";
+  const protocol =
+    forwardedProto || (process.env.NODE_ENV === "production" ? "https" : "http");
+  const host =
+    firstHeader(req.headers["x-forwarded-host"]) ||
+    req.headers.host ||
+    "localhost:3000";
   return `${protocol}://${host}/access-review?id=${encodeURIComponent(
     requestId
   )}&token=${encodeURIComponent(reviewToken)}`;
