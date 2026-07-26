@@ -1,0 +1,366 @@
+name: BTC Corridor 24Q Targeted Repair Proof
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/btc-corridor-24q-repair-proof.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-corridor-24q-repair-proof-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PRODUCT_SHA: d400c41e89d73684ddf1e412cb76d77b640f47a8
+      PRODUCT_PR: "72"
+    steps:
+      - name: Checkout verifier
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lock verification-only scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" > /tmp/changed.txt
+          printf '%s\n' '.github/workflows/btc-corridor-24q-repair-proof.yml' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo BTC_CORRIDOR_24Q_REPAIR_VERIFICATION_ONLY_SCOPE=PASS
+
+      - name: Checkout exact product head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PRODUCT_SHA }}
+          path: product
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: product/package-lock.json
+
+      - name: Build exact product head
+        run: |
+          set -euo pipefail
+          cd product
+          test "$(git rev-parse HEAD)" = "$PRODUCT_SHA"
+          npm ci
+          VERCEL_GIT_COMMIT_SHA="$PRODUCT_SHA" npm run build
+
+      - name: Install proof dependencies
+        run: python3 -m pip install --disable-pip-version-check requests==2.32.4 beautifulsoup4==4.13.4 selenium==4.34.2
+
+      - name: Start exact product preview
+        run: |
+          set -euo pipefail
+          cd product
+          VERCEL_GIT_COMMIT_SHA="$PRODUCT_SHA" npm run start -- -p 3000 >/tmp/btc-24q-product.log 2>&1 &
+          echo $! >/tmp/btc-24q-product.pid
+          for attempt in {1..60}; do
+            curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-24q-product.log
+          exit 1
+
+      - name: Execute repaired 24-question baseline
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/screenshots
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import math
+          import re
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import urlencode
+
+          import requests
+          from bs4 import BeautifulSoup
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          NODE = "BTC_CORRIDOR_RU_GRAVITY_SYNONYM_AND_QUESTION_SPECIFIC_EXECUTIVE_READ_TARGETED_REPAIR_PROOF_v0_1"
+          BASE = "http://127.0.0.1:3000/crypto-astro/btc"
+          PRODUCER = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json"
+          PRODUCT_SHA = "d400c41e89d73684ddf1e412cb76d77b640f47a8"
+
+          modules = {
+              "general_btc_field": ["market_structure", "change_event_memory"],
+              "change_memory": ["change_event_memory", "market_structure"],
+              "btc_gravity": ["market_structure", "change_event_memory"],
+              "liquidity": ["liquidity_membrane", "market_structure"],
+              "market_participation_rotation": ["market_structure", "change_event_memory"],
+              "market_structure": ["market_structure", "liquidity_membrane"],
+              "temporal_pressure": ["temporal_context", "change_event_memory"],
+          }
+
+          scenarios = [
+              {"id":"01_en_orientation","locale":"en","question":"What is happening around BTC now and why does it matter?","class":"general_btc_field","lens":"general"},
+              {"id":"02_ru_orientation","locale":"ru","question":"Что сейчас происходит вокруг BTC и почему это важно?","class":"general_btc_field","lens":"general"},
+              {"id":"03_en_change","locale":"en","question":"What changed since the previous accepted snapshot?","class":"change_memory","lens":"general"},
+              {"id":"04_ru_change","locale":"ru","question":"Что изменилось с предыдущего принятого снимка?","class":"change_memory","lens":"general"},
+              {"id":"05_en_gravity","locale":"en","question":"What does current BTC dominance mean for the wider market?","class":"btc_gravity","lens":"market_gravity"},
+              {"id":"06_ru_gravity","locale":"ru","question":"Что означает текущая доминация BTC для более широкого рынка?","class":"btc_gravity","lens":"market_gravity"},
+              {"id":"07_en_liquidity","locale":"en","question":"Do stablecoin share, DeFi TVL and DEX volume confirm current BTC liquidity conditions?","class":"liquidity","lens":"market_structure"},
+              {"id":"08_ru_liquidity","locale":"ru","question":"Подтверждают ли доля стейблкоинов, DeFi TVL и объём DEX текущие условия ликвидности BTC?","class":"liquidity","lens":"market_structure"},
+              {"id":"09_en_participation","locale":"en","question":"What do altcoin breadth, rotation and wider market participation show around BTC?","class":"market_participation_rotation","lens":"market_structure"},
+              {"id":"10_ru_participation","locale":"ru","question":"Что показывают ширина альткоинов, ротация и участие широкого рынка вокруг BTC?","class":"market_participation_rotation","lens":"market_structure"},
+              {"id":"11_en_structure","locale":"en","question":"Do regime, Market Field Score and market cap confirm the current BTC structure?","class":"market_structure","lens":"market_structure"},
+              {"id":"12_ru_structure","locale":"ru","question":"Подтверждают ли режим, Market Field Score и капитализация текущую структуру BTC?","class":"market_structure","lens":"market_structure"},
+              {"id":"13_en_temporal","locale":"en","question":"How does the selected date change the BTC observation context and temporal pressure?","class":"temporal_pressure","lens":"pressure_context","date":"2026-07-27"},
+              {"id":"14_ru_temporal","locale":"ru","question":"Как выбранная дата меняет контекст наблюдения BTC и временное давление?","class":"temporal_pressure","lens":"pressure_context","date":"2026-07-27"},
+              {"id":"15_en_evidence","locale":"en","question":"Which facts and sources support the current BTC read?","class":"general_btc_field","lens":"general"},
+              {"id":"16_ru_evidence","locale":"ru","question":"Какие факты и источники подтверждают текущее чтение BTC?","class":"general_btc_field","lens":"general"},
+              {"id":"17_en_buy_sell","locale":"en","question":"Should I buy or sell BTC now?","class":"general_btc_field","lens":"general","safe":True},
+              {"id":"18_ru_buy_sell","locale":"ru","question":"Стоит ли мне купить или продать BTC сейчас?","class":"general_btc_field","lens":"general","safe":True},
+              {"id":"19_en_price_target","locale":"en","question":"Give me an exact BTC price target and entry point.","class":"general_btc_field","lens":"general","safe":True},
+              {"id":"20_ru_entry_exit","locale":"ru","question":"Дай точку входа и выхода по BTC.","class":"general_btc_field","lens":"general","safe":True},
+              {"id":"21_en_change_repeat","locale":"en","question":"What changed since the previous accepted snapshot?","class":"change_memory","lens":"general","repeat_of":"03_en_change"},
+              {"id":"22_en_gravity_paraphrase","locale":"en","question":"How should I understand Bitcoin market leadership and gravity right now?","class":"btc_gravity","lens":"market_gravity","paraphrase_of":"05_en_gravity"},
+              {"id":"23_en_future_temporal","locale":"en","question":"How does the selected date change the BTC observation context and temporal pressure?","class":"temporal_pressure","lens":"pressure_context","date":"2030-01-01","future":True},
+              {"id":"24_invalid_date","locale":"en","question":"How does this date change the BTC observation context?","invalid":True,"date":"2026-02-30"},
+          ]
+
+          session = requests.Session()
+          session.headers.update({"User-Agent":"BHRIGU-BTC-24Q-targeted-repair-proof/0.1","Cache-Control":"no-cache"})
+          producer_response = session.get(PRODUCER, timeout=30)
+          producer_response.raise_for_status()
+          producer = producer_response.json()
+          expected = {
+              "timestamp": producer["generated_at_utc"],
+              "price": producer["public_samples"]["assets"]["BTC"]["price_usd"],
+              "dominance": producer["market_reality"]["btc_dominance_pct"],
+              "field_score": producer["field_output"]["market_field_score"],
+              "stable_share": producer["market_reality"]["stablecoin_share_pct"],
+              "breadth": producer["altcoin_rotation"]["alt_breadth_24h_pct"],
+              "tvl": producer["liquidity_tvl"]["defi_tvl_usd"],
+          }
+
+          def near(a, b):
+              return isinstance(a, (int, float)) and not isinstance(a, bool) and math.isclose(float(a), float(b), rel_tol=1e-10, abs_tol=1e-8)
+
+          def url_for(case):
+              params = {"q":case["question"], "lang":case["locale"], "proof":case["id"]}
+              if case.get("date"): params["d"] = case["date"]
+              return BASE + "?" + urlencode(params)
+
+          def parse(response):
+              soup = BeautifulSoup(response.text, "html.parser")
+              script = soup.find("script", id="__NEXT_DATA__")
+              if script is None or not script.string:
+                  raise AssertionError("NEXT_DATA_MISSING")
+              props = json.loads(script.string)["props"]["pageProps"]
+              lead_node = soup.select_one(".executiveLead")
+              watch = ""
+              for row in soup.select(".executiveContext dl > div"):
+                  dt = row.select_one("dt")
+                  dd = row.select_one("dd")
+                  if dt and dd and dt.get_text(" ", strip=True) in ("Watch next", "За чем наблюдать дальше"):
+                      watch = re.sub(r"\s+", " ", dd.get_text(" ", strip=True))
+              lead = re.sub(r"\s+", " ", lead_node.get_text(" ", strip=True)) if lead_node else ""
+              return props, lead, watch
+
+          def fact_view(result, envelope):
+              return {
+                  "market_snapshot": result["market_snapshot"],
+                  "btc_gravity": result["btc_gravity"],
+                  "market_structure": result["market_structure"],
+                  "aspect_pressure": result["aspect_pressure"],
+                  "temporal_context": result["temporal_context"],
+                  "watch_conditions": result["watch_conditions"],
+                  "source_proof": result["source_proof"],
+                  "boundary": result["boundary"],
+                  "envelope_current": envelope["current"],
+                  "envelope_memory": envelope["memory"],
+                  "envelope_source_proof": envelope["source_proof"],
+                  "envelope_boundary": envelope["boundary"],
+              }
+
+          def signature(result, envelope):
+              payload = {
+                  "question": {
+                      "lens": result["question"]["lens"],
+                      "safe_reframed": result["question"]["safe_reframed"],
+                      "geometry": result["question"]["geometry"],
+                  },
+                  "facts": fact_view(result, envelope),
+                  "read": result["cosmographer_read"],
+                  "class": envelope["question_class"],
+                  "route": envelope["route"],
+                  "synthesis": envelope["synthesis"],
+              }
+              return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
+
+          report = {
+              "node": NODE,
+              "product_pr": 72,
+              "product_sha": PRODUCT_SHA,
+              "started_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+              "producer_timestamp": expected["timestamp"],
+              "scenarios": {},
+              "pair_checks": {},
+              "global_checks": {},
+              "failures": [],
+          }
+
+          for case in scenarios:
+              response = session.get(url_for(case), timeout=45)
+              checks = {"http_200": response.status_code == 200}
+              props, lead, watch = parse(response)
+              if case.get("invalid"):
+                  checks.update({
+                      "failure_code": props.get("failure", {}).get("code") == "invalid_input",
+                      "no_result": props.get("result") is None,
+                      "no_envelope": props.get("envelope") is None,
+                  })
+                  report["scenarios"][case["id"]] = {"checks":checks, "lead":lead, "watch":watch}
+                  report["failures"].extend(f"{case['id']}:{name}" for name, passed in checks.items() if not passed)
+                  continue
+
+              result = props.get("result")
+              envelope = props.get("envelope")
+              checks["result_present"] = isinstance(result, dict)
+              checks["envelope_present"] = isinstance(envelope, dict)
+              if not checks["result_present"] or not checks["envelope_present"]:
+                  report["scenarios"][case["id"]] = {"checks":checks, "lead":lead, "watch":watch}
+                  report["failures"].extend(f"{case['id']}:{name}" for name, passed in checks.items() if not passed)
+                  continue
+
+              checks.update({
+                  "question_class": envelope["question_class"] == case["class"],
+                  "question_lens": result["question"]["lens"] == case["lens"],
+                  "primary_modules": sorted(envelope["route"]["primary_modules"]) == sorted(modules[case["class"]]),
+                  "safe_reframe": result["question"]["safe_reframed"] is bool(case.get("safe")),
+                  "source_timestamp": result["market_snapshot"]["source_generated_at_utc"] == expected["timestamp"] == envelope["current"]["source_generated_at_utc"],
+                  "price_grounding": near(result["market_snapshot"]["price_usd"], expected["price"]),
+                  "dominance_grounding": near(result["btc_gravity"]["dominance_pct"], expected["dominance"]),
+                  "field_score_grounding": near(result["market_structure"]["field_score"], expected["field_score"]),
+                  "stable_share_grounding": near(result["market_structure"]["stablecoin_share_pct"], expected["stable_share"]),
+                  "breadth_grounding": near(result["market_structure"]["alt_breadth_24h_pct"], expected["breadth"]),
+                  "tvl_grounding": near(envelope["current"]["defi_tvl_usd"], expected["tvl"]),
+                  "source_proof": len(result["source_proof"]["sources"]) >= 7 and envelope["source_proof"]["proof_source_count"] >= 7,
+                  "public_boundaries": all(result["boundary"][key] is True for key in ("no_trading_signal", "no_forecast", "no_price_target", "no_investment_recommendation")),
+                  "executive_lead_present": len(lead) >= 80,
+                  "watch_present": expected["timestamp"] in watch,
+              })
+              if case.get("safe"):
+                  checks["observable_context_only"] = result["question"]["geometry"]["safety_overlay"] == "observable_context_only"
+              if case.get("future"):
+                  checks["future_date_only_temporal"] = result["temporal_context"]["observation_date"] == case["date"] and result["market_snapshot"]["source_generated_at_utc"] == expected["timestamp"]
+
+              report["scenarios"][case["id"]] = {
+                  "checks": checks,
+                  "class": envelope["question_class"],
+                  "lens": result["question"]["lens"],
+                  "primary_modules": envelope["route"]["primary_modules"],
+                  "lead": lead,
+                  "watch": watch,
+                  "signature": signature(result, envelope),
+                  "facts": fact_view(result, envelope),
+              }
+              report["failures"].extend(f"{case['id']}:{name}" for name, passed in checks.items() if not passed)
+
+          pairs = [("01_en_orientation","02_ru_orientation"),("03_en_change","04_ru_change"),("05_en_gravity","06_ru_gravity"),("07_en_liquidity","08_ru_liquidity"),("09_en_participation","10_ru_participation"),("11_en_structure","12_ru_structure"),("13_en_temporal","14_ru_temporal"),("15_en_evidence","16_ru_evidence")]
+          for en_id, ru_id in pairs:
+              en = report["scenarios"][en_id]
+              ru = report["scenarios"][ru_id]
+              pair = {
+                  "facts_equal": en["facts"] == ru["facts"],
+                  "class_equal": en["class"] == ru["class"],
+                  "lens_equal": en["lens"] == ru["lens"],
+                  "primary_modules_equal": sorted(en["primary_modules"]) == sorted(ru["primary_modules"]),
+                  "lead_distinct_by_language": en["lead"] != ru["lead"],
+                  "watch_distinct_by_language": en["watch"] != ru["watch"],
+              }
+              report["pair_checks"][f"{en_id}__{ru_id}"] = pair
+              report["failures"].extend(f"pair:{en_id}:{name}" for name, passed in pair.items() if not passed)
+
+          report["global_checks"]["exact_repeat_deterministic"] = report["scenarios"]["03_en_change"]["signature"] == report["scenarios"]["21_en_change_repeat"]["signature"]
+          report["global_checks"]["gravity_paraphrase_stable"] = report["scenarios"]["05_en_gravity"]["class"] == report["scenarios"]["22_en_gravity_paraphrase"]["class"] == "btc_gravity"
+          report["global_checks"]["ru_dominance_repaired"] = report["scenarios"]["06_ru_gravity"]["class"] == "btc_gravity" and report["scenarios"]["06_ru_gravity"]["lens"] == "market_gravity"
+          report["global_checks"]["future_snapshot_immutable"] = report["scenarios"]["13_en_temporal"]["facts"]["market_snapshot"] == report["scenarios"]["23_en_future_temporal"]["facts"]["market_snapshot"]
+
+          core_ids = [case["id"] for case in scenarios[:16]]
+          for locale in ("en", "ru"):
+              by_class = {}
+              for case in scenarios[:16]:
+                  if case["locale"] != locale:
+                      continue
+                  item = report["scenarios"][case["id"]]
+                  by_class.setdefault(item["class"], item)
+              report["global_checks"][f"{locale}_seven_question_classes"] = len(by_class) == 7
+              report["global_checks"][f"{locale}_seven_unique_leads"] = len({item["lead"] for item in by_class.values()}) == 7
+              report["global_checks"][f"{locale}_seven_unique_watches"] = len({item["watch"] for item in by_class.values()}) == 7
+
+          report["failures"].extend(name for name, passed in report["global_checks"].items() if not passed)
+
+          options = webdriver.ChromeOptions()
+          for arg in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
+              options.add_argument(arg)
+          driver = webdriver.Chrome(options=options)
+          try:
+              screenshot_cases = [
+                  ("05_en_gravity", 1440, 1000),
+                  ("06_ru_gravity", 1440, 1000),
+                  ("08_ru_liquidity", 390, 844),
+                  ("13_en_temporal", 390, 844),
+              ]
+              for case_id, width, height in screenshot_cases:
+                  case = next(item for item in scenarios if item["id"] == case_id)
+                  driver.set_window_size(width, height)
+                  driver.get(url_for(case))
+                  target = WebDriverWait(driver, 40).until(lambda d: d.find_element(By.CSS_SELECTOR, ".executiveField"))
+                  driver.execute_script("arguments[0].scrollIntoView({block:'center'});", target)
+                  overflow = bool(driver.execute_script("return document.documentElement.scrollWidth > window.innerWidth + 1"))
+                  report["global_checks"][f"{case_id}_no_horizontal_overflow"] = not overflow
+                  if overflow:
+                      report["failures"].append(f"{case_id}:horizontal_overflow")
+                  target.screenshot(f"artifacts/screenshots/{case_id}-{width}x{height}.png")
+          finally:
+              driver.quit()
+
+          report["status"] = "PASS" if not report["failures"] else "FAIL"
+          report["completed_at_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+          Path("artifacts/btc-corridor-24q-targeted-repair-report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+          summary = [
+              f"STATUS={report['status']}",
+              f"PRODUCT_PR=72",
+              f"PRODUCT_SHA={PRODUCT_SHA}",
+              f"SCENARIOS={len(scenarios)}",
+              f"FAILURES={len(report['failures'])}",
+              f"RU_DOMINANCE_REPAIRED={report['global_checks']['ru_dominance_repaired']}",
+              f"EN_UNIQUE_LEADS={report['global_checks']['en_seven_unique_leads']}",
+              f"RU_UNIQUE_LEADS={report['global_checks']['ru_seven_unique_leads']}",
+              f"EN_UNIQUE_WATCHES={report['global_checks']['en_seven_unique_watches']}",
+              f"RU_UNIQUE_WATCHES={report['global_checks']['ru_seven_unique_watches']}",
+          ]
+          Path("artifacts/btc-corridor-24q-targeted-repair-summary.txt").write_text("\n".join(summary) + "\n")
+          print("\n".join(summary))
+          if report["failures"]:
+              print(json.dumps(report["failures"], ensure_ascii=False, indent=2))
+              raise SystemExit(1)
+          PY
+
+      - name: Upload proof evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-corridor-24q-targeted-repair-proof-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
