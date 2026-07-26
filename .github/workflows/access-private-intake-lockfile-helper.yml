@@ -1,0 +1,113 @@
+name: Access Private Intake Lockfile Helper
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: access-private-intake-lockfile-helper
+  cancel-in-progress: false
+
+jobs:
+  materialize-lockfile:
+    if: >-
+      github.event.issue.title == 'Access private intake lockfile request' &&
+      github.event.issue.user.login == 'AiBhrigu' &&
+      github.event.issue.author_association == 'OWNER' &&
+      github.actor == 'AiBhrigu'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/bhrigu-first-external-request-durable-private-intake-v0-1
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Validate exact owner request and target head
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+          EXPECTED='SCHEMA=access_private_intake_lockfile_request_v0_1
+          SOURCE_MASTER_SHA=88a7c2b27652704cc089afb87bafae8b0a9dc4f1
+          EXPECTED_TARGET_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
+          TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1'
+          test "$ISSUE_BODY" = "$EXPECTED"
+          git fetch --no-tags origin master agent/bhrigu-first-external-request-durable-private-intake-v0-1
+          test "$(git rev-parse origin/master)" = "88a7c2b27652704cc089afb87bafae8b0a9dc4f1"
+          test "$(git rev-parse HEAD)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
+          test "$(git rev-parse origin/agent/bhrigu-first-external-request-durable-private-intake-v0-1)" = "7a02019a13cb7dbfbdfbfe3689900d21ff2615d6"
+          echo LOCKFILE_HELPER_REQUEST=PASS
+
+      - name: Materialize exact package lock
+        run: |
+          set -euo pipefail
+          cp package-lock.json /tmp/package-lock.before.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          git diff --name-only | sort > /tmp/changed.txt
+          printf '%s\n' 'package-lock.json' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          node - <<'NODE'
+          const lock = require('./package-lock.json');
+          if (lock.lockfileVersion !== 3) throw new Error('lockfileVersion must remain 3');
+          if (lock.packages?.['']?.dependencies?.['@vercel/blob'] !== '2.6.1') {
+            throw new Error('root @vercel/blob lock is not exact 2.6.1');
+          }
+          const pkg = lock.packages?.['node_modules/@vercel/blob'];
+          if (pkg?.version !== '2.6.1') throw new Error('resolved @vercel/blob is not 2.6.1');
+          console.log('ACCESS_PRIVATE_INTAKE_LOCKFILE_CONTRACT=PASS');
+          NODE
+
+      - name: Verify install, typed fixture, and production build
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run verify:access-private-intake
+          npm run build
+
+      - name: Commit only generated lockfile
+        run: |
+          set -euo pipefail
+          git status --short
+          test "$(git status --short | wc -l | tr -d ' ')" = "1"
+          git status --short | grep -Eq '^ M package-lock.json$'
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package-lock.json
+          git commit -m 'Access: lock private Blob dependency graph'
+          git push origin HEAD:agent/bhrigu-first-external-request-durable-private-intake-v0-1
+
+      - name: Record accepted materialization
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          NEW_HEAD=$(git rev-parse HEAD)
+          LOCK_SHA256=$(sha256sum package-lock.json | awk '{print $1}')
+          gh issue comment "${{ github.event.issue.number }}" --body "STATUS=PASS
+          TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1
+          PREVIOUS_HEAD_SHA=7a02019a13cb7dbfbdfbfe3689900d21ff2615d6
+          NEW_HEAD_SHA=$NEW_HEAD
+          CHANGED_FILE=package-lock.json
+          PACKAGE_LOCK_SHA256=$LOCK_SHA256
+          NPM_CI=PASS
+          ACCESS_PRIVATE_INTAKE_FIXTURE=PASS
+          PRODUCTION_BUILD=PASS"
+          gh issue close "${{ github.event.issue.number }}" --reason completed
+
+      - name: Record fail-closed result
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" --body "STATUS=FAIL_CLOSED
+          TARGET_BRANCH=agent/bhrigu-first-external-request-durable-private-intake-v0-1
+          TARGET_WRITE_PERFORMED=NO_OR_UNVERIFIED"
