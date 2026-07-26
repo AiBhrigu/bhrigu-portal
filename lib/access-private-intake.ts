@@ -40,7 +40,7 @@ type BlobGetResult = {
   stream: ReadableStream<Uint8Array> | null;
 };
 
-type PrivateBlobClient = {
+export type PrivateBlobClient = {
   get(
     pathname: string,
     options: { access: "private"; useCache?: boolean }
@@ -115,10 +115,7 @@ export function buildAccessIdempotencySha256(
     stableJson({
       schema_version: "bhrigu_access_idempotency_v0_1",
       anchor,
-      email: data.request.email,
-      subject_type: data.request.subjectType,
-      main_question: data.request.mainQuestion,
-      preferred_depth: data.request.preferredDepth,
+      payload: data,
     })
   );
 }
@@ -274,8 +271,7 @@ function assertEnvelopeIdentity(
 ): void {
   if (
     existing.request_id !== proposed.request_id ||
-    existing.idempotency_sha256 !== proposed.idempotency_sha256 ||
-    existing.record_sha256 !== proposed.record_sha256
+    existing.idempotency_sha256 !== proposed.idempotency_sha256
   ) {
     throw new AccessPrivateIntakeError(
       "duplicate_conflict",
