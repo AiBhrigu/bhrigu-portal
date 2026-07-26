@@ -1,0 +1,433 @@
+name: BTC Corridor Canonical 24 Question Baseline
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/btc-corridor-24-question-baseline.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-corridor-24-question-baseline-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Lock verification-only scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" > /tmp/changed.txt
+          printf '%s\n' '.github/workflows/btc-corridor-24-question-baseline.yml' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo BTC_CORRIDOR_24Q_VERIFICATION_ONLY_SCOPE=PASS
+
+      - name: Install baseline dependencies
+        run: python3 -m pip install --disable-pip-version-check requests==2.32.4 beautifulsoup4==4.13.4 selenium==4.34.2
+
+      - name: Execute 24-question production baseline
+        env:
+          EXPECTED_MASTER_SHA: bb814791a69068940e8a401c8e111a3b4ea015da
+        run: |
+          mkdir -p artifacts/screenshots
+          python3 - <<'PY'
+          import copy
+          import hashlib
+          import json
+          import math
+          import re
+          import time
+          from datetime import datetime, timezone
+          from pathlib import Path
+          from urllib.parse import urlencode
+
+          import requests
+          from bs4 import BeautifulSoup
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          NODE = 'BTC_CORRIDOR_CANONICAL_24_QUESTION_BASELINE_EXECUTION_SCOPE_v0_1'
+          BASE = 'https://www.bhrigu.io/crypto-astro/btc'
+          PRODUCER = 'https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json'
+          EXPECTED_MASTER_SHA = 'bb814791a69068940e8a401c8e111a3b4ea015da'
+          MODULES = {
+              'general_btc_field': ['market_structure', 'change_event_memory'],
+              'change_memory': ['change_event_memory', 'market_structure'],
+              'btc_gravity': ['market_structure', 'change_event_memory'],
+              'liquidity': ['liquidity_membrane', 'market_structure'],
+              'market_participation_rotation': ['market_structure', 'change_event_memory'],
+              'market_structure': ['market_structure', 'liquidity_membrane'],
+              'temporal_pressure': ['temporal_context', 'change_event_memory'],
+          }
+          LENS_SECTIONS = {
+              'general': ['what_changed', 'why_it_matters'],
+              'market_gravity': ['why_it_matters', 'relative_market_field'],
+              'market_structure': ['current_structure', 'relative_market_field'],
+              'temporal_context': ['temporal_context', 'dominant_pressures'],
+          }
+
+          scenarios = [
+              {'id':'01_en_orientation','locale':'en','question':'What is happening around BTC now and why does it matter?','class':'general_btc_field','lens':'general'},
+              {'id':'02_ru_orientation','locale':'ru','question':'Что сейчас происходит вокруг BTC и почему это важно?','class':'general_btc_field','lens':'general'},
+              {'id':'03_en_change','locale':'en','question':'What changed since the previous accepted snapshot?','class':'change_memory','lens':'general'},
+              {'id':'04_ru_change','locale':'ru','question':'Что изменилось с предыдущего принятого снимка?','class':'change_memory','lens':'general'},
+              {'id':'05_en_gravity','locale':'en','question':'What does current BTC dominance mean for the wider market?','class':'btc_gravity','lens':'market_gravity'},
+              {'id':'06_ru_gravity','locale':'ru','question':'Что означает текущая доминация BTC для более широкого рынка?','class':'btc_gravity','lens':'market_gravity'},
+              {'id':'07_en_liquidity','locale':'en','question':'Do stablecoin share, DeFi TVL and DEX volume confirm current BTC liquidity conditions?','class':'liquidity','lens':'market_structure'},
+              {'id':'08_ru_liquidity','locale':'ru','question':'Подтверждают ли доля стейблкоинов, DeFi TVL и объём DEX текущие условия ликвидности BTC?','class':'liquidity','lens':'market_structure'},
+              {'id':'09_en_participation','locale':'en','question':'What do altcoin breadth, rotation and wider market participation show around BTC?','class':'market_participation_rotation','lens':'market_structure'},
+              {'id':'10_ru_participation','locale':'ru','question':'Что показывают ширина альткоинов, ротация и участие широкого рынка вокруг BTC?','class':'market_participation_rotation','lens':'market_structure'},
+              {'id':'11_en_structure','locale':'en','question':'Do regime, Market Field Score and market cap confirm the current BTC structure?','class':'market_structure','lens':'market_structure'},
+              {'id':'12_ru_structure','locale':'ru','question':'Подтверждают ли режим, Market Field Score и капитализация текущую структуру BTC?','class':'market_structure','lens':'market_structure'},
+              {'id':'13_en_temporal','locale':'en','question':'How does the selected date change the BTC observation context and temporal pressure?','class':'temporal_pressure','lens':'temporal_context','date':'2026-07-27'},
+              {'id':'14_ru_temporal','locale':'ru','question':'Как выбранная дата меняет контекст наблюдения BTC и временное давление?','class':'temporal_pressure','lens':'temporal_context','date':'2026-07-27'},
+              {'id':'15_en_evidence','locale':'en','question':'Which facts and sources support the current BTC read?','class':'general_btc_field','lens':'general','evidence':True},
+              {'id':'16_ru_evidence','locale':'ru','question':'Какие факты и источники подтверждают текущее чтение BTC?','class':'general_btc_field','lens':'general','evidence':True},
+              {'id':'17_en_buy_sell','locale':'en','question':'Should I buy or sell BTC now?','class':'general_btc_field','lens':'general','safe':True},
+              {'id':'18_ru_buy_sell','locale':'ru','question':'Стоит ли мне купить или продать BTC сейчас?','class':'general_btc_field','lens':'general','safe':True},
+              {'id':'19_en_price_target','locale':'en','question':'Give me an exact BTC price target and entry point.','class':'general_btc_field','lens':'general','safe':True},
+              {'id':'20_ru_entry_exit','locale':'ru','question':'Дай точку входа и выхода по BTC.','class':'general_btc_field','lens':'general','safe':True},
+              {'id':'21_en_change_repeat','locale':'en','question':'What changed since the previous accepted snapshot?','class':'change_memory','lens':'general','repeat_of':'03_en_change'},
+              {'id':'22_en_gravity_paraphrase','locale':'en','question':'How should I understand Bitcoin market leadership and gravity right now?','class':'btc_gravity','lens':'market_gravity','paraphrase_of':'05_en_gravity'},
+              {'id':'23_en_future_temporal','locale':'en','question':'How does the selected date change the BTC observation context and temporal pressure?','class':'temporal_pressure','lens':'temporal_context','date':'2030-01-01','future':True},
+              {'id':'24_invalid_date','locale':'en','question':'How does this date change the BTC observation context?','invalid':True,'date':'2026-02-30'},
+          ]
+
+          session = requests.Session()
+          session.headers.update({'User-Agent':'BHRIGU-BTC-Corridor-24Q-Baseline/0.1','Cache-Control':'no-cache'})
+          report = {
+              'node': NODE,
+              'started_at_utc': datetime.now(timezone.utc).isoformat().replace('+00:00','Z'),
+              'production_url': BASE,
+              'expected_master_sha': EXPECTED_MASTER_SHA,
+              'scenario_count': len(scenarios),
+              'scenarios': {},
+              'pair_checks': {},
+              'global_checks': {},
+              'failures': [],
+          }
+
+          producer_response = session.get(PRODUCER, timeout=30)
+          producer_response.raise_for_status()
+          producer = producer_response.json()
+          expected_values = {
+              'source_generated_at_utc': producer['generated_at_utc'],
+              'price_usd': producer['public_samples']['assets']['BTC']['price_usd'],
+              'dominance_pct': producer['market_reality']['btc_dominance_pct'],
+              'field_score': producer['field_output']['market_field_score'],
+              'stablecoin_share_pct': producer['market_reality']['stablecoin_share_pct'],
+              'alt_breadth_24h_pct': producer['altcoin_rotation']['alt_breadth_24h_pct'],
+              'defi_tvl_usd': producer['liquidity_tvl']['defi_tvl_usd'],
+          }
+
+          def near(a, b, rel=1e-10, abs_tol=1e-8):
+              return isinstance(a,(int,float)) and not isinstance(a,bool) and math.isfinite(float(a)) and math.isclose(float(a),float(b),rel_tol=rel,abs_tol=abs_tol)
+
+          def nested_values(value, key, out=None):
+              out = [] if out is None else out
+              if isinstance(value, dict):
+                  for k, v in value.items():
+                      if k == key: out.append(v)
+                      nested_values(v, key, out)
+              elif isinstance(value, list):
+                  for item in value: nested_values(item, key, out)
+              return out
+
+          def parse_page(response):
+              soup = BeautifulSoup(response.text, 'html.parser')
+              script = soup.find('script', id='__NEXT_DATA__')
+              if script is None or not script.string:
+                  raise AssertionError('NEXT_DATA_MISSING')
+              data = json.loads(script.string)
+              props = data['props']['pageProps']
+              reading = soup.select_one('.reading')
+              reading_text = re.sub(r'\s+', ' ', reading.get_text(' ', strip=True)) if reading else ''
+              body_text = re.sub(r'\s+', ' ', soup.get_text(' ', strip=True))
+              return props, reading_text, body_text
+
+          def canonical_signature(props):
+              result = props['result']
+              envelope = props['envelope']
+              payload = {
+                  'result': {
+                      'question_lens': result['question']['lens'],
+                      'safe_reframed': result['question']['safe_reframed'],
+                      'geometry': result['question']['geometry'],
+                      'market_snapshot': result['market_snapshot'],
+                      'btc_gravity': result['btc_gravity'],
+                      'market_structure': result['market_structure'],
+                      'aspect_pressure': result['aspect_pressure'],
+                      'temporal_context': result['temporal_context'],
+                      'watch_conditions': result['watch_conditions'],
+                      'cosmographer_read': result['cosmographer_read'],
+                      'source_proof': result['source_proof'],
+                      'uncertainty': result['uncertainty'],
+                      'boundary': result['boundary'],
+                  },
+                  'envelope': {
+                      'question_class': envelope['question_class'],
+                      'phi_geometry': envelope['phi_geometry'],
+                      'route': envelope['route'],
+                      'current': envelope['current'],
+                      'memory': envelope['memory'],
+                      'synthesis': envelope['synthesis'],
+                      'verified_history': envelope['verified_history'],
+                      'source_proof': envelope['source_proof'],
+                      'inactive_modules': envelope['inactive_modules'],
+                      'boundary': envelope['boundary'],
+                  },
+              }
+              encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, separators=(',',':')).encode()
+              return hashlib.sha256(encoded).hexdigest(), payload
+
+          def fact_projection_ok(result):
+              expected = {
+                  'what_changed': {
+                      'section_id':'what_changed',
+                      'price_usd':result['market_snapshot']['price_usd'],
+                      'change_24h_pct':result['market_snapshot']['change_24h_pct'],
+                      'change_7d_pct':result['market_snapshot']['change_7d_pct'],
+                      'change_30d_pct':result['market_snapshot']['change_30d_pct'],
+                      'market_cap_change_24h_pct':result['market_snapshot']['market_cap_change_24h_pct'],
+                  },
+                  'why_it_matters': {
+                      'section_id':'why_it_matters',
+                      'dominance_pct':result['btc_gravity']['dominance_pct'],
+                      'dominance_band':result['btc_gravity']['dominance_band'],
+                      'market_cap_rank':result['btc_gravity']['market_cap_rank'],
+                      'market_context_label':result['btc_gravity']['market_context_label'],
+                  },
+                  'current_structure': {
+                      'section_id':'current_structure',
+                      'regime_label':result['market_structure']['regime_label'],
+                      'field_score':result['market_structure']['field_score'],
+                      'direction_bias':result['market_structure']['direction_bias'],
+                      'liquidity_state':result['market_structure']['liquidity_state'],
+                  },
+                  'dominant_pressures': {
+                      'section_id':'dominant_pressures',
+                      'pressure_band':result['aspect_pressure']['pressure_band'],
+                      'harmonic_tension':result['aspect_pressure']['harmonic_tension'],
+                      'evidence_mode':result['aspect_pressure']['evidence_mode'],
+                      'pressure_label':result['aspect_pressure']['label'],
+                      'stablecoin_share_pct':result['market_structure']['stablecoin_share_pct'],
+                      'temporal_state':result['temporal_context']['state'],
+                  },
+                  'relative_market_field': {
+                      'section_id':'relative_market_field',
+                      'dominance_pct':result['btc_gravity']['dominance_pct'],
+                      'alt_breadth_24h_pct':result['market_structure']['alt_breadth_24h_pct'],
+                      'stablecoin_share_pct':result['market_structure']['stablecoin_share_pct'],
+                  },
+                  'temporal_context': {
+                      'section_id':'temporal_context',
+                      'temporal_state':result['temporal_context']['state'],
+                      'observation_date':result['temporal_context']['observation_date'],
+                      'source_generated_at_utc':result['market_snapshot']['source_generated_at_utc'],
+                      'temporal_limitation':result['temporal_context']['limitation'],
+                  },
+              }
+              for section in result['cosmographer_read']['sections']:
+                  if section['fact_payload'] != expected[section['section_id']]:
+                      return False
+              return True
+
+          outputs = {}
+          for scenario in scenarios:
+              params = {'q':scenario['question'],'lang':scenario['locale'],'baseline':f"{EXPECTED_MASTER_SHA[:12]}-{scenario['id']}"}
+              if scenario.get('date'): params['d'] = scenario['date']
+              url = BASE + '?' + urlencode(params)
+              started = time.perf_counter()
+              response = session.get(url, timeout=45)
+              elapsed = time.perf_counter() - started
+              checks = {'http_200': response.status_code == 200}
+              item = {'url':url,'elapsed_seconds':round(elapsed,3),'checks':checks,'failures':[]}
+              try:
+                  response.raise_for_status()
+                  props, reading_text, body_text = parse_page(response)
+                  item['locale'] = props.get('locale')
+                  item['source_state'] = props.get('sourceContext',{}).get('state')
+                  item['deployment_source_sha'] = props.get('deploymentSourceSha')
+                  checks['locale_exact'] = props.get('locale') == scenario['locale']
+                  checks['question_preserved'] = props.get('initialQuestion') == scenario['question']
+                  checks['deployment_source_exact'] = props.get('deploymentSourceSha') == EXPECTED_MASTER_SHA
+                  checks['source_available'] = props.get('sourceContext',{}).get('state') in ('FRESH','STALE_LIMITED')
+                  if scenario.get('invalid'):
+                      checks['invalid_fail_closed'] = props.get('result') is None and props.get('failure',{}).get('code') == 'invalid_input'
+                      checks['no_envelope_on_invalid'] = props.get('envelope') is None
+                      item['failure_code'] = props.get('failure',{}).get('code')
+                  else:
+                      result = props.get('result')
+                      envelope = props.get('envelope')
+                      checks['result_present'] = isinstance(result,dict)
+                      checks['envelope_present'] = isinstance(envelope,dict)
+                      if not isinstance(result,dict) or not isinstance(envelope,dict):
+                          raise AssertionError('RESULT_OR_ENVELOPE_MISSING')
+                      item['question_class'] = envelope['question_class']
+                      item['lens'] = result['question']['lens']
+                      item['primary_modules'] = envelope['route']['primary_modules']
+                      item['primary_sections'] = result['question']['geometry']['primary_sections']
+                      item['safe_reframed'] = result['question']['safe_reframed']
+                      item['reading_excerpt'] = reading_text[:1200]
+                      checks['question_class_exact'] = envelope['question_class'] == scenario['class']
+                      checks['primary_modules_exact'] = envelope['route']['primary_modules'] == MODULES[scenario['class']]
+                      checks['lens_exact'] = result['question']['lens'] == scenario['lens']
+                      checks['primary_sections_exact'] = result['question']['geometry']['primary_sections'] == LENS_SECTIONS[scenario['lens']]
+                      checks['safe_reframe_exact'] = result['question']['safe_reframed'] is bool(scenario.get('safe',False))
+                      checks['safety_overlay_exact'] = result['question']['geometry']['safety_overlay'] == ('observable_context_only' if scenario.get('safe') else 'standard_public_context')
+                      checks['source_timestamp_exact'] = result['market_snapshot']['source_generated_at_utc'] == expected_values['source_generated_at_utc']
+                      checks['price_exact'] = near(result['market_snapshot']['price_usd'], expected_values['price_usd'])
+                      checks['dominance_exact'] = near(result['btc_gravity']['dominance_pct'], expected_values['dominance_pct'])
+                      checks['field_score_exact'] = near(result['market_structure']['field_score'], expected_values['field_score'])
+                      checks['stable_share_exact'] = near(result['market_structure']['stablecoin_share_pct'], expected_values['stablecoin_share_pct'])
+                      checks['breadth_exact'] = near(result['market_structure']['alt_breadth_24h_pct'], expected_values['alt_breadth_24h_pct'])
+                      checks['defi_tvl_exact'] = near(envelope['current']['defi_tvl_usd'], expected_values['defi_tvl_usd'])
+                      checks['fact_projection_exact'] = fact_projection_ok(result)
+                      checks['proof_sources_complete'] = len(result['source_proof']['sources']) >= 7 and all(s.get('status') == 'PASS' and str(s.get('url','')).startswith('https://') for s in result['source_proof']['sources'])
+                      checks['public_boundaries_exact'] = all(result['boundary'].get(k) is True for k in ('read_only','static_public_snapshot','no_trading_signal','no_forecast','no_price_target','no_investment_recommendation','backend_api_closed','runtime_closed','payment_closed','orion_core_protected')) and result['boundary'].get('formula_weights_exposed') is False
+                      checks['reading_present'] = 250 <= len(reading_text) <= 20000
+                      checks['no_render_tokens'] = not any(token in reading_text for token in ('undefined','NaN','[object Object]'))
+                      if scenario['locale'] == 'ru':
+                          required_labels = ('Что изменилось','Что это подтверждает','Что это ослабляет','За чем наблюдать дальше','Граница неопределённости')
+                      else:
+                          required_labels = ('What changed','What confirms it','What weakens it','Watch next','Uncertainty boundary')
+                      checks['comprehension_labels_present'] = all(label in body_text for label in required_labels)
+                      if scenario.get('safe'):
+                          checks['unsafe_guidance_absent'] = not any(phrase in reading_text.lower() for phrase in ('buy now','sell now','price target is','entry point is','exit point is','guaranteed return','купить сейчас','продать сейчас','точка входа','точка выхода','ценовая цель'))
+                          checks['reframe_visible'] = ('Direct trading guidance was removed.' in body_text) or ('Прямая торговая рекомендация удалена.' in body_text)
+                      if scenario.get('evidence'):
+                          checks['evidence_depth_present'] = len(result['source_proof']['sources']) >= 7 and envelope['source_proof']['proof_source_count'] >= 7
+                      if scenario.get('future'):
+                          checks['future_date_accepted'] = result['temporal_context']['observation_date'] == scenario['date']
+                          checks['future_market_snapshot_immutable'] = result['market_snapshot']['source_generated_at_utc'] == expected_values['source_generated_at_utc']
+                          checks['future_no_forecast_boundary'] = result['boundary']['no_forecast'] is True and result['boundary']['no_price_target'] is True
+                      signature, signature_payload = canonical_signature(props)
+                      item['semantic_sha256'] = signature
+                      outputs[scenario['id']] = {'props':props,'signature':signature,'signature_payload':signature_payload,'facts':{
+                          'source_generated_at_utc':result['market_snapshot']['source_generated_at_utc'],
+                          'price_usd':result['market_snapshot']['price_usd'],
+                          'dominance_pct':result['btc_gravity']['dominance_pct'],
+                          'field_score':result['market_structure']['field_score'],
+                          'stablecoin_share_pct':result['market_structure']['stablecoin_share_pct'],
+                          'alt_breadth_24h_pct':result['market_structure']['alt_breadth_24h_pct'],
+                          'defi_tvl_usd':envelope['current']['defi_tvl_usd'],
+                      }}
+              except Exception as exc:
+                  item['exception'] = f'{type(exc).__name__}: {exc}'
+                  checks['scenario_exception_free'] = False
+              item['failures'] = [name for name, ok in checks.items() if not ok]
+              if item['failures']:
+                  report['failures'].extend(f"{scenario['id']}:{name}" for name in item['failures'])
+              report['scenarios'][scenario['id']] = item
+
+          semantic_pairs = [
+              ('orientation','01_en_orientation','02_ru_orientation'),
+              ('change','03_en_change','04_ru_change'),
+              ('gravity','05_en_gravity','06_ru_gravity'),
+              ('liquidity','07_en_liquidity','08_ru_liquidity'),
+              ('participation','09_en_participation','10_ru_participation'),
+              ('structure','11_en_structure','12_ru_structure'),
+              ('temporal','13_en_temporal','14_ru_temporal'),
+              ('evidence','15_en_evidence','16_ru_evidence'),
+          ]
+          for label, en_id, ru_id in semantic_pairs:
+              en = outputs[en_id]
+              ru = outputs[ru_id]
+              pair = {
+                  'facts_equal': en['facts'] == ru['facts'],
+                  'question_class_equal': en['props']['envelope']['question_class'] == ru['props']['envelope']['question_class'],
+                  'primary_modules_equal': en['props']['envelope']['route']['primary_modules'] == ru['props']['envelope']['route']['primary_modules'],
+                  'lens_equal': en['props']['result']['question']['lens'] == ru['props']['result']['question']['lens'],
+                  'source_hashes_equal': en['props']['envelope']['source_proof'] == ru['props']['envelope']['source_proof'],
+              }
+              pair['pass'] = all(pair.values())
+              report['pair_checks'][label] = pair
+              if not pair['pass']: report['failures'].append(f'pair:{label}')
+
+          repeat_ok = outputs['03_en_change']['signature'] == outputs['21_en_change_repeat']['signature']
+          paraphrase_ok = outputs['05_en_gravity']['facts'] == outputs['22_en_gravity_paraphrase']['facts'] and outputs['05_en_gravity']['props']['envelope']['route'] == outputs['22_en_gravity_paraphrase']['props']['envelope']['route']
+          report['global_checks'] = {
+              'scenario_count_24': len(report['scenarios']) == 24,
+              'semantic_pair_count_8': len(report['pair_checks']) == 8,
+              'ru_en_fact_parity_8_of_8': all(v['pass'] for v in report['pair_checks'].values()),
+              'exact_repeat_deterministic': repeat_ok,
+              'gravity_paraphrase_stable': paraphrase_ok,
+              'all_scenarios_pass': not report['failures'],
+          }
+          if not all(report['global_checks'].values()):
+              report['failures'].extend(k for k,v in report['global_checks'].items() if not v)
+
+          options = webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--hide-scrollbars'):
+              options.add_argument(arg)
+          driver = webdriver.Chrome(options=options)
+          try:
+              screenshot_ids = ['01_en_orientation','02_ru_orientation','17_en_buy_sell','23_en_future_temporal']
+              by_id = {s['id']:s for s in scenarios}
+              for scenario_id in screenshot_ids:
+                  scenario = by_id[scenario_id]
+                  params = {'q':scenario['question'],'lang':scenario['locale'],'baseline':f'screenshot-{scenario_id}'}
+                  if scenario.get('date'): params['d'] = scenario['date']
+                  driver.set_window_size(390 if scenario['locale']=='ru' else 1440, 844 if scenario['locale']=='ru' else 1000)
+                  driver.get(BASE + '?' + urlencode(params))
+                  WebDriverWait(driver,45).until(lambda d: len(d.find_elements(By.CSS_SELECTOR,'.reading')) == 1)
+                  time.sleep(.2)
+                  driver.save_screenshot(f'artifacts/screenshots/{scenario_id}.png')
+                  overflow = driver.execute_script('return document.documentElement.scrollWidth > window.innerWidth + 1')
+                  report['scenarios'][scenario_id]['checks']['screenshot_rendered'] = True
+                  report['scenarios'][scenario_id]['checks']['horizontal_overflow_none'] = not overflow
+                  if overflow: report['failures'].append(f'{scenario_id}:horizontal_overflow')
+          finally:
+              driver.quit()
+
+          report['finished_at_utc'] = datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
+          report['status'] = 'PASS' if not report['failures'] else 'FAIL'
+          Path('artifacts/btc-corridor-24-question-baseline.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          lines = [
+              '# BTC Corridor 24-Question Baseline', '',
+              f"- Status: **{report['status']}**",
+              f"- Production URL: `{BASE}`",
+              f"- Expected deployment SHA: `{EXPECTED_MASTER_SHA}`",
+              f"- Scenarios: `{len(report['scenarios'])}`",
+              f"- RU/EN semantic pairs: `{sum(1 for v in report['pair_checks'].values() if v['pass'])}/8`",
+              f"- Failures: `{len(report['failures'])}`", '',
+              '## Scenario results', '',
+              '| ID | Class / outcome | Locale | Safe reframe | Result |',
+              '|---|---|---|---:|---|',
+          ]
+          for scenario in scenarios:
+              item = report['scenarios'][scenario['id']]
+              outcome = item.get('question_class', item.get('failure_code','unknown'))
+              lines.append(f"| {scenario['id']} | {outcome} | {scenario['locale']} | {item.get('safe_reframed','—')} | {'PASS' if not item['failures'] else 'FAIL'} |")
+          lines.extend(['','## Failures',''])
+          lines.extend([f'- `{failure}`' for failure in report['failures']] or ['- None'])
+          Path('artifacts/btc-corridor-24-question-baseline.md').write_text('\n'.join(lines)+'\n',encoding='utf-8')
+
+          for path in sorted(Path('artifacts').rglob('*')):
+              if path.is_file():
+                  print(hashlib.sha256(path.read_bytes()).hexdigest(), path)
+          if report['failures']:
+              raise SystemExit(json.dumps(report['failures'],ensure_ascii=False))
+          print('BTC_CORRIDOR_CANONICAL_24_QUESTION_BASELINE=PASS')
+          PY
+
+      - name: Upload baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-corridor-24-question-baseline-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
