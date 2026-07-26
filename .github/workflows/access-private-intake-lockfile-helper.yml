@@ -105,11 +105,14 @@ jobs:
         run: |
           set -euo pipefail
           git status --short | tee artifacts/git-status.log
-          test "$(git status --short | wc -l | tr -d ' ')" = "1"
-          git status --short | grep -Eq '^ M package-lock.json$'
+          git diff --name-only | sort > /tmp/tracked-changed.txt
+          printf '%s\n' 'package-lock.json' > /tmp/expected-tracked.txt
+          diff -u /tmp/expected-tracked.txt /tmp/tracked-changed.txt
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add package-lock.json
+          git diff --cached --name-only | sort > /tmp/staged.txt
+          diff -u /tmp/expected-tracked.txt /tmp/staged.txt
           git commit -m 'Access: lock private Blob dependency graph'
           git push origin HEAD:agent/bhrigu-first-external-request-durable-private-intake-v0-1
 
