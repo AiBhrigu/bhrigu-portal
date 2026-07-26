@@ -156,9 +156,9 @@ async function main(): Promise<void> {
     globalThis.fetch = originalFetch;
   }
   assert(messages.length === 2, "delivery must emit exactly operator and client messages");
-  assert(messages[0]?.to === "operator@bhrigu.invalid", "operator notification must be first");
+  assert(Array.isArray(messages[0]?.to) && messages[0].to[0] === "operator@bhrigu.invalid", "operator notification must be first");
   assert(String(messages[0]?.text).includes("/access-review?id="), "operator message must contain private capability route");
-  assert(messages[1]?.to === proof.email, "client acknowledgement must target submitted email");
+  assert(Array.isArray(messages[1]?.to) && messages[1].to[0] === proof.email, "client acknowledgement must target submitted email");
   assert(String(messages[1]?.subject).includes(requestId), "client acknowledgement must contain request id");
 
   const apiSource = readFileSync("pages/api/access/submit.ts", "utf8");
