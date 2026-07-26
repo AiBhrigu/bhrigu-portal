@@ -169,11 +169,11 @@ async function main(): Promise<void> {
   assert(!reviewSource.includes("listAccessReviewRecords"), "operator review must expose no public list mode");
   assert(reviewSource.includes("noindex, nofollow, noarchive"), "operator review must be non-indexable");
 
-  process.stdout.write("ACCESS_PRIVATE_INTAKE_FIXTURE=PASS\n");
+  process.stdout.write("ACCESS_PRIVATE_INTAKE_FIXTURE=PASS" + String.fromCharCode(10));
 }
 
 main().catch((error) => {
-  process.stderr.write((error instanceof Error ? error.stack || error.message : String(error)) + "\n");
+  process.stderr.write((error instanceof Error ? error.stack || error.message : String(error)) + String.fromCharCode(10));
   process.exit(1);
 });
 `;
