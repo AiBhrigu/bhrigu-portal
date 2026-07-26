@@ -1,0 +1,245 @@
+name: BHRIGU Production Branch Drift Guard
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bhrigu-production-branch-drift-guard
+  cancel-in-progress: false
+
+jobs:
+  branch-drift-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CANONICAL_BRANCH: master
+      PRODUCTION_BRANCH: main
+      CUSTOM_DOMAIN: https://www.bhrigu.io
+
+    steps:
+      - name: Checkout event source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch canonical and production refs
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          git fetch --no-tags origin \
+            "+refs/heads/${CANONICAL_BRANCH}:refs/remotes/origin/${CANONICAL_BRANCH}" \
+            "+refs/heads/${PRODUCTION_BRANCH}:refs/remotes/origin/${PRODUCTION_BRANCH}"
+
+      - name: Classify branch topology
+        id: topology
+        run: |
+          set -euo pipefail
+          MASTER_SHA=$(git rev-parse "refs/remotes/origin/${CANONICAL_BRANCH}")
+          MAIN_SHA=$(git rev-parse "refs/remotes/origin/${PRODUCTION_BRANCH}")
+
+          if [ "$MAIN_SHA" = "$MASTER_SHA" ]; then
+            STATE=IDENTICAL
+          elif git merge-base --is-ancestor "$MAIN_SHA" "$MASTER_SHA"; then
+            STATE=MAIN_BEHIND_MASTER
+          elif git merge-base --is-ancestor "$MASTER_SHA" "$MAIN_SHA"; then
+            STATE=MAIN_AHEAD_OF_MASTER
+          else
+            STATE=DIVERGED
+          fi
+
+          echo "master_sha=$MASTER_SHA" >> "$GITHUB_OUTPUT"
+          echo "main_sha=$MAIN_SHA" >> "$GITHUB_OUTPUT"
+          echo "state=$STATE" >> "$GITHUB_OUTPUT"
+
+          python3 - <<PY
+          import json
+          from pathlib import Path
+          Path("artifacts/topology-before.json").write_text(json.dumps({
+              "schema_version": "bhrigu_production_branch_topology_v0_1",
+              "canonical_branch": "${CANONICAL_BRANCH}",
+              "production_branch": "${PRODUCTION_BRANCH}",
+              "canonical_sha": "$MASTER_SHA",
+              "production_sha": "$MAIN_SHA",
+              "state": "$STATE",
+              "event_name": "${GITHUB_EVENT_NAME}",
+              "event_ref": "${GITHUB_REF}",
+          }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+          echo "BRANCH_TOPOLOGY=$STATE canonical=$MASTER_SHA production=$MAIN_SHA"
+
+      - name: Reject direct pull requests to production mirror
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          if [ "${{ github.base_ref }}" != "$CANONICAL_BRANCH" ]; then
+            echo "FAIL: pull requests must target ${CANONICAL_BRANCH}; ${PRODUCTION_BRANCH} is deployment-only."
+            exit 1
+          fi
+          if [ "${{ steps.topology.outputs.state }}" != "IDENTICAL" ]; then
+            echo "FAIL: production mirror must be aligned before a canonical pull request can pass."
+            exit 1
+          fi
+          echo "PR_TARGET_CANON=PASS"
+
+      - name: Fail closed on production-only or divergent history
+        if: steps.topology.outputs.state == 'MAIN_AHEAD_OF_MASTER' || steps.topology.outputs.state == 'DIVERGED'
+        run: |
+          echo "FAIL: ${PRODUCTION_BRANCH} contains history not safely fast-forwardable from ${CANONICAL_BRANCH}."
+          echo "No force update or automatic history rewrite is permitted."
+          exit 1
+
+      - name: Fast-forward production mirror
+        id: sync
+        if: >-
+          steps.topology.outputs.state == 'MAIN_BEHIND_MASTER' &&
+          github.event_name != 'pull_request' &&
+          (github.event_name != 'push' || github.ref == 'refs/heads/master')
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA="${{ steps.topology.outputs.master_sha }}"
+          git push origin "$EXPECTED_SHA:refs/heads/${PRODUCTION_BRANCH}"
+          echo "performed=true" >> "$GITHUB_OUTPUT"
+          echo "PRODUCTION_MIRROR_FAST_FORWARD=PASS sha=$EXPECTED_SHA"
+
+      - name: Reject unsynchronized production push context
+        if: >-
+          steps.topology.outputs.state == 'MAIN_BEHIND_MASTER' &&
+          (github.event_name == 'pull_request' ||
+           (github.event_name == 'push' && github.ref != 'refs/heads/master'))
+        run: |
+          echo "FAIL: this event is not authorized to advance the production mirror."
+          exit 1
+
+      - name: Verify final ref identity
+        id: final
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin \
+            "+refs/heads/${CANONICAL_BRANCH}:refs/remotes/origin/${CANONICAL_BRANCH}" \
+            "+refs/heads/${PRODUCTION_BRANCH}:refs/remotes/origin/${PRODUCTION_BRANCH}"
+          MASTER_SHA=$(git rev-parse "refs/remotes/origin/${CANONICAL_BRANCH}")
+          MAIN_SHA=$(git rev-parse "refs/remotes/origin/${PRODUCTION_BRANCH}")
+          test "$MAIN_SHA" = "$MASTER_SHA"
+          echo "sha=$MASTER_SHA" >> "$GITHUB_OUTPUT"
+          echo "FINAL_BRANCH_ALIGNMENT=PASS sha=$MASTER_SHA"
+
+      - name: Verify custom-domain deployment source
+        if: github.event_name != 'pull_request'
+        env:
+          EXPECTED_SHA: ${{ steps.final.outputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          expected = os.environ["EXPECTED_SHA"]
+          base = os.environ["CUSTOM_DOMAIN"].rstrip("/")
+          run_id = os.environ["RUN_ID"]
+          last = None
+
+          for attempt in range(48):
+              query = urllib.parse.urlencode({
+                  "lang": "en",
+                  "__branch_guard": f"{run_id}-{attempt}",
+              })
+              url = f"{base}/crypto-astro/btc?{query}"
+              try:
+                  request = urllib.request.Request(url, headers={
+                      "Cache-Control": "no-cache",
+                      "Pragma": "no-cache",
+                      "User-Agent": "ORION-BHRIGU-Branch-Drift-Guard/0.1",
+                  })
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      final_url = response.geturl()
+                      status = response.status
+                      html = response.read().decode("utf-8")
+
+                  checks = {
+                      "http_200": status == 200,
+                      "route_preserved": urllib.parse.urlparse(final_url).path == "/crypto-astro/btc",
+                      "main_source_attribute": f'data-deployment-source-sha="{expected}"' in html,
+                      "head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in html,
+                      "visible_source_prefix": expected[:12] in html,
+                  }
+                  last = {
+                      "attempt": attempt + 1,
+                      "url": final_url,
+                      "expected_source_sha": expected,
+                      "checks": checks,
+                      "failures": [name for name, passed in checks.items() if not passed],
+                  }
+                  if not last["failures"]:
+                      break
+              except Exception as exc:
+                  last = {
+                      "attempt": attempt + 1,
+                      "expected_source_sha": expected,
+                      "error": str(exc),
+                      "failures": ["request"],
+                  }
+              time.sleep(5)
+
+          report = {
+              "schema_version": "bhrigu_production_branch_public_alignment_v0_1",
+              "status": "PASS" if last and not last.get("failures") else "FAIL",
+              "result": last,
+          }
+          Path("artifacts/public-deployment-source-proof.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          if report["status"] != "PASS":
+              raise SystemExit(f"PUBLIC_DEPLOYMENT_SOURCE_ALIGNMENT=FAIL {last}")
+          print(f"PUBLIC_DEPLOYMENT_SOURCE_ALIGNMENT=PASS source_sha={expected}")
+          PY
+
+      - name: Write final guard report
+        if: always()
+        env:
+          INITIAL_STATE: ${{ steps.topology.outputs.state }}
+          INITIAL_MASTER_SHA: ${{ steps.topology.outputs.master_sha }}
+          INITIAL_MAIN_SHA: ${{ steps.topology.outputs.main_sha }}
+          FINAL_SHA: ${{ steps.final.outputs.sha }}
+          SYNC_PERFORMED: ${{ steps.sync.outputs.performed }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          Path("artifacts/branch-drift-guard-report.json").write_text(json.dumps({
+              "schema_version": "bhrigu_production_branch_drift_guard_report_v0_1",
+              "canonical_branch": "master",
+              "production_branch": "main",
+              "initial_state": os.environ.get("INITIAL_STATE") or None,
+              "initial_master_sha": os.environ.get("INITIAL_MASTER_SHA") or None,
+              "initial_main_sha": os.environ.get("INITIAL_MAIN_SHA") or None,
+              "final_aligned_sha": os.environ.get("FINAL_SHA") or None,
+              "sync_performed": os.environ.get("SYNC_PERFORMED") == "true",
+              "event_name": os.environ.get("GITHUB_EVENT_NAME"),
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+          }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload guard evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-production-branch-drift-guard-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
