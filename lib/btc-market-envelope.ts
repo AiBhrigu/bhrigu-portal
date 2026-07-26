@@ -995,8 +995,8 @@ export function buildBtcMarketEnvelopeFromDocuments(
       ],
       uncertainty: [
         current.source_freshness === "FRESH"
-          ? "Accepted source is within the 72-hour product window."
-          : "Accepted source is older than 72 hours; strong current-state language is suppressed.",
+          ? "Accepted source is within the 24-hour freshness window."
+          : "Accepted source is older than 24 hours; strong current-state language is suppressed.",
         uniqueUnavailableMetrics.length
           ? `Unavailable or incompatible memory metrics: ${uniqueUnavailableMetrics.join(", ")}.`
           : "All eight Snapshot Memory metrics are methodologically comparable.",
