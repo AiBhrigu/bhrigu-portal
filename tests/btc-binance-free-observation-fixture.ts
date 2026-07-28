@@ -21,12 +21,14 @@ async function main() {
   const raw = await readFile(candidatePath, "utf8");
   const decoded = JSON.parse(raw);
   const packet = parseBtcBinanceFreeObservation(decoded);
+  const runtimeHeadSha = process.env.BTC_BINANCE_RUNTIME_HEAD_SHA ?? null;
 
   checks.candidate_contract = packet.candidate_sha256 === BTC_BINANCE_FREE_OBSERVATION_CANDIDATE_SHA256;
   checks.candidate_file_hash = computeBtcBinanceObservationFileSha256(raw) === BTC_BINANCE_FREE_OBSERVATION_FILE_SHA256;
   checks.one_observed_row = packet.boundary.maximum_observed_rows === 1 && packet.boundary.historical_window_rows_exposed === 0;
   checks.venue_specific = packet.observation.instrument === "BTCUSDT" && packet.observation.quote_asset === "USDT";
   checks.no_public_raw_or_private_rows = packet.boundary.raw_provider_payload_exposed === false && packet.boundary.private_corpus_rows_exposed === false;
+  checks.runtime_head_sha_bound = runtimeHeadSha === null || /^[a-f0-9]{40}$/.test(runtimeHeadSha);
 
   const shadow = await loadBtcBinanceFreeObservationBridge({ env: {} });
   checks.default_off_shadow_ready = shadow.status === "READY_SHADOW" && shadow.public_enabled === false && shadow.packet === null;
@@ -83,7 +85,7 @@ async function main() {
     source_artifact_digest: "sha256:5c621068e48c7923346a547bc56801a2e17237806bf27cf5986b486347fca35e",
     source_orion_merge_sha: "55b5e2923059694df1247cfd9090396259ab8111",
     portal_source_base_sha: "a8221adc926418be012f852db719a4b141bb7afc",
-    runtime_head_sha: process.env.GITHUB_SHA ?? null,
+    runtime_head_sha: runtimeHeadSha,
     checks,
     decision: {
       public_activation: false,
