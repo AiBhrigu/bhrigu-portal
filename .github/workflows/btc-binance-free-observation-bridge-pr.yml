@@ -1,0 +1,178 @@
+name: BTC Binance Free Observation Bridge Dual Run
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - ".github/workflows/btc-binance-free-observation-bridge-pr.yml"
+      - "components/btc/BtcBinanceFreeObservation.tsx"
+      - "data/btc-binance-free-observation-v0-1.json"
+      - "docs/BTC_MARKET_COSMOGRAPHER_BINANCE_FREE_OBSERVATION_PUBLIC_BRIDGE_AND_DUAL_RUN_INTEGRATION_FULL_CYCLE_v0_1.md"
+      - "lib/btc-binance-free-observation-bridge.ts"
+      - "lib/btc-binance-free-observation-contract.ts"
+      - "lib/btc-binance-free-observation-style.ts"
+      - "package.json"
+      - "pages/crypto-astro/btc.tsx"
+      - "scripts/run-btc-binance-observation-fixture.mjs"
+      - "scripts/verify-btc-binance-observation-surface.py"
+      - "tests/btc-binance-free-observation-fixture.ts"
+      - "tsconfig.btc-binance-observation-fixture.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bridge-dual-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prove exact integration scope
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
+          cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-binance-free-observation-bridge-pr.yml
+          components/btc/BtcBinanceFreeObservation.tsx
+          data/btc-binance-free-observation-v0-1.json
+          docs/BTC_MARKET_COSMOGRAPHER_BINANCE_FREE_OBSERVATION_PUBLIC_BRIDGE_AND_DUAL_RUN_INTEGRATION_FULL_CYCLE_v0_1.md
+          lib/btc-binance-free-observation-bridge.ts
+          lib/btc-binance-free-observation-contract.ts
+          lib/btc-binance-free-observation-style.ts
+          package.json
+          pages/crypto-astro/btc.tsx
+          scripts/run-btc-binance-observation-fixture.mjs
+          scripts/verify-btc-binance-observation-surface.py
+          tests/btc-binance-free-observation-fixture.ts
+          tsconfig.btc-binance-observation-fixture.json
+          SCOPE
+          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+
+      - name: Verify bridge contract and dual-run fallback
+        env:
+          BTC_BINANCE_BRIDGE_REPORT: artifacts/binance-observation-bridge-acceptance.json
+          BTC_BINANCE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run verify:btc-binance-observation | tee artifacts/binance-observation-fixture.log
+
+      - name: Verify existing BTC routing unchanged
+        run: npm run verify:btc-routing
+
+      - name: Build with public flag off
+        env:
+          BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+        run: npm run build
+
+      - name: Start flag-off preview
+        env:
+          BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+        run: |
+          npm run start -- -p 3100 > artifacts/binance-observation-off-preview.log 2>&1 &
+          echo $! > /tmp/binance-off.pid
+          for attempt in {1..45}; do
+            curl --fail --silent http://127.0.0.1:3100/crypto-astro/btc?lang=en >/dev/null && exit 0
+            sleep 1
+          done
+          cat artifacts/binance-observation-off-preview.log
+          exit 1
+
+      - name: Prove default-off public parity
+        run: |
+          python3 - <<'PY'
+          from urllib.parse import quote
+          from urllib.request import urlopen
+          base='http://127.0.0.1:3100/crypto-astro/btc'
+          initial=urlopen(f'{base}?lang=en',timeout=30).read().decode('utf-8')
+          assert 'id="binance-free-observation"' not in initial
+          assert 'b0bfa9c6489e5eff94233a903d6c29b9e31122c30499f84f1328e2ad19943aa3' not in initial
+          assert 'Ask one BTC field question' in initial
+          q=quote('What changed in the BTC field, why does it matter, and what should I watch next?')
+          reading=urlopen(f'{base}?lang=en&q={q}',timeout=45).read().decode('utf-8')
+          assert 'BTC Cosmographer reading' in reading
+          assert 'id="binance-free-observation"' not in reading
+          print('BTC_BINANCE_DEFAULT_OFF_PARITY=PASS')
+          PY
+
+      - name: Stop flag-off preview
+        if: always()
+        run: |
+          if test -f /tmp/binance-off.pid; then kill "$(cat /tmp/binance-off.pid)" || true; fi
+
+      - name: Start SHA-bound visual preview
+        env:
+          BTC_BINANCE_FREE_OBSERVATION_ENABLED: "true"
+          BTC_BINANCE_FREE_OBSERVATION_ACTIVATION_SHA: b0bfa9c6489e5eff94233a903d6c29b9e31122c30499f84f1328e2ad19943aa3
+        run: |
+          npm run start -- -p 3101 > artifacts/binance-observation-on-preview.log 2>&1 &
+          echo $! > /tmp/binance-on.pid
+          for attempt in {1..45}; do
+            curl --fail --silent http://127.0.0.1:3101/crypto-astro/btc?lang=en >/dev/null && exit 0
+            sleep 1
+          done
+          cat artifacts/binance-observation-on-preview.log
+          exit 1
+
+      - name: Install visual driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify additive panel and visual geometry
+        env:
+          BTC_BINANCE_PREVIEW_BASE: http://127.0.0.1:3101/crypto-astro/btc
+        run: python3 scripts/verify-btc-binance-observation-surface.py
+
+      - name: Stop SHA-bound preview
+        if: always()
+        run: |
+          if test -f /tmp/binance-on.pid; then kill "$(cat /tmp/binance-on.pid)" || true; fi
+
+      - name: Prove report-only public evidence
+        env:
+          BTC_BINANCE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test -f artifacts/binance-observation-bridge-acceptance.json
+          test -f artifacts/binance-observation-visual-report.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          bridge=json.loads(Path('artifacts/binance-observation-bridge-acceptance.json').read_text())
+          visual=json.loads(Path('artifacts/binance-observation-visual-report.json').read_text())
+          assert bridge['status']=='PASS_PUBLIC_BRIDGE_DUAL_RUN_DEFAULT_OFF'
+          assert bridge['runtime_head_sha']==os.environ['BTC_BINANCE_RUNTIME_HEAD_SHA']
+          assert bridge['decision']['public_activation'] is False
+          assert bridge['decision']['feature_flag_default_off'] is True
+          assert bridge['decision']['activation_sha_binding_required'] is True
+          assert bridge['decision']['current_static_corridor_preserved'] is True
+          assert visual['checks']['desktop_panel_in_view'] is True
+          assert visual['checks']['mobile_panel_in_view'] is True
+          assert not visual['failures']
+          print('BTC_BINANCE_BRIDGE_ACCEPTANCE=PASS')
+          PY
+
+      - name: Upload bridge and visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-binance-free-observation-bridge-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": ".tmp/btc-binance-observation-fixture",
+    "noEmitOnError": true
+  },
+  "include": [
+    "lib/btc-binance-free-observation-contract.ts",
+    "lib/btc-binance-free-observation-bridge.ts",
+    "tests/btc-binance-free-observation-fixture.ts"
+  ]
+}
