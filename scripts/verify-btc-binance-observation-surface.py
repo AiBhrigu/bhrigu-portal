@@ -19,10 +19,10 @@ def wait(selector,timeout=45):
   return WebDriverWait(driver,timeout).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
 
 def rect(selector):
-  return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {width:r.width,height:r.height};',selector)
+  return driver.execute_script('const r=document.querySelector(arguments[0]).getBoundingClientRect();return {width:r.width,height:r.height,top:r.top,bottom:r.bottom};',selector)
 
 try:
-  driver.set_window_size(1440,1000)
+  driver.set_window_size(1440,1400)
   driver.get(f'{base}?lang=en')
   panel=wait('#binance-free-observation')
   report['checks']['one_panel']=len(driver.find_elements(By.CSS_SELECTOR,'#binance-free-observation'))==1
@@ -36,6 +36,12 @@ try:
   report['measurements']['phi_ratio']=primary['width']/context['width']
   report['checks']['phi_ratio']=1.57<=report['measurements']['phi_ratio']<=1.67
   report['checks']['desktop_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
+  driver.execute_script('arguments[0].scrollIntoView({block:"start"})',panel)
+  time.sleep(.3)
+  panel_rect=rect('#binance-free-observation')
+  report['measurements']['desktop_panel_top']=panel_rect['top']
+  report['measurements']['desktop_panel_bottom']=panel_rect['bottom']
+  report['checks']['desktop_panel_in_view']=panel_rect['top']>=-1 and panel_rect['top']<300 and panel_rect['bottom']>500
   driver.save_screenshot('artifacts/binance-observation-desktop-en.png')
 
   driver.get(f'{base}?lang=en&q={quote(question)}')
@@ -50,7 +56,9 @@ try:
   report['checks']['ru_title']=panel.find_element(By.CSS_SELECTOR,'h2').text.startswith('BTC/USDT')
   report['checks']['mobile_no_overflow']=driver.execute_script('return document.documentElement.scrollWidth<=window.innerWidth+1')
   driver.execute_script('arguments[0].scrollIntoView({block:"start"})',panel)
-  time.sleep(.2)
+  time.sleep(.3)
+  mobile_rect=rect('#binance-free-observation')
+  report['checks']['mobile_panel_in_view']=mobile_rect['top']>=-1 and mobile_rect['top']<160 and mobile_rect['bottom']>600
   driver.save_screenshot('artifacts/binance-observation-mobile-ru.png')
 
   severe=[entry for entry in driver.get_log('browser') if entry.get('level')=='SEVERE' and 'favicon' not in entry.get('message','').lower()]
