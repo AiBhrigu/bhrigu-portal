@@ -1,0 +1,93 @@
+{
+  "boundary": {
+    "current_static_corridor_fallback_preserved": true,
+    "free_observation_only": true,
+    "historical_observation": true,
+    "historical_window_rows_exposed": 0,
+    "maximum_observed_rows": 1,
+    "no_forecast": true,
+    "no_global_btc_usd_claim": true,
+    "no_investment_recommendation": true,
+    "no_trading_signal": true,
+    "paid_question": false,
+    "payment_activation": false,
+    "private_corpus_rows_exposed": false,
+    "raw_provider_payload_exposed": false,
+    "read_only": true
+  },
+  "candidate_sha256": "b0bfa9c6489e5eff94233a903d6c29b9e31122c30499f84f1328e2ad19943aa3",
+  "cosmographer_context": {
+    "cross_layer_confirmation": "NO_STRONG_ACTIVITY_CONFIRMATION",
+    "cross_layer_divergence": "ASTRO_ACTIVITY_DOMINANT",
+    "market_state": "MIXED_30D_TREND",
+    "meaning": "Historical descriptive co-occurrence only. No causality, price forecast, or trading signal.",
+    "trend_structure": "FRAGMENTED"
+  },
+  "derived_market": {
+    "drawdown_from_trailing_365d_high": -0.11128440953295515,
+    "quote_volume_ratio_to_prior_30d_median": 0.5243163389850678,
+    "range_position_30d": 0.35418650768711585,
+    "realized_volatility_30d_annualized": 0.5419019944673916,
+    "return_1d": 0.017590332258871744,
+    "return_30d": -0.008559834030698932,
+    "return_7d": 0.01589499864762356,
+    "trend_persistence_30d": 0.012232727698969293
+  },
+  "evidence_card": {
+    "astro_packet_sha256": "e8c5968994357a60bbcf3bf1c5d5d0f3c0e9b5869495da442c7657f2d3acdcbe",
+    "attribution_en": "Market data: Binance Spot BTCUSDT",
+    "attribution_ru": "Рыночные данные: Binance Spot BTCUSDT",
+    "boundary_statement": "Venue-specific BTC/USDT evidence; not a global BTC/USD reference.",
+    "claim_type": "OBSERVED_AND_DERIVED",
+    "independence_notice": "Binance supplies the referenced market data and does not endorse or sponsor Market Cosmographer.",
+    "instrument": "BTCUSDT",
+    "interval": "1d",
+    "method_id": "BTC_BINANCE_FREE_OBSERVATION_SHADOW_READER_v0_1",
+    "observation_period": {
+      "context_end": "2024-04-20",
+      "context_start": "2024-01-22",
+      "target": "2024-04-20"
+    },
+    "provider": "Binance",
+    "rights_state": "PUBLIC_FREE_SANITIZED_DERIVED_VENUE_OBSERVATION_WITH_PROVENANCE",
+    "shadow_join_sha256": "e5cb5376360e968d93038b1c3faad6107164308ccbcc16f4ba96ad0266825aaa",
+    "source_archive_set_sha256": "67deda0d1ed79e21e3c2870cc1f8315fb12a7e766ff803584c4e98627ff86098",
+    "target_market_row_sha256": "05b67fe6b85ebb7b5aba1f8834c3674edc1275b5807232772d27ce870661435f",
+    "venue": "Binance Spot"
+  },
+  "integration": {
+    "direct_replacement": false,
+    "fallback": "CURRENT_STATIC_BTC_CORRIDOR",
+    "feature_flag": "BTC_BINANCE_FREE_OBSERVATION_ENABLED",
+    "feature_flag_default": false,
+    "mode": "ADDITIVE_PANEL_SEPARATE_FROM_EXISTING_QUESTION_RESULT",
+    "public_activation": false,
+    "rollback": "DISABLE_FEATURE_FLAG_NO_DATA_MIGRATION"
+  },
+  "mode": "FREE_HISTORICAL_OBSERVATION",
+  "observation": {
+    "close_usdt": 64940.59,
+    "context_end": "2024-04-20",
+    "context_start": "2024-01-22",
+    "high_usdt": 65419.0,
+    "instrument": "BTCUSDT",
+    "interval": "1d",
+    "low_usdt": 63090.07,
+    "open_usdt": 63818.01,
+    "provider": "Binance",
+    "quote_asset": "USDT",
+    "quote_volume_usdt": 1486949581.439479,
+    "target_date": "2024-04-20",
+    "trade_count": 1376712,
+    "venue": "Binance Spot",
+    "volume_btc": 23137.42975
+  },
+  "schema_version": "btc_market_cosmographer_binance_free_observation_public_candidate_v0_1",
+  "status": "PASS_PUBLIC_CANDIDATE_SHADOW_ONLY",
+  "uncertainty": [
+    "Historical Binance Spot BTCUSDT observation; not a current live market reading.",
+    "Venue-specific BTC/USDT evidence; not a global BTC/USD reference.",
+    "USDT is not silently relabeled as USD.",
+    "Historical descriptive co-occurrence only; no causality, forecast, or trading signal."
+  ]
+}
