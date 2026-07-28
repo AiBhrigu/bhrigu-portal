@@ -68,6 +68,7 @@ jobs:
       - name: Verify bridge contract and dual-run fallback
         env:
           BTC_BINANCE_BRIDGE_REPORT: artifacts/binance-observation-bridge-acceptance.json
+          BTC_BINANCE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           mkdir -p artifacts
@@ -144,20 +145,25 @@ jobs:
           if test -f /tmp/binance-on.pid; then kill "$(cat /tmp/binance-on.pid)" || true; fi
 
       - name: Prove report-only public evidence
+        env:
+          BTC_BINANCE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set -euo pipefail
           test -f artifacts/binance-observation-bridge-acceptance.json
           test -f artifacts/binance-observation-visual-report.json
           python3 - <<'PY'
-          import json
+          import json, os
           from pathlib import Path
           bridge=json.loads(Path('artifacts/binance-observation-bridge-acceptance.json').read_text())
           visual=json.loads(Path('artifacts/binance-observation-visual-report.json').read_text())
           assert bridge['status']=='PASS_PUBLIC_BRIDGE_DUAL_RUN_DEFAULT_OFF'
+          assert bridge['runtime_head_sha']==os.environ['BTC_BINANCE_RUNTIME_HEAD_SHA']
           assert bridge['decision']['public_activation'] is False
           assert bridge['decision']['feature_flag_default_off'] is True
           assert bridge['decision']['activation_sha_binding_required'] is True
           assert bridge['decision']['current_static_corridor_preserved'] is True
+          assert visual['checks']['desktop_panel_in_view'] is True
+          assert visual['checks']['mobile_panel_in_view'] is True
           assert not visual['failures']
           print('BTC_BINANCE_BRIDGE_ACCEPTANCE=PASS')
           PY
