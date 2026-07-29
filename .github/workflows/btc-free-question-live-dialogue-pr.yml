@@ -1,0 +1,157 @@
+name: BTC Free Question Live Dialogue PR
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - ".github/workflows/btc-free-question-live-dialogue-pr.yml"
+      - "components/btc/BtcHeroQuestionLaunch.tsx"
+      - "components/btc/BtcLiveDialogue.tsx"
+      - "components/btc/BtcQuestionMembrane.tsx"
+      - "docs/BTC_MARKET_COSMOGRAPHER_FREE_QUESTION_CORRIDOR_PUBLIC_LAUNCH_AND_REAL_USER_REQUEST_ACCEPTANCE_v0_1.md"
+      - "lib/btc-live-dialogue-style.ts"
+      - "lib/btc-product-rebalance-style.ts"
+      - "pages/crypto-astro/btc.tsx"
+      - "pages/crypto-astro/btc/live.tsx"
+      - "scripts/run-btc-live-dialogue-fixture.mjs"
+      - "scripts/verify-btc-live-dialogue-surface.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-dialogue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prove exact product scope
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
+          cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-free-question-live-dialogue-pr.yml
+          components/btc/BtcHeroQuestionLaunch.tsx
+          components/btc/BtcLiveDialogue.tsx
+          components/btc/BtcQuestionMembrane.tsx
+          docs/BTC_MARKET_COSMOGRAPHER_FREE_QUESTION_CORRIDOR_PUBLIC_LAUNCH_AND_REAL_USER_REQUEST_ACCEPTANCE_v0_1.md
+          lib/btc-live-dialogue-style.ts
+          lib/btc-product-rebalance-style.ts
+          pages/crypto-astro/btc.tsx
+          pages/crypto-astro/btc/live.tsx
+          scripts/run-btc-live-dialogue-fixture.mjs
+          scripts/verify-btc-live-dialogue-surface.py
+          SCOPE
+          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+
+      - name: Verify product and routing contract
+        env:
+          BTC_LIVE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          node scripts/run-btc-live-dialogue-fixture.mjs | tee artifacts/btc-live-dialogue-fixture.log
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Build production bundle
+        env:
+          BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+        run: npm run build
+
+      - name: Start exact-head preview
+        env:
+          BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3110 > artifacts/btc-live-dialogue-preview.log 2>&1 &
+          echo $! > /tmp/btc-live-dialogue.pid
+          for attempt in {1..60}; do
+            curl --fail --silent "http://127.0.0.1:3110/crypto-astro/btc?lang=en" >/dev/null && exit 0
+            sleep 1
+          done
+          cat artifacts/btc-live-dialogue-preview.log
+          exit 1
+
+      - name: Prove live question runtime
+        run: |
+          python3 - <<'PY'
+          from urllib.parse import quote
+          from urllib.request import urlopen
+          base='http://127.0.0.1:3110'
+          landing=urlopen(f'{base}/crypto-astro/btc?lang=en',timeout=45).read().decode('utf-8')
+          assert 'heroQuestionCard' in landing
+          assert 'Ask the BTC Cosmographer' in landing
+          assert landing.count('data-example-route=') == 5
+          assert '/crypto-astro/btc/live' in landing
+          q=quote('What changed in the BTC field, why does it matter, and what should I watch next?')
+          live=urlopen(f'{base}/crypto-astro/btc/live?lang=en&q={q}',timeout=60).read().decode('utf-8')
+          assert 'data-live-dialogue="btc-free-question"' in live
+          assert 'userTurn' in live
+          assert 'cosmographerTurn' in live
+          assert 'Open full Φ-field, Memory, and Evidence' in live
+          assert 'Stripe' not in live
+          assert 'checkout' not in live.lower()
+          print('BTC_FREE_QUESTION_RUNTIME=PASS')
+          PY
+
+      - name: Install visual driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify first-screen question and live dialogue geometry
+        env:
+          BTC_LIVE_PREVIEW_BASE: http://127.0.0.1:3110
+        run: python3 scripts/verify-btc-live-dialogue-surface.py
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-live-dialogue.pid; then kill "$(cat /tmp/btc-live-dialogue.pid)" || true; fi
+
+      - name: Enforce report-only acceptance
+        env:
+          BTC_LIVE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          test -f artifacts/btc-live-dialogue-contract.json
+          test -f artifacts/btc-live-dialogue-visual-report.json
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          contract=json.loads(Path('artifacts/btc-live-dialogue-contract.json').read_text())
+          visual=json.loads(Path('artifacts/btc-live-dialogue-visual-report.json').read_text())
+          assert contract['status']=='PASS', contract
+          assert contract['runtime_head_sha']==os.environ['BTC_LIVE_RUNTIME_HEAD_SHA'], contract
+          assert not visual['failures'], visual
+          assert visual['checks']['landing_question_in_first_viewport'] is True
+          assert visual['checks']['five_static_routes_preserved'] is True
+          assert visual['checks']['dialogue_phi_ratio'] is True
+          assert visual['checks']['browser_severe_none'] is True
+          print('BTC_FREE_QUESTION_LIVE_DIALOGUE_ACCEPTANCE=PASS')
+          PY
+
+      - name: Upload contract and visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-free-question-live-dialogue-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
