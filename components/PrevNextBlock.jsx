@@ -59,7 +59,18 @@ export default function PrevNextBlock({ route }) {
           border: 1px solid rgba(255,255,255,0.04);
         }
         @media (max-width: 520px) {
-          .pnInner { gap: 7px; padding: 8px 9px; }
+          .pn {
+            position: static;
+            left: auto;
+            right: auto;
+            bottom: auto;
+            width: 100%;
+            margin: 28px 0 20px;
+            padding: 0 16px calc(12px + env(safe-area-inset-bottom));
+            box-sizing: border-box;
+            z-index: auto;
+          }
+          .pnInner { gap: 7px; padding: 8px 9px; max-width: 100%; }
           .pnLink, .pnGhost { padding: 7px 9px; }
         }
       `}</style>
