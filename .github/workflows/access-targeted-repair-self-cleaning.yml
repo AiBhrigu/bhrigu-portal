@@ -1,0 +1,188 @@
+name: Access targeted repair self-cleaning
+
+on:
+  push:
+    branches:
+      - agent/bhrigu-access-scoped-style-mobile-workflow-repair-v0-1
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/bhrigu-access-scoped-style-mobile-workflow-repair-v0-1
+          fetch-depth: 0
+
+      - name: Apply exact one-file Access repair
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('pages/access.tsx')
+          text = path.read_text()
+
+          old_context = '''          <IntroBlock />
+          <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
+            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">'''
+          new_context = '''          <div className="accessContext">
+            <IntroBlock />
+            <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
+            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">'''
+          if old_context not in text:
+              raise SystemExit('context opening anchor not found')
+          text = text.replace(old_context, new_context, 1)
+
+          old_workflow = '''            </section>
+
+          <AccessNotices'''
+          new_workflow = '''            </section>
+          </div>
+
+          <div className="accessWorkflow">
+          <AccessNotices'''
+          if old_workflow not in text:
+              raise SystemExit('workflow opening anchor not found')
+          text = text.replace(old_workflow, new_workflow, 1)
+
+          old_close = '''          )}
+        </section>
+      {/* ACCESS_CLARITY_INFOGRAPHIC_DEEPTECH_V0_2 */}'''
+          new_close = '''          )}
+          </div>
+        </section>
+      {/* ACCESS_CLARITY_INFOGRAPHIC_DEEPTECH_V0_2 */}'''
+          if old_close not in text:
+              raise SystemExit('workflow closing anchor not found')
+          text = text.replace(old_close, new_close, 1)
+
+          old_notice = '''  return (
+    <div className="noticeStack" aria-live="polite">
+      {activeNotice ?? <div className="notice noticePlaceholder" aria-hidden="true" />}
+    </div>
+  );'''
+          new_notice = '''  if (!activeNotice) return null;
+
+  return (
+    <div className="noticeStack" aria-live="polite">
+      {activeNotice}
+    </div>
+  );'''
+          if old_notice not in text:
+              raise SystemExit('notice anchor not found')
+          text = text.replace(old_notice, new_notice, 1)
+
+          old_shell = '''            padding: 14px 0 40px;
+          }'''
+          new_shell = '''            padding: 14px 0 40px;
+            display: flex;
+            flex-direction: column;
+          }
+
+          .accessContext,
+          .accessWorkflow {
+            width: 100%;
+            min-width: 0;
+          }'''
+          if old_shell not in text:
+              raise SystemExit('shell style anchor not found')
+          text = text.replace(old_shell, new_shell, 1)
+
+          mobile_anchor = '''          @media (max-width: 760px) {
+            .grid2,'''
+          mobile_replacement = '''          @media (max-width: 760px) {
+            .accessWorkflow {
+              order: 1;
+            }
+
+            .accessContext {
+              order: 2;
+              margin-top: 18px;
+            }
+
+            .grid2,'''
+          if mobile_anchor not in text:
+              raise SystemExit('mobile style anchor not found')
+          text = text.replace(mobile_anchor, mobile_replacement, 1)
+
+          start_marker = '        <style jsx>{`'
+          end_marker = '        `}</style>'
+          start = text.index(start_marker)
+          end = text.index(end_marker, start)
+          css = text[start + len(start_marker):end]
+
+          def matching_brace(source, opening):
+              depth = 0
+              for i in range(opening, len(source)):
+                  if source[i] == '{':
+                      depth += 1
+                  elif source[i] == '}':
+                      depth -= 1
+                      if depth == 0:
+                          return i
+              raise ValueError('unbalanced CSS braces')
+
+          def scope_selector(selector):
+              selector = selector.strip()
+              if not selector:
+                  return selector
+              if selector == '.accessPage' or selector.startswith('.accessPage '):
+                  return selector
+              return '.accessPage ' + selector
+
+          def transform_css(source):
+              out = []
+              cursor = 0
+              while cursor < len(source):
+                  opening = source.find('{', cursor)
+                  if opening == -1:
+                      out.append(source[cursor:])
+                      break
+                  header = source[cursor:opening]
+                  closing = matching_brace(source, opening)
+                  body = source[opening + 1:closing]
+                  stripped = header.strip()
+                  leading = header[:len(header) - len(header.lstrip())]
+                  trailing = header[len(header.rstrip()):]
+                  if stripped.startswith('@media') or stripped.startswith('@supports'):
+                      new_header = header
+                      new_body = transform_css(body)
+                  elif stripped.startswith('@'):
+                      new_header = header
+                      new_body = body
+                  else:
+                      selectors = [scope_selector(item) for item in stripped.split(',')]
+                      new_header = leading + (',\n' + leading).join(selectors) + trailing
+                      new_body = body
+                  out.append(new_header + '{' + new_body + '}')
+                  cursor = closing + 1
+              return ''.join(out)
+
+          scoped_css = transform_css(css)
+          text = text[:start] + '        <style jsx global>{`' + scoped_css + text[end:]
+
+          path.write_text(text)
+
+      - name: Remove temporary workflow
+        run: rm .github/workflows/access-targeted-repair-self-cleaning.yml
+
+      - name: Verify exact net scope and source anchors
+        run: |
+          git diff -- pages/access.tsx
+          test "$(git status --short | wc -l)" -eq 2
+          grep -q '<style jsx global>' pages/access.tsx
+          grep -q 'className="accessWorkflow"' pages/access.tsx
+          grep -q 'if (!activeNotice) return null;' pages/access.tsx
+          ! git diff --name-only | grep -vE '^(pages/access.tsx|.github/workflows/access-targeted-repair-self-cleaning.yml)$'
+
+      - name: Commit final one-file repair
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/access.tsx .github/workflows/access-targeted-repair-self-cleaning.yml
+          git commit -m "fix(access): restore scoped controls and mobile workflow priority"
+          git push origin HEAD:agent/bhrigu-access-scoped-style-mobile-workflow-repair-v0-1
