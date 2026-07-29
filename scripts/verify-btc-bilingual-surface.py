@@ -71,7 +71,7 @@ try:
       zones=driver.find_elements(By.CSS_SELECTOR,'.reading>.readingZone')
       modules=driver.find_elements(By.CSS_SELECTOR,'.phiPlane .phiModule')
       source_time=driver.find_element(By.CSS_SELECTOR,'.metricRibbon').get_attribute('data-source-generated-at')
-      question_value=driver.find_element(By.CSS_SELECTOR,'textarea[name="q"]').get_attribute('value')
+      question_value=driver.find_element(By.CSS_SELECTOR,'#btc-question textarea[name="q"]').get_attribute('value')
       complete='BTC Field Read unavailable' not in body and 'Чтение поля BTC недоступно' not in body
       item={'locale':locale,'route_id':route_id,'question':question,'complete':complete,'primary_modules':sorted(primaries),'source_generated_at_utc':source_time}
       report['routes'].append(item)
@@ -138,7 +138,7 @@ try:
   report['checks']['three_supporting_or_unavailable']=len(driver.find_elements(By.CSS_SELECTOR,'.phiPlane .supportModule'))==3
   report['checks']['six_metrics']=len(driver.find_elements(By.CSS_SELECTOR,'.metricRibbon>dl>div'))==6
   report['checks']['three_evidence_disclosures']=len(driver.find_elements(By.CSS_SELECTOR,'.evidenceStack>details'))==3
-  report['checks']['field_anchor_glyphs_bounded']=len(driver.find_elements(By.CSS_SELECTOR,'.fieldAnchorGlyph'))==3
+  report['checks']['field_anchor_glyphs_bounded']=len(driver.find_elements(By.CSS_SELECTOR,'.fieldAnchorGlyph'))==4
   report['checks']['one_example_relation_glyph']=len(driver.find_elements(By.CSS_SELECTOR,'.exampleRelationGlyph'))==1
   report['checks']['one_phi_relation_glyph']=len(driver.find_elements(By.CSS_SELECTOR,'.phiRouteGlyph'))==1
   report['checks']['one_state_glyph']=len(driver.find_elements(By.CSS_SELECTOR,'.fieldDirection i'))==1
@@ -149,10 +149,10 @@ try:
   report['checks']['no_continuous_animation']=driver.execute_script('return [...document.querySelectorAll("main *")].every(e=>getComputedStyle(e).animationName==="none")')
   report['checks']['btc_axis_not_circle']=css('.btcAxis','border-radius') in ('0px','')
   report['checks']['primary_type_hierarchy']=float(css('.primaryModule h3','font-size').replace('px',''))>float(css('.supportModule h3','font-size').replace('px',''))
-  report['checks']['bronze_active']=css('.languageSelector a[aria-current="true"]','border-top-color') in ('rgb(181, 138, 85)','rgba(181, 138, 85, 1)')
-  report['checks']['near_black_field']=css('body','background-color') in ('rgb(8, 7, 5)','rgba(8, 7, 5, 1)')
-  report['checks']['warm_white_reading']=css('.executivePrimary h3','color') in ('rgb(238, 232, 220)','rgba(238, 232, 220, 1)')
-  report['checks']['temporal_blue_limited']=css('.module-temporal_context h3','color') in ('rgb(120, 146, 174)','rgba(120, 146, 174, 1)')
+  report['checks']['bronze_active']=css('.languageSelector a[aria-current="true"]','border-top-color') in ('rgb(210, 164, 95)','rgba(210, 164, 95, 1)')
+  report['checks']['near_black_field']=css('body','background-color') in ('rgb(5, 7, 12)','rgba(5, 7, 12, 1)')
+  report['checks']['warm_white_reading']=css('.executivePrimary h3','color') in ('rgb(237, 242, 247)','rgba(237, 242, 247, 1)')
+  report['checks']['temporal_blue_limited']=css('.module-temporal_context h3','color') in ('rgb(106, 168, 255)','rgba(106, 168, 255, 1)')
   report['checks']['no_rejected_dashboard_patterns']=sum(len(driver.find_elements(By.CSS_SELECTOR,s)) for s in ['.metricGrid','.executiveGrid','.moduleNode','.btcCore','.memoryStrip'])==0
   report['checks']['canonical_names_visible']=all(name in driver.page_source for name in ['CoinGecko','DefiLlama','Snapshot Registry','Snapshot Delta'])
   driver.save_screenshot('artifacts/bilingual-glyph-desktop-en.png')
