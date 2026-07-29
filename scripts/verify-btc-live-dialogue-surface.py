@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import time
@@ -34,6 +35,20 @@ def no_overflow():
     return driver.execute_script("return document.documentElement.scrollWidth<=window.innerWidth+1")
 
 
+def full_page_screenshot(path):
+    metrics = driver.execute_cdp_cmd("Page.getLayoutMetrics", {})
+    size = metrics["cssContentSize"]
+    payload = driver.execute_cdp_cmd(
+        "Page.captureScreenshot",
+        {
+            "format": "png",
+            "captureBeyondViewport": True,
+            "clip": {"x": 0, "y": 0, "width": size["width"], "height": size["height"], "scale": 1},
+        },
+    )
+    Path(path).write_bytes(base64.b64decode(payload["data"]))
+
+
 try:
     Path("artifacts").mkdir(exist_ok=True)
     driver.set_window_size(1440, 1100)
@@ -47,10 +62,32 @@ try:
     report["checks"]["landing_has_no_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, "main textarea[name='q']")) == 0
     report["checks"]["landing_cta_targets_live"] = "/crypto-astro/btc/live" in hero_cta.get_attribute("href")
     report["checks"]["landing_cta_in_first_viewport"] = cta_rect["top"] < viewport_height
-    report["checks"]["landing_cta_clear_of_portal_nav"] = cta_rect["bottom"] <= portal_nav["top"] - 8
+    report["checks"]["landing_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
     report["checks"]["five_static_routes_preserved"] = len(driver.find_elements(By.CSS_SELECTOR, ".exampleRouteList a")) == 5
     report["checks"]["landing_no_overflow"] = no_overflow()
     driver.save_screenshot("artifacts/btc-clean-dialogue-landing-desktop-en.png")
+
+    driver.set_window_size(390, 844)
+    driver.get(f"{base}/crypto-astro/btc?lang=en")
+    wait(".heroDialogueCta")
+    wait(".staticRouteProof")
+    mobile_landing_height = driver.execute_script("return window.innerHeight")
+    mobile_cta = rect(".heroDialogueCta")
+    proof_header = rect(".staticProofHeader")
+    proof_routes = rect(".staticExampleRoutes")
+    route_rects = driver.execute_script(
+        "return [...document.querySelectorAll('.exampleRouteList a')].map(e=>{"
+        "const r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,right:r.right,width:r.width};});"
+    )
+    report["checks"]["mobile_landing_cta_in_first_viewport"] = mobile_cta["bottom"] <= mobile_landing_height
+    report["checks"]["mobile_static_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
+    report["checks"]["mobile_static_single_column"] = proof_routes["top"] >= proof_header["bottom"] - 1
+    report["checks"]["mobile_static_routes_bounded"] = all(item["left"] >= 0 and item["right"] <= 390 for item in route_rects)
+    report["checks"]["mobile_static_routes_do_not_overlap"] = all(route_rects[index]["bottom"] <= route_rects[index + 1]["top"] + 1 for index in range(len(route_rects) - 1))
+    report["checks"]["mobile_static_has_no_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, "main textarea[name='q']")) == 0
+    report["checks"]["mobile_static_no_overflow"] = no_overflow()
+    driver.save_screenshot("artifacts/btc-clean-dialogue-landing-mobile-first-screen-en.png")
+    full_page_screenshot("artifacts/btc-clean-dialogue-landing-mobile-full-en.png")
 
     driver.get(f"{base}/crypto-astro/btc/live?lang=en")
     wait(".liveDialogueShell")

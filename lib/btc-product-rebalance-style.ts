@@ -24,6 +24,7 @@ html,body{
     var(--f);
 }
 main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
+body:has(main[data-btc-static-proof="true"]) nav[aria-label="Portal navigation"]{display:none!important}
 .heroProductEntry{
   display:grid;
   grid-template-columns:minmax(0,38.196601125fr) minmax(420px,61.803398875fr);
@@ -117,9 +118,26 @@ button{border-color:rgba(210,164,95,.58)}
 }
 @media(max-width:680px){
   main{padding-inline:16px}
-  .heroProductEntry{gap:26px;padding:30px 0 34px}
-  .heroProductCopy h1{font-size:clamp(44px,16vw,68px)}
-  .heroQuestionCard{padding:24px 18px;border-radius:18px 28px}
+  .heroProductEntry{gap:20px;padding:22px 0 28px}
+  .heroProductCopy h1{margin:.22em 0 .08em;font-size:clamp(42px,12.6vw,52px);line-height:.94}
+  .heroProductCopy>p:last-child{display:none}
+  .heroQuestionCard{min-height:0;gap:12px;padding:20px 16px;border-radius:18px 28px}
+  .heroQuestionCard:before{inset:12px}
+  .heroQuestionHeader{gap:12px;align-items:flex-start}
+  .heroQuestionHeader h2{font-size:clamp(27px,8.2vw,32px)}
+  .heroQuestionGlyph{width:40px;height:40px}
+  .heroQuestionLead{font-size:14px;line-height:1.48}
+  .heroDialogueCta{padding:15px 17px}
+  .heroQuestionBoundary{font-size:10px;line-height:1.5}
   .heroQuestionControls{grid-template-columns:1fr}
+  .proofRouteMembrane{display:block}
+  .staticProofHeader{gap:14px;padding:26px 0}
+  .staticProofHeader .questionTitleLockup{align-items:flex-start}
+  .staticProofHeader h2{font-size:clamp(27px,8vw,32px);line-height:1.05}
+  .staticProofHeader>p{font-size:14px;line-height:1.55}
+  .staticExampleRoutes{margin:0;padding:26px 0 0}
+  .staticExampleRoutes h3{font-size:23px;line-height:1.1}
+  .exampleRouteList a{grid-template-columns:26px minmax(0,1fr) 18px;gap:8px;padding:15px 0}
+  .exampleRouteList b,.exampleRouteList em{min-width:0;overflow-wrap:anywhere}
 }
 `;
