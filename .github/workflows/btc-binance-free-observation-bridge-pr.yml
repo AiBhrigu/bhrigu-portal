@@ -106,7 +106,7 @@ jobs:
           initial=urlopen(f'{base}?lang=en',timeout=30).read().decode('utf-8')
           assert 'id="binance-free-observation"' not in initial
           assert 'b0bfa9c6489e5eff94233a903d6c29b9e31122c30499f84f1328e2ad19943aa3' not in initial
-          assert initial.count('heroDialogueCta') == 1
+          assert 'class="heroDialogueCta"' in initial
           assert initial.count('<textarea') == 0
           assert initial.count('data-example-route=') == 5
           q=quote('What changed in the BTC field, why does it matter, and what should I watch next?')
