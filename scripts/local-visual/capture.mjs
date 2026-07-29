@@ -168,7 +168,9 @@ async function captureRoute(browserInstance, route, viewport) {
         const rect = element.getBoundingClientRect();
         const rightOverflow = Math.max(0, Math.ceil(rect.right - viewportWidth));
         const leftOverflow = Math.max(0, Math.ceil(-rect.left));
-        const overflow = Math.max(rightOverflow, leftOverflow);
+        const boxOverflow = Math.max(rightOverflow, leftOverflow);
+        const contentOverflow = Math.max(0, Math.ceil(element.scrollWidth - element.clientWidth));
+        const overflow = Math.max(boxOverflow, contentOverflow);
         if (overflow <= 2 || rect.width <= 0 || rect.height <= 0) return null;
         const style = getComputedStyle(element);
         return {
@@ -178,6 +180,10 @@ async function captureRoute(browserInstance, route, viewport) {
           left: Math.round(rect.left * 100) / 100,
           right: Math.round(rect.right * 100) / 100,
           width: Math.round(rect.width * 100) / 100,
+          client_width: element.clientWidth,
+          scroll_width: element.scrollWidth,
+          box_overflow_px: boxOverflow,
+          content_overflow_px: contentOverflow,
           overflow_px: overflow,
           font_size: style.fontSize,
           white_space: style.whiteSpace,
