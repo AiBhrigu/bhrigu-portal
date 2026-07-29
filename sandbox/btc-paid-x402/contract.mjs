@@ -244,26 +244,39 @@ export async function processPayment(input, { ledger, facilitator, clock = () =>
     return reject(202, error.message, STATES.REVIEW_REQUIRED);
   }
 
-  const finalization = await ledger.finalizeSettlement({
-    paymentIdentifier: input.paymentIdentifier,
-    normalized,
-    payloadHash,
-    receiptHash: normalized.receipt_reference_hash,
-    transactionHash: normalized.transaction_reference_hash,
-  });
+  let finalization;
+  try {
+    finalization = await ledger.finalizeSettlement({
+      paymentIdentifier: input.paymentIdentifier,
+      normalized,
+      payloadHash,
+      receiptHash: normalized.receipt_reference_hash,
+      transactionHash: normalized.transaction_reference_hash,
+      eventHash: normalized.event_id,
+    });
+  } catch {
+    try { await ledger.markReconciliation(input.paymentIdentifier, 'SETTLED_LEDGER_FINALIZATION_FAILED'); } catch {}
+    return reject(202, 'ENTITLEMENT_WRITE_FAILED', STATES.ENTITLEMENT_WRITE_FAILED);
+  }
   if (finalization.kind === 'duplicate') return { ...finalization.result, replay: true };
   if (finalization.kind === 'ledger-failure') return reject(202, 'ENTITLEMENT_WRITE_FAILED', STATES.ENTITLEMENT_WRITE_FAILED);
 
-  const entitlement = await ledger.issueEntitlement({
-    paymentIdentifier: input.paymentIdentifier,
-    normalized,
-    successfulTurns: TRUSTED.successfulTurns,
-    activationWindowSeconds: TRUSTED.activationWindowSeconds,
-    activeLifetimeSeconds: TRUSTED.activeLifetimeSeconds,
-    now: clock(),
-  });
+  let entitlement;
+  try {
+    entitlement = await ledger.issueEntitlement({
+      paymentIdentifier: input.paymentIdentifier,
+      normalized,
+      successfulTurns: TRUSTED.successfulTurns,
+      activationWindowSeconds: TRUSTED.activationWindowSeconds,
+      activeLifetimeSeconds: TRUSTED.activeLifetimeSeconds,
+      now: clock(),
+    });
+  } catch {
+    try { await ledger.markRefundRequired(input.paymentIdentifier, 'ENTITLEMENT_WRITE_FAILED'); } catch {}
+    return reject(202, 'ENTITLEMENT_WRITE_FAILED', STATES.ENTITLEMENT_WRITE_FAILED);
+  }
   if (!entitlement?.issued) {
-    await ledger.markRefundRequired(input.paymentIdentifier, 'ENTITLEMENT_WRITE_FAILED');
+    try { await ledger.markRefundRequired(input.paymentIdentifier, 'ENTITLEMENT_WRITE_FAILED'); } catch {}
     return reject(202, 'ENTITLEMENT_WRITE_FAILED', STATES.ENTITLEMENT_WRITE_FAILED);
   }
 
