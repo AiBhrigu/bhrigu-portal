@@ -18,7 +18,7 @@ export class InMemoryEntitlementLedger {
   async atomic(fn) {
     const previous = this.mutex;
     let release;
-    this.mutex = new Promise((resolve) => { release = resolve(); });
+    this.mutex = new Promise((resolve) => { release = resolve; });
     await previous;
     try { return await fn(); } finally { release(); }
   }
