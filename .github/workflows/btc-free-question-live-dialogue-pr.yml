@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [ master ]
     paths:
+      - ".github/workflows/btc-binance-free-observation-bridge-pr.yml"
       - ".github/workflows/btc-free-question-live-dialogue-pr.yml"
       - "components/btc/BtcHeroQuestionLaunch.tsx"
       - "components/btc/BtcLiveDialogue.tsx"
@@ -14,6 +15,7 @@ on:
       - "pages/crypto-astro/btc.tsx"
       - "pages/crypto-astro/btc/live.tsx"
       - "scripts/run-btc-live-dialogue-fixture.mjs"
+      - "scripts/verify-btc-bilingual-surface.py"
       - "scripts/verify-btc-live-dialogue-surface.py"
   workflow_dispatch:
 
@@ -46,6 +48,7 @@ jobs:
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
           cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-binance-free-observation-bridge-pr.yml
           .github/workflows/btc-free-question-live-dialogue-pr.yml
           components/btc/BtcHeroQuestionLaunch.tsx
           components/btc/BtcLiveDialogue.tsx
@@ -56,6 +59,7 @@ jobs:
           pages/crypto-astro/btc.tsx
           pages/crypto-astro/btc/live.tsx
           scripts/run-btc-live-dialogue-fixture.mjs
+          scripts/verify-btc-bilingual-surface.py
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
           sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
