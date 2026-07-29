@@ -7,7 +7,7 @@ import type {
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 
 export const BTC_EXECUTIVE_QUESTION_LANGUAGE_SCHEMA =
-  "btc_executive_question_language_v0_2" as const;
+  "btc_executive_question_language_v0_1" as const;
 
 export type BtcQuestionFacet =
   | "change"
