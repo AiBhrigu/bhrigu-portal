@@ -29,8 +29,8 @@ main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
   grid-template-columns:minmax(0,38.196601125fr) minmax(420px,61.803398875fr);
   gap:clamp(34px,5vw,78px);
   align-items:center;
-  min-height:min(760px,calc(100svh - 92px));
-  padding:clamp(34px,5vw,72px) 0;
+  min-height:min(700px,calc(100svh - 132px));
+  padding:clamp(24px,3.6vw,48px) 0;
   border-bottom:1px solid var(--bl);
 }
 .heroProductCopy{align-self:center;max-width:34rem}
@@ -46,11 +46,11 @@ main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
   position:relative;
   isolation:isolate;
   overflow:hidden;
-  min-height:clamp(430px,58svh,560px);
+  min-height:clamp(390px,52svh,510px);
   display:grid;
   align-content:center;
-  gap:18px;
-  padding:clamp(26px,4vw,54px);
+  gap:14px;
+  padding:clamp(24px,3.2vw,42px);
   border:1px solid rgba(106,168,255,.34);
   border-radius:21px 34px;
   background:
@@ -72,13 +72,14 @@ main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
 .heroQuestionHeader h2{margin:5px 0 0;font-size:clamp(27px,3.1vw,42px);line-height:1.05;letter-spacing:-.035em}
 .heroQuestionGlyph{width:46px;height:46px;border-color:rgba(106,168,255,.65)}
 .heroQuestionGlyph b{color:var(--t)}
-.heroQuestionLead{position:relative;max-width:46rem;margin:0;color:var(--t2);line-height:1.6}
+.heroQuestionLead{position:relative;max-width:46rem;margin:0;color:var(--t2);font-size:14px;line-height:1.5}
 .heroQuestionForm{position:relative;display:grid;grid-template-columns:1fr;gap:13px}
 .heroQuestionInput{display:grid;gap:8px}
-.heroQuestionInput textarea{min-height:126px;border-color:rgba(106,168,255,.3);background:rgba(2,7,14,.72);line-height:1.5}
+.heroQuestionInput textarea{min-height:94px;border-color:rgba(106,168,255,.3);background:rgba(2,7,14,.72);line-height:1.5}
 .heroQuestionControls{display:grid;grid-template-columns:minmax(170px,.62fr) minmax(190px,.38fr);gap:13px;align-items:end}
 .heroQuestionControls button{
   width:100%;
+  min-height:48px;
   justify-self:stretch;
   border-color:rgba(106,168,255,.72);
   background:linear-gradient(110deg,rgba(106,168,255,.28),rgba(143,124,244,.16));
