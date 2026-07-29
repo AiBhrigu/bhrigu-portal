@@ -8,6 +8,7 @@ export class InMemoryEntitlementLedger {
     this.rows = new Map(snapshot?.rows || []);
     this.receipts = new Map(snapshot?.receipts || []);
     this.transactions = new Map(snapshot?.transactions || []);
+    this.events = new Map(snapshot?.events || []);
     this.payloads = new Map(snapshot?.payloads || []);
     this.entitlements = new Map(snapshot?.entitlements || []);
     this.refunds = new Map(snapshot?.refunds || []);
@@ -17,7 +18,7 @@ export class InMemoryEntitlementLedger {
   async atomic(fn) {
     const previous = this.mutex;
     let release;
-    this.mutex = new Promise((resolve) => { release = resolve; });
+    this.mutex = new Promise((resolve) => { release = resolve(); });
     await previous;
     try { return await fn(); } finally { release(); }
   }
@@ -62,12 +63,12 @@ export class InMemoryEntitlementLedger {
     });
   }
 
-  async finalizeSettlement({ paymentIdentifier, normalized, receiptHash, transactionHash }) {
+  async finalizeSettlement({ paymentIdentifier, normalized, receiptHash, transactionHash, eventHash }) {
     return this.atomic(() => {
       this.assertAvailable();
       if (this.failFinalize) return { kind: 'ledger-failure' };
-      for (const index of [this.receipts, this.transactions]) {
-        const key = index === this.receipts ? receiptHash : transactionHash;
+      for (const index of [this.receipts, this.transactions, this.events]) {
+        const key = index === this.receipts ? receiptHash : index === this.transactions ? transactionHash : eventHash;
         const existingId = index.get(key);
         if (existingId && existingId !== paymentIdentifier) {
           const existing = this.rows.get(existingId);
@@ -78,6 +79,7 @@ export class InMemoryEntitlementLedger {
       if (!row) return { kind: 'ledger-failure' };
       this.receipts.set(receiptHash, paymentIdentifier);
       this.transactions.set(transactionHash, paymentIdentifier);
+      this.events.set(eventHash, paymentIdentifier);
       this.rows.set(paymentIdentifier, { ...row, status: 'settled', normalized });
       return { kind: 'settled' };
     });
@@ -115,6 +117,55 @@ export class InMemoryEntitlementLedger {
       const row = this.rows.get(paymentIdentifier);
       this.rows.set(paymentIdentifier, { ...row, status: 'completed', result });
       return result;
+    });
+  }
+
+  async activate(paymentIdentifier, now) {
+    return this.atomic(() => {
+      this.assertAvailable();
+      const entitlement = this.entitlements.get(paymentIdentifier);
+      if (!entitlement) return { activated: false, code: 'ENTITLEMENT_NOT_FOUND' };
+      if (entitlement.state === 'revoked') return { activated: false, code: 'ENTITLEMENT_REVOKED' };
+      if (entitlement.state === 'fulfilled') return { activated: false, code: 'ENTITLEMENT_FULFILLED' };
+      if (entitlement.state === 'active') return { activated: true, replay: true, publicView: publicEntitlement(entitlement) };
+      if (now > entitlement.activateByMs) {
+        const expired = { ...entitlement, state: 'expired', expiredAtMs: now };
+        this.entitlements.set(paymentIdentifier, expired);
+        return { activated: false, code: 'ACTIVATION_EXPIRED', publicView: publicEntitlement(expired) };
+      }
+      const active = {
+        ...entitlement,
+        state: 'active',
+        activatedAtMs: now,
+        expiresAtMs: now + entitlement.activeLifetimeSeconds * 1000,
+      };
+      this.entitlements.set(paymentIdentifier, active);
+      return { activated: true, replay: false, publicView: publicEntitlement(active) };
+    });
+  }
+
+  async consumeSuccessfulTurn(paymentIdentifier, now) {
+    return this.atomic(() => {
+      this.assertAvailable();
+      const entitlement = this.entitlements.get(paymentIdentifier);
+      if (!entitlement) return { consumed: false, code: 'ENTITLEMENT_NOT_FOUND' };
+      if (entitlement.state === 'revoked') return { consumed: false, code: 'ENTITLEMENT_REVOKED' };
+      if (entitlement.state === 'fulfilled' || entitlement.remainingTurns <= 0) return { consumed: false, code: 'ENTITLEMENT_FULFILLED' };
+      if (entitlement.state !== 'active') return { consumed: false, code: 'ENTITLEMENT_NOT_ACTIVE' };
+      if (now > entitlement.expiresAtMs) {
+        const expired = { ...entitlement, state: 'expired', expiredAtMs: now };
+        this.entitlements.set(paymentIdentifier, expired);
+        return { consumed: false, code: 'SESSION_EXPIRED', publicView: publicEntitlement(expired) };
+      }
+      const remainingTurns = entitlement.remainingTurns - 1;
+      const updated = {
+        ...entitlement,
+        remainingTurns,
+        state: remainingTurns === 0 ? 'fulfilled' : 'active',
+        fulfilledAtMs: remainingTurns === 0 ? now : null,
+      };
+      this.entitlements.set(paymentIdentifier, updated);
+      return { consumed: true, remainingTurns, publicView: publicEntitlement(updated) };
     });
   }
 
@@ -165,7 +216,7 @@ export class InMemoryEntitlementLedger {
   getRow(paymentIdentifier) { return this.rows.get(paymentIdentifier) || null; }
   snapshot() {
     return {
-      rows: [...this.rows.entries()], receipts: [...this.receipts.entries()], transactions: [...this.transactions.entries()],
+      rows: [...this.rows.entries()], receipts: [...this.receipts.entries()], transactions: [...this.transactions.entries()], events: [...this.events.entries()],
       payloads: [...this.payloads.entries()], entitlements: [...this.entitlements.entries()], refunds: [...this.refunds.entries()],
     };
   }
@@ -181,5 +232,7 @@ function publicEntitlement(value) {
     remaining_successful_turns: value.remainingTurns,
     activation_deadline: new Date(value.activateByMs).toISOString(),
     active_lifetime_seconds: value.activeLifetimeSeconds,
+    activated_at: value.activatedAtMs == null ? null : new Date(value.activatedAtMs).toISOString(),
+    expires_at: value.expiresAtMs == null ? null : new Date(value.expiresAtMs).toISOString(),
   };
 }
