@@ -1,0 +1,192 @@
+name: BTC Paid Dialogue x402 Sandbox
+
+on:
+  push:
+    branches: [ "agent/btc-paid-x402-sandbox-v0-1" ]
+    paths:
+      - ".github/workflows/btc-paid-x402-sandbox.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "sandbox/btc-paid-x402/**"
+  pull_request:
+    branches: [ master ]
+    paths:
+      - ".github/workflows/btc-paid-x402-sandbox.yml"
+      - "package.json"
+      - "package-lock.json"
+      - "sandbox/btc-paid-x402/**"
+  workflow_dispatch:
+    inputs:
+      run_live_canary:
+        description: "Run protected Base Sepolia value-transfer canary"
+        required: true
+        default: false
+        type: boolean
+
+env:
+  LOCKED_BASE_SHA: b9e31e19b7863a0959096067ea9d97ea252fe4b7
+
+permissions:
+  contents: write
+
+jobs:
+  lockfile-bootstrap:
+    if: ${{ github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Resolve exact sandbox lockfile without lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Fail on x402 lifecycle scripts or forbidden packages
+        run: |
+          node <<'NODE'
+          const lock=require('./package-lock.json');
+          const packages=lock.packages||{};
+          for(const name of ['@x402/core','@x402/evm','@x402/extensions']){
+            const key=`node_modules/${name}`;
+            if(packages[key]?.version!=='2.20.0') throw new Error(`${name} exact version mismatch`);
+            if(packages[key]?.hasInstallScript) throw new Error(`${name} lifecycle script forbidden`);
+          }
+          for(const forbidden of ['@x402/next','@x402/paywall','@x402/svm']){
+            if(packages[`node_modules/${forbidden}`]) throw new Error(`${forbidden} forbidden`);
+          }
+          NODE
+
+      - name: Commit deterministic lockfile to feature branch
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package-lock.json; then
+            echo "PACKAGE_LOCK_ALREADY_EXACT=YES"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "BTC: lock isolated x402 sandbox dependencies"
+          git push origin HEAD:agent/btc-paid-x402-sandbox-v0-1
+
+  offline-exact-head:
+    if: ${{ github.event_name != 'push' || github.actor == 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prove exact eight-file scope
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          BASE_SHA="${PR_BASE_SHA:-$LOCKED_BASE_SHA}"
+          git diff --name-only "$BASE_SHA...HEAD" | sort > /tmp/actual-scope.txt
+          cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-paid-x402-sandbox.yml
+          package-lock.json
+          package.json
+          sandbox/btc-paid-x402/contract.mjs
+          sandbox/btc-paid-x402/entitlement-ledger.mjs
+          sandbox/btc-paid-x402/fixtures.json
+          sandbox/btc-paid-x402/mock-facilitator.mjs
+          sandbox/btc-paid-x402/run-fixtures.mjs
+          SCOPE
+          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+
+      - name: Install exact lock without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify exact dependencies and forbidden wrappers
+        run: |
+          node <<'NODE'
+          const pkg=require('./package.json');
+          const lock=require('./package-lock.json');
+          const required={'@x402/core':'2.20.0','@x402/evm':'2.20.0','@x402/extensions':'2.20.0'};
+          for(const [name,version] of Object.entries(required)){
+            if(pkg.dependencies?.[name]!==version) throw new Error(`${name} package exact pin mismatch`);
+            if(lock.packages?.[`node_modules/${name}`]?.version!==version) throw new Error(`${name} lock exact pin mismatch`);
+            if(lock.packages?.[`node_modules/${name}`]?.hasInstallScript) throw new Error(`${name} lifecycle script forbidden`);
+          }
+          for(const forbidden of ['@x402/next','@x402/paywall','@x402/svm']){
+            if(pkg.dependencies?.[forbidden]||pkg.devDependencies?.[forbidden]||lock.packages?.[`node_modules/${forbidden}`]) throw new Error(`${forbidden} forbidden`);
+          }
+          NODE
+          npm audit --audit-level=high
+
+      - name: Run 60 offline x402 entitlement cases
+        run: npm run verify:btc-paid-x402-sandbox
+
+      - name: Verify existing BTC contracts unchanged
+        run: |
+          npm run verify:btc-routing
+          npm run verify:btc-producer-contract
+          npm run verify:btc-binance-observation
+
+      - name: Build unchanged portal
+        run: npm run build
+
+      - name: Prove no public payment surface
+        run: |
+          set -euo pipefail
+          test ! -e pages/api/btc-paid-x402.ts
+          test ! -e pages/crypto-astro/btc-paid.tsx
+          git diff --quiet "$LOCKED_BASE_SHA...HEAD" -- pages components lib vercel.json
+          ! grep -R --line-number --exclude='run-fixtures.mjs' --exclude='fixtures.json' 'PRIVATE KEY\|BEGIN PRIVATE' sandbox/btc-paid-x402
+          echo "PUBLIC_PAYMENT_SURFACE=ABSENT"
+
+  live-base-sepolia-canary:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_live_canary == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: btc-paid-x402-base-sepolia-sandbox
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install exact lock without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Run fail-closed live input gate
+        env:
+          X402_SANDBOX_PAYER_PRIVATE_KEY: ${{ secrets.X402_SANDBOX_PAYER_PRIVATE_KEY }}
+          X402_SANDBOX_RECEIVER_PRIVATE_KEY: ${{ secrets.X402_SANDBOX_RECEIVER_PRIVATE_KEY }}
+          X402_SANDBOX_RECEIVER_ADDRESS: ${{ vars.X402_SANDBOX_RECEIVER_ADDRESS }}
+          X402_SANDBOX_DURABLE_LEDGER_URL: ${{ secrets.X402_SANDBOX_DURABLE_LEDGER_URL }}
+          X402_SANDBOX_DURABLE_LEDGER_TOKEN: ${{ secrets.X402_SANDBOX_DURABLE_LEDGER_TOKEN }}
+          X402_SANDBOX_BASE_SEPOLIA_RPC_URL: ${{ secrets.X402_SANDBOX_BASE_SEPOLIA_RPC_URL }}
+          X402_SANDBOX_LIVE_EXECUTION_ACK: ${{ vars.X402_SANDBOX_LIVE_EXECUTION_ACK }}
+        run: npm run verify:btc-paid-x402-live
