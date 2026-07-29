@@ -45,7 +45,13 @@ const summary = {
   completed_captures: captures.length,
   passing_captures: captures.length - blockerCaptures.length,
   blocking_captures: blockerCaptures.length,
-  blockers: blockerCaptures.map(({ route_id, path: routePath, viewport, blockers }) => ({ route_id, path: routePath, viewport, blockers })),
+  blockers: blockerCaptures.map(({ route_id, path: routePath, viewport, blockers, metrics }) => ({
+    route_id,
+    path: routePath,
+    viewport,
+    blockers,
+    overflow_offenders: metrics?.overflow_offenders || [],
+  })),
   screenshots_committed_to_repository: false,
   production_writes: 0,
   vercel_writes: 0,
@@ -144,6 +150,7 @@ async function captureRoute(browserInstance, route, viewport) {
   const metrics = await page.evaluate(() => {
     const root = document.documentElement;
     const body = document.body;
+    const viewportWidth = window.innerWidth;
     const images = [...document.images].map((image) => {
       const source = image.currentSrc || image.src || "";
       let firstParty = false;
@@ -156,6 +163,33 @@ async function captureRoute(browserInstance, route, viewport) {
         natural_height: image.naturalHeight,
       };
     });
+    const overflowOffenders = [...document.querySelectorAll("body *")]
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const rightOverflow = Math.max(0, Math.ceil(rect.right - viewportWidth));
+        const leftOverflow = Math.max(0, Math.ceil(-rect.left));
+        const overflow = Math.max(rightOverflow, leftOverflow);
+        if (overflow <= 2 || rect.width <= 0 || rect.height <= 0) return null;
+        const style = getComputedStyle(element);
+        return {
+          selector: selectorFor(element),
+          tag: element.tagName.toLowerCase(),
+          text: (element.textContent || "").trim().replace(/\s+/g, " ").slice(0, 160),
+          left: Math.round(rect.left * 100) / 100,
+          right: Math.round(rect.right * 100) / 100,
+          width: Math.round(rect.width * 100) / 100,
+          overflow_px: overflow,
+          font_size: style.fontSize,
+          white_space: style.whiteSpace,
+          overflow_wrap: style.overflowWrap,
+          word_break: style.wordBreak,
+          min_width: style.minWidth,
+          max_width: style.maxWidth,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.overflow_px - a.overflow_px || b.width - a.width)
+      .slice(0, 20);
     return {
       title: document.title,
       body_text_length: (body?.innerText || "").trim().length,
@@ -166,9 +200,31 @@ async function captureRoute(browserInstance, route, viewport) {
       landmark_count: document.querySelectorAll("main,header,nav,footer").length,
       heading_count: document.querySelectorAll("h1,h2,h3").length,
       link_count: document.querySelectorAll("a[href]").length,
+      overflow_offenders: overflowOffenders,
       images,
     };
-  }).catch((error) => ({ evaluation_error: safeMessage(error), images: [] }));
+
+    function selectorFor(element) {
+      if (element.id) return `#${CSS.escape(element.id)}`;
+      const parts = [];
+      let current = element;
+      while (current && current.nodeType === Node.ELEMENT_NODE && parts.length < 6) {
+        let part = current.tagName.toLowerCase();
+        const stableClasses = [...current.classList]
+          .filter((name) => /^[A-Za-z_-][A-Za-z0-9_-]*$/.test(name))
+          .slice(0, 2);
+        if (stableClasses.length) part += `.${stableClasses.map((name) => CSS.escape(name)).join(".")}`;
+        const parent = current.parentElement;
+        if (parent) {
+          const siblings = [...parent.children].filter((child) => child.tagName === current.tagName);
+          if (siblings.length > 1) part += `:nth-of-type(${siblings.indexOf(current) + 1})`;
+        }
+        parts.unshift(part);
+        current = parent;
+      }
+      return parts.join(" > ");
+    }
+  }).catch((error) => ({ evaluation_error: safeMessage(error), images: [], overflow_offenders: [] }));
 
   const firstPartyRequestFailures = requestFailures.filter((item) => item.first_party);
   const firstPartyHttpFailures = httpFailures.filter((item) => item.first_party && !isIgnorableFirstPartyStatus(item));
@@ -275,7 +331,9 @@ function safeMessage(error) {
 
 function renderMarkdown(summary, records) {
   const rows = records.map((record) => `| ${record.viewport} | \`${record.path}\` | ${record.blockers.length ? `FAIL · ${record.blockers.join(", ")}` : "PASS"} | ${record.screenshot || "—"} |`).join("\n");
-  return `# BHRIGU Portal local exact-head visual validation\n\n- Node: \`${summary.node}\`\n- Status: **${summary.status}**\n- Source SHA: \`${summary.source_sha}\`\n- Harness SHA: \`${summary.harness_sha}\`\n- Generated: ${summary.generated_at_utc}\n- Public routes and scenarios: ${summary.public_routes_and_scenarios}\n- Captures: ${summary.completed_captures}/${summary.expected_captures}\n- Blocking captures: ${summary.blocking_captures}\n- Production writes: 0\n- Vercel writes: 0\n- x402 live transfers: 0\n\n| Viewport | Route | Result | Screenshot |\n|---|---|---|---|\n${rows}\n`;
+  const offenderRows = summary.blockers.flatMap((blocker) => (blocker.overflow_offenders || []).slice(0, 3).map((offender) => `| ${blocker.viewport} | \`${blocker.path}\` | \`${offender.selector}\` | ${offender.overflow_px}px | ${offender.font_size || "—"} |`)).join("\n");
+  const offenderSection = offenderRows ? `\n## Overflow offenders\n\n| Viewport | Route | Selector | Overflow | Font |\n|---|---|---|---:|---|\n${offenderRows}\n` : "";
+  return `# BHRIGU Portal local exact-head visual validation\n\n- Node: \`${summary.node}\`\n- Status: **${summary.status}**\n- Source SHA: \`${summary.source_sha}\`\n- Harness SHA: \`${summary.harness_sha}\`\n- Generated: ${summary.generated_at_utc}\n- Public routes and scenarios: ${summary.public_routes_and_scenarios}\n- Captures: ${summary.completed_captures}/${summary.expected_captures}\n- Blocking captures: ${summary.blocking_captures}\n- Production writes: 0\n- Vercel writes: 0\n- x402 live transfers: 0\n\n| Viewport | Route | Result | Screenshot |\n|---|---|---|---|\n${rows}\n${offenderSection}`;
 }
 
 function renderGallery(summary, records) {
