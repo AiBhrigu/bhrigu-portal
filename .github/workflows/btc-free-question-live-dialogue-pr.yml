@@ -140,6 +140,7 @@ jobs:
           assert not visual['failures'], visual
           assert visual['checks']['landing_single_dialogue_cta'] is True
           assert visual['checks']['landing_has_no_question_input'] is True
+          assert visual['checks']['landing_portal_nav_hidden'] is True
           assert visual['checks']['five_static_routes_preserved'] is True
           assert visual['checks']['mobile_landing_cta_in_first_viewport'] is True
           assert visual['checks']['mobile_static_portal_nav_hidden'] is True
