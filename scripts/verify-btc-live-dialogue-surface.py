@@ -61,8 +61,13 @@ try:
     wait(".cosmographerTurn .answerHeader")
     conversation = rect(".liveConversation")
     evidence = rect(".liveEvidenceRail")
+    header_title = rect(".liveConversationHeader h1")
+    header_intro = rect(".liveConversationHeader>p")
     report["measurements"]["dialogue_phi_ratio"] = conversation["width"] / evidence["width"]
+    report["measurements"]["header_title_right"] = header_title["right"]
+    report["measurements"]["header_intro_left"] = header_intro["left"]
     report["checks"]["dialogue_phi_ratio"] = 1.54 <= report["measurements"]["dialogue_phi_ratio"] <= 1.69
+    report["checks"]["live_header_no_collision"] = header_title["right"] <= header_intro["left"] - 8
     report["checks"]["user_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".userTurn")) == 1
     report["checks"]["cosmographer_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")) >= 1
     report["checks"]["concise_decision_cells"] = len(driver.find_elements(By.CSS_SELECTOR, ".answerDecisionGrid>div")) == 5
