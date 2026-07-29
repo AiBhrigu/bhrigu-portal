@@ -108,7 +108,7 @@ export function formatBtcQuestionWatchNext(
 export function classifyBtcQuestionFacets(question: string): BtcQuestionFacet[] {
   const q = question.toLowerCase();
   const facets: BtcQuestionFacet[] = [];
-  if (/what changed|change|changed|since|delta|что измен|изменени|сравн.*предыдущ/.test(q)) facets.push("change");
+  if (/what changed|change|changed|since|delta|что измен|изменени/.test(q)) facets.push("change");
   if (/why|matter|reason|почему|важно|причин/.test(q)) facets.push("reason");
   if (/confirm|support|agree|подтверж|соглас/.test(q)) facets.push("confirmation");
   if (/watch|next|condition|наблюд|дальше|услов/.test(q)) facets.push("watch");
