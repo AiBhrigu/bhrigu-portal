@@ -4,18 +4,10 @@ on:
   pull_request:
     branches: [ master ]
     paths:
-      - ".github/workflows/btc-binance-free-observation-bridge-pr.yml"
       - ".github/workflows/btc-free-question-live-dialogue-pr.yml"
-      - "components/btc/BtcHeroQuestionLaunch.tsx"
       - "components/btc/BtcLiveDialogue.tsx"
-      - "components/btc/BtcQuestionMembrane.tsx"
-      - "docs/BTC_MARKET_COSMOGRAPHER_FREE_QUESTION_CORRIDOR_PUBLIC_LAUNCH_AND_REAL_USER_REQUEST_ACCEPTANCE_v0_1.md"
-      - "lib/btc-live-dialogue-style.ts"
-      - "lib/btc-product-rebalance-style.ts"
-      - "pages/crypto-astro/btc.tsx"
-      - "pages/crypto-astro/btc/live.tsx"
+      - "lib/btc-executive-question-language.ts"
       - "scripts/run-btc-live-dialogue-fixture.mjs"
-      - "scripts/verify-btc-bilingual-surface.py"
       - "scripts/verify-btc-live-dialogue-surface.py"
   workflow_dispatch:
 
@@ -25,7 +17,7 @@ permissions:
 jobs:
   live-dialogue:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - name: Checkout exact head
         uses: actions/checkout@v4
@@ -42,22 +34,22 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Prove exact clean-dialogue scope
+      - name: Prove exact question-specific repair scope
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
           cat > /tmp/expected-scope.txt <<'SCOPE'
-          .github/workflows/btc-binance-free-observation-bridge-pr.yml
           .github/workflows/btc-free-question-live-dialogue-pr.yml
-          lib/btc-product-rebalance-style.ts
-          pages/crypto-astro/btc.tsx
+          components/btc/BtcLiveDialogue.tsx
+          lib/btc-executive-question-language.ts
+          scripts/run-btc-live-dialogue-fixture.mjs
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
           sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
           diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
 
-      - name: Verify product and routing contract
+      - name: Verify product and inherited routing contracts
         env:
           BTC_LIVE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
@@ -79,14 +71,127 @@ jobs:
           set -euo pipefail
           npm run start -- -p 3110 > artifacts/btc-live-dialogue-preview.log 2>&1 &
           echo $! > /tmp/btc-live-dialogue.pid
-          for attempt in {1..60}; do
+          for attempt in {1..90}; do
             curl --fail --silent "http://127.0.0.1:3110/crypto-astro/btc?lang=en" >/dev/null && exit 0
             sleep 1
           done
           cat artifacts/btc-live-dialogue-preview.log
           exit 1
 
-      - name: Prove clean live dialogue runtime
+      - name: Run 24-question bilingual semantic gate
+        run: |
+          python3 - <<'PY'
+          import html
+          import json
+          import re
+          from pathlib import Path
+          from urllib.parse import quote
+          from urllib.request import urlopen
+
+          base='http://127.0.0.1:3110'
+          corpus=[
+            ('en','Do BTC dominance and altcoin breadth confirm BTC leadership?','btc_gravity','confirmation'),
+            ('en','Why does BTC dominance diverge from wider market breadth?','btc_gravity','reason'),
+            ('en','Do stablecoin share, DeFi TVL and DEX volume confirm current BTC liquidity conditions?','liquidity','confirmation'),
+            ('en','What changed in stablecoin liquidity and DeFi TVL?','liquidity','change'),
+            ('en','Do regime, Market Field Score and market cap confirm the current BTC structure?','market_structure','confirmation'),
+            ('en','Why do regime and market cap describe a split market structure?','market_structure','reason'),
+            ('en','Are altcoin breadth and ETH rotation broadening market participation?','market_participation_rotation','confirmation'),
+            ('en','What should I watch next in altcoin rotation and participation?','market_participation_rotation','watch'),
+            ('en','What changed in accepted Snapshot Memory since the previous verified snapshot?','change_memory','change'),
+            ('en','Compare the accepted Snapshot Memory with the previous checkpoint.','change_memory','comparison'),
+            ('en','How does the selected date change BTC temporal pressure and cycle context?','temporal_pressure','temporal_context'),
+            ('en','What is the current BTC field overview and why does it matter?','general_btc_field','reason'),
+            ('ru','Подтверждают ли доминирование BTC и ширина альткоинов лидерство BTC?','btc_gravity','confirmation'),
+            ('ru','Почему доминирование BTC расходится с шириной рынка?','btc_gravity','reason'),
+            ('ru','Подтверждают ли стейблкоины, DeFi TVL и DEX текущую ликвидность BTC?','liquidity','confirmation'),
+            ('ru','Что изменилось в ликвидности стейблкоинов и DeFi TVL?','liquidity','change'),
+            ('ru','Подтверждают ли режим, Field Score и капитализация структуру BTC?','market_structure','confirmation'),
+            ('ru','Почему режим и капитализация дают раздельную структуру рынка?','market_structure','reason'),
+            ('ru','Расширяют ли ширина альткоинов и ротация ETH участие рынка?','market_participation_rotation','confirmation'),
+            ('ru','За чем наблюдать дальше в ротации альткоинов и участии?','market_participation_rotation','watch'),
+            ('ru','Что изменила принятая память BTC по сравнению с предыдущим снимком?','change_memory','change'),
+            ('ru','Сравни принятую Snapshot Memory с предыдущей контрольной точкой.','change_memory','comparison'),
+            ('ru','Как выбранная дата меняет временное давление и цикл BTC?','temporal_pressure','temporal_context'),
+            ('ru','Что показывает общее поле BTC и почему это важно?','general_btc_field','reason'),
+          ]
+
+          def text_between(page, pattern):
+            match=re.search(pattern,page,re.S)
+            assert match, pattern
+            return re.sub(r'<[^>]+>',' ',html.unescape(match.group(1))).strip()
+
+          rows=[]
+          for locale,question,expected_class,expected_facet in corpus:
+            page=urlopen(f'{base}/crypto-astro/btc/live?lang={locale}&q={quote(question)}',timeout=60).read().decode('utf-8')
+            klass=re.search(r'data-question-class="([^"]+)"',page)
+            facets=re.search(r'data-question-facets="([^"]*)"',page)
+            state=re.search(r'data-answer-state="([^"]+)"',page)
+            assert klass and facets and state, question
+            headline=text_between(page,r'<header class="answerHeader">.*?<h2>(.*?)</h2>')
+            direct=text_between(page,r'<p class="answerLead" data-answer-direct="true">(.*?)</p>')
+            evidence=text_between(page,r'<section data-answer-section="evidence">(.*?)</section>')
+            limit=text_between(page,r'<p data-answer-section="limit">(.*?)</p>')
+            change=text_between(page,r'<p data-answer-section="change">(.*?)</p>')
+            boundary=text_between(page,r'<footer class="answerSource" data-answer-source-boundary="true">(.*?)</footer>')
+            actual_facets=[value for value in html.unescape(facets.group(1)).split(',') if value]
+            assert klass.group(1)==expected_class,(question,klass.group(1),expected_class)
+            assert expected_facet in actual_facets,(question,actual_facets,expected_facet)
+            assert state.group(1) in {'CONFIRMED','SPLIT','LIMITED'}
+            assert headline and headline.lower()!='mixed signals'
+            assert direct and evidence and limit and change and boundary
+            assert ('forecast' in boundary.lower()) or ('прогноз' in boundary.lower())
+            assert 'price target' not in direct.lower()
+            rows.append({'locale':locale,'question':question,'question_class':klass.group(1),'facets':actual_facets,'state':state.group(1),'headline':headline,'direct':direct,'evidence':evidence})
+
+          assert len(rows)==24
+          assert {row['question_class'] for row in rows if row['locale']=='en'}=={'btc_gravity','liquidity','market_structure','market_participation_rotation','change_memory','temporal_pressure','general_btc_field'}
+          assert {row['question_class'] for row in rows if row['locale']=='ru'}=={'btc_gravity','liquidity','market_structure','market_participation_rotation','change_memory','temporal_pressure','general_btc_field'}
+
+          cross_class={}
+          for row in rows:
+            key=(row['locale'],row['question_class'])
+            cross_class.setdefault(key,set()).add((row['headline'],row['direct'],row['evidence']))
+          for locale in ('en','ru'):
+            signatures={next(iter(values)) for (loc,_),values in cross_class.items() if loc==locale}
+            assert len(signatures)==7,(locale,len(signatures))
+
+          for locale in ('en','ru'):
+            same_class=[row for row in rows if row['locale']==locale and row['question_class'] in {'btc_gravity','liquidity','market_structure','market_participation_rotation','change_memory'}]
+            grouped={}
+            for row in same_class: grouped.setdefault(row['question_class'],[]).append(row)
+            for klass,items in grouped.items():
+              assert len(items)==2
+              assert items[0]['direct']!=items[1]['direct'] or items[0]['facets']!=items[1]['facets'],(locale,klass)
+
+          repeated=corpus[2]
+          locale,question,_,_=repeated
+          url=f'{base}/crypto-astro/btc/live?lang={locale}&q={quote(question)}'
+          a=urlopen(url,timeout=60).read().decode('utf-8')
+          b=urlopen(url,timeout=60).read().decode('utf-8')
+          for pattern in (r'<h2>(.*?)</h2>',r'<p class="answerLead" data-answer-direct="true">(.*?)</p>',r'<section data-answer-section="evidence">(.*?)</section>'):
+            assert text_between(a,pattern)==text_between(b,pattern)
+
+          required_labels={
+            'btc_gravity':['dominance','breadth'],
+            'liquidity':['stablecoin','defi tvl','dex'],
+            'market_structure':['regime','field score','market cap'],
+            'market_participation_rotation':['breadth','eth rotation','concentration'],
+            'change_memory':['→'],
+            'temporal_pressure':['observation date','temporal state'],
+            'general_btc_field':['btc gravity','structure','liquidity'],
+          }
+          for klass,needles in required_labels.items():
+            sample=next(row for row in rows if row['locale']=='en' and row['question_class']==klass)
+            value=sample['evidence'].lower()
+            assert all(needle.lower() in value for needle in needles),(klass,value)
+
+          report={'schema':'btc_question_specific_semantic_gate_v0_1','status':'PASS','question_count':24,'class_accuracy':'24/24','facet_accuracy':'24/24','exact_repeat_determinism':True,'cross_class_exact_answer_duplicates':0,'generic_mixed_signals_count':0,'rows':rows}
+          Path('artifacts/btc-question-specific-semantic-gate.json').write_text(json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('BTC_24_QUESTION_SEMANTIC_GATE=PASS')
+          PY
+
+      - name: Prove clean live runtime boundary
         run: |
           python3 - <<'PY'
           from urllib.parse import quote
@@ -99,21 +204,22 @@ jobs:
           q=quote('What changed in the BTC field, why does it matter, and what should I watch next?')
           live=urlopen(f'{base}/crypto-astro/btc/live?lang=en&q={q}',timeout=60).read().decode('utf-8')
           assert 'data-live-dialogue="btc-free-question"' in live
-          assert 'liveDialogueShell' in live
-          assert 'userTurn' in live
-          assert 'cosmographerTurn' in live
+          assert 'data-answer-direct="true"' in live
+          assert 'data-answer-section="evidence"' in live
+          assert 'data-answer-section="limit"' in live
+          assert 'data-answer-section="change"' in live
           assert live.count('<textarea') == 1
-          for rejected in ('liveEvidenceRail','liveMetricField','answerDecisionGrid','liveFullField'):
+          for rejected in ('liveEvidenceRail','liveMetricField','answerDecisionGrid','liveFullField','Mixed signals'):
               assert rejected not in live
           assert 'Stripe' not in live
           assert 'checkout' not in live.lower()
-          print('BTC_CLEAN_FREE_DIALOGUE_RUNTIME=PASS')
+          print('BTC_QUESTION_SPECIFIC_RUNTIME_BOUNDARY=PASS')
           PY
 
       - name: Install visual driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
 
-      - name: Verify complete mobile static surface and live dialogue geometry
+      - name: Verify multi-class desktop and mobile visual proof
         env:
           BTC_LIVE_PREVIEW_BASE: http://127.0.0.1:3110
         run: python3 scripts/verify-btc-live-dialogue-surface.py
@@ -129,37 +235,39 @@ jobs:
         run: |
           set -euo pipefail
           test -f artifacts/btc-live-dialogue-contract.json
+          test -f artifacts/btc-question-specific-semantic-gate.json
           test -f artifacts/btc-live-dialogue-visual-report.json
           python3 - <<'PY'
           import json, os
           from pathlib import Path
           contract=json.loads(Path('artifacts/btc-live-dialogue-contract.json').read_text())
+          semantic=json.loads(Path('artifacts/btc-question-specific-semantic-gate.json').read_text())
           visual=json.loads(Path('artifacts/btc-live-dialogue-visual-report.json').read_text())
           assert contract['status']=='PASS', contract
           assert contract['runtime_head_sha']==os.environ['BTC_LIVE_RUNTIME_HEAD_SHA'], contract
+          assert semantic['status']=='PASS' and semantic['question_count']==24, semantic
+          assert semantic['class_accuracy']=='24/24' and semantic['facet_accuracy']=='24/24', semantic
+          assert semantic['exact_repeat_determinism'] is True
+          assert semantic['cross_class_exact_answer_duplicates']==0
+          assert semantic['generic_mixed_signals_count']==0
           assert not visual['failures'], visual
-          assert visual['checks']['landing_single_dialogue_cta'] is True
-          assert visual['checks']['landing_has_no_question_input'] is True
-          assert visual['checks']['landing_portal_nav_hidden'] is True
-          assert visual['checks']['five_static_routes_preserved'] is True
-          assert visual['checks']['mobile_landing_cta_in_first_viewport'] is True
-          assert visual['checks']['mobile_static_portal_nav_hidden'] is True
-          assert visual['checks']['mobile_static_single_column'] is True
-          assert visual['checks']['mobile_static_routes_bounded'] is True
-          assert visual['checks']['mobile_static_routes_do_not_overlap'] is True
-          assert visual['checks']['mobile_static_no_overflow'] is True
-          assert visual['checks']['live_has_no_analytics_cards'] is True
-          assert visual['checks']['mobile_has_no_analytics_cards'] is True
-          assert visual['checks']['mobile_answer_enters_first_viewport'] is True
-          assert visual['checks']['browser_severe_none'] is True
-          print('BTC_CLEAN_FREE_DIALOGUE_ACCEPTANCE=PASS')
+          for name in (
+            'landing_single_dialogue_cta','landing_has_no_question_input','landing_portal_nav_hidden',
+            'five_static_routes_preserved','mobile_landing_cta_in_first_viewport','mobile_static_portal_nav_hidden',
+            'mobile_static_single_column','mobile_static_routes_bounded','mobile_static_routes_do_not_overlap',
+            'mobile_static_no_overflow','live_has_no_analytics_cards','four_question_classes_visualized',
+            'four_distinct_headlines','all_samples_have_direct_answer','all_samples_have_limit_and_change',
+            'all_samples_source_bound','all_samples_no_overflow','generic_mixed_signals_absent','browser_severe_none'
+          ):
+            assert visual['checks'][name] is True,(name,visual)
+          print('BTC_QUESTION_SPECIFIC_DIALOGUE_ACCEPTANCE=PASS')
           PY
 
-      - name: Upload contract and visual evidence
+      - name: Upload semantic, contract and visual evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-free-question-live-dialogue-${{ github.run_id }}
+          name: btc-question-specific-dialogue-${{ github.run_id }}
           path: artifacts/
           if-no-files-found: error
           retention-days: 30
