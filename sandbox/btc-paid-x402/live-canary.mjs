@@ -62,7 +62,6 @@ async function execute(env) {
   const ctx = await preflight(env);
   const cases = [];
   const pass = (id, proof = {}) => { cases.push({ id, status: 'PASS', ...proof }); runtime.executed_cases = cases.length; };
-
   const required = buildRequirement(ctx.receiver.address);
   assert.equal(required.x402Version, 2);
   assert.deepEqual(select(required.accepts[0]), {
@@ -119,8 +118,6 @@ async function execute(env) {
   const canonicalResult = issued[0];
   const settleTx = adapter.transactions.settlement;
   assert.match(settleTx, /^0x[0-9a-fA-F]{64}$/);
-  runtime.settlement_transaction = settleTx;
-  runtime.blockchain_transactions = 1;
   const settleReceipt = await ctx.publicClient.waitForTransactionReceipt({ hash: settleTx, confirmations: 1 });
   assert.equal(settleReceipt.status, 'success');
   assert.equal((await balance(ctx.publicClient, ctx.receiver.address)) - receiverBefore, BigInt(TRUSTED.amountAtomic));
@@ -171,8 +168,6 @@ async function execute(env) {
   assert.equal((await refundPayment({ paymentIdentifier, ledger: restarted, facilitator: adapter })).state, STATES.REFUNDED);
   const refundTx = adapter.transactions.refund;
   assert.match(refundTx, /^0x[0-9a-fA-F]{64}$/);
-  runtime.refund_transaction = refundTx;
-  runtime.blockchain_transactions = 2;
   const refundReceipt = await ctx.publicClient.waitForTransactionReceipt({ hash: refundTx, confirmations: 1 });
   assert.equal(refundReceipt.status, 'success');
   assert.equal((await balance(ctx.publicClient, ctx.payer.address)) - payerBeforeRefund, BigInt(TRUSTED.amountAtomic));
@@ -241,18 +236,18 @@ function facilitatorAdapter(ctx, payload, accepted) {
     evidenceKey: ctx.evidenceKey, counts: { verify: 0, settle: 0, refund: 0 },
     transactions: { settlement: null, refund: null },
     async verify(header) {
-      assert.equal(header.officialPayload, payload);
-      adapter.counts.verify += 1;
+      assert.equal(header.officialPayload, payload); adapter.counts.verify += 1;
       const result = await ctx.facilitator.verify(payload, accepted);
       return { ...result, tuple: trustedTuple({}, accepted.payTo), verifiedAt: new Date().toISOString() };
     },
     async settle(header) {
-      assert.equal(header.officialPayload, payload);
-      adapter.counts.settle += 1;
+      assert.equal(header.officialPayload, payload); adapter.counts.settle += 1;
       if (adapter.counts.settle > 1) throw codeError('SETTLEMENT_BUDGET_EXCEEDED');
       const result = await ctx.facilitator.settle(payload, accepted);
       if (!result?.success) return result;
       adapter.transactions.settlement = result.transaction;
+      runtime.settlement_transaction = result.transaction;
+      runtime.blockchain_transactions = 1;
       return { ...result, eventId: `x402-settle:${result.network}:${result.transaction}`,
         receipt: `x402-receipt:${result.transaction}`, tuple: trustedTuple({}, accepted.payTo), settledAt: new Date().toISOString() };
     },
@@ -264,6 +259,8 @@ function facilitatorAdapter(ctx, payload, accepted) {
       const hash = await ctx.receiverWallet.writeContract({ address: TRUSTED.asset, abi: ABI,
         functionName: 'transfer', args: [ctx.payer.address, BigInt(TRUSTED.amountAtomic)] });
       adapter.transactions.refund = hash;
+      runtime.refund_transaction = hash;
+      runtime.blockchain_transactions = 2;
       const receipt = await ctx.publicClient.waitForTransactionReceipt({ hash, confirmations: 1 });
       if (receipt.status !== 'success') throw codeError('REFUND_TRANSACTION_REVERTED');
       return { success: true, transaction: hash };
@@ -278,7 +275,10 @@ function exact(actual, expected, code) { if (String(actual) !== String(expected)
 function addressEqual(a, b, code) { if (String(a).toLowerCase() !== String(b).toLowerCase()) throw new Error(code); }
 function privateKey(value) { if (!/^0x[0-9a-fA-F]{64}$/.test(String(value))) throw new Error('PRIVATE_KEY_FORMAT_INVALID'); return value; }
 function codeError(code) { return Object.assign(new Error(code), { code }); }
-function safeCode(value) { return String(value || 'UNKNOWN_LIVE_FAILURE').toUpperCase().replace(/[^A-Z0-9_:-]/g, '_').slice(0,160); }
+function safeCode(value) {
+  const candidate = String(value || '').toUpperCase();
+  return /^[A-Z][A-Z0-9_:-]{0,159}$/.test(candidate) ? candidate : 'UNCLASSIFIED_LIVE_CANARY_FAILURE';
+}
 function bigintJson(_key, value) { return typeof value === 'bigint' ? value.toString() : value; }
 async function retain(report) { await writeFile('btc-paid-x402-live-evidence.json', `${JSON.stringify(report, bigintJson, 2)}\n`, { mode: 0o600 }); }
 function hold(reason, extra = {}) {
