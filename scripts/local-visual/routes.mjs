@@ -11,10 +11,12 @@ export const VIEWPORTS = Object.freeze([
 const INTERNAL_ROUTES = new Set([
   "/404",
   "/500",
+  "/_api_page_disabled",
   "/_app",
   "/_document",
   "/_error",
   "/access-review",
+  "/api",
 ]);
 
 const BTC_SCENARIOS = Object.freeze([
