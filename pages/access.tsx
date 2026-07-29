@@ -157,7 +157,7 @@ export default function AccessPage({
           <HeaderBlock />
           <IntroBlock />
           <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
-            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">
+            <section className="panel stack accessContextPanel" aria-labelledby="crypto-astro-research-surface">
               <p className="sectionTitle" id="crypto-astro-research-surface">
                 Crypto-Astro Research Surface
               </p>
@@ -347,7 +347,7 @@ export default function AccessPage({
       </section>
 
 
-        <style jsx>{`
+        <style jsx global>{`
           .accessPage {
             min-height: 100vh;
             padding: 32px 18px 64px;
@@ -357,14 +357,14 @@ export default function AccessPage({
             color: #eaf1f7;
           }
 
-          .shell {
+          .accessPage .shell {
             width: 100%;
             max-width: 980px;
             margin: 0 auto;
             padding: 14px 0 40px;
           }
 
-          .panel {
+          .accessPage .panel {
             position: relative;
             border: 1px solid rgba(255,255,255,0.14);
             background:
@@ -376,25 +376,25 @@ export default function AccessPage({
             backdrop-filter: blur(14px);
           }
 
-          .stack {
+          .accessPage .stack {
             display: grid;
             gap: 22px;
           }
 
-          .muted {
+          .accessPage .muted {
             color: rgba(234,241,247,0.72);
             margin: 0;
             line-height: 1.6;
           }
 
-          .tiny {
+          .accessPage .tiny {
             font-size: 12px;
             color: rgba(234,241,247,0.6);
             line-height: 1.5;
             margin: 0;
           }
 
-          .sectionTitle {
+          .accessPage .sectionTitle {
             font-size: 12px;
             letter-spacing: 0.18em;
             text-transform: uppercase;
@@ -402,7 +402,7 @@ export default function AccessPage({
             margin: 0 0 8px;
           }
 
-          .heroTitle {
+          .accessPage .heroTitle {
             font-size: clamp(34px, 4.8vw, 52px);
             line-height: 0.98;
             letter-spacing: -0.058em;
@@ -410,7 +410,7 @@ export default function AccessPage({
             max-width: 720px;
           }
 
-          .heroText {
+          .accessPage .heroText {
             max-width: 700px;
             font-size: 17px;
             line-height: 1.74;
@@ -418,28 +418,28 @@ export default function AccessPage({
             margin: 0;
           }
 
-          .grid2 {
+          .accessPage .grid2 {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 18px;
             align-items: start;
           }
 
-          .grid3 {
+          .accessPage .grid3 {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 18px;
             align-items: start;
           }
 
-          .field {
+          .accessPage .field {
             display: grid;
             gap: 10px;
             align-content: start;
             min-width: 0;
           }
 
-          .fieldLabel {
+          .accessPage .fieldLabel {
             min-height: 18px;
             font-size: 11px;
             font-weight: 600;
@@ -449,10 +449,10 @@ export default function AccessPage({
             display: block;
           }
 
-          .fieldControl,
-          .field textarea,
-          .field select,
-          .field input {
+          .accessPage .fieldControl,
+          .accessPage .field textarea,
+          .accessPage .field select,
+          .accessPage .field input {
             width: 100%;
             min-height: 54px;
             border-radius: 18px;
@@ -468,16 +468,16 @@ export default function AccessPage({
             transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
           }
 
-          .field textarea {
+          .accessPage .field textarea {
             min-height: 146px;
             resize: none;
             line-height: 1.66;
             padding-top: 15px;
           }
 
-          .field input:focus,
-          .field textarea:focus,
-          .field select:focus {
+          .accessPage .field input:focus,
+          .accessPage .field textarea:focus,
+          .accessPage .field select:focus {
             border-color: rgba(255,255,255,0.32);
             background: linear-gradient(180deg, rgba(11,23,37,0.97), rgba(9,20,33,0.95));
             box-shadow:
@@ -486,7 +486,7 @@ export default function AccessPage({
             transform: translateY(-1px);
           }
 
-          .actions {
+          .accessPage .actions {
             display: flex;
             flex-wrap: wrap;
             gap: 14px;
@@ -494,7 +494,7 @@ export default function AccessPage({
             justify-content: flex-start;
           }
 
-          .noticeStack {
+          .accessPage .noticeStack {
             display: grid;
             gap: 10px;
             min-height: 96px;
@@ -502,7 +502,7 @@ export default function AccessPage({
             align-content: start;
           }
 
-          .statusPanel {
+          .accessPage .statusPanel {
             display: grid;
             gap: 8px;
             min-height: 168px;
@@ -512,11 +512,11 @@ export default function AccessPage({
             background: linear-gradient(180deg, rgba(255,255,255,0.046), rgba(255,255,255,0.03));
           }
 
-          .statusPanelEmpty {
+          .accessPage .statusPanelEmpty {
             align-content: center;
           }
 
-          .statusItem {
+          .accessPage .statusItem {
             display: grid;
             gap: 4px;
             min-height: 52px;
@@ -525,19 +525,19 @@ export default function AccessPage({
             align-content: start;
           }
 
-          .statusItem:first-child {
+          .accessPage .statusItem:first-child {
             border-top: 0;
             padding-top: 0;
           }
 
-          .statusMeta {
+          .accessPage .statusMeta {
             min-height: 18px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
           }
 
-          .checkboxField {
+          .accessPage .checkboxField {
             grid-template-columns: 20px minmax(0, 1fr);
             gap: 14px;
             align-items: start;
@@ -547,7 +547,7 @@ export default function AccessPage({
             background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
           }
 
-          .checkboxField input {
+          .accessPage .checkboxField input {
             width: 16px;
             height: 16px;
             min-height: 16px;
@@ -555,15 +555,15 @@ export default function AccessPage({
             accent-color: #eaf1f7;
           }
 
-          .checkboxText {
+          .accessPage .checkboxText {
             font-size: 13px;
             line-height: 1.62;
             color: rgba(234,241,247,0.8);
           }
 
-          .btnPrimary,
-          .btnSecondary,
-          .btnGhost {
+          .accessPage .btnPrimary,
+          .accessPage .btnSecondary,
+          .accessPage .btnGhost {
             min-height: 50px;
             border-radius: 999px;
             padding: 12px 26px;
@@ -578,27 +578,27 @@ export default function AccessPage({
             transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
           }
 
-          .btnPrimary {
+          .accessPage .btnPrimary {
             border: 1px solid rgba(255,255,255,0.24);
             background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(232,238,244,0.94));
             color: #091522;
             box-shadow: 0 14px 30px rgba(0,0,0,0.18);
           }
 
-          .btnSecondary {
+          .accessPage .btnSecondary {
             border: 1px solid rgba(255,255,255,0.15);
             background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045));
             color: #eef4f9;
           }
 
-          .btnGhost {
+          .accessPage .btnGhost {
             border: 1px solid rgba(255,255,255,0.12);
             background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.024));
             color: rgba(234,241,247,0.82);
             padding-left: 20px;
             padding-right: 20px;
           }
-          .accessBridgeNote {
+          .accessPage .accessBridgeNote {
             margin-top: 18px;
             padding: 18px 20px;
             border-radius: 20px;
@@ -607,7 +607,7 @@ export default function AccessPage({
             color: rgba(234,241,247,0.78);
           }
 
-          .accessBridgeNote .eyebrow {
+          .accessPage .accessBridgeNote .eyebrow {
             margin: 0 0 10px;
             color: #d8ad62;
             font-size: 0.76rem;
@@ -616,48 +616,48 @@ export default function AccessPage({
             text-transform: uppercase;
           }
 
-          .accessBridgeNote div {
+          .accessPage .accessBridgeNote div {
             margin: 0;
             font-size: 13px;
             line-height: 1.62;
           }
 
-          .accessBridgeNote div + div {
+          .accessPage .accessBridgeNote div + div {
             margin-top: 10px;
           }
 
 
-          .btnPrimary:hover,
-          .btnSecondary:hover,
-          .btnGhost:hover {
+          .accessPage .btnPrimary:hover,
+          .accessPage .btnSecondary:hover,
+          .accessPage .btnGhost:hover {
             transform: translateY(-1px);
           }
 
-          .btnPrimary:hover {
+          .accessPage .btnPrimary:hover {
             box-shadow: 0 18px 34px rgba(0,0,0,0.22);
           }
 
-          .btnPrimary:focus-visible,
-          .btnSecondary:focus-visible,
-          .btnGhost:focus-visible {
+          .accessPage .btnPrimary:focus-visible,
+          .accessPage .btnSecondary:focus-visible,
+          .accessPage .btnGhost:focus-visible {
             outline: none;
             box-shadow: 0 0 0 4px rgba(255,255,255,0.05);
           }
 
-          .btnPrimary:active,
-          .btnSecondary:active,
-          .btnGhost:active {
+          .accessPage .btnPrimary:active,
+          .accessPage .btnSecondary:active,
+          .accessPage .btnGhost:active {
             transform: translateY(0);
           }
 
-          .progress {
+          .accessPage .progress {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin: 22px 0;
           }
 
-          .progressStep {
+          .accessPage .progressStep {
             padding: 8px 12px;
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.1);
@@ -666,13 +666,13 @@ export default function AccessPage({
             background: rgba(255,255,255,0.02);
           }
 
-          .progressStepActive {
+          .accessPage .progressStepActive {
             color: #eaf1f7;
             border-color: rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.08);
           }
 
-          .notice {
+          .accessPage .notice {
             min-height: 96px;
             border-radius: 20px;
             padding: 18px 20px;
@@ -685,49 +685,49 @@ export default function AccessPage({
             box-sizing: border-box;
           }
 
-          .noticePlaceholder {
+          .accessPage .noticePlaceholder {
             visibility: hidden;
           }
 
-          .noticeError {
+          .accessPage .noticeError {
             border-color: rgba(255,140,140,0.22);
             background: rgba(120,16,16,0.18);
           }
 
-          .reviewBlock {
+          .accessPage .reviewBlock {
             display: grid;
             gap: 18px;
           }
 
-          .reviewItem {
+          .accessPage .reviewItem {
             display: grid;
             gap: 5px;
             padding: 14px 0;
             border-top: 1px solid rgba(255,255,255,0.08);
           }
 
-          .reviewItem:first-child {
+          .accessPage .reviewItem:first-child {
             border-top: 0;
             padding-top: 0;
           }
 
-          .reviewLabel {
+          .accessPage .reviewLabel {
             font-size: 13px;
             color: rgba(234,241,247,0.68);
           }
 
-          .reviewValue {
+          .accessPage .reviewValue {
             font-size: 15px;
             color: #eaf1f7;
           }
 
-          .iso {
+          .accessPage .iso {
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
             font-size: 12px;
             color: rgba(234,241,247,0.6);
           }
 
-          .list {
+          .accessPage .list {
             margin: 0;
             padding-left: 18px;
             display: grid;
@@ -735,7 +735,7 @@ export default function AccessPage({
             color: rgba(234,241,247,0.8);
           }
 
-          .errorList {
+          .accessPage .errorList {
             margin: 0;
             padding-left: 18px;
             color: #ffd2d2;
@@ -743,19 +743,19 @@ export default function AccessPage({
             gap: 8px;
           }
 
-          .formFrame {
+          .accessPage .formFrame {
             display: grid;
             gap: 24px;
           }
 
-          .formHero {
+          .accessPage .formHero {
             display: grid;
             gap: 12px;
             padding-bottom: 14px;
             border-bottom: 1px solid rgba(255,255,255,0.08);
           }
 
-          .formTitle {
+          .accessPage .formTitle {
             margin: 0;
             font-size: 30px;
             line-height: 1.04;
@@ -764,7 +764,7 @@ export default function AccessPage({
             max-width: 720px;
           }
 
-          .formLead {
+          .accessPage .formLead {
             margin: 0;
             max-width: 720px;
             font-size: 15px;
@@ -772,17 +772,17 @@ export default function AccessPage({
             color: rgba(234,241,247,0.78);
           }
 
-          .formSection {
+          .accessPage .formSection {
             display: grid;
             gap: 18px;
           }
 
-          .formSectionHeader {
+          .accessPage .formSectionHeader {
             display: grid;
             gap: 7px;
           }
 
-          .formSectionTitle {
+          .accessPage .formSectionTitle {
             margin: 0;
             font-size: 12px;
             letter-spacing: 0.16em;
@@ -790,21 +790,21 @@ export default function AccessPage({
             color: rgba(234,241,247,0.58);
           }
 
-          .formSectionText {
+          .accessPage .formSectionText {
             margin: 0;
             font-size: 14px;
             line-height: 1.66;
             color: rgba(234,241,247,0.74);
           }
 
-          .grid2Asymmetric {
+          .accessPage .grid2Asymmetric {
             display: grid;
             grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
             gap: 18px;
             align-items: start;
           }
 
-          .submitRow {
+          .accessPage .submitRow {
             display: flex;
             align-items: center;
             gap: 14px;
@@ -813,9 +813,9 @@ export default function AccessPage({
           }
 
           @media (max-width: 760px) {
-            .grid2,
-            .grid3,
-            .grid2Asymmetric {
+            .accessPage .grid2,
+            .accessPage .grid3,
+            .accessPage .grid2Asymmetric {
               grid-template-columns: 1fr;
             }
 
@@ -823,28 +823,28 @@ export default function AccessPage({
               padding: 22px 14px 42px;
             }
 
-            .panel {
+            .accessPage .panel {
               padding: 18px;
               border-radius: 16px;
             }
 
-            .actions,
-            .submitRow {
+            .accessPage .actions,
+            .accessPage .submitRow {
               flex-direction: column;
               align-items: stretch;
             }
 
-            .formTitle {
+            .accessPage .formTitle {
               font-size: 25px;
             }
 
-            .btnPrimary,
-            .btnSecondary,
-            .btnGhost {
+            .accessPage .btnPrimary,
+            .accessPage .btnSecondary,
+            .accessPage .btnGhost {
               width: 100%;
             }
 
-            .btnGhost {
+            .accessPage .btnGhost {
               padding-left: 18px;
               padding-right: 18px;
               border: 1px solid rgba(255,255,255,0.12);
@@ -852,19 +852,45 @@ export default function AccessPage({
               background: rgba(255,255,255,0.03);
             }
 
-            .statusPanel {
+            .accessPage .statusPanel {
               min-height: 0;
             }
 
-            .noticeStack {
+            .accessPage .noticeStack {
               min-height: 86px;
             }
 
-            .notice {
+            .accessPage .notice {
               min-height: 74px;
             }
           }
-        `}</style>
+        
+
+/* ACCESS_SCOPED_STYLE_BINDING_AND_MOBILE_WORKFLOW_PRIORITY_V0_1 */
+.accessPage p.muted { font-size: 14px !important; }
+.accessPage p.tiny { font-size: 12px !important; }
+.accessPage p.sectionTitle { font-size: 12px !important; }
+.accessPage p.formLead { font-size: 15px !important; }
+.accessPage p.formSectionText { font-size: 14px !important; }
+.accessPage p.formSectionTitle { font-size: 12px !important; }
+.accessPage .accessBridgeNote div { font-size: 13px !important; }
+.accessPage .fieldControl { font: inherit; }
+
+@media (max-width: 760px) {
+  .accessPage .shell {
+    display: flex;
+    flex-direction: column;
+  }
+  .accessPage .heroFrame { order: 0; }
+  .accessPage .noticeStack { order: 1; }
+  .accessPage .progress { order: 2; }
+  .accessPage .accessWorkflowPanel { order: 3; }
+  .accessPage .accessContextPanel { order: 10; }
+  .accessPage .formFrame { gap: 20px; }
+  .accessPage .formSection { gap: 14px; }
+  .accessPage .formHero { gap: 10px; }
+}
+`}</style>
       </main>
     </>
   );
@@ -908,7 +934,7 @@ function HeaderBlock() {
 
 function IntroBlock() {
   return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
+    <section className="panel stack accessContextPanel" style={{ marginTop: 18 }}>
       <div className="introGrid">
         <div className="introCard">
           <span className="introCardTitle">Frey</span>
@@ -1019,7 +1045,7 @@ function IntroBlock() {
 
 function LoadingBlock() {
   return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
+    <section className="panel stack accessWorkflowPanel" style={{ marginTop: 18 }}>
       <p className="sectionTitle">Loading</p>
       <p className="muted">Preparing your reviewed access workspace.</p>
     </section>
@@ -1032,7 +1058,7 @@ function RestoreDraftBlock(props: {
   onStartOver: () => void;
 }) {
   return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
+    <section className="panel stack accessWorkflowPanel" style={{ marginTop: 18 }}>
       <p className="sectionTitle">Unfinished request found</p>
       <p className="muted">A previous request draft was saved on this device.</p>
       <p className="tiny">Last saved: {formatDisplayDateTime(props.savedAt)}</p>
@@ -1111,7 +1137,7 @@ function AccessBridgeContextBlock(props: {
 
   return (
     <section
-      className="panel"
+      className="panel accessContextPanel"
       style={{ marginTop: 18 }}
       data-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
       data-access-signal={bridgeCtx.signal_class || ""}
@@ -1155,7 +1181,7 @@ function RequestStep(props: {
   const { formData, updateFormData, bridgeCtx, bridgeEncoded, onContinue } = props;
 
   return (
-    <section className="panel" style={{ marginTop: 18 }}>
+    <section className="panel accessWorkflowPanel" style={{ marginTop: 18 }}>
       <form
         className="formFrame"
         onSubmit={(e) => {
@@ -1320,7 +1346,7 @@ function DatesStep(props: {
   onContinue: () => void;
 }) {
   return (
-    <section className="panel stack">
+    <section className="panel stack accessWorkflowPanel">
       <p className="sectionTitle">Relevant dates</p>
       <p className="muted">
         Add the dates that define this request. You will verify them before final submission.
@@ -1358,7 +1384,7 @@ function ScopeStep(props: {
   const { formData, updateFormData, onBack, onContinue } = props;
 
   return (
-    <section className="panel stack">
+    <section className="panel stack accessWorkflowPanel">
       <p className="sectionTitle">Scope</p>
 
       <div className="grid3" data-access-row="three">
@@ -1432,7 +1458,7 @@ function AmbiguityState(props: {
   if (!ambiguous) return null;
 
   return (
-    <section className="panel stack">
+    <section className="panel stack accessWorkflowPanel">
       <p className="sectionTitle">Confirm date</p>
       <p className="muted">
         This date format is ambiguous. Please confirm the correct date before continuing.
@@ -1480,7 +1506,7 @@ function ReviewStep(props: {
   const { submission } = props;
 
   return (
-    <section className="panel reviewBlock">
+    <section className="panel reviewBlock accessWorkflowPanel">
       <div className="stack">
         <p className="sectionTitle">Review your request</p>
         <p className="muted">
@@ -1568,7 +1594,7 @@ function SuccessStep(props: { clientView: AccessSubmissionModel["clientView"] })
   if (!clientView) return null;
 
   return (
-    <section className="panel stack">
+    <section className="panel stack accessWorkflowPanel">
       <p className="sectionTitle">Request received</p>
       <p className="muted">Your request has been received and placed into manual review.</p>
       <p className="muted">
@@ -1966,9 +1992,11 @@ function AccessNotices(props: {
       )
     : null;
 
+  if (!activeNotice) return null;
+
   return (
     <div className="noticeStack" aria-live="polite">
-      {activeNotice ?? <div className="notice noticePlaceholder" aria-hidden="true" />}
+      {activeNotice}
     </div>
   );
 }
