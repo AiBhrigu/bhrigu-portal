@@ -49,12 +49,14 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
           cat > /tmp/expected-scope.txt <<'SCOPE'
           .github/workflows/btc-free-question-live-dialogue-pr.yml
+          .github/workflows/btc-temporal-boundary-pr.yml
           components/btc/BtcHeroQuestionLaunch.tsx
           components/btc/BtcLiveDialogue.tsx
           components/btc/BtcQuestionMembrane.tsx
           lib/btc-live-dialogue-style.ts
           lib/btc-product-rebalance-style.ts
           scripts/run-btc-live-dialogue-fixture.mjs
+          scripts/verify-btc-bilingual-surface.py
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
           sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
