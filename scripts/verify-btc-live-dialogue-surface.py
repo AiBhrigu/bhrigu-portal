@@ -62,7 +62,7 @@ try:
     report["checks"]["landing_has_no_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, "main textarea[name='q']")) == 0
     report["checks"]["landing_cta_targets_live"] = "/crypto-astro/btc/live" in hero_cta.get_attribute("href")
     report["checks"]["landing_cta_in_first_viewport"] = cta_rect["top"] < viewport_height
-    report["checks"]["landing_cta_clear_of_portal_nav"] = cta_rect["bottom"] <= portal_nav["top"] - 8
+    report["checks"]["landing_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
     report["checks"]["five_static_routes_preserved"] = len(driver.find_elements(By.CSS_SELECTOR, ".exampleRouteList a")) == 5
     report["checks"]["landing_no_overflow"] = no_overflow()
     driver.save_screenshot("artifacts/btc-clean-dialogue-landing-desktop-en.png")
