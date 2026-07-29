@@ -49,14 +49,8 @@ jobs:
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
           cat > /tmp/expected-scope.txt <<'SCOPE'
           .github/workflows/btc-free-question-live-dialogue-pr.yml
-          .github/workflows/btc-temporal-boundary-pr.yml
-          components/btc/BtcHeroQuestionLaunch.tsx
-          components/btc/BtcLiveDialogue.tsx
-          components/btc/BtcQuestionMembrane.tsx
-          lib/btc-live-dialogue-style.ts
           lib/btc-product-rebalance-style.ts
-          scripts/run-btc-live-dialogue-fixture.mjs
-          scripts/verify-btc-bilingual-surface.py
+          pages/crypto-astro/btc.tsx
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
           sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
@@ -118,7 +112,7 @@ jobs:
       - name: Install visual driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
 
-      - name: Verify first-screen question and live dialogue geometry
+      - name: Verify complete mobile static surface and live dialogue geometry
         env:
           BTC_LIVE_PREVIEW_BASE: http://127.0.0.1:3110
         run: python3 scripts/verify-btc-live-dialogue-surface.py
@@ -146,6 +140,12 @@ jobs:
           assert visual['checks']['landing_single_dialogue_cta'] is True
           assert visual['checks']['landing_has_no_question_input'] is True
           assert visual['checks']['five_static_routes_preserved'] is True
+          assert visual['checks']['mobile_landing_cta_in_first_viewport'] is True
+          assert visual['checks']['mobile_static_portal_nav_hidden'] is True
+          assert visual['checks']['mobile_static_single_column'] is True
+          assert visual['checks']['mobile_static_routes_bounded'] is True
+          assert visual['checks']['mobile_static_routes_do_not_overlap'] is True
+          assert visual['checks']['mobile_static_no_overflow'] is True
           assert visual['checks']['live_has_no_analytics_cards'] is True
           assert visual['checks']['mobile_has_no_analytics_cards'] is True
           assert visual['checks']['mobile_answer_enters_first_viewport'] is True
