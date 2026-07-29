@@ -1,0 +1,199 @@
+name: BHRIGU Portal Local Exact Head Visual Validation
+
+on:
+  push:
+    branches: [ "agent/bhrigu-portal-local-visual-harness-v0-1" ]
+    paths:
+      - ".github/workflows/bhrigu-portal-local-visual-validation.yml"
+      - ".gitignore"
+      - "docs/operations/BHRIGU_PORTAL_LOCAL_VISUAL_VALIDATION.md"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/local-visual/**"
+  pull_request:
+    branches: [ "agent/btc-paid-x402-sandbox-v0-1" ]
+    paths:
+      - ".github/workflows/bhrigu-portal-local-visual-validation.yml"
+      - ".gitignore"
+      - "docs/operations/BHRIGU_PORTAL_LOCAL_VISUAL_VALIDATION.md"
+      - "package.json"
+      - "package-lock.json"
+      - "scripts/local-visual/**"
+  workflow_dispatch:
+
+concurrency:
+  group: bhrigu-local-visual-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  LOCKED_SOURCE_SHA: 27737aed75059c01472ecec5e123aaed2ff10236
+  LOCKED_HARNESS_BRANCH: agent/bhrigu-portal-local-visual-harness-v0-1
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  lockfile-bootstrap:
+    if: ${{ github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout triggering harness head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Resolve deterministic Playwright lock without lifecycle scripts
+        run: npm install --package-lock-only --ignore-scripts
+
+      - name: Verify exact Playwright lock
+        run: |
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          if (pkg.devDependencies?.['@playwright/test'] !== '1.62.0') throw new Error('@playwright/test exact package pin mismatch');
+          for (const name of ['@playwright/test', 'playwright', 'playwright-core']) {
+            const version = lock.packages?.[`node_modules/${name}`]?.version;
+            if (version !== '1.62.0') throw new Error(`${name} exact lock mismatch: ${version}`);
+          }
+          console.log('PLAYWRIGHT_EXACT_LOCK=PASS');
+          console.log('NPM_LIFECYCLE_SCRIPTS_EXECUTED=NO');
+          NODE
+
+      - name: Commit lockfile to isolated harness branch
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- package-lock.json; then
+            echo "PACKAGE_LOCK_ALREADY_EXACT=YES"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "OPS/F: lock local visual harness dependencies"
+          git push origin HEAD:"$LOCKED_HARNESS_BRANCH"
+
+  visual-validation:
+    needs: [ lockfile-bootstrap ]
+    if: ${{ always() && (needs.lockfile-bootstrap.result == 'success' || needs.lockfile-bootstrap.result == 'skipped') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout latest isolated harness head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || env.LOCKED_HARNESS_BRANCH }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Prove exact source ancestry and nine-file scope
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$LOCKED_SOURCE_SHA" HEAD
+          git diff --name-only "$LOCKED_SOURCE_SHA...HEAD" | sort > /tmp/actual-scope.txt
+          cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/bhrigu-portal-local-visual-validation.yml
+          .gitignore
+          docs/operations/BHRIGU_PORTAL_LOCAL_VISUAL_VALIDATION.md
+          package-lock.json
+          package.json
+          scripts/local-visual/capture.mjs
+          scripts/local-visual/routes.mjs
+          scripts/local-visual/run.mjs
+          scripts/local-visual/sync-and-run.sh
+          SCOPE
+          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          echo "EXACT_SOURCE_ANCESTRY=PASS"
+          echo "AUTHORIZED_HARNESS_SCOPE=9_FILES"
+
+      - name: Install exact lock without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify dependency and security delta
+        run: |
+          set -euo pipefail
+          git show "$LOCKED_SOURCE_SHA:package-lock.json" > /tmp/source-package-lock.json
+          npm audit --json > /tmp/npm-audit.json || true
+          node <<'NODE'
+          const pkg = require('./package.json');
+          const lock = require('./package-lock.json');
+          const source = require('/tmp/source-package-lock.json');
+          const audit = require('/tmp/npm-audit.json');
+          if (pkg.devDependencies?.['@playwright/test'] !== '1.62.0') throw new Error('@playwright/test package pin mismatch');
+          for (const name of ['@playwright/test', 'playwright', 'playwright-core']) {
+            if (lock.packages?.[`node_modules/${name}`]?.version !== '1.62.0') throw new Error(`${name} lock pin mismatch`);
+          }
+          for (const inherited of ['next', 'postcss']) {
+            const key = `node_modules/${inherited}`;
+            if (lock.packages?.[key]?.version !== source.packages?.[key]?.version) throw new Error(`${inherited} inherited baseline changed`);
+          }
+          const inheritedHigh = new Set(['next', 'postcss']);
+          const newHigh = Object.entries(audit.vulnerabilities || {})
+            .filter(([name, value]) => ['high', 'critical'].includes(value.severity) && !inheritedHigh.has(name));
+          if (newHigh.length) throw new Error(`new high severity dependency findings: ${newHigh.map(([name]) => name).join(',')}`);
+          console.log('VISUAL_HARNESS_SECURITY_DELTA=PASS');
+          console.log('INHERITED_NEXT_POSTCSS_HIGH_FINDINGS=UNCHANGED');
+          NODE
+
+      - name: Validate runner syntax
+        run: |
+          node --check scripts/local-visual/routes.mjs
+          node --check scripts/local-visual/capture.mjs
+          node --check scripts/local-visual/run.mjs
+          bash -n scripts/local-visual/sync-and-run.sh
+
+      - name: Install pinned Chromium with Linux dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify existing BTC contracts unchanged
+        run: |
+          npm run verify:btc-paid-x402-sandbox
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Run local production build and desktop mobile visual capture
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+          BHRIGU_VISUAL_SOURCE_SHA: ${{ env.LOCKED_SOURCE_SHA }}
+          BHRIGU_VISUAL_HARNESS_SHA: ${{ github.sha }}
+          BHRIGU_VISUAL_ARTIFACT_ROOT: artifacts/local-visual
+        run: |
+          export BHRIGU_VISUAL_HARNESS_SHA="$(git rev-parse HEAD)"
+          npm run verify:local-visual
+
+      - name: Publish visual summary to job report
+        if: always()
+        run: |
+          summary="$(find artifacts/local-visual -name summary.md -type f | sort | tail -n 1)"
+          if [[ -n "$summary" ]]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No visual summary was produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload local visual evidence package
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-portal-local-visual-${{ github.run_id }}
+          path: artifacts/local-visual/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
