@@ -500,7 +500,7 @@ export default function Reading({ temporal }) {
           </a>
         </section>
 
-      <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
+      <h1 style={{ fontSize: "clamp(48px, 7vw, 80px)", lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
         Frey Temporal Reading
       </h1>
 
