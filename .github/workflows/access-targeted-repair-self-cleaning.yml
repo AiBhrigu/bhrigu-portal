@@ -1,16 +1,15 @@
 name: Access targeted repair self-cleaning
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/bhrigu-access-scoped-style-mobile-workflow-repair-v0-1
+      - agent/bhrigu-prevnext-mobile-content-occlusion-repair-v0-1
 
 permissions:
   contents: write
 
 jobs:
   repair:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -164,7 +163,6 @@ jobs:
 
           scoped_css = transform_css(css)
           text = text[:start] + '        <style jsx global>{`' + scoped_css + text[end:]
-
           path.write_text(text)
 
       - name: Remove temporary workflow
@@ -172,7 +170,6 @@ jobs:
 
       - name: Verify exact net scope and source anchors
         run: |
-          git diff -- pages/access.tsx
           test "$(git status --short | wc -l)" -eq 2
           grep -q '<style jsx global>' pages/access.tsx
           grep -q 'className="accessWorkflow"' pages/access.tsx
