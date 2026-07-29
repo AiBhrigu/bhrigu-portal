@@ -1,0 +1,314 @@
+name: BHRIGU Access Exact Head Evidence V2
+
+on:
+  push:
+    branches: [ "agent/bhrigu-access-scoped-style-mobile-priority-repair-v0-1" ]
+    paths:
+      - ".github/workflows/bhrigu-access-exact-head-evidence-v2.yml"
+
+concurrency:
+  group: bhrigu-access-scoped-style-mobile-priority-repair
+  cancel-in-progress: true
+
+env:
+  LOCKED_BASE_SHA: 99997ade460cd9cb6fd52e5c1896f61613a20fee
+  LOCKED_BRANCH: agent/bhrigu-access-scoped-style-mobile-priority-repair-v0-1
+  WORKFLOW_PATH: .github/workflows/bhrigu-access-exact-head-evidence-v2.yml
+  PR_NUMBER: "85"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  exact-head-evidence:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout triggering branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Normalize one-file repair and lock final head
+        run: |
+          set -euo pipefail
+          sed -i 's/[[:space:]]\+$//' pages/access.tsx
+          rm "$WORKFLOW_PATH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/access.tsx "$WORKFLOW_PATH"
+          git commit -m "Normalize Access scoped style repair"
+          git push origin HEAD:"$LOCKED_BRANCH"
+          final_head="$(git rev-parse HEAD)"
+          echo "FINAL_HEAD=$final_head" >> "$GITHUB_ENV"
+          echo "FINAL_REPAIR_HEAD=$final_head" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish observable run anchor
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/start.md <<EOF
+          ## OPS/F observable exact-head run V2
+
+          \`BHRIGU_ACCESS_INTAKE_SCOPED_STYLE_BINDING_AND_MOBILE_WORKFLOW_PRIORITY_TARGETED_REPAIR_FULL_CYCLE_v0_1\`
+
+          - final head under review: \`$FINAL_HEAD\`
+          - workflow run: \`${{ github.run_id }}\`
+          - state: \`VALIDATION_IN_PROGRESS\`
+          EOF
+          gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --method POST --field body="$(cat /tmp/start.md)"
+
+      - name: Prove exact one-file net scope
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$LOCKED_BASE_SHA" HEAD
+          git diff --name-only "$LOCKED_BASE_SHA...HEAD" | sort > /tmp/actual-scope.txt
+          printf '%s\n' 'pages/access.tsx' > /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          test "$(git diff --numstat "$LOCKED_BASE_SHA...HEAD" | wc -l)" -eq 1
+          git diff --check "$LOCKED_BASE_SHA...HEAD"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify inherited BTC contracts
+        run: |
+          npm run verify:btc-paid-x402-sandbox
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Install pinned Chromium with Linux dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production portal
+        run: npm run build
+
+      - name: Start production-mode localhost
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run start -- --hostname 127.0.0.1 --port 4317 > artifacts/server.log 2>&1 &
+          echo $! > /tmp/bhrigu-server.pid
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent --show-error http://127.0.0.1:4317/access >/dev/null; then
+              echo "LOCALHOST_READY=YES"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/server.log
+          exit 1
+
+      - name: Prove Access mobile conversion and Request to Dates
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { chromium } from '@playwright/test';
+
+          const browser = await chromium.launch({ headless: true });
+          const evidence = {
+            node: 'BHRIGU_ACCESS_INTAKE_SCOPED_STYLE_BINDING_AND_MOBILE_WORKFLOW_PRIORITY_TARGETED_REPAIR_FULL_CYCLE_v0_1',
+            final_head: process.env.FINAL_HEAD,
+            status: 'PASS',
+          };
+
+          try {
+            const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'en-US' });
+            const page = await mobile.newPage();
+            const response = await page.goto('http://127.0.0.1:4317/access', { waitUntil: 'networkidle', timeout: 45000 });
+            if (!response || response.status() !== 200) throw new Error(`mobile status ${response?.status()}`);
+
+            const metrics = await page.evaluate(() => {
+              const firstControl = document.querySelector('.fieldControl');
+              const textarea = document.querySelector('textarea.fieldControl');
+              const continueButton = Array.from(document.querySelectorAll('button')).find((node) => node.textContent?.trim() === 'Continue');
+              const contextPanel = document.querySelector('.accessContextPanel');
+              const notice = document.querySelector('.noticeStack');
+              if (!firstControl || !textarea || !continueButton || !contextPanel) return { missing: true };
+              const box = (node) => {
+                const r = node.getBoundingClientRect();
+                return { top: r.top + window.scrollY, width: r.width, height: r.height };
+              };
+              return {
+                missing: false,
+                pageHeight: document.documentElement.scrollHeight,
+                viewportWidth: window.innerWidth,
+                scrollWidth: document.documentElement.scrollWidth,
+                firstControl: box(firstControl),
+                textarea: box(textarea),
+                continueButton: box(continueButton),
+                contextPanel: box(contextPanel),
+                noticePresent: Boolean(notice),
+                inputBorderRadius: getComputedStyle(firstControl).borderRadius,
+                inputBackground: getComputedStyle(firstControl).backgroundImage,
+                buttonBorderRadius: getComputedStyle(continueButton).borderRadius,
+              };
+            });
+
+            if (metrics.missing) throw new Error('required Access elements missing');
+            if (metrics.firstControl.top > 1974) throw new Error(`first control y ${metrics.firstControl.top}`);
+            if (metrics.continueButton.top > 2550) throw new Error(`Continue y ${metrics.continueButton.top}`);
+            if (metrics.firstControl.height < 53) throw new Error(`input height ${metrics.firstControl.height}`);
+            if (metrics.textarea.height < 145) throw new Error(`textarea height ${metrics.textarea.height}`);
+            if (metrics.continueButton.height < 49) throw new Error(`button height ${metrics.continueButton.height}`);
+            if (metrics.continueButton.width < 300) throw new Error(`mobile CTA width ${metrics.continueButton.width}`);
+            if (metrics.scrollWidth > metrics.viewportWidth + 1) throw new Error(`horizontal overflow ${metrics.scrollWidth - metrics.viewportWidth}`);
+            if (metrics.firstControl.top >= metrics.contextPanel.top) throw new Error('workflow does not precede context on mobile');
+            if (metrics.noticePresent) throw new Error('empty notice reserve remains');
+            if (metrics.inputBorderRadius === '0px') throw new Error('native input radius remains');
+            if (metrics.buttonBorderRadius === '0px') throw new Error('native CTA radius remains');
+
+            await page.getByLabel('Name').fill('Access Proof');
+            await page.getByLabel('Email').fill('proof@example.com');
+            await page.getByLabel('Subject type').selectOption({ label: 'Project' });
+            await page.getByLabel('Main question').fill('How should this project be structured?');
+            await page.getByLabel('Short description').fill('A deterministic local workflow transition proof without submission.');
+            await page.getByLabel('Preferred depth').selectOption({ label: 'Structured Snapshot' });
+            await page.locator('input[type="checkbox"]').first().check();
+            await page.getByRole('button', { name: 'Continue', exact: true }).click();
+            await page.getByText('Relevant dates', { exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+            evidence.mobile = { ...metrics, request_to_dates: 'PASS' };
+            await page.screenshot({ path: 'artifacts/access-mobile-repaired.png', fullPage: true });
+            await mobile.close();
+
+            const desktop = await browser.newContext({ viewport: { width: 1440, height: 1200 }, locale: 'en-US' });
+            const desktopPage = await desktop.newPage();
+            const desktopResponse = await desktopPage.goto('http://127.0.0.1:4317/access', { waitUntil: 'networkidle', timeout: 45000 });
+            if (!desktopResponse || desktopResponse.status() !== 200) throw new Error(`desktop status ${desktopResponse?.status()}`);
+            const desktopMetrics = await desktopPage.evaluate(() => {
+              const firstControl = document.querySelector('.fieldControl');
+              const contextPanel = document.querySelector('.accessContextPanel');
+              if (!firstControl || !contextPanel) return { missing: true };
+              const control = firstControl.getBoundingClientRect();
+              const context = contextPanel.getBoundingClientRect();
+              return {
+                missing: false,
+                firstControlTop: control.top + window.scrollY,
+                contextTop: context.top + window.scrollY,
+                inputHeight: control.height,
+                horizontalOverflow: document.documentElement.scrollWidth - window.innerWidth,
+              };
+            });
+            if (desktopMetrics.missing) throw new Error('desktop Access elements missing');
+            if (desktopMetrics.contextTop >= desktopMetrics.firstControlTop) throw new Error('desktop source order changed');
+            if (desktopMetrics.inputHeight < 53) throw new Error(`desktop input height ${desktopMetrics.inputHeight}`);
+            if (desktopMetrics.horizontalOverflow > 1) throw new Error(`desktop overflow ${desktopMetrics.horizontalOverflow}`);
+            evidence.desktop = desktopMetrics;
+            await desktopPage.screenshot({ path: 'artifacts/access-desktop-repaired.png', fullPage: true });
+            await desktop.close();
+          } finally {
+            await browser.close();
+          }
+
+          fs.writeFileSync('artifacts/access-layout-audit.json', JSON.stringify(evidence, null, 2));
+          console.log('ACCESS_SCOPED_STYLE_BINDING=PASS');
+          console.log('ACCESS_MOBILE_WORKFLOW_PRIORITY=PASS');
+          console.log('ACCESS_REQUEST_TO_DATES=PASS');
+          NODE
+
+      - name: Run full 25-route 50-capture harness
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+          BHRIGU_VISUAL_ARTIFACT_ROOT: artifacts/local-visual
+        run: |
+          export BHRIGU_VISUAL_SOURCE_SHA="$FINAL_HEAD"
+          export BHRIGU_VISUAL_HARNESS_SHA="$FINAL_HEAD"
+          node scripts/local-visual/capture.mjs
+
+      - name: Prove 50 of 50 technical visual pass
+        run: |
+          set -euo pipefail
+          manifest="$(find artifacts/local-visual -name manifest.json -type f | sort | tail -n 1)"
+          test -n "$manifest"
+          node - "$manifest" <<'NODE'
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          const required = {
+            public_routes_and_scenarios: 25,
+            expected_captures: 50,
+            completed_captures: 50,
+            passing_captures: 50,
+            blocking_captures: 0,
+            production_writes: 0,
+            vercel_writes: 0,
+            x402_live_transfers: 0,
+          };
+          for (const [key, expected] of Object.entries(required)) {
+            if (data[key] !== expected) throw new Error(`${key}: expected ${expected}, got ${data[key]}`);
+          }
+          if (data.status !== 'PASS') throw new Error(`manifest status ${data.status}`);
+          NODE
+
+      - name: Publish accepted exact-head evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/pass.md <<EOF
+          ## OPS/F exact-head evidence accepted
+
+          \`BHRIGU_ACCESS_INTAKE_SCOPED_STYLE_BINDING_AND_MOBILE_WORKFLOW_PRIORITY_TARGETED_REPAIR_FULL_CYCLE_v0_1\`
+
+          - final repair head: \`$FINAL_HEAD\`
+          - workflow run: \`${{ github.run_id }}\`
+          - exact net scope: \`pages/access.tsx\`
+          - scoped child-component style binding: \`PASS\`
+          - mobile workflow priority: \`PASS\`
+          - empty notice reserve: \`REMOVED\`
+          - Request → Dates transition: \`PASS\`
+          - production build: \`PASS\`
+          - inherited BTC regressions: \`PASS\`
+          - visual captures: \`50/50 PASS\`
+          - artifact: \`bhrigu-access-mobile-conversion-evidence-${{ github.run_id }}\`
+
+          No merge, production deployment, manual Vercel write, intake submission or x402 live transfer was performed.
+          EOF
+          gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --method POST --field body="$(cat /tmp/pass.md)"
+
+      - name: Publish failure anchor
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/fail.md <<EOF
+          ## OPS/F exact-head evidence V2 blocked
+
+          - final head: \`$FINAL_HEAD\`
+          - workflow run: \`${{ github.run_id }}\`
+          - state: \`FAIL_CLOSED\`
+          EOF
+          gh api repos/${{ github.repository }}/issues/$PR_NUMBER/comments --method POST --field body="$(cat /tmp/fail.md)"
+
+      - name: Publish summary
+        if: always()
+        run: |
+          if [[ -f artifacts/access-layout-audit.json ]]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/access-layout-audit.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          summary="$(find artifacts/local-visual -name summary.md -type f | sort | tail -n 1 || true)"
+          if [[ -n "$summary" && -f "$summary" ]]; then cat "$summary" >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: Upload exact-head evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-access-mobile-conversion-evidence-${{ github.run_id }}
+          path: artifacts/**
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 6
