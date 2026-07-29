@@ -1,0 +1,161 @@
+name: Temporary Reading Mobile Overflow Evidence
+
+on:
+  push:
+    branches: [ "agent/bhrigu-reading-mobile-390-overflow-repair-v0-1" ]
+    paths:
+      - ".github/workflows/tmp-reading-mobile-overflow-evidence.yml"
+
+concurrency:
+  group: reading-mobile-overflow-evidence-v0-1
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+env:
+  BASE_HARNESS_SHA: 3fc872ca256dc3d7891c1034cc4b5451ca5f5c4a
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  exact-head-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    steps:
+      - name: Checkout triggering repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Remove temporary workflow and lock final repair head
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$BASE_HARNESS_SHA" HEAD
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/tmp-reading-mobile-overflow-evidence.yml
+          git commit -m "OPS/F: lock reading overflow repair evidence head"
+          git push origin HEAD:agent/bhrigu-reading-mobile-390-overflow-repair-v0-1
+          echo "FINAL_REPAIR_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - name: Prove final exact one-file scope
+        run: |
+          set -euo pipefail
+          printf 'pages/reading.js\n' > /tmp/expected-scope.txt
+          git diff --name-only "$BASE_HARNESS_SHA...HEAD" | sort > /tmp/actual-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          test "$(git diff --numstat "$BASE_HARNESS_SHA...HEAD" -- pages/reading.js)" = $'1\t1\tpages/reading.js'
+          grep -F 'fontSize: "clamp(48px, 7vw, 80px)"' pages/reading.js
+          echo "FINAL_EXACT_SCOPE=pages/reading.js"
+          echo "FINAL_REPAIR_HEAD=$(git rev-parse HEAD)"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify inherited BTC contracts
+        run: |
+          npm run verify:btc-paid-x402-sandbox
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Install pinned Chromium with Linux dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production build and full visual harness
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+          BHRIGU_VISUAL_SOURCE_SHA: ${{ env.FINAL_REPAIR_HEAD }}
+          BHRIGU_VISUAL_HARNESS_SHA: ${{ env.BASE_HARNESS_SHA }}
+          BHRIGU_VISUAL_ARTIFACT_ROOT: artifacts/local-visual
+        run: npm run verify:local-visual
+
+      - name: Prove 50 of 50 and reading mobile zero overflow
+        run: |
+          set -euo pipefail
+          manifest="$(find artifacts/local-visual -name manifest.json -type f | sort | tail -n 1)"
+          test -n "$manifest"
+          node - "$manifest" <<'NODE'
+          const fs = require('fs');
+          const manifest = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
+          if (manifest.status !== 'PASS') throw new Error(`visual status ${manifest.status}`);
+          if (manifest.expected_captures !== 50 || manifest.completed_captures !== 50) throw new Error('capture count mismatch');
+          if (manifest.passing_captures !== 50 || manifest.blocking_captures !== 0) throw new Error('visual blockers remain');
+          const readingMobile = manifest.captures.find((item) => item.path === '/reading' && item.viewport === 'mobile');
+          const readingDesktop = manifest.captures.find((item) => item.path === '/reading' && item.viewport === 'desktop');
+          if (!readingMobile || !readingDesktop) throw new Error('reading captures missing');
+          if (readingMobile.overflow_px !== 0 || readingMobile.blockers.length !== 0) throw new Error('reading mobile not repaired');
+          if (readingDesktop.overflow_px !== 0 || readingDesktop.blockers.length !== 0) throw new Error('reading desktop regressed');
+          fs.writeFileSync('/tmp/visual-proof.json', JSON.stringify({
+            status: manifest.status,
+            source_sha: manifest.source_sha,
+            captures: `${manifest.passing_captures}/${manifest.expected_captures}`,
+            blockers: manifest.blocking_captures,
+            reading_mobile_overflow_px: readingMobile.overflow_px,
+            reading_desktop_overflow_px: readingDesktop.overflow_px,
+          }));
+          console.log('FULL_VISUAL_ACCEPTANCE=50/50_PASS');
+          console.log('READING_MOBILE_OVERFLOW=0px');
+          console.log('READING_DESKTOP_OVERFLOW=0px');
+          NODE
+
+      - name: Publish exact evidence comment to PR 83
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          proof="$(cat /tmp/visual-proof.json)"
+          captures="$(node -e 'const p=JSON.parse(process.argv[1]);process.stdout.write(p.captures)' "$proof")"
+          mobile="$(node -e 'const p=JSON.parse(process.argv[1]);process.stdout.write(String(p.reading_mobile_overflow_px))' "$proof")"
+          desktop="$(node -e 'const p=JSON.parse(process.argv[1]);process.stdout.write(String(p.reading_desktop_overflow_px))' "$proof")"
+          body=$(cat <<EOF
+          ## OPS/F exact-head evidence
+
+          \`BHRIGU_READING_MOBILE_390_OVERFLOW_TARGETED_REPAIR_FULL_CYCLE_v0_1\`
+
+          - final repair head: \`${FINAL_REPAIR_HEAD}\`
+          - exact net scope: \`pages/reading.js · +1/-1\`
+          - workflow run: \`${GITHUB_RUN_ID}\`
+          - job platform: \`ubuntu-24.04\`
+          - production build: \`PASS\`
+          - inherited BTC regressions: \`PASS\`
+          - visual captures: \`${captures} PASS\`
+          - visual blockers: \`0\`
+          - /reading mobile 390px overflow: \`${mobile}px\`
+          - /reading desktop overflow: \`${desktop}px\`
+          - artifact: \`bhrigu-reading-mobile-overflow-evidence-${GITHUB_RUN_ID}\`
+
+          No merge, production deployment, manual Vercel write or x402 live transfer was performed.
+          EOF
+          )
+          gh api "repos/${GITHUB_REPOSITORY}/issues/83/comments" -f body="$body"
+
+      - name: Publish visual summary
+        if: always()
+        run: |
+          summary="$(find artifacts/local-visual -name summary.md -type f | sort | tail -n 1)"
+          if [[ -n "$summary" ]]; then
+            cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No visual summary produced." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload exact-head visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-reading-mobile-overflow-evidence-${{ github.run_id }}
+          path: artifacts/local-visual/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
