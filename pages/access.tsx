@@ -884,11 +884,17 @@ export default function AccessPage({
   .accessPage .heroFrame { order: 0; }
   .accessPage .noticeStack { order: 1; }
   .accessPage .progress { order: 2; }
-  .accessPage .accessWorkflowPanel { order: 3; }
+  .accessPage .accessWorkflowPanel { order: 3; padding: 14px; }
   .accessPage .accessContextPanel { order: 10; }
-  .accessPage .formFrame { gap: 20px; }
-  .accessPage .formSection { gap: 14px; }
-  .accessPage .formHero { gap: 10px; }
+  .accessPage .formFrame { gap: 12px; }
+  .accessPage .formSection { gap: 10px; }
+  .accessPage .formSectionHeader { gap: 5px; }
+  .accessPage .formHero { gap: 8px; padding-bottom: 10px; }
+  .accessPage .accessWorkflowPanel .grid2,
+  .accessPage .accessWorkflowPanel .grid2Asymmetric { gap: 12px; }
+  .accessPage .accessWorkflowPanel .field { gap: 7px; }
+  .accessPage .accessWorkflowPanel .checkboxField { padding: 14px 16px; }
+  .accessPage .submitRow { padding-top: 0; }
 }
 `}</style>
       </main>
@@ -2098,4 +2104,3 @@ function buildEmptySubjectPayload(subjectType: SubjectType | ""): SubjectPayload
       return {};
   }
 }
-
