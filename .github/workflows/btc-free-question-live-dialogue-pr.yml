@@ -42,28 +42,23 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Prove exact product scope
+      - name: Prove bounded dialogue polish scope
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
-          cat > /tmp/expected-scope.txt <<'SCOPE'
-          .github/workflows/btc-binance-free-observation-bridge-pr.yml
+          cat > /tmp/allowed-scope.txt <<'SCOPE'
           .github/workflows/btc-free-question-live-dialogue-pr.yml
-          components/btc/BtcHeroQuestionLaunch.tsx
-          components/btc/BtcLiveDialogue.tsx
-          components/btc/BtcQuestionMembrane.tsx
-          docs/BTC_MARKET_COSMOGRAPHER_FREE_QUESTION_CORRIDOR_PUBLIC_LAUNCH_AND_REAL_USER_REQUEST_ACCEPTANCE_v0_1.md
           lib/btc-live-dialogue-style.ts
           lib/btc-product-rebalance-style.ts
-          pages/crypto-astro/btc.tsx
-          pages/crypto-astro/btc/live.tsx
-          scripts/run-btc-live-dialogue-fixture.mjs
-          scripts/verify-btc-bilingual-surface.py
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
-          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
-          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          sort -o /tmp/allowed-scope.txt /tmp/allowed-scope.txt
+          test "$(wc -l < /tmp/actual-scope.txt)" -le 4
+          test -z "$(comm -23 /tmp/actual-scope.txt /tmp/allowed-scope.txt)"
+          grep -Fxq 'lib/btc-live-dialogue-style.ts' /tmp/actual-scope.txt
+          grep -Fxq 'lib/btc-product-rebalance-style.ts' /tmp/actual-scope.txt
+          grep -Fxq 'scripts/verify-btc-live-dialogue-surface.py' /tmp/actual-scope.txt
 
       - name: Verify product and routing contract
         env:
