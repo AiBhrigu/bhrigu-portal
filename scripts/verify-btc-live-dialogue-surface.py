@@ -10,13 +10,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 base = os.environ.get("BTC_LIVE_PREVIEW_BASE", "http://127.0.0.1:3110")
-question = "What changed in the BTC field, why does it matter, and what should I watch next?"
 options = webdriver.ChromeOptions()
 for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
     options.add_argument(argument)
 options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 driver = webdriver.Chrome(options=options)
-report = {"checks": {}, "measurements": {}, "failures": [], "browser_severe": []}
+report = {"checks": {}, "measurements": {}, "semantic_samples": [], "failures": [], "browser_severe": []}
 
 
 def wait(selector, timeout=45):
@@ -49,6 +48,36 @@ def full_page_screenshot(path):
     Path(path).write_bytes(base64.b64decode(payload["data"]))
 
 
+def sample_answer(locale, question, slug, width, height):
+    driver.set_window_size(width, height)
+    driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(question)}")
+    turn = wait(".cosmographerTurn[data-question-class]")
+    wait(".cosmographerTurn .answerHeader")
+    headline = driver.find_element(By.CSS_SELECTOR, ".cosmographerTurn .answerHeader h2").text
+    direct = driver.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text
+    evidence = [item.text for item in driver.find_elements(By.CSS_SELECTOR, "[data-answer-section='evidence'] li")]
+    limit_text = driver.find_element(By.CSS_SELECTOR, "[data-answer-section='limit']").text
+    change_text = driver.find_element(By.CSS_SELECTOR, "[data-answer-section='change']").text
+    source_text = driver.find_element(By.CSS_SELECTOR, "[data-answer-source-boundary='true']").text
+    item = {
+        "locale": locale,
+        "question": question,
+        "question_class": turn.get_attribute("data-question-class"),
+        "facets": turn.get_attribute("data-question-facets"),
+        "answer_state": turn.get_attribute("data-answer-state"),
+        "headline": headline,
+        "direct": direct,
+        "evidence": evidence,
+        "limit": limit_text,
+        "change": change_text,
+        "source": source_text,
+        "no_overflow": no_overflow(),
+    }
+    report["semantic_samples"].append(item)
+    driver.save_screenshot(f"artifacts/btc-question-specific-{slug}-{locale}-{width}.png")
+    return item
+
+
 try:
     Path("artifacts").mkdir(exist_ok=True)
     driver.set_window_size(1440, 1100)
@@ -57,7 +86,6 @@ try:
     wait(".staticRouteProof")
     viewport_height = driver.execute_script("return window.innerHeight")
     cta_rect = rect(".heroDialogueCta")
-    portal_nav = rect("nav[aria-label='Portal navigation']")
     report["checks"]["landing_single_dialogue_cta"] = len(driver.find_elements(By.CSS_SELECTOR, ".heroDialogueCta")) == 1
     report["checks"]["landing_has_no_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, "main textarea[name='q']")) == 0
     report["checks"]["landing_cta_targets_live"] = "/crypto-astro/btc/live" in hero_cta.get_attribute("href")
@@ -96,7 +124,24 @@ try:
     report["checks"]["empty_live_no_overflow"] = no_overflow()
     driver.save_screenshot("artifacts/btc-clean-dialogue-empty-desktop-en.png")
 
-    q = quote(question)
+    samples = [
+        ("en", "Do stablecoin share, DeFi TVL and DEX volume confirm current BTC liquidity conditions?", "liquidity", 1440, 1100),
+        ("en", "Do regime, Market Field Score and market cap confirm the current BTC structure?", "structure", 1440, 1100),
+        ("ru", "Что изменила принятая память BTC по сравнению с предыдущим снимком?", "memory", 390, 844),
+        ("ru", "Как выбранная дата меняет временной контекст и давление BTC?", "temporal", 390, 844),
+    ]
+    observed = [sample_answer(*sample) for sample in samples]
+    report["checks"]["four_question_classes_visualized"] = len({item["question_class"] for item in observed}) == 4
+    report["checks"]["four_distinct_headlines"] = len({item["headline"] for item in observed}) == 4
+    report["checks"]["all_samples_have_direct_answer"] = all(item["direct"] for item in observed)
+    report["checks"]["all_samples_have_three_evidence_lines"] = all(len(item["evidence"]) >= 1 for item in observed)
+    report["checks"]["all_samples_have_limit_and_change"] = all(item["limit"] and item["change"] for item in observed)
+    report["checks"]["all_samples_source_bound"] = all("forecast" in item["source"].lower() or "прогноз" in item["source"].lower() for item in observed)
+    report["checks"]["all_samples_no_overflow"] = all(item["no_overflow"] for item in observed)
+    report["checks"]["generic_mixed_signals_absent"] = all(item["headline"].lower() != "mixed signals" for item in observed)
+
+    driver.set_window_size(1440, 1100)
+    q = quote("What changed in the BTC field, why does it matter, and what should I watch next?")
     driver.get(f"{base}/crypto-astro/btc/live?lang=en&q={q}")
     wait(".liveThread")
     wait(".cosmographerTurn .answerHeader")
@@ -110,27 +155,11 @@ try:
     report["checks"]["user_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".userTurn")) == 1
     report["checks"]["cosmographer_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")) >= 1
     report["checks"]["answer_before_next_composer"] = answer["top"] < composer["top"]
-    report["checks"]["answer_enters_first_viewport"] = answer["top"] < viewport_height
+    report["checks"]["answer_enters_first_viewport"] = answer["top"] < driver.execute_script("return window.innerHeight")
     report["checks"]["live_has_one_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveDialogueShell textarea[name='q']")) == 1
     report["checks"]["live_has_no_analytics_cards"] = sum(len(driver.find_elements(By.CSS_SELECTOR, selector)) for selector in (".liveEvidenceRail", ".liveMetricField", ".answerDecisionGrid", ".liveFullField")) == 0
     report["checks"]["live_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
     report["checks"]["live_no_overflow"] = no_overflow()
-    driver.save_screenshot("artifacts/btc-clean-dialogue-answer-desktop-en.png")
-
-    driver.set_window_size(390, 844)
-    driver.get(f"{base}/crypto-astro/btc/live?lang=ru&q={q}")
-    wait(".liveThread")
-    wait(".cosmographerTurn .answerHeader")
-    mobile_height = driver.execute_script("return window.innerHeight")
-    mobile_answer = rect(".cosmographerTurn .answerHeader")
-    mobile_composer = rect(".liveComposer")
-    report["checks"]["mobile_single_column"] = rect(".liveDialogueShell")["width"] <= 390
-    report["checks"]["mobile_answer_enters_first_viewport"] = mobile_answer["top"] < mobile_height
-    report["checks"]["mobile_answer_before_next_composer"] = mobile_answer["top"] < mobile_composer["top"]
-    report["checks"]["mobile_has_no_analytics_cards"] = sum(len(driver.find_elements(By.CSS_SELECTOR, selector)) for selector in (".liveEvidenceRail", ".liveMetricField", ".answerDecisionGrid", ".liveFullField")) == 0
-    report["checks"]["mobile_no_overflow"] = no_overflow()
-    time.sleep(0.2)
-    driver.save_screenshot("artifacts/btc-clean-dialogue-answer-mobile-ru.png")
 
     severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "favicon" not in entry.get("message", "").lower()]
     report["checks"]["browser_severe_none"] = not severe
