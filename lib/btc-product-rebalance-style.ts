@@ -72,7 +72,11 @@ main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
 .heroQuestionHeader h2{margin:5px 0 0;font-size:clamp(27px,3.1vw,42px);line-height:1.05;letter-spacing:-.035em}
 .heroQuestionGlyph{width:46px;height:46px;border-color:rgba(106,168,255,.65)}
 .heroQuestionGlyph b{color:var(--t)}
-.heroQuestionLead{position:relative;max-width:46rem;margin:0;color:var(--t2);font-size:14px;line-height:1.5}
+.heroQuestionLead{position:relative;max-width:40rem;margin:0;color:var(--t2);font-size:clamp(15px,1.45vw,18px);line-height:1.55}
+.heroDialogueCta{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:17px 20px;border:1px solid rgba(106,168,255,.62);border-radius:999px;background:linear-gradient(110deg,rgba(106,168,255,.24),rgba(143,124,244,.12));color:var(--t);text-decoration:none;font-weight:700}
+.heroDialogueCta:hover{background:linear-gradient(110deg,rgba(106,168,255,.34),rgba(143,124,244,.18))}
+.heroDialogueCta span{color:var(--blue);font-size:20px}
+.heroDialogueGateway{min-height:clamp(330px,43svh,430px)}
 .heroQuestionForm{position:relative;display:grid;grid-template-columns:1fr;gap:13px}
 .heroQuestionInput{display:grid;gap:8px}
 .heroQuestionInput textarea{min-height:94px;border-color:rgba(106,168,255,.3);background:rgba(2,7,14,.72);line-height:1.5}
@@ -88,6 +92,11 @@ main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
 .heroQuestionControls button:hover{background:linear-gradient(110deg,rgba(106,168,255,.4),rgba(143,124,244,.22))}
 .heroQuestionBoundary{position:relative;margin:0;color:var(--m);font-size:11px;letter-spacing:.04em}
 .fieldNav{background:rgba(5,7,12,.92);border-color:var(--bl)}
+.proofRouteMembrane{grid-template-columns:minmax(0,38.196601125fr) minmax(0,61.803398875fr)}
+.staticProofHeader{display:grid;align-content:start;gap:18px;padding:clamp(24px,4vw,48px)}
+.staticProofHeader>p{margin:0;color:var(--t2);line-height:1.65}
+.staticExampleRoutes{border-left:1px solid var(--bl)}
+@media(max-width:900px){.proofRouteMembrane{grid-template-columns:1fr}.staticExampleRoutes{border-left:0;border-top:1px solid var(--bl)}}
 .questionPanel,.readingZone{border-color:var(--bl)}
 .questionMembrane,.readingHeader,.executiveField,.phiPlane{grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr)}
 .exampleRoutes,.executiveContext,.supportBand{border-color:var(--bl)}
