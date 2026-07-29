@@ -1,0 +1,266 @@
+name: BHRIGU PrevNext Mobile Occlusion Evidence
+
+on:
+  push:
+    branches: [ "agent/bhrigu-prevnext-mobile-content-occlusion-repair-v0-1" ]
+    paths:
+      - ".github/workflows/bhrigu-prevnext-mobile-occlusion-evidence.yml"
+
+concurrency:
+  group: bhrigu-prevnext-mobile-occlusion-evidence
+  cancel-in-progress: false
+
+env:
+  LOCKED_BASE_SHA: 47d5f82ca624111dd4d03c4a37559085191d07b7
+  LOCKED_BRANCH: agent/bhrigu-prevnext-mobile-content-occlusion-repair-v0-1
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  exact-head-evidence:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout triggering repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Remove temporary workflow and lock final repair head
+        run: |
+          set -euo pipefail
+          rm .github/workflows/bhrigu-prevnext-mobile-occlusion-evidence.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/bhrigu-prevnext-mobile-occlusion-evidence.yml
+          git commit -m "OPS/F: lock final prev-next mobile repair head"
+          git push origin HEAD:"$LOCKED_BRANCH"
+          final_head="$(git rev-parse HEAD)"
+          echo "FINAL_HEAD=$final_head" >> "$GITHUB_ENV"
+          echo "FINAL_REPAIR_HEAD=$final_head" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Prove exact source ancestry and one-file net scope
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$LOCKED_BASE_SHA" HEAD
+          git diff --name-only "$LOCKED_BASE_SHA...HEAD" | sort > /tmp/actual-scope.txt
+          printf '%s\n' 'components/PrevNextBlock.jsx' > /tmp/expected-scope.txt
+          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          test "$(git diff --numstat "$LOCKED_BASE_SHA...HEAD" | wc -l)" -eq 1
+          echo "EXACT_ONE_FILE_SCOPE=PASS"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Verify inherited BTC contracts
+        run: |
+          npm run verify:btc-paid-x402-sandbox
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Install pinned Chromium with Linux dependencies
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production portal
+        run: npm run build
+
+      - name: Start production-mode localhost
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run start -- --hostname 127.0.0.1 --port 4317 > artifacts/server.log 2>&1 &
+          echo $! > /tmp/bhrigu-server.pid
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent --show-error http://127.0.0.1:4317/ >/dev/null; then
+              echo "LOCALHOST_READY=YES"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/server.log
+          exit 1
+
+      - name: Run full 25-route 50-capture harness
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+          BHRIGU_VISUAL_ARTIFACT_ROOT: artifacts/local-visual
+        run: |
+          export BHRIGU_VISUAL_SOURCE_SHA="$FINAL_HEAD"
+          export BHRIGU_VISUAL_HARNESS_SHA="$FINAL_HEAD"
+          node scripts/local-visual/capture.mjs
+
+      - name: Prove 50 of 50 technical visual pass
+        run: |
+          set -euo pipefail
+          manifest="$(find artifacts/local-visual -name manifest.json -type f | sort | tail -n 1)"
+          test -n "$manifest"
+          node - "$manifest" <<'NODE'
+          const fs = require('fs');
+          const manifestPath = process.argv[2];
+          const data = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const required = {
+            public_routes_and_scenarios: 25,
+            expected_captures: 50,
+            completed_captures: 50,
+            passing_captures: 50,
+            blocking_captures: 0,
+            production_writes: 0,
+            vercel_writes: 0,
+            x402_live_transfers: 0,
+          };
+          for (const [key, expected] of Object.entries(required)) {
+            if (data[key] !== expected) throw new Error(`${key}: expected ${expected}, got ${data[key]}`);
+          }
+          if (data.status !== 'PASS') throw new Error(`manifest status: ${data.status}`);
+          console.log('FULL_VISUAL_HARNESS=50_OF_50_PASS');
+          NODE
+
+      - name: Prove mobile document flow and zero content intersection
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { chromium } from '@playwright/test';
+
+          const baseUrl = 'http://127.0.0.1:4317';
+          const routes = ['/', '/services', '/guide/frey', '/faq', '/investors', '/support', '/reading'];
+          const browser = await chromium.launch({ headless: true });
+          const results = [];
+
+          try {
+            const mobile = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: 'ru-RU' });
+            for (const route of routes) {
+              const page = await mobile.newPage();
+              const response = await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle', timeout: 45000 });
+              if (!response || response.status() !== 200) throw new Error(`${route}: navigation status ${response?.status()}`);
+              const result = await page.evaluate(() => {
+                const root = document.getElementById('__next');
+                const nav = root?.querySelector('[data-pn-root="PORTAL_PREVNEXT_V0_2"]');
+                if (!root || !nav) return { missing: true };
+                const navStyle = getComputedStyle(nav);
+                const navRect = nav.getBoundingClientRect();
+                const navTop = navRect.top + window.scrollY;
+                let contentBottom = 0;
+                for (const element of Array.from(root.children)) {
+                  if (element === nav || !(element instanceof HTMLElement)) continue;
+                  const style = getComputedStyle(element);
+                  if (style.position === 'fixed' || style.position === 'sticky' || style.display === 'none') continue;
+                  const rect = element.getBoundingClientRect();
+                  contentBottom = Math.max(contentBottom, rect.bottom + window.scrollY);
+                }
+                return {
+                  missing: false,
+                  position: navStyle.position,
+                  navTop,
+                  contentBottom,
+                  intersectionPx: Math.max(0, contentBottom - navTop),
+                  navWidth: navRect.width,
+                  viewportWidth: window.innerWidth,
+                  documentHeight: document.documentElement.scrollHeight,
+                };
+              });
+              if (result.missing) throw new Error(`${route}: navigation missing`);
+              if (result.position !== 'static') throw new Error(`${route}: mobile position ${result.position}`);
+              if (result.intersectionPx > 1) throw new Error(`${route}: content intersection ${result.intersectionPx}px`);
+              if (result.navWidth > result.viewportWidth + 1) throw new Error(`${route}: nav width ${result.navWidth} > viewport ${result.viewportWidth}`);
+              results.push({ route, viewport: 'mobile', ...result });
+              await page.close();
+            }
+            await mobile.close();
+
+            const desktop = await browser.newContext({ viewport: { width: 1440, height: 1200 }, locale: 'en-US' });
+            for (const route of ['/reading', '/faq']) {
+              const page = await desktop.newPage();
+              await page.goto(`${baseUrl}${route}`, { waitUntil: 'networkidle', timeout: 45000 });
+              const result = await page.evaluate(() => {
+                const nav = document.querySelector('[data-pn-root="PORTAL_PREVNEXT_V0_2"]');
+                if (!nav) return { missing: true };
+                const style = getComputedStyle(nav);
+                const rect = nav.getBoundingClientRect();
+                return { missing: false, position: style.position, bottomGap: window.innerHeight - rect.bottom };
+              });
+              if (result.missing) throw new Error(`${route}: desktop navigation missing`);
+              if (result.position !== 'fixed') throw new Error(`${route}: desktop position ${result.position}`);
+              if (Math.abs(result.bottomGap - 14) > 1) throw new Error(`${route}: desktop bottom gap ${result.bottomGap}`);
+              results.push({ route, viewport: 'desktop', ...result });
+              await page.close();
+            }
+            await desktop.close();
+          } finally {
+            await browser.close();
+          }
+
+          fs.writeFileSync('artifacts/prevnext-layout-audit.json', JSON.stringify({
+            node: 'BHRIGU_PORTAL_PREVNEXT_MOBILE_CONTENT_OCCLUSION_TARGETED_REPAIR_FULL_CYCLE_v0_1',
+            final_head: process.env.FINAL_HEAD,
+            status: 'PASS',
+            mobile_routes_checked: 7,
+            desktop_routes_checked: 2,
+            results,
+          }, null, 2));
+          console.log('MOBILE_DOCUMENT_FLOW=PASS');
+          console.log('MOBILE_CONTENT_INTERSECTION=0');
+          console.log('DESKTOP_FIXED_BEHAVIOR=PRESERVED');
+          NODE
+
+      - name: Publish exact evidence comment to PR 84
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/comment.md <<EOF
+          ## OPS/F exact-head evidence
+
+          \`BHRIGU_PORTAL_PREVNEXT_MOBILE_CONTENT_OCCLUSION_TARGETED_REPAIR_FULL_CYCLE_v0_1\`
+
+          - final repair head: \`$FINAL_HEAD\`
+          - exact net scope: \`components/PrevNextBlock.jsx\`
+          - workflow run: \`${{ github.run_id }}\`
+          - platform: \`ubuntu-24.04\`
+          - production build: \`PASS\`
+          - inherited BTC regressions: \`PASS\`
+          - visual captures: \`50/50 PASS\`
+          - mobile routes checked for occlusion: \`7/7 PASS\`
+          - mobile computed navigation position: \`static\`
+          - mobile content intersection: \`0px\`
+          - desktop computed navigation position: \`fixed\`
+          - desktop bottom gap: \`14px\`
+          - artifact: \`bhrigu-prevnext-mobile-occlusion-evidence-${{ github.run_id }}\`
+
+          No merge, production deployment, manual Vercel write or x402 live transfer was performed.
+          EOF
+          gh api repos/${{ github.repository }}/issues/84/comments --method POST --field body="$(cat /tmp/comment.md)"
+
+      - name: Publish visual summary
+        if: always()
+        run: |
+          summary="$(find artifacts/local-visual -name summary.md -type f | sort | tail -n 1)"
+          if [[ -n "$summary" ]]; then cat "$summary" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [[ -f artifacts/prevnext-layout-audit.json ]]; then
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat artifacts/prevnext-layout-audit.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload exact-head visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-prevnext-mobile-occlusion-evidence-${{ github.run_id }}
+          path: artifacts/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
