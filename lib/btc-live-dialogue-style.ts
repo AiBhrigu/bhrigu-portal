@@ -1,37 +1,30 @@
 export const BTC_LIVE_DIALOGUE_CSS = String.raw`
 body:has(.liveDialoguePage) nav[aria-label="Portal navigation"]{display:none}
-.liveDialoguePage{width:min(1460px,100%);padding:0 clamp(16px,3vw,42px) 80px}
-.liveDialogueStage{min-height:100svh;padding-top:18px}
-.liveDialogueTopbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;min-height:58px;border-bottom:1px solid var(--bl);color:var(--t2);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.liveDialoguePage{--phi-major:61.803398875%;--phi-minor:38.196601125%;width:min(1180px,100%);padding:0 clamp(16px,3vw,42px) 96px}
+.liveDialogueTopbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;min-height:58px;margin-top:18px;border-bottom:1px solid var(--bl);color:var(--t2);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
 .liveBackLink,.liveLocaleLink{text-decoration:none}.liveBackLink:hover,.liveLocaleLink:hover{color:var(--t)}
 .liveLocaleLink{justify-self:end;border:1px solid rgba(106,168,255,.28);border-radius:999px;padding:8px 12px}
 .liveIdentity{display:flex;align-items:center;gap:10px;color:var(--t)}.liveIdentityGlyph{width:30px;height:30px}
-.liveGoldenGrid{display:grid;grid-template-columns:minmax(0,61.803398875fr) minmax(300px,38.196601125fr);gap:clamp(24px,3.8vw,58px);min-height:calc(100svh - 76px);padding:clamp(28px,4vw,56px) 0}
-.liveConversation{min-width:0;display:grid;align-content:start;gap:18px}
-.liveConversation:has(.answerHeader) .liveConversationHeader{order:1;gap:10px;padding-bottom:14px}
-.liveConversation:has(.answerHeader) .liveConversationHeader h1{max-width:34rem;font-size:clamp(28px,2.55vw,36px);line-height:1.04;letter-spacing:-.04em}
-.liveConversation:has(.answerHeader) .liveConversationHeader>p{max-width:36rem;font-size:13px;line-height:1.45}
-.liveConversation:has(.answerHeader) .userTurn{order:2}
-.liveConversation:has(.answerHeader) .cosmographerTurn{order:3}
-.liveConversation:has(.answerHeader) .liveComposer{order:4;margin-top:8px}
-.liveConversationHeader{display:grid;grid-template-columns:1fr;gap:18px;padding-bottom:18px;border-bottom:1px solid var(--bl)}
-.liveConversationHeader>div,.liveConversationHeader>p{min-width:0}.liveConversationHeader h1{max-width:760px;margin:7px 0 0;font-size:clamp(32px,3.5vw,52px);line-height:1;letter-spacing:-.045em;text-wrap:balance;word-break:normal}.liveConversationHeader>p{max-width:48rem;margin:0;color:var(--t2);line-height:1.6}
-.liveComposer{display:grid;grid-template-columns:1fr;gap:10px;padding:16px;border:1px solid rgba(106,168,255,.3);border-radius:13px 21px;background:linear-gradient(135deg,rgba(10,23,40,.94),rgba(5,10,18,.94));box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
-.liveComposer textarea{min-height:82px;background:rgba(2,7,14,.66)}.liveComposerControls{display:grid;grid-template-columns:minmax(160px,.38fr) minmax(220px,.62fr);gap:12px;align-items:end}
-.liveComposer button{width:100%;justify-self:stretch;border-color:rgba(106,168,255,.72);background:linear-gradient(110deg,rgba(106,168,255,.3),rgba(143,124,244,.17))}
-.dialogueTurn{display:grid;grid-template-columns:92px minmax(0,1fr);gap:16px;align-items:start}.turnRole{display:grid;justify-items:center;gap:8px;padding-top:12px;color:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.turnGlyph{width:42px;height:42px}
-.turnBody{min-width:0;border:1px solid rgba(255,255,255,.07);border-radius:13px 21px;padding:clamp(20px,3vw,34px);background:rgba(9,17,29,.78)}
-.userTurn .turnBody{border-color:rgba(210,164,95,.22);background:linear-gradient(115deg,rgba(210,164,95,.08),rgba(9,17,29,.74) 44%)}.userTurn .turnBody p{margin:0;font-size:clamp(17px,1.8vw,21px);line-height:1.55}
-.cosmographerTurn .turnBody{border-color:rgba(106,168,255,.25);background:linear-gradient(145deg,rgba(11,25,44,.93),rgba(5,10,18,.94))}.dialogueEmptyState .turnBody{min-height:180px;display:grid;align-content:center}.dialogueFailure .turnBody{border-color:rgba(215,134,127,.48)}
-.answerHeader{display:flex;justify-content:space-between;gap:20px;align-items:start}.answerHeader h2{margin:6px 0;font-size:clamp(30px,4vw,54px);line-height:1}.answerHeader>span{color:var(--m);font-size:11px;white-space:nowrap}
-.answerLead{max-width:54rem;color:var(--t2);font-size:clamp(17px,2vw,22px);line-height:1.55}
-.answerDecisionGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:24px 0 0}.answerDecisionGrid>div{padding:14px 0;border-top:1px solid var(--bl)}.answerDecisionGrid dt{color:var(--b);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.answerDecisionGrid dd{margin:7px 0 0;color:var(--t2);line-height:1.5}.answerDecisionGrid .watchCell{grid-column:1/-1}
-.liveMetricField{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:24px;border-block:1px solid var(--bl)}.liveMetricField>div{padding:14px 12px;border-left:1px solid rgba(106,168,255,.12)}.liveMetricField>div:first-child{border-left:0}.liveMetricField span{display:block;color:var(--m);font-size:9px;letter-spacing:.08em;text-transform:uppercase}.liveMetricField strong{display:block;margin:5px 0;font-size:clamp(20px,2vw,28px)}.liveMetricField small{display:block;color:var(--t2);line-height:1.4}
-.boundedSections{display:grid;gap:12px;margin-top:18px}.boundedSections section{padding-top:12px;border-top:1px solid var(--bl)}.boundedSections h3{margin:0 0 6px}.boundedSections p{color:var(--t2)}
-.liveEvidenceRail{position:sticky;top:86px;align-self:start;min-height:min(620px,calc(100svh - 110px));display:grid;align-content:start;gap:14px;padding:clamp(20px,2.4vw,30px);border:1px solid rgba(106,168,255,.28);border-radius:21px 34px;background:linear-gradient(90deg,transparent calc(61.803398875% - .08%),rgba(210,164,95,.22) 61.803398875%,transparent calc(61.803398875% + .08%)),linear-gradient(180deg,transparent calc(38.196601125% - .08%),rgba(106,168,255,.22) 38.196601125%,transparent calc(38.196601125% + .08%)),linear-gradient(145deg,rgba(9,19,34,.96),rgba(4,9,16,.98));box-shadow:0 26px 70px rgba(0,0,0,.35)}
-.railCore{display:grid;justify-items:start;gap:6px}.railCore h2{margin:0;font-size:clamp(23px,2.35vw,32px);line-height:1.08}.railFacts{margin:0;border-top:1px solid var(--bl)}.railFacts>div{display:grid;grid-template-columns:38.196601125fr 61.803398875fr;gap:10px;padding:8px 0;border-bottom:1px solid rgba(106,168,255,.1)}.railFacts dt{color:var(--m);font-size:9px;letter-spacing:.08em;text-transform:uppercase}.railFacts dd{margin:0;text-align:right;color:var(--t2);overflow-wrap:anywhere}
-.railBoundary{padding-left:14px;border-left:2px solid rgba(143,124,244,.55)}.railBoundary p{margin:0;color:var(--t2);font-size:13px;line-height:1.48}.railPulse{display:grid;gap:5px;padding-top:15px;border-top:1px solid var(--bl)}.railPulse span{color:var(--m);font-size:9px;text-transform:uppercase}.railPulse strong{font-size:22px}.railPulse small{color:var(--t2)}
-.liveFullField{margin-top:10px;border-top:1px solid var(--bl)}.liveFullField>summary{padding:22px 0;color:var(--t);font-size:15px;letter-spacing:.03em}.liveFullFieldBody{padding-top:4px}.liveFullFieldBody>.readingZone{padding-inline:0}
-@media(max-width:1080px){.liveGoldenGrid{grid-template-columns:1fr;min-height:auto}.liveEvidenceRail{position:relative;top:auto;min-height:0;grid-template-columns:38.196601125fr 61.803398875fr;align-items:start}.railCore,.railFacts,.railBoundary,.railPulse{min-width:0}.railFacts{grid-column:2;grid-row:1/3}}
-@media(max-width:760px){.liveDialoguePage{padding-inline:14px;padding-bottom:96px}.liveDialogueTopbar{grid-template-columns:1fr auto}.liveIdentity{display:none}.liveGoldenGrid{padding-top:24px;gap:22px}.liveConversationHeader h1{font-size:clamp(32px,10vw,44px)}.liveConversation:has(.answerHeader) .liveConversationHeader h1{font-size:clamp(26px,7.3vw,31px)}.liveConversation:has(.answerHeader) .liveConversationHeader>p{display:none}.liveComposerControls{grid-template-columns:1fr}.dialogueTurn{grid-template-columns:1fr}.turnRole{display:flex;justify-content:flex-start;padding-top:0}.turnGlyph{width:32px;height:32px}.answerHeader{display:grid}.answerDecisionGrid{grid-template-columns:1fr}.answerDecisionGrid .watchCell{grid-column:auto}.liveMetricField{grid-template-columns:1fr 1fr}.liveMetricField>div:nth-child(3){border-left:0}.liveEvidenceRail{display:grid;grid-template-columns:1fr;padding:20px 17px;border-radius:18px 28px}.railFacts{grid-column:auto;grid-row:auto}}
+.liveDialogueShell{width:min(760px,100%);margin:0 auto;padding:clamp(42px,7vw,88px) 0 0}
+.liveDialogueIntro{display:grid;gap:10px;margin-bottom:clamp(30px,5vw,52px)}
+.liveDialogueIntro h1{margin:0;font-size:clamp(42px,6vw,72px);line-height:.95;letter-spacing:-.055em}
+.liveDialogueIntro>p:not(.eyebrow){margin:0;color:var(--t2);font-size:clamp(17px,2vw,21px);line-height:1.5}
+.liveTrustLine{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:8px;color:var(--m);font-size:10px;letter-spacing:.07em;text-transform:uppercase}
+.liveTrustLine span{display:flex;align-items:center;gap:8px}.liveTrustLine span+span:before{content:"";width:3px;height:3px;border-radius:50%;background:var(--blue)}
+.liveThread{display:grid;gap:24px;margin-bottom:30px}
+.dialogueTurn{display:grid;gap:8px}.turnRole{display:flex;align-items:center;gap:8px;color:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.turnGlyph{width:28px;height:28px}
+.turnBody{position:relative;padding:clamp(20px,3vw,30px);border:1px solid rgba(106,168,255,.2);border-radius:18px;background:rgba(8,16,28,.72)}
+.userTurn{justify-items:end}.userTurn .turnRole{padding-right:4px}.userTurn .turnBody{width:min(86%,650px);border-color:rgba(210,164,95,.18);background:rgba(210,164,95,.045)}.userTurn .turnBody p{margin:0;font-size:clamp(16px,2vw,19px);line-height:1.55}
+.cosmographerTurn .turnBody:before{content:"";position:absolute;top:-1px;left:0;width:var(--phi-major);height:1px;background:linear-gradient(90deg,var(--blue),var(--b),transparent)}
+.answerHeader{display:grid;gap:5px}.answerHeader h2{margin:0;font-size:clamp(30px,4.5vw,48px);line-height:1}
+.answerLead{margin:18px 0 0;color:var(--t);font-size:clamp(18px,2.2vw,22px);line-height:1.55}
+.answerNarrative{display:grid;gap:14px;margin-top:22px}.answerNarrative p{margin:0;color:var(--t2);line-height:1.65}.answerNarrative strong{color:var(--t);font-weight:600}
+.answerSource{margin-top:24px;padding-top:14px;border-top:1px solid var(--bl);color:var(--m);font-size:10px;letter-spacing:.05em;text-transform:uppercase}
+.dialogueFailure .turnBody{border-color:rgba(215,134,127,.45)}
+.liveComposer{display:grid;gap:12px;padding:18px;border:1px solid rgba(106,168,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(9,20,35,.94),rgba(5,10,18,.96))}
+.liveComposer label{display:grid;gap:8px}.liveComposer textarea{min-height:86px;resize:vertical;background:rgba(2,7,14,.66)}
+.liveComposerControls{display:grid;grid-template-columns:minmax(180px,var(--phi-minor)) minmax(220px,var(--phi-major));gap:12px;align-items:end}
+.liveComposer button{width:100%;min-height:48px;border-color:rgba(106,168,255,.72);background:linear-gradient(110deg,rgba(106,168,255,.3),rgba(143,124,244,.17))}
+.liveComposerAfterAnswer{margin-top:12px}.liveBoundary{margin:12px 0 0;color:var(--m);font-size:10px;letter-spacing:.04em;text-align:center}
+@media(max-width:760px){.liveDialoguePage{padding-inline:14px}.liveDialogueTopbar{grid-template-columns:1fr auto}.liveIdentity{display:none}.liveDialogueShell{padding-top:34px}.liveDialogueIntro{margin-bottom:28px}.liveDialogueIntro h1{font-size:clamp(38px,12vw,52px)}.liveTrustLine{gap:7px 12px}.liveDialogueShell:has(.liveThread){padding-top:20px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro{gap:5px;margin-bottom:18px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro>.eyebrow,.liveDialogueShell:has(.liveThread) .liveDialogueIntro>p:not(.eyebrow){display:none}.liveDialogueShell:has(.liveThread) .liveDialogueIntro h1{font-size:30px;line-height:1}.liveDialogueShell:has(.liveThread) .liveTrustLine{margin-top:5px;font-size:8px}.liveDialogueShell:has(.liveThread) .liveThread{gap:18px}.liveDialogueShell:has(.liveThread) .userTurn .turnBody{padding:15px 16px}.userTurn .turnBody{width:94%}.turnBody{padding:19px 17px}.liveComposerControls{grid-template-columns:1fr}.liveBoundary{text-align:left}}
 `;
