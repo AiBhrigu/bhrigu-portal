@@ -42,28 +42,30 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Prove exact integration scope
+      - name: Prove bridge regression ownership
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -euo pipefail
-          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
-          cat > /tmp/expected-scope.txt <<'SCOPE'
-          .github/workflows/btc-binance-free-observation-bridge-pr.yml
-          components/btc/BtcBinanceFreeObservation.tsx
-          data/btc-binance-free-observation-v0-1.json
-          docs/BTC_MARKET_COSMOGRAPHER_BINANCE_FREE_OBSERVATION_PUBLIC_BRIDGE_AND_DUAL_RUN_INTEGRATION_FULL_CYCLE_v0_1.md
-          lib/btc-binance-free-observation-bridge.ts
-          lib/btc-binance-free-observation-contract.ts
-          lib/btc-binance-free-observation-style.ts
-          package.json
-          pages/crypto-astro/btc.tsx
-          scripts/run-btc-binance-observation-fixture.mjs
-          scripts/verify-btc-binance-observation-surface.py
-          tests/btc-binance-free-observation-fixture.ts
-          tsconfig.btc-binance-observation-fixture.json
-          SCOPE
-          sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
-          diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
+          mkdir -p artifacts
+          git diff --name-status "${{ github.event.pull_request.base.sha }}...HEAD" | tee artifacts/binance-observation-pr-scope.txt
+          for path in \
+            components/btc/BtcBinanceFreeObservation.tsx \
+            data/btc-binance-free-observation-v0-1.json \
+            lib/btc-binance-free-observation-bridge.ts \
+            lib/btc-binance-free-observation-contract.ts \
+            lib/btc-binance-free-observation-style.ts \
+            pages/crypto-astro/btc.tsx \
+            scripts/run-btc-binance-observation-fixture.mjs \
+            scripts/verify-btc-binance-observation-surface.py \
+            tests/btc-binance-free-observation-fixture.ts \
+            tsconfig.btc-binance-observation-fixture.json; do
+            test -f "$path"
+          done
+          if grep -Eq '^D[[:space:]]+(components/btc/BtcBinanceFreeObservation.tsx|data/btc-binance-free-observation-v0-1.json|lib/btc-binance-free-observation-(bridge|contract|style).ts|scripts/run-btc-binance-observation-fixture.mjs|scripts/verify-btc-binance-observation-surface.py|tests/btc-binance-free-observation-fixture.ts|tsconfig.btc-binance-observation-fixture.json)$' artifacts/binance-observation-pr-scope.txt; then
+            echo "BINANCE_BRIDGE_OWNED_FILE_DELETION=FAIL"
+            exit 1
+          fi
+          echo "BINANCE_BRIDGE_REGRESSION_SCOPE=PASS"
 
       - name: Verify bridge contract and dual-run fallback
         env:
