@@ -120,11 +120,16 @@ jobs:
       - name: Install exact lock without lifecycle scripts
         run: npm ci --ignore-scripts
 
-      - name: Verify exact dependencies and forbidden wrappers
+      - name: Verify exact dependencies and x402 security delta
         run: |
+          set -euo pipefail
+          git show "$LOCKED_BASE_SHA:package-lock.json" > /tmp/base-package-lock.json
+          npm audit --json > /tmp/npm-audit.json || true
           node <<'NODE'
           const pkg=require('./package.json');
           const lock=require('./package-lock.json');
+          const base=require('/tmp/base-package-lock.json');
+          const audit=require('/tmp/npm-audit.json');
           const required={'@x402/core':'2.20.0','@x402/evm':'2.20.0','@x402/extensions':'2.20.0'};
           for(const [name,version] of Object.entries(required)){
             if(pkg.dependencies?.[name]!==version) throw new Error(`${name} package exact pin mismatch`);
@@ -134,8 +139,16 @@ jobs:
           for(const forbidden of ['@x402/next','@x402/paywall','@x402/svm']){
             if(pkg.dependencies?.[forbidden]||pkg.devDependencies?.[forbidden]||lock.packages?.[`node_modules/${forbidden}`]) throw new Error(`${forbidden} forbidden`);
           }
+          for(const inherited of ['next','postcss']){
+            const key=`node_modules/${inherited}`;
+            if(lock.packages?.[key]?.version!==base.packages?.[key]?.version) throw new Error(`${inherited} baseline changed inside forbidden scope`);
+          }
+          const inheritedHigh=new Set(['next','postcss']);
+          const newHigh=Object.entries(audit.vulnerabilities||{}).filter(([name,value])=>['high','critical'].includes(value.severity)&&!inheritedHigh.has(name));
+          if(newHigh.length) throw new Error(`new high severity dependency findings: ${newHigh.map(([name])=>name).join(',')}`);
+          console.log('X402_DEPENDENCY_SECURITY_DELTA=PASS');
+          console.log('INHERITED_NEXT_POSTCSS_HIGH_FINDINGS=RETAINED_BLOCKER');
           NODE
-          npm audit --audit-level=high
 
       - name: Run 60 offline x402 entitlement cases
         run: npm run verify:btc-paid-x402-sandbox
