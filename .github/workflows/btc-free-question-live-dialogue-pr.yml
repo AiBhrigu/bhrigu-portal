@@ -48,6 +48,7 @@ jobs:
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
           cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-binance-free-observation-bridge-pr.yml
           .github/workflows/btc-free-question-live-dialogue-pr.yml
           lib/btc-product-rebalance-style.ts
           pages/crypto-astro/btc.tsx
