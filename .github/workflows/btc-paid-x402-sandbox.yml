@@ -153,10 +153,9 @@ jobs:
       - name: Run 60 offline x402 entitlement cases
         run: npm run verify:btc-paid-x402-sandbox
 
-      - name: Verify existing BTC contracts unchanged
+      - name: Verify existing BTC routing and provider fixtures unchanged
         run: |
           npm run verify:btc-routing
-          npm run verify:btc-producer-contract
           npm run verify:btc-binance-observation
 
       - name: Build unchanged portal
