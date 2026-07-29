@@ -49,6 +49,11 @@ try:
     report["measurements"]["landing_phi_ratio"] = landing_card["width"] / landing_copy["width"]
     report["checks"]["landing_phi_ratio"] = 1.54 <= report["measurements"]["landing_phi_ratio"] <= 1.69
     report["checks"]["landing_no_overflow"] = no_overflow()
+    landing_button = rect(".heroQuestionControls button")
+    portal_nav = rect("nav[aria-label='Portal navigation']")
+    report["measurements"]["landing_cta_bottom"] = landing_button["bottom"]
+    report["measurements"]["portal_nav_top"] = portal_nav["top"]
+    report["checks"]["landing_cta_clear_of_portal_nav"] = landing_button["bottom"] <= portal_nav["top"] - 8
     blue_token = driver.execute_script("return getComputedStyle(document.documentElement).getPropertyValue('--bl').trim()")
     normalized_blue = blue_token.replace(" ", "").replace("0.22", ".22")
     report["measurements"]["blue_structure_token"] = blue_token
@@ -69,6 +74,12 @@ try:
     report["measurements"]["header_intro_left"] = header_intro["left"]
     report["measurements"]["header_intro_top"] = header_intro["top"]
     report["checks"]["dialogue_phi_ratio"] = 1.54 <= report["measurements"]["dialogue_phi_ratio"] <= 1.69
+    answer_header = rect(".cosmographerTurn .answerHeader")
+    repeat_composer = rect(".liveComposer")
+    report["measurements"]["answer_header_top"] = answer_header["top"]
+    report["measurements"]["repeat_composer_top"] = repeat_composer["top"]
+    report["checks"]["answer_before_repeat_composer"] = answer_header["top"] < repeat_composer["top"]
+    report["checks"]["answer_enters_first_viewport"] = answer_header["top"] < viewport_height * 0.9
     horizontal_separation = header_title["right"] <= header_intro["left"] - 8
     vertical_separation = header_title["bottom"] <= header_intro["top"] - 8
     report["checks"]["live_header_no_collision"] = horizontal_separation or vertical_separation
@@ -79,6 +90,8 @@ try:
     report["checks"]["full_field_collapsed"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveFullField:not([open])")) == 1
     report["checks"]["evidence_rail_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveEvidenceRail")) == 1
     report["checks"]["dialogue_no_overflow"] = no_overflow()
+    portal_nav_live = driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']")
+    report["checks"]["live_portal_nav_hidden"] = not portal_nav_live.is_displayed()
     driver.save_screenshot("artifacts/btc-free-question-live-desktop-en.png")
 
     driver.set_window_size(390, 844)
@@ -97,6 +110,9 @@ try:
     wait(".cosmographerTurn .answerHeader")
     report["checks"]["mobile_dialogue_no_overflow"] = no_overflow()
     report["checks"]["mobile_single_column"] = rect(".liveConversation")["width"] >= rect(".liveEvidenceRail")["width"] - 2
+    mobile_answer = rect(".cosmographerTurn .answerHeader")
+    report["checks"]["mobile_answer_before_repeat_composer"] = mobile_answer["top"] < rect(".liveComposer")["top"]
+    report["checks"]["mobile_answer_enters_first_viewport"] = mobile_answer["top"] < mobile_height
     driver.save_screenshot("artifacts/btc-free-question-live-mobile-ru.png")
 
     severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "favicon" not in entry.get("message", "").lower()]
