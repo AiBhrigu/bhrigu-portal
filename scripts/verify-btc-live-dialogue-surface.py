@@ -90,6 +90,8 @@ try:
     report["checks"]["full_field_collapsed"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveFullField:not([open])")) == 1
     report["checks"]["evidence_rail_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveEvidenceRail")) == 1
     report["checks"]["dialogue_no_overflow"] = no_overflow()
+    portal_nav_live = driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']")
+    report["checks"]["live_portal_nav_hidden"] = not portal_nav_live.is_displayed()
     driver.save_screenshot("artifacts/btc-free-question-live-desktop-en.png")
 
     driver.set_window_size(390, 844)
@@ -108,7 +110,9 @@ try:
     wait(".cosmographerTurn .answerHeader")
     report["checks"]["mobile_dialogue_no_overflow"] = no_overflow()
     report["checks"]["mobile_single_column"] = rect(".liveConversation")["width"] >= rect(".liveEvidenceRail")["width"] - 2
-    report["checks"]["mobile_answer_before_repeat_composer"] = rect(".cosmographerTurn .answerHeader")["top"] < rect(".liveComposer")["top"]
+    mobile_answer = rect(".cosmographerTurn .answerHeader")
+    report["checks"]["mobile_answer_before_repeat_composer"] = mobile_answer["top"] < rect(".liveComposer")["top"]
+    report["checks"]["mobile_answer_enters_first_viewport"] = mobile_answer["top"] < mobile_height
     driver.save_screenshot("artifacts/btc-free-question-live-mobile-ru.png")
 
     severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "favicon" not in entry.get("message", "").lower()]
