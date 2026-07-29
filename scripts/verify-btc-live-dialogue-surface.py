@@ -65,9 +65,13 @@ try:
     header_intro = rect(".liveConversationHeader>p")
     report["measurements"]["dialogue_phi_ratio"] = conversation["width"] / evidence["width"]
     report["measurements"]["header_title_right"] = header_title["right"]
+    report["measurements"]["header_title_bottom"] = header_title["bottom"]
     report["measurements"]["header_intro_left"] = header_intro["left"]
+    report["measurements"]["header_intro_top"] = header_intro["top"]
     report["checks"]["dialogue_phi_ratio"] = 1.54 <= report["measurements"]["dialogue_phi_ratio"] <= 1.69
-    report["checks"]["live_header_no_collision"] = header_title["right"] <= header_intro["left"] - 8
+    horizontal_separation = header_title["right"] <= header_intro["left"] - 8
+    vertical_separation = header_title["bottom"] <= header_intro["top"] - 8
+    report["checks"]["live_header_no_collision"] = horizontal_separation or vertical_separation
     report["checks"]["user_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".userTurn")) == 1
     report["checks"]["cosmographer_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")) >= 1
     report["checks"]["concise_decision_cells"] = len(driver.find_elements(By.CSS_SELECTOR, ".answerDecisionGrid>div")) == 5
