@@ -1,0 +1,204 @@
+name: BHRIGU Access Final Visual Evidence
+
+on:
+  push:
+    branches: [ "agent/bhrigu-access-final-visual-evidence-v0-1" ]
+    paths:
+      - ".github/workflows/bhrigu-access-final-visual-evidence.yml"
+
+concurrency:
+  group: bhrigu-access-final-visual-evidence
+  cancel-in-progress: true
+
+env:
+  LOCKED_REPAIR_SHA: 99aed28404d84827df72e1e0593964fab2fc0dd5
+  REPAIR_PR: "85"
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+jobs:
+  exact-head-evidence:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout evidence head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Prove exact repair parent and isolated evidence delta
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "$LOCKED_REPAIR_SHA"
+          git diff --name-only "$LOCKED_REPAIR_SHA...HEAD" | sort > /tmp/actual.txt
+          printf '%s\n' '.github/workflows/bhrigu-access-final-visual-evidence.yml' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+          git diff --check "$LOCKED_REPAIR_SHA...HEAD"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify inherited contracts
+        run: |
+          npm run verify:btc-paid-x402-sandbox
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+
+      - name: Install Chromium
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: npx playwright install --with-deps chromium
+
+      - name: Build production portal
+        run: npm run build
+
+      - name: Start production localhost
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/access-final
+          npm run start -- --hostname 127.0.0.1 --port 4317 > artifacts/access-final/server.log 2>&1 &
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:4317/access >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat artifacts/access-final/server.log
+          exit 1
+
+      - name: Prove Access layout and interaction
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { chromium } from '@playwright/test';
+          const browser = await chromium.launch({headless:true});
+          const evidence = {node:'BHRIGU_ACCESS_INTAKE_SCOPED_STYLE_BINDING_AND_MOBILE_WORKFLOW_PRIORITY_TARGETED_REPAIR_FULL_CYCLE_v0_1', final_repair_sha:process.env.LOCKED_REPAIR_SHA, status:'PASS'};
+          try {
+            const mobile = await browser.newContext({viewport:{width:390,height:844},locale:'en-US'});
+            const page = await mobile.newPage();
+            const response = await page.goto('http://127.0.0.1:4317/access',{waitUntil:'networkidle',timeout:45000});
+            if (!response || response.status() !== 200) throw new Error(`mobile status ${response?.status()}`);
+            const m = await page.evaluate(() => {
+              const input=document.querySelector('.fieldControl');
+              const textarea=document.querySelector('textarea.fieldControl');
+              const button=Array.from(document.querySelectorAll('button')).find(n=>n.textContent?.trim()==='Continue');
+              const workflow=document.querySelector('.accessWorkflowPanel');
+              const context=document.querySelector('.accessContextPanel');
+              if(!input||!textarea||!button||!workflow||!context)return{missing:true};
+              const box=n=>{const r=n.getBoundingClientRect();return{top:r.top+scrollY,bottom:r.bottom+scrollY,width:r.width,height:r.height}};
+              return{missing:false,viewportWidth:innerWidth,pageHeight:document.documentElement.scrollHeight,scrollWidth:document.documentElement.scrollWidth,input:box(input),textarea:box(textarea),button:box(button),workflow:box(workflow),context:box(context),notice:Boolean(document.querySelector('.noticeStack')),inputRadius:getComputedStyle(input).borderRadius,buttonRadius:getComputedStyle(button).borderRadius,inputBackground:getComputedStyle(input).backgroundImage};
+            });
+            if(m.missing)throw new Error('elements missing');
+            if(m.input.top>1974)throw new Error(`first control y ${m.input.top}`);
+            if(m.button.top>2550)throw new Error(`Continue y ${m.button.top}`);
+            if(m.input.height<53||m.textarea.height<145||m.button.height<49)throw new Error('control dimensions');
+            if(m.button.width<300)throw new Error(`CTA width ${m.button.width}`);
+            if(m.scrollWidth>m.viewportWidth+1)throw new Error(`overflow ${m.scrollWidth-m.viewportWidth}`);
+            if(m.workflow.top>=m.context.top)throw new Error('mobile ordering');
+            if(m.notice)throw new Error('empty notice reserve');
+            if(m.inputRadius==='0px'||m.buttonRadius==='0px')throw new Error('native styling');
+            await page.screenshot({path:'artifacts/access-final/access-mobile-request.png',fullPage:true});
+            await page.getByLabel('Name').fill('Access Proof');
+            await page.getByLabel('Email').fill('proof@example.com');
+            await page.getByLabel('Subject type').selectOption({label:'Project'});
+            await page.getByLabel('Main question').fill('How should this project be structured?');
+            await page.getByLabel('Short description').fill('Deterministic local transition proof without submission.');
+            await page.getByLabel('Preferred depth').selectOption({label:'Structured Snapshot'});
+            await page.locator('input[type="checkbox"]').first().check();
+            await page.getByRole('button',{name:'Continue',exact:true}).click();
+            await page.getByText('Relevant dates',{exact:true}).waitFor({state:'visible',timeout:10000});
+            await page.screenshot({path:'artifacts/access-final/access-mobile-dates.png',fullPage:true});
+            evidence.mobile={...m,request_to_dates:'PASS'};
+            await mobile.close();
+
+            const desktop=await browser.newContext({viewport:{width:1440,height:1200},locale:'en-US'});
+            const dp=await desktop.newPage();
+            const dr=await dp.goto('http://127.0.0.1:4317/access',{waitUntil:'networkidle',timeout:45000});
+            if(!dr||dr.status()!==200)throw new Error(`desktop status ${dr?.status()}`);
+            const d=await dp.evaluate(()=>{const input=document.querySelector('.fieldControl');const context=document.querySelector('.accessContextPanel');if(!input||!context)return{missing:true};const i=input.getBoundingClientRect(),c=context.getBoundingClientRect();return{missing:false,inputTop:i.top+scrollY,contextTop:c.top+scrollY,inputHeight:i.height,overflow:document.documentElement.scrollWidth-innerWidth}});
+            if(d.missing||d.contextTop>=d.inputTop||d.inputHeight<53||d.overflow>1)throw new Error('desktop preservation');
+            evidence.desktop=d;
+            await dp.screenshot({path:'artifacts/access-final/access-desktop-request.png',fullPage:true});
+            await desktop.close();
+          } finally {await browser.close();}
+          fs.writeFileSync('artifacts/access-final/access-layout-audit.json',JSON.stringify(evidence,null,2));
+          NODE
+
+      - name: Run full 25-route 50-capture harness
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "0"
+          BHRIGU_VISUAL_ARTIFACT_ROOT: artifacts/local-visual
+          BHRIGU_VISUAL_SOURCE_SHA: 99aed28404d84827df72e1e0593964fab2fc0dd5
+          BHRIGU_VISUAL_HARNESS_SHA: ${{ github.sha }}
+        run: node scripts/local-visual/capture.mjs
+
+      - name: Prove 50 of 50
+        run: |
+          set -euo pipefail
+          manifest="$(find artifacts/local-visual -name manifest.json -type f | sort | tail -n 1)"
+          test -n "$manifest"
+          node - "$manifest" <<'NODE'
+          const fs=require('fs');const d=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+          const required={public_routes_and_scenarios:25,expected_captures:50,completed_captures:50,passing_captures:50,blocking_captures:0,production_writes:0,vercel_writes:0,x402_live_transfers:0};
+          for(const[k,v]of Object.entries(required))if(d[k]!==v)throw new Error(`${k}: ${d[k]}`);
+          if(d.status!=='PASS')throw new Error(`status ${d.status}`);
+          NODE
+
+      - name: Publish accepted evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          first="$(node -e "const d=require('./artifacts/access-final/access-layout-audit.json');console.log(d.mobile.input.top)")"
+          cta="$(node -e "const d=require('./artifacts/access-final/access-layout-audit.json');console.log(d.mobile.button.top)")"
+          height="$(node -e "const d=require('./artifacts/access-final/access-layout-audit.json');console.log(d.mobile.pageHeight)")"
+          gh api repos/${{ github.repository }}/issues/$REPAIR_PR/comments --method POST --field body="## OPS/F final exact-head visual evidence
+
+- final repair SHA: \`$LOCKED_REPAIR_SHA\`
+- workflow run: \`${{ github.run_id }}\`
+- first mobile control Y: \`$first px\`
+- first mobile Continue Y: \`$cta px\`
+- mobile page height: \`$height px\`
+- scoped styles: \`PASS\`
+- empty notice reserve: \`REMOVED\`
+- mobile workflow priority: \`PASS\`
+- Request → Dates: \`PASS\`
+- desktop order: \`PRESERVED\`
+- production build: \`PASS\`
+- inherited contracts: \`PASS\`
+- captures: \`50/50 PASS\`
+- artifact: \`bhrigu-access-final-visual-${{ github.run_id }}\`
+
+No merge, production deployment, manual Vercel write, intake submission or x402 live transfer was performed."
+
+      - name: Publish failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/issues/$REPAIR_PR/comments --method POST --field body="## OPS/F final visual evidence blocked
+
+- final repair SHA: \`$LOCKED_REPAIR_SHA\`
+- workflow run: \`${{ github.run_id }}\`
+- state: \`FAIL_CLOSED\`"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-access-final-visual-${{ github.run_id }}
+          path: |
+            artifacts/access-final/**
+            artifacts/local-visual/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
