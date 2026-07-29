@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { PAYMENT_IDENTIFIER, isPaymentIdentifierRequired } from '@x402/extensions/payment-identifier';
 import {
   TRUSTED, STATES, buildRequirement, paymentFingerprint, processPayment, refundPayment,
   trustedTuple, validateEnvelope, validateTrustedTuple,
 } from './contract.mjs';
 import { MockFacilitator } from './mock-facilitator.mjs';
 import { InMemoryEntitlementLedger } from './entitlement-ledger.mjs';
+import { DURABLE_LEDGER_CONTRACT, DurableEntitlementLedger } from './durable-ledger.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const fixtureDoc = JSON.parse(await readFile(path.join(HERE, 'fixtures.json'), 'utf8'));
@@ -16,17 +18,26 @@ const failures = [];
 const mode = process.argv.includes('--live') ? 'live' : 'offline';
 
 if (mode === 'live') {
-  await runLiveGate();
+  try { const { runLiveCanary } = await import('./live-canary.mjs'); await runLiveCanary(); }
+  catch (error) {
+    console.error(JSON.stringify({
+      node: 'BTC_PAID_DIALOGUE_ONE_OFF_X402_BASE_SEPOLIA_CANARY_IMPLEMENTATION_TARGETED_REPAIR_v0_1',
+      mode: 'live-base-sepolia-canary', status: 'FAIL_CLOSED',
+      reason: sanitize(error?.code || error?.message || String(error)), executed_cases: 0,
+      payment_requests: 0, blockchain_transactions: 0, secrets_logged: false,
+    }, null, 2));
+    process.exitCode = 1;
+  }
   process.exit(process.exitCode || 0);
 }
 
 await smokeOfficialPackages();
+await smokeDurableLedgerContract();
 const tests = createTests();
 assert.equal(fixtureDoc.expected_count, 60);
 assert.equal(fixtureDoc.cases.length, 60);
 assert.equal(tests.size, 60);
 assert.deepEqual([...tests.keys()], fixtureDoc.cases.map((item) => item.id));
-
 for (const fixture of fixtureDoc.cases) {
   const started = performance.now();
   try {
@@ -36,33 +47,23 @@ for (const fixture of fixtureDoc.cases) {
     failures.push({ id: fixture.id, category: fixture.category, status: 'FAIL', error: sanitize(error?.message || String(error)) });
   }
 }
-
 const summary = {
-  node: 'BTC_PAID_DIALOGUE_ONE_OFF_X402_SANDBOX_IMPLEMENTATION_FULL_CYCLE_v0_1',
-  mode: 'offline',
-  status: failures.length ? 'FAIL' : 'PASS',
-  expected: 60,
-  passed: results.length,
-  failed: failures.length,
+  node: 'BTC_PAID_DIALOGUE_ONE_OFF_X402_BASE_SEPOLIA_CANARY_IMPLEMENTATION_TARGETED_REPAIR_v0_1',
+  mode: 'offline', status: failures.length ? 'FAIL' : 'PASS', expected: 60,
+  passed: results.length, failed: failures.length,
   categories: Object.fromEntries([...new Set(fixtureDoc.cases.map((x) => x.category))].map((category) => [category, results.filter((x) => x.category === category).length])),
-  protected_material_logged: false,
-  live_canary: 'NOT_RUN',
+  official_payment_identifier_declaration: 'PASS', official_client_facilitator_imports: 'PASS',
+  durable_ledger_contract_smoke: 'PASS', protected_material_logged: false, live_canary: 'NOT_RUN',
 };
 console.log(JSON.stringify(summary, null, 2));
-if (failures.length) {
-  console.error(JSON.stringify({ failures }, null, 2));
-  process.exit(1);
-}
+if (failures.length) { console.error(JSON.stringify({ failures }, null, 2)); process.exit(1); }
 
 function createTests() {
   const m = new Map();
   const valid = (id = 'payment_identifier_0001', overrides = {}) => ({
     method: 'POST', bodyBytes: 120, protocolVersion: 2, paymentIdentifier: id,
-    paymentHeader: {
-      tuple: trustedTuple(), expiresAt: Date.now() + 60_000, signatureValid: true,
-      signedPayload: { authorization: 'fixture-redacted', nonce: id },
-      ...overrides.paymentHeader,
-    },
+    paymentHeader: { tuple: trustedTuple(), expiresAt: Date.now() + 60_000, signatureValid: true,
+      signedPayload: { authorization: 'fixture-redacted', nonce: id }, ...overrides.paymentHeader },
     ...overrides,
   });
   const execute = async (input = valid(), deps = {}) => {
@@ -73,7 +74,7 @@ function createTests() {
   };
   const mismatch = (key, value) => validateTrustedTuple(trustedTuple({ [key]: value }));
 
-  m.set('A01', async () => { const r = await processPayment({}); assert.equal(r.httpStatus, 402); assert.equal(r.state, STATES.REQUIREMENT_ISSUED); });
+  m.set('A01', async () => { const r = await processPayment({}); assert.equal(r.httpStatus, 402); assert.equal(r.state, STATES.REQUIREMENT_ISSUED); assert.equal(isPaymentIdentifierRequired(r.requirement.extensions[PAYMENT_IDENTIFIER]), true); });
   m.set('A02', () => assert.equal(validateEnvelope(valid('payment_identifier_0002', { method: 'GET' })).code, 'METHOD_NOT_ALLOWED'));
   m.set('A03', () => assert.equal(validateEnvelope(valid('payment_identifier_0003', { paymentHeader: 'bad' })).code, 'PAYMENT_HEADER_MALFORMED'));
   m.set('A04', () => assert.equal(validateEnvelope(valid('payment_identifier_0004', { protocolVersion: 1 })).code, 'UNSUPPORTED_PROTOCOL_VERSION'));
@@ -83,7 +84,6 @@ function createTests() {
   m.set('A08', () => assert.equal(validateEnvelope(valid('payment_identifier_0008', { bodyBytes: TRUSTED.maxBodyBytes + 1 })).code, 'PAYLOAD_TOO_LARGE'));
   m.set('A09', async () => { const x = valid('payment_identifier_0009'); x.paymentHeader.tuple.scheme = 'upto'; assert.match((await execute(x)).result.code, /SCHEME_MISMATCH/); });
   m.set('A10', () => assert.equal(validateEnvelope(valid('payment_identifier_0010', { unknownExtension: true })).code, 'UNKNOWN_EXTENSION_STATE'));
-
   m.set('B01', () => assert.equal(validateTrustedTuple(trustedTuple()).ok, true));
   m.set('B02', () => assert.match(mismatch('network', 'eip155:1').code, /NETWORK_MISMATCH/));
   m.set('B03', () => assert.match(mismatch('asset', '0x2222222222222222222222222222222222222222').code, /ASSET_MISMATCH/));
@@ -96,7 +96,6 @@ function createTests() {
   m.set('B10', async () => assert.equal((await execute(valid('payment_identifier_0020'), { facilitator: new MockFacilitator({ verifyMode: 'reject' }) })).result.state, STATES.PAYMENT_INVALID));
   m.set('B11', async () => assert.equal((await execute(valid('payment_identifier_0021'), { facilitator: new MockFacilitator({ verifyMode: 'unavailable' }) })).result.state, STATES.VERIFY_UNAVAILABLE));
   m.set('B12', async () => { const { result, ledger } = await execute(valid('payment_identifier_0022'), { facilitator: new MockFacilitator({ settleMode: 'reject' }) }); assert.equal(result.state, STATES.SETTLE_FAILED); assert.equal(ledger.getEntitlement('payment_identifier_0022'), null); });
-
   m.set('C01', async () => assert.equal((await execute(valid('payment_identifier_0023'))).result.state, STATES.ENTITLEMENT_ISSUED));
   m.set('C02', async () => assert.equal((await execute(valid('payment_identifier_0024'), { facilitator: new MockFacilitator({ settleMode: 'reject' }) })).result.state, STATES.SETTLE_FAILED));
   m.set('C03', async () => assert.equal((await execute(valid('payment_identifier_0025'), { facilitator: new MockFacilitator({ settleMode: 'timeout' }) })).result.state, STATES.SETTLE_UNKNOWN));
@@ -107,7 +106,6 @@ function createTests() {
   m.set('C08', async () => { const { result, facilitator } = await execute(valid('payment_identifier_0030'), { preflight: async () => false }); assert.equal(result.code, 'PROTECTED_PREFLIGHT_FAILED'); assert.equal(facilitator.counts.settle, 0); });
   m.set('C09', async () => { const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator(); const first = await execute(valid('payment_identifier_0031'), { ledger, facilitator }); const second = await execute(valid('payment_identifier_0031'), { ledger, facilitator }); assert.equal(first.result.state, STATES.ENTITLEMENT_ISSUED); assert.equal(second.result.replay, true); assert.equal(facilitator.counts.settle, 1); });
   m.set('C10', async () => { const id = 'payment_identifier_0032'; const { ledger } = await execute(valid(id), { facilitator: new MockFacilitator({ settleMode: 'timeout' }) }); assert.equal(ledger.getRow(id).status, 'reconciliation'); });
-
   m.set('D01', async () => { const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator(); await execute(valid('payment_identifier_0033'), { ledger, facilitator }); const x = await execute(valid('payment_identifier_0033'), { ledger, facilitator }); assert.equal(x.result.replay, true); assert.equal(facilitator.counts.settle, 1); });
   m.set('D02', async () => { const ledger = new InMemoryEntitlementLedger(); const first = valid('payment_identifier_0034'); await ledger.reserve({ paymentIdentifier: first.paymentIdentifier, fingerprint: paymentFingerprint(first.paymentHeader.tuple), payloadHash: 'a', now: 1 }); const changed = trustedTuple({ resourceId: 'urn:changed' }); const r = await ledger.reserve({ paymentIdentifier: first.paymentIdentifier, fingerprint: paymentFingerprint(changed), payloadHash: 'b', now: 2 }); assert.equal(r.kind, 'conflict'); });
   m.set('D03', async () => { const ledger = new InMemoryEntitlementLedger(); const x = valid('payment_identifier_0035'); const fingerprint = paymentFingerprint(x.paymentHeader.tuple); await ledger.reserve({ paymentIdentifier: x.paymentIdentifier, fingerprint, payloadHash: 'p1', now: 1 }); assert.equal((await ledger.reserve({ paymentIdentifier: x.paymentIdentifier, fingerprint, payloadHash: 'p1', now: 2 })).kind, 'pending'); });
@@ -122,7 +120,6 @@ function createTests() {
   m.set('D12', async () => { const id = 'payment_identifier_0046'; const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator(); await execute(valid(id), { ledger, facilitator }); await refundPayment({ paymentIdentifier: id, ledger, facilitator }); const r = await execute(valid(id), { ledger, facilitator }); assert.equal(r.result.state, STATES.REFUNDED); assert.equal(facilitator.counts.settle, 1); });
   m.set('D13', async () => { const ledger = new InMemoryEntitlementLedger(); await ledger.reserve({ paymentIdentifier: 'payment_identifier_0047', fingerprint: 'x', payloadHash: 'y', now: 1 }); assert.equal(ledger.getEntitlement('payment_identifier_0047'), null); });
   m.set('D14', async () => { const ledger = new InMemoryEntitlementLedger(); assert.equal(ledger.getEntitlement('payment_identifier_0048'), null); assert.equal('success=true'.includes('entitlement'), false); });
-
   m.set('E01', async () => { const { result } = await execute(valid('payment_identifier_0049')); assert.equal(result.entitlement.successful_turn_limit, 5); });
   m.set('E02', async () => { const ledger = new InMemoryEntitlementLedger(null, { failEntitlement: true }); const r = await execute(valid('payment_identifier_0050'), { ledger }); assert.equal(r.result.state, STATES.ENTITLEMENT_WRITE_FAILED); assert.equal(ledger.getEntitlement('payment_identifier_0050'), null); });
   m.set('E03', async () => { const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator(); await execute(valid('payment_identifier_0051'), { ledger, facilitator }); await execute(valid('payment_identifier_0051'), { ledger, facilitator }); assert.equal([...ledger.entitlements.values()].length, 1); });
@@ -133,7 +130,6 @@ function createTests() {
   m.set('E08', async () => { const id = 'payment_identifier_0056'; const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator(); await execute(valid(id), { ledger, facilitator }); await refundPayment({ paymentIdentifier: id, ledger, facilitator }); const replay = await refundPayment({ paymentIdentifier: id, ledger, facilitator }); assert.equal(replay.replay, true); assert.equal(facilitator.counts.refund, 1); });
   m.set('E09', async () => { const id = 'payment_identifier_0057'; const ledger = new InMemoryEntitlementLedger(); const facilitator = new MockFacilitator({ refundMode: 'reject' }); await execute(valid(id), { ledger, facilitator }); const r = await refundPayment({ paymentIdentifier: id, ledger, facilitator }); assert.equal(r.state, STATES.REVIEW_REQUIRED); });
   m.set('E10', async () => { const protectedPaths = ['/access', 'pages/api/access/submit.ts']; const touched = authorizedPaths().filter((p) => protectedPaths.some((x) => p.includes(x))); assert.deepEqual(touched, []); });
-
   m.set('F01', async () => { const { result } = await execute(valid('payment_identifier_0059')); const log = JSON.stringify(result); for (const forbidden of ['fixture-redacted', 'privateKey', 'PAYMENT-SIGNATURE', 'authorization']) assert.equal(log.includes(forbidden), false); });
   m.set('F02', async () => { const raw = JSON.stringify(fixtureDoc); for (const forbidden of ['PRIVATE KEY', 'BEGIN PRIVATE', '@', '0x2222222222222222222222222222222222222222']) assert.equal(raw.includes(forbidden), false); });
   m.set('F03', () => { const forbidden = ['pages/', 'components/', 'lib/btc-', 'snapshot', 'router', 'memory', 'evidence', 'orion']; assert.equal(authorizedPaths().some((p) => forbidden.some((x) => p.toLowerCase().includes(x))), false); });
@@ -142,53 +138,46 @@ function createTests() {
 }
 
 function authorizedPaths() {
-  return [
-    'package.json', 'package-lock.json', 'sandbox/btc-paid-x402/contract.mjs',
-    'sandbox/btc-paid-x402/mock-facilitator.mjs', 'sandbox/btc-paid-x402/entitlement-ledger.mjs',
-    'sandbox/btc-paid-x402/fixtures.json', 'sandbox/btc-paid-x402/run-fixtures.mjs',
-    '.github/workflows/btc-paid-x402-sandbox.yml',
-  ];
+  return ['package.json','package-lock.json','sandbox/btc-paid-x402/contract.mjs',
+    'sandbox/btc-paid-x402/mock-facilitator.mjs','sandbox/btc-paid-x402/entitlement-ledger.mjs',
+    'sandbox/btc-paid-x402/durable-ledger.mjs','sandbox/btc-paid-x402/live-canary.mjs',
+    'sandbox/btc-paid-x402/fixtures.json','sandbox/btc-paid-x402/run-fixtures.mjs',
+    '.github/workflows/btc-paid-x402-sandbox.yml'];
 }
-
 async function smokeOfficialPackages() {
   if (process.env.SKIP_X402_PACKAGE_SMOKE === '1') return;
-  const [{ HTTPFacilitatorClient }, evm, extension] = await Promise.all([
-    import('@x402/core/server'), import('@x402/evm/exact/server'), import('@x402/extensions/payment-identifier'),
+  const [{ HTTPFacilitatorClient }, { x402Client }, evmClient, extension, accounts] = await Promise.all([
+    import('@x402/core/server'), import('@x402/core/client'), import('@x402/evm/exact/client'),
+    import('@x402/extensions/payment-identifier'), import('viem/accounts'),
   ]);
   assert.equal(typeof HTTPFacilitatorClient, 'function');
-  assert.equal(typeof evm.ExactEvmScheme, 'function');
+  assert.equal(typeof x402Client, 'function');
+  assert.equal(typeof evmClient.ExactEvmScheme, 'function');
   assert.equal(typeof extension.declarePaymentIdentifierExtension, 'function');
+  assert.equal(typeof extension.appendPaymentIdentifierToExtensions, 'function');
+  assert.equal(typeof extension.extractAndValidatePaymentIdentifier, 'function');
+  assert.equal(typeof accounts.privateKeyToAccount, 'function');
   assert.equal(extension.isValidPaymentId('payment_identifier_0001'), true);
+  assert.equal(extension.isPaymentIdentifierRequired(buildRequirement(TRUSTED.fixturePayTo).extensions[extension.PAYMENT_IDENTIFIER]), true);
 }
-
-async function runLiveGate() {
-  const required = [
-    'X402_SANDBOX_PAYER_PRIVATE_KEY', 'X402_SANDBOX_RECEIVER_PRIVATE_KEY',
-    'X402_SANDBOX_RECEIVER_ADDRESS', 'X402_SANDBOX_DURABLE_LEDGER_URL',
-    'X402_SANDBOX_DURABLE_LEDGER_TOKEN', 'X402_SANDBOX_BASE_SEPOLIA_RPC_URL',
-    'X402_SANDBOX_LIVE_EXECUTION_ACK',
-  ];
-  const missing = required.filter((name) => !process.env[name]);
-  const ackValid = process.env.X402_SANDBOX_LIVE_EXECUTION_ACK === 'BASE_SEPOLIA_TEST_USDC_ONLY';
-  const report = {
-    node: 'BTC_PAID_DIALOGUE_ONE_OFF_X402_SANDBOX_IMPLEMENTATION_FULL_CYCLE_v0_1',
-    mode: 'live-base-sepolia-canary',
-    status: missing.length || !ackValid ? 'HOLD_INPUT_REQUIRED' : 'HOLD_IMPLEMENTATION_REVIEW_REQUIRED',
-    network: TRUSTED.network,
-    asset: TRUSTED.asset,
-    amount_atomic: TRUSTED.amountAtomic,
-    required_cases: 10,
-    executed_cases: 0,
-    missing_inputs: missing,
-    payment_requests: 0,
-    blockchain_transactions: 0,
-    secrets_logged: false,
-    reason: missing.length ? 'DEDICATED_TESTNET_INPUTS_ABSENT' : 'LIVE_VALUE_TRANSFER_REQUIRES_INDEPENDENT_EXACT_HEAD_REVIEW',
-  };
-  console.log(JSON.stringify(report, null, 2));
-  process.exitCode = 2;
+async function smokeDurableLedgerContract() {
+  const operations = [];
+  const proof = { contract: DURABLE_LEDGER_CONTRACT, durable: true, atomic: true, compare_and_set: true,
+    restart_persistent: true, uniqueness_keys: ['payment_identifier','payload_hash','receipt_hash','transaction_hash','event_hash','entitlement','refund'],
+    single_winner: true, replay_stable: true };
+  const ledger = new DurableEntitlementLedger({ url: 'http://127.0.0.1:9999/ledger',
+    token: 'offline-durable-ledger-token-v0-1', namespace: 'btc-paid-x402:offline-smoke-v0-1',
+    fetchImpl: async (_url, init) => {
+      const request = JSON.parse(init.body); operations.push(request.operation);
+      assert.equal(request.contract, DURABLE_LEDGER_CONTRACT);
+      assert.equal(init.headers['x-bhrigu-ledger-contract'], DURABLE_LEDGER_CONTRACT);
+      assert.match(init.headers.authorization, /^Bearer /);
+      return new Response(JSON.stringify({ contract: DURABLE_LEDGER_CONTRACT, ok: true, result: proof }), { status: 200, headers: { 'content-type': 'application/json' } });
+    } });
+  await ledger.assertLiveReady({ probeId: 'offline-probe-v0-1' });
+  assert.deepEqual(operations, ['health','probe_atomicity']);
 }
-
 function sanitize(value) {
-  return String(value).replace(/0x[0-9a-fA-F]{64}/g, '[REDACTED_TX]').replace(/[A-Za-z0-9_-]{32,}/g, '[REDACTED]');
+  return String(value).replace(/0x[0-9a-fA-F]{64}/g, '[REDACTED_32_BYTE_HEX]')
+    .replace(/https?:\/\/[^\s"']+/g, '[REDACTED_URL]').replace(/[A-Za-z0-9_-]{32,}/g, '[REDACTED]');
 }
