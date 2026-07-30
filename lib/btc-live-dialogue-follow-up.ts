@@ -163,8 +163,8 @@ export function isBtcContextualFollowUp(question: string): boolean {
   const normalized = question.trim();
   if (!normalized) return false;
   const hasReferent = /\b(?:it|this|that)\b|(?:это|этот|эта|прошл\w+\s+ответ)/i.test(normalized);
-  const hasExplicitSubject = /btc\s+(?:dominance|gravity|leadership|field)|altcoin\s+(?:breadth|rotation|participation)|eth\s+rotation|stablecoin|defi\s+tvl|dex|market\s+field\s+score|market\s+cap|accepted\s+snapshot\s+memory|selected\s+date|доминир\w*\s+btc|гравитац\w*\s+btc|лидерств\w*\s+btc|ширин\w*\s+альткоин|ротац\w*\s+(?:альткоин|eth)|ликвидн|стейблкоин|капитализац|принят\w*\s+(?:snapshot\s+memory|памят\w*)|выбранн\w*\s+дат/i.test(normalized);
-  if (hasExplicitSubject && !hasReferent && !EXPAND.test(normalized)) return false;
+  const hasExplicitSubject = /btc\s+(?:dominance|gravity|leadership|field)|altcoin\s+(?:breadth|rotation|participation)|eth\s+rotation|stablecoin|defi\s+tvl|dex|market\s+field\s+score|market\s+cap|accepted\s+snapshot\s+memory|selected\s+date|доминир\w*\s+btc|гравитац\w*\s+btc|лидерств\w*\s+btc|ширин\w*\s+альткоин|ротац\w*\s+(?:альткоин|eth)|ликвидн|стейблкоин|капитализац|принят\w*\s+(?:snapshot\s+memory|памят\w*)|выбранн\w*\s+дат|поле\s+btc|общее\s+поле/i.test(normalized);
+  if (hasExplicitSubject && !EXPAND.test(normalized) && !CONFIRM.test(normalized)) return false;
   if (normalized.length <= 96 && (
     EXPLAIN.test(normalized) ||
     PRIORITY.test(normalized) ||
