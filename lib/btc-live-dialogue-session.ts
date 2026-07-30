@@ -14,11 +14,15 @@ import type {
 
 export const BTC_DIALOGUE_SESSION_SCHEMA =
   "btc_cosmographer_dialogue_session_v0_2" as const;
+const BTC_DIALOGUE_LEGACY_SESSION_SCHEMA =
+  "btc_free_dialogue_session_v0_1" as const;
 export const BTC_DIALOGUE_SESSION_KEY =
+  "bhrigu:btc-free-dialogue:session:v0_1" as const;
+const BTC_DIALOGUE_PREVIOUS_SESSION_KEY =
   "bhrigu:btc-cosmographer:session:v0_2" as const;
 export const BTC_DIALOGUE_SESSION_MAX_TURNS = 20;
 export const BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS = 6;
-export const BTC_DIALOGUE_SESSION_MAX_BYTES = 96 * 1024;
+export const BTC_DIALOGUE_SESSION_MAX_BYTES = 64 * 1024;
 
 export type BtcDialogueAnswerState = BtcCosmographerAnswerState | "BOUNDED";
 
@@ -161,7 +165,8 @@ export function createBtcDialogueSession(
 }
 
 export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | null {
-  if (!isRecord(value) || value.schema !== BTC_DIALOGUE_SESSION_SCHEMA) return null;
+  if (!isRecord(value)) return null;
+  if (value.schema !== BTC_DIALOGUE_SESSION_SCHEMA && value.schema !== BTC_DIALOGUE_LEGACY_SESSION_SCHEMA) return null;
   if (!isText(value.session_id, 160)) return null;
   if (value.locale !== "ru" && value.locale !== "en") return null;
   if (!isText(value.created_at_utc, 40) || !isText(value.updated_at_utc, 40)) return null;
@@ -189,12 +194,13 @@ export function readBtcDialogueSession(
   deploymentSha: string | null,
 ): BtcDialogueSession {
   if (!storageAvailable()) return createBtcDialogueSession(locale, deploymentSha);
-  const raw = window.sessionStorage.getItem(BTC_DIALOGUE_SESSION_KEY);
+  const raw = window.sessionStorage.getItem(BTC_DIALOGUE_SESSION_KEY) ??
+    window.sessionStorage.getItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
   if (!raw) return createBtcDialogueSession(locale, deploymentSha);
   try {
     const parsed = parseBtcDialogueSession(JSON.parse(raw));
     if (!parsed) throw new Error("invalid session");
-    return {
+    const migrated = {
       ...parsed,
       locale,
       source_binding: {
@@ -202,8 +208,12 @@ export function readBtcDialogueSession(
         deployment_sha: deploymentSha ?? parsed.source_binding.deployment_sha,
       },
     };
+    window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, JSON.stringify(migrated));
+    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
+    return migrated;
   } catch {
     window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
+    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
     return createBtcDialogueSession(locale, deploymentSha);
   }
 }
@@ -229,13 +239,16 @@ export function compactBtcDialogueSession(
   if (serializedBytes(candidate) > BTC_DIALOGUE_SESSION_MAX_BYTES) {
     turns = turns.map((turn) => ({
       ...turn,
-      direct_answer: turn.direct_answer?.slice(0, 1800) ?? null,
+      direct_answer: turn.direct_answer?.slice(0, 1200) ?? null,
+      evidence_lines: turn.evidence_lines.slice(0, 5).map((line) => line.slice(0, 300)),
+      contradiction_or_limit: turn.contradiction_or_limit?.slice(0, 500) ?? null,
+      what_would_change_the_read: turn.what_would_change_the_read?.slice(0, 500) ?? null,
       sections: turn.sections?.slice(0, 4).map((section) => ({
         ...section,
-        paragraph: section.paragraph?.slice(0, 700),
-        bullets: section.bullets?.slice(0, 5).map((line) => line.slice(0, 500)),
+        paragraph: section.paragraph?.slice(0, 500),
+        bullets: section.bullets?.slice(0, 5).map((line) => line.slice(0, 300)),
       })),
-      source_boundary: turn.source_boundary?.slice(0, 700) ?? null,
+      source_boundary: turn.source_boundary?.slice(0, 500) ?? null,
     }));
     candidate = { ...candidate, turns, compacted: true };
   }
@@ -251,6 +264,7 @@ export function writeBtcDialogueSession(
   });
   if (storageAvailable()) {
     window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, JSON.stringify(compacted));
+    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
   }
   return compacted;
 }
@@ -275,7 +289,9 @@ export function upsertBtcDialogueTurn(
 }
 
 export function clearBtcDialogueSession(): void {
-  if (storageAvailable()) window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
+  if (!storageAvailable()) return;
+  window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
+  window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
 }
 
 export function latestContextTurn(
