@@ -23,6 +23,15 @@ import { BTC_PRODUCT_REBALANCE_CSS } from "../../../lib/btc-product-rebalance-st
 
 const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
+function validObservationDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day;
+}
+
 type Props = {
   locale: BtcPublicLocale;
   initialQuestion: string;
@@ -32,6 +41,7 @@ type Props = {
   sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
+  inputError: string | null;
 };
 
 function deploymentSourceSha(): string | null {
@@ -96,7 +106,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     sourceContext,
     deploymentSourceSha: deploymentSourceSha(),
     sourceBindingChanged: false,
+    inputError: null,
   };
+
+  if (initialDate && !validObservationDate(initialDate)) {
+    return {
+      props: {
+        ...base,
+        initialQuestion,
+        inputError: resolvedLocale.locale === "ru"
+          ? "Укажите реальную дату UTC в формате YYYY-MM-DD."
+          : "Enter a real UTC date in YYYY-MM-DD format.",
+      },
+    };
+  }
+
   if (!initialQuestion) return { props: base };
 
   const parsed = parseBtcCosmographerContext(query);
