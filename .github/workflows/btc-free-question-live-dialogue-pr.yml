@@ -63,7 +63,11 @@ jobs:
         run: npm ci
 
       - name: Static semantic contract
-        run: node scripts/run-btc-cosmographer-semantic-route-fixture.mjs
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p artifacts
+          node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-static.log
 
       - name: Preserve inherited BTC routing gates
         shell: bash
@@ -91,9 +95,13 @@ jobs:
           exit 1
 
       - name: Runtime semantic matrix
+        shell: bash
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
-        run: node scripts/run-btc-cosmographer-semantic-route-fixture.mjs
+        run: |
+          set -o pipefail
+          mkdir -p artifacts
+          node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -142,6 +150,8 @@ jobs:
             artifacts/btc-cosmographer-route-visual-report.json
             artifacts/btc-cosmographer-route-desktop.png
             artifacts/btc-cosmographer-route-mobile.png
+            artifacts/btc-cosmographer-static.log
+            artifacts/btc-cosmographer-runtime.log
             /tmp/btc-cosmographer-next.log
           if-no-files-found: warn
           retention-days: 14
