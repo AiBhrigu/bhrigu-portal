@@ -53,12 +53,30 @@ jobs:
           import urllib.error
           import urllib.parse
           import urllib.request
+          from html.parser import HTMLParser
           from pathlib import Path
 
           hosts = ["bhrigu.io", "www.bhrigu.io"]
           paths = ["/", "/crypto-astro/btc", "/crypto-astro/btc/live"]
           expected = os.environ["EXPECTED_MASTER_SHA"]
           nonce = f"{os.environ.get('GITHUB_RUN_ID','local')}-{int(time.time())}"
+
+          route_contracts = {
+              "/": ["BHRIGU", "Frey", "ORION"],
+              "/crypto-astro/btc": [
+                  "BTC Field Read",
+                  "Snapshot Memory",
+                  "Start free dialogue",
+                  "Liquidity",
+                  "Accepted memory",
+              ],
+              "/crypto-astro/btc/live": [
+                  "BTC Cosmographer",
+                  "Free dialogue",
+                  "New conversation",
+                  "Continue",
+              ],
+          }
 
           def run(args):
               proc = subprocess.run(args, text=True, capture_output=True, timeout=30)
@@ -87,12 +105,47 @@ jobs:
               def redirect_request(self, req, fp, code, msg, headers, newurl):
                   return None
 
-          def request(url, follow):
+          class VisibleTextParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.depth = 0
+                  self.parts = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() in {"script", "style", "noscript", "svg"}:
+                      self.depth += 1
+
+              def handle_endtag(self, tag):
+                  if tag.lower() in {"script", "style", "noscript", "svg"} and self.depth:
+                      self.depth -= 1
+
+              def handle_data(self, data):
+                  if not self.depth:
+                      self.parts.append(data)
+
+          def normalize_visible_text(text):
+              parser = VisibleTextParser()
+              try:
+                  parser.feed(text)
+              except Exception:
+                  return ""
+              visible = " ".join(parser.parts)
+              visible = visible.replace("www.bhrigu.io", "<host>").replace("bhrigu.io", "<host>")
+              visible = visible.replace(expected, "<sha>")
+              visible = re.sub(r"\b[0-9a-f]{40}\b", "<sha>", visible, flags=re.I)
+              visible = re.sub(r"\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b", "<timestamp>", visible)
+              visible = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "<date>", visible)
+              visible = re.sub(r"\b\d{1,2}:\d{2}(?::\d{2})?\b", "<time>", visible)
+              visible = re.sub(r"\b\d+(?:\.\d+)?\b", "<n>", visible)
+              visible = re.sub(r"\s+", " ", visible).strip()
+              return visible
+
+          def request(url, follow, path):
               opener = urllib.request.build_opener() if follow else urllib.request.build_opener(NoRedirect)
               req = urllib.request.Request(url, headers={
                   "Cache-Control": "no-cache",
                   "Pragma": "no-cache",
-                  "User-Agent": "ORION-BHRIGU-Apex-WWW-Recon/0.1",
+                  "User-Agent": "ORION-BHRIGU-Apex-WWW-Recon/0.2",
               })
               try:
                   response = opener.open(req, timeout=30)
@@ -127,22 +180,34 @@ jobs:
                       "x-matched-path", "cache-control", "age", "content-type",
                   }:
                       selected_headers[key.lower()] = value
+
+              normalized = normalize_visible_text(text)
+              markers = {token: token in text for token in route_contracts[path]}
+              deployment_sha = (meta_match.group(1) if meta_match else None) or (attr_match.group(1) if attr_match else None)
+              title = re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else None
+              semantic_contract = {
+                  "title": title,
+                  "deployment_sha": deployment_sha,
+                  "matched_path": selected_headers.get("x-matched-path"),
+                  "markers": markers,
+              }
               return {
                   "status": status,
                   "requested_url": url,
                   "final_url": final_url,
                   "headers": selected_headers,
                   "body_bytes": len(body),
-                  "body_sha256": hashlib.sha256(body).hexdigest(),
-                  "title": re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else None,
+                  "body_sha256_diagnostic_only": hashlib.sha256(body).hexdigest(),
+                  "normalized_visible_sha256_diagnostic_only": hashlib.sha256(normalized.encode("utf-8")).hexdigest(),
+                  "title": title,
                   "deployment_meta_sha": meta_match.group(1) if meta_match else None,
                   "deployment_attr_sha": attr_match.group(1) if attr_match else None,
+                  "deployment_sha": deployment_sha,
                   "expected_sha_visible": expected in text,
-                  "new_product_markers": {
-                      "btc_field": "BTC Field" in text,
-                      "snapshot_memory": "Snapshot Memory" in text,
-                      "live_dialogue": any(token in text for token in ["New conversation", "Новый диалог", "Continue", "Продолжить"]),
-                  },
+                  "markers": markers,
+                  "semantic_contract_sha256": hashlib.sha256(
+                      json.dumps(semantic_contract, sort_keys=True).encode("utf-8")
+                  ).hexdigest(),
               }
 
           http = {}
@@ -152,65 +217,83 @@ jobs:
                   query = urllib.parse.urlencode({"lang": "en", "__binding_recon": nonce})
                   url = f"https://{host}{path}?{query}"
                   http[host][path] = {
-                      "initial": request(url, follow=False),
-                      "followed": request(url, follow=True),
+                      "initial": request(url, follow=False, path=path),
+                      "followed": request(url, follow=True, path=path),
                   }
 
           route_results = {}
-          split_routes = []
-          redirect_routes = []
-          identical_routes = []
+          divergent_routes = []
+          canonicalized_routes = []
+          aligned_dual_host_routes = []
           incomplete_routes = []
+
           for path in paths:
               apex_initial = http["bhrigu.io"][path]["initial"]
               www_initial = http["www.bhrigu.io"][path]["initial"]
               apex = http["bhrigu.io"][path]["followed"]
               www = http["www.bhrigu.io"][path]["followed"]
+
               if any("error" in item for item in [apex_initial, www_initial, apex, www]):
                   classification = "INCOMPLETE"
                   incomplete_routes.append(path)
               else:
                   apex_redirect = apex_initial.get("status") in {301, 302, 307, 308}
                   www_redirect = www_initial.get("status") in {301, 302, 307, 308}
-                  same_body = apex.get("body_sha256") == www.get("body_sha256")
-                  same_final = urllib.parse.urlparse(apex.get("final_url", "")).netloc == urllib.parse.urlparse(www.get("final_url", "")).netloc
-                  if (apex_redirect or www_redirect) and same_body and same_final:
-                      classification = "CANONICAL_REDIRECT_IDENTICAL"
-                      redirect_routes.append(path)
-                  elif not apex_redirect and not www_redirect and same_body:
-                      classification = "DUAL_SERVE_IDENTICAL"
-                      identical_routes.append(path)
-                  elif apex.get("status") == 200 and www.get("status") == 200 and not same_body:
-                      classification = "SPLIT_BRAIN"
-                      split_routes.append(path)
+                  same_final_host = (
+                      urllib.parse.urlparse(apex.get("final_url", "")).netloc
+                      == urllib.parse.urlparse(www.get("final_url", "")).netloc
+                  )
+                  same_contract = apex.get("semantic_contract_sha256") == www.get("semantic_contract_sha256")
+                  both_200 = apex.get("status") == 200 and www.get("status") == 200
+                  expected_deployment = True
+                  if path != "/":
+                      expected_deployment = (
+                          apex.get("deployment_sha") == expected
+                          and www.get("deployment_sha") == expected
+                      )
+
+                  if (apex_redirect or www_redirect) and same_final_host and same_contract and expected_deployment:
+                      classification = "CANONICAL_REDIRECT_ALIGNED"
+                      canonicalized_routes.append(path)
+                  elif not apex_redirect and not www_redirect and both_200 and same_contract and expected_deployment:
+                      classification = "SAME_DEPLOYMENT_DUAL_HOST_NO_REDIRECT"
+                      aligned_dual_host_routes.append(path)
+                  elif path != "/" and apex.get("deployment_sha") != www.get("deployment_sha"):
+                      classification = "SPLIT_DEPLOYMENT"
+                      divergent_routes.append(path)
                   else:
-                      classification = "MISMATCH"
-                      split_routes.append(path)
+                      classification = "CONTENT_CONTRACT_DIVERGENCE"
+                      divergent_routes.append(path)
+
               route_results[path] = {
                   "classification": classification,
                   "apex_initial_status": apex_initial.get("status"),
                   "www_initial_status": www_initial.get("status"),
                   "apex_final_url": apex.get("final_url"),
                   "www_final_url": www.get("final_url"),
-                  "apex_body_sha256": apex.get("body_sha256"),
-                  "www_body_sha256": www.get("body_sha256"),
-                  "apex_deployment_sha": apex.get("deployment_meta_sha") or apex.get("deployment_attr_sha"),
-                  "www_deployment_sha": www.get("deployment_meta_sha") or www.get("deployment_attr_sha"),
+                  "apex_body_sha256_diagnostic_only": apex.get("body_sha256_diagnostic_only"),
+                  "www_body_sha256_diagnostic_only": www.get("body_sha256_diagnostic_only"),
+                  "apex_semantic_contract_sha256": apex.get("semantic_contract_sha256"),
+                  "www_semantic_contract_sha256": www.get("semantic_contract_sha256"),
+                  "apex_deployment_sha": apex.get("deployment_sha"),
+                  "www_deployment_sha": www.get("deployment_sha"),
+                  "apex_markers": apex.get("markers"),
+                  "www_markers": www.get("markers"),
               }
 
-          if split_routes:
-              overall = "SPLIT_BRAIN"
+          if divergent_routes:
+              overall = "DIVERGENCE"
           elif incomplete_routes:
               overall = "INCOMPLETE"
-          elif len(redirect_routes) == len(paths):
+          elif len(canonicalized_routes) == len(paths):
               overall = "CANONICALIZED"
-          elif len(identical_routes) == len(paths):
-              overall = "DUAL_SERVE_IDENTICAL_NO_REDIRECT"
+          elif len(aligned_dual_host_routes) == len(paths):
+              overall = "SAME_DEPLOYMENT_DUAL_HOST_NO_REDIRECT"
           else:
-              overall = "MIXED_BINDING"
+              overall = "MIXED_ALIGNED_BINDING"
 
           report = {
-              "schema_version": "bhrigu_apex_www_public_surface_binding_recon_v0_1",
+              "schema_version": "bhrigu_apex_www_public_surface_binding_recon_v0_2",
               "status": "RECON_COMPLETE",
               "overall_classification": overall,
               "expected_master_sha": expected,
@@ -219,10 +302,11 @@ jobs:
               "dns": dns,
               "http": http,
               "route_results": route_results,
-              "split_routes": split_routes,
-              "redirect_routes": redirect_routes,
-              "identical_routes": identical_routes,
+              "divergent_routes": divergent_routes,
+              "canonicalized_routes": canonicalized_routes,
+              "aligned_dual_host_routes": aligned_dual_host_routes,
               "incomplete_routes": incomplete_routes,
+              "raw_body_hash_is_decision_input": False,
               "writes": 0,
           }
           Path("artifacts/bhrigu-apex-www-binding-recon.json").write_text(
@@ -234,14 +318,16 @@ jobs:
               "",
               f"- Overall: `{overall}`",
               f"- Expected master SHA: `{expected}`",
+              "- Raw SSR body hash: `DIAGNOSTIC_ONLY`",
               "",
-              "| Route | Classification | Apex status | WWW status | Apex deployment | WWW deployment |",
-              "|---|---|---:|---:|---|---|",
+              "| Route | Classification | Apex status | WWW status | Apex deployment | WWW deployment | Contract equal |",
+              "|---|---|---:|---:|---|---|---|",
           ]
           for path, result in route_results.items():
+              contract_equal = result["apex_semantic_contract_sha256"] == result["www_semantic_contract_sha256"]
               lines.append(
                   f"| `{path}` | `{result['classification']}` | {result['apex_initial_status']} | {result['www_initial_status']} | "
-                  f"`{result['apex_deployment_sha'] or 'none'}` | `{result['www_deployment_sha'] or 'none'}` |"
+                  f"`{result['apex_deployment_sha'] or 'none'}` | `{result['www_deployment_sha'] or 'none'}` | `{contract_equal}` |"
               )
           Path("artifacts/summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
           print("\n".join(lines))
