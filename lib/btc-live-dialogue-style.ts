@@ -21,12 +21,13 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"]{display:none}
 .dialogueTurn{display:grid;gap:8px;outline:none}.turnRole{display:flex;align-items:center;gap:8px;color:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.turnGlyph{width:28px;height:28px}
 .turnBody{position:relative;padding:clamp(20px,3vw,30px);border:1px solid rgba(106,168,255,.2);border-radius:18px;background:rgba(8,16,28,.72)}
 .userTurn{justify-items:end}.userTurn .turnRole{padding-right:4px}.userTurn .turnBody{width:min(86%,650px);border-color:rgba(210,164,95,.18);background:rgba(210,164,95,.045)}.userTurn .turnBody p{margin:0;font-size:clamp(16px,2vw,19px);line-height:1.55;overflow-wrap:anywhere}
-.cosmographerTurn .turnBody:before{content:"";position:absolute;top:-1px;left:0;width:var(--phi-major);height:1px;background:linear-gradient(90deg,var(--blue),var(--b),transparent)}
+.cosmographerTurn .turnBody:before,.cosmographerHistoryTurn .turnBody:before{content:"";position:absolute;top:-1px;left:0;width:var(--phi-major);height:1px;background:linear-gradient(90deg,var(--blue),var(--b),transparent)}
+.cosmographerHistoryTurn{opacity:.94}
 .answerHeader{display:grid;gap:5px}.answerHeader h2{margin:0;font-size:clamp(30px,4.5vw,48px);line-height:1}
 .answerLead{margin:18px 0 0;color:var(--t);font-size:clamp(18px,2.2vw,22px);line-height:1.55;overflow-wrap:anywhere}
 .answerNarrative{display:grid;gap:14px;margin-top:22px}.answerNarrative p{margin:0;color:var(--t2);line-height:1.65}.answerNarrative strong{color:var(--t);font-weight:600}.answerNarrative ul{display:grid;gap:8px;margin:10px 0 0;padding-left:20px;color:var(--t2)}.answerNarrative li{line-height:1.55;overflow-wrap:anywhere}
-.answerSource{display:grid;gap:7px;margin-top:24px;padding-top:14px;border-top:1px solid var(--bl);color:var(--m);font-size:10px;letter-spacing:.05em;text-transform:uppercase;overflow-wrap:anywhere}
-.answerSource span{display:block;line-height:1.55;text-transform:none;letter-spacing:0}
+.answerSource,.answerSourceHistory{display:grid;gap:7px;margin-top:24px;padding-top:14px;border-top:1px solid var(--bl);color:var(--m);font-size:10px;letter-spacing:.05em;text-transform:uppercase;overflow-wrap:anywhere}
+.answerSource span,.answerSourceHistory span{display:block;line-height:1.55;text-transform:none;letter-spacing:0}
 .sourceChangedNote{margin:18px 0 0;padding:11px 13px;border:1px solid rgba(106,168,255,.22);border-radius:12px;background:rgba(106,168,255,.055);color:var(--t2);font-size:12px;line-height:1.55}
 .dialogueStateFAILURE .turnBody,.dialogueStateCLARIFICATION .turnBody{border-color:rgba(215,134,127,.45)}
 .dialogueStateCLARIFICATION .turnBody:before{background:linear-gradient(90deg,rgba(215,134,127,.8),rgba(210,164,95,.5),transparent)}
