@@ -1,0 +1,239 @@
+name: BHRIGU Apex WWW Final Post-Merge Proof
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/bhrigu-apex-www-final-post-merge-proof.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-dual-edge-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_SHA: 639b4afc04baa7f262265e9ef9c699a93044fef3
+      CANONICAL_HOST: www.bhrigu.io
+      SECONDARY_HOST: bhrigu.io
+      CANONICAL_ORIGIN: https://www.bhrigu.io
+      SECONDARY_ORIGIN: https://bhrigu.io
+
+    steps:
+      - name: Checkout exact verification head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce verification-only one-file scope
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          mapfile -t changed < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          printf '%s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = ".github/workflows/bhrigu-apex-www-final-post-merge-proof.yml"
+          test "$(git rev-parse "origin/${{ github.base_ref }}")" = "$EXPECTED_SHA"
+          echo "FINAL_POST_MERGE_PROOF_SCOPE=PASS"
+
+      - name: Prove branch identity and public dual-edge contract
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          expected = os.environ["EXPECTED_SHA"]
+          canonical_host = os.environ["CANONICAL_HOST"]
+          secondary_host = os.environ["SECONDARY_HOST"]
+          canonical_origin = os.environ["CANONICAL_ORIGIN"].rstrip("/")
+          secondary_origin = os.environ["SECONDARY_ORIGIN"].rstrip("/")
+          run_id = os.environ.get("GITHUB_RUN_ID", "local")
+          paths = ["/", "/crypto-astro/btc", "/crypto-astro/btc/live"]
+
+          def git(*args):
+              return subprocess.check_output(["git", *args], text=True).strip()
+
+          master_sha = git("rev-parse", "origin/master")
+          main_sha = git("rev-parse", "origin/main")
+          branch_checks = {
+              "master_expected": master_sha == expected,
+              "main_expected": main_sha == expected,
+              "main_master_identical": main_sha == master_sha,
+          }
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def request(url, follow):
+              opener = urllib.request.build_opener() if follow else urllib.request.build_opener(NoRedirect)
+              req = urllib.request.Request(url, headers={
+                  "Cache-Control": "no-cache",
+                  "Pragma": "no-cache",
+                  "User-Agent": "ORION-BHRIGU-Final-Post-Merge-Proof/0.1",
+              })
+              try:
+                  response = opener.open(req, timeout=30)
+                  return {
+                      "status": response.status,
+                      "url": response.geturl(),
+                      "headers": dict(response.headers.items()),
+                      "body": response.read().decode("utf-8", errors="replace"),
+                  }
+              except urllib.error.HTTPError as exc:
+                  return {
+                      "status": exc.code,
+                      "url": exc.geturl(),
+                      "headers": dict(exc.headers.items()),
+                      "body": exc.read().decode("utf-8", errors="replace"),
+                  }
+              except Exception as exc:
+                  return {"error": f"{type(exc).__name__}: {exc}"}
+
+          def query_pairs(url):
+              return sorted(urllib.parse.parse_qsl(
+                  urllib.parse.urlparse(url).query,
+                  keep_blank_values=True,
+              ))
+
+          last = None
+          for attempt in range(36):
+              failures = []
+              route_results = {}
+              for path in paths:
+                  query = urllib.parse.urlencode({
+                      "lang": "en",
+                      "__final_post_merge_proof": f"{run_id}-{attempt}",
+                      "edge_contract": "preserve",
+                  })
+                  canonical_url = f"{canonical_origin}{path}?{query}"
+                  secondary_url = f"{secondary_origin}{path}?{query}"
+                  canonical = request(canonical_url, follow=False)
+                  secondary_initial = request(secondary_url, follow=False)
+                  secondary_followed = request(secondary_url, follow=True)
+
+                  checks = {}
+                  if any("error" in item for item in [canonical, secondary_initial, secondary_followed]):
+                      checks["requests_complete"] = False
+                  else:
+                      canonical_parsed = urllib.parse.urlparse(canonical["url"])
+                      location_raw = secondary_initial["headers"].get("Location") or secondary_initial["headers"].get("location")
+                      location_url = urllib.parse.urljoin(secondary_url, location_raw or "")
+                      location_parsed = urllib.parse.urlparse(location_url)
+                      followed_parsed = urllib.parse.urlparse(secondary_followed["url"])
+                      checks = {
+                          "requests_complete": True,
+                          "canonical_http_200": canonical["status"] == 200,
+                          "canonical_host_preserved": canonical_parsed.netloc == canonical_host,
+                          "canonical_path_preserved": canonical_parsed.path == path,
+                          "canonical_query_preserved": query_pairs(canonical["url"]) == query_pairs(canonical_url),
+                          "secondary_http_308": secondary_initial["status"] == 308,
+                          "redirect_https": location_parsed.scheme == "https",
+                          "redirect_to_canonical_host": location_parsed.netloc == canonical_host,
+                          "redirect_path_preserved": location_parsed.path == path,
+                          "redirect_query_preserved": query_pairs(location_url) == query_pairs(secondary_url),
+                          "followed_http_200": secondary_followed["status"] == 200,
+                          "followed_canonical_host": followed_parsed.netloc == canonical_host,
+                          "followed_path_preserved": followed_parsed.path == path,
+                          "followed_query_preserved": query_pairs(secondary_followed["url"]) == query_pairs(secondary_url),
+                      }
+                      canonical_html = canonical["body"]
+                      followed_html = secondary_followed["body"]
+                      if path == "/crypto-astro/btc":
+                          checks.update({
+                              "canonical_main_source_attribute": f'data-deployment-source-sha="{expected}"' in canonical_html,
+                              "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
+                              "canonical_visible_source_prefix": expected[:12] in canonical_html,
+                              "followed_main_source_attribute": f'data-deployment-source-sha="{expected}"' in followed_html,
+                              "followed_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in followed_html,
+                              "followed_visible_source_prefix": expected[:12] in followed_html,
+                          })
+                      elif path == "/crypto-astro/btc/live":
+                          live_marker = 'name="btc-live-dialogue" content="free-question-v0-2-session-local"'
+                          checks.update({
+                              "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
+                              "canonical_live_dialogue_marker": live_marker in canonical_html,
+                              "followed_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in followed_html,
+                              "followed_live_dialogue_marker": live_marker in followed_html,
+                          })
+
+                  route_failures = [name for name, passed in checks.items() if not passed]
+                  if route_failures:
+                      failures.append({"path": path, "checks": route_failures})
+                  route_results[path] = {
+                      "canonical_status": canonical.get("status"),
+                      "canonical_url": canonical.get("url"),
+                      "secondary_initial_status": secondary_initial.get("status"),
+                      "secondary_location": secondary_initial.get("headers", {}).get("Location")
+                          or secondary_initial.get("headers", {}).get("location"),
+                      "secondary_followed_status": secondary_followed.get("status"),
+                      "secondary_followed_url": secondary_followed.get("url"),
+                      "checks": checks,
+                      "failures": route_failures,
+                  }
+
+              last = {
+                  "attempt": attempt + 1,
+                  "route_results": route_results,
+                  "failures": failures,
+              }
+              if not failures and all(branch_checks.values()):
+                  break
+              time.sleep(5)
+
+          report = {
+              "schema_version": "bhrigu_apex_www_final_post_merge_proof_v0_1",
+              "status": "PASS" if last and not last["failures"] and all(branch_checks.values()) else "FAIL",
+              "expected_sha": expected,
+              "master_sha": master_sha,
+              "main_sha": main_sha,
+              "branch_checks": branch_checks,
+              "canonical_host": canonical_host,
+              "secondary_host": secondary_host,
+              "result": last,
+              "writes": 0,
+          }
+          Path("artifacts/bhrigu-apex-www-final-post-merge-proof.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          lines = [
+              "# BHRIGU apex / www final post-merge proof",
+              "",
+              f"- Status: `{report['status']}`",
+              f"- Expected SHA: `{expected}`",
+              f"- master/main identity: `{branch_checks['main_master_identical']}`",
+              "",
+              "| Route | Canonical | Secondary | Followed | Failures |",
+              "|---|---:|---:|---:|---|",
+          ]
+          for path, result in last["route_results"].items():
+              lines.append(
+                  f"| `{path}` | {result['canonical_status']} | {result['secondary_initial_status']} | "
+                  f"{result['secondary_followed_status']} | `{','.join(result['failures']) or 'none'}` |"
+              )
+          Path("artifacts/summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          if report["status"] != "PASS":
+              raise SystemExit(f"BHRIGU_APEX_WWW_FINAL_POST_MERGE_PROOF=FAIL {report}")
+          print(f"BHRIGU_APEX_WWW_FINAL_POST_MERGE_PROOF=PASS sha={expected}")
+          PY
+
+      - name: Upload immutable final evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-apex-www-final-post-merge-proof-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
