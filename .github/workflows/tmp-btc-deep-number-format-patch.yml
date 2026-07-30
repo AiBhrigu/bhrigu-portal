@@ -1,11 +1,9 @@
 name: Temporary BTC deep number format patch
 
-# Synchronization trigger: workflow already exists in the previous PR head.
 on:
-  pull_request:
-    branches: [master]
-    paths:
-      - ".github/workflows/tmp-btc-deep-number-format-patch.yml"
+  push:
+    branches:
+      - repair/btc-dialogue-context-authority-deep-synthesis-v0-1
 
 permissions:
   contents: write
@@ -13,7 +11,7 @@ permissions:
 jobs:
   patch-format:
     runs-on: ubuntu-latest
-    if: github.head_ref == 'repair/btc-dialogue-context-authority-deep-synthesis-v0-1' && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     steps:
       - uses: actions/checkout@v4
         with:
