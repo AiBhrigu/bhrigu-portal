@@ -32,7 +32,8 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .dialogueStateFAILURE .turnBody,.dialogueStateCLARIFICATION .turnBody{border-color:rgba(215,134,127,.45)}
 .dialogueStateCLARIFICATION .turnBody:before{background:linear-gradient(90deg,rgba(215,134,127,.8),rgba(210,164,95,.5),transparent)}
 .dialogueStateBOUNDED .turnBody{border-color:rgba(210,164,95,.32)}
-.liveComposer{display:grid;gap:12px;padding:18px;border:1px solid rgba(106,168,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(9,20,35,.94),rgba(5,10,18,.96))}
+.liveComposer{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:12px;padding:18px;border:1px solid rgba(106,168,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(9,20,35,.94),rgba(5,10,18,.96))}
+.liveComposer>label,.liveComposerControls,.liveComposerControls>label,.liveComposerControls>button{min-width:0}
 .liveComposer label{display:grid;gap:8px}.liveComposer textarea{min-height:86px;resize:vertical;background:rgba(2,7,14,.66)}
 .liveComposerControls{display:grid;grid-template-columns:minmax(180px,.61803398875fr) minmax(220px,1fr);gap:12px;align-items:end}
 .liveComposer button{width:100%;min-height:48px;border-color:rgba(106,168,255,.72);background:linear-gradient(110deg,rgba(106,168,255,.3),rgba(143,124,244,.17))}
