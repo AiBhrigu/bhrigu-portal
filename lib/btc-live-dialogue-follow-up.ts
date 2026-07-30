@@ -162,6 +162,7 @@ const STALE_REFERENT = /\bthen\b|since then|back then|тогда|с тех по�
 export function isBtcContextualFollowUp(question: string): boolean {
   const normalized = question.trim();
   if (!normalized) return false;
+  if (UNSAFE.test(normalized)) return true;
   const hasReferent = /\b(?:it|this|that)\b|(?:это|этот|эта|прошл[а-яё]*\s+ответ)/i.test(normalized);
   const hasExplicitSubject = /btc\s+(?:dominance|gravity|leadership|field)|altcoin\s+(?:breadth|rotation|participation)|eth\s+rotation|stablecoin|defi\s+tvl|dex|market\s+field\s+score|market\s+cap|accepted\s+snapshot\s+memory|previous\s+accepted\s+snapshot|selected\s+date|доминир[а-яё]*\s+btc|гравитац[а-яё]*\s+btc|лидерств[а-яё]*\s+btc|ширин[а-яё]*\s+альткоин|ротац[а-яё]*\s+(?:альткоин|eth)|ликвидн[а-яё]*|стейблкоин|капитализац[а-яё]*|принят[а-яё]*\s+(?:snapshot\s+memory|памят[а-яё]*)|предыдущ[а-яё]*\s+принят[а-яё]*\s+сним|выбранн[а-яё]*\s+дат|поле\s+btc|общее\s+поле/i.test(normalized);
   if (hasExplicitSubject && !EXPAND.test(normalized) && !CONFIRM.test(normalized)) return false;
