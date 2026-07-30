@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from pathlib import Path
-from urllib.parse import quote, urlencode
+from urllib.parse import parse_qs, quote, urlencode, urlparse
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -65,14 +65,28 @@ def clear_session():
     driver.execute_script("sessionStorage.removeItem(arguments[0])", SESSION_KEY)
 
 
+def submitted_question_visible(driver_instance, question, previous_turns):
+    params = parse_qs(urlparse(driver_instance.current_url).query)
+    if params.get("q", [""])[0] != question:
+        return False
+    exchanges = driver_instance.find_elements(By.CSS_SELECTOR, ".dialogueExchange")
+    if len(exchanges) < previous_turns + 1:
+        return False
+    return any(
+        node.text.strip() == question
+        for node in driver_instance.find_elements(By.CSS_SELECTOR, ".dialogueExchange .userTurn .turnBody p")
+    )
+
+
 def submit_question(question):
+    previous_turns = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange"))
     textarea = wait("textarea[name='q']")
     textarea.clear()
     textarea.send_keys(question)
     driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']").click()
     wait(".liveDialogueShell")
     WebDriverWait(driver, 60).until(
-        lambda d: question in d.current_url or quote(question) in d.current_url
+        lambda d: submitted_question_visible(d, question, previous_turns)
     )
 
 
