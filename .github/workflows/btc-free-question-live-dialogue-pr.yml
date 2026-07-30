@@ -17,91 +17,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  temporary-humanize-public-module-state:
-    if: github.event_name == 'pull_request' && github.head_ref == 'repair/btc-dialogue-context-authority-deep-synthesis-v0-1' && github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: repair/btc-dialogue-context-authority-deep-synthesis-v0-1
-          fetch-depth: 0
-      - name: Replace internal module IDs with public RU and EN labels
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          executive=Path('lib/btc-executive-question-language.ts')
-          text=executive.read_text(encoding='utf-8')
-          old='''function moduleState(envelope: BtcMarketEnvelope, moduleId: string): BtcSignalDirection {
-            return envelope.phi_geometry.nodes.find((node) => node.id === moduleId)?.state ?? "UNAVAILABLE";
-          }
-          '''
-          new=old+'''\nconst PUBLIC_MODULE_LABEL: Record<BtcPublicLocale, Record<string, string>> = {
-            en: {
-              market_structure: "Market Structure",
-              liquidity_membrane: "Liquidity Membrane",
-              change_event_memory: "Change / Event Memory",
-              temporal_context: "Temporal Context",
-              cosmographer_review: "Cosmographer Review",
-            },
-            ru: {
-              market_structure: "Структура рынка",
-              liquidity_membrane: "Мембрана ликвидности",
-              change_event_memory: "Память изменений",
-              temporal_context: "Временной контекст",
-              cosmographer_review: "Обзор Космографа",
-            },
-          };
-
-          const PUBLIC_SIGNAL_LABEL: Record<BtcPublicLocale, Record<BtcSignalDirection, string>> = {
-            en: { UP: "strengthening", DOWN: "weakening", UNCHANGED: "unchanged", BOUNDED: "bounded", UNAVAILABLE: "unavailable" },
-            ru: { UP: "усиливается", DOWN: "ослабевает", UNCHANGED: "без изменения", BOUNDED: "ограничено", UNAVAILABLE: "недоступно" },
-          };
-
-          function moduleProofLabel(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, moduleId: string): string {
-            const label = PUBLIC_MODULE_LABEL[locale][moduleId] ?? moduleId.replace(/_/g, " ");
-            return `${label} — ${PUBLIC_SIGNAL_LABEL[locale][moduleState(envelope, moduleId)]}`;
-          }
-          '''
-          assert text.count(old)==1, text.count(old)
-          text=text.replace(old,new,1)
-          old_route='''  const primary = envelope.route.primary_modules.map((id) => `${id}:${moduleState(envelope, id)}`).join(" / ");
-            const supporting = envelope.route.supporting_modules.map((id) => `${id}:${moduleState(envelope, id)}`).join(" / ") || (ru ? "нет" : "none");'''
-          new_route='''  const primary = envelope.route.primary_modules.map((id) => moduleProofLabel(locale, envelope, id)).join(" / ");
-            const supporting = envelope.route.supporting_modules.map((id) => moduleProofLabel(locale, envelope, id)).join(" / ") || (ru ? "нет" : "none");'''
-          assert text.count(old_route)==1, text.count(old_route)
-          executive.write_text(text.replace(old_route,new_route,1),encoding='utf-8')
-
-          fixture=Path('scripts/run-btc-live-dialogue-session-fixture.mjs')
-          text=fixture.read_text(encoding='utf-8')
-          old_gate='''  if (!deepRu.direct.includes("приоритет") || !deepRu.direct.includes("SPLIT") || !deepRu.limit.includes("SPLIT")) throw new Error("exact RU prior split not preserved");
-            if (!deepRu.evidence_lines.every((line) => /важен|важно|важна/.test(line)) || !deepRu.change.includes("следующий принятый Snapshot") || !deepRu.source.includes("компактный контекст")) throw new Error("exact RU deep synthesis failed");'''
-          new_gate='''  if (!deepRu.direct.includes("приоритет") || !deepRu.direct.includes("SPLIT") || !deepRu.limit.includes("SPLIT")) throw new Error("exact RU prior split not preserved");
-            if (["change_event_memory:", "market_structure:", "liquidity_membrane:", "temporal_context:", "cosmographer_review:"].some((id) => deepRu.limit.includes(id))) throw new Error("raw module ID leaked into RU public answer");
-            if (!deepRu.limit.includes("Память изменений") || !deepRu.limit.includes("Структура рынка") || !deepRu.limit.includes("Мембрана ликвидности")) throw new Error("RU public module labels missing");
-            if (!deepRu.evidence_lines.every((line) => /важен|важно|важна/.test(line)) || !deepRu.change.includes("следующий принятый Snapshot") || !deepRu.source.includes("компактный контекст")) throw new Error("exact RU deep synthesis failed");'''
-          assert text.count(old_gate)==1, text.count(old_gate)
-          text=text.replace(old_gate,new_gate,1)
-          old_en='''  if (!deepEn.direct.includes("priorities") || !deepEn.direct.includes("SPLIT") || !deepEn.limit.includes("SPLIT")) throw new Error("EN prior split not preserved");
-            if (!deepEn.evidence_lines.every((line) => line.includes("it matters because")) || !deepEn.change.includes("next accepted Snapshot") || !deepEn.source.includes("compact prior context")) throw new Error("EN deep synthesis failed");'''
-          new_en='''  if (!deepEn.direct.includes("priorities") || !deepEn.direct.includes("SPLIT") || !deepEn.limit.includes("SPLIT")) throw new Error("EN prior split not preserved");
-            if (["change_event_memory:", "market_structure:", "liquidity_membrane:", "temporal_context:", "cosmographer_review:"].some((id) => deepEn.limit.includes(id))) throw new Error("raw module ID leaked into EN public answer");
-            if (!deepEn.limit.includes("Change / Event Memory") || !deepEn.limit.includes("Market Structure") || !deepEn.limit.includes("Liquidity Membrane")) throw new Error("EN public module labels missing");
-            if (!deepEn.evidence_lines.every((line) => line.includes("it matters because")) || !deepEn.change.includes("next accepted Snapshot") || !deepEn.source.includes("compact prior context")) throw new Error("EN deep synthesis failed");'''
-          assert text.count(old_en)==1, text.count(old_en)
-          fixture.write_text(text.replace(old_en,new_en,1),encoding='utf-8')
-          PY
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add lib/btc-executive-question-language.ts scripts/run-btc-live-dialogue-session-fixture.mjs
-          git diff --cached --check
-          git commit -m "BTC dialogue: humanize public module proof"
-          git push origin HEAD:repair/btc-dialogue-context-authority-deep-synthesis-v0-1
-
   live-dialogue:
     runs-on: ubuntu-latest
     timeout-minutes: 50
