@@ -35,7 +35,27 @@ type Props = {
   sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
+  inputError: string | null;
 };
+
+const EN_MONTHS = [
+  "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC",
+];
+
+function observationDateLabel(locale: BtcPublicLocale, value: string | null): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (locale === "ru") return `${String(day).padStart(2, "0")}.${String(month).padStart(2, "0")}.${year} UTC`;
+  return `${String(day).padStart(2, "0")} ${EN_MONTHS[month - 1]} ${year}`;
+}
+
+function legacySectionId(id: string): string {
+  if (id === "market_evidence") return "evidence";
+  if (id === "market_limit") return "limit";
+  if (id === "market_watch") return "change";
+  return id;
+}
 
 function sourceState(
   locale: BtcPublicLocale,
@@ -71,7 +91,7 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
 }
 
 function makeTurn(props: Props): BtcDialogueTurn | null {
-  if (!props.initialQuestion || !props.route || !props.answer) return null;
+  if (!props.initialQuestion || !props.route || !props.answer || props.inputError) return null;
   const timestamp = props.sourceContext.generated_at_utc;
   const observationDate = props.route.time_range?.end ?? (props.initialDate || null);
   const evidenceLines = props.answer.sections
@@ -118,7 +138,7 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
 }
 
 export function BtcCosmographerDialogue(props: Props) {
-  const { locale, initialDate, sourceContext, deploymentSourceSha } = props;
+  const { locale, initialDate, sourceContext, deploymentSourceSha, inputError } = props;
   const ru = locale === "ru";
   const otherLocale: BtcPublicLocale = ru ? "en" : "ru";
   const currentTurn = useMemo(() => makeTurn(props), [
@@ -129,6 +149,7 @@ export function BtcCosmographerDialogue(props: Props) {
     props.answer,
     props.sourceContext,
     props.sourceBindingChanged,
+    props.inputError,
   ]);
   const [turns, setTurns] = useState<BtcDialogueTurn[]>(currentTurn ? [currentTurn] : []);
   const [compacted, setCompacted] = useState(false);
@@ -161,6 +182,14 @@ export function BtcCosmographerDialogue(props: Props) {
     ct0: contextTurn.time_start ?? contextTurn.observation_date ?? "",
     ct1: contextTurn.time_end ?? contextTurn.observation_date ?? "",
     cb: contextTurn.source_snapshot_generated_at_utc ?? "",
+  } : null;
+  const legacyContextFields = contextTurn ? {
+    fc: "btc_follow_up_context_v0_1",
+    pc: contextTurn.market_question_class ?? contextTurn.question_class ?? "",
+    pf: (contextTurn.route_intents ?? contextTurn.question_facets).join(","),
+    ps: contextTurn.answer_state,
+    pd: contextTurn.observation_date ?? "",
+    pt: contextTurn.source_snapshot_generated_at_utc ?? "",
   } : null;
 
   const startNewConversation = () => {
@@ -211,6 +240,11 @@ export function BtcCosmographerDialogue(props: Props) {
         </p>}
       </header>
 
+      {inputError && <section className="dialogueFailure" role="alert">
+        <strong>{ru ? "Дата не принята." : "Date not accepted."}</strong>
+        <p>{inputError}</p>
+      </section>}
+
       {hasConversation && <section
         className="liveThread"
         role="log"
@@ -222,6 +256,9 @@ export function BtcCosmographerDialogue(props: Props) {
           const sections = turn.sections ?? [];
           const domain = turn.route_domain ?? "unsupported";
           const subject = turn.route_subject ?? turn.question_class ?? "unknown";
+          const questionClass = turn.market_question_class ?? turn.question_class ?? "";
+          const facets = (turn.route_intents ?? turn.question_facets).join(",");
+          const observationLabel = observationDateLabel(turn.locale, turn.observation_date);
           return <div className="dialogueExchange" data-dialogue-turn-id={turn.turn_id} key={turn.turn_id}>
             <article className="dialogueTurn userTurn">
               <div className="turnRole">{turn.locale === "ru" ? "Вы" : "You"}</div>
@@ -235,7 +272,9 @@ export function BtcCosmographerDialogue(props: Props) {
               data-answer-mode={turn.answer_mode ?? "CLARIFICATION"}
               data-route-domain={domain}
               data-route-subject={subject}
-              data-market-question-class={turn.market_question_class ?? turn.question_class ?? ""}
+              data-question-class={questionClass}
+              data-question-facets={facets}
+              data-market-question-class={questionClass}
               data-context-relation={turn.context_relation ?? "GENUINELY_AMBIGUOUS"}
             >
               <div className="turnRole">
@@ -249,7 +288,11 @@ export function BtcCosmographerDialogue(props: Props) {
                 </header>
                 {turn.direct_answer && <p className="answerLead" data-answer-direct="true">{turn.direct_answer}</p>}
                 {sections.length > 0 && <div className="answerNarrative">
-                  {sections.map((section) => <section key={`${turn.turn_id}-${section.id}`} data-answer-section={section.id}>
+                  {sections.map((section) => <section
+                    key={`${turn.turn_id}-${section.id}`}
+                    data-answer-section={legacySectionId(section.id)}
+                    data-semantic-answer-section={section.id}
+                  >
                     <p><strong>{section.label}.</strong></p>
                     {section.paragraph && <p>{section.paragraph}</p>}
                     {section.bullets && section.bullets.length > 0 && <ul>
@@ -262,6 +305,7 @@ export function BtcCosmographerDialogue(props: Props) {
                 </p>}
                 <footer className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
                   <span>{domain}</span>
+                  {observationLabel && <span data-observation-date>{observationLabel}</span>}
                   {turn.time_start && turn.time_end && <span>{turn.time_start} — {turn.time_end}</span>}
                   <span>{turn.proof_label ?? (turn.proof_available ? "Proof available" : "Proof unavailable")}</span>
                   {turn.source_boundary && <span>{turn.source_boundary}</span>}
@@ -279,6 +323,9 @@ export function BtcCosmographerDialogue(props: Props) {
       >
         <input type="hidden" name="lang" value={locale}/>
         {contextFields && Object.entries(contextFields).map(([name, value]) =>
+          <input key={name} type="hidden" name={name} value={value}/>
+        )}
+        {legacyContextFields && Object.entries(legacyContextFields).map(([name, value]) =>
           <input key={name} type="hidden" name={name} value={value}/>
         )}
         <label>
