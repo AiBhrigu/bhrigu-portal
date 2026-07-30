@@ -1,19 +1,14 @@
 import type { BtcMarketEnvelope, BtcMarketEnvelopeFailure } from "../../lib/btc-market-envelope";
 import type { BtcFailureCode, BtcPublicSnapshot, FreshnessState } from "../../lib/btc-public-output-contract";
-import { formatBtcQuestionExecutiveLead, formatBtcQuestionWatchNext } from "../../lib/btc-executive-question-language";
+import { buildBtcQuestionSpecificAnswer } from "../../lib/btc-executive-question-language";
 import {
   formatBtcFailureMessage,
-  formatBtcMemoryLabel,
   formatBtcObservationDate,
-  formatBtcStateLabel,
   formatBtcUtcTimestamp,
-  formatBtcWeakening,
   type BtcPublicLocale,
 } from "../../lib/btc-public-language-contract";
 import {
   factLine,
-  memoryDelta,
-  memoryValue,
   narrativeLine,
   sectionTitle,
 } from "../../lib/btc-public-surface-format";
@@ -68,21 +63,14 @@ function sourceState(locale: BtcPublicLocale, context: BtcLiveSourceContext): st
   return "Source temporarily unavailable";
 }
 
-function changedLines(locale: BtcPublicLocale, envelope: BtcMarketEnvelope): string[] {
-  return envelope.memory.metrics
-    .filter((metric) => metric.direction !== "UNCHANGED" || metric.transition !== "UNCHANGED")
-    .slice(0, 2)
-    .map((metric) => `${formatBtcMemoryLabel(locale, metric.metric_id)} ${memoryValue(locale, metric, metric.previous_value)} → ${memoryValue(locale, metric, metric.current_value)} (${memoryDelta(locale, metric)})`);
-}
-
 export function BtcLiveDialogue(props: Props) {
   const { locale, initialQuestion, initialDate, result, failure, envelope, envelopeFailure, sourceContext } = props;
   const ru = locale === "ru";
   const otherLocale: BtcPublicLocale = ru ? "en" : "ru";
-  const changed = envelope ? changedLines(locale, envelope) : [];
-  const confirms = envelope?.synthesis.confirming_modules[0]?.split(":")[0] ?? null;
-  const weakens = envelope ? formatBtcWeakening(locale, envelope.synthesis.state) : null;
   const hasAnswer = Boolean(initialQuestion);
+  const answer = result && envelope
+    ? buildBtcQuestionSpecificAnswer(locale, initialQuestion, envelope, result.temporal_context.observation_date)
+    : null;
 
   return <main className="liveDialoguePage" lang={locale} data-live-dialogue="btc-free-question">
     <header className="liveDialogueTopbar">
@@ -93,15 +81,15 @@ export function BtcLiveDialogue(props: Props) {
 
     <section className="liveDialogueShell" aria-labelledby="live-dialogue-title">
       <header className="liveDialogueIntro">
-        <p className="eyebrow">{ru ? "Бесплатный BTC-диалог" : "Free BTC dialogue"}</p>
+        <p className="eyebrow">{ru ? "Бесплатное чтение вопроса BTC" : "Free BTC question read"}</p>
         <h1 id="live-dialogue-title">{ru ? "BTC Космограф" : "BTC Cosmographer"}</h1>
         <p>{ru
-          ? "Один вопрос. Один ясный, проверяемый ответ."
-          : "One question. One clear, verifiable answer."}</p>
+          ? "Один вопрос. Один источник-привязанный ответ без памяти между запросами."
+          : "One question. One source-bound answer with no memory between requests."}</p>
         <div className="liveTrustLine"><span>{sourceState(locale,sourceContext)}</span>{sourceContext.generated_at_utc&&<span>{formatBtcUtcTimestamp(locale,sourceContext.generated_at_utc)}</span>}<span>{ru?"Без прогноза":"No forecast"}</span></div>
       </header>
 
-      {hasAnswer&&<section className="liveThread" aria-label={ru?"Диалог":"Dialogue"}>
+      {hasAnswer&&<section className="liveThread" aria-label={ru?"Чтение вопроса":"Question read"}>
         <article className="dialogueTurn userTurn">
           <div className="turnRole">{ru?"Вы":"You"}</div>
           <div className="turnBody"><p>{initialQuestion}</p></div>
@@ -116,17 +104,28 @@ export function BtcLiveDialogue(props: Props) {
           </div>
         </article>}
 
-        {result&&envelope&&<article className="dialogueTurn cosmographerTurn" data-synthesis-state={envelope.synthesis.state}>
+        {answer&&result&&envelope&&<article
+          className="dialogueTurn cosmographerTurn"
+          data-answer-state={answer.answer_state}
+          data-question-class={answer.question_class}
+          data-question-facets={answer.question_facets.join(",")}
+        >
           <div className="turnRole"><FieldAnchorGlyph className="turnGlyph"/><span>Cosmographer</span></div>
           <div className="turnBody">
-            <header className="answerHeader"><p className="eyebrow">{ru?"Ответ":"Answer"}</p><h2>{formatBtcStateLabel(locale,envelope.synthesis.state)}</h2></header>
-            <p className="answerLead">{formatBtcQuestionExecutiveLead(locale,envelope.question_class,envelope.synthesis.state)}</p>
+            <header className="answerHeader"><p className="eyebrow">{ru?"Прямой ответ":"Direct answer"}</p><h2>{answer.headline}</h2></header>
+            <p className="answerLead" data-answer-direct="true">{answer.direct_answer}</p>
             <div className="answerNarrative">
-              <p><strong>{ru?"Что изменилось.":"What changed."}</strong> {changed.length?changed.join(" "):(ru?"Сильного нового перехода не подтверждено.":"No strong new transition is confirmed.")}</p>
-              <p><strong>{ru?"Как читать.":"How to read it."}</strong> {confirms?(ru?`${confirms} подтверждает маршрут вопроса.`:`${confirms} confirms the routed question.`):(ru?"Независимое подтверждение ограничено.":"Independent confirmation is limited.")} {weakens}</p>
-              <p><strong>{ru?"Наблюдать дальше.":"Watch next."}</strong> {formatBtcQuestionWatchNext(locale,envelope.question_class,envelope.current.source_generated_at_utc)}</p>
+              <section data-answer-section="evidence">
+                <p><strong>{ru?"Доказательность вопроса.":"Question-specific evidence."}</strong></p>
+                <ul>{answer.evidence_lines.map((line)=><li key={line}>{line}</li>)}</ul>
+              </section>
+              <p data-answer-section="limit"><strong>{ru?"Противоречие или граница.":"Contradiction or limit."}</strong> {answer.contradiction_or_limit}</p>
+              <p data-answer-section="change"><strong>{ru?"Что изменит чтение.":"What would change the read."}</strong> {answer.what_would_change_the_read}</p>
             </div>
-            <footer className="answerSource">{sourceState(locale,sourceContext)} · {formatBtcObservationDate(locale,result.temporal_context.observation_date)} · {sourceContext.proof_available?(ru?"Proof доступен":"Proof available"):(ru?"Proof недоступен":"Proof unavailable")}</footer>
+            <footer className="answerSource" data-answer-source-boundary="true">
+              {sourceState(locale,sourceContext)} · {formatBtcObservationDate(locale,result.temporal_context.observation_date)} · {sourceContext.proof_available?(ru?"Proof доступен":"Proof available"):(ru?"Proof недоступен":"Proof unavailable")}
+              <span>{answer.source_boundary}</span>
+            </footer>
           </div>
         </article>}
 
@@ -143,10 +142,10 @@ export function BtcLiveDialogue(props: Props) {
 
       <form className={hasAnswer?"liveComposer liveComposerAfterAnswer":"liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>
-        <label><span>{hasAnswer?(ru?"Следующий вопрос":"Ask another question"):(ru?"Ваш вопрос о BTC":"Your BTC question")}</span><textarea name="q" rows={3} minLength={8} maxLength={280} required placeholder={ru?"Что вы хотите понять о текущем поле BTC?":"What do you want to understand about the current BTC field?"}/></label>
-        <div className="liveComposerControls"><label><span>{ru?"Дата наблюдения · необязательно":"Observation date · optional"}</span><input name="d" type="date" defaultValue={initialDate}/></label><button type="submit">{hasAnswer?(ru?"Продолжить":"Continue"):(ru?"Получить ответ":"Get answer")}</button></div>
+        <label><span>{hasAnswer?(ru?"Новый независимый вопрос":"New independent question"):(ru?"Ваш вопрос о BTC":"Your BTC question")}</span><textarea name="q" rows={3} minLength={8} maxLength={280} required placeholder={ru?"Что вы хотите понять о текущем поле BTC?":"What do you want to understand about the current BTC field?"}/></label>
+        <div className="liveComposerControls"><label><span>{ru?"Дата наблюдения · необязательно":"Observation date · optional"}</span><input name="d" type="date" defaultValue={initialDate}/></label><button type="submit">{hasAnswer?(ru?"Новое чтение":"New read"):(ru?"Получить ответ":"Get answer")}</button></div>
       </form>
-      <p className="liveBoundary">{ru?"Без регистрации · Без оплаты · Не прогноз и не торговый сигнал":"No account · No payment · No forecast or trading signal"}</p>
+      <p className="liveBoundary">{ru?"Без регистрации · Без оплаты · Без памяти между вопросами · Не прогноз и не торговый сигнал":"No account · No payment · No memory between questions · No forecast or trading signal"}</p>
     </section>
   </main>;
 }
