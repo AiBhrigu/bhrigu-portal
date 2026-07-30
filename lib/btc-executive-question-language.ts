@@ -254,14 +254,30 @@ function rankedMemoryMetrics(envelope: BtcMarketEnvelope): MemoryMetric[] {
     .slice(0, 3);
 }
 
+function metricDisplayValue(metric: MemoryMetric, value: string): string {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  const unit = metric.unit.toLowerCase();
+  const digits = metric.metric_id === "market_field_score"
+    ? 1
+    : unit.includes("%") || unit.includes("pct")
+      ? 2
+      : Math.abs(numeric) >= 1_000_000
+        ? 0
+        : 2;
+  return fmtNumber(numeric, digits);
+}
+
 function metricLine(locale: BtcPublicLocale, metric: MemoryMetric, index: number): string {
   const label = METRIC_LABEL[locale][metric.metric_id] ?? metric.metric_id.replace(/_/g, " ");
   const reason = METRIC_REASON[locale][metric.metric_id]
     ?? (locale === "ru" ? "он входит в принятую сопоставимую дельту" : "it belongs to the accepted comparable delta");
+  const previous = metricDisplayValue(metric, metric.previous_value);
+  const current = metricDisplayValue(metric, metric.current_value);
   const delta = metric.display_delta ? ` (${metric.display_delta})` : metric.transition && metric.transition !== "UNCHANGED" ? ` (${metric.transition})` : "";
   return locale === "ru"
-    ? `${index}. ${label}: ${metric.previous_value} → ${metric.current_value}${delta}; важен, потому что ${reason}.`
-    : `${index}. ${label}: ${metric.previous_value} → ${metric.current_value}${delta}; it matters because ${reason}.`;
+    ? `${index}. ${label}: ${previous} → ${current}${delta}; важен, потому что ${reason}.`
+    : `${index}. ${label}: ${previous} → ${current}${delta}; it matters because ${reason}.`;
 }
 
 function classEvidence(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, observationDate: string): string[] {
