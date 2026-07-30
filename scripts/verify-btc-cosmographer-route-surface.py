@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 BASE = os.environ.get("BTC_COSMOGRAPHER_PREVIEW_BASE", "http://127.0.0.1:3110").rstrip("/")
-SESSION_KEY = "bhrigu:btc-cosmographer:session:v0_2"
+SESSION_KEY = "bhrigu:btc-free-dialogue:session:v0_1"
 CONTEXT_FIELDS = ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb"]
 
 options = webdriver.ChromeOptions()
