@@ -1,3 +1,4 @@
+import type { BtcEnvelopeQuestionClass } from "./btc-market-envelope";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 import type {
   BtcCosmographerAnswerState,
@@ -19,27 +20,42 @@ export const BTC_DIALOGUE_SESSION_MAX_TURNS = 20;
 export const BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS = 6;
 export const BTC_DIALOGUE_SESSION_MAX_BYTES = 96 * 1024;
 
+export type BtcDialogueAnswerState = BtcCosmographerAnswerState | "BOUNDED";
+
+/**
+ * Compatibility shell during the route-graph rebuild.
+ * Legacy deterministic fields remain required so dormant source files compile;
+ * route-graph fields are additive and are used by the new public component.
+ */
 export type BtcDialogueTurn = {
   turn_id: string;
   created_at_utc: string;
   locale: BtcPublicLocale;
   user_text: string;
-  route_domain: BtcCosmographerDomain;
-  route_subject: string;
-  route_intents: BtcCosmographerIntent[];
-  context_relation: BtcCosmographerContextRelation;
-  market_question_class: BtcCosmographerRoute["market_question_class"];
-  time_start: string | null;
-  time_end: string | null;
-  answer_state: BtcCosmographerAnswerState;
-  answer_mode: BtcCosmographerAnswerProjection["answer_mode"];
-  headline: string;
-  direct_answer: string;
-  sections: BtcCosmographerSection[];
-  source_boundary: string;
-  proof_label: string;
+  effective_question: string;
+  observation_date: string | null;
+  question_class: BtcEnvelopeQuestionClass | null;
+  question_facets: string[];
+  answer_state: BtcDialogueAnswerState;
+  headline: string | null;
+  direct_answer: string | null;
+  evidence_lines: string[];
+  contradiction_or_limit: string | null;
+  what_would_change_the_read: string | null;
+  source_boundary: string | null;
   source_snapshot_generated_at_utc: string | null;
+  proof_available: boolean;
+  context_relation: BtcCosmographerContextRelation | string | null;
   source_binding_changed: boolean;
+  route_domain?: BtcCosmographerDomain;
+  route_subject?: string;
+  route_intents?: BtcCosmographerIntent[];
+  market_question_class?: BtcCosmographerRoute["market_question_class"];
+  time_start?: string | null;
+  time_end?: string | null;
+  answer_mode?: BtcCosmographerAnswerProjection["answer_mode"];
+  sections?: BtcCosmographerSection[];
+  proof_label?: string;
 };
 
 export type BtcDialogueSession = {
@@ -75,8 +91,14 @@ function isText(value: unknown, max: number): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= max;
 }
 
-function isNullableText(value: unknown, max: number): value is string | null {
+function nullableText(value: unknown, max: number): value is string | null {
   return value === null || isText(value, max);
+}
+
+function stringList(value: unknown, maxItems: number, maxLength: number): value is string[] {
+  return Array.isArray(value) &&
+    value.length <= maxItems &&
+    value.every((item) => isText(item, maxLength));
 }
 
 function validSections(value: unknown): value is BtcCosmographerSection[] {
@@ -84,40 +106,38 @@ function validSections(value: unknown): value is BtcCosmographerSection[] {
   return value.every((item) => {
     if (!isRecord(item) || !isText(item.id, 64) || !isText(item.label, 160)) return false;
     if (item.paragraph !== undefined && !isText(item.paragraph, 2400)) return false;
-    if (item.bullets !== undefined) {
-      if (!Array.isArray(item.bullets) || item.bullets.length > 12) return false;
-      if (!item.bullets.every((line) => isText(line, 1200))) return false;
-    }
+    if (item.bullets !== undefined && !stringList(item.bullets, 12, 1200)) return false;
     return true;
   });
 }
 
 function validTurn(value: unknown): value is BtcDialogueTurn {
   if (!isRecord(value)) return false;
-  return (
-    isText(value.turn_id, 160) &&
-    isText(value.created_at_utc, 40) &&
-    (value.locale === "ru" || value.locale === "en") &&
-    isText(value.user_text, 500) &&
-    isText(value.route_domain, 40) &&
-    isText(value.route_subject, 80) &&
-    Array.isArray(value.route_intents) &&
-    value.route_intents.length <= 10 &&
-    value.route_intents.every((intent) => isText(intent, 40)) &&
-    isText(value.context_relation, 40) &&
-    isNullableText(value.market_question_class, 64) &&
-    isNullableText(value.time_start, 10) &&
-    isNullableText(value.time_end, 10) &&
-    isText(value.answer_state, 32) &&
-    isText(value.answer_mode, 40) &&
-    isText(value.headline, 400) &&
-    isText(value.direct_answer, 5000) &&
-    validSections(value.sections) &&
-    isText(value.source_boundary, 2600) &&
-    isText(value.proof_label, 200) &&
-    isNullableText(value.source_snapshot_generated_at_utc, 40) &&
-    typeof value.source_binding_changed === "boolean"
-  );
+  if (!isText(value.turn_id, 160) || !isText(value.created_at_utc, 40)) return false;
+  if (value.locale !== "ru" && value.locale !== "en") return false;
+  if (!isText(value.user_text, 500) || !isText(value.effective_question, 500)) return false;
+  if (!nullableText(value.observation_date, 10) || !nullableText(value.question_class, 64)) return false;
+  if (!stringList(value.question_facets, 12, 48)) return false;
+  if (!isText(value.answer_state, 32)) return false;
+  if (!nullableText(value.headline, 400) || !nullableText(value.direct_answer, 5000)) return false;
+  if (!stringList(value.evidence_lines, 12, 1200)) return false;
+  if (!nullableText(value.contradiction_or_limit, 2400)) return false;
+  if (!nullableText(value.what_would_change_the_read, 2400)) return false;
+  if (!nullableText(value.source_boundary, 2600)) return false;
+  if (!nullableText(value.source_snapshot_generated_at_utc, 40)) return false;
+  if (typeof value.proof_available !== "boolean") return false;
+  if (!nullableText(value.context_relation, 48)) return false;
+  if (typeof value.source_binding_changed !== "boolean") return false;
+  if (value.route_domain !== undefined && !isText(value.route_domain, 40)) return false;
+  if (value.route_subject !== undefined && !isText(value.route_subject, 80)) return false;
+  if (value.route_intents !== undefined && !stringList(value.route_intents, 10, 40)) return false;
+  if (value.market_question_class !== undefined && !nullableText(value.market_question_class, 64)) return false;
+  if (value.time_start !== undefined && !nullableText(value.time_start, 10)) return false;
+  if (value.time_end !== undefined && !nullableText(value.time_end, 10)) return false;
+  if (value.answer_mode !== undefined && !isText(value.answer_mode, 40)) return false;
+  if (value.sections !== undefined && !validSections(value.sections)) return false;
+  if (value.proof_label !== undefined && !isText(value.proof_label, 200)) return false;
+  return true;
 }
 
 export function createBtcDialogueSession(
@@ -146,8 +166,8 @@ export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | nu
   if (value.locale !== "ru" && value.locale !== "en") return null;
   if (!isText(value.created_at_utc, 40) || !isText(value.updated_at_utc, 40)) return null;
   if (!isRecord(value.source_binding)) return null;
-  if (!isNullableText(value.source_binding.deployment_sha, 40)) return null;
-  if (!isNullableText(value.source_binding.snapshot_generated_at_utc, 40)) return null;
+  if (!nullableText(value.source_binding.deployment_sha, 40)) return null;
+  if (!nullableText(value.source_binding.snapshot_generated_at_utc, 40)) return null;
   if (!Array.isArray(value.turns) || !value.turns.every(validTurn)) return null;
   return compactBtcDialogueSession({
     schema: BTC_DIALOGUE_SESSION_SCHEMA,
@@ -209,13 +229,13 @@ export function compactBtcDialogueSession(
   if (serializedBytes(candidate) > BTC_DIALOGUE_SESSION_MAX_BYTES) {
     turns = turns.map((turn) => ({
       ...turn,
-      direct_answer: turn.direct_answer.slice(0, 1800),
-      sections: turn.sections.slice(0, 4).map((section) => ({
+      direct_answer: turn.direct_answer?.slice(0, 1800) ?? null,
+      sections: turn.sections?.slice(0, 4).map((section) => ({
         ...section,
         paragraph: section.paragraph?.slice(0, 700),
         bullets: section.bullets?.slice(0, 5).map((line) => line.slice(0, 500)),
       })),
-      source_boundary: turn.source_boundary.slice(0, 700),
+      source_boundary: turn.source_boundary?.slice(0, 700) ?? null,
     }));
     candidate = { ...candidate, turns, compacted: true };
   }
@@ -230,10 +250,7 @@ export function writeBtcDialogueSession(
     updated_at_utc: new Date().toISOString(),
   });
   if (storageAvailable()) {
-    window.sessionStorage.setItem(
-      BTC_DIALOGUE_SESSION_KEY,
-      JSON.stringify(compacted),
-    );
+    window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, JSON.stringify(compacted));
   }
   return compacted;
 }
@@ -258,9 +275,7 @@ export function upsertBtcDialogueTurn(
 }
 
 export function clearBtcDialogueSession(): void {
-  if (storageAvailable()) {
-    window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
-  }
+  if (storageAvailable()) window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
 }
 
 export function latestContextTurn(
@@ -268,9 +283,7 @@ export function latestContextTurn(
 ): BtcDialogueTurn | null {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
     const turn = turns[index];
-    if (!(["FAILURE", "CLARIFICATION"] as string[]).includes(turn.answer_state)) {
-      return turn;
-    }
+    if (!(["FAILURE", "CLARIFICATION"] as string[]).includes(turn.answer_state)) return turn;
   }
   return null;
 }
@@ -284,23 +297,46 @@ function hashText(value: string): string {
   return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
-export function makeBtcDialogueTurnId(parts: {
+type LegacyTurnIdInput = {
+  userText: string;
+  effectiveQuestion: string;
+  observationDate: string | null;
+  snapshotTimestamp: string | null;
+  answerState: BtcDialogueAnswerState;
+  headline: string | null;
+};
+
+type RouteTurnIdInput = {
   userText: string;
   route: BtcCosmographerRoute;
   answer: BtcCosmographerAnswerProjection;
   snapshotTimestamp: string | null;
-}): string {
-  return `btc-cosmographer-turn-${hashText([
-    parts.userText,
-    parts.route.domain,
-    parts.route.subject,
-    parts.route.intents.join(","),
-    parts.route.context_relation,
-    parts.route.time_range?.start ?? "",
-    parts.route.time_range?.end ?? "",
-    parts.answer.answer_state,
-    parts.answer.answer_mode,
-    parts.answer.headline,
-    parts.snapshotTimestamp ?? "",
-  ].join("\u241f"))}`;
+};
+
+export function makeBtcDialogueTurnId(
+  parts: LegacyTurnIdInput | RouteTurnIdInput,
+): string {
+  const fields = "route" in parts
+    ? [
+        parts.userText,
+        parts.route.domain,
+        parts.route.subject,
+        parts.route.intents.join(","),
+        parts.route.context_relation,
+        parts.route.time_range?.start ?? "",
+        parts.route.time_range?.end ?? "",
+        parts.answer.answer_state,
+        parts.answer.answer_mode,
+        parts.answer.headline,
+        parts.snapshotTimestamp ?? "",
+      ]
+    : [
+        parts.userText,
+        parts.effectiveQuestion,
+        parts.observationDate ?? "",
+        parts.snapshotTimestamp ?? "",
+        parts.answerState,
+        parts.headline ?? "",
+      ];
+  return `btc-cosmographer-turn-${hashText(fields.join("\u241f"))}`;
 }
