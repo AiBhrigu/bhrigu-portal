@@ -162,7 +162,9 @@ const STALE_REFERENT = /\bthen\b|since then|back then|тогда|с тех по�
 export function isBtcContextualFollowUp(question: string): boolean {
   const normalized = question.trim();
   if (!normalized) return false;
-  if (/accepted\s+snapshot\s+memory|принят\w*\s+(?:snapshot\s+memory|памят\w*)/i.test(normalized)) return false;
+  const hasReferent = /\b(?:it|this|that)\b|(?:это|этот|эта|прошл\w+\s+ответ)/i.test(normalized);
+  const hasExplicitSubject = /btc\s+(?:dominance|gravity|leadership|field)|altcoin\s+(?:breadth|rotation|participation)|eth\s+rotation|stablecoin|defi\s+tvl|dex|market\s+field\s+score|market\s+cap|accepted\s+snapshot\s+memory|selected\s+date|доминир\w*\s+btc|гравитац\w*\s+btc|лидерств\w*\s+btc|ширин\w*\s+альткоин|ротац\w*\s+(?:альткоин|eth)|ликвидн|стейблкоин|капитализац|принят\w*\s+(?:snapshot\s+memory|памят\w*)|выбранн\w*\s+дат/i.test(normalized);
+  if (hasExplicitSubject && !hasReferent && !EXPAND.test(normalized)) return false;
   if (normalized.length <= 96 && (
     EXPLAIN.test(normalized) ||
     PRIORITY.test(normalized) ||
@@ -173,7 +175,7 @@ export function isBtcContextualFollowUp(question: string): boolean {
     EXPAND.test(normalized) ||
     AMBIGUOUS_ONLY.test(normalized)
   )) return true;
-  return /\b(?:it|this|that)\b|(?:это|этот|эта|прошл\w+\s+ответ)/i.test(normalized);
+  return hasReferent;
 }
 
 function explicitClass(question: string): BtcEnvelopeQuestionClass | null {
