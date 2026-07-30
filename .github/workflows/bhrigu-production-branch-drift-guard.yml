@@ -64,10 +64,7 @@ jobs:
               "permanent": True,
           }
           redirects = config.get("redirects")
-          exact_matches = [
-              rule for rule in redirects or []
-              if rule == expected_rule
-          ]
+          exact_matches = [rule for rule in redirects or [] if rule == expected_rule]
           conflicting_rules = []
           for rule in redirects or []:
               hosts = {
@@ -299,9 +296,9 @@ jobs:
                           "followed_path_preserved": followed_parsed.path == path,
                           "followed_query_preserved": query_pairs(secondary_followed["url"]) == query_pairs(secondary_url),
                       }
-                      if path != "/":
-                          canonical_html = canonical["body"]
-                          followed_html = secondary_followed["body"]
+                      canonical_html = canonical["body"]
+                      followed_html = secondary_followed["body"]
+                      if path == "/crypto-astro/btc":
                           checks.update({
                               "canonical_main_source_attribute": f'data-deployment-source-sha="{expected}"' in canonical_html,
                               "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
@@ -309,6 +306,14 @@ jobs:
                               "followed_main_source_attribute": f'data-deployment-source-sha="{expected}"' in followed_html,
                               "followed_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in followed_html,
                               "followed_visible_source_prefix": expected[:12] in followed_html,
+                          })
+                      elif path == "/crypto-astro/btc/live":
+                          live_marker = 'name="btc-live-dialogue" content="free-question-v0-2-session-local"'
+                          checks.update({
+                              "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
+                              "canonical_live_dialogue_marker": live_marker in canonical_html,
+                              "followed_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in followed_html,
+                              "followed_live_dialogue_marker": live_marker in followed_html,
                           })
 
                   route_failures = [name for name, passed in checks.items() if not passed]
