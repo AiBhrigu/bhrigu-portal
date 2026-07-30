@@ -78,12 +78,31 @@ def submitted_question_visible(driver_instance, question, previous_turns):
     )
 
 
+def button_center_is_clear(driver_instance, button):
+    return bool(driver_instance.execute_script(
+        "const e=arguments[0];"
+        "const r=e.getBoundingClientRect();"
+        "if(!r.width||!r.height)return false;"
+        "const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);"
+        "return !!hit&&(hit===e||e.contains(hit));",
+        button,
+    ))
+
+
 def submit_question(question):
     previous_turns = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange"))
     textarea = wait("textarea[name='q']")
     textarea.clear()
     textarea.send_keys(question)
-    driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']").click()
+    button = driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']")
+    driver.execute_script(
+        "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
+        button,
+    )
+    WebDriverWait(driver, 20).until(
+        lambda d: button.is_displayed() and button.is_enabled() and button_center_is_clear(d, button)
+    )
+    button.click()
     wait(".liveDialogueShell")
     WebDriverWait(driver, 60).until(
         lambda d: submitted_question_visible(d, question, previous_turns)
