@@ -1,5 +1,6 @@
 name: Temporary BTC deep schema contract patch
 
+# Synchronization trigger for registered workflow path.
 on:
   pull_request:
     branches: [master]
