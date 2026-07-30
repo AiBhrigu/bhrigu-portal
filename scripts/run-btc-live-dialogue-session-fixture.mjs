@@ -14,6 +14,7 @@ const page = read("pages/crypto-astro/btc/live.tsx");
 const dialogue = read("components/btc/BtcLiveDialogue.tsx");
 const session = read("lib/btc-live-dialogue-session.ts");
 const followUp = read("lib/btc-live-dialogue-follow-up.ts");
+const executive = read("lib/btc-executive-question-language.ts");
 const style = read("lib/btc-live-dialogue-style.ts");
 const verifier = read("scripts/verify-btc-live-dialogue-surface.py");
 const workflow = read(".github/workflows/btc-free-question-live-dialogue-pr.yml");
@@ -28,6 +29,12 @@ check("context_packet_has_no_transcript", !followUp.includes("prior_raw_question
 check("seven_context_relations_present", ["EXPLAIN_PRIOR", "PRIORITY_WITHIN_PRIOR", "CONFIRM_WITH_MODULE", "COMPARE_MEMORY", "CHANGE_CONDITION", "EXPAND_RELATED_CLASS", "EXPLAIN_CONTRADICTION"].every((value) => followUp.includes(`\"${value}\"`)));
 check("clarification_fail_closed_present", ["NO_PRIOR_CONTEXT", "AMBIGUOUS_REFERENT", "UNSUPPORTED_CONTEXT", "CONTEXT_STALE"].every((value) => followUp.includes(`\"${value}\"`)) && followUp.includes("CLARIFICATION_REQUIRED"));
 check("unsafe_financial_requests_bounded", followUp.includes("price target") && followUp.includes("wallet") && followUp.includes("прогноз"));
+check("valid_packet_is_authoritative", page.includes("parsedContext.present || isBtcContextualFollowUp(initialQuestion)"));
+check("resolved_facets_forwarded", page.includes("resolvedQuestionFacets = followUp.resolved_facets") && dialogue.includes("resolved_facets: resolvedQuestionFacets"));
+check("prior_split_forwarded", page.includes("priorAnswerState: packet?.prior_answer_state") && dialogue.includes("prior_answer_state: priorAnswerState"));
+check("natural_priority_phrasing_supported", followUp.includes("какие (?:показатели|метрики|сигналы)") && followUp.includes("Which accepted indicators matter now"));
+check("deep_memory_ranking_present", executive.includes("rankedMemoryMetrics") && executive.includes("MEMORY_PRIORITY") && executive.includes("METRIC_REASON"));
+check("deep_context_source_boundary_truthful", executive.includes("компактный контекст") && executive.includes("full transcript is not sent"));
 check("server_resolves_before_routing", page.includes("resolveBtcFollowUp") && page.indexOf("resolveBtcFollowUp") < page.indexOf("canonicalizeBtcQuestionForRouter(effectiveQuestion)"));
 check("raw_and_effective_questions_separated", page.includes("initialQuestion") && page.includes("effectiveQuestion") && dialogue.includes("effective_question"));
 check("source_reloaded_each_request", page.includes("loadBtcStaticSource") && page.includes("composeBtcPublicSnapshot") && page.includes("loadBtcMarketEnvelope"));
@@ -42,26 +49,25 @@ check("source_change_disclosed", dialogue.includes("data-source-binding-changed"
 check("semantic_phi_geometry_preserved", style.includes("61.803398875") && style.includes("38.196601125"));
 check("composer_does_not_overlay_thread", !style.includes("position:sticky") && !style.includes("position:fixed"));
 check("visual_session_states_required", ["1-turn", "3-turn", "8-turn", "clarification", "source-unavailable"].every((value) => verifier.toLowerCase().includes(value)));
-check("workflow_exact_eight_file_scope", [
+check("workflow_deep_six_file_scope", [
   ".github/workflows/btc-free-question-live-dialogue-pr.yml",
   "components/btc/BtcLiveDialogue.tsx",
+  "lib/btc-executive-question-language.ts",
   "lib/btc-live-dialogue-follow-up.ts",
-  "lib/btc-live-dialogue-session.ts",
-  "lib/btc-live-dialogue-style.ts",
   "pages/crypto-astro/btc/live.tsx",
   "scripts/run-btc-live-dialogue-session-fixture.mjs",
-  "scripts/verify-btc-live-dialogue-surface.py",
 ].every((file) => workflow.includes(file)));
 check("no_analytics_provider_or_server_storage", !dialogue.includes("analytics") && !page.includes("pages/api") && !session.includes("fetch(") && !session.includes("Blob"));
 
 const failed = checks.filter((item) => !item.passed);
 const contract = {
-  schema: "btc_free_dialogue_session_contract_v0_1",
+  schema: "btc_free_dialogue_session_contract_v0_2",
   status: failed.length ? "FAIL" : "PASS",
   runtime_head_sha: process.env.BTC_LIVE_RUNTIME_HEAD_SHA ?? "LOCAL",
   required_two_turn_chains: 12,
   required_three_turn_chains: 6,
   required_clarification_gates: 8,
+  required_natural_context_cases: 2,
   storage: "sessionStorage",
   server_transcript: false,
   checks,
@@ -101,15 +107,16 @@ function contextPacket(pageText) {
   return packet;
 }
 
-async function getPage(baseUrl, locale, question, packet = null) {
+async function getPage(baseUrl, locale, question, packet = null, date = null) {
   const params = new URLSearchParams({ lang: locale, q: question });
+  if (date) params.set("d", date);
   if (packet) for (const [key, value] of Object.entries(packet)) params.set(key, value);
   const response = await fetch(`${baseUrl}/crypto-astro/btc/live?${params}`, { headers: { "Cache-Control": "no-cache" } });
   if (!response.ok) throw new Error(`HTTP ${response.status} for ${question}`);
   return response.text();
 }
 
-function evidenceText(pageText) {
+function evidenceLines(pageText) {
   const start = pageText.indexOf('data-answer-section="evidence"');
   if (start < 0) throw new Error("missing evidence marker");
   const limit = pageText.indexOf('data-answer-section="limit"', start);
@@ -118,10 +125,11 @@ function evidenceText(pageText) {
     .map((match) => decodeHtml(match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()))
     .filter(Boolean);
   if (!items.length) throw new Error("missing evidence lines");
-  return items.join(" | ");
+  return items;
 }
 
 function answerProjection(pageText) {
+  const evidence = evidenceLines(pageText);
   return {
     question_class: attribute(pageText, "data-question-class"),
     facets: attribute(pageText, "data-question-facets").split(",").filter(Boolean),
@@ -129,7 +137,11 @@ function answerProjection(pageText) {
     relation: attribute(pageText, "data-context-relation"),
     headline: textBetween(pageText, /<header class="answerHeader">[\s\S]*?<h2>([\s\S]*?)<\/h2>/),
     direct: textBetween(pageText, /<p class="answerLead" data-answer-direct="true">([\s\S]*?)<\/p>/),
-    evidence: evidenceText(pageText),
+    evidence_lines: evidence,
+    evidence: evidence.join(" | "),
+    limit: textBetween(pageText, /<p data-answer-section="limit">([\s\S]*?)<\/p>/),
+    change: textBetween(pageText, /<p data-answer-section="change">([\s\S]*?)<\/p>/),
+    source: textBetween(pageText, /<footer[^>]*data-answer-source-boundary="true"[^>]*>([\s\S]*?)<\/footer>/),
   };
 }
 
@@ -185,7 +197,7 @@ async function runRuntimeAcceptance(baseUrl) {
   if (JSON.stringify(repeatA) !== JSON.stringify(repeatB)) throw new Error("exact repeat determinism failed");
 
   const semanticReport = {
-    schema: "btc_question_specific_semantic_gate_v0_1",
+    schema: "btc_question_specific_semantic_gate_v0_2",
     status: "PASS",
     question_count: 24,
     class_accuracy: "24/24",
@@ -257,6 +269,21 @@ async function runRuntimeAcceptance(baseUrl) {
     threeRows.push({ locale, questions: [firstQuestions[key], secondQuestion, thirdQuestion], ...value });
   }
 
+  const memoryPageRu = await getPage(baseUrl, "ru", firstQuestions.memory_ru);
+  const memoryPacketRu = { ...contextPacket(memoryPageRu), pf: "change,reason,watch", ps: "SPLIT", pd: "2026-07-30" };
+  const deepRu = answerProjection(await getPage(baseUrl, "ru", "Какие показатели сейчас важны", memoryPacketRu, "2026-07-30"));
+  if (deepRu.question_class !== "change_memory" || deepRu.relation !== "PRIORITY_WITHIN_PRIOR" || deepRu.answer_state !== "SPLIT") throw new Error("exact RU deep context route failed");
+  if (!deepRu.facets.includes("reason") || deepRu.evidence_lines.length !== 3) throw new Error("exact RU deep facets/evidence failed");
+  if (!deepRu.direct.includes("приоритет") || !deepRu.direct.includes("SPLIT") || !deepRu.limit.includes("SPLIT")) throw new Error("exact RU prior split not preserved");
+  if (!deepRu.evidence_lines.every((line) => /важен|важно|важна/.test(line)) || !deepRu.change.includes("следующий принятый Snapshot") || !deepRu.source.includes("компактный контекст")) throw new Error("exact RU deep synthesis failed");
+
+  const memoryPageEn = await getPage(baseUrl, "en", firstQuestions.memory_en);
+  const memoryPacketEn = { ...contextPacket(memoryPageEn), pf: "change,reason,watch", ps: "SPLIT", pd: "2026-07-30" };
+  const deepEn = answerProjection(await getPage(baseUrl, "en", "Which indicators matter now?", memoryPacketEn, "2026-07-30"));
+  if (deepEn.question_class !== "change_memory" || deepEn.relation !== "PRIORITY_WITHIN_PRIOR" || deepEn.answer_state !== "SPLIT") throw new Error("EN natural deep context route failed");
+  if (!deepEn.direct.includes("priorities") || !deepEn.direct.includes("SPLIT") || !deepEn.limit.includes("SPLIT")) throw new Error("EN prior split not preserved");
+  if (!deepEn.evidence_lines.every((line) => line.includes("it matters because")) || !deepEn.change.includes("next accepted Snapshot") || !deepEn.source.includes("compact prior context")) throw new Error("EN deep synthesis failed");
+
   const basePacket = contextPacket(await getPage(baseUrl, "en", firstQuestions.gravity_en));
   const clarifications = [
     ["en", "Why?", null],
@@ -276,17 +303,20 @@ async function runRuntimeAcceptance(baseUrl) {
   }
 
   const followReport = {
-    schema: "btc_session_follow_up_acceptance_v0_1",
+    schema: "btc_session_follow_up_acceptance_v0_2",
     status: "PASS",
     two_turn_count: twoRows.length,
     three_turn_count: threeRows.length,
     clarification_count: clarificationRows.length,
+    natural_context_count: 2,
     two_turn: twoRows,
     three_turn: threeRows,
+    natural_context: [deepRu, deepEn],
     clarifications: clarificationRows,
   };
-  if (followReport.two_turn_count !== 12 || followReport.three_turn_count !== 6 || followReport.clarification_count !== 8) throw new Error("follow-up corpus count failed");
+  if (followReport.two_turn_count !== 12 || followReport.three_turn_count !== 6 || followReport.clarification_count !== 8 || followReport.natural_context_count !== 2) throw new Error("follow-up corpus count failed");
   fs.writeFileSync(path.join(root, "artifacts/btc-session-follow-up-gate.json"), JSON.stringify(followReport, null, 2) + "\n");
   console.log("BTC_24_QUESTION_SEMANTIC_GATE=PASS");
+  console.log("BTC_DEEP_NATURAL_CONTEXT_GATE=PASS");
   console.log("BTC_SESSION_FOLLOW_UP_GATE=PASS");
 }
