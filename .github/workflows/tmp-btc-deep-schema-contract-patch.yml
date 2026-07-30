@@ -19,7 +19,7 @@ jobs:
           ref: repair/btc-dialogue-context-authority-deep-synthesis-v0-1
           fetch-depth: 0
 
-      - name: Apply deterministic contract patch
+      - name: Apply deterministic non-workflow contract patch
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -37,16 +37,6 @@ jobs:
               '"btc_executive_question_language_v0_2"',
           )
           replace_once(
-              '.github/workflows/btc-free-question-live-dialogue-pr.yml',
-              '      - "scripts/verify-btc-live-dialogue-surface.py"\n',
-              '      - "scripts/verify-btc-live-dialogue-surface.py"\n      - "tests/btc-bilingual-glyph-fixture.ts"\n',
-          )
-          replace_once(
-              '.github/workflows/btc-free-question-live-dialogue-pr.yml',
-              '          scripts/run-btc-live-dialogue-session-fixture.mjs\n          SCOPE\n',
-              '          scripts/run-btc-live-dialogue-session-fixture.mjs\n          tests/btc-bilingual-glyph-fixture.ts\n          SCOPE\n',
-          )
-          replace_once(
               'scripts/run-btc-live-dialogue-session-fixture.mjs',
               'workflow_deep_six_file_scope',
               'workflow_deep_seven_file_scope',
@@ -58,10 +48,9 @@ jobs:
           )
           PY
 
-          git rm .github/workflows/tmp-btc-deep-schema-contract-patch.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/workflows/btc-free-question-live-dialogue-pr.yml scripts/run-btc-live-dialogue-session-fixture.mjs tests/btc-bilingual-glyph-fixture.ts
+          git add scripts/run-btc-live-dialogue-session-fixture.mjs tests/btc-bilingual-glyph-fixture.ts
           git diff --cached --check
           git commit -m "BTC dialogue: bind deep synthesis v0.2 contract"
           git push origin HEAD:repair/btc-dialogue-context-authority-deep-synthesis-v0-1
