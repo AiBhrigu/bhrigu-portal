@@ -1,25 +1,38 @@
 import base64
 import json
 import os
-import time
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 base = os.environ.get("BTC_LIVE_PREVIEW_BASE", "http://127.0.0.1:3110")
+SESSION_KEY = "bhrigu:btc-free-dialogue:session:v0_1"
 options = webdriver.ChromeOptions()
 for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
     options.add_argument(argument)
 options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
 driver = webdriver.Chrome(options=options)
-report = {"checks": {}, "measurements": {}, "semantic_samples": [], "failures": [], "browser_severe": []}
+report = {
+    "checks": {},
+    "measurements": {},
+    "semantic_samples": [],
+    "session_states": ["1-turn", "3-turn", "8-turn", "clarification", "source-changed", "source-unavailable"],
+    "failures": [],
+    "browser_severe": [],
+}
 
 
 def wait(selector, timeout=45):
     return WebDriverWait(driver, timeout).until(lambda d: d.find_element(By.CSS_SELECTOR, selector))
+
+
+def wait_turns(expected, timeout=45):
+    return WebDriverWait(driver, timeout).until(
+        lambda d: len(d.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == expected
+    )
 
 
 def rect(selector):
@@ -46,6 +59,21 @@ def full_page_screenshot(path):
         },
     )
     Path(path).write_bytes(base64.b64decode(payload["data"]))
+
+
+def clear_session():
+    driver.execute_script("sessionStorage.removeItem(arguments[0])", SESSION_KEY)
+
+
+def submit_question(question):
+    textarea = wait("textarea[name='q']")
+    textarea.clear()
+    textarea.send_keys(question)
+    driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']").click()
+    wait(".liveDialogueShell")
+    WebDriverWait(driver, 60).until(
+        lambda d: question in d.current_url or quote(question) in d.current_url
+    )
 
 
 def sample_answer(locale, question, slug, width, height):
@@ -78,8 +106,56 @@ def sample_answer(locale, question, slug, width, height):
     return item
 
 
+def make_turn(index, locale="en", state="CONFIRMED", question_class="btc_gravity", source_changed=False):
+    return {
+        "turn_id": f"fixture-turn-{locale}-{index}",
+        "created_at_utc": f"2026-07-{20 + min(index, 9):02d}T00:00:00Z",
+        "locale": locale,
+        "user_text": ("Вопрос " if locale == "ru" else "Question ") + str(index),
+        "effective_question": ("Доминирование BTC. Почему это важно?" if locale == "ru" else "BTC dominance. Why does it matter?"),
+        "observation_date": "2026-07-30",
+        "question_class": question_class,
+        "question_facets": ["reason"],
+        "answer_state": state,
+        "headline": ("Лидерство BTC подтверждается" if locale == "ru" else "BTC leadership is supported"),
+        "direct_answer": ("Проверенный локальный ход " if locale == "ru" else "Verified local turn ") + str(index),
+        "evidence_lines": ["BTC dominance: 61%.", "Alt breadth 24h / 7d: 32% / 38%.", "ETH rotation anchor: 18%."],
+        "contradiction_or_limit": "The accepted evidence remains bounded.",
+        "what_would_change_the_read": "A later accepted snapshot with opposing breadth would change the read.",
+        "source_boundary": "Research context only. No forecast, trading signal or price target.",
+        "source_snapshot_generated_at_utc": "2026-07-30T00:00:00Z",
+        "proof_available": True,
+        "context_relation": "EXPLAIN_PRIOR",
+        "source_binding_changed": source_changed,
+    }
+
+
+def set_session(turns, compacted=False):
+    payload = {
+        "schema": "btc_free_dialogue_session_v0_1",
+        "session_id": "fixture-session",
+        "locale": turns[-1]["locale"] if turns else "en",
+        "created_at_utc": "2026-07-30T00:00:00Z",
+        "updated_at_utc": "2026-07-30T00:00:00Z",
+        "turn_count": len(turns),
+        "compacted": compacted,
+        "source_binding": {
+            "deployment_sha": None,
+            "snapshot_generated_at_utc": turns[-1]["source_snapshot_generated_at_utc"] if turns else None,
+            "observation_date": "2026-07-30" if turns else None,
+        },
+        "turns": turns,
+    }
+    driver.execute_script(
+        "sessionStorage.setItem(arguments[0],arguments[1])",
+        SESSION_KEY,
+        json.dumps(payload, ensure_ascii=False),
+    )
+
+
 try:
     Path("artifacts").mkdir(exist_ok=True)
+
     driver.set_window_size(1440, 1100)
     driver.get(f"{base}/crypto-astro/btc?lang=en")
     hero_cta = wait(".heroDialogueCta")
@@ -93,7 +169,7 @@ try:
     report["checks"]["landing_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
     report["checks"]["five_static_routes_preserved"] = len(driver.find_elements(By.CSS_SELECTOR, ".exampleRouteList a")) == 5
     report["checks"]["landing_no_overflow"] = no_overflow()
-    driver.save_screenshot("artifacts/btc-clean-dialogue-landing-desktop-en.png")
+    driver.save_screenshot("artifacts/btc-session-dialogue-landing-desktop-en.png")
 
     driver.set_window_size(390, 844)
     driver.get(f"{base}/crypto-astro/btc?lang=en")
@@ -114,15 +190,7 @@ try:
     report["checks"]["mobile_static_routes_do_not_overlap"] = all(route_rects[index]["bottom"] <= route_rects[index + 1]["top"] + 1 for index in range(len(route_rects) - 1))
     report["checks"]["mobile_static_has_no_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, "main textarea[name='q']")) == 0
     report["checks"]["mobile_static_no_overflow"] = no_overflow()
-    driver.save_screenshot("artifacts/btc-clean-dialogue-landing-mobile-first-screen-en.png")
-    full_page_screenshot("artifacts/btc-clean-dialogue-landing-mobile-full-en.png")
-
-    driver.get(f"{base}/crypto-astro/btc/live?lang=en")
-    wait(".liveDialogueShell")
-    report["checks"]["empty_live_has_one_composer"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveDialogueShell textarea[name='q']")) == 1
-    report["checks"]["empty_live_has_no_analytics_cards"] = sum(len(driver.find_elements(By.CSS_SELECTOR, selector)) for selector in (".liveEvidenceRail", ".liveMetricField", ".answerDecisionGrid", ".liveFullField")) == 0
-    report["checks"]["empty_live_no_overflow"] = no_overflow()
-    driver.save_screenshot("artifacts/btc-clean-dialogue-empty-desktop-en.png")
+    driver.save_screenshot("artifacts/btc-session-dialogue-landing-mobile-first-screen-en.png")
 
     samples = [
         ("en", "Do stablecoin share, DeFi TVL and DEX volume confirm current BTC liquidity conditions?", "liquidity", 1440, 1100),
@@ -140,33 +208,157 @@ try:
     report["checks"]["all_samples_no_overflow"] = all(item["no_overflow"] for item in observed)
     report["checks"]["generic_mixed_signals_absent"] = all(item["headline"].lower() != "mixed signals" for item in observed)
 
-    driver.set_window_size(1440, 1100)
-    q = quote("What changed in the BTC field, why does it matter, and what should I watch next?")
-    driver.get(f"{base}/crypto-astro/btc/live?lang=en&q={q}")
-    wait(".liveThread")
-    wait(".cosmographerTurn .answerHeader")
-    shell = rect(".liveDialogueShell")
-    answer = rect(".cosmographerTurn .answerHeader")
+    driver.set_window_size(1440, 1200)
+    driver.get(f"{base}/crypto-astro/btc/live?lang=en")
+    wait(".liveDialogueShell")
+    clear_session()
+    driver.refresh()
+    wait(".liveDialogueShell")
+    submit_question("Do BTC dominance and altcoin breadth confirm BTC leadership?")
+    wait_turns(1)
+    wait("input[name='fc']")
+    report["checks"]["one_turn_session_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 1
+    report["checks"]["one_turn_tab_memory_note"] = "Memory only in this tab" in driver.find_element(By.CSS_SELECTOR, "[data-session-memory-note='tab-only']").text
+    driver.save_screenshot("artifacts/btc-session-1-turn-desktop-en.png")
+
+    submit_question("Why?")
+    wait_turns(2)
+    second = driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")[-1]
+    report["checks"]["why_follow_up_resolved"] = second.get_attribute("data-context-relation") == "EXPLAIN_PRIOR"
+    report["checks"]["why_inherits_gravity"] = second.get_attribute("data-question-class") == "btc_gravity"
+
+    submit_question("Does liquidity confirm it?")
+    wait_turns(3)
+    third = driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")[-1]
+    report["checks"]["three_turn_session_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 3
+    report["checks"]["liquidity_follow_up_resolved"] = third.get_attribute("data-context-relation") == "CONFIRM_WITH_MODULE"
+    report["checks"]["liquidity_follow_up_routed"] = third.get_attribute("data-question-class") == "liquidity"
+    report["checks"]["same_tab_route_persistence"] = "Turns: 3" in driver.find_element(By.CSS_SELECTOR, "[data-session-turn-count]").text
+    last_answer = rect(".dialogueExchange:last-child .cosmographerTurn")
     composer = rect(".liveComposer")
-    report["measurements"]["shell_width"] = shell["width"]
-    report["measurements"]["answer_top"] = answer["top"]
-    report["measurements"]["composer_top"] = composer["top"]
-    report["checks"]["live_single_column_measure"] = shell["width"] <= 800
-    report["checks"]["user_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".userTurn")) == 1
-    report["checks"]["cosmographer_turn_present"] = len(driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")) >= 1
-    report["checks"]["answer_before_next_composer"] = answer["top"] < composer["top"]
-    report["checks"]["answer_enters_first_viewport"] = answer["top"] < driver.execute_script("return window.innerHeight")
+    report["checks"]["latest_answer_not_covered"] = last_answer["bottom"] <= composer["top"] + 2
+    report["checks"]["three_turn_no_overflow"] = no_overflow()
+    full_page_screenshot("artifacts/btc-session-3-turn-desktop-en.png")
+
+    handles_before = set(driver.window_handles)
+    driver.execute_script(f"window.open('{base}/crypto-astro/btc/live?lang=en','_blank','noopener')")
+    WebDriverWait(driver, 20).until(lambda d: len(d.window_handles) == len(handles_before) + 1)
+    new_handle = next(handle for handle in driver.window_handles if handle not in handles_before)
+    original_handle = next(iter(handles_before))
+    driver.switch_to.window(new_handle)
+    wait(".liveDialogueShell")
+    report["checks"]["separate_tab_isolated"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 0
+    driver.close()
+    driver.switch_to.window(original_handle)
+
+    driver.set_window_size(390, 844)
+    driver.get(f"{base}/crypto-astro/btc/live?lang=ru")
+    wait(".liveDialogueShell")
+    set_session([make_turn(index, locale="ru") for index in range(1, 9)])
+    driver.refresh()
+    wait_turns(8)
+    report["checks"]["eight_turn_thread_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 8
+    report["checks"]["eight_turn_mobile_no_overflow"] = no_overflow()
+    driver.execute_script("document.querySelector('.liveComposer').scrollIntoView({block:'center'})")
+    composer_mobile = rect(".liveComposer")
+    report["checks"]["eight_turn_composer_reachable"] = composer_mobile["bottom"] > 0 and composer_mobile["top"] < 844
+    full_page_screenshot("artifacts/btc-session-8-turn-mobile-ru.png")
+
+    clear_session()
+    driver.get(f"{base}/crypto-astro/btc/live?lang=en&q={quote('Why?')}")
+    wait(".dialogueStateCLARIFICATION")
+    report["checks"]["no_context_clarification_fail_closed"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueStateCLARIFICATION")) == 1
+    report["checks"]["clarification_has_no_market_class"] = driver.find_element(By.CSS_SELECTOR, ".dialogueStateCLARIFICATION").get_attribute("data-question-class") == ""
+    driver.save_screenshot("artifacts/btc-session-clarification-mobile-en.png")
+
+    clear_session()
+    params = {
+        "lang": "en",
+        "q": "Why?",
+        "fc": "btc_follow_up_context_v0_1",
+        "pc": "btc_gravity",
+        "pf": "confirmation",
+        "ps": "SPLIT",
+        "pd": "2026-07-29",
+        "pt": "2020-01-01T00:00:00Z",
+    }
+    driver.get(f"{base}/crypto-astro/btc/live?{urlencode(params)}")
+    wait("[data-source-changed='true']")
+    report["checks"]["source_changed_disclosed"] = len(driver.find_elements(By.CSS_SELECTOR, "[data-source-changed='true']")) == 1
+    driver.save_screenshot("artifacts/btc-session-source-changed-mobile-en.png")
+
+    driver.get(f"{base}/crypto-astro/btc/live?lang=en")
+    wait(".liveDialogueShell")
+    failed_turn = make_turn(1, state="FAILURE")
+    failed_turn["question_class"] = None
+    failed_turn["question_facets"] = []
+    failed_turn["headline"] = "Source temporarily unavailable"
+    failed_turn["direct_answer"] = "The accepted source could not be verified. Local conversation history remains available."
+    failed_turn["evidence_lines"] = []
+    failed_turn["contradiction_or_limit"] = None
+    failed_turn["what_would_change_the_read"] = None
+    failed_turn["source_boundary"] = None
+    failed_turn["proof_available"] = False
+    set_session([failed_turn])
+    driver.refresh()
+    wait(".dialogueStateFAILURE")
+    report["checks"]["source_unavailable_history_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueStateFAILURE")) == 1
+    driver.save_screenshot("artifacts/btc-session-source-unavailable-mobile-en.png")
+
+    driver.execute_script("sessionStorage.setItem(arguments[0],'{bad')", SESSION_KEY)
+    driver.refresh()
+    wait(".liveComposer")
+    report["checks"]["malformed_storage_recovers"] = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY) is None
+
+    driver.execute_script("sessionStorage.setItem(arguments[0],JSON.stringify({schema:'wrong'}))", SESSION_KEY)
+    driver.refresh()
+    wait(".liveComposer")
+    report["checks"]["schema_mismatch_recovers"] = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY) is None
+
+    long_turns = []
+    for index in range(1, 21):
+        turn = make_turn(index)
+        turn["direct_answer"] = "D" * 2300
+        turn["evidence_lines"] = ["E" * 780, "F" * 780, "G" * 780]
+        turn["contradiction_or_limit"] = "L" * 1700
+        turn["what_would_change_the_read"] = "C" * 1700
+        turn["source_boundary"] = "S" * 1500
+        long_turns.append(turn)
+    set_session(long_turns)
+    driver.refresh()
+    wait(".liveThread")
+    compacted_raw = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY)
+    compacted_value = json.loads(compacted_raw)
+    report["checks"]["session_compaction_under_64kb"] = len(compacted_raw.encode("utf-8")) <= 64 * 1024
+    report["checks"]["session_compaction_retains_latest_six"] = 6 <= len(compacted_value["turns"]) <= 20
+    report["checks"]["session_compaction_flag_visible"] = compacted_value["compacted"] is True and len(driver.find_elements(By.CSS_SELECTOR, ".liveCompactionNotice")) == 1
+
+    button = wait(".liveNewConversation")
+    button.click()
+    WebDriverWait(driver, 10).until(lambda d: d.switch_to.alert)
+    driver.switch_to.alert.accept()
+    WebDriverWait(driver, 30).until(lambda d: "q=" not in d.current_url)
+    wait(".liveComposer")
+    report["checks"]["new_conversation_clears_local_history"] = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY) is None
+    report["checks"]["new_conversation_returns_empty_thread"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 0
+
     report["checks"]["live_has_one_question_input"] = len(driver.find_elements(By.CSS_SELECTOR, ".liveDialogueShell textarea[name='q']")) == 1
     report["checks"]["live_has_no_analytics_cards"] = sum(len(driver.find_elements(By.CSS_SELECTOR, selector)) for selector in (".liveEvidenceRail", ".liveMetricField", ".answerDecisionGrid", ".liveFullField")) == 0
     report["checks"]["live_portal_nav_hidden"] = not driver.find_element(By.CSS_SELECTOR, "nav[aria-label='Portal navigation']").is_displayed()
     report["checks"]["live_no_overflow"] = no_overflow()
 
-    severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "favicon" not in entry.get("message", "").lower()]
+    severe = [
+        entry for entry in driver.get_log("browser")
+        if entry.get("level") == "SEVERE" and "favicon" not in entry.get("message", "").lower()
+    ]
     report["checks"]["browser_severe_none"] = not severe
     report["browser_severe"] = severe
     report["failures"] = [name for name, passed in report["checks"].items() if not passed]
     assert not report["failures"], report["failures"]
 finally:
     Path("artifacts").mkdir(exist_ok=True)
-    Path("artifacts/btc-live-dialogue-visual-report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    Path("artifacts/btc-live-dialogue-visual-report.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     driver.quit()
