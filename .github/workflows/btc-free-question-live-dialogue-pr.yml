@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/btc-free-question-live-dialogue-pr.yml"
       - "components/btc/BtcLiveDialogue.tsx"
+      - "lib/btc-executive-question-language.ts"
       - "lib/btc-live-dialogue-follow-up.ts"
       - "lib/btc-live-dialogue-session.ts"
       - "lib/btc-live-dialogue-style.ts"
@@ -46,6 +47,15 @@ jobs:
             cat > /tmp/expected-scope.txt <<'SCOPE'
           .github/workflows/btc-free-question-live-dialogue-pr.yml
           lib/btc-live-dialogue-style.ts
+          SCOPE
+          elif test "${{ github.head_ref }}" = "repair/btc-dialogue-context-authority-deep-synthesis-v0-1"; then
+            cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-free-question-live-dialogue-pr.yml
+          components/btc/BtcLiveDialogue.tsx
+          lib/btc-executive-question-language.ts
+          lib/btc-live-dialogue-follow-up.ts
+          pages/crypto-astro/btc/live.tsx
+          scripts/run-btc-live-dialogue-session-fixture.mjs
           SCOPE
           else
             cat > /tmp/expected-scope.txt <<'SCOPE'
@@ -136,11 +146,18 @@ jobs:
 
           assert contract['status']=='PASS' and contract['runtime_head_sha']==os.environ['BTC_LIVE_RUNTIME_HEAD_SHA'], contract
           assert contract['storage']=='sessionStorage' and contract['server_transcript'] is False
+          assert contract['required_natural_context_cases']==2
           assert semantic['status']=='PASS' and semantic['question_count']==24, semantic
           assert semantic['class_accuracy']=='24/24' and semantic['facet_accuracy']=='24/24', semantic
           assert semantic['exact_repeat_determinism'] is True
           assert semantic['cross_class_exact_answer_duplicates']==0 and semantic['generic_mixed_signals_count']==0
           assert follow['status']=='PASS' and follow['two_turn_count']==12 and follow['three_turn_count']==6 and follow['clarification_count']==8
+          assert follow['natural_context_count']==2
+          ru_deep, en_deep=follow['natural_context']
+          assert ru_deep['question_class']=='change_memory' and ru_deep['relation']=='PRIORITY_WITHIN_PRIOR' and ru_deep['answer_state']=='SPLIT'
+          assert en_deep['question_class']=='change_memory' and en_deep['relation']=='PRIORITY_WITHIN_PRIOR' and en_deep['answer_state']=='SPLIT'
+          assert len(ru_deep['evidence_lines'])==3 and len(en_deep['evidence_lines'])==3
+          assert 'компактный контекст' in ru_deep['source'] and 'compact prior context' in en_deep['source']
           assert not visual['failures'], visual
           required=(
             'landing_single_dialogue_cta','landing_has_no_question_input','landing_portal_nav_hidden','five_static_routes_preserved',
@@ -160,7 +177,7 @@ jobs:
           )
           for name in required:
             assert visual['checks'][name] is True,(name,visual)
-          print('BTC_SESSION_LOCAL_DIALOGUE_ACCEPTANCE=PASS')
+          print('BTC_DIALOGUE_CONTEXT_AUTHORITY_AND_DEEP_SYNTHESIS_ACCEPTANCE=PASS')
           PY
 
       - name: Upload session, semantic and visual evidence
