@@ -1,5 +1,5 @@
 export const BTC_LIVE_DIALOGUE_CSS = String.raw`
-body:has(.liveDialoguePage) nav[aria-label="Portal navigation"]{display:none}
+body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePage~nav[aria-label="Portal navigation"]{display:none}
 .liveDialoguePage{--phi-major:61.803398875%;--phi-minor:38.196601125%;width:min(1180px,100%);padding:0 clamp(16px,3vw,42px) 96px}
 .liveDialogueTopbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;min-height:58px;margin-top:18px;border-bottom:1px solid var(--bl);color:var(--t2);font-size:11px;letter-spacing:.1em;text-transform:uppercase}
 .liveBackLink,.liveLocaleLink{text-decoration:none}.liveBackLink:hover,.liveLocaleLink:hover{color:var(--t)}
@@ -34,7 +34,7 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"]{display:none}
 .dialogueStateBOUNDED .turnBody{border-color:rgba(210,164,95,.32)}
 .liveComposer{display:grid;gap:12px;padding:18px;border:1px solid rgba(106,168,255,.28);border-radius:18px;background:linear-gradient(145deg,rgba(9,20,35,.94),rgba(5,10,18,.96))}
 .liveComposer label{display:grid;gap:8px}.liveComposer textarea{min-height:86px;resize:vertical;background:rgba(2,7,14,.66)}
-.liveComposerControls{display:grid;grid-template-columns:minmax(180px,var(--phi-minor)) minmax(220px,var(--phi-major));gap:12px;align-items:end}
+.liveComposerControls{display:grid;grid-template-columns:minmax(180px,.61803398875fr) minmax(220px,1fr);gap:12px;align-items:end}
 .liveComposer button{width:100%;min-height:48px;border-color:rgba(106,168,255,.72);background:linear-gradient(110deg,rgba(106,168,255,.3),rgba(143,124,244,.17))}
 .liveComposerAfterAnswer{margin-top:12px;box-shadow:0 14px 40px rgba(0,0,0,.18)}
 .liveBoundary{margin:12px 0 0;color:var(--m);font-size:10px;letter-spacing:.04em;text-align:center}
