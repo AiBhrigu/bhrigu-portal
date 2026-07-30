@@ -162,6 +162,7 @@ const STALE_REFERENT = /\bthen\b|since then|back then|тогда|с тех по�
 export function isBtcContextualFollowUp(question: string): boolean {
   const normalized = question.trim();
   if (!normalized) return false;
+  if (/accepted\s+snapshot\s+memory|принят\w*\s+(?:snapshot\s+memory|памят\w*)/i.test(normalized)) return false;
   if (normalized.length <= 96 && (
     EXPLAIN.test(normalized) ||
     PRIORITY.test(normalized) ||
@@ -172,7 +173,7 @@ export function isBtcContextualFollowUp(question: string): boolean {
     EXPAND.test(normalized) ||
     AMBIGUOUS_ONLY.test(normalized)
   )) return true;
-  return /\b(?:it|this|that|previous|prior)\b|(?:это|этот|эта|предыдущ|прошл\w+\s+ответ)/i.test(normalized);
+  return /\b(?:it|this|that)\b|(?:это|этот|эта|прошл\w+\s+ответ)/i.test(normalized);
 }
 
 function explicitClass(question: string): BtcEnvelopeQuestionClass | null {
