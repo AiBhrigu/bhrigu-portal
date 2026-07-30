@@ -89,6 +89,16 @@ def button_center_is_clear(driver_instance, button):
     ))
 
 
+def element_intersects_viewport(driver_instance, selector):
+    return bool(driver_instance.execute_script(
+        "const e=document.querySelector(arguments[0]);"
+        "if(!e)return false;"
+        "const r=e.getBoundingClientRect();"
+        "return r.width>0&&r.height>0&&r.bottom>0&&r.top<window.innerHeight&&r.right>0&&r.left<window.innerWidth;",
+        selector,
+    ))
+
+
 def submit_question(question):
     previous_turns = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange"))
     textarea = wait("textarea[name='q']")
@@ -251,7 +261,8 @@ try:
     wait_turns(1)
     wait("input[name='fc']")
     report["checks"]["one_turn_session_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 1
-    report["checks"]["one_turn_tab_memory_note"] = "Memory only in this tab" in driver.find_element(By.CSS_SELECTOR, "[data-session-memory-note='tab-only']").text
+    memory_note_text = driver.find_element(By.CSS_SELECTOR, "[data-session-memory-note='tab-only']").text.casefold()
+    report["checks"]["one_turn_tab_memory_note"] = "memory only in this tab" in memory_note_text
     driver.save_screenshot("artifacts/btc-session-1-turn-desktop-en.png")
 
     submit_question("Why?")
@@ -266,7 +277,8 @@ try:
     report["checks"]["three_turn_session_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 3
     report["checks"]["liquidity_follow_up_resolved"] = third.get_attribute("data-context-relation") == "CONFIRM_WITH_MODULE"
     report["checks"]["liquidity_follow_up_routed"] = third.get_attribute("data-question-class") == "liquidity"
-    report["checks"]["same_tab_route_persistence"] = "Turns: 3" in driver.find_element(By.CSS_SELECTOR, "[data-session-turn-count]").text
+    turn_count_text = driver.find_element(By.CSS_SELECTOR, "[data-session-turn-count]").text.casefold()
+    report["checks"]["same_tab_route_persistence"] = "turns: 3" in turn_count_text
     last_answer = rect(".dialogueExchange:last-child .cosmographerTurn")
     composer = rect(".liveComposer")
     report["checks"]["latest_answer_not_covered"] = last_answer["bottom"] <= composer["top"] + 2
@@ -292,9 +304,11 @@ try:
     wait_turns(8)
     report["checks"]["eight_turn_thread_visible"] = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) == 8
     report["checks"]["eight_turn_mobile_no_overflow"] = no_overflow()
-    driver.execute_script("document.querySelector('.liveComposer').scrollIntoView({block:'center'})")
+    driver.execute_script("document.querySelector('.liveComposer').scrollIntoView({block:'center',inline:'nearest'})")
+    WebDriverWait(driver, 20).until(lambda d: element_intersects_viewport(d, ".liveComposer"))
     composer_mobile = rect(".liveComposer")
-    report["checks"]["eight_turn_composer_reachable"] = composer_mobile["bottom"] > 0 and composer_mobile["top"] < 844
+    mobile_viewport_height = driver.execute_script("return window.innerHeight")
+    report["checks"]["eight_turn_composer_reachable"] = composer_mobile["bottom"] > 0 and composer_mobile["top"] < mobile_viewport_height
     full_page_screenshot("artifacts/btc-session-8-turn-mobile-ru.png")
 
     clear_session()
