@@ -84,10 +84,11 @@ Closure requires:
 3. redirect targets use `www.bhrigu.io`;
 4. path and query are preserved exactly;
 5. following the secondary redirect reaches the canonical route;
-6. both BTC routes expose the accepted `master` SHA through:
+6. the static BTC route exposes the accepted `master` SHA through:
    - `<meta name="btc-deployment-source-sha" content="<40-char SHA>">`;
    - `<main data-deployment-source-sha="<40-char SHA>">`;
-   - the quiet visible 12-character SHA prefix.
+   - the quiet visible 12-character SHA prefix;
+7. the live BTC route exposes the accepted `master` SHA through its deployment-source `<meta>` and preserves the `btc-live-dialogue` route marker.
 
 ## Fail-closed states
 
