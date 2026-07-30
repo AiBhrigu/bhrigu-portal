@@ -276,7 +276,7 @@ function bodySubject(question: string): string | null {
 
 function protocolSubject(question: string): string | null {
   if (/halving|халвинг|сокращени[ея]\s+награ|уполовинив/i.test(question)) return "halving";
-  if (/сколько.*(?:btc|биткоин|монет)|количеств.*(?:btc|биткоин|монет)|total\s+(?:btc|bitcoin)|max(?:imum)?\s+supply|circulating\s+supply|эмисси|предложени[ея]\s+btc|21\s*(?:m|million|млн)/i.test(question)) return "supply";
+  if (/сколько.*(?:btc|биткоин|монет)|количеств.*(?:btc|биткоин|монет)|how\s+many\s+(?:btc|bitcoin)(?:\s+coins?)?(?:\s+can\s+(?:exist|there\s+be))?|total\s+(?:btc|bitcoin)|max(?:imum)?\s+supply|circulating\s+supply|эмисси|предложени[ея]\s+btc|21\s*(?:m|million|млн)/i.test(question)) return "supply";
   if (/subsid|block reward|награда\s+за\s+блок|субсиди/i.test(question)) return "subsidy";
   if (/transaction fee|fees?\b|комисси/i.test(question)) return "fees";
   if (/difficulty|сложност/i.test(question)) return "difficulty";
@@ -475,18 +475,21 @@ export function parseBtcCosmographerContext(
   const timestamp = first(query.cb) || null;
 
   const malformed =
-    schema !== BTC_COSMOGRAPHER_CONTEXT_SCHEMA ||
+    first(query.cc) !== BTC_COSMOGRAPHER_CONTEXT_SCHEMA ||
     !DOMAINS.includes(domain) ||
-    subject.length === 0 ||
+    !subject ||
     subject.length > 80 ||
+    parsedIntents.length === 0 ||
     parsedIntents.some((intent) => !INTENTS.includes(intent)) ||
     !ANSWER_STATES.includes(state) ||
     (market !== null && !MARKET_CLASSES.includes(market)) ||
+    ((start === null) !== (end === null)) ||
     (start !== null && !validDate(start)) ||
     (end !== null && !validDate(end)) ||
-    !validTimestamp(timestamp ?? "");
+    (timestamp !== null && !validTimestamp(timestamp));
 
   if (malformed) return { present: true, malformed: true, packet: null };
+
   return {
     present: true,
     malformed: false,
