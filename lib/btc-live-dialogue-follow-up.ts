@@ -155,7 +155,7 @@ const CHANGE_CONDITION = /what would change (?:this|that|the read|this read)|wha
 const MEMORY_COMPARE = /compare (?:it |this |that )?(?:with|to) (?:the )?previous snapshot|previous checkpoint|what changed since (?:then|the previous)|сравни .*предыдущ|предыдущ(?:им|ей) сним|контрольн[а-яё]+ точк|что изменилось с тех пор/i;
 const CONTRADICTION = /why (?:is|does) (?:that|this|the) contradiction|why does (?:that|this) limit matter|почему .*противореч|почему .*границ.*важ/i;
 const CONFIRM = /does .*confirm (?:it|this|that)|does .*support (?:it|this|that)|подтвержда.*(?:это|вывод)|(?:это|вывод).*подтвержда|поддержива.*(?:это|вывод)|(?:это|вывод).*поддержива/i;
-const EXPAND = /^(?:and|what about|how about|а|что насч[её]т)\b/i;
+const EXPAND = /^(?:(?:and|what about|how about)\b|а(?:\s|$)|что насч[её]т\b)/i;
 const AMBIGUOUS_ONLY = /^(?:it|this|that|them|there|это|этот|эта|они|там)[\s?.!]*$/i;
 const STALE_REFERENT = /\bthen\b|since then|back then|тогда|с тех пор/i;
 
