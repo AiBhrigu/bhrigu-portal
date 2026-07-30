@@ -42,7 +42,13 @@ jobs:
         run: |
           set -euo pipefail
           git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/actual-scope.txt
-          cat > /tmp/expected-scope.txt <<'SCOPE'
+          if test "${{ github.head_ref }}" = "fix/btc-dialogue-responsive-interaction-polish-v0-1"; then
+            cat > /tmp/expected-scope.txt <<'SCOPE'
+          .github/workflows/btc-free-question-live-dialogue-pr.yml
+          lib/btc-live-dialogue-style.ts
+          SCOPE
+          else
+            cat > /tmp/expected-scope.txt <<'SCOPE'
           .github/workflows/btc-free-question-live-dialogue-pr.yml
           components/btc/BtcLiveDialogue.tsx
           lib/btc-live-dialogue-follow-up.ts
@@ -52,6 +58,7 @@ jobs:
           scripts/run-btc-live-dialogue-session-fixture.mjs
           scripts/verify-btc-live-dialogue-surface.py
           SCOPE
+          fi
           sort -o /tmp/expected-scope.txt /tmp/expected-scope.txt
           diff -u /tmp/expected-scope.txt /tmp/actual-scope.txt
 
