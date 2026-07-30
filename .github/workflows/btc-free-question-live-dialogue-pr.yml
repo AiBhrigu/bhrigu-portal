@@ -18,7 +18,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   semantic-route:
@@ -96,8 +95,6 @@ jobs:
           exit 1
 
       - name: Runtime semantic matrix
-        id: runtime
-        continue-on-error: true
         shell: bash
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
@@ -105,25 +102,6 @@ jobs:
           set -o pipefail
           mkdir -p artifacts
           node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
-
-      - name: Report exact runtime failure
-        if: steps.runtime.outcome == 'failure'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          {
-            echo '## Temporary exact-head runtime diagnostic'
-            echo
-            echo '```text'
-            grep -E '^(FAIL|Error|missing)' artifacts/btc-cosmographer-runtime.log | tail -n 40 || true
-            echo '```'
-            echo
-            echo "HEAD=${{ github.event.pull_request.head.sha }}"
-          } > /tmp/btc-cosmographer-runtime-comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/btc-cosmographer-runtime-comment.md
-          exit 1
 
       - name: Setup Python
         uses: actions/setup-python@v5
