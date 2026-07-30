@@ -99,6 +99,17 @@ def element_intersects_viewport(driver_instance, selector):
     ))
 
 
+def answer_composer_gap():
+    return driver.execute_script(
+        "const a=document.querySelector('.dialogueExchange:last-child .cosmographerTurn');"
+        "const c=document.querySelector('.liveComposer');"
+        "if(!a||!c)return null;"
+        "const ar=a.getBoundingClientRect();"
+        "const cr=c.getBoundingClientRect();"
+        "return {answer_bottom:ar.bottom,composer_top:cr.top,gap:cr.top-ar.bottom};"
+    )
+
+
 def submit_question(question):
     previous_turns = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange"))
     textarea = wait("textarea[name='q']")
@@ -279,9 +290,9 @@ try:
     report["checks"]["liquidity_follow_up_routed"] = third.get_attribute("data-question-class") == "liquidity"
     turn_count_text = driver.find_element(By.CSS_SELECTOR, "[data-session-turn-count]").text.casefold()
     report["checks"]["same_tab_route_persistence"] = "turns: 3" in turn_count_text
-    last_answer = rect(".dialogueExchange:last-child .cosmographerTurn")
-    composer = rect(".liveComposer")
-    report["checks"]["latest_answer_not_covered"] = last_answer["bottom"] <= composer["top"] + 2
+    geometry = answer_composer_gap()
+    report["measurements"]["three_turn_answer_composer_gap"] = geometry
+    report["checks"]["latest_answer_not_covered"] = geometry is not None and geometry["gap"] >= -2
     report["checks"]["three_turn_no_overflow"] = no_overflow()
     full_page_screenshot("artifacts/btc-session-3-turn-desktop-en.png")
 
