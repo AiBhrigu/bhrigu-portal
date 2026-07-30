@@ -1,0 +1,257 @@
+name: BHRIGU Apex WWW Binding Recon
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/bhrigu-apex-www-binding-recon.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-binding-recon:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      EXPECTED_MASTER_SHA: 62954649fa37ebe9a146945f6262c56269b10cab
+    steps:
+      - name: Checkout exact recon head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce verification-only one-file scope
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          mapfile -t changed < <(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          printf '%s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 1
+          test "${changed[0]}" = ".github/workflows/bhrigu-apex-www-binding-recon.yml"
+          echo "RECON_SCOPE=PASS"
+
+      - name: Install DNS probe utility
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dnsutils
+
+      - name: Probe DNS, redirects, edge headers and deployment bindings
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          import re
+          import subprocess
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          hosts = ["bhrigu.io", "www.bhrigu.io"]
+          paths = ["/", "/crypto-astro/btc", "/crypto-astro/btc/live"]
+          expected = os.environ["EXPECTED_MASTER_SHA"]
+          nonce = f"{os.environ.get('GITHUB_RUN_ID','local')}-{int(time.time())}"
+
+          def run(args):
+              proc = subprocess.run(args, text=True, capture_output=True, timeout=30)
+              return {
+                  "returncode": proc.returncode,
+                  "stdout": [line.strip() for line in proc.stdout.splitlines() if line.strip()],
+                  "stderr": proc.stderr.strip(),
+              }
+
+          dns = {}
+          for host in hosts:
+              dns[host] = {}
+              for resolver_name, resolver_arg in [
+                  ("system", None),
+                  ("google", "@8.8.8.8"),
+                  ("cloudflare", "@1.1.1.1"),
+              ]:
+                  dns[host][resolver_name] = {}
+                  for rrtype in ["A", "AAAA", "CNAME", "NS"]:
+                      args = ["dig", "+time=4", "+tries=1", "+short", rrtype, host]
+                      if resolver_arg:
+                          args.insert(1, resolver_arg)
+                      dns[host][resolver_name][rrtype] = run(args)
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def request(url, follow):
+              opener = urllib.request.build_opener() if follow else urllib.request.build_opener(NoRedirect)
+              req = urllib.request.Request(url, headers={
+                  "Cache-Control": "no-cache",
+                  "Pragma": "no-cache",
+                  "User-Agent": "ORION-BHRIGU-Apex-WWW-Recon/0.1",
+              })
+              try:
+                  response = opener.open(req, timeout=30)
+                  status = response.status
+                  final_url = response.geturl()
+                  headers = dict(response.headers.items())
+                  body = response.read()
+              except urllib.error.HTTPError as exc:
+                  status = exc.code
+                  final_url = exc.geturl()
+                  headers = dict(exc.headers.items())
+                  body = exc.read()
+              except Exception as exc:
+                  return {"error": f"{type(exc).__name__}: {exc}"}
+
+              text = body.decode("utf-8", errors="replace")
+              title_match = re.search(r"<title[^>]*>(.*?)</title>", text, re.I | re.S)
+              meta_match = re.search(
+                  r'name=["\']btc-deployment-source-sha["\'][^>]*content=["\']([0-9a-f]{40})["\']',
+                  text,
+                  re.I,
+              ) or re.search(
+                  r'content=["\']([0-9a-f]{40})["\'][^>]*name=["\']btc-deployment-source-sha["\']',
+                  text,
+                  re.I,
+              )
+              attr_match = re.search(r'data-deployment-source-sha=["\']([0-9a-f]{40})["\']', text, re.I)
+              selected_headers = {}
+              for key, value in headers.items():
+                  if key.lower() in {
+                      "server", "location", "x-vercel-id", "x-vercel-cache",
+                      "x-matched-path", "cache-control", "age", "content-type",
+                  }:
+                      selected_headers[key.lower()] = value
+              return {
+                  "status": status,
+                  "requested_url": url,
+                  "final_url": final_url,
+                  "headers": selected_headers,
+                  "body_bytes": len(body),
+                  "body_sha256": hashlib.sha256(body).hexdigest(),
+                  "title": re.sub(r"\s+", " ", title_match.group(1)).strip() if title_match else None,
+                  "deployment_meta_sha": meta_match.group(1) if meta_match else None,
+                  "deployment_attr_sha": attr_match.group(1) if attr_match else None,
+                  "expected_sha_visible": expected in text,
+                  "new_product_markers": {
+                      "btc_field": "BTC Field" in text,
+                      "snapshot_memory": "Snapshot Memory" in text,
+                      "live_dialogue": any(token in text for token in ["New conversation", "Новый диалог", "Continue", "Продолжить"]),
+                  },
+              }
+
+          http = {}
+          for host in hosts:
+              http[host] = {}
+              for path in paths:
+                  query = urllib.parse.urlencode({"lang": "en", "__binding_recon": nonce})
+                  url = f"https://{host}{path}?{query}"
+                  http[host][path] = {
+                      "initial": request(url, follow=False),
+                      "followed": request(url, follow=True),
+                  }
+
+          route_results = {}
+          split_routes = []
+          redirect_routes = []
+          identical_routes = []
+          incomplete_routes = []
+          for path in paths:
+              apex_initial = http["bhrigu.io"][path]["initial"]
+              www_initial = http["www.bhrigu.io"][path]["initial"]
+              apex = http["bhrigu.io"][path]["followed"]
+              www = http["www.bhrigu.io"][path]["followed"]
+              if any("error" in item for item in [apex_initial, www_initial, apex, www]):
+                  classification = "INCOMPLETE"
+                  incomplete_routes.append(path)
+              else:
+                  apex_redirect = apex_initial.get("status") in {301, 302, 307, 308}
+                  www_redirect = www_initial.get("status") in {301, 302, 307, 308}
+                  same_body = apex.get("body_sha256") == www.get("body_sha256")
+                  same_final = urllib.parse.urlparse(apex.get("final_url", "")).netloc == urllib.parse.urlparse(www.get("final_url", "")).netloc
+                  if (apex_redirect or www_redirect) and same_body and same_final:
+                      classification = "CANONICAL_REDIRECT_IDENTICAL"
+                      redirect_routes.append(path)
+                  elif not apex_redirect and not www_redirect and same_body:
+                      classification = "DUAL_SERVE_IDENTICAL"
+                      identical_routes.append(path)
+                  elif apex.get("status") == 200 and www.get("status") == 200 and not same_body:
+                      classification = "SPLIT_BRAIN"
+                      split_routes.append(path)
+                  else:
+                      classification = "MISMATCH"
+                      split_routes.append(path)
+              route_results[path] = {
+                  "classification": classification,
+                  "apex_initial_status": apex_initial.get("status"),
+                  "www_initial_status": www_initial.get("status"),
+                  "apex_final_url": apex.get("final_url"),
+                  "www_final_url": www.get("final_url"),
+                  "apex_body_sha256": apex.get("body_sha256"),
+                  "www_body_sha256": www.get("body_sha256"),
+                  "apex_deployment_sha": apex.get("deployment_meta_sha") or apex.get("deployment_attr_sha"),
+                  "www_deployment_sha": www.get("deployment_meta_sha") or www.get("deployment_attr_sha"),
+              }
+
+          if split_routes:
+              overall = "SPLIT_BRAIN"
+          elif incomplete_routes:
+              overall = "INCOMPLETE"
+          elif len(redirect_routes) == len(paths):
+              overall = "CANONICALIZED"
+          elif len(identical_routes) == len(paths):
+              overall = "DUAL_SERVE_IDENTICAL_NO_REDIRECT"
+          else:
+              overall = "MIXED_BINDING"
+
+          report = {
+              "schema_version": "bhrigu_apex_www_public_surface_binding_recon_v0_1",
+              "status": "RECON_COMPLETE",
+              "overall_classification": overall,
+              "expected_master_sha": expected,
+              "github_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "github_sha": os.environ.get("GITHUB_SHA"),
+              "dns": dns,
+              "http": http,
+              "route_results": route_results,
+              "split_routes": split_routes,
+              "redirect_routes": redirect_routes,
+              "identical_routes": identical_routes,
+              "incomplete_routes": incomplete_routes,
+              "writes": 0,
+          }
+          Path("artifacts/bhrigu-apex-www-binding-recon.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+          )
+
+          lines = [
+              "# BHRIGU apex / www binding recon",
+              "",
+              f"- Overall: `{overall}`",
+              f"- Expected master SHA: `{expected}`",
+              "",
+              "| Route | Classification | Apex status | WWW status | Apex deployment | WWW deployment |",
+              "|---|---|---:|---:|---|---|",
+          ]
+          for path, result in route_results.items():
+              lines.append(
+                  f"| `{path}` | `{result['classification']}` | {result['apex_initial_status']} | {result['www_initial_status']} | "
+                  f"`{result['apex_deployment_sha'] or 'none'}` | `{result['www_deployment_sha'] or 'none'}` |"
+              )
+          Path("artifacts/summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print("\n".join(lines))
+          print(f"PUBLIC_BINDING_RECON=PASS classification={overall}")
+          PY
+
+      - name: Upload immutable recon evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-apex-www-binding-recon-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
