@@ -76,12 +76,7 @@ const base = process.env.BTC_LIVE_PREVIEW_BASE?.replace(/\/$/, "");
 if (base) await runRuntimeAcceptance(base);
 
 function decodeHtml(value) {
-  return value
-    .replace(/&quot;/g, '"')
-    .replace(/&#x27;|&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">");
+  return value.replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 }
 
 function textBetween(pageText, pattern) {
@@ -114,6 +109,18 @@ async function getPage(baseUrl, locale, question, packet = null) {
   return response.text();
 }
 
+function evidenceText(pageText) {
+  const start = pageText.indexOf('data-answer-section="evidence"');
+  if (start < 0) throw new Error("missing evidence marker");
+  const limit = pageText.indexOf('data-answer-section="limit"', start);
+  const segment = pageText.slice(start, limit > start ? limit : start + 12000);
+  const items = [...segment.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)]
+    .map((match) => decodeHtml(match[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()))
+    .filter(Boolean);
+  if (!items.length) throw new Error("missing evidence lines");
+  return items.join(" | ");
+}
+
 function answerProjection(pageText) {
   return {
     question_class: attribute(pageText, "data-question-class"),
@@ -122,7 +129,7 @@ function answerProjection(pageText) {
     relation: attribute(pageText, "data-context-relation"),
     headline: textBetween(pageText, /<header class="answerHeader">[\s\S]*?<h2>([\s\S]*?)<\/h2>/),
     direct: textBetween(pageText, /<p class="answerLead" data-answer-direct="true">([\s\S]*?)<\/p>/),
-    evidence: textBetween(pageText, /<section data-answer-section="evidence">([\s\S]*?)<\/section>/),
+    evidence: evidenceText(pageText),
   };
 }
 
