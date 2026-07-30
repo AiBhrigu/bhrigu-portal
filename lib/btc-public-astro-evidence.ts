@@ -4,15 +4,8 @@ import type { BtcCosmographerAnswerProjection } from "./btc-protocol-evidence";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 
 type BodyState = [number, number];
-type Anchor = {
-  date: string;
-  b: Record<string, BodyState>;
-};
-type Ingress = {
-  date: string;
-  body: string;
-  sign: string;
-};
+type Anchor = { date: string; b: Record<string, BodyState> };
+type Ingress = { date: string; body: string; sign: string };
 type Station = {
   date: string;
   body: string;
@@ -27,7 +20,6 @@ type AspectWindow = {
   angle: number;
   orb: number;
 };
-
 type PublicAstroEvidence = {
   schema: string;
   source: {
@@ -46,7 +38,12 @@ type PublicAstroEvidence = {
   aspects: AspectWindow[];
 };
 
-const data = astroEvidence as PublicAstroEvidence;
+const data = astroEvidence as unknown as PublicAstroEvidence;
+
+const SIGN_KEYS = [
+  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
+  "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
+];
 
 const SIGNS: Record<BtcPublicLocale, string[]> = {
   en: [
@@ -61,52 +58,27 @@ const SIGNS: Record<BtcPublicLocale, string[]> = {
 
 const BODY_LABELS: Record<BtcPublicLocale, Record<string, string>> = {
   en: {
-    sun: "Sun",
-    moon: "Moon",
-    mercury: "Mercury",
-    venus: "Venus",
-    mars: "Mars",
-    jupiter: "Jupiter",
-    saturn: "Saturn",
-    uranus: "Uranus",
-    neptune: "Neptune",
-    pluto: "Pluto",
+    sun: "Sun", moon: "Moon", mercury: "Mercury", venus: "Venus",
+    mars: "Mars", jupiter: "Jupiter", saturn: "Saturn", uranus: "Uranus",
+    neptune: "Neptune", pluto: "Pluto",
   },
   ru: {
-    sun: "Солнце",
-    moon: "Луна",
-    mercury: "Меркурий",
-    venus: "Венера",
-    mars: "Марс",
-    jupiter: "Юпитер",
-    saturn: "Сатурн",
-    uranus: "Уран",
-    neptune: "Нептун",
-    pluto: "Плутон",
+    sun: "Солнце", moon: "Луна", mercury: "Меркурий", venus: "Венера",
+    mars: "Марс", jupiter: "Юпитер", saturn: "Сатурн", uranus: "Уран",
+    neptune: "Нептун", pluto: "Плутон",
   },
 };
 
 const ASPECT_LABELS: Record<BtcPublicLocale, Record<number, string>> = {
   en: {
-    0: "conjunction",
-    60: "sextile",
-    90: "square",
-    120: "trine",
-    180: "opposition",
+    0: "conjunction", 60: "sextile", 90: "square",
+    120: "trine", 180: "opposition",
   },
   ru: {
-    0: "соединение",
-    60: "секстиль",
-    90: "квадрат",
-    120: "трин",
-    180: "оппозиция",
+    0: "соединение", 60: "секстиль", 90: "квадрат",
+    120: "трин", 180: "оппозиция",
   },
 };
-
-const SIGN_KEYS = [
-  "aries", "taurus", "gemini", "cancer", "leo", "virgo",
-  "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
-];
 
 function bodyLabel(locale: BtcPublicLocale, body: string): string {
   return BODY_LABELS[locale][body] ?? body;
@@ -192,7 +164,7 @@ function aspectLines(
     });
 }
 
-function unavailableAnswer(
+function limitedAnswer(
   locale: BtcPublicLocale,
   headline: string,
   direct: string,
@@ -224,7 +196,7 @@ export function buildBtcAstroAnswer(
   };
 
   if (requested.end < data.range.start || requested.start > data.range.end) {
-    return unavailableAnswer(
+    return limitedAnswer(
       locale,
       locale === "ru"
         ? "Запрошенный период пока вне публичного Astro Evidence"
@@ -243,9 +215,8 @@ export function buildBtcAstroAnswer(
     : requested.end;
   const startAnchor = closestAnchor(start, body);
   const endAnchor = closestAnchor(end, body);
-
   if (!startAnchor || !endAnchor) {
-    return unavailableAnswer(
+    return limitedAnswer(
       locale,
       locale === "ru"
         ? "Astro Evidence для тела недоступен"
