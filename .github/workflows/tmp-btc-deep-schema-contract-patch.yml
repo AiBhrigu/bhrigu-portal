@@ -1,0 +1,73 @@
+name: Temporary BTC deep schema contract patch
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/tmp-btc-deep-schema-contract-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch-format:
+    runs-on: ubuntu-latest
+    if: github.head_ref == 'repair/btc-dialogue-context-authority-deep-synthesis-v0-1' && github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: repair/btc-dialogue-context-authority-deep-synthesis-v0-1
+          fetch-depth: 0
+
+      - name: Format public memory values deterministically
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('lib/btc-executive-question-language.ts')
+          text=p.read_text(encoding='utf-8')
+          old='''function metricLine(locale: BtcPublicLocale, metric: MemoryMetric, index: number): string {
+  const label = METRIC_LABEL[locale][metric.metric_id] ?? metric.metric_id.replace(/_/g, " ");
+  const reason = METRIC_REASON[locale][metric.metric_id]
+    ?? (locale === "ru" ? "он входит в принятую сопоставимую дельту" : "it belongs to the accepted comparable delta");
+  const delta = metric.display_delta ? ` (${metric.display_delta})` : metric.transition && metric.transition !== "UNCHANGED" ? ` (${metric.transition})` : "";
+  return locale === "ru"
+    ? `${index}. ${label}: ${metric.previous_value} → ${metric.current_value}${delta}; важен, потому что ${reason}.`
+    : `${index}. ${label}: ${metric.previous_value} → ${metric.current_value}${delta}; it matters because ${reason}.`;
+}
+'''
+          new='''function metricDisplayValue(metric: MemoryMetric, value: string): string {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  const unit = metric.unit.toLowerCase();
+  const digits = metric.metric_id === "market_field_score"
+    ? 1
+    : unit.includes("%") || unit.includes("pct")
+      ? 2
+      : Math.abs(numeric) >= 1_000_000
+        ? 0
+        : 2;
+  return fmtNumber(numeric, digits);
+}
+
+function metricLine(locale: BtcPublicLocale, metric: MemoryMetric, index: number): string {
+  const label = METRIC_LABEL[locale][metric.metric_id] ?? metric.metric_id.replace(/_/g, " ");
+  const reason = METRIC_REASON[locale][metric.metric_id]
+    ?? (locale === "ru" ? "он входит в принятую сопоставимую дельту" : "it belongs to the accepted comparable delta");
+  const previous = metricDisplayValue(metric, metric.previous_value);
+  const current = metricDisplayValue(metric, metric.current_value);
+  const delta = metric.display_delta ? ` (${metric.display_delta})` : metric.transition && metric.transition !== "UNCHANGED" ? ` (${metric.transition})` : "";
+  return locale === "ru"
+    ? `${index}. ${label}: ${previous} → ${current}${delta}; важен, потому что ${reason}.`
+    : `${index}. ${label}: ${previous} → ${current}${delta}; it matters because ${reason}.`;
+}
+'''
+          assert text.count(old)==1, text.count(old)
+          p.write_text(text.replace(old,new,1),encoding='utf-8')
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/btc-executive-question-language.ts
+          git diff --cached --check
+          git commit -m "BTC dialogue: format public memory values"
+          git push origin HEAD:repair/btc-dialogue-context-authority-deep-synthesis-v0-1
