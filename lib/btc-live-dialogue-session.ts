@@ -223,7 +223,7 @@ export function readBtcDialogueSession(
   try {
     const parsed = parseBtcDialogueSession(JSON.parse(raw));
     if (!parsed) throw new Error("invalid session");
-    return {
+    const normalized = {
       ...parsed,
       locale,
       source_binding: {
@@ -231,6 +231,9 @@ export function readBtcDialogueSession(
         deployment_sha: deploymentSha ?? parsed.source_binding.deployment_sha,
       },
     };
+    const serialized = JSON.stringify(normalized);
+    if (serialized !== raw) window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, serialized);
+    return normalized;
   } catch {
     window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
     return createBtcDialogueSession(locale, deploymentSha);
