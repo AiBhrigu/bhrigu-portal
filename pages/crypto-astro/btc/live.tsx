@@ -13,7 +13,15 @@ import {
   resolveBtcFollowUp,
   type BtcContextRelation,
 } from "../../../lib/btc-live-dialogue-follow-up";
-import { loadBtcMarketEnvelope, type BtcMarketEnvelope } from "../../../lib/btc-market-envelope";
+import type {
+  BtcQuestionFacet,
+  BtcQuestionSpecificAnswerState,
+} from "../../../lib/btc-executive-question-language";
+import {
+  loadBtcMarketEnvelope,
+  type BtcEnvelopeQuestionClass,
+  type BtcMarketEnvelope,
+} from "../../../lib/btc-market-envelope";
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../../lib/btc-bilingual-surface-style";
 import { BTC_LIVE_DIALOGUE_CSS } from "../../../lib/btc-live-dialogue-style";
 import {
@@ -42,6 +50,10 @@ type Props = {
   localeSource: BtcLocaleSource;
   deploymentSourceSha: string | null;
   contextRelation: BtcContextRelation | null;
+  priorQuestionClass: BtcEnvelopeQuestionClass | null;
+  resolvedQuestionFacets: BtcQuestionFacet[];
+  priorAnswerState: BtcQuestionSpecificAnswerState | null;
+  priorSnapshotGeneratedAtUtc: string | null;
   sourceBindingChanged: boolean;
 };
 
@@ -86,30 +98,29 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const resolvedLocale = resolveBtcPublicLocale(first(query.lang), initialQuestion);
   const source = await loadBtcStaticSource();
 
-  let sourceContext: BtcLiveSourceContext;
-  if (source.ok === false) {
-    const lastVerified = source.last_verified_at_utc ?? null;
-    sourceContext = {
-      state: "UNAVAILABLE",
-      generated_at_utc: lastVerified,
-      age_hours: failureAgeHours(lastVerified),
-      proof_available: false,
-    };
-  } else {
-    sourceContext = {
-      state: source.freshness,
-      generated_at_utc: source.snapshot.generated_at_utc,
-      age_hours: source.age_hours,
-      proof_available: true,
-    };
-  }
+  const sourceContext: BtcLiveSourceContext = source.ok === false
+    ? {
+        state: "UNAVAILABLE",
+        generated_at_utc: source.last_verified_at_utc ?? null,
+        age_hours: failureAgeHours(source.last_verified_at_utc ?? null),
+        proof_available: false,
+      }
+    : {
+        state: source.freshness,
+        generated_at_utc: source.snapshot.generated_at_utc,
+        age_hours: source.age_hours,
+        proof_available: true,
+      };
 
   const parsedContext = parseBtcFollowUpContext(query);
+  const packet = parsedContext.packet;
   const currentSourceTimestamp = source.ok === false
     ? source.last_verified_at_utc ?? null
     : source.snapshot.generated_at_utc;
+
   let effectiveQuestion = initialQuestion;
   let contextRelation: BtcContextRelation | null = null;
+  let resolvedQuestionFacets: BtcQuestionFacet[] = packet?.prior_question_facets ?? [];
   let clarification: BtcLiveClarification | null = null;
 
   if (initialQuestion && parsedContext.malformed) {
@@ -119,11 +130,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
         ? "Контекст прошлого хода повреждён. Уточните предмет вопроса: гравитация BTC, ликвидность или структура рынка."
         : "The previous-turn context is invalid. Clarify the subject: BTC gravity, liquidity or market structure.",
     };
-  } else if (initialQuestion && isBtcContextualFollowUp(initialQuestion)) {
+  } else if (initialQuestion && (parsedContext.present || isBtcContextualFollowUp(initialQuestion))) {
     const followUp = resolveBtcFollowUp(
       resolvedLocale.locale,
       initialQuestion,
-      parsedContext.packet,
+      packet,
       currentSourceTimestamp,
     );
     if (followUp.status === "CLARIFICATION_REQUIRED") {
@@ -131,13 +142,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     } else {
       effectiveQuestion = followUp.effective_question;
       contextRelation = followUp.context_relation;
+      resolvedQuestionFacets = followUp.resolved_facets;
     }
   }
 
   const sourceBindingChanged = Boolean(
-    parsedContext.packet?.prior_snapshot_generated_at_utc &&
+    packet?.prior_snapshot_generated_at_utc &&
     currentSourceTimestamp &&
-    parsedContext.packet.prior_snapshot_generated_at_utc !== currentSourceTimestamp,
+    packet.prior_snapshot_generated_at_utc !== currentSourceTimestamp,
   );
 
   const empty: Props = {
@@ -154,18 +166,16 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     localeSource: resolvedLocale.source,
     deploymentSourceSha: deploymentSourceSha(),
     contextRelation,
+    priorQuestionClass: packet?.prior_question_class ?? null,
+    resolvedQuestionFacets,
+    priorAnswerState: packet?.prior_answer_state ?? null,
+    priorSnapshotGeneratedAtUtc: packet?.prior_snapshot_generated_at_utc ?? null,
     sourceBindingChanged,
   };
 
   if (!initialQuestion) return { props: empty };
   if (clarification) {
-    return {
-      props: {
-        ...empty,
-        initialQuestion,
-        effectiveQuestion: initialQuestion,
-      },
-    };
+    return { props: { ...empty, initialQuestion, effectiveQuestion: initialQuestion } };
   }
 
   if (source.ok === false) {
@@ -194,11 +204,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
         ...empty,
         initialQuestion,
         effectiveQuestion,
-        failure: {
-          code: composed.code,
-          message: composed.message,
-          last_verified_at_utc: null,
-        },
+        failure: { code: composed.code, message: composed.message, last_verified_at_utc: null },
       },
     };
   }
