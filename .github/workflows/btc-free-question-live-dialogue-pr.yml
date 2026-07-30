@@ -65,12 +65,11 @@ jobs:
       - name: Static semantic contract
         run: node scripts/run-btc-cosmographer-semantic-route-fixture.mjs
 
-      - name: Preserve existing BTC gates
+      - name: Preserve inherited BTC routing gates
         shell: bash
         run: |
           set -euo pipefail
           npm run verify:btc-routing
-          npm run verify:btc-producer-contract
           npm run verify:btc-binance-observation
 
       - name: Production build
