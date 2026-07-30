@@ -1,3 +1,17 @@
 {
-  "framework": "nextjs"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "bhrigu.io"
+        }
+      ],
+      "destination": "https://www.bhrigu.io/:path*",
+      "permanent": true
+    }
+  ]
 }
