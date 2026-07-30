@@ -40,7 +40,7 @@ assert(
 );
 assert(
   BTC_EXECUTIVE_QUESTION_LANGUAGE_SCHEMA ===
-    "btc_executive_question_language_v0_1",
+    "btc_executive_question_language_v0_2",
   "Executive question-language schema mismatch",
 );
 assert(

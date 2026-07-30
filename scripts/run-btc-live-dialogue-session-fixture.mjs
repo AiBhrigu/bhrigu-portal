@@ -49,13 +49,14 @@ check("source_change_disclosed", dialogue.includes("data-source-binding-changed"
 check("semantic_phi_geometry_preserved", style.includes("61.803398875") && style.includes("38.196601125"));
 check("composer_does_not_overlay_thread", !style.includes("position:sticky") && !style.includes("position:fixed"));
 check("visual_session_states_required", ["1-turn", "3-turn", "8-turn", "clarification", "source-unavailable"].every((value) => verifier.toLowerCase().includes(value)));
-check("workflow_deep_six_file_scope", [
+check("workflow_deep_seven_file_scope", [
   ".github/workflows/btc-free-question-live-dialogue-pr.yml",
   "components/btc/BtcLiveDialogue.tsx",
   "lib/btc-executive-question-language.ts",
   "lib/btc-live-dialogue-follow-up.ts",
   "pages/crypto-astro/btc/live.tsx",
   "scripts/run-btc-live-dialogue-session-fixture.mjs",
+  "tests/btc-bilingual-glyph-fixture.ts",
 ].every((file) => workflow.includes(file)));
 check("no_analytics_provider_or_server_storage", !dialogue.includes("analytics") && !page.includes("pages/api") && !session.includes("fetch(") && !session.includes("Blob"));
 
