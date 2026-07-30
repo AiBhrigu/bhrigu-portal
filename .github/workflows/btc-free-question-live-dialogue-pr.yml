@@ -88,7 +88,17 @@ jobs:
         env:
           BTC_LIVE_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           BTC_LIVE_PREVIEW_BASE: http://127.0.0.1:3110
-        run: node scripts/run-btc-live-dialogue-session-fixture.mjs
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          source=Path('scripts/run-btc-live-dialogue-session-fixture.mjs').read_text(encoding='utf-8')
+          needle='for (const [locale, question, expectedClass, expectedFacet] of corpus) {\n    const pageText'
+          replacement='for (const [locale, question, expectedClass, expectedFacet] of corpus) {\n    console.log(`SEMANTIC_CASE locale=${locale} question=${question}`);\n    const pageText'
+          assert needle in source
+          Path('/tmp/btc-live-dialogue-session-diagnostic.mjs').write_text(source.replace(needle,replacement,1),encoding='utf-8')
+          PY
+          node /tmp/btc-live-dialogue-session-diagnostic.mjs
 
       - name: Install visual driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
