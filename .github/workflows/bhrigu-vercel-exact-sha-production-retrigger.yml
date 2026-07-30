@@ -1,0 +1,369 @@
+name: BHRIGU Vercel Exact SHA Production Retrigger
+
+on:
+  push:
+    branches:
+      - agent/bhrigu-vercel-exact-sha-retrigger-transport-v0-1
+    paths:
+      - .github/workflows/bhrigu-vercel-exact-sha-production-retrigger.yml
+      - scripts/verify-bhrigu-production-source.mjs
+  workflow_dispatch:
+    inputs:
+      authorization:
+        description: Exact execution acknowledgement
+        required: true
+        type: string
+        default: BHRIGU_EXACT_SHA_RETRIGGER_12591461
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-vercel-exact-sha-production-retrigger
+  cancel-in-progress: false
+
+env:
+  LOCKED_PRODUCT_SHA: 12591461ca70c99fca2322215502f77ac21d4d28
+  LOCKED_PROJECT_ID: prj_CmMNrwffAR0UZKsJA4fbFUWQnMqC
+  LOCKED_ORG_ID: team_yvjQzRPxIUDJohO4Nbkr7NyJ
+  CANONICAL_BRANCH: master
+  PRODUCTION_BRANCH: main
+  CUSTOM_DOMAIN: https://www.bhrigu.io
+  VERCEL_CLI_VERSION: 56.5.0
+
+jobs:
+  capability-probe-and-retrigger:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - name: Checkout transport control files
+        uses: actions/checkout@v4
+        with:
+          path: control
+          fetch-depth: 0
+
+      - name: Checkout locked product source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.LOCKED_PRODUCT_SHA }}
+          path: product
+          fetch-depth: 1
+
+      - name: Establish exact execution mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            MODE=TRANSPORT_EXECUTE_ONCE
+          else
+            test "${{ inputs.authorization }}" = "BHRIGU_EXACT_SHA_RETRIGGER_12591461"
+            MODE=MANUAL_DISPATCH
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE=$MODE"
+
+      - name: Verify exact refs and two-file transport scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C control fetch --no-tags origin \
+            "+refs/heads/${CANONICAL_BRANCH}:refs/remotes/origin/${CANONICAL_BRANCH}" \
+            "+refs/heads/${PRODUCTION_BRANCH}:refs/remotes/origin/${PRODUCTION_BRANCH}"
+          MASTER_SHA=$(git -C control rev-parse "refs/remotes/origin/${CANONICAL_BRANCH}")
+          MAIN_SHA=$(git -C control rev-parse "refs/remotes/origin/${PRODUCTION_BRANCH}")
+          PRODUCT_SHA=$(git -C product rev-parse HEAD)
+          test "$MASTER_SHA" = "$LOCKED_PRODUCT_SHA"
+          test "$MAIN_SHA" = "$LOCKED_PRODUCT_SHA"
+          test "$PRODUCT_SHA" = "$LOCKED_PRODUCT_SHA"
+          test -z "$(git -C product status --porcelain --untracked-files=no)"
+
+          if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            mapfile -t PATHS < <(git -C control diff --name-only "$LOCKED_PRODUCT_SHA...HEAD" | sort)
+            EXPECTED=(
+              ".github/workflows/bhrigu-vercel-exact-sha-production-retrigger.yml"
+              "scripts/verify-bhrigu-production-source.mjs"
+            )
+            test "${#PATHS[@]}" -eq 2
+            test "${PATHS[0]}" = "${EXPECTED[0]}"
+            test "${PATHS[1]}" = "${EXPECTED[1]}"
+          fi
+
+          python3 - <<PY
+          import json
+          from pathlib import Path
+          Path("artifacts/source-preflight.json").write_text(json.dumps({
+              "schema_version": "bhrigu_vercel_retrigger_source_preflight_v0_1",
+              "master_sha": "$MASTER_SHA",
+              "main_sha": "$MAIN_SHA",
+              "product_sha": "$PRODUCT_SHA",
+              "expected_sha": "${LOCKED_PRODUCT_SHA}",
+              "event_name": "${GITHUB_EVENT_NAME}",
+              "run_id": "${GITHUB_RUN_ID}",
+          }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+      - name: Probe protected Vercel capability
+        id: capability
+        shell: bash
+        run: |
+          set -euo pipefail
+          TOKEN_PRESENT=false
+          ORG_OVERRIDE_PRESENT=false
+          PROJECT_OVERRIDE_PRESENT=false
+          [ -n "${VERCEL_TOKEN:-}" ] && TOKEN_PRESENT=true
+          [ -n "${VERCEL_ORG_ID:-}" ] && ORG_OVERRIDE_PRESENT=true
+          [ -n "${VERCEL_PROJECT_ID:-}" ] && PROJECT_OVERRIDE_PRESENT=true
+
+          CANDIDATES_MATCH=true
+          if [ "$ORG_OVERRIDE_PRESENT" = true ] && [ "$VERCEL_ORG_ID" != "$LOCKED_ORG_ID" ]; then
+            CANDIDATES_MATCH=false
+          fi
+          if [ "$PROJECT_OVERRIDE_PRESENT" = true ] && [ "$VERCEL_PROJECT_ID" != "$LOCKED_PROJECT_ID" ]; then
+            CANDIDATES_MATCH=false
+          fi
+
+          API_PROJECT_MATCH=false
+          API_HTTP_STATUS=NOT_RUN
+          DEPLOYMENTS_LAST_24H=NOT_RUN
+          RATE_LIMIT_RISK=false
+          if [ "$TOKEN_PRESENT" = true ] && [ "$CANDIDATES_MATCH" = true ]; then
+            python3 - <<'PY'
+          import json, os, time, urllib.parse, urllib.request
+          from pathlib import Path
+
+          token = os.environ["VERCEL_TOKEN"]
+          org = os.environ["LOCKED_ORG_ID"]
+          project = os.environ["LOCKED_PROJECT_ID"]
+          headers = {"Authorization": f"Bearer {token}", "User-Agent": "ORION-BHRIGU-Vercel-Capability-Probe/0.1"}
+
+          def get_json(url):
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return response.status, json.loads(response.read().decode("utf-8"))
+
+          result = {"api_http_status": None, "api_project_match": False, "deployments_last_24h": None, "rate_limit_risk": True}
+          try:
+              status, payload = get_json(f"https://api.vercel.com/v9/projects/{project}?teamId={org}")
+              result["api_http_status"] = status
+              result["api_project_match"] = status == 200 and payload.get("id") == project
+              since = int((time.time() - 86400) * 1000)
+              until = int(time.time() * 1000)
+              query = urllib.parse.urlencode({"teamId": org, "since": since, "until": until, "limit": 100})
+              dep_status, dep_payload = get_json(f"https://api.vercel.com/v6/deployments?{query}")
+              deployments = dep_payload.get("deployments", []) if dep_status == 200 else []
+              result["deployments_last_24h"] = len(deployments)
+              result["rate_limit_risk"] = dep_status != 200 or len(deployments) >= 100
+          except Exception as exc:
+              result["error_code"] = type(exc).__name__
+          Path("artifacts/vercel-api-probe.json").write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          print(f"api_http_status={result['api_http_status'] or 'ERROR'}")
+          print(f"api_project_match={'true' if result['api_project_match'] else 'false'}")
+          print(f"deployments_last_24h={result['deployments_last_24h'] if result['deployments_last_24h'] is not None else 'ERROR'}")
+          print(f"rate_limit_risk={'true' if result['rate_limit_risk'] else 'false'}")
+          PY
+            source <(python3 - <<'PY'
+          import json
+          value = json.load(open("artifacts/vercel-api-probe.json", encoding="utf-8"))
+          print(f"API_HTTP_STATUS={value.get('api_http_status') or 'ERROR'}")
+          print(f"API_PROJECT_MATCH={'true' if value.get('api_project_match') else 'false'}")
+          print(f"DEPLOYMENTS_LAST_24H={value.get('deployments_last_24h') if value.get('deployments_last_24h') is not None else 'ERROR'}")
+          print(f"RATE_LIMIT_RISK={'true' if value.get('rate_limit_risk') else 'false'}")
+          PY
+          )
+          fi
+
+          CAPABILITY_READY=false
+          if [ "$TOKEN_PRESENT" = true ] && [ "$CANDIDATES_MATCH" = true ] \
+            && [ "$API_PROJECT_MATCH" = true ] && [ "$RATE_LIMIT_RISK" = false ]; then
+            CAPABILITY_READY=true
+          fi
+
+          echo "ready=$CAPABILITY_READY" >> "$GITHUB_OUTPUT"
+          echo "rate_limit_risk=$RATE_LIMIT_RISK" >> "$GITHUB_OUTPUT"
+          python3 - <<PY
+          import json
+          from pathlib import Path
+          Path("artifacts/capability-probe.json").write_text(json.dumps({
+              "schema_version": "bhrigu_vercel_protected_capability_probe_v0_1",
+              "token_present": "$TOKEN_PRESENT" == "true",
+              "org_id_override_present": "$ORG_OVERRIDE_PRESENT" == "true",
+              "project_id_override_present": "$PROJECT_OVERRIDE_PRESENT" == "true",
+              "locked_candidates_match": "$CANDIDATES_MATCH" == "true",
+              "api_project_match": "$API_PROJECT_MATCH" == "true",
+              "api_http_status": "$API_HTTP_STATUS",
+              "deployments_last_24h": "$DEPLOYMENTS_LAST_24H",
+              "rate_limit_risk": "$RATE_LIMIT_RISK" == "true",
+              "capability_ready": "$CAPABILITY_READY" == "true",
+              "project_id_redacted": "${LOCKED_PROJECT_ID:0:8}…${LOCKED_PROJECT_ID: -4}",
+              "org_id_redacted": "${LOCKED_ORG_ID:0:9}…${LOCKED_ORG_ID: -4}",
+          }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+          echo "VERCEL_CAPABILITY_READY=$CAPABILITY_READY"
+
+      - name: Verify current public state before deployment
+        id: current
+        shell: bash
+        run: |
+          set +e
+          node control/scripts/verify-bhrigu-production-source.mjs \
+            --base-url "$CUSTOM_DOMAIN" \
+            --expected-sha "$LOCKED_PRODUCT_SHA" \
+            --mode production \
+            --report artifacts/public-before.json
+          STATUS=$?
+          set -e
+          case "$STATUS" in
+            0) echo "state=ALREADY_CURRENT" >> "$GITHUB_OUTPUT" ;;
+            20) echo "state=STALE_SOURCE" >> "$GITHUB_OUTPUT" ;;
+            *) echo "PUBLIC_PREFLIGHT_UNSAFE exit=$STATUS"; exit "$STATUS" ;;
+          esac
+
+      - name: Stop successfully when production is already current
+        if: steps.current.outputs.state == 'ALREADY_CURRENT'
+        run: echo "PUBLIC_EXACT_SHA_ALREADY_CURRENT=PASS"
+
+      - name: Hold before build when protected capability is unavailable
+        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready != 'true'
+        shell: bash
+        run: |
+          echo "HOLD_INPUT_REQUIRED: protected Vercel capability is unavailable or rate-limit risk is active."
+          exit 78
+
+      - name: Install pinned Vercel CLI
+        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global "vercel@${VERCEL_CLI_VERSION}"
+          VERSION=$(vercel --version | tail -n 1 | tr -d '\r')
+          echo "VERCEL_CLI=$VERSION"
+          echo "$VERSION" | grep -F "$VERCEL_CLI_VERSION"
+
+      - name: Link and pull locked production project
+        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p product/.vercel
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path("product/.vercel/project.json").write_text(json.dumps({
+              "orgId": os.environ["LOCKED_ORG_ID"],
+              "projectId": os.environ["LOCKED_PROJECT_ID"],
+          }, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+          vercel pull --yes --environment=production --cwd product --token="$VERCEL_TOKEN"
+          test -z "$(git -C product status --porcelain --untracked-files=no)"
+
+      - name: Build exact product SHA once
+        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        shell: bash
+        env:
+          GITHUB_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
+          VERCEL_GIT_COMMIT_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
+        run: |
+          set -euo pipefail
+          vercel build --prod --cwd product --token="$VERCEL_TOKEN"
+          test -d product/.vercel/output
+          test -z "$(git -C product status --porcelain --untracked-files=no)"
+
+      - name: Create one staged production deployment
+        id: staged
+        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        shell: bash
+        env:
+          GITHUB_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
+          VERCEL_GIT_COMMIT_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
+        run: |
+          set -euo pipefail
+          DEPLOYMENT_OUTPUT=$(vercel deploy --prebuilt --prod --skip-domain --yes --cwd product --token="$VERCEL_TOKEN")
+          DEPLOYMENT_URL=$(printf '%s\n' "$DEPLOYMENT_OUTPUT" | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1 | tr -d '\r')
+          echo "$DEPLOYMENT_URL" | grep -E '^https://[^ ]+\.vercel\.app$'
+          echo "url=$DEPLOYMENT_URL" >> "$GITHUB_OUTPUT"
+          printf '%s\n' "$DEPLOYMENT_URL" > artifacts/staged-deployment-url.txt
+          echo "STAGED_DEPLOYMENT_CREATED=PASS"
+
+      - name: Verify staged exact-SHA deployment
+        if: steps.staged.outputs.url != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          node control/scripts/verify-bhrigu-production-source.mjs \
+            --base-url "${{ steps.staged.outputs.url }}" \
+            --expected-sha "$LOCKED_PRODUCT_SHA" \
+            --mode staged \
+            --attempts 12 \
+            --delay-ms 5000 \
+            --report artifacts/staged-source-proof.json
+
+      - name: Promote the verified staged deployment
+        id: promote
+        if: steps.staged.outputs.url != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          vercel promote "${{ steps.staged.outputs.url }}" --yes --token="$VERCEL_TOKEN"
+          echo "performed=true" >> "$GITHUB_OUTPUT"
+          echo "STAGED_DEPLOYMENT_PROMOTED=PASS"
+
+      - name: Verify custom-domain exact SHA
+        if: steps.promote.outputs.performed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          node control/scripts/verify-bhrigu-production-source.mjs \
+            --base-url "$CUSTOM_DOMAIN" \
+            --expected-sha "$LOCKED_PRODUCT_SHA" \
+            --mode production \
+            --attempts 48 \
+            --delay-ms 5000 \
+            --report artifacts/public-after.json
+
+      - name: Write redacted closure report
+        if: always()
+        shell: bash
+        env:
+          EXECUTION_MODE: ${{ steps.mode.outputs.mode }}
+          CAPABILITY_READY: ${{ steps.capability.outputs.ready }}
+          PUBLIC_BEFORE_STATE: ${{ steps.current.outputs.state }}
+          STAGED_URL: ${{ steps.staged.outputs.url }}
+          PROMOTION_PERFORMED: ${{ steps.promote.outputs.performed }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          staged = os.environ.get("STAGED_URL") or None
+          Path("artifacts/closure-report.json").write_text(json.dumps({
+              "schema_version": "bhrigu_vercel_exact_sha_retrigger_closure_v0_1",
+              "expected_sha": os.environ["LOCKED_PRODUCT_SHA"],
+              "execution_mode": os.environ.get("EXECUTION_MODE") or None,
+              "capability_ready": os.environ.get("CAPABILITY_READY") == "true",
+              "public_before_state": os.environ.get("PUBLIC_BEFORE_STATE") or None,
+              "staged_deployment_host": staged.removeprefix("https://") if staged else None,
+              "promotion_performed": os.environ.get("PROMOTION_PERFORMED") == "true",
+              "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "generated_at_utc": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat(),
+          }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          PY
+
+      - name: Remove protected local material
+        if: always()
+        shell: bash
+        run: |
+          rm -rf product/.vercel
+
+      - name: Upload redacted evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-vercel-exact-sha-retrigger-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
