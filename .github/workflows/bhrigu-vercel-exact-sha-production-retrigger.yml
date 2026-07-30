@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/bhrigu-vercel-exact-sha-production-retrigger.yml
       - scripts/verify-bhrigu-production-source.mjs
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/bhrigu-vercel-exact-sha-production-retrigger.yml
+      - scripts/verify-bhrigu-production-source.mjs
   workflow_dispatch:
     inputs:
       authorization:
@@ -43,6 +49,7 @@ jobs:
       - name: Checkout transport control files
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: control
           fetch-depth: 0
 
@@ -59,14 +66,21 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts
+          EXECUTE_ALLOWED=false
           if [ "${GITHUB_EVENT_NAME}" = "push" ]; then
+            MODE=PROBE_ONLY
+          elif [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            test "${{ github.event.pull_request.head.ref }}" = "agent/bhrigu-vercel-exact-sha-retrigger-transport-v0-1"
             MODE=TRANSPORT_EXECUTE_ONCE
+            EXECUTE_ALLOWED=true
           else
             test "${{ inputs.authorization }}" = "BHRIGU_EXACT_SHA_RETRIGGER_12591461"
             MODE=MANUAL_DISPATCH
+            EXECUTE_ALLOWED=true
           fi
           echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-          echo "EXECUTION_MODE=$MODE"
+          echo "execute_allowed=$EXECUTE_ALLOWED" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE=$MODE execute_allowed=$EXECUTE_ALLOWED"
 
       - name: Verify exact refs and two-file transport scope
         shell: bash
@@ -224,19 +238,23 @@ jobs:
             *) echo "PUBLIC_PREFLIGHT_UNSAFE exit=$STATUS"; exit "$STATUS" ;;
           esac
 
+      - name: Complete read-only probe transport
+        if: steps.mode.outputs.execute_allowed != 'true'
+        run: echo "CAPABILITY_PROBE_ONLY=PASS deploy_attempted=false"
+
       - name: Stop successfully when production is already current
-        if: steps.current.outputs.state == 'ALREADY_CURRENT'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'ALREADY_CURRENT'
         run: echo "PUBLIC_EXACT_SHA_ALREADY_CURRENT=PASS"
 
       - name: Hold before build when protected capability is unavailable
-        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready != 'true'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready != 'true'
         shell: bash
         run: |
           echo "HOLD_INPUT_REQUIRED: protected Vercel capability is unavailable or rate-limit risk is active."
           exit 78
 
       - name: Install pinned Vercel CLI
-        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -246,7 +264,7 @@ jobs:
           echo "$VERSION" | grep -F "$VERCEL_CLI_VERSION"
 
       - name: Link and pull locked production project
-        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -263,7 +281,7 @@ jobs:
           test -z "$(git -C product status --porcelain --untracked-files=no)"
 
       - name: Build exact product SHA once
-        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
         shell: bash
         env:
           GITHUB_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
@@ -276,7 +294,7 @@ jobs:
 
       - name: Create one staged production deployment
         id: staged
-        if: steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
+        if: steps.mode.outputs.execute_allowed == 'true' && steps.current.outputs.state == 'STALE_SOURCE' && steps.capability.outputs.ready == 'true'
         shell: bash
         env:
           GITHUB_SHA: ${{ env.LOCKED_PRODUCT_SHA }}
