@@ -5,13 +5,21 @@ import {
   type BtcCosmographerSourceContext,
 } from "../../../components/btc/BtcCosmographerDialogue";
 import {
+  BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
   parseBtcCosmographerContext,
   routeBtcCosmographerQuestion,
+  type BtcCosmographerAnswerState,
+  type BtcCosmographerContextPacket,
+  type BtcCosmographerIntent,
   type BtcCosmographerRoute,
 } from "../../../lib/btc-cosmographer-route-graph";
 import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
 import type { BtcCosmographerAnswerProjection } from "../../../lib/btc-protocol-evidence";
-import { loadBtcMarketEnvelope, type BtcMarketEnvelope } from "../../../lib/btc-market-envelope";
+import {
+  loadBtcMarketEnvelope,
+  type BtcEnvelopeQuestionClass,
+  type BtcMarketEnvelope,
+} from "../../../lib/btc-market-envelope";
 import { canonicalizeBtcQuestionForRouter } from "../../../lib/btc-public-question-bridge";
 import { composeBtcPublicSnapshot } from "../../../lib/btc-public-snapshot-composer";
 import { loadBtcStaticSource } from "../../../lib/btc-public-static-source";
@@ -23,6 +31,37 @@ import { BTC_PRODUCT_REBALANCE_CSS } from "../../../lib/btc-product-rebalance-st
 
 const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
+const MARKET_CLASSES = new Set<BtcEnvelopeQuestionClass>([
+  "btc_gravity",
+  "market_structure",
+  "liquidity",
+  "market_participation_rotation",
+  "change_memory",
+  "temporal_pressure",
+  "general_btc_field",
+]);
+
+const CONTEXT_STATES = new Set<BtcCosmographerAnswerState>([
+  "CONFIRMED",
+  "SPLIT",
+  "LIMITED",
+  "CLARIFICATION",
+  "FAILURE",
+]);
+
+const CONTEXT_INTENTS = new Set<BtcCosmographerIntent>([
+  "fact",
+  "explain",
+  "interval_analysis",
+  "compare",
+  "change",
+  "reason",
+  "confirmation",
+  "watch",
+  "bridge",
+  "navigate",
+]);
+
 function validObservationDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const [year, month, day] = value.split("-").map(Number);
@@ -30,6 +69,40 @@ function validObservationDate(value: string): boolean {
   return date.getUTCFullYear() === year &&
     date.getUTCMonth() === month - 1 &&
     date.getUTCDate() === day;
+}
+
+function parseLegacyContext(
+  query: Record<string, string | string[] | undefined>,
+): BtcCosmographerContextPacket | null {
+  if (first(query.fc) !== "btc_follow_up_context_v0_1") return null;
+  const marketClass = first(query.pc) as BtcEnvelopeQuestionClass;
+  if (!MARKET_CLASSES.has(marketClass)) return null;
+
+  const rawState = first(query.ps);
+  const state = (rawState === "BOUNDED" ? "LIMITED" : rawState) as BtcCosmographerAnswerState;
+  if (!CONTEXT_STATES.has(state)) return null;
+
+  const intents = first(query.pf)
+    .split(",")
+    .filter((value): value is BtcCosmographerIntent => CONTEXT_INTENTS.has(value as BtcCosmographerIntent));
+  if (!intents.length) return null;
+
+  const date = first(query.pd);
+  if (date && !validObservationDate(date)) return null;
+  const timestamp = first(query.pt);
+  if (timestamp && !Number.isFinite(new Date(timestamp).getTime())) return null;
+
+  return {
+    schema: BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
+    prior_domain: marketClass === "change_memory" ? "snapshot_memory" : "btc_market",
+    prior_subject: marketClass,
+    prior_intents: intents,
+    prior_answer_state: state,
+    prior_market_question_class: marketClass,
+    prior_time_start: date || null,
+    prior_time_end: date || null,
+    prior_snapshot_generated_at_utc: timestamp || null,
+  };
 }
 
 type Props = {
@@ -124,7 +197,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   if (!initialQuestion) return { props: base };
 
   const parsed = parseBtcCosmographerContext(query);
-  const packet = parsed.malformed ? null : parsed.packet;
+  const packet = parsed.malformed
+    ? null
+    : parsed.packet ?? parseLegacyContext(query);
   const route = routeBtcCosmographerQuestion(resolvedLocale.locale, initialQuestion, packet, initialDate || undefined);
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
