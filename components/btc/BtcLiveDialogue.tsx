@@ -277,6 +277,8 @@ export function BtcLiveDialogue(props: Props) {
       {hasConversation && <section className="liveThread" role="log" aria-live="polite" aria-label={ru ? "Диалог BTC" : "BTC dialogue"}>
         {turns.map((turn, index) => {
           const newest = index === turns.length - 1;
+          const answerRoleClass = newest ? "cosmographerTurn" : "cosmographerHistoryTurn";
+          const failureClass = newest && turn.answer_state === "FAILURE" ? " dialogueFailure" : "";
           return <div className="dialogueExchange" data-dialogue-turn-id={turn.turn_id} key={turn.turn_id}>
             <article className="dialogueTurn userTurn">
               <div className="turnRole">{turn.locale === "ru" ? "Вы" : "You"}</div>
@@ -286,7 +288,7 @@ export function BtcLiveDialogue(props: Props) {
             <article
               ref={newest ? newestAnswerRef : undefined}
               tabIndex={-1}
-              className={`dialogueTurn cosmographerTurn dialogueState${turn.answer_state}`}
+              className={`dialogueTurn ${answerRoleClass} dialogueState${turn.answer_state}${failureClass}`}
               data-answer-state={turn.answer_state}
               data-question-class={turn.question_class ?? ""}
               data-question-facets={turn.question_facets.join(",")}
@@ -313,7 +315,7 @@ export function BtcLiveDialogue(props: Props) {
                     ? "Источник обновился между ходами; этот ответ построен по новому принятому snapshot."
                     : "The source changed between turns; this answer uses the newly accepted snapshot."}
                 </p>}
-                {turn.source_snapshot_generated_at_utc && <footer className="answerSource" data-answer-source-boundary={turn.source_boundary ? "true" : "bounded"}>
+                {turn.source_snapshot_generated_at_utc && <footer className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary={turn.source_boundary ? "true" : "bounded"}>
                   {formatBtcObservationDate(turn.locale, turn.observation_date ?? "")}
                   {" · "}
                   {formatBtcUtcTimestamp(turn.locale, turn.source_snapshot_generated_at_utc)}
