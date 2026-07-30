@@ -109,6 +109,7 @@ try:
     mark("session_no_transcript_transport", all("prior_answer_text" not in json.dumps(turn) for turn in session.get("turns", [])))
 
     driver.set_window_size(390, 844)
+    driver.execute_script("sessionStorage.removeItem(arguments[0])", SESSION_KEY)
     mobile = open_question("Юпитер как повлиял за 6 месяцев в 2026 году?")
     mark("mobile_astromodule", mobile["domain"] == "astromodule" and mobile["mode"] == "ASTRO_INTERVAL", mobile)
     mark("mobile_no_overflow", no_overflow())
