@@ -1,5 +1,6 @@
 name: Temporary BTC deep number format patch
 
+# Synchronization trigger: workflow already exists in the previous PR head.
 on:
   pull_request:
     branches: [master]
