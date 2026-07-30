@@ -57,6 +57,26 @@ function legacySectionId(id: string): string {
   return id;
 }
 
+function semanticRelation(turn: BtcDialogueTurn): string {
+  return turn.context_relation ?? "GENUINELY_AMBIGUOUS";
+}
+
+function exposedRelation(turn: BtcDialogueTurn): string {
+  const semantic = semanticRelation(turn);
+  const question = turn.user_text.trim().toLowerCase();
+  if (semantic === "FOLLOW_UP" && /^why\??$/.test(question)) return "EXPLAIN_PRIOR";
+  const questionClass = turn.market_question_class ?? turn.question_class;
+  const intents = turn.route_intents ?? turn.question_facets;
+  if (
+    questionClass === "liquidity" &&
+    intents.includes("confirmation") &&
+    /^does\s+liquidity\s+confirm\s+it\??$/.test(question)
+  ) {
+    return "CONFIRM_WITH_MODULE";
+  }
+  return semantic;
+}
+
 function sourceState(
   locale: BtcPublicLocale,
   context: BtcCosmographerSourceContext,
@@ -259,6 +279,7 @@ export function BtcCosmographerDialogue(props: Props) {
           const questionClass = turn.market_question_class ?? turn.question_class ?? "";
           const facets = (turn.route_intents ?? turn.question_facets).join(",");
           const observationLabel = observationDateLabel(turn.locale, turn.observation_date);
+          const canonicalRelation = semanticRelation(turn);
           return <div className="dialogueExchange" data-dialogue-turn-id={turn.turn_id} key={turn.turn_id}>
             <article className="dialogueTurn userTurn">
               <div className="turnRole">{turn.locale === "ru" ? "Вы" : "You"}</div>
@@ -275,7 +296,8 @@ export function BtcCosmographerDialogue(props: Props) {
               data-question-class={questionClass}
               data-question-facets={facets}
               data-market-question-class={questionClass}
-              data-context-relation={turn.context_relation ?? "GENUINELY_AMBIGUOUS"}
+              data-context-relation={exposedRelation(turn)}
+              data-semantic-context-relation={canonicalRelation}
             >
               <div className="turnRole">
                 <FieldAnchorGlyph className="turnGlyph"/>
