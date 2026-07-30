@@ -149,8 +149,8 @@ export function parseBtcFollowUpContext(
 }
 
 const UNSAFE = /(?:\bbuy\b|\bsell\b|\blong\b|\bshort\b|\bleverage\b|\bentry\b|\bexit\b|price target|trade signal|wallet|seed phrase|private key|forecast|predict|prediction|купить|продать|лонг|шорт|плеч|точк[а-яё]*\s+(?:вход|выход)|ценов[а-яё]*\s+цел|кошел[её]к|сид[- ]?фраз|приватн[а-яё]*\s+ключ|прогноз|предскаж)/i;
-const EXPLAIN = /^(?:so\s+)?(?:why|why\?|why does (?:that|this|it) matter|how should i read (?:that|this|it)|почему|почему\?|почему это важно|как это читать)[\s?.!]*$/i;
-const PRIORITY = /what (?:matters|is) most|which (?:signal|part|factor) is stronger|что (?:здесь|из этого)?\s*важнее|какой сигнал сильнее/i;
+const EXPLAIN = /^(?:so\s+)?(?:why|why\?|why does (?:that|this|it) matter|how should i read (?:that|this|it)|what does (?:that|this|it) mean|почему|почему\?|почему это важно|как это читать|как это понимать|что это значит)[\s?.!]*$/i;
+const PRIORITY = /what (?:matters|is) most|which (?:accepted )?(?:signal|part|factor|indicator|metric|measure)s? (?:matters?|is|are|should i focus on)|what (?:indicator|metric|measure)s? (?:matter|are important)|where should i focus|что (?:здесь|из этого)?\s*важнее|какой сигнал сильнее|какие (?:показатели|метрики|сигналы)(?:\s+сейчас)?\s+важн|что отслеживать в первую очередь|на (?:какие|что) (?:показатели|метрики|сигналы) (?:смотреть|обратить внимание)/i;
 const CHANGE_CONDITION = /what would change (?:this|that|the read|this read)|what should i watch next|when would (?:this|that) no longer hold|что изменит (?:это|этот вывод|чтение)|за чем наблюдать дальше|когда вывод перестанет/i;
 const MEMORY_COMPARE = /compare (?:it |this |that )?(?:with|to) (?:the )?previous snapshot|previous checkpoint|what changed since (?:then|the previous)|сравни .*предыдущ|предыдущ(?:им|ей) сним|контрольн[а-яё]+ точк|что изменилось с тех пор/i;
 const CONTRADICTION = /why (?:is|does) (?:that|this|the) contradiction|why does (?:that|this) limit matter|почему .*противореч|почему .*границ.*важ/i;
@@ -166,7 +166,7 @@ export function isBtcContextualFollowUp(question: string): boolean {
   const hasReferent = /\b(?:it|this|that)\b|(?:это|этот|эта|прошл[а-яё]*\s+ответ)/i.test(normalized);
   const hasExplicitSubject = /btc\s+(?:dominance|gravity|leadership|field)|altcoin\s+(?:breadth|rotation|participation)|eth\s+rotation|stablecoin|defi\s+tvl|dex|market\s+field\s+score|market\s+cap|accepted\s+snapshot\s+memory|previous\s+accepted\s+snapshot|selected\s+date|доминир[а-яё]*\s+btc|гравитац[а-яё]*\s+btc|лидерств[а-яё]*\s+btc|ширин[а-яё]*\s+альткоин|ротац[а-яё]*\s+(?:альткоин|eth)|ликвидн[а-яё]*|стейблкоин|капитализац[а-яё]*|принят[а-яё]*\s+(?:snapshot\s+memory|памят[а-яё]*)|предыдущ[а-яё]*\s+принят[а-яё]*\s+сним|выбранн[а-яё]*\s+дат|поле\s+btc|общее\s+поле/i.test(normalized);
   if (hasExplicitSubject && !EXPAND.test(normalized) && !CONFIRM.test(normalized)) return false;
-  if (normalized.length <= 96 && (
+  if (normalized.length <= 160 && (
     EXPLAIN.test(normalized) ||
     PRIORITY.test(normalized) ||
     CHANGE_CONDITION.test(normalized) ||
@@ -243,38 +243,24 @@ function effective(
 
   if (locale === "ru") {
     switch (relation) {
-      case "EXPLAIN_PRIOR":
-        return `${priorSubject}. Почему это важно для текущего поля BTC?`;
-      case "PRIORITY_WITHIN_PRIOR":
-        return `${priorSubject}. Что здесь важнее и почему, без прогноза?`;
-      case "CONFIRM_WITH_MODULE":
-        return `${targetSubject}. Подтверждают ли принятые показатели этого модуля текущее чтение или ослабляют его?`;
-      case "COMPARE_MEMORY":
-        return "Что изменилось в принятой Snapshot Memory по сравнению с предыдущим совместимым снимком?";
-      case "CHANGE_CONDITION":
-        return `${priorSubject}. За чем наблюдать дальше и что изменит этот вывод?`;
-      case "EXPAND_RELATED_CLASS":
-        return `${targetSubject}. Что показывает этот принятый модуль?`;
-      case "EXPLAIN_CONTRADICTION":
-        return `${priorSubject}. Почему противоречие или граница прошлого чтения важны?`;
+      case "EXPLAIN_PRIOR": return `${priorSubject}. Почему это важно для текущего поля BTC?`;
+      case "PRIORITY_WITHIN_PRIOR": return `${priorSubject}. Какие принятые показатели сейчас важнее, почему и как они связаны между собой?`;
+      case "CONFIRM_WITH_MODULE": return `${targetSubject}. Подтверждают ли принятые показатели этого модуля текущее чтение или ослабляют его?`;
+      case "COMPARE_MEMORY": return "Что изменилось в принятой Snapshot Memory по сравнению с предыдущим совместимым снимком?";
+      case "CHANGE_CONDITION": return `${priorSubject}. За чем наблюдать дальше и что изменит этот вывод?`;
+      case "EXPAND_RELATED_CLASS": return `${targetSubject}. Что показывает этот принятый модуль?`;
+      case "EXPLAIN_CONTRADICTION": return `${priorSubject}. Почему противоречие или граница прошлого чтения важны?`;
     }
   }
 
   switch (relation) {
-    case "EXPLAIN_PRIOR":
-      return `${priorSubject}. Why does this matter in the current BTC field?`;
-    case "PRIORITY_WITHIN_PRIOR":
-      return `${priorSubject}. Which accepted signal matters most and why, without a forecast?`;
-    case "CONFIRM_WITH_MODULE":
-      return `${targetSubject}. Do the accepted indicators in this module support or weaken the current read?`;
-    case "COMPARE_MEMORY":
-      return "What changed in accepted Snapshot Memory compared with the previous compatible snapshot?";
-    case "CHANGE_CONDITION":
-      return `${priorSubject}. What should I watch next and what would change this read?`;
-    case "EXPAND_RELATED_CLASS":
-      return `${targetSubject}. What does this accepted module show?`;
-    case "EXPLAIN_CONTRADICTION":
-      return `${priorSubject}. Why does the contradiction or limit in the previous read matter?`;
+    case "EXPLAIN_PRIOR": return `${priorSubject}. Why does this matter in the current BTC field?`;
+    case "PRIORITY_WITHIN_PRIOR": return `${priorSubject}. Which accepted indicators matter now, why, and how do they connect?`;
+    case "CONFIRM_WITH_MODULE": return `${targetSubject}. Do the accepted indicators in this module support or weaken the current read?`;
+    case "COMPARE_MEMORY": return "What changed in accepted Snapshot Memory compared with the previous compatible snapshot?";
+    case "CHANGE_CONDITION": return `${priorSubject}. What should I watch next and what would change this read?`;
+    case "EXPAND_RELATED_CLASS": return `${targetSubject}. What does this accepted module show?`;
+    case "EXPLAIN_CONTRADICTION": return `${priorSubject}. Why does the contradiction or limit in the previous read matter?`;
   }
 }
 
@@ -297,9 +283,7 @@ export function resolveBtcFollowUp(
     return clarification(locale, question, "CONTEXT_STALE", packet);
   }
 
-  if (AMBIGUOUS_ONLY.test(question)) {
-    return clarification(locale, question, "AMBIGUOUS_REFERENT", packet);
-  }
+  if (AMBIGUOUS_ONLY.test(question)) return clarification(locale, question, "AMBIGUOUS_REFERENT", packet);
 
   const named = explicitClass(question);
   let relation: BtcContextRelation;
@@ -311,9 +295,7 @@ export function resolveBtcFollowUp(
   } else if (CHANGE_CONDITION.test(question)) {
     relation = "CHANGE_CONDITION";
   } else if (CONTRADICTION.test(question)) {
-    if (packet.prior_answer_state !== "SPLIT") {
-      return clarification(locale, question, "AMBIGUOUS_REFERENT", packet);
-    }
+    if (packet.prior_answer_state !== "SPLIT") return clarification(locale, question, "AMBIGUOUS_REFERENT", packet);
     relation = "EXPLAIN_CONTRADICTION";
   } else if (PRIORITY.test(question)) {
     relation = "PRIORITY_WITHIN_PRIOR";
