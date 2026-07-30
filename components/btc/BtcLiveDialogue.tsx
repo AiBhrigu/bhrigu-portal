@@ -9,9 +9,17 @@ import {
   upsertBtcDialogueTurn,
   type BtcDialogueTurn,
 } from "../../lib/btc-live-dialogue-session";
-import type { BtcMarketEnvelope, BtcMarketEnvelopeFailure } from "../../lib/btc-market-envelope";
+import type {
+  BtcEnvelopeQuestionClass,
+  BtcMarketEnvelope,
+  BtcMarketEnvelopeFailure,
+} from "../../lib/btc-market-envelope";
 import type { BtcFailureCode, BtcPublicSnapshot, FreshnessState } from "../../lib/btc-public-output-contract";
-import { buildBtcQuestionSpecificAnswer } from "../../lib/btc-executive-question-language";
+import {
+  buildBtcQuestionSpecificAnswer,
+  type BtcQuestionFacet,
+  type BtcQuestionSpecificAnswerState,
+} from "../../lib/btc-executive-question-language";
 import {
   formatBtcFailureMessage,
   formatBtcObservationDate,
@@ -58,6 +66,10 @@ type Props = {
   sourceContext: BtcLiveSourceContext;
   deploymentSourceSha: string | null;
   contextRelation: BtcContextRelation | null;
+  priorQuestionClass: BtcEnvelopeQuestionClass | null;
+  resolvedQuestionFacets: BtcQuestionFacet[];
+  priorAnswerState: BtcQuestionSpecificAnswerState | null;
+  priorSnapshotGeneratedAtUtc: string | null;
   sourceBindingChanged: boolean;
 };
 
@@ -85,6 +97,10 @@ function buildCurrentTurn(props: Props): BtcDialogueTurn | null {
     clarification,
     sourceContext,
     contextRelation,
+    priorQuestionClass,
+    resolvedQuestionFacets,
+    priorAnswerState,
+    priorSnapshotGeneratedAtUtc,
     sourceBindingChanged,
   } = props;
   if (!initialQuestion) return null;
@@ -95,6 +111,13 @@ function buildCurrentTurn(props: Props): BtcDialogueTurn | null {
         effectiveQuestion || initialQuestion,
         envelope,
         result.temporal_context.observation_date,
+        {
+          context_relation: contextRelation,
+          prior_question_class: priorQuestionClass,
+          resolved_facets: resolvedQuestionFacets,
+          prior_answer_state: priorAnswerState,
+          prior_snapshot_generated_at_utc: priorSnapshotGeneratedAtUtc,
+        },
       )
     : null;
 
@@ -199,6 +222,10 @@ export function BtcLiveDialogue(props: Props) {
     props.clarification,
     props.sourceContext,
     props.contextRelation,
+    props.priorQuestionClass,
+    props.resolvedQuestionFacets,
+    props.priorAnswerState,
+    props.priorSnapshotGeneratedAtUtc,
     props.sourceBindingChanged,
   ]);
   const [turns, setTurns] = useState<BtcDialogueTurn[]>(currentTurn ? [currentTurn] : []);
@@ -255,8 +282,8 @@ export function BtcLiveDialogue(props: Props) {
         <p className="eyebrow">{ru ? "Бесплатный BTC-диалог" : "Free BTC dialogue"}</p>
         <h1 id="live-dialogue-title">{ru ? "BTC Космограф" : "BTC Cosmographer"}</h1>
         <p>{ru
-          ? "Продолжайте разговор в этой вкладке. Каждый новый ответ заново привязан к текущему проверенному источнику."
-          : "Continue the conversation in this tab. Every new answer is freshly bound to the current verified source."}</p>
+          ? "Продолжайте разговор в этой вкладке. Каждый ответ использует компактный контекст прошлого хода и заново привязывается к проверенному источнику."
+          : "Continue the conversation in this tab. Each answer uses compact prior-turn context and is freshly rebound to the verified source."}</p>
         <div className="liveTrustLine">
           <span>{sourceState(locale, sourceContext)}</span>
           {sourceContext.generated_at_utc && <span>{formatBtcUtcTimestamp(locale, sourceContext.generated_at_utc)}</span>}
@@ -284,7 +311,6 @@ export function BtcLiveDialogue(props: Props) {
               <div className="turnRole">{turn.locale === "ru" ? "Вы" : "You"}</div>
               <div className="turnBody"><p>{turn.user_text}</p></div>
             </article>
-
             <article
               ref={newest ? newestAnswerRef : undefined}
               tabIndex={-1}
@@ -304,7 +330,7 @@ export function BtcLiveDialogue(props: Props) {
                 {turn.direct_answer && <p className="answerLead" data-answer-direct="true">{turn.direct_answer}</p>}
                 {turn.evidence_lines.length > 0 && <div className="answerNarrative">
                   <section data-answer-section="evidence">
-                    <p><strong>{turn.locale === "ru" ? "Доказательность вопроса." : "Question-specific evidence."}</strong></p>
+                    <p><strong>{turn.locale === "ru" ? "Показатели и смысл." : "Indicators and meaning."}</strong></p>
                     <ul>{turn.evidence_lines.map((line, evidenceIndex) => <li key={`${turn.turn_id}-${evidenceIndex}`}>{line}</li>)}</ul>
                   </section>
                   {turn.contradiction_or_limit && <p data-answer-section="limit"><strong>{turn.locale === "ru" ? "Противоречие или граница." : "Contradiction or limit."}</strong> {turn.contradiction_or_limit}</p>}
@@ -342,7 +368,7 @@ export function BtcLiveDialogue(props: Props) {
         <label>
           <span>{hasConversation ? (ru ? "Продолжить разговор" : "Continue the conversation") : (ru ? "Ваш вопрос о BTC" : "Your BTC question")}</span>
           <textarea name="q" rows={3} minLength={2} maxLength={280} required placeholder={hasConversation
-            ? (ru ? "Почему? Что важнее? Ликвидность это подтверждает?" : "Why? What matters most? Does liquidity confirm it?")
+            ? (ru ? "Какие показатели сейчас важны? Почему? Что изменит вывод?" : "Which indicators matter now? Why? What would change the read?")
             : (ru ? "Что вы хотите понять о текущем поле BTC?" : "What do you want to understand about the current BTC field?")}/>
         </label>
         <div className="liveComposerControls">
