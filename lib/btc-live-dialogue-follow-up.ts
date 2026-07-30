@@ -247,13 +247,13 @@ function effective(
       case "PRIORITY_WITHIN_PRIOR":
         return `${priorSubject}. Что здесь важнее и почему, без прогноза?`;
       case "CONFIRM_WITH_MODULE":
-        return `${targetSubject}. Подтверждает ли это предыдущее чтение про ${priorSubject} или ослабляет его?`;
+        return `${targetSubject}. Подтверждают ли принятые показатели этого модуля текущее чтение или ослабляют его?`;
       case "COMPARE_MEMORY":
         return "Что изменилось в принятой Snapshot Memory по сравнению с предыдущим совместимым снимком?";
       case "CHANGE_CONDITION":
         return `${priorSubject}. За чем наблюдать дальше и что изменит этот вывод?`;
       case "EXPAND_RELATED_CLASS":
-        return `${targetSubject}. Что это показывает относительно прошлого чтения про ${priorSubject}?`;
+        return `${targetSubject}. Что показывает этот принятый модуль?`;
       case "EXPLAIN_CONTRADICTION":
         return `${priorSubject}. Почему противоречие или граница прошлого чтения важны?`;
     }
@@ -265,13 +265,13 @@ function effective(
     case "PRIORITY_WITHIN_PRIOR":
       return `${priorSubject}. Which accepted signal matters most and why, without a forecast?`;
     case "CONFIRM_WITH_MODULE":
-      return `${targetSubject}. Does this confirm or weaken the previous read about ${priorSubject}?`;
+      return `${targetSubject}. Do the accepted indicators in this module support or weaken the current read?`;
     case "COMPARE_MEMORY":
       return "What changed in accepted Snapshot Memory compared with the previous compatible snapshot?";
     case "CHANGE_CONDITION":
       return `${priorSubject}. What should I watch next and what would change this read?`;
     case "EXPAND_RELATED_CLASS":
-      return `${targetSubject}. What does this show relative to the previous read about ${priorSubject}?`;
+      return `${targetSubject}. What does this accepted module show?`;
     case "EXPLAIN_CONTRADICTION":
       return `${priorSubject}. Why does the contradiction or limit in the previous read matter?`;
   }
