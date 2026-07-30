@@ -1,51 +1,38 @@
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
 import {
-  BtcLiveDialogue,
-  type BtcLiveClarification,
-  type BtcLiveEnvelopeFailure,
-  type BtcLiveFailure,
-  type BtcLiveSourceContext,
-} from "../../../components/btc/BtcLiveDialogue";
+  BtcCosmographerDialogue,
+  type BtcCosmographerSourceContext,
+} from "../../../components/btc/BtcCosmographerDialogue";
 import {
-  isBtcContextualFollowUp,
-  parseBtcFollowUpContext,
-  resolveBtcFollowUp,
-  type BtcContextRelation,
-} from "../../../lib/btc-live-dialogue-follow-up";
+  parseBtcCosmographerContext,
+  routeBtcCosmographerQuestion,
+  type BtcCosmographerRoute,
+} from "../../../lib/btc-cosmographer-route-graph";
+import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
+import type { BtcCosmographerAnswerProjection } from "../../../lib/btc-protocol-evidence";
 import { loadBtcMarketEnvelope, type BtcMarketEnvelope } from "../../../lib/btc-market-envelope";
-import { BTC_BILINGUAL_SURFACE_CSS } from "../../../lib/btc-bilingual-surface-style";
-import { BTC_LIVE_DIALOGUE_CSS } from "../../../lib/btc-live-dialogue-style";
-import {
-  normalizeBtcDisplayQuestion,
-  resolveBtcPublicLocale,
-  type BtcLocaleSource,
-  type BtcPublicLocale,
-} from "../../../lib/btc-public-language-contract";
 import { canonicalizeBtcQuestionForRouter } from "../../../lib/btc-public-question-bridge";
 import { composeBtcPublicSnapshot } from "../../../lib/btc-public-snapshot-composer";
 import { loadBtcStaticSource } from "../../../lib/btc-public-static-source";
 import type { BtcPublicSnapshot } from "../../../lib/btc-public-output-contract";
+import { resolveBtcPublicLocale, type BtcPublicLocale } from "../../../lib/btc-public-language-contract";
+import { BTC_BILINGUAL_SURFACE_CSS } from "../../../lib/btc-bilingual-surface-style";
+import { BTC_LIVE_DIALOGUE_CSS } from "../../../lib/btc-live-dialogue-style";
 import { BTC_PRODUCT_REBALANCE_CSS } from "../../../lib/btc-product-rebalance-style";
 
+const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
+
 type Props = {
-  result: BtcPublicSnapshot | null;
-  failure: BtcLiveFailure | null;
-  envelope: BtcMarketEnvelope | null;
-  envelopeFailure: BtcLiveEnvelopeFailure | null;
-  clarification: BtcLiveClarification | null;
-  sourceContext: BtcLiveSourceContext;
-  initialQuestion: string;
-  effectiveQuestion: string;
-  initialDate: string;
   locale: BtcPublicLocale;
-  localeSource: BtcLocaleSource;
+  initialQuestion: string;
+  initialDate: string;
+  route: BtcCosmographerRoute | null;
+  answer: BtcCosmographerAnswerProjection | null;
+  sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
-  contextRelation: BtcContextRelation | null;
   sourceBindingChanged: boolean;
 };
-
-const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
 
 function deploymentSourceSha(): string | null {
   const value = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? null;
@@ -61,23 +48,23 @@ function failureAgeHours(value: string | null): number | null {
 }
 
 function applyFreshnessTruth(envelope: BtcMarketEnvelope, freshness: "FRESH" | "STALE_LIMITED"): BtcMarketEnvelope {
-  const current = { ...envelope.current, source_freshness: freshness };
-  if (freshness === "FRESH") return { ...envelope, current };
+  if (freshness === "FRESH") return { ...envelope, current: { ...envelope.current, source_freshness: freshness } };
   return {
     ...envelope,
-    current,
+    current: { ...envelope.current, source_freshness: freshness },
     synthesis: {
       ...envelope.synthesis,
       state: "INSUFFICIENT_EVIDENCE",
       confirming_modules: [],
-      contradicting_or_weakening_modules: ["Accepted source is older than 24 hours; strong current-state language is suppressed."],
-      why_this_matters: "The 24-hour freshness boundary is more important than a forced current-state conclusion.",
-      uncertainty: [
-        "Accepted source is older than 24 hours; strong current-state language is suppressed.",
-        ...envelope.synthesis.uncertainty.slice(1),
-      ],
+      contradicting_or_weakening_modules: ["Accepted Market Snapshot is older than 24 hours."],
+      why_this_matters: "Freshness takes priority over a forced current-state conclusion.",
+      uncertainty: ["Accepted Market Snapshot is older than 24 hours.", ...envelope.synthesis.uncertainty],
     },
   };
+}
+
+function needsMarket(route: BtcCosmographerRoute): boolean {
+  return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
 }
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
@@ -85,184 +72,100 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const initialDate = first(query.d);
   const resolvedLocale = resolveBtcPublicLocale(first(query.lang), initialQuestion);
   const source = await loadBtcStaticSource();
+  const sourceTimestamp = source.ok === false ? source.last_verified_at_utc ?? null : source.snapshot.generated_at_utc;
+  const sourceContext: BtcCosmographerSourceContext = source.ok === false
+    ? {
+        state: "UNAVAILABLE",
+        generated_at_utc: sourceTimestamp,
+        age_hours: failureAgeHours(sourceTimestamp),
+        proof_available: false,
+      }
+    : {
+        state: source.freshness,
+        generated_at_utc: sourceTimestamp,
+        age_hours: source.age_hours,
+        proof_available: true,
+      };
 
-  let sourceContext: BtcLiveSourceContext;
-  if (source.ok === false) {
-    const lastVerified = source.last_verified_at_utc ?? null;
-    sourceContext = {
-      state: "UNAVAILABLE",
-      generated_at_utc: lastVerified,
-      age_hours: failureAgeHours(lastVerified),
-      proof_available: false,
-    };
-  } else {
-    sourceContext = {
-      state: source.freshness,
-      generated_at_utc: source.snapshot.generated_at_utc,
-      age_hours: source.age_hours,
-      proof_available: true,
-    };
-  }
+  const base: Props = {
+    locale: resolvedLocale.locale,
+    initialQuestion: "",
+    initialDate,
+    route: null,
+    answer: null,
+    sourceContext,
+    deploymentSourceSha: deploymentSourceSha(),
+    sourceBindingChanged: false,
+  };
+  if (!initialQuestion) return { props: base };
 
-  const parsedContext = parseBtcFollowUpContext(query);
-  const currentSourceTimestamp = source.ok === false
-    ? source.last_verified_at_utc ?? null
-    : source.snapshot.generated_at_utc;
-  let effectiveQuestion = initialQuestion;
-  let contextRelation: BtcContextRelation | null = null;
-  let clarification: BtcLiveClarification | null = null;
+  const parsed = parseBtcCosmographerContext(query);
+  const packet = parsed.malformed ? null : parsed.packet;
+  const route = routeBtcCosmographerQuestion(resolvedLocale.locale, initialQuestion, packet, initialDate || undefined);
+  let snapshot: BtcPublicSnapshot | null = null;
+  let envelope: BtcMarketEnvelope | null = null;
 
-  if (initialQuestion && parsedContext.malformed) {
-    clarification = {
-      reason: "UNSUPPORTED_CONTEXT",
-      prompt: resolvedLocale.locale === "ru"
-        ? "Контекст прошлого хода повреждён. Уточните предмет вопроса: гравитация BTC, ликвидность или структура рынка."
-        : "The previous-turn context is invalid. Clarify the subject: BTC gravity, liquidity or market structure.",
-    };
-  } else if (initialQuestion && isBtcContextualFollowUp(initialQuestion)) {
-    const followUp = resolveBtcFollowUp(
-      resolvedLocale.locale,
-      initialQuestion,
-      parsedContext.packet,
-      currentSourceTimestamp,
-    );
-    if (followUp.status === "CLARIFICATION_REQUIRED") {
-      clarification = { reason: followUp.reason, prompt: followUp.clarification_prompt };
-    } else {
-      effectiveQuestion = followUp.effective_question;
-      contextRelation = followUp.context_relation;
+  if (needsMarket(route) && source.ok !== false) {
+    const marketQuestion = canonicalizeBtcQuestionForRouter(route.normalized_question);
+    const composed = await composeBtcPublicSnapshot(source, {
+      question: marketQuestion,
+      date: initialDate || undefined,
+    });
+    if (composed.ok !== false) {
+      snapshot = {
+        ...composed.value,
+        question: {
+          ...composed.value.question,
+          raw: initialQuestion,
+          normalized: route.normalized_question,
+        },
+      };
+      const market = await loadBtcMarketEnvelope(marketQuestion, {
+        temporal: {
+          state: snapshot.temporal_context.state,
+          label: snapshot.temporal_context.label,
+          harmonic_tension: snapshot.aspect_pressure.harmonic_tension,
+        },
+      });
+      if (market.ok !== false) envelope = applyFreshnessTruth(market.value, source.freshness);
     }
   }
 
+  const answer = buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
   const sourceBindingChanged = Boolean(
-    parsedContext.packet?.prior_snapshot_generated_at_utc &&
-    currentSourceTimestamp &&
-    parsedContext.packet.prior_snapshot_generated_at_utc !== currentSourceTimestamp,
+    packet?.prior_snapshot_generated_at_utc &&
+    sourceTimestamp &&
+    packet.prior_snapshot_generated_at_utc !== sourceTimestamp,
   );
-
-  const empty: Props = {
-    result: null,
-    failure: null,
-    envelope: null,
-    envelopeFailure: null,
-    clarification,
-    sourceContext,
-    initialQuestion: "",
-    effectiveQuestion: "",
-    initialDate,
-    locale: resolvedLocale.locale,
-    localeSource: resolvedLocale.source,
-    deploymentSourceSha: deploymentSourceSha(),
-    contextRelation,
-    sourceBindingChanged,
-  };
-
-  if (!initialQuestion) return { props: empty };
-  if (clarification) {
-    return {
-      props: {
-        ...empty,
-        initialQuestion,
-        effectiveQuestion: initialQuestion,
-      },
-    };
-  }
-
-  if (source.ok === false) {
-    return {
-      props: {
-        ...empty,
-        initialQuestion,
-        effectiveQuestion,
-        failure: {
-          code: source.code,
-          message: source.message,
-          last_verified_at_utc: source.last_verified_at_utc ?? null,
-        },
-      },
-    };
-  }
-
-  const coreQuestion = canonicalizeBtcQuestionForRouter(effectiveQuestion);
-  const composed = await composeBtcPublicSnapshot(source, {
-    question: coreQuestion,
-    date: initialDate || undefined,
-  });
-  if (composed.ok === false) {
-    return {
-      props: {
-        ...empty,
-        initialQuestion,
-        effectiveQuestion,
-        failure: {
-          code: composed.code,
-          message: composed.message,
-          last_verified_at_utc: null,
-        },
-      },
-    };
-  }
-
-  const result: BtcPublicSnapshot = {
-    ...composed.value,
-    question: {
-      ...composed.value.question,
-      raw: initialQuestion,
-      normalized: normalizeBtcDisplayQuestion(initialQuestion),
-    },
-  };
-  const market = await loadBtcMarketEnvelope(coreQuestion, {
-    temporal: {
-      state: result.temporal_context.state,
-      label: result.temporal_context.label,
-      harmonic_tension: result.aspect_pressure.harmonic_tension,
-    },
-  });
-  if (market.ok === false) {
-    return {
-      props: {
-        ...empty,
-        result,
-        initialQuestion,
-        effectiveQuestion,
-        envelopeFailure: {
-          code: market.code,
-          message: market.message,
-          last_verified_at_utc: market.last_verified_at_utc ?? null,
-        },
-      },
-    };
-  }
 
   return {
     props: {
-      ...empty,
-      result,
-      envelope: applyFreshnessTruth(market.value, source.freshness),
+      ...base,
       initialQuestion,
-      effectiveQuestion,
+      route,
+      answer,
+      sourceBindingChanged,
     },
   };
 };
 
 export default function BtcLivePage(props: Props) {
   const title = props.locale === "ru"
-    ? "BTC Космограф · Бесплатный диалог"
-    : "BTC Cosmographer · Free dialogue";
+    ? "BTC Космограф · Bitcoin Corridor"
+    : "BTC Cosmographer · Bitcoin Corridor";
   const description = props.locale === "ru"
-    ? "Бесплатный диалог с Market Cosmographer по текущему проверенному BTC snapshot."
-    : "A free Market Cosmographer dialogue grounded in the current verified BTC snapshot.";
-
+    ? "Навигационный диалог по протоколу Bitcoin, BTC Market, Snapshot Memory и Astromodule."
+    : "A navigational dialogue across Bitcoin Protocol, BTC Market, Snapshot Memory and Astromodule.";
   return <>
     <Head>
       <title>{title}</title>
       <meta name="description" content={description}/>
-      <meta name="btc-live-dialogue" content="free-question-v0-2-session-local"/>
+      <meta name="btc-live-dialogue" content="semantic-route-graph-v0-1"/>
       <meta name="btc-deployment-source-sha" content={props.deploymentSourceSha ?? ""}/>
     </Head>
-    <style dangerouslySetInnerHTML={{__html: BTC_BILINGUAL_SURFACE_CSS}}/>
-    <style dangerouslySetInnerHTML={{__html: BTC_PRODUCT_REBALANCE_CSS}}/>
-    <style dangerouslySetInnerHTML={{__html: BTC_LIVE_DIALOGUE_CSS}}/>
-    <BtcLiveDialogue {...props}/>
+    <style dangerouslySetInnerHTML={{ __html: BTC_BILINGUAL_SURFACE_CSS }}/>
+    <style dangerouslySetInnerHTML={{ __html: BTC_PRODUCT_REBALANCE_CSS }}/>
+    <style dangerouslySetInnerHTML={{ __html: BTC_LIVE_DIALOGUE_CSS }}/>
+    <BtcCosmographerDialogue {...props}/>
   </>;
 }

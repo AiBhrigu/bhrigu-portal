@@ -1,38 +1,41 @@
-import type { BtcEnvelopeQuestionClass } from "./btc-market-envelope";
-import type { BtcQuestionFacet, BtcQuestionSpecificAnswerState } from "./btc-executive-question-language";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
+import type {
+  BtcCosmographerAnswerState,
+  BtcCosmographerContextRelation,
+  BtcCosmographerDomain,
+  BtcCosmographerIntent,
+  BtcCosmographerRoute,
+} from "./btc-cosmographer-route-graph";
+import type { BtcCosmographerAnswerProjection, BtcCosmographerSection } from "./btc-protocol-evidence";
 
-export const BTC_DIALOGUE_SESSION_SCHEMA = "btc_free_dialogue_session_v0_1" as const;
-export const BTC_DIALOGUE_SESSION_KEY = "bhrigu:btc-free-dialogue:session:v0_1" as const;
+export const BTC_DIALOGUE_SESSION_SCHEMA =
+  "btc_cosmographer_dialogue_session_v0_2" as const;
+export const BTC_DIALOGUE_SESSION_KEY =
+  "bhrigu:btc-cosmographer:session:v0_2" as const;
 export const BTC_DIALOGUE_SESSION_MAX_TURNS = 20;
 export const BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS = 6;
-export const BTC_DIALOGUE_SESSION_MAX_BYTES = 64 * 1024;
-
-export type BtcDialogueTurnState =
-  | BtcQuestionSpecificAnswerState
-  | "FAILURE"
-  | "BOUNDED"
-  | "CLARIFICATION";
+export const BTC_DIALOGUE_SESSION_MAX_BYTES = 96 * 1024;
 
 export type BtcDialogueTurn = {
   turn_id: string;
   created_at_utc: string;
   locale: BtcPublicLocale;
   user_text: string;
-  effective_question: string;
-  observation_date: string | null;
-  question_class: BtcEnvelopeQuestionClass | null;
-  question_facets: BtcQuestionFacet[];
-  answer_state: BtcDialogueTurnState;
-  headline: string | null;
-  direct_answer: string | null;
-  evidence_lines: string[];
-  contradiction_or_limit: string | null;
-  what_would_change_the_read: string | null;
-  source_boundary: string | null;
+  route_domain: BtcCosmographerDomain;
+  route_subject: string;
+  route_intents: BtcCosmographerIntent[];
+  context_relation: BtcCosmographerContextRelation;
+  market_question_class: BtcCosmographerRoute["market_question_class"];
+  time_start: string | null;
+  time_end: string | null;
+  answer_state: BtcCosmographerAnswerState;
+  answer_mode: BtcCosmographerAnswerProjection["answer_mode"];
+  headline: string;
+  direct_answer: string;
+  sections: BtcCosmographerSection[];
+  source_boundary: string;
+  proof_label: string;
   source_snapshot_generated_at_utc: string | null;
-  proof_available: boolean;
-  context_relation: string | null;
   source_binding_changed: boolean;
 };
 
@@ -47,38 +50,20 @@ export type BtcDialogueSession = {
   source_binding: {
     deployment_sha: string | null;
     snapshot_generated_at_utc: string | null;
-    observation_date: string | null;
   };
   turns: BtcDialogueTurn[];
 };
 
-const QUESTION_CLASSES: BtcEnvelopeQuestionClass[] = [
-  "btc_gravity",
-  "market_structure",
-  "liquidity",
-  "market_participation_rotation",
-  "change_memory",
-  "temporal_pressure",
-  "general_btc_field",
-];
+function storageAvailable(): boolean {
+  return typeof window !== "undefined" && Boolean(window.sessionStorage);
+}
 
-const FACETS: BtcQuestionFacet[] = [
-  "change",
-  "reason",
-  "confirmation",
-  "watch",
-  "comparison",
-  "temporal_context",
-];
-
-const TURN_STATES: BtcDialogueTurnState[] = [
-  "CONFIRMED",
-  "SPLIT",
-  "LIMITED",
-  "FAILURE",
-  "BOUNDED",
-  "CLARIFICATION",
-];
+function uuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `btc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -96,69 +81,62 @@ function validIso(value: unknown): value is string {
   return typeof value === "string" && Number.isFinite(new Date(value).getTime());
 }
 
-function validLocale(value: unknown): value is BtcPublicLocale {
-  return value === "en" || value === "ru";
-}
-
-function validQuestionClass(value: unknown): value is BtcEnvelopeQuestionClass | null {
-  return value === null || QUESTION_CLASSES.includes(value as BtcEnvelopeQuestionClass);
-}
-
-function validFacetList(value: unknown): value is BtcQuestionFacet[] {
-  return Array.isArray(value) && value.length <= FACETS.length && value.every((facet) => FACETS.includes(facet as BtcQuestionFacet));
-}
-
-function validTurnState(value: unknown): value is BtcDialogueTurnState {
-  return TURN_STATES.includes(value as BtcDialogueTurnState);
+function sanitizeSections(value: unknown): BtcCosmographerSection[] | null {
+  if (!Array.isArray(value) || value.length > 8) return null;
+  const output: BtcCosmographerSection[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || !validText(item.id, 64) || !validText(item.label, 160)) return null;
+    const paragraph = item.paragraph === undefined ? undefined : item.paragraph;
+    const bullets = item.bullets === undefined ? undefined : item.bullets;
+    if (paragraph !== undefined && !validText(paragraph, 2400)) return null;
+    if (bullets !== undefined && (!Array.isArray(bullets) || bullets.length > 12 || !bullets.every((line) => validText(line, 1200)))) return null;
+    output.push({
+      id: item.id,
+      label: item.label,
+      ...(paragraph ? { paragraph } : {}),
+      ...(bullets ? { bullets: bullets as string[] } : {}),
+    });
+  }
+  return output;
 }
 
 function sanitizeTurn(value: unknown): BtcDialogueTurn | null {
   if (!isRecord(value)) return null;
-  if (!validText(value.turn_id, 160) || !validIso(value.created_at_utc) || !validLocale(value.locale)) return null;
-  if (!validText(value.user_text, 280) || !validText(value.effective_question, 560)) return null;
-  if (!nullableText(value.observation_date, 10) || !validQuestionClass(value.question_class)) return null;
-  if (!validFacetList(value.question_facets) || !validTurnState(value.answer_state)) return null;
-  if (!nullableText(value.headline, 320) || !nullableText(value.direct_answer, 2400)) return null;
-  if (!Array.isArray(value.evidence_lines)) return null;
-  const evidence = value.evidence_lines.filter((line) => validText(line, 800)).slice(0, 3);
-  if (!nullableText(value.contradiction_or_limit, 1800)) return null;
-  if (!nullableText(value.what_would_change_the_read, 1800)) return null;
-  if (!nullableText(value.source_boundary, 1600)) return null;
+  if (!validText(value.turn_id, 160) || !validIso(value.created_at_utc)) return null;
+  if (value.locale !== "ru" && value.locale !== "en") return null;
+  if (!validText(value.user_text, 500) || !validText(value.route_domain, 40) || !validText(value.route_subject, 80)) return null;
+  if (!Array.isArray(value.route_intents) || value.route_intents.length > 10 || !value.route_intents.every((item) => validText(item, 40))) return null;
+  if (!validText(value.context_relation, 40) || !nullableText(value.market_question_class, 64)) return null;
+  if (!nullableText(value.time_start, 10) || !nullableText(value.time_end, 10)) return null;
+  if (!validText(value.answer_state, 32) || !validText(value.answer_mode, 40)) return null;
+  if (!validText(value.headline, 400) || !validText(value.direct_answer, 5000)) return null;
+  const sections = sanitizeSections(value.sections);
+  if (!sections) return null;
+  if (!validText(value.source_boundary, 2600) || !validText(value.proof_label, 200)) return null;
   if (!nullableText(value.source_snapshot_generated_at_utc, 40)) return null;
-  if (typeof value.proof_available !== "boolean") return null;
-  if (!nullableText(value.context_relation, 64)) return null;
   if (typeof value.source_binding_changed !== "boolean") return null;
-
   return {
     turn_id: value.turn_id,
     created_at_utc: value.created_at_utc,
     locale: value.locale,
     user_text: value.user_text,
-    effective_question: value.effective_question,
-    observation_date: value.observation_date,
-    question_class: value.question_class,
-    question_facets: value.question_facets,
+    route_domain: value.route_domain as BtcCosmographerDomain,
+    route_subject: value.route_subject,
+    route_intents: value.route_intents as BtcCosmographerIntent[],
+    context_relation: value.context_relation as BtcCosmographerContextRelation,
+    market_question_class: value.market_question_class as BtcCosmographerRoute["market_question_class"],
+    time_start: value.time_start,
+    time_end: value.time_end,
     answer_state: value.answer_state,
+    answer_mode: value.answer_mode,
     headline: value.headline,
     direct_answer: value.direct_answer,
-    evidence_lines: evidence,
-    contradiction_or_limit: value.contradiction_or_limit,
-    what_would_change_the_read: value.what_would_change_the_read,
+    sections,
     source_boundary: value.source_boundary,
+    proof_label: value.proof_label,
     source_snapshot_generated_at_utc: value.source_snapshot_generated_at_utc,
-    proof_available: value.proof_available,
-    context_relation: value.context_relation,
     source_binding_changed: value.source_binding_changed,
   };
-}
-
-function storageAvailable(): boolean {
-  return typeof window !== "undefined" && Boolean(window.sessionStorage);
-}
-
-function uuid(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return `btc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 export function createBtcDialogueSession(
@@ -177,7 +155,6 @@ export function createBtcDialogueSession(
     source_binding: {
       deployment_sha: deploymentSha,
       snapshot_generated_at_utc: null,
-      observation_date: null,
     },
     turns: [],
   };
@@ -185,16 +162,12 @@ export function createBtcDialogueSession(
 
 export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | null {
   if (!isRecord(value) || value.schema !== BTC_DIALOGUE_SESSION_SCHEMA) return null;
-  if (!validText(value.session_id, 160) || !validLocale(value.locale)) return null;
+  if (!validText(value.session_id, 160) || (value.locale !== "ru" && value.locale !== "en")) return null;
   if (!validIso(value.created_at_utc) || !validIso(value.updated_at_utc)) return null;
-  if (!isRecord(value.source_binding) || !Array.isArray(value.turns)) return null;
-  if (!nullableText(value.source_binding.deployment_sha, 40)) return null;
-  if (!nullableText(value.source_binding.snapshot_generated_at_utc, 40)) return null;
-  if (!nullableText(value.source_binding.observation_date, 10)) return null;
-
+  if (!isRecord(value.source_binding) || !nullableText(value.source_binding.deployment_sha, 40)) return null;
+  if (!nullableText(value.source_binding.snapshot_generated_at_utc, 40) || !Array.isArray(value.turns)) return null;
   const turns = value.turns.map(sanitizeTurn).filter((turn): turn is BtcDialogueTurn => Boolean(turn));
   if (turns.length !== value.turns.length) return null;
-
   return compactBtcDialogueSession({
     schema: BTC_DIALOGUE_SESSION_SCHEMA,
     session_id: value.session_id,
@@ -206,7 +179,6 @@ export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | nu
     source_binding: {
       deployment_sha: value.source_binding.deployment_sha,
       snapshot_generated_at_utc: value.source_binding.snapshot_generated_at_utc,
-      observation_date: value.source_binding.observation_date,
     },
     turns,
   });
@@ -219,11 +191,10 @@ export function readBtcDialogueSession(
   if (!storageAvailable()) return createBtcDialogueSession(locale, deploymentSha);
   const raw = window.sessionStorage.getItem(BTC_DIALOGUE_SESSION_KEY);
   if (!raw) return createBtcDialogueSession(locale, deploymentSha);
-
   try {
     const parsed = parseBtcDialogueSession(JSON.parse(raw));
     if (!parsed) throw new Error("invalid session");
-    const normalized = {
+    return {
       ...parsed,
       locale,
       source_binding: {
@@ -231,9 +202,6 @@ export function readBtcDialogueSession(
         deployment_sha: deploymentSha ?? parsed.source_binding.deployment_sha,
       },
     };
-    const serialized = JSON.stringify(normalized);
-    if (serialized !== raw) window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, serialized);
-    return normalized;
   } catch {
     window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
     return createBtcDialogueSession(locale, deploymentSha);
@@ -248,26 +216,28 @@ export function compactBtcDialogueSession(session: BtcDialogueSession): BtcDialo
   let turns = session.turns.slice(-BTC_DIALOGUE_SESSION_MAX_TURNS);
   let compacted = session.compacted || turns.length !== session.turns.length;
   let candidate = { ...session, turns, turn_count: turns.length, compacted };
-
-  while (turns.length > BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS && serializedBytes(candidate) > BTC_DIALOGUE_SESSION_MAX_BYTES) {
+  while (
+    turns.length > BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS &&
+    serializedBytes(candidate) > BTC_DIALOGUE_SESSION_MAX_BYTES
+  ) {
     turns = turns.slice(1);
     compacted = true;
     candidate = { ...candidate, turns, turn_count: turns.length, compacted };
   }
-
   if (serializedBytes(candidate) > BTC_DIALOGUE_SESSION_MAX_BYTES) {
     turns = turns.map((turn) => ({
       ...turn,
-      direct_answer: turn.direct_answer?.slice(0, 900) ?? null,
-      evidence_lines: turn.evidence_lines.map((line) => line.slice(0, 360)),
-      contradiction_or_limit: turn.contradiction_or_limit?.slice(0, 600) ?? null,
-      what_would_change_the_read: turn.what_would_change_the_read?.slice(0, 600) ?? null,
-      source_boundary: turn.source_boundary?.slice(0, 400) ?? null,
+      direct_answer: turn.direct_answer.slice(0, 1800),
+      sections: turn.sections.slice(0, 4).map((section) => ({
+        ...section,
+        paragraph: section.paragraph?.slice(0, 700),
+        bullets: section.bullets?.slice(0, 5).map((line) => line.slice(0, 500)),
+      })),
+      source_boundary: turn.source_boundary.slice(0, 700),
     }));
     compacted = true;
     candidate = { ...candidate, turns, turn_count: turns.length, compacted };
   }
-
   return candidate;
 }
 
@@ -291,14 +261,12 @@ export function upsertBtcDialogueTurn(
   const turns = existing >= 0
     ? session.turns.map((item, index) => index === existing ? turn : item)
     : [...session.turns, turn];
-
   return writeBtcDialogueSession({
     ...session,
     locale: turn.locale,
     source_binding: {
       ...session.source_binding,
       snapshot_generated_at_utc: turn.source_snapshot_generated_at_utc,
-      observation_date: turn.observation_date,
     },
     turns,
   });
@@ -311,13 +279,7 @@ export function clearBtcDialogueSession(): void {
 export function latestContextTurn(turns: BtcDialogueTurn[]): BtcDialogueTurn | null {
   for (let index = turns.length - 1; index >= 0; index -= 1) {
     const turn = turns[index];
-    if (
-      turn.question_class &&
-      ["CONFIRMED", "SPLIT", "LIMITED"].includes(turn.answer_state) &&
-      turn.source_snapshot_generated_at_utc
-    ) {
-      return turn;
-    }
+    if (!["FAILURE", "CLARIFICATION"].includes(turn.answer_state)) return turn;
   }
   return null;
 }
@@ -325,26 +287,4 @@ export function latestContextTurn(turns: BtcDialogueTurn[]): BtcDialogueTurn | n
 function hashText(value: string): string {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0");
-}
-
-export function makeBtcDialogueTurnId(parts: {
-  userText: string;
-  effectiveQuestion: string;
-  observationDate: string | null;
-  snapshotTimestamp: string | null;
-  answerState: BtcDialogueTurnState;
-  headline: string | null;
-}): string {
-  return `btc-turn-${hashText([
-    parts.userText,
-    parts.effectiveQuestion,
-    parts.observationDate ?? "",
-    parts.snapshotTimestamp ?? "",
-    parts.answerState,
-    parts.headline ?? "",
-  ].join("\u241f"))}`;
-}
+    hashxôÙ…±Õ”¹¡…É½‘•Ğ¡¥¹‘•à¤ì(€€€¡…Í¢ÒÖF‚æ–×VÂ††6‚Âcsssc’“°¢Ğ¢&WGW&â††6‚ããâ’çFõ7G&–ærƒb’çE7F'Bƒ‚Â#"“°§Ğ ¦W‡÷'BgVæ7F–öâÖ¶T'F4F–ÆöwVUGW&ä–B‡'G3¢°¢W6W%FW‡C¢7G&–æs°¢&÷WFS¢'F46÷6Ööw&†W%&÷WFS°¢ç7vW#¢'F46÷6Ööw&†W$ç7vW%&ö¦V7F–öã°¢6æ6†÷EF–ÖW7F×¢7G&–ærÂçVÆÃ°§Ò“¢7G&–ær°¢&WGW&â'F2Ö6÷6Ööw&†W"×GW&âÒG¶†6…FW‡B…°¢'G2çW6W%FW‡BÀ¢'G2ç&÷WFRæFöÖ–âÀ¢'G2ç&÷WFRç7V&¦V7BÀ¢'G2ç&÷WFRæ–çFVçG2æ¦ö–â‚"Â"’À¢'G2ç&÷WFRæ6öçFW‡E÷&VÆF–öâÀ¢'G2ç&÷WFRçF–ÖU÷&ævSòç7F'Bóò""À¢'G2ç&÷WFRçF–ÖU÷&ævSòæVæBóò""À¢'G2æç7vW"æç7vW%÷7FFRÀ¢'G2æç7vW"æ†VFÆ–æRÀ¢'G2ç6æ6†÷EF–ÖW7F×óò""À¢Òæ¦ö–â‚%ÇS#Cb"’—Ö°§Ğ 
