@@ -13,6 +13,7 @@ on:
       - "pages/crypto-astro/btc/live.tsx"
       - "scripts/run-btc-live-dialogue-session-fixture.mjs"
       - "scripts/verify-btc-live-dialogue-surface.py"
+      - "tests/btc-bilingual-glyph-fixture.ts"
   workflow_dispatch:
 
 permissions:
@@ -56,6 +57,7 @@ jobs:
           lib/btc-live-dialogue-follow-up.ts
           pages/crypto-astro/btc/live.tsx
           scripts/run-btc-live-dialogue-session-fixture.mjs
+          tests/btc-bilingual-glyph-fixture.ts
           SCOPE
           else
             cat > /tmp/expected-scope.txt <<'SCOPE'
