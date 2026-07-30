@@ -73,8 +73,10 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
 function makeTurn(props: Props): BtcDialogueTurn | null {
   if (!props.initialQuestion || !props.route || !props.answer) return null;
   const timestamp = props.sourceContext.generated_at_utc;
-  const observationDate = props.route.time_range?.end ?? props.initialDate || null;
-  const evidenceLines = props.answer.sections.flatMap((section) => section.bullets ?? []).slice(0, 3);
+  const observationDate = props.route.time_range?.end ?? (props.initialDate || null);
+  const evidenceLines = props.answer.sections
+    .flatMap((section) => section.bullets ?? [])
+    .slice(0, 3);
   const turnWithoutId: Omit<BtcDialogueTurn, "turn_id"> = {
     created_at_utc: timestamp ?? `${observationDate ?? "2026-01-01"}T12:00:00Z`,
     locale: props.locale,
