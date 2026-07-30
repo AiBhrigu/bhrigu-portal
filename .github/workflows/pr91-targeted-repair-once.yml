@@ -1,0 +1,109 @@
+name: PR 91 Targeted Repair Once
+
+on:
+  push:
+    branches:
+      - feature/btc-session-local-dialogue-v0-1
+    paths:
+      - .github/workflows/pr91-targeted-repair-once.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pr91-targeted-repair-once
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/btc-session-local-dialogue-v0-1
+          fetch-depth: 0
+
+      - name: Apply two targeted repairs
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          follow = Path('lib/btc-live-dialogue-follow-up.ts')
+          text = follow.read_text(encoding='utf-8')
+          replacements = {
+              'return `${targetSubject}. Подтверждает ли это предыдущее чтение про ${priorSubject} или ослабляет его?`;':
+                  'return `${targetSubject}. Подтверждают ли принятые показатели этого модуля текущее чтение или ослабляют его?`;',
+              'return `${targetSubject}. Что это показывает относительно прошлого чтения про ${priorSubject}?`;':
+                  'return `${targetSubject}. Что показывает этот принятый модуль?`;',
+              'return `${targetSubject}. Does this confirm or weaken the previous read about ${priorSubject}?`;':
+                  'return `${targetSubject}. Do the accepted indicators in this module support or weaken the current read?`;',
+              'return `${targetSubject}. What does this show relative to the previous read about ${priorSubject}?`;':
+                  'return `${targetSubject}. What does this accepted module show?`;',
+          }
+          for old, new in replacements.items():
+              if text.count(old) != 1:
+                  raise SystemExit(f'follow-up replacement invariant failed: {old}')
+              text = text.replace(old, new, 1)
+          follow.write_text(text, encoding='utf-8')
+
+          visual = Path('scripts/verify-btc-live-dialogue-surface.py')
+          text = visual.read_text(encoding='utf-8')
+          old_import = 'from urllib.parse import quote, urlencode'
+          new_import = 'from urllib.parse import parse_qs, quote, urlencode, urlparse'
+          if text.count(old_import) != 1:
+              raise SystemExit('visual import invariant failed')
+          text = text.replace(old_import, new_import, 1)
+
+          old_submit = '''def submit_question(question):
+    textarea = wait("textarea[name='q']")
+    textarea.clear()
+    textarea.send_keys(question)
+    driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']").click()
+    wait(".liveDialogueShell")
+    WebDriverWait(driver, 60).until(
+        lambda d: question in d.current_url or quote(question) in d.current_url
+    )
+'''
+          new_submit = '''def submit_question(question):
+    previous_turns = len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange"))
+    textarea = wait("textarea[name='q']")
+    textarea.clear()
+    textarea.send_keys(question)
+    driver.find_element(By.CSS_SELECTOR, ".liveComposer button[type='submit']").click()
+    wait(".liveDialogueShell")
+    WebDriverWait(driver, 60).until(
+        lambda d: parse_qs(urlparse(d.current_url).query).get("q", [""])[0] == question
+    )
+    WebDriverWait(driver, 60).until(
+        lambda d: len(d.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) >= previous_turns + 1
+        and any(
+            node.text.strip() == question
+            for node in d.find_elements(By.CSS_SELECTOR, ".dialogueExchange .userTurn .turnBody p")
+        )
+    )
+'''
+          if text.count(old_submit) != 1:
+              raise SystemExit('visual submit_question invariant failed')
+          text = text.replace(old_submit, new_submit, 1)
+          visual.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Prove targeted diff and remove runner
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff -- lib/btc-live-dialogue-follow-up.ts scripts/verify-btc-live-dialogue-surface.py
+          git rm .github/workflows/pr91-targeted-repair-once.yml
+          git status --short
+
+      - name: Commit repair to existing PR branch
+        run: |
+          set -euo pipefail
+          git config user.name "bhrigu-ops-f"
+          git config user.email "154300034+AiBhrigu@users.noreply.github.com"
+          git add lib/btc-live-dialogue-follow-up.ts scripts/verify-btc-live-dialogue-surface.py
+          git commit -m "BTC: repair cross-class follow-up routing and visual navigation"
+          git push origin HEAD:feature/btc-session-local-dialogue-v0-1
