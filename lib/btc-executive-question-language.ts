@@ -140,6 +140,33 @@ function moduleState(envelope: BtcMarketEnvelope, moduleId: string): BtcSignalDi
   return envelope.phi_geometry.nodes.find((node) => node.id === moduleId)?.state ?? "UNAVAILABLE";
 }
 
+const PUBLIC_MODULE_LABEL: Record<BtcPublicLocale, Record<string, string>> = {
+  en: {
+    market_structure: "Market Structure",
+    liquidity_membrane: "Liquidity Membrane",
+    change_event_memory: "Change / Event Memory",
+    temporal_context: "Temporal Context",
+    cosmographer_review: "Cosmographer Review",
+  },
+  ru: {
+    market_structure: "Структура рынка",
+    liquidity_membrane: "Мембрана ликвидности",
+    change_event_memory: "Память изменений",
+    temporal_context: "Временной контекст",
+    cosmographer_review: "Обзор Космографа",
+  },
+};
+
+const PUBLIC_SIGNAL_LABEL: Record<BtcPublicLocale, Record<BtcSignalDirection, string>> = {
+  en: { UP: "strengthening", DOWN: "weakening", UNCHANGED: "unchanged", BOUNDED: "bounded", UNAVAILABLE: "unavailable" },
+  ru: { UP: "усиливается", DOWN: "ослабевает", UNCHANGED: "без изменения", BOUNDED: "ограничено", UNAVAILABLE: "недоступно" },
+};
+
+function moduleProofLabel(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, moduleId: string): string {
+  const label = PUBLIC_MODULE_LABEL[locale][moduleId] ?? moduleId.replace(/_/g, " ");
+  return `${label} — ${PUBLIC_SIGNAL_LABEL[locale][moduleState(envelope, moduleId)]}`;
+}
+
 function answerState(envelope: BtcMarketEnvelope, context?: BtcQuestionAnswerContext): BtcQuestionSpecificAnswerState {
   const [a, b] = envelope.route.primary_modules.map((id) => moduleState(envelope, id));
   let current: BtcQuestionSpecificAnswerState;
@@ -369,8 +396,8 @@ function contradictionText(
   context?: BtcQuestionAnswerContext,
 ): string {
   const ru = locale === "ru";
-  const primary = envelope.route.primary_modules.map((id) => `${id}:${moduleState(envelope, id)}`).join(" / ");
-  const supporting = envelope.route.supporting_modules.map((id) => `${id}:${moduleState(envelope, id)}`).join(" / ") || (ru ? "нет" : "none");
+  const primary = envelope.route.primary_modules.map((id) => moduleProofLabel(locale, envelope, id)).join(" / ");
+  const supporting = envelope.route.supporting_modules.map((id) => moduleProofLabel(locale, envelope, id)).join(" / ") || (ru ? "нет" : "none");
   if (
     context?.prior_answer_state === "SPLIT" &&
     context.prior_question_class === envelope.question_class &&

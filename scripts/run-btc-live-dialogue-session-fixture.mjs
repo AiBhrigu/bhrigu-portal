@@ -276,6 +276,8 @@ async function runRuntimeAcceptance(baseUrl) {
   if (deepRu.question_class !== "change_memory" || deepRu.relation !== "PRIORITY_WITHIN_PRIOR" || deepRu.answer_state !== "SPLIT") throw new Error("exact RU deep context route failed");
   if (!deepRu.facets.includes("reason") || deepRu.evidence_lines.length !== 3) throw new Error("exact RU deep facets/evidence failed");
   if (!deepRu.direct.includes("приоритет") || !deepRu.direct.includes("SPLIT") || !deepRu.limit.includes("SPLIT")) throw new Error("exact RU prior split not preserved");
+  if (["change_event_memory:", "market_structure:", "liquidity_membrane:", "temporal_context:", "cosmographer_review:"].some((id) => deepRu.limit.includes(id))) throw new Error("raw module ID leaked into RU public answer");
+  if (!deepRu.limit.includes("Память изменений") || !deepRu.limit.includes("Структура рынка") || !deepRu.limit.includes("Мембрана ликвидности")) throw new Error("RU public module labels missing");
   if (!deepRu.evidence_lines.every((line) => /важен|важно|важна/.test(line)) || !deepRu.change.includes("следующий принятый Snapshot") || !deepRu.source.includes("компактный контекст")) throw new Error("exact RU deep synthesis failed");
 
   const memoryPageEn = await getPage(baseUrl, "en", firstQuestions.memory_en);
@@ -283,6 +285,8 @@ async function runRuntimeAcceptance(baseUrl) {
   const deepEn = answerProjection(await getPage(baseUrl, "en", "Which indicators matter now?", memoryPacketEn, "2026-07-30"));
   if (deepEn.question_class !== "change_memory" || deepEn.relation !== "PRIORITY_WITHIN_PRIOR" || deepEn.answer_state !== "SPLIT") throw new Error("EN natural deep context route failed");
   if (!deepEn.direct.includes("priorities") || !deepEn.direct.includes("SPLIT") || !deepEn.limit.includes("SPLIT")) throw new Error("EN prior split not preserved");
+  if (["change_event_memory:", "market_structure:", "liquidity_membrane:", "temporal_context:", "cosmographer_review:"].some((id) => deepEn.limit.includes(id))) throw new Error("raw module ID leaked into EN public answer");
+  if (!deepEn.limit.includes("Change / Event Memory") || !deepEn.limit.includes("Market Structure") || !deepEn.limit.includes("Liquidity Membrane")) throw new Error("EN public module labels missing");
   if (!deepEn.evidence_lines.every((line) => line.includes("it matters because")) || !deepEn.change.includes("next accepted Snapshot") || !deepEn.source.includes("compact prior context")) throw new Error("EN deep synthesis failed");
 
   const basePacket = contextPacket(await getPage(baseUrl, "en", firstQuestions.gravity_en));
