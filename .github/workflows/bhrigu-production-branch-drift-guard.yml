@@ -23,7 +23,10 @@ jobs:
     env:
       CANONICAL_BRANCH: master
       PRODUCTION_BRANCH: main
-      CUSTOM_DOMAIN: https://www.bhrigu.io
+      CANONICAL_HOST: www.bhrigu.io
+      SECONDARY_HOST: bhrigu.io
+      CANONICAL_ORIGIN: https://www.bhrigu.io
+      SECONDARY_ORIGIN: https://bhrigu.io
 
     steps:
       - name: Checkout event source
@@ -38,6 +41,67 @@ jobs:
           git fetch --no-tags origin \
             "+refs/heads/${CANONICAL_BRANCH}:refs/remotes/origin/${CANONICAL_BRANCH}" \
             "+refs/heads/${PRODUCTION_BRANCH}:refs/remotes/origin/${PRODUCTION_BRANCH}"
+
+      - name: Validate canonical host configuration
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("vercel.json")
+          config = json.loads(path.read_text(encoding="utf-8"))
+          canonical_host = os.environ["CANONICAL_HOST"]
+          secondary_host = os.environ["SECONDARY_HOST"]
+          canonical_origin = os.environ["CANONICAL_ORIGIN"].rstrip("/")
+          secondary_origin = os.environ["SECONDARY_ORIGIN"].rstrip("/")
+
+          expected_rule = {
+              "source": "/:path*",
+              "has": [{"type": "host", "value": secondary_host}],
+              "destination": f"{canonical_origin}/:path*",
+              "permanent": True,
+          }
+          redirects = config.get("redirects")
+          exact_matches = [
+              rule for rule in redirects or []
+              if rule == expected_rule
+          ]
+          conflicting_rules = []
+          for rule in redirects or []:
+              hosts = {
+                  item.get("value")
+                  for item in rule.get("has", [])
+                  if item.get("type") == "host"
+              }
+              destination = str(rule.get("destination", ""))
+              if canonical_host in hosts and destination.startswith(secondary_origin):
+                  conflicting_rules.append(rule)
+
+          checks = {
+              "framework_nextjs": config.get("framework") == "nextjs",
+              "redirects_array": isinstance(redirects, list),
+              "exact_secondary_to_canonical_rule": len(exact_matches) == 1,
+              "no_canonical_to_secondary_conflict": not conflicting_rules,
+          }
+          report = {
+              "schema_version": "bhrigu_canonical_host_config_proof_v0_1",
+              "status": "PASS" if all(checks.values()) else "FAIL",
+              "canonical_host": canonical_host,
+              "secondary_host": secondary_host,
+              "expected_rule": expected_rule,
+              "checks": checks,
+              "conflicting_rules": conflicting_rules,
+          }
+          Path("artifacts/canonical-host-config-proof.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          if report["status"] != "PASS":
+              raise SystemExit(f"CANONICAL_HOST_CONFIG=FAIL {report}")
+          print("CANONICAL_HOST_CONFIG=PASS")
+          PY
 
       - name: Classify branch topology
         id: topology
@@ -133,7 +197,7 @@ jobs:
           echo "sha=$MASTER_SHA" >> "$GITHUB_OUTPUT"
           echo "FINAL_BRANCH_ALIGNMENT=PASS sha=$MASTER_SHA"
 
-      - name: Verify custom-domain deployment source
+      - name: Verify canonical and secondary public edges
         if: github.event_name != 'pull_request'
         env:
           EXPECTED_SHA: ${{ steps.final.outputs.sha }}
@@ -144,69 +208,158 @@ jobs:
           import json
           import os
           import time
+          import urllib.error
           import urllib.parse
           import urllib.request
           from pathlib import Path
 
           expected = os.environ["EXPECTED_SHA"]
-          base = os.environ["CUSTOM_DOMAIN"].rstrip("/")
+          canonical_host = os.environ["CANONICAL_HOST"]
+          secondary_host = os.environ["SECONDARY_HOST"]
+          canonical_origin = os.environ["CANONICAL_ORIGIN"].rstrip("/")
+          secondary_origin = os.environ["SECONDARY_ORIGIN"].rstrip("/")
           run_id = os.environ["RUN_ID"]
-          last = None
+          paths = ["/", "/crypto-astro/btc", "/crypto-astro/btc/live"]
 
-          for attempt in range(48):
-              query = urllib.parse.urlencode({
-                  "lang": "en",
-                  "__branch_guard": f"{run_id}-{attempt}",
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          def request(url, follow):
+              opener = urllib.request.build_opener() if follow else urllib.request.build_opener(NoRedirect)
+              req = urllib.request.Request(url, headers={
+                  "Cache-Control": "no-cache",
+                  "Pragma": "no-cache",
+                  "User-Agent": "ORION-BHRIGU-Dual-Edge-Guard/0.1",
               })
-              url = f"{base}/crypto-astro/btc?{query}"
               try:
-                  request = urllib.request.Request(url, headers={
-                      "Cache-Control": "no-cache",
-                      "Pragma": "no-cache",
-                      "User-Agent": "ORION-BHRIGU-Branch-Drift-Guard/0.1",
-                  })
-                  with urllib.request.urlopen(request, timeout=30) as response:
-                      final_url = response.geturl()
-                      status = response.status
-                      html = response.read().decode("utf-8")
-
-                  checks = {
-                      "http_200": status == 200,
-                      "route_preserved": urllib.parse.urlparse(final_url).path == "/crypto-astro/btc",
-                      "main_source_attribute": f'data-deployment-source-sha="{expected}"' in html,
-                      "head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in html,
-                      "visible_source_prefix": expected[:12] in html,
+                  response = opener.open(req, timeout=30)
+                  return {
+                      "status": response.status,
+                      "url": response.geturl(),
+                      "headers": dict(response.headers.items()),
+                      "body": response.read().decode("utf-8", errors="replace"),
                   }
-                  last = {
-                      "attempt": attempt + 1,
-                      "url": final_url,
-                      "expected_source_sha": expected,
-                      "checks": checks,
-                      "failures": [name for name, passed in checks.items() if not passed],
+              except urllib.error.HTTPError as exc:
+                  return {
+                      "status": exc.code,
+                      "url": exc.geturl(),
+                      "headers": dict(exc.headers.items()),
+                      "body": exc.read().decode("utf-8", errors="replace"),
                   }
-                  if not last["failures"]:
-                      break
               except Exception as exc:
-                  last = {
-                      "attempt": attempt + 1,
-                      "expected_source_sha": expected,
-                      "error": str(exc),
-                      "failures": ["request"],
+                  return {"error": f"{type(exc).__name__}: {exc}"}
+
+          def query_pairs(url):
+              return sorted(urllib.parse.parse_qsl(
+                  urllib.parse.urlparse(url).query,
+                  keep_blank_values=True,
+              ))
+
+          last = None
+          for attempt in range(48):
+              route_results = {}
+              failures = []
+              for path in paths:
+                  query = urllib.parse.urlencode({
+                      "lang": "en",
+                      "__branch_guard": f"{run_id}-{attempt}",
+                      "edge_contract": "preserve",
+                  })
+                  canonical_url = f"{canonical_origin}{path}?{query}"
+                  secondary_url = f"{secondary_origin}{path}?{query}"
+
+                  canonical = request(canonical_url, follow=False)
+                  secondary_initial = request(secondary_url, follow=False)
+                  secondary_followed = request(secondary_url, follow=True)
+
+                  checks = {}
+                  if any("error" in item for item in [canonical, secondary_initial, secondary_followed]):
+                      checks["requests_complete"] = False
+                  else:
+                      canonical_parsed = urllib.parse.urlparse(canonical["url"])
+                      location_raw = secondary_initial["headers"].get("Location") or secondary_initial["headers"].get("location")
+                      location_url = urllib.parse.urljoin(secondary_url, location_raw or "")
+                      location_parsed = urllib.parse.urlparse(location_url)
+                      followed_parsed = urllib.parse.urlparse(secondary_followed["url"])
+
+                      checks = {
+                          "requests_complete": True,
+                          "canonical_http_200": canonical["status"] == 200,
+                          "canonical_host_preserved": canonical_parsed.netloc == canonical_host,
+                          "canonical_path_preserved": canonical_parsed.path == path,
+                          "canonical_query_preserved": query_pairs(canonical["url"]) == query_pairs(canonical_url),
+                          "secondary_http_308": secondary_initial["status"] == 308,
+                          "redirect_https": location_parsed.scheme == "https",
+                          "redirect_to_canonical_host": location_parsed.netloc == canonical_host,
+                          "redirect_path_preserved": location_parsed.path == path,
+                          "redirect_query_preserved": query_pairs(location_url) == query_pairs(secondary_url),
+                          "followed_http_200": secondary_followed["status"] == 200,
+                          "followed_canonical_host": followed_parsed.netloc == canonical_host,
+                          "followed_path_preserved": followed_parsed.path == path,
+                          "followed_query_preserved": query_pairs(secondary_followed["url"]) == query_pairs(secondary_url),
+                      }
+                      if path != "/":
+                          canonical_html = canonical["body"]
+                          followed_html = secondary_followed["body"]
+                          checks.update({
+                              "canonical_main_source_attribute": f'data-deployment-source-sha="{expected}"' in canonical_html,
+                              "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
+                              "canonical_visible_source_prefix": expected[:12] in canonical_html,
+                              "followed_main_source_attribute": f'data-deployment-source-sha="{expected}"' in followed_html,
+                              "followed_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in followed_html,
+                              "followed_visible_source_prefix": expected[:12] in followed_html,
+                          })
+
+                  route_failures = [name for name, passed in checks.items() if not passed]
+                  if route_failures:
+                      failures.append({"path": path, "checks": route_failures})
+                  route_results[path] = {
+                      "canonical": {
+                          "status": canonical.get("status"),
+                          "url": canonical.get("url"),
+                      },
+                      "secondary_initial": {
+                          "status": secondary_initial.get("status"),
+                          "url": secondary_initial.get("url"),
+                          "location": secondary_initial.get("headers", {}).get("Location")
+                              or secondary_initial.get("headers", {}).get("location"),
+                      },
+                      "secondary_followed": {
+                          "status": secondary_followed.get("status"),
+                          "url": secondary_followed.get("url"),
+                      },
+                      "checks": checks,
+                      "failures": route_failures,
                   }
+
+              last = {
+                  "attempt": attempt + 1,
+                  "expected_source_sha": expected,
+                  "canonical_host": canonical_host,
+                  "secondary_host": secondary_host,
+                  "route_results": route_results,
+                  "failures": failures,
+              }
+              if not failures:
+                  break
               time.sleep(5)
 
           report = {
-              "schema_version": "bhrigu_production_branch_public_alignment_v0_1",
+              "schema_version": "bhrigu_production_dual_edge_alignment_v0_1",
               "status": "PASS" if last and not last.get("failures") else "FAIL",
               "result": last,
           }
-          Path("artifacts/public-deployment-source-proof.json").write_text(
+          Path("artifacts/public-dual-edge-proof.json").write_text(
               json.dumps(report, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
           if report["status"] != "PASS":
-              raise SystemExit(f"PUBLIC_DEPLOYMENT_SOURCE_ALIGNMENT=FAIL {last}")
-          print(f"PUBLIC_DEPLOYMENT_SOURCE_ALIGNMENT=PASS source_sha={expected}")
+              raise SystemExit(f"PUBLIC_DUAL_EDGE_ALIGNMENT=FAIL {last}")
+          print(
+              "PUBLIC_DUAL_EDGE_ALIGNMENT=PASS "
+              f"canonical={canonical_host} secondary={secondary_host} source_sha={expected}"
+          )
           PY
 
       - name: Write final guard report
@@ -223,9 +376,11 @@ jobs:
           import os
           from pathlib import Path
           Path("artifacts/branch-drift-guard-report.json").write_text(json.dumps({
-              "schema_version": "bhrigu_production_branch_drift_guard_report_v0_1",
+              "schema_version": "bhrigu_production_branch_drift_guard_report_v0_2",
               "canonical_branch": "master",
               "production_branch": "main",
+              "canonical_host": os.environ.get("CANONICAL_HOST"),
+              "secondary_host": os.environ.get("SECONDARY_HOST"),
               "initial_state": os.environ.get("INITIAL_STATE") or None,
               "initial_master_sha": os.environ.get("INITIAL_MASTER_SHA") or None,
               "initial_main_sha": os.environ.get("INITIAL_MAIN_SHA") or None,
