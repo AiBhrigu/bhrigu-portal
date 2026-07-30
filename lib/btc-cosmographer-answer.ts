@@ -140,8 +140,8 @@ function navigationAnswer(
   unknownQuestion?: string,
 ): BtcCosmographerAnswerProjection {
   return {
-    answer_state: "LIMITED",
-    answer_mode: "NAVIGATION",
+    answer_state: unknownQuestion ? "CLARIFICATION" : "LIMITED",
+    answer_mode: unknownQuestion ? "CLARIFICATION" : "NAVIGATION",
     headline: unknownQuestion
       ? (locale === "ru"
           ? "Я не буду подменять неизвестный предмет рыночным шаблоном"
