@@ -1,0 +1,49 @@
+name: BTC Public Live Multi-Body Projection Apply
+
+on:
+  push:
+    branches:
+      - repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - lib/btc-cosmographer-public-multi-body-projection.ts
+      - scripts/verify-btc-public-live-multi-body-projection.mjs
+
+permissions:
+  contents: write
+
+concurrency:
+  group: btc-public-live-multi-body-projection-apply
+  cancel-in-progress: false
+
+jobs:
+  apply-exact-projection:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v4
+        with:
+          ref: repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enforce accepted ancestry
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 86815de0c90aa26e67213e02ec3eee02012782a6 HEAD
+
+      - name: Apply deterministic projection patch
+        run: python3 scripts/apply-btc-public-live-multi-body-projection.py
+
+      - name: Commit exact production projection
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add pages/crypto-astro/btc/live.tsx components/btc/BtcCosmographerDialogue.tsx lib/btc-live-dialogue-style.ts
+          git diff --cached --check
+          git commit -m "BTC: project multi-body Astro UX into public live"
+          git push origin HEAD:repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
