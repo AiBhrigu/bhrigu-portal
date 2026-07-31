@@ -98,6 +98,7 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
     MARKET_DIAGNOSIS: ["BTC Market · чтение", "BTC Market · read"],
     ASTRO_INTERVAL: ["Astromodule · период", "Astromodule · interval"],
     ASTRO_STATE: ["Astromodule · состояние", "Astromodule · state"],
+    ASTRO_YEAR_OVERVIEW: ["Astromodule · годовой обзор", "Astromodule · annual overview"],
     ASTRO_BTC_BRIDGE: ["Astro × BTC · сопоставление", "Astro × BTC · comparison"],
     METHODOLOGY: ["Метод и доказательность", "Method and evidence"],
     NAVIGATION: ["Навигация Bitcoin Corridor", "Bitcoin Corridor navigation"],
@@ -191,6 +192,17 @@ export function BtcCosmographerDialogue(props: Props) {
   }, [hydrated, turns.length]);
 
   const contextTurn = latestContextTurn(turns);
+  const retainedAstroTurn = [...turns].reverse().find((turn) =>
+    turn.route_subject === "planetary_aspects" &&
+    (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
+    Boolean(turn.time_start && turn.time_end),
+  );
+  const retainedAstroFields = retainedAstroTurn ? {
+    rad: "astromodule",
+    ras: "planetary_aspects",
+    rat0: retainedAstroTurn.time_start ?? "",
+    rat1: retainedAstroTurn.time_end ?? "",
+  } : null;
   const hasConversation = turns.length > 0;
   const contextFields = contextTurn ? {
     cc: BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
@@ -310,17 +322,24 @@ export function BtcCosmographerDialogue(props: Props) {
                 </header>
                 {turn.direct_answer && <p className="answerLead" data-answer-direct="true">{turn.direct_answer}</p>}
                 {sections.length > 0 && <div className="answerNarrative">
-                  {sections.map((section) => <section
-                    key={`${turn.turn_id}-${section.id}`}
-                    data-answer-section={legacySectionId(section.id)}
-                    data-semantic-answer-section={section.id}
-                  >
-                    <p><strong>{section.label}.</strong></p>
-                    {section.paragraph && <p>{section.paragraph}</p>}
-                    {section.bullets && section.bullets.length > 0 && <ul>
-                      {section.bullets.map((line, itemIndex) => <li key={`${turn.turn_id}-${section.id}-${itemIndex}`}>{line}</li>)}
-                    </ul>}
-                  </section>)}
+                  {sections.map((section) => {
+                    const sectionKey = `${turn.turn_id}-${section.id}`;
+                    if (section.id === "fast_triggers" && section.bullets?.length) {
+                      return <section key={sectionKey} data-answer-section={legacySectionId(section.id)} data-semantic-answer-section={section.id}>
+                        <details className="answerDisclosure" data-complete-transitions="collapsed">
+                          <summary>{section.label} · {section.bullets.length}</summary>
+                          <ul>{section.bullets.map((line, itemIndex) => <li key={`${sectionKey}-${itemIndex}`}>{line}</li>)}</ul>
+                        </details>
+                      </section>;
+                    }
+                    return <section key={sectionKey} data-answer-section={legacySectionId(section.id)} data-semantic-answer-section={section.id}>
+                      <p><strong>{section.label}.</strong></p>
+                      {section.paragraph && <p>{section.paragraph}</p>}
+                      {section.bullets && section.bullets.length > 0 && <ul>
+                        {section.bullets.map((line, itemIndex) => <li key={`${sectionKey}-${itemIndex}`}>{line}</li>)}
+                      </ul>}
+                    </section>;
+                  })}
                 </div>}
                 {turn.source_binding_changed && <p className="sourceChangedNote" data-source-changed="true">
                   {ru ? "Market Snapshot обновился между ходами; рыночная часть перестроена." : "Market Snapshot changed between turns; the market layer was rebuilt."}
@@ -344,6 +363,9 @@ export function BtcCosmographerDialogue(props: Props) {
         action="/crypto-astro/btc/live"
       >
         <input type="hidden" name="lang" value={locale}/>
+        {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) =>
+          <input key={name} type="hidden" name={name} value={value}/>
+        )}
         {contextFields && Object.entries(contextFields).map(([name, value]) =>
           <input key={name} type="hidden" name={name} value={value}/>
         )}
