@@ -11,8 +11,10 @@ on:
       - "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs"
       - "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh"
       - "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs"
+      - "scripts/verify-btc-cosmographer-local-rc-usability.py"
       - "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md"
       - "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md"
+      - "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md"
   workflow_dispatch:
 
 permissions:
@@ -25,7 +27,7 @@ concurrency:
 jobs:
   local-release-candidate:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 50
     env:
       BTC_LOCAL_RC: "1"
       BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -64,14 +66,16 @@ jobs:
               "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
               "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
               "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
+              "scripts/verify-btc-cosmographer-local-rc-usability.py",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
           }
           unexpected = sorted(set(changed) - allowed)
           missing = sorted(allowed - set(changed))
           if unexpected or missing:
               raise SystemExit(f"scope mismatch: unexpected={unexpected}, missing={missing}")
-          print({"status": "PASS_LOCAL_RC_PLUS_PINNED_V0_5_OVERLAY", "changed": changed})
+          print({"status": "PASS_LOCAL_RC_USABILITY_REPAIR_SCOPE", "changed": changed})
           PY
 
       - name: Set up Node 20
@@ -107,6 +111,14 @@ jobs:
         env:
           BTC_COSMOGRAPHER_LOCAL_RC_BASE: http://127.0.0.1:4185
         run: node scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs
+
+      - name: Install usability visual verifier
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Run six-state desktop and mobile usability acceptance
+        env:
+          BTC_COSMOGRAPHER_LOCAL_RC_BASE: http://127.0.0.1:4185
+        run: python3 scripts/verify-btc-cosmographer-local-rc-usability.py
 
       - name: Prove public gate is closed without env
         run: |
