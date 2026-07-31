@@ -26,8 +26,12 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .answerHeader{display:grid;gap:5px}.answerHeader h2{margin:0;font-size:clamp(30px,4.5vw,48px);line-height:1}
 .answerLead{margin:18px 0 0;color:var(--t);font-size:clamp(18px,2.2vw,22px);line-height:1.55;overflow-wrap:anywhere}
 .answerNarrative{display:grid;gap:14px;margin-top:22px}.answerNarrative p{margin:0;color:var(--t2);line-height:1.65}.answerNarrative strong{color:var(--t);font-weight:600}.answerNarrative ul{display:grid;gap:8px;margin:10px 0 0;padding-left:20px;color:var(--t2)}.answerNarrative li{line-height:1.55;overflow-wrap:anywhere}
-.answerNarrative [data-semantic-answer-section="main_windows"]>ul{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:0;list-style:none}
-.answerNarrative [data-semantic-answer-section="main_windows"]>ul>li{margin:0;padding:14px;border:1px solid rgba(106,168,255,.22);border-radius:14px;background:rgba(10,22,38,.72)}
+.astroWindowGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.astroWindowCard{display:grid;grid-template-columns:auto minmax(0,1fr);gap:13px;margin:0;padding:15px;border:1px solid rgba(106,168,255,.22);border-radius:14px;background:rgba(10,22,38,.72)}
+.astroWindowRank{display:grid;align-content:start;justify-items:center;min-width:52px;padding:9px 7px;border:1px solid rgba(106,168,255,.34);border-radius:12px;background:rgba(106,168,255,.055);color:var(--t)}
+.astroWindowRank span{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--m)}.astroWindowRank strong{font-size:22px;line-height:1.1}
+.astroWindowBody{min-width:0}.astroWindowRange{color:var(--t);font-size:12px;line-height:1.4}.astroWindowPeak{margin-top:3px;color:var(--gold);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.astroWindowTitle{margin:10px 0 7px;color:var(--t);font-size:17px;line-height:1.25}.astroWindowBasis{margin:0!important;color:var(--t2)!important;font-size:13px;line-height:1.5!important}
 .answerNarrative [data-semantic-answer-section="market_layer"]{order:-1;padding:15px;border:1px solid rgba(210,164,95,.28);border-radius:14px;background:rgba(210,164,95,.045)}
 .answerDisclosure{border:1px solid rgba(106,168,255,.2);border-radius:14px;background:rgba(5,12,21,.62)}
 .answerDisclosure summary{cursor:pointer;padding:13px 15px;color:var(--t);font-weight:600}.answerDisclosure[open] summary{border-bottom:1px solid var(--bl)}.answerDisclosure ul{padding:13px 30px 16px}
@@ -48,6 +52,6 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .liveDialoguePage{padding-inline:14px}.liveDialogueTopbar{grid-template-columns:1fr auto}.liveIdentity{display:none}.liveDialogueShell{padding-top:34px}.liveDialogueIntro{margin-bottom:28px}.liveDialogueIntro h1{font-size:clamp(38px,12vw,52px)}.liveTrustLine{gap:7px 12px}
 .liveDialogueShell:has(.liveThread){padding-top:20px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro{gap:5px;margin-bottom:18px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro>.eyebrow,.liveDialogueShell:has(.liveThread) .liveDialogueIntro>p:not(.eyebrow):not(.liveCompactionNotice){display:none}.liveDialogueShell:has(.liveThread) .liveDialogueIntro h1{font-size:30px;line-height:1}.liveDialogueShell:has(.liveThread) .liveTrustLine{margin-top:5px;font-size:8px}
 .liveSessionLine{gap:7px 10px;font-size:8px}.liveSessionLine span+span:before{margin-right:10px}.liveNewConversation{width:100%;margin-left:0}
-.liveDialogueShell:has(.liveThread) .liveThread{gap:22px}.dialogueExchange{gap:14px}.liveDialogueShell:has(.liveThread) .userTurn .turnBody{padding:15px 16px}.userTurn .turnBody{width:94%}.turnBody{padding:19px 17px}.answerHeader h2{font-size:clamp(27px,8.5vw,36px)}.answerLead{font-size:18px}.answerNarrative [data-semantic-answer-section="main_windows"]>ul{grid-template-columns:1fr}.liveComposerControls{grid-template-columns:1fr}.liveBoundary{text-align:left}
+.liveDialogueShell:has(.liveThread) .liveThread{gap:22px}.dialogueExchange{gap:14px}.liveDialogueShell:has(.liveThread) .userTurn .turnBody{padding:15px 16px}.userTurn .turnBody{width:94%}.turnBody{padding:19px 17px}.answerHeader h2{font-size:clamp(27px,8.5vw,36px)}.answerLead{font-size:18px}.astroWindowGrid{grid-template-columns:1fr}.astroWindowCard{grid-template-columns:48px minmax(0,1fr);padding:13px}.liveComposerControls{grid-template-columns:1fr}.liveBoundary{text-align:left}
 }
 `;

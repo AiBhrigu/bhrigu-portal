@@ -57,6 +57,114 @@ function legacySectionId(id: string): string {
   return id;
 }
 
+type AstroWindowProjection = {
+  rank: string;
+  range: string;
+  start: string;
+  peak: string;
+  title: string;
+  basis: string;
+};
+
+function parseAstroWindowBullet(
+  locale: BtcPublicLocale,
+  bullet: string,
+): AstroWindowProjection | null {
+  const parts = bullet.split(" · ");
+  if (parts.length < 3) return null;
+  const rank = parts[0].replace(locale === "ru" ? "Ранг " : "Rank ", "").trim();
+  const range = parts[1].trim();
+  const remainder = parts.slice(2).join(" · ");
+  const colon = remainder.indexOf(": ");
+  if (!rank || !range || colon < 0) return null;
+  const peak = remainder
+    .slice(0, colon)
+    .replace(locale === "ru" ? "пик " : "peak ", "")
+    .trim();
+  const body = remainder.slice(colon + 2);
+  const marker = locale === "ru" ? ". Основания: " : ". Basis: ";
+  const markerIndex = body.indexOf(marker);
+  if (markerIndex < 0) return null;
+  const start = range.split("–")[0]?.trim() ?? "";
+  return {
+    rank,
+    range,
+    start,
+    peak,
+    title: body.slice(0, markerIndex).trim(),
+    basis: body.slice(markerIndex + marker.length).replace(/\.$/, "").trim(),
+  };
+}
+
+function publicDomainLabel(locale: BtcPublicLocale, domain: string): string {
+  const labels: Record<string, [string, string]> = {
+    bitcoin_protocol: ["Bitcoin Protocol", "Bitcoin Protocol"],
+    btc_market: ["BTC Market", "BTC Market"],
+    snapshot_memory: ["Snapshot Memory", "Snapshot Memory"],
+    astromodule: ["Astromodule", "Astromodule"],
+    astro_btc_bridge: ["Astro × BTC", "Astro × BTC"],
+    methodology: ["Метод и доказательность", "Method and evidence"],
+    navigation: ["Навигация Bitcoin Corridor", "Bitcoin Corridor navigation"],
+    unsupported: ["Граница поддержки", "Support boundary"],
+  };
+  const value = labels[domain] ?? [domain, domain];
+  return locale === "ru" ? value[0] : value[1];
+}
+
+function AstroWindowSection({
+  locale,
+  section,
+  sectionKey,
+}: {
+  locale: BtcPublicLocale;
+  section: NonNullable<BtcDialogueTurn["sections"]>[number];
+  sectionKey: string;
+}) {
+  const parsed = (section.bullets ?? []).map((bullet) =>
+    parseAstroWindowBullet(locale, bullet)
+  );
+  if (parsed.some((item) => !item)) {
+    return <section
+      key={sectionKey}
+      data-answer-section={legacySectionId(section.id)}
+      data-semantic-answer-section={section.id}
+    >
+      <p><strong>{section.label}.</strong></p>
+      <ul>{section.bullets?.map((line, itemIndex) =>
+        <li key={`${sectionKey}-${itemIndex}`}>{line}</li>
+      )}</ul>
+    </section>;
+  }
+  return <section
+    key={sectionKey}
+    data-answer-section={legacySectionId(section.id)}
+    data-semantic-answer-section={section.id}
+  >
+    <p><strong>{section.label}.</strong></p>
+    <div className="astroWindowGrid">
+      {(parsed as AstroWindowProjection[]).map((item) =>
+        <article
+          className="astroWindowCard"
+          data-window-start={item.start}
+          data-window-rank={item.rank}
+          key={`${sectionKey}-${item.range}-${item.peak}`}
+        >
+          <div className="astroWindowRank" aria-label={`${locale === "ru" ? "Ранг" : "Rank"} ${item.rank}`}>
+            <span>{locale === "ru" ? "Ранг" : "Rank"}</span>
+            <strong>{item.rank}</strong>
+          </div>
+          <div className="astroWindowBody">
+            <div className="astroWindowRange">{item.range}</div>
+            <div className="astroWindowPeak">{locale === "ru" ? "пик" : "peak"} {item.peak}</div>
+            <h3 className="astroWindowTitle">{item.title}</h3>
+            <p className="astroWindowBasis">{item.basis}</p>
+          </div>
+        </article>
+      )}
+    </div>
+  </section>;
+}
+
 function semanticRelation(turn: BtcDialogueTurn): string {
   return turn.context_relation ?? "GENUINELY_AMBIGUOUS";
 }
@@ -324,6 +432,14 @@ export function BtcCosmographerDialogue(props: Props) {
                 {sections.length > 0 && <div className="answerNarrative">
                   {sections.map((section) => {
                     const sectionKey = `${turn.turn_id}-${section.id}`;
+                    if (section.id === "main_windows" && section.bullets?.length) {
+                      return <AstroWindowSection
+                        locale={turn.locale}
+                        section={section}
+                        sectionKey={sectionKey}
+                        key={sectionKey}
+                      />;
+                    }
                     if (section.id === "fast_triggers" && section.bullets?.length) {
                       return <section key={sectionKey} data-answer-section={legacySectionId(section.id)} data-semantic-answer-section={section.id}>
                         <details className="answerDisclosure" data-complete-transitions="collapsed">
@@ -345,7 +461,7 @@ export function BtcCosmographerDialogue(props: Props) {
                   {ru ? "Market Snapshot обновился между ходами; рыночная часть перестроена." : "Market Snapshot changed between turns; the market layer was rebuilt."}
                 </p>}
                 <footer className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
-                  <span>{domain}</span>
+                  <span>{publicDomainLabel(turn.locale, domain)}</span>
                   {observationLabel && <span data-observation-date>{observationLabel}</span>}
                   {turn.time_start && turn.time_end && <span>{turn.time_start} — {turn.time_end}</span>}
                   <span>{turn.proof_label ?? (turn.proof_available ? "Proof available" : "Proof unavailable")}</span>
