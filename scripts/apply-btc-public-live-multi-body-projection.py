@@ -10,49 +10,73 @@ def replace_once(path: str, old: str, new: str) -> None:
     file.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
-# The accepted annual Astro answer contains 14 complete station/ingress bullets.
-# Preserve it in the compact tab-local session while retaining a bounded validator.
+# Browser scroll restoration can override the first React effect after a GET
+# navigation. Disable restoration on the live dialogue and focus/scroll the newest
+# answer again across two animation frames.
 replace_once(
-    "lib/btc-live-dialogue-session.ts",
-    '''    if (item.bullets !== undefined && !stringList(item.bullets, 12, 1200)) return false;''',
-    '''    if (item.bullets !== undefined && !stringList(item.bullets, 24, 1200)) return false;''',
+    "components/btc/BtcCosmographerDialogue.tsx",
+    '''  useEffect(() => {
+    if (!hydrated || !newestRef.current) return;
+    newestRef.current.focus({ preventScroll: true });
+    newestRef.current.scrollIntoView({ block: "nearest" });
+  }, [hydrated, turns.length]);''',
+    '''  useEffect(() => {
+    if (!hydrated || !newestRef.current) return;
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    const focusNewest = () => {
+      const node = newestRef.current;
+      if (!node) return;
+      node.focus({ preventScroll: true });
+      node.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+    };
+    focusNewest();
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(focusNewest);
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
+  }, [hydrated, turns.length]);''',
 )
 
-# Human-facing labels may intentionally keep canonical product names such as
-# “Astromodule”; reject raw underscore enums rather than lowercased product names.
+replace_once(
+    "lib/btc-live-dialogue-style.ts",
+    '''.dialogueTurn{display:grid;gap:8px;outline:none}''',
+    '''.dialogueTurn{display:grid;gap:8px;outline:none;scroll-margin-top:18px}''',
+)
+
+# Measure only after the application has focused the newest answer. A bounded
+# viewport capture is sufficient evidence; Chrome element screenshots time out on
+# very tall bridge answers.
 path = "scripts/verify-btc-public-live-visual-information-acceptance.py"
 replace_once(
     path,
-    '''RAW_DOMAINS = {
-    "astromodule",
-    "astro_btc_bridge",
-    "bitcoin_protocol",
-    "btc_market",
-    "snapshot_memory",
-    "methodology",
-    "navigation",
-    "unsupported",
-}
+    '''        WebDriverWait(driver, 45).until(
+            lambda instance: (
+                instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
+                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
+                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
+            )
+        )
 ''',
-    '''PUBLIC_DOMAIN_LABELS = {
-    "Bitcoin Protocol",
-    "BTC Market",
-    "Snapshot Memory",
-    "Astromodule",
-    "Astro × BTC",
-    "Метод и доказательность",
-    "Method and evidence",
-    "Навигация Bitcoin Corridor",
-    "Bitcoin Corridor navigation",
-    "Граница поддержки",
-    "Support boundary",
-}
+    '''        WebDriverWait(driver, 45).until(
+            lambda instance: (
+                instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
+                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
+                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
+            )
+        )
+        WebDriverWait(driver, 45).until(
+            lambda instance: instance.execute_script(
+                "return document.activeElement === document.querySelector('.cosmographerTurn');"
+            )
+        )
 ''',
 )
 replace_once(
     path,
-    '''        first.casefold() not in RAW_DOMAINS and "_" not in first,''',
-    '''        first in PUBLIC_DOMAIN_LABELS and "_" not in first,''',
+    '''    answer.screenshot(str(ARTIFACTS / f"{label}-answer.png"))''',
+    '''    driver.save_screenshot(str(ARTIFACTS / f"{label}-answer.png"))''',
 )
 
-print("PASS_PUBLIC_LIVE_SESSION_AND_PROOF_ACCEPTANCE_REPAIR")
+print("PASS_PUBLIC_LIVE_NEWEST_ANSWER_FOCUS_REPAIR")
