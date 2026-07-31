@@ -28,7 +28,7 @@ check("salience_dimensions", [
 check("jupiter_default_absent", !moduleSource.includes('? route.subject : "jupiter"'));
 check("chronological_sort", moduleSource.includes('sort((a, b) => a.start.localeCompare(b.start))'));
 check("no_causality_boundary", moduleSource.includes("не доказывает причинное влияние на BTC"));
-check("compact_astro_memory", ["rad", "ras", "rat0", "rat1"].every((value) => componentSource.includes(`name="${value}"`)));
+check("compact_astro_memory", ["rad", "ras", "rat0", "rat1"].every((value) => componentSource.includes(`name=\"${value}\"`)));
 check("no_transcript_transport", !componentSource.includes("transcript") || componentSource.includes("without transporting the transcript"));
 check("noindex", pageSource.includes('noindex,nofollow,noarchive'));
 check("public_2026_evidence", astroData.range.start === "2026-01-01" && astroData.range.end === "2026-12-31");
@@ -161,9 +161,14 @@ async function runRuntime(base) {
     check("runtime_salience_explained", overview.html.includes("Почему выбраны именно эти окна"));
     check("runtime_july_cluster_visible", overview.html.includes("2026-07-20") && overview.html.includes("2026-07-21"));
     const jan = overview.html.indexOf("2026-01-08");
+    const apr = overview.html.indexOf("2026-04-02");
+    const jun = overview.html.indexOf("2026-06-05");
     const jul = overview.html.indexOf("2026-07-04");
-    const nov = overview.html.indexOf("2026-11-29");
-    check("runtime_chronological_windows", jan >= 0 && jul > jan && nov > jul, `${jan}/${jul}/${nov}`);
+    check(
+      "runtime_chronological_windows",
+      jan >= 0 && apr > jan && jun > apr && jul > jun,
+      `${jan}/${apr}/${jun}/${jul}`,
+    );
   }
 
   const why = overview
