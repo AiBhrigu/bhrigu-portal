@@ -37,6 +37,9 @@ check("july_cluster_source", ["2026-07-20", "2026-07-21"].every((date) => astroD
 check("slow_context_source", astroData.aspects.some((row) => row.a === "neptune" && row.b === "pluto"));
 check("workflow_local_gate", workflowSource.includes("BTC_LOCAL_RC: \"1\""));
 check("workflow_runtime_fixture", workflowSource.includes("BTC_COSMOGRAPHER_LOCAL_RC_BASE"));
+check("complete_transition_renderer", componentSource.includes("completeTransitionBullets"));
+check("unique_cluster_transition_count", componentSource.includes("uniqueTransitionCount"));
+check("market_source_usage_label", componentSource.includes("не используется в этом ответе") && componentSource.includes("not used in this answer"));
 
 const previewBase = process.env.BTC_COSMOGRAPHER_LOCAL_RC_BASE?.replace(/\/$/, "");
 if (previewBase) await runRuntime(previewBase);
@@ -168,6 +171,27 @@ async function runRuntime(base) {
       "runtime_chronological_windows",
       jan >= 0 && apr > jan && jun > apr && jul > jun,
       `${jan}/${apr}/${jun}/${jul}`,
+    );
+    check(
+      "runtime_december_13_complete",
+      overview.html.split("2026-12-13").length - 1 >= 2,
+    );
+    check(
+      "runtime_ru_numeral_morphology",
+      !/[234]\s+пересечений\s+со\s+станциями\/ингрессиями/.test(overview.html),
+    );
+    check(
+      "runtime_july_unique_transition_count",
+      overview.html.includes("2 пересечения со станциями/ингрессиями"),
+    );
+    check(
+      "runtime_ru_ingress_case",
+      ["входит в знак Овна", "входит в знак Близнецов", "входит в знак Льва"]
+        .every((value) => overview.html.includes(value)),
+    );
+    check(
+      "runtime_market_source_usage_label",
+      overview.html.includes("Market Snapshot: STALE_LIMITED · не используется в этом ответе"),
     );
   }
 
