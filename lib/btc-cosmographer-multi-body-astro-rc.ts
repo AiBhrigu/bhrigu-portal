@@ -125,8 +125,23 @@ const SIGN_LABELS: Record<BtcPublicLocale, Record<string, string>> = {
   ru: { aries: "Овен", taurus: "Телец", gemini: "Близнецы", cancer: "Рак", leo: "Лев", virgo: "Дева", libra: "Весы", scorpio: "Скорпион", sagittarius: "Стрелец", capricorn: "Козерог", aquarius: "Водолей", pisces: "Рыбы" },
 };
 
+const SIGN_GENITIVE_RU: Record<string, string> = {
+  aries: "Овна",
+  taurus: "Тельца",
+  gemini: "Близнецов",
+  cancer: "Рака",
+  leo: "Льва",
+  virgo: "Девы",
+  libra: "Весов",
+  scorpio: "Скорпиона",
+  sagittarius: "Стрельца",
+  capricorn: "Козерога",
+  aquarius: "Водолея",
+  pisces: "Рыб",
+};
+
 const MULTI_BODY_PATTERN =
-  /(?:planetary\s+aspects?|aspects?\s+(?:between|of)\s+planets?|аспект\w*\s+планет|планет\w*\s+аспект)/i;
+  /(?:planetary\s+aspects?|aspects?\s+(?:between|of)\s+planets?|аспект[а-яё]*\s+планет[а-яё]*|планет[а-яё]*\s+аспект[а-яё]*)/iu;
 const RETURN_ASTRO_PATTERN =
   /(?:back|return)\s+to\s+(?:the\s+)?(?:aspects?|astro)|верн[её]мся\s+к\s+аспект|вернуться\s+к\s+аспект|снова\s+к\s+аспект/i;
 
@@ -252,6 +267,33 @@ function relatedTransitions(event: AspectWindow): Array<Station | Ingress> {
   });
 }
 
+function transitionKey(item: Station | Ingress): string {
+  return "motion" in item
+    ? `${item.date}|${item.body}|station|${item.motion}`
+    : `${item.date}|${item.body}|ingress|${item.sign}`;
+}
+
+function uniqueTransitionCount(events: AspectWindow[]): number {
+  const keys = new Set<string>();
+  for (const event of events) {
+    for (const transition of relatedTransitions(event)) {
+      keys.add(transitionKey(transition));
+    }
+  }
+  return keys.size;
+}
+
+function russianIntersectionPhrase(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const noun = mod10 === 1 && mod100 !== 11
+    ? "пересечение"
+    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+      ? "пересечения"
+      : "пересечений";
+  return `${count} ${noun} со станциями/ингрессиями`;
+}
+
 function scoreAspect(event: AspectWindow): ScoredAspect {
   const slowScale = (BODY_SCALE[event.a] ?? 0) + (BODY_SCALE[event.b] ?? 0);
   const exactness = exactnessScore(event.orb);
@@ -315,14 +357,14 @@ function clusterReasons(locale: BtcPublicLocale, cluster: AspectCluster): string
   const maxSlow = Math.max(...cluster.events.map((item) => item.slowScale));
   const minOrb = Math.min(...cluster.events.map((item) => item.orb));
   const maxDuration = Math.max(...cluster.events.map((item) => item.durationDays));
-  const transitions = cluster.events.reduce((sum, item) => sum + item.overlapCount, 0);
+  const transitions = uniqueTransitionCount(cluster.events);
   if (locale === "ru") {
     return [
       `масштаб медленного цикла ${maxSlow}`,
       `минимальный дневной orb ${minOrb.toFixed(3)}°`,
       `окно до ${maxDuration} дн.`,
       cluster.events.length > 1 ? `${cluster.events.length} точных аспекта в одном кластере` : "один точный аспект",
-      transitions ? `${transitions} пересечений со станциями/ингрессиями` : "без отдельного перехода движения или знака",
+      transitions ? russianIntersectionPhrase(transitions) : "без отдельного перехода движения или знака",
     ].join("; ");
   }
   return [
@@ -330,7 +372,9 @@ function clusterReasons(locale: BtcPublicLocale, cluster: AspectCluster): string
     `minimum daily orb ${minOrb.toFixed(3)}°`,
     `window up to ${maxDuration} days`,
     cluster.events.length > 1 ? `${cluster.events.length} exact aspects in one cluster` : "one exact aspect",
-    transitions ? `${transitions} station/ingress overlaps` : "no separate station or ingress overlap",
+    transitions
+      ? `${transitions} station/ingress ${transitions === 1 ? "overlap" : "overlaps"}`
+      : "no separate station or ingress overlap",
   ].join("; ");
 }
 
@@ -341,16 +385,9 @@ function clusterBullet(locale: BtcPublicLocale, cluster: AspectCluster): string 
     : `Rank ${cluster.rank} · ${cluster.start}–${cluster.end} · peak ${peaks}: ${clusterTitle(locale, cluster)}. Basis: ${clusterReasons(locale, cluster)}.`;
 }
 
-function transitionBullets(locale: BtcPublicLocale, selected: AspectCluster[]): string[] {
-  const start = Math.min(...selected.map((item) => dayNumber(item.start))) - 7;
-  const end = Math.max(...selected.map((item) => dayNumber(item.end))) + 7;
-  const bodies = new Set(selected.flatMap((cluster) => cluster.events.flatMap((event) => [event.a, event.b])));
+function transitionBullets(locale: BtcPublicLocale): string[] {
   const transitions = [...data.stations, ...data.ingresses]
-    .filter((item) => {
-      const day = dayNumber(item.date);
-      return bodies.has(item.body) && day >= start && day <= end;
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date) || transitionKey(a).localeCompare(transitionKey(b)));
 
   return transitions.map((item) => {
     if ("motion" in item) {
@@ -359,7 +396,9 @@ function transitionBullets(locale: BtcPublicLocale, selected: AspectCluster[]): 
         : (locale === "ru" ? "переход к ретроградному движению" : "station retrograde");
       return `${item.date}: ${bodyLabel(locale, item.body)} — ${motion}.`;
     }
-    const sign = SIGN_LABELS[locale][item.sign] ?? item.sign;
+    const sign = locale === "ru"
+      ? (SIGN_GENITIVE_RU[item.sign] ?? item.sign)
+      : (SIGN_LABELS.en[item.sign] ?? item.sign);
     return locale === "ru"
       ? `${item.date}: ${bodyLabel(locale, item.body)} входит в знак ${sign}.`
       : `${item.date}: ${bodyLabel(locale, item.body)} enters ${sign}.`;
@@ -401,7 +440,7 @@ export function buildMultiBodyAstroYearAnswer(
     .sort((a, b) => a.rank - b.rank)
     .slice(0, 5)
     .sort((a, b) => a.start.localeCompare(b.start));
-  const transitions = transitionBullets(locale, top);
+  const transitions = transitionBullets(locale);
 
   const direct = locale === "ru"
     ? "В 2026 году важность определяется не одной планетой, а сочетанием масштаба медленного цикла, точности, длительности окна, кластерности и пересечений со станциями или ингрессиями. Самая плотная тактическая связка приходится на 20–21 июля; многомесячный несущий слой формируют Нептун—Плутон и Уран—Плутон."
@@ -422,8 +461,10 @@ export function buildMultiBodyAstroYearAnswer(
       },
       {
         id: "fast_triggers",
-        label: locale === "ru" ? "Станции и ингрессии внутри структуры" : "Stations and ingresses inside the structure",
-        bullets: transitions.slice(0, 12),
+        label: locale === "ru"
+          ? "Станции и ингрессии внутри годовой структуры — без усечения"
+          : "Stations and ingresses inside the annual structure — complete",
+        bullets: transitions,
       },
       {
         id: "slow_context",
