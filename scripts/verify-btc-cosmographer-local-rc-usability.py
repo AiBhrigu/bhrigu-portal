@@ -25,6 +25,7 @@ report = {
     "measurements": [],
     "failures": [],
     "browser_severe": [],
+    "ignored_local_network_noise": [],
 }
 
 
@@ -165,9 +166,12 @@ try:
     run_ru_sequence(390, 844, "mobile")
     run_en_overview(390, 844, "mobile")
 
-    severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE"]
+    raw_severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE"]
+    ignored = [entry for entry in raw_severe if "/favicon.ico" in entry.get("message", "")]
+    severe = [entry for entry in raw_severe if entry not in ignored]
+    report["ignored_local_network_noise"] = ignored
     report["browser_severe"] = severe
-    check("browser_has_no_severe_errors", not severe, severe)
+    check("browser_has_no_severe_application_errors", not severe, severe)
 finally:
     driver.quit()
 
