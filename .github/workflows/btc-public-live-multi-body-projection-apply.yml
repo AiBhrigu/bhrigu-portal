@@ -7,8 +7,7 @@ on:
     paths:
       - .github/workflows/btc-public-live-multi-body-projection-apply.yml
       - scripts/apply-btc-public-live-multi-body-projection.py
-      - lib/btc-cosmographer-public-multi-body-projection.ts
-      - scripts/verify-btc-public-live-multi-body-projection.mjs
+      - scripts/verify-btc-public-live-copy-canon.mjs
 
 permissions:
   contents: write
@@ -21,7 +20,7 @@ jobs:
   apply-exact-projection:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - name: Checkout exact branch head
         uses: actions/checkout@v4
@@ -33,17 +32,42 @@ jobs:
       - name: Enforce accepted ancestry
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor 86815de0c90aa26e67213e02ec3eee02012782a6 HEAD
+          git merge-base --is-ancestor 75bd42151c02931260e7c9b30fc93a02d54ab763 HEAD
 
-      - name: Apply deterministic projection patch
+      - name: Detect complete copy-canon atom
+        id: marker
+        run: |
+          if grep -q 'COPY_CANON_TARGETED_REPAIR_v0_1' scripts/apply-btc-public-live-multi-body-projection.py; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Copy-canon patch script not published yet; no repository mutation.'
+          fi
+
+      - name: Apply deterministic canonical copy patch
+        if: steps.marker.outputs.ready == 'true'
         run: python3 scripts/apply-btc-public-live-multi-body-projection.py
 
-      - name: Commit exact production projection
+      - name: Verify canonical copy before commit
+        if: steps.marker.outputs.ready == 'true'
+        run: node scripts/verify-btc-public-live-copy-canon.mjs
+
+      - name: Commit exact canonical product copy repair
+        if: steps.marker.outputs.ready == 'true'
         run: |
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add components/btc/BtcCosmographerDialogue.tsx lib/btc-live-dialogue-style.ts scripts/verify-btc-public-live-visual-information-acceptance.py
+          git add \
+            .github/workflows/btc-public-live-multi-body-projection-pr.yml \
+            .github/workflows/btc-public-live-visual-information-acceptance-pr.yml \
+            components/btc/BtcCosmographerDialogue.tsx \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/verify-btc-public-live-visual-information-acceptance.py
           git diff --cached --check
-          git commit -m "BTC: focus newest public answer deterministically"
+          if git diff --cached --quiet; then
+            echo 'No canonical copy changes to commit.'
+            exit 0
+          fi
+          git commit -m "BTC: align public copy with product canon"
           git push origin HEAD:repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
