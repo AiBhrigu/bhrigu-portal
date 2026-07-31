@@ -1,120 +1,45 @@
 name: BTC Public Live Multi-Body Projection Apply
 
 on:
-  push:
-    branches:
-      - repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
-    paths:
-      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
-      - scripts/apply-btc-public-live-multi-body-projection.py
-      - scripts/verify-btc-public-live-copy-canon.mjs
   pull_request:
     paths:
       - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - pages/crypto-astro/btc/live.tsx
       - scripts/apply-btc-public-live-multi-body-projection.py
       - scripts/verify-btc-public-live-copy-canon.mjs
+      - scripts/verify-btc-public-live-visual-information-acceptance.py
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: btc-public-live-multi-body-projection-apply-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
+  group: btc-public-live-copy-canon-closure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  apply-exact-projection:
-    if: github.actor != 'github-actions[bot]'
+  verify-closed-copy-atom:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
-      - name: Checkout exact branch head
+      - name: Checkout exact head
         uses: actions/checkout@v4
         with:
-          ref: repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Enforce accepted ancestry
         run: |
           set -euo pipefail
           git merge-base --is-ancestor 75bd42151c02931260e7c9b30fc93a02d54ab763 HEAD
 
-      - name: Detect complete copy-canon atom
-        id: marker
-        run: |
-          if grep -q 'COPY_CANON_TARGETED_REPAIR_v0_1' scripts/apply-btc-public-live-multi-body-projection.py; then
-            echo 'ready=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'ready=false' >> "$GITHUB_OUTPUT"
-            echo 'Copy-canon patch script not published yet; no repository mutation.'
-          fi
-
-      - name: Remove connector-published workflow mutations from patch recipe
-        if: steps.marker.outputs.ready == 'true'
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('scripts/apply-btc-public-live-multi-body-projection.py')
-          text = path.read_text(encoding='utf-8')
-          start_marker = '# Track and execute the new verifier in both exact-scope workflows.\n'
-          end_marker = '# Existing visual acceptance remains authoritative, but its governed labels and\n'
-          if text.count(start_marker) != 1 or text.count(end_marker) != 1:
-              raise SystemExit('workflow mutation markers did not match exactly')
-          start = text.index(start_marker)
-          end = text.index(end_marker)
-          path.write_text(text[:start] + text[end:], encoding='utf-8')
-          PY
-
-      - name: Apply deterministic canonical copy patch
-        if: steps.marker.outputs.ready == 'true'
-        id: apply
-        shell: bash
-        run: |
-          set +e
-          python3 scripts/apply-btc-public-live-multi-body-projection.py > /tmp/copy-canon-apply.log 2>&1
-          status=$?
-          cat /tmp/copy-canon-apply.log
-          echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Commit fail-closed apply diagnostic
-        if: steps.marker.outputs.ready == 'true' && steps.apply.outputs.status != '0'
-        run: |
-          set -euo pipefail
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          {
-            echo
-            echo '## COPY_CANON_APPLY_DIAGNOSTIC'
-            echo
-            echo '```text'
-            cat /tmp/copy-canon-apply.log
-            echo '```'
-          } >> docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
-          git add docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
-          git commit -m "CI: record exact copy-canon apply diagnostic"
-          git push origin HEAD:repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
-          exit 1
-
-      - name: Verify canonical copy before commit
-        if: steps.marker.outputs.ready == 'true' && steps.apply.outputs.status == '0'
+      - name: Verify canonical product copy and headings
         run: node scripts/verify-btc-public-live-copy-canon.mjs
 
-      - name: Commit exact canonical product copy repair
-        if: steps.marker.outputs.ready == 'true' && steps.apply.outputs.status == '0'
+      - name: Prove apply recipe is closed and non-mutating
         run: |
           set -euo pipefail
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add \
-            components/btc/BtcCosmographerDialogue.tsx \
-            pages/crypto-astro/btc/live.tsx \
-            scripts/apply-btc-public-live-multi-body-projection.py \
-            scripts/verify-btc-public-live-visual-information-acceptance.py
-          git diff --cached --check
-          if git diff --cached --quiet; then
-            echo 'No canonical copy changes to commit.'
-            exit 0
-          fi
-          git commit -m "BTC: align public copy with product canon"
-          git push origin HEAD:repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
+          grep -q 'COPY_CANON_TARGETED_REPAIR_v0_1' scripts/apply-btc-public-live-multi-body-projection.py
+          ! grep -q 'git push' scripts/apply-btc-public-live-multi-body-projection.py
+          git diff --exit-code
