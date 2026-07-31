@@ -98,17 +98,95 @@ function parseAstroWindowBullet(
 
 function publicDomainLabel(locale: BtcPublicLocale, domain: string): string {
   const labels: Record<string, [string, string]> = {
-    bitcoin_protocol: ["Bitcoin Protocol", "Bitcoin Protocol"],
-    btc_market: ["BTC Market", "BTC Market"],
-    snapshot_memory: ["Snapshot Memory", "Snapshot Memory"],
-    astromodule: ["Astromodule", "Astromodule"],
-    astro_btc_bridge: ["Astro × BTC", "Astro × BTC"],
+    bitcoin_protocol: ["Протокол Bitcoin", "Bitcoin Protocol"],
+    btc_market: ["Рынок BTC", "BTC Market"],
+    snapshot_memory: ["Память снимков", "Snapshot Memory"],
+    astromodule: ["Астрономические данные", "Astronomical data"],
+    astro_btc_bridge: ["Астрономия × BTC", "Astronomy × BTC"],
     methodology: ["Метод и доказательность", "Method and evidence"],
-    navigation: ["Навигация Bitcoin Corridor", "Bitcoin Corridor navigation"],
+    navigation: ["Навигация по полю BTC", "BTC field navigation"],
     unsupported: ["Граница поддержки", "Support boundary"],
   };
   const value = labels[domain] ?? [domain, domain];
   return locale === "ru" ? value[0] : value[1];
+}
+
+const CANONICAL_PUBLIC_COPY: Record<BtcPublicLocale, Array<[string, string]>> = {
+  ru: [
+    ["Планетарные аспекты 2026: пять главных окон", "Планетарные аспекты 2026: пять окон по принятому рейтингу"],
+    ["Почему именно эти окна важны", "По каким критериям выбраны эти окна"],
+    ["Астрономическое окно и ликвидность проверены как независимые слои", "Астрономические данные и ликвидность сопоставлены независимо"],
+    ["Халвинг запускается высотой блока", "Халвинг определяется высотой блока, а не календарной датой"],
+    ["Контекст аспектов 2026 восстановлен", "Планетарные аспекты 2026: краткое продолжение"],
+    ["Самая плотная тактическая связка", "Наибольшая концентрация точных аспектов"],
+    ["самая плотная тактическая связка", "наибольшая концентрация точных аспектов"],
+    ["многомесячный несущий слой", "долгосрочный астрономический контекст"],
+    ["Медленный несущий контекст", "Долгосрочный астрономический контекст"],
+    ["Внутренний анализ идёт от медленных пар к быстрым активаторам. Пользовательский ответ идёт от ближайших окон к многомесячному слою. Быстрый триггер уточняет момент, но не заменяет родительский цикл.", "Анализ начинается с долгосрочных конфигураций и переходит к более быстрым астрономическим событиям. Ответ пользователю идёт от ближайших окон к долгосрочному контексту. Более быстрое событие уточняет момент, но не заменяет долгосрочную конфигурацию."],
+    ["сохранённому годовому коридору", "сохранённому годовому обзору"],
+    ["Граница трактовки", "Граница вывода"],
+    ["Граница моста Astro × BTC", "Граница сопоставления"],
+    ["Multi-body Astro proof доступен", "Астрономические доказательства доступны"],
+    ["Astro proof + Market proof", "Астрономические и рыночные доказательства доступны"],
+    ["Protocol proof доступен", "Доказательства протокола доступны"],
+    ["Astro proof ограничен", "Астрономические доказательства ограничены"],
+    ["Market proof доступен", "Рыночные доказательства доступны"],
+    ["Market proof недоступен", "Рыночные доказательства недоступны"],
+    ["Method proof доступен", "Доказательства метода доступны"],
+    ["Capability registry", "Реестр возможностей"],
+    ["Рыночный evidence временно недоступен", "Рыночные доказательства временно недоступны"],
+    ["Основные маршруты Bitcoin Corridor", "Основные маршруты поля BTC"],
+    ["Навигация Bitcoin Corridor", "Навигация по полю BTC"],
+    ["Astromodule", "Астрономические данные"],
+  ],
+  en: [
+    ["Planetary aspects in 2026: five primary windows", "Planetary aspects in 2026: five windows by the accepted ranking"],
+    ["Why these windows matter", "How these windows were selected"],
+    ["The astronomy window and liquidity were checked as independent layers", "Astronomical data and liquidity were compared independently"],
+    ["Halving is triggered by block height", "Halving is determined by block height, not a calendar date"],
+    ["The 2026 aspect context is restored", "Planetary aspects in 2026: concise continuation"],
+    ["The densest tactical cluster", "The highest concentration of exact aspects"],
+    ["the densest tactical cluster", "the highest concentration of exact aspects"],
+    ["multi-month carrier layer", "long-term astronomical context"],
+    ["Slow carrier context", "Long-term astronomical context"],
+    ["Internal analysis runs from slow pairs to fast activators. The public answer runs from nearer windows to the multi-month layer. A fast trigger refines timing but does not replace its parent cycle.", "Analysis begins with long-term configurations and then moves to faster astronomical events. The public answer moves from nearer windows to long-term context. A faster event refines timing but does not replace the long-term configuration."],
+    ["saved annual corridor", "saved annual overview"],
+    ["Interpretation boundary", "Inference boundary"],
+    ["Astro × BTC bridge boundary", "Comparison boundary"],
+    ["Multi-body Astro proof available", "Astronomical evidence available"],
+    ["Astro proof + Market proof", "Astronomical and market evidence available"],
+    ["Protocol proof available", "Protocol evidence available"],
+    ["Astro proof limited", "Astronomical evidence limited"],
+    ["Market proof available", "Market evidence available"],
+    ["Market proof unavailable", "Market evidence unavailable"],
+    ["Method proof available", "Method evidence available"],
+    ["Capability registry", "Capability registry"],
+    ["Market evidence is temporarily unavailable", "Market evidence is temporarily unavailable"],
+    ["Main Bitcoin Corridor routes", "Main BTC field routes"],
+    ["Bitcoin Corridor navigation", "BTC field navigation"],
+    ["Astromodule", "Astronomical data"],
+  ],
+};
+
+function canonicalPublicCopy(locale: BtcPublicLocale, value: string): string {
+  return CANONICAL_PUBLIC_COPY[locale].reduce(
+    (output, [source, target]) => output.replaceAll(source, target),
+    value,
+  );
+}
+
+function canonicalAnswerSections(
+  locale: BtcPublicLocale,
+  sections: BtcCosmographerAnswerProjection["sections"],
+): BtcCosmographerAnswerProjection["sections"] {
+  return sections.map((section) => ({
+    ...section,
+    label: canonicalPublicCopy(locale, section.label),
+    paragraph: section.paragraph
+      ? canonicalPublicCopy(locale, section.paragraph)
+      : section.paragraph,
+    bullets: section.bullets?.map((line) => canonicalPublicCopy(locale, line)),
+  }));
 }
 
 function AstroWindowSection({
@@ -204,12 +282,12 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
     PROTOCOL_FACT: ["Bitcoin Protocol · факт", "Bitcoin Protocol · fact"],
     PROTOCOL_EXPLAIN: ["Bitcoin Protocol · объяснение", "Bitcoin Protocol · explanation"],
     MARKET_DIAGNOSIS: ["BTC Market · чтение", "BTC Market · read"],
-    ASTRO_INTERVAL: ["Astromodule · период", "Astromodule · interval"],
-    ASTRO_STATE: ["Astromodule · состояние", "Astromodule · state"],
-    ASTRO_YEAR_OVERVIEW: ["Astromodule · годовой обзор", "Astromodule · annual overview"],
-    ASTRO_BTC_BRIDGE: ["Astro × BTC · сопоставление", "Astro × BTC · comparison"],
+    ASTRO_INTERVAL: ["Астрономические данные · период", "Astronomical data · interval"],
+    ASTRO_STATE: ["Астрономические данные · состояние", "Astronomical data · state"],
+    ASTRO_YEAR_OVERVIEW: ["Астрономические данные · годовой обзор", "Astronomical data · annual overview"],
+    ASTRO_BTC_BRIDGE: ["Астрономия × BTC · сопоставление", "Astronomy × BTC · comparison"],
     METHODOLOGY: ["Метод и доказательность", "Method and evidence"],
-    NAVIGATION: ["Навигация Bitcoin Corridor", "Bitcoin Corridor navigation"],
+    NAVIGATION: ["Навигация по полю BTC", "BTC field navigation"],
     CLARIFICATION: ["Уточнение", "Clarification"],
   };
   const value = labels[turn.answer_mode ?? "CLARIFICATION"] ?? [
@@ -223,7 +301,8 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
   if (!props.initialQuestion || !props.route || !props.answer || props.inputError) return null;
   const timestamp = props.sourceContext.generated_at_utc;
   const observationDate = props.route.time_range?.end ?? (props.initialDate || null);
-  const evidenceLines = props.answer.sections
+  const canonicalSections = canonicalAnswerSections(props.locale, props.answer.sections);
+  const evidenceLines = canonicalSections
     .flatMap((section) => section.bullets ?? [])
     .slice(0, 3);
   const turnWithoutId: Omit<BtcDialogueTurn, "turn_id"> = {
@@ -235,12 +314,12 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
     question_class: props.route.market_question_class,
     question_facets: props.route.intents,
     answer_state: props.answer.answer_state,
-    headline: props.answer.headline,
-    direct_answer: props.answer.direct_answer,
+    headline: canonicalPublicCopy(props.locale, props.answer.headline),
+    direct_answer: canonicalPublicCopy(props.locale, props.answer.direct_answer),
     evidence_lines: evidenceLines,
     contradiction_or_limit: null,
     what_would_change_the_read: null,
-    source_boundary: props.answer.source_boundary,
+    source_boundary: canonicalPublicCopy(props.locale, props.answer.source_boundary),
     source_snapshot_generated_at_utc: timestamp,
     proof_available: props.sourceContext.proof_available || props.route.domain !== "btc_market",
     context_relation: props.route.context_relation,
@@ -252,8 +331,8 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
     time_start: props.route.time_range?.start ?? null,
     time_end: props.route.time_range?.end ?? null,
     answer_mode: props.answer.answer_mode,
-    sections: props.answer.sections,
-    proof_label: props.answer.proof_label,
+    sections: canonicalSections,
+    proof_label: canonicalPublicCopy(props.locale, props.answer.proof_label),
   };
   return {
     ...turnWithoutId,
@@ -377,11 +456,11 @@ export function BtcCosmographerDialogue(props: Props) {
 
     <section className="liveDialogueShell" aria-labelledby="btc-cosmographer-title">
       <header className="liveDialogueIntro">
-        <p className="eyebrow">Bitcoin Corridor</p>
-        <h1 id="btc-cosmographer-title">{ru ? "BTC Космограф" : "BTC Cosmographer"}</h1>
+        <p className="eyebrow">Market Cosmographer</p>
+        <h1 id="btc-cosmographer-title">{ru ? "Чтение поля BTC" : "BTC Field Read"}</h1>
         <p>{ru
-          ? "Свободно переходите между протоколом Bitcoin, рынком, Snapshot Memory, Astromodule и мостом Astro × BTC. Явная новая тема сильнее прошлого контекста."
-          : "Move freely between Bitcoin protocol, market, Snapshot Memory, Astromodule and the Astro × BTC bridge. An explicit new topic overrides prior context."}</p>
+          ? "Задайте вопрос о протоколе Bitcoin, рынке BTC, памяти снимков или астрономических данных. Космограф разделяет источники, выводы и границы доказательности."
+          : "Ask about the Bitcoin protocol, the BTC market, snapshot memory, or astronomical data. Cosmographer keeps sources, conclusions, and evidence boundaries separate."}</p>
         <div className="liveTrustLine">
           <span>{sourceState(locale, sourceContext)}</span>
           {sourceContext.generated_at_utc && <span>{formatBtcUtcTimestamp(locale, sourceContext.generated_at_utc)}</span>}
@@ -483,7 +562,9 @@ export function BtcCosmographerDialogue(props: Props) {
                   <span>{publicDomainLabel(turn.locale, domain)}</span>
                   {observationLabel && <span data-observation-date>{observationLabel}</span>}
                   {turn.time_start && turn.time_end && <span>{turn.time_start} — {turn.time_end}</span>}
-                  <span>{turn.proof_label ?? (turn.proof_available ? "Proof available" : "Proof unavailable")}</span>
+                  <span>{turn.proof_label ?? (turn.proof_available
+                    ? (turn.locale === "ru" ? "Доказательства доступны" : "Evidence available")
+                    : (turn.locale === "ru" ? "Доказательства недоступны" : "Evidence unavailable"))}</span>
                   {turn.source_boundary && <span>{turn.source_boundary}</span>}
                 </footer>
               </div>
@@ -510,7 +591,7 @@ export function BtcCosmographerDialogue(props: Props) {
         <label>
           <span>{hasConversation
             ? (ru ? "Продолжить или начать новую тему" : "Continue or start a new topic")
-            : (ru ? "Ваш вопрос в Bitcoin Corridor" : "Your Bitcoin Corridor question")}</span>
+            : (ru ? "Ваш вопрос о поле BTC" : "Your question about the BTC field")}</span>
           <textarea
             name="q"
             rows={3}

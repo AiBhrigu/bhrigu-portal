@@ -17,15 +17,20 @@ ARTIFACTS = Path("artifacts/btc-public-live-visual-acceptance")
 ARTIFACTS.mkdir(parents=True, exist_ok=True)
 
 PUBLIC_DOMAIN_LABELS = {
+    "Протокол Bitcoin",
     "Bitcoin Protocol",
+    "Рынок BTC",
     "BTC Market",
+    "Память снимков",
     "Snapshot Memory",
-    "Astromodule",
-    "Astro × BTC",
+    "Астрономические данные",
+    "Astronomical data",
+    "Астрономия × BTC",
+    "Astronomy × BTC",
     "Метод и доказательность",
     "Method and evidence",
-    "Навигация Bitcoin Corridor",
-    "Bitcoin Corridor navigation",
+    "Навигация по полю BTC",
+    "BTC field navigation",
     "Граница поддержки",
     "Support boundary",
 }
@@ -335,7 +340,7 @@ def run_ru_sequence(driver, width, height, suffix):
     return_state = state_record(driver, f"ru-return-{suffix}")
     window_checks(driver, f"ru_return_{suffix}", 3, desktop)
     transition_check(driver, f"ru_return_{suffix}", False)
-    check(f"ru_return_{suffix}_restored_context_cue", "восстанов" in return_state["headline"].casefold(), return_state["headline"])
+    check(f"ru_return_{suffix}_continuation_cue", "краткое продолжение" in return_state["headline"].casefold(), return_state["headline"])
     proof_layer_check(driver, f"ru_return_{suffix}")
     visual_metrics(driver, f"ru-return-{suffix}")
     return annual_state, bridge_state

@@ -307,11 +307,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
 
 export default function BtcLivePage(props: Props) {
   const title = props.locale === "ru"
-    ? "BTC Космограф · Bitcoin Corridor"
-    : "BTC Cosmographer · Bitcoin Corridor";
+    ? "Чтение поля BTC · Market Cosmographer"
+    : "BTC Field Read · Market Cosmographer";
   const description = props.locale === "ru"
-    ? "Навигационный диалог по протоколу Bitcoin, BTC Market, Snapshot Memory и Astromodule."
-    : "A navigational dialogue across Bitcoin Protocol, BTC Market, Snapshot Memory and Astromodule.";
+    ? "Аналитический диалог о протоколе Bitcoin, рынке BTC, памяти снимков и астрономических данных."
+    : "Analytical dialogue about the Bitcoin protocol, the BTC market, snapshot memory, and astronomical data.";
   return <>
     <Head>
       <title>{title}</title>

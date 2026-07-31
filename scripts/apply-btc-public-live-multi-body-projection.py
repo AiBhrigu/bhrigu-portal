@@ -194,29 +194,6 @@ replace_once(
                     : (turn.locale === "ru" ? "Доказательства недоступны" : "Evidence unavailable"))}</span>''',
 )
 
-# Track and execute the new verifier in both exact-scope workflows.
-for workflow in (
-    ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
-    ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
-):
-    insert_after(
-        workflow,
-        "      - scripts/apply-btc-public-live-multi-body-projection.py\n",
-        "      - scripts/verify-btc-public-live-copy-canon.mjs\n",
-    )
-    replace_once(workflow, "Verify exact twelve-file scope", "Verify exact thirteen-file scope")
-
-projection_workflow = ".github/workflows/btc-public-live-multi-body-projection-pr.yml"
-insert_after(
-    projection_workflow,
-    '''          node scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs
-''',
-    '''
-      - name: Verify canonical product copy and headings
-        run: node scripts/verify-btc-public-live-copy-canon.mjs
-''',
-)
-
 # Existing visual acceptance remains authoritative, but its governed labels and
 # return cue must follow the repaired public product copy.
 visual = "scripts/verify-btc-public-live-visual-information-acceptance.py"
