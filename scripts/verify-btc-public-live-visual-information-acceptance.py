@@ -16,15 +16,18 @@ BASE = os.environ.get(
 ARTIFACTS = Path("artifacts/btc-public-live-visual-acceptance")
 ARTIFACTS.mkdir(parents=True, exist_ok=True)
 
-RAW_DOMAINS = {
-    "astromodule",
-    "astro_btc_bridge",
-    "bitcoin_protocol",
-    "btc_market",
-    "snapshot_memory",
-    "methodology",
-    "navigation",
-    "unsupported",
+PUBLIC_DOMAIN_LABELS = {
+    "Bitcoin Protocol",
+    "BTC Market",
+    "Snapshot Memory",
+    "Astromodule",
+    "Astro × BTC",
+    "Метод и доказательность",
+    "Method and evidence",
+    "Навигация Bitcoin Corridor",
+    "Bitcoin Corridor navigation",
+    "Граница поддержки",
+    "Support boundary",
 }
 
 report = {
@@ -205,7 +208,7 @@ def proof_layer_check(driver, label):
     first = spans[0].text.strip() if spans else ""
     check(
         f"{label}_public_proof_uses_human_domain_label",
-        first.casefold() not in RAW_DOMAINS and "_" not in first,
+        first in PUBLIC_DOMAIN_LABELS and "_" not in first,
         first,
     )
 
