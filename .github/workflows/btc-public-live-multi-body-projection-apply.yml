@@ -49,27 +49,20 @@ jobs:
             echo 'Copy-canon patch script not published yet; no repository mutation.'
           fi
 
-      - name: Normalize exact patch helper
+      - name: Remove connector-published workflow mutations from patch recipe
         if: steps.marker.outputs.ready == 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path('scripts/apply-btc-public-live-multi-body-projection.py')
           text = path.read_text(encoding='utf-8')
-          old = '''def insert_after(path: str, anchor: str, addition: str) -> None:
-              replace_once(path, anchor, anchor + addition)
-          '''
-          new = '''def insert_after(path: str, anchor: str, addition: str) -> None:
-              file = Path(path)
-              text = file.read_text(encoding="utf-8")
-              count = text.count(anchor)
-              if count not in (1, 2):
-                  raise SystemExit(f"{path}: expected one or two anchors, found {count}: {anchor[:120]!r}")
-              file.write_text(text.replace(anchor, anchor + addition), encoding="utf-8")
-          '''
-          if text.count(old) != 1:
-              raise SystemExit('apply helper source did not match exactly')
-          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          start_marker = '# Track and execute the new verifier in both exact-scope workflows.\n'
+          end_marker = '# Existing visual acceptance remains authoritative, but its governed labels and\n'
+          if text.count(start_marker) != 1 or text.count(end_marker) != 1:
+              raise SystemExit('workflow mutation markers did not match exactly')
+          start = text.index(start_marker)
+          end = text.index(end_marker)
+          path.write_text(text[:start] + text[end:], encoding='utf-8')
           PY
 
       - name: Apply deterministic canonical copy patch
@@ -114,8 +107,6 @@ jobs:
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add \
-            .github/workflows/btc-public-live-multi-body-projection-pr.yml \
-            .github/workflows/btc-public-live-visual-information-acceptance-pr.yml \
             components/btc/BtcCosmographerDialogue.tsx \
             pages/crypto-astro/btc/live.tsx \
             scripts/apply-btc-public-live-multi-body-projection.py \
