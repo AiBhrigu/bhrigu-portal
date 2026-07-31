@@ -121,6 +121,11 @@ def wait_state(driver, question, mode, relation, subject, expected_turns):
                 and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
             )
         )
+        WebDriverWait(driver, 45).until(
+            lambda instance: instance.execute_script(
+                "return document.activeElement === document.querySelector('.cosmographerTurn');"
+            )
+        )
     except Exception:
         print("STATE_WAIT_DIAGNOSTIC", json.dumps(state_snapshot(driver), ensure_ascii=False))
         raise
@@ -198,7 +203,7 @@ def visual_metrics(driver, label):
     )
     check(f"{label}_answer_within_viewport_width", values["answerWidth"] <= values["viewportWidth"] + 1, values)
     driver.save_screenshot(str(ARTIFACTS / f"{label}-viewport.png"))
-    answer.screenshot(str(ARTIFACTS / f"{label}-answer.png"))
+    driver.save_screenshot(str(ARTIFACTS / f"{label}-answer.png"))
     return values
 
 

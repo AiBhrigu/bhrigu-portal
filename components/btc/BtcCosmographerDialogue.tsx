@@ -295,8 +295,20 @@ export function BtcCosmographerDialogue(props: Props) {
 
   useEffect(() => {
     if (!hydrated || !newestRef.current) return;
-    newestRef.current.focus({ preventScroll: true });
-    newestRef.current.scrollIntoView({ block: "nearest" });
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    const focusNewest = () => {
+      const node = newestRef.current;
+      if (!node) return;
+      node.focus({ preventScroll: true });
+      node.scrollIntoView({ block: "start", inline: "nearest", behavior: "auto" });
+    };
+    focusNewest();
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(focusNewest);
+    });
+    return () => window.cancelAnimationFrame(firstFrame);
   }, [hydrated, turns.length]);
 
   const contextTurn = latestContextTurn(turns);

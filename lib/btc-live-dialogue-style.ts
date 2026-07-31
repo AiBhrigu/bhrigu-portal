@@ -18,7 +18,7 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .liveCompactionNotice{margin:2px 0 0;padding:10px 12px;border-left:2px solid rgba(210,164,95,.5);color:var(--m);font-size:12px;line-height:1.5}
 .liveThread{display:grid;gap:28px;margin-bottom:30px}
 .dialogueExchange{display:grid;gap:18px}
-.dialogueTurn{display:grid;gap:8px;outline:none}.turnRole{display:flex;align-items:center;gap:8px;color:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.turnGlyph{width:28px;height:28px}
+.dialogueTurn{display:grid;gap:8px;outline:none;scroll-margin-top:18px}.turnRole{display:flex;align-items:center;gap:8px;color:var(--m);font-size:9px;letter-spacing:.1em;text-transform:uppercase}.turnGlyph{width:28px;height:28px}
 .turnBody{position:relative;padding:clamp(20px,3vw,30px);border:1px solid rgba(106,168,255,.2);border-radius:18px;background:rgba(8,16,28,.72)}
 .userTurn{justify-items:end}.userTurn .turnRole{padding-right:4px}.userTurn .turnBody{width:min(86%,650px);border-color:rgba(210,164,95,.18);background:rgba(210,164,95,.045)}.userTurn .turnBody p{margin:0;font-size:clamp(16px,2vw,19px);line-height:1.55;overflow-wrap:anywhere}
 .cosmographerTurn .turnBody:before,.cosmographerHistoryTurn .turnBody:before{content:"";position:absolute;top:-1px;left:0;width:var(--phi-major);height:1px;background:linear-gradient(90deg,var(--blue),var(--b),transparent)}
