@@ -10,71 +10,49 @@ def replace_once(path: str, old: str, new: str) -> None:
     file.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
+# The accepted annual Astro answer contains 14 complete station/ingress bullets.
+# Preserve it in the compact tab-local session while retaining a bounded validator.
+replace_once(
+    "lib/btc-live-dialogue-session.ts",
+    '''    if (item.bullets !== undefined && !stringList(item.bullets, 12, 1200)) return false;''',
+    '''    if (item.bullets !== undefined && !stringList(item.bullets, 24, 1200)) return false;''',
+)
+
+# Human-facing labels may intentionally keep canonical product names such as
+# “Astromodule”; reject raw underscore enums rather than lowercased product names.
 path = "scripts/verify-btc-public-live-visual-information-acceptance.py"
 replace_once(
     path,
-    '''def wait_state(driver, question, mode, relation, subject, expected_turns):
-    WebDriverWait(driver, 45).until(lambda instance: current_question(instance) == question)
-    WebDriverWait(driver, 45).until(
-        lambda instance: len(instance.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) >= expected_turns
-    )
-    WebDriverWait(driver, 45).until(
-        lambda instance: (
-            instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
-            and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
-            and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
-        )
-    )
-    return newest(driver)
+    '''RAW_DOMAINS = {
+    "astromodule",
+    "astro_btc_bridge",
+    "bitcoin_protocol",
+    "btc_market",
+    "snapshot_memory",
+    "methodology",
+    "navigation",
+    "unsupported",
+}
 ''',
-    '''def session_turn_count(driver):
-    return int(driver.execute_script(
-        """
-        const raw=sessionStorage.getItem('bhrigu:btc-free-dialogue:session:v0_1');
-        if(!raw) return 0;
-        try {
-          const value=JSON.parse(raw);
-          return Array.isArray(value.turns) ? value.turns.length : 0;
-        } catch (_) {
-          return -1;
-        }
-        """
-    ))
-
-
-def state_snapshot(driver):
-    answers = driver.find_elements(By.CSS_SELECTOR, ".cosmographerTurn")
-    answer = answers[0] if answers else None
-    return {
-        "url": driver.current_url,
-        "question": current_question(driver),
-        "dom_turns": len(driver.find_elements(By.CSS_SELECTOR, ".dialogueExchange")),
-        "session_turns": session_turn_count(driver),
-        "mode": answer.get_attribute("data-answer-mode") if answer else None,
-        "relation": answer.get_attribute("data-semantic-context-relation") if answer else None,
-        "subject": answer.get_attribute("data-route-subject") if answer else None,
-    }
-
-
-def wait_state(driver, question, mode, relation, subject, expected_turns):
-    try:
-        WebDriverWait(driver, 45).until(lambda instance: current_question(instance) == question)
-        WebDriverWait(driver, 45).until(lambda instance: session_turn_count(instance) >= expected_turns)
-        WebDriverWait(driver, 45).until(
-            lambda instance: len(instance.find_elements(By.CSS_SELECTOR, ".dialogueExchange")) >= expected_turns
-        )
-        WebDriverWait(driver, 45).until(
-            lambda instance: (
-                instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
-            )
-        )
-    except Exception:
-        print("STATE_WAIT_DIAGNOSTIC", json.dumps(state_snapshot(driver), ensure_ascii=False))
-        raise
-    return newest(driver)
+    '''PUBLIC_DOMAIN_LABELS = {
+    "Bitcoin Protocol",
+    "BTC Market",
+    "Snapshot Memory",
+    "Astromodule",
+    "Astro × BTC",
+    "Метод и доказательность",
+    "Method and evidence",
+    "Навигация Bitcoin Corridor",
+    "Bitcoin Corridor navigation",
+    "Граница поддержки",
+    "Support boundary",
+}
 ''',
 )
+replace_once(
+    path,
+    '''        first.casefold() not in RAW_DOMAINS and "_" not in first,''',
+    '''        first in PUBLIC_DOMAIN_LABELS and "_" not in first,''',
+)
 
-print("PASS_PUBLIC_LIVE_VISUAL_SESSION_READY_PATCH")
+print("PASS_PUBLIC_LIVE_SESSION_AND_PROOF_ACCEPTANCE_REPAIR")
