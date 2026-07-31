@@ -44,6 +44,14 @@ function deploymentSourceSha(): string | null {
   return value && /^[0-9a-f]{40}$/i.test(value) ? value : null;
 }
 
+function routeDetectionQuestion(value: string): string {
+  const russianMultiBody =
+    /аспект(?:ы|ов|ам|ами|ах)?\s+планет(?:ы|арных|ам|ами|ах)?/iu.test(value);
+  if (!russianMultiBody) return value;
+  const year = value.match(/\b20\d{2}\b/)?.[0] ?? "2026";
+  return `Which planetary aspects matter in ${year}?`;
+}
+
 function parseAstroMemory(
   query: Record<string, string | string[] | undefined>,
 ): BtcMultiBodyAstroMemory | null {
@@ -145,13 +153,21 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
 
   const parsed = parseBtcCosmographerContext(query);
   const packet = parsed.malformed ? null : parsed.packet;
-  const route = routeBtcCosmographerLocalRc(
+  const detectionQuestion = routeDetectionQuestion(initialQuestion);
+  const detectedRoute = routeBtcCosmographerLocalRc(
     locale,
-    initialQuestion,
+    detectionQuestion,
     packet,
     initialDate || undefined,
     priorAstroMemory,
   );
+  const route: BtcMultiBodyAstroRcRoute = detectionQuestion === initialQuestion
+    ? detectedRoute
+    : {
+        ...detectedRoute,
+        raw_question: initialQuestion,
+        normalized_question: initialQuestion.trim().replace(/\s+/g, " "),
+      };
 
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
