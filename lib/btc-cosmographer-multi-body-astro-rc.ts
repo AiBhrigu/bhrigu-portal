@@ -294,6 +294,17 @@ function russianIntersectionPhrase(count: number): string {
   return `${count} ${noun} со станциями/ингрессиями`;
 }
 
+function russianExactAspectPhrase(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  const noun = mod10 === 1 && mod100 !== 11
+    ? "точный аспект"
+    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)
+      ? "точных аспекта"
+      : "точных аспектов";
+  return `${count} ${noun} в одном кластере`;
+}
+
 function scoreAspect(event: AspectWindow): ScoredAspect {
   const slowScale = (BODY_SCALE[event.a] ?? 0) + (BODY_SCALE[event.b] ?? 0);
   const exactness = exactnessScore(event.orb);
@@ -363,7 +374,7 @@ function clusterReasons(locale: BtcPublicLocale, cluster: AspectCluster): string
       `масштаб медленного цикла ${maxSlow}`,
       `минимальный дневной orb ${minOrb.toFixed(3)}°`,
       `окно до ${maxDuration} дн.`,
-      cluster.events.length > 1 ? `${cluster.events.length} точных аспекта в одном кластере` : "один точный аспект",
+      cluster.events.length > 1 ? russianExactAspectPhrase(cluster.events.length) : "один точный аспект",
       transitions ? russianIntersectionPhrase(transitions) : "без отдельного перехода движения или знака",
     ].join("; ");
   }
