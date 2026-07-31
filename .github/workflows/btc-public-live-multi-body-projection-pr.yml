@@ -9,6 +9,7 @@ on:
       - components/btc/BtcCosmographerDialogue.tsx
       - docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
       - lib/btc-cosmographer-public-multi-body-projection.ts
+      - lib/btc-live-dialogue-session.ts
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/apply-btc-public-live-multi-body-projection.py
@@ -37,7 +38,7 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify exact eleven-file scope
+      - name: Verify exact twelve-file scope
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
@@ -49,6 +50,7 @@ jobs:
           components/btc/BtcCosmographerDialogue.tsx
           docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
           lib/btc-cosmographer-public-multi-body-projection.ts
+          lib/btc-live-dialogue-session.ts
           lib/btc-live-dialogue-style.ts
           pages/crypto-astro/btc/live.tsx
           scripts/apply-btc-public-live-multi-body-projection.py
