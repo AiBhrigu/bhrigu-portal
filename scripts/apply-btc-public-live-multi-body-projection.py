@@ -10,16 +10,10 @@ def replace_once(path: str, old: str, new: str) -> None:
     file.write_text(text.replace(old, new, 1), encoding="utf-8")
 
 
-# Browser scroll restoration can override the first React effect after a GET
-# navigation. Disable restoration on the live dialogue and focus/scroll the newest
-# answer again across two animation frames.
+# Native/Next scroll restoration can run after focus. Align the newest answer by
+# absolute document coordinate immediately and across bounded delayed passes.
 replace_once(
     "components/btc/BtcCosmographerDialogue.tsx",
-    '''  useEffect(() => {
-    if (!hydrated || !newestRef.current) return;
-    newestRef.current.focus({ preventScroll: true });
-    newestRef.current.scrollIntoView({ block: "nearest" });
-  }, [hydrated, turns.length]);''',
     '''  useEffect(() => {
     if (!hydrated || !newestRef.current) return;
     if ("scrollRestoration" in window.history) {
@@ -37,46 +31,57 @@ replace_once(
     });
     return () => window.cancelAnimationFrame(firstFrame);
   }, [hydrated, turns.length]);''',
+    '''  useEffect(() => {
+    if (!hydrated || !newestRef.current) return;
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    const focusNewest = () => {
+      const node = newestRef.current;
+      if (!node) return;
+      node.focus({ preventScroll: true });
+      const absoluteTop = window.scrollY + node.getBoundingClientRect().top;
+      window.scrollTo({ top: Math.max(0, absoluteTop - 18), behavior: "auto" });
+    };
+    focusNewest();
+    const firstFrame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(focusNewest);
+    });
+    const restorationGuard = window.setTimeout(focusNewest, 80);
+    const lateRestorationGuard = window.setTimeout(focusNewest, 240);
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.clearTimeout(restorationGuard);
+      window.clearTimeout(lateRestorationGuard);
+    };
+  }, [hydrated, turns.length]);''',
 )
 
-replace_once(
-    "lib/btc-live-dialogue-style.ts",
-    '''.dialogueTurn{display:grid;gap:8px;outline:none}''',
-    '''.dialogueTurn{display:grid;gap:8px;outline:none;scroll-margin-top:18px}''',
-)
-
-# Measure only after the application has focused the newest answer. A bounded
-# viewport capture is sufficient evidence; Chrome element screenshots time out on
-# very tall bridge answers.
+# The visual gate waits for both focus and the governed top alignment before
+# measuring the first viewport.
 path = "scripts/verify-btc-public-live-visual-information-acceptance.py"
 replace_once(
     path,
     '''        WebDriverWait(driver, 45).until(
-            lambda instance: (
-                instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
-            )
-        )
-''',
-    '''        WebDriverWait(driver, 45).until(
-            lambda instance: (
-                instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-answer-mode") == mode
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-semantic-context-relation") == relation
-                and instance.find_element(By.CSS_SELECTOR, ".cosmographerTurn").get_attribute("data-route-subject") == subject
-            )
-        )
-        WebDriverWait(driver, 45).until(
             lambda instance: instance.execute_script(
                 "return document.activeElement === document.querySelector('.cosmographerTurn');"
             )
         )
 ''',
-)
-replace_once(
-    path,
-    '''    answer.screenshot(str(ARTIFACTS / f"{label}-answer.png"))''',
-    '''    driver.save_screenshot(str(ARTIFACTS / f"{label}-answer.png"))''',
+    '''        WebDriverWait(driver, 45).until(
+            lambda instance: instance.execute_script(
+                "return document.activeElement === document.querySelector('.cosmographerTurn');"
+            )
+        )
+        WebDriverWait(driver, 45).until(
+            lambda instance: instance.execute_script(
+                "const node=document.querySelector('.cosmographerTurn');"
+                "if(!node) return false;"
+                "const top=node.getBoundingClientRect().top;"
+                "return top >= 0 && top <= 64;"
+            )
+        )
+''',
 )
 
-print("PASS_PUBLIC_LIVE_NEWEST_ANSWER_FOCUS_REPAIR")
+print("PASS_PUBLIC_LIVE_ABSOLUTE_NEWEST_ANSWER_ALIGNMENT_REPAIR")
