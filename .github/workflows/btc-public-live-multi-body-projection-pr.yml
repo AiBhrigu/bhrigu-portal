@@ -1,0 +1,102 @@
+name: BTC Public Live Multi-Body Projection
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - .github/workflows/btc-public-live-multi-body-projection-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - lib/btc-cosmographer-public-multi-body-projection.ts
+      - lib/btc-live-dialogue-style.ts
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-multi-body-projection.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-public-live-multi-body-projection-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-projection:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Verify exact eight-file scope
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/btc-public-live-multi-body-projection-apply.yml
+          .github/workflows/btc-public-live-multi-body-projection-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          lib/btc-cosmographer-public-multi-body-projection.ts
+          lib/btc-live-dialogue-style.ts
+          pages/crypto-astro/btc/live.tsx
+          scripts/apply-btc-public-live-multi-body-projection.py
+          scripts/verify-btc-public-live-multi-body-projection.mjs
+          EOF
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Preserve inherited routing and semantic gates
+        run: |
+          npm run verify:btc-routing
+          npm run verify:btc-binance-observation
+          node scripts/run-btc-cosmographer-semantic-route-fixture.mjs
+          node scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start exact-head production preview
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3110 > /tmp/btc-public-projection.log 2>&1 &
+          echo $! > /tmp/btc-public-projection.pid
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent "http://127.0.0.1:3110/crypto-astro/btc/live?lang=ru" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/btc-public-projection.log
+          exit 1
+
+      - name: Verify six-state public projection
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
+        run: node scripts/verify-btc-public-live-multi-body-projection.mjs
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-public-projection.pid; then kill "$(cat /tmp/btc-public-projection.pid)" || true; fi
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-public-live-multi-body-projection-${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          path: artifacts/btc-public-live-multi-body-projection-report.json
+          if-no-files-found: warn
+          retention-days: 30
