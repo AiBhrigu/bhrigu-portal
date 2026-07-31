@@ -8,12 +8,17 @@ on:
       - .github/workflows/btc-public-live-multi-body-projection-apply.yml
       - scripts/apply-btc-public-live-multi-body-projection.py
       - scripts/verify-btc-public-live-copy-canon.mjs
+  pull_request:
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-copy-canon.mjs
 
 permissions:
   contents: write
 
 concurrency:
-  group: btc-public-live-multi-body-projection-apply
+  group: btc-public-live-multi-body-projection-apply-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: false
 
 jobs:
