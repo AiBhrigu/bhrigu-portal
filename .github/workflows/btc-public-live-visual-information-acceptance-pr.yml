@@ -13,6 +13,7 @@ on:
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-copy-canon.mjs
       - scripts/verify-btc-public-live-multi-body-projection.mjs
       - scripts/verify-btc-public-live-visual-information-acceptance.py
   workflow_dispatch:
@@ -38,7 +39,7 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify exact twelve-file scope
+      - name: Verify exact thirteen-file scope
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
@@ -54,6 +55,7 @@ jobs:
           lib/btc-live-dialogue-style.ts
           pages/crypto-astro/btc/live.tsx
           scripts/apply-btc-public-live-multi-body-projection.py
+          scripts/verify-btc-public-live-copy-canon.mjs
           scripts/verify-btc-public-live-multi-body-projection.mjs
           scripts/verify-btc-public-live-visual-information-acceptance.py
           EOF
