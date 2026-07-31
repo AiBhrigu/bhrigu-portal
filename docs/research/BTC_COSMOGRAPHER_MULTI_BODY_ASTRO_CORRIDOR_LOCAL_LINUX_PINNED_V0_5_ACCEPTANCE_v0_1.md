@@ -6,7 +6,7 @@ Node:
 
 ## Purpose
 
-Perform a reproducible Linux acceptance of the isolated multi-body Astro corridor without changing the accepted release-candidate source files, PR #99, merge state, or production surfaces.
+Perform a reproducible Linux acceptance of the isolated multi-body Astro corridor without changing the accepted release-candidate implementation files, PR #99, merge state, or production surfaces.
 
 ## Pin
 
@@ -22,12 +22,19 @@ Perform a reproducible Linux acceptance of the isolated multi-body Astro corrido
 
 The pinned v0.5 overlay may contain only:
 
-1. `.github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml`;
-2. `scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh`;
-3. `scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs`;
-4. this document.
+1. `.github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml` — orchestration guard only;
+2. `.github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml`;
+3. `scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh`;
+4. `scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs`;
+5. this document.
 
-The six release-candidate files must remain byte-equivalent to the pinned source SHA.
+The five release-candidate implementation and fixture files must remain byte-equivalent to the pinned source SHA:
+
+- `components/btc/BtcCosmographerMultiBodyAstroRc.tsx`;
+- `lib/btc-cosmographer-multi-body-astro-rc.ts`;
+- `pages/crypto-astro/btc/local-rc.tsx`;
+- `scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs`;
+- `docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md`.
 
 ## Launcher modes
 
@@ -41,7 +48,7 @@ The launcher:
 
 - verifies Linux and a compatible Node.js runtime;
 - verifies that the checkout descends from the pinned source SHA;
-- rejects drift in all six release-candidate files;
+- rejects drift in all five release-candidate implementation and fixture files;
 - installs exact dependencies with `npm ci`;
 - runs authoritative static acceptance;
 - builds the Next.js candidate;
