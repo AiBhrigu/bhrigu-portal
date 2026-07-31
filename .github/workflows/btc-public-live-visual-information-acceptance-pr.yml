@@ -1,0 +1,109 @@
+name: BTC Public Live Visual Information Acceptance
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - .github/workflows/btc-public-live-multi-body-projection-pr.yml
+      - .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
+      - lib/btc-cosmographer-public-multi-body-projection.ts
+      - lib/btc-live-dialogue-style.ts
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-multi-body-projection.mjs
+      - scripts/verify-btc-public-live-visual-information-acceptance.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-public-live-visual-information-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-information-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Verify exact eleven-file scope
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/btc-public-live-multi-body-projection-apply.yml
+          .github/workflows/btc-public-live-multi-body-projection-pr.yml
+          .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
+          lib/btc-cosmographer-public-multi-body-projection.ts
+          lib/btc-live-dialogue-style.ts
+          pages/crypto-astro/btc/live.tsx
+          scripts/apply-btc-public-live-multi-body-projection.py
+          scripts/verify-btc-public-live-multi-body-projection.mjs
+          scripts/verify-btc-public-live-visual-information-acceptance.py
+          EOF
+          diff -u /tmp/expected.txt /tmp/actual.txt
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install portal dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install visual driver
+        run: python -m pip install --disable-pip-version-check selenium==4.29.0
+
+      - name: Start exact-head production preview
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3112 > /tmp/btc-public-live-visual.log 2>&1 &
+          echo $! > /tmp/btc-public-live-visual.pid
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent "http://127.0.0.1:3112/crypto-astro/btc/live?lang=ru" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/btc-public-live-visual.log
+          exit 1
+
+      - name: Render and verify public visual information design
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3112
+        run: python scripts/verify-btc-public-live-visual-information-acceptance.py
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-public-live-visual.pid; then kill "$(cat /tmp/btc-public-live-visual.pid)" || true; fi
+
+      - name: Upload screenshots and acceptance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-public-live-visual-information-${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          path: artifacts/btc-public-live-visual-acceptance/
+          if-no-files-found: error
+          retention-days: 30
