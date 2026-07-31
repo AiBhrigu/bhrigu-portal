@@ -141,7 +141,7 @@ const SIGN_GENITIVE_RU: Record<string, string> = {
 };
 
 const MULTI_BODY_PATTERN =
-  /(?:planetary\s+aspects?|aspects?\s+(?:between|of)\s+planets?|аспект[а-яё]*\s+планет[а-яё]*|планет[а-яё]*\s+аспект[а-яё]*)/iu;
+  /(?:planetary\s+aspects?|aspects?\s+(?:between|of)\s+planets?|аспект[а-яё]*\s+планет[а-яё]*|планет[а-яё]*\s+аспект[а-яё]*)/i;
 const RETURN_ASTRO_PATTERN =
   /(?:back|return)\s+to\s+(?:the\s+)?(?:aspects?|astro)|верн[её]мся\s+к\s+аспект|вернуться\s+к\s+аспект|снова\s+к\s+аспект/i;
 
