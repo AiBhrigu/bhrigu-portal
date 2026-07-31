@@ -56,6 +56,11 @@ check(
     !moduleSource.includes("cluster.events.reduce((sum, item) => sum + item.overlapCount, 0)"),
 );
 check("ru_numeral_morphology", moduleSource.includes("function russianIntersectionPhrase"));
+check(
+  "ru_exact_aspect_morphology",
+  moduleSource.includes("function russianExactAspectPhrase") &&
+    moduleSource.includes("russianExactAspectPhrase(cluster.events.length)"),
+);
 check("market_source_usage_label", componentSource.includes("не используется в этом ответе") && componentSource.includes("not used in this answer"));
 
 const previewBase = process.env.BTC_COSMOGRAPHER_LOCAL_RC_BASE?.replace(/\/$/, "");
@@ -213,6 +218,10 @@ async function runRuntime(base) {
     check(
       "runtime_july_unique_transition_count",
       visibleMainWindows.includes("2 пересечения со станциями/ингрессиями"),
+    );
+    check(
+      "runtime_ru_exact_aspect_morphology",
+      visibleMainWindows.includes("3 точных аспекта в одном кластере"),
     );
     check(
       "runtime_ru_ingress_case",
