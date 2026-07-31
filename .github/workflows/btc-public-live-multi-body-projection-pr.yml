@@ -5,12 +5,15 @@ on:
     paths:
       - .github/workflows/btc-public-live-multi-body-projection-apply.yml
       - .github/workflows/btc-public-live-multi-body-projection-pr.yml
+      - .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
       - components/btc/BtcCosmographerDialogue.tsx
+      - docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
       - lib/btc-cosmographer-public-multi-body-projection.ts
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/apply-btc-public-live-multi-body-projection.py
       - scripts/verify-btc-public-live-multi-body-projection.mjs
+      - scripts/verify-btc-public-live-visual-information-acceptance.py
   workflow_dispatch:
 
 permissions:
@@ -34,7 +37,7 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify exact eight-file scope
+      - name: Verify exact eleven-file scope
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
@@ -42,12 +45,15 @@ jobs:
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/btc-public-live-multi-body-projection-apply.yml
           .github/workflows/btc-public-live-multi-body-projection-pr.yml
+          .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
           components/btc/BtcCosmographerDialogue.tsx
+          docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
           lib/btc-cosmographer-public-multi-body-projection.ts
           lib/btc-live-dialogue-style.ts
           pages/crypto-astro/btc/live.tsx
           scripts/apply-btc-public-live-multi-body-projection.py
           scripts/verify-btc-public-live-multi-body-projection.mjs
+          scripts/verify-btc-public-live-visual-information-acceptance.py
           EOF
           diff -u /tmp/expected.txt /tmp/actual.txt
 
