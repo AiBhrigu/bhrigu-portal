@@ -46,7 +46,7 @@ function deploymentSourceSha(): string | null {
 
 function routeDetectionQuestion(value: string): string {
   const russianMultiBody =
-    /аспект(?:ы|ов|ам|ами|ах)?\s+планет(?:ы|арных|ам|ами|ах)?/iu.test(value);
+    /аспект(?:ы|ов|ам|ами|ах)?\s+планет(?:ы|арных|ам|ами|ах)?/i.test(value);
   if (!russianMultiBody) return value;
   const year = value.match(/\b20\d{2}\b/)?.[0] ?? "2026";
   return `Which planetary aspects matter in ${year}?`;
