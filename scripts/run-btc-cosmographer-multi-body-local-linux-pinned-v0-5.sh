@@ -52,7 +52,6 @@ git cat-file -e "${PINNED_SOURCE_SHA}^{commit}" 2>/dev/null || fail "pinned sour
 git merge-base --is-ancestor "$PINNED_SOURCE_SHA" HEAD || fail "current checkout does not descend from pinned source SHA"
 
 CANDIDATE_FILES=(
-  ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml"
   "components/btc/BtcCosmographerMultiBodyAstroRc.tsx"
   "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md"
   "lib/btc-cosmographer-multi-body-astro-rc.ts"
