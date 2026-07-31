@@ -40,8 +40,8 @@ The exact-head browser passes proved:
 4. public proof uses governed labels such as `Astromodule` and `Astro × BTC`;
 5. session persistence originally rejected the 14-item chronology because the section validator allowed only 12 bullets;
 6. the bounded validator now allows 24 bullets, preserving the accepted chronology without removing the session-size boundary;
-7. the multi-turn session now advances through focused follow-up and market-first bridge instead of resetting;
-8. the browser retained an old scroll position after SSR navigation because `scrollIntoView({block: "nearest"})` could lose to native scroll restoration;
+7. the multi-turn session now advances through focused follow-up, market-first bridge, halving and restored Astro return instead of resetting;
+8. active focus alone was insufficient because native/Next scroll restoration could retain an earlier document position after SSR navigation;
 9. full-element screenshots of the long bridge could time out the Chrome renderer and were not a valid product failure.
 
 ## Targeted repair
@@ -53,13 +53,14 @@ The bounded repair includes:
 - governed public domain labels;
 - bounded 24-bullet section validation for tab-local session memory;
 - manual live-page scroll restoration;
-- immediate plus double-animation-frame focus transfer to the newest answer using `block: start`;
+- absolute newest-answer alignment through `window.scrollTo` using the answer document coordinate;
+- immediate, double-animation-frame, 80 ms and 240 ms alignment passes;
 - `scroll-margin-top` on dialogue turns;
-- verifier focus readiness before viewport measurement;
+- verifier readiness for both active focus and answer top position `0–64 px` before viewport measurement;
 - bounded viewport screenshots instead of unstable giant element captures.
 
 ## Current state
 
-`PRESENTATION_SESSION_AND_FOCUS_REPAIRS_APPLIED · EXACT_HEAD_REVERIFYING · NO MERGE · NO PRODUCTION`
+`ABSOLUTE_NEWEST_ANSWER_ALIGNMENT_APPLIED · AUTHORITATIVE_EXACT_HEAD_REVERIFYING · NO MERGE · NO PRODUCTION`
 
 Final PASS is recorded only after the complete desktop/mobile RU/EN screenshot artifact and machine-readable report are inspected.
