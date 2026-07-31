@@ -4,11 +4,15 @@ on:
   pull_request:
     paths:
       - ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml"
+      - ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml"
       - "lib/btc-cosmographer-multi-body-astro-rc.ts"
       - "components/btc/BtcCosmographerMultiBodyAstroRc.tsx"
       - "pages/crypto-astro/btc/local-rc.tsx"
       - "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs"
+      - "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh"
+      - "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs"
       - "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md"
+      - "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md"
   workflow_dispatch:
 
 permissions:
@@ -53,17 +57,21 @@ jobs:
           ).splitlines()
           allowed = {
               ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+              ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
               "lib/btc-cosmographer-multi-body-astro-rc.ts",
               "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
               "pages/crypto-astro/btc/local-rc.tsx",
               "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
+              "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
+              "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
           }
           unexpected = sorted(set(changed) - allowed)
           missing = sorted(allowed - set(changed))
           if unexpected or missing:
               raise SystemExit(f"scope mismatch: unexpected={unexpected}, missing={missing}")
-          print({"status": "PASS_LOCAL_ONLY_SCOPE", "changed": changed})
+          print({"status": "PASS_LOCAL_RC_PLUS_PINNED_V0_5_OVERLAY", "changed": changed})
           PY
 
       - name: Set up Node 20
