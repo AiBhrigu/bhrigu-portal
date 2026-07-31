@@ -47,16 +47,7 @@ The exact-head browser sequence proved and repaired:
 
 ## Exact-head acceptance
 
-- exact head: `acbc69b7ff681f5d539fe6bdd6ba904c35df285f`;
-- visual workflow: `30631444318` — PASS;
-- checks: `145/145`;
-- failures: `0`;
-- screenshot artifact: `8793507812`;
-- artifact digest: `sha256:8d31b78bfd71702294a03e04f43e406577c6f49272390f30cf698a4f9dc23c1e`;
-- public projection workflow: `30631444273` — PASS;
-- temporal boundary workflow: `30631444234` — PASS;
-- independent field visual workflow: `30631444313` — PASS;
-- severe application browser errors: `0`.
+The authoritative exact-head receipt is maintained in PR metadata and the GitHub Actions artifact because recording a commit SHA inside this file creates a new SHA recursively.
 
 ## Status
 
