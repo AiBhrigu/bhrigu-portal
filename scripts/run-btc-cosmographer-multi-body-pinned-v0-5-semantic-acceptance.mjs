@@ -109,6 +109,7 @@ assertRoute("turn_1_ru_overview_route", overview, {
   mode: "ASTRO_YEAR_OVERVIEW",
   state: "CONFIRMED",
 });
+check("overview_visible_pinned_source_sha", pinnedSourceSha !== "UNKNOWN" && overview.text.includes(`SHA ${pinnedSourceSha}`), overview.text.match(/SHA\s+[0-9a-f]{40}/i)?.[0] ?? "missing visible SHA");
 check("overview_no_jupiter_fallback", !overview.text.includes("Юпитер: движение в периоде"));
 check("overview_has_ranked_windows", overview.text.includes("Планетарные аспекты 2026") && overview.text.includes("Главные окна"));
 check("overview_july_cluster_complete", overview.text.includes("2026-07-20") && overview.text.includes("2026-07-21"));
