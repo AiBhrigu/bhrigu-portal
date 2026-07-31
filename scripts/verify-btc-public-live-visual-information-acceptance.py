@@ -126,6 +126,14 @@ def wait_state(driver, question, mode, relation, subject, expected_turns):
                 "return document.activeElement === document.querySelector('.cosmographerTurn');"
             )
         )
+        WebDriverWait(driver, 45).until(
+            lambda instance: instance.execute_script(
+                "const node=document.querySelector('.cosmographerTurn');"
+                "if(!node) return false;"
+                "const top=node.getBoundingClientRect().top;"
+                "return top >= 0 && top <= 64;"
+            )
+        )
     except Exception:
         print("STATE_WAIT_DIAGNOSTIC", json.dumps(state_snapshot(driver), ensure_ascii=False))
         raise
