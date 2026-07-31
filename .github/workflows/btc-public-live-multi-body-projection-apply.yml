@@ -43,7 +43,7 @@ jobs:
           set -euo pipefail
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add pages/crypto-astro/btc/live.tsx components/btc/BtcCosmographerDialogue.tsx lib/btc-live-dialogue-style.ts scripts/verify-btc-public-live-visual-information-acceptance.py
+          git add lib/btc-live-dialogue-session.ts scripts/verify-btc-public-live-visual-information-acceptance.py
           git diff --cached --check
-          git commit -m "BTC: repair public visual information hierarchy"
+          git commit -m "BTC: preserve complete Astro chronology in session memory"
           git push origin HEAD:repair/btc-cosmographer-public-live-multi-body-usability-projection-v0-1
