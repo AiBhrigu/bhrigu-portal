@@ -5,6 +5,8 @@ import type {
   SourceProofItem,
 } from "./btc-public-output-contract";
 
+import { classifyBtcMarketSnapshotFreshness } from "./btc-freshness-contract";
+
 export const BTC_SOURCE_BASE = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data";
 export const BTC_SOURCE_URLS = {
   snapshot: `${BTC_SOURCE_BASE}/crypto_astro_snapshot.public.json`,
@@ -24,9 +26,6 @@ export const REQUIRED_PROOF_LABELS = [
 
 const MAX_FETCH_MS = 4000;
 const MAX_COMPATIBILITY_SECONDS = 300;
-const FUTURE_TOLERANCE_SECONDS = 300;
-const FRESH_HOURS = 24;
-const STALE_LIMITED_HOURS = 24 * 7;
 
 export type CanonicalSnapshot = {
   schema_version: "crypto_astro_snapshot_public_v0_1";
@@ -308,15 +307,8 @@ function compatible(a: string, b: string): boolean {
 }
 
 export function determineFreshness(generatedAt: string, now = new Date()): { state: FreshnessState; ageHours: number } {
-  const generatedMs = new Date(generatedAt).getTime();
-  const ageMs = now.getTime() - generatedMs;
-  if (!Number.isFinite(generatedMs) || !Number.isFinite(ageMs) || ageMs < -FUTURE_TOLERANCE_SECONDS * 1000) {
-    return { state: "UNAVAILABLE", ageHours: Number.NaN };
-  }
-  const ageHours = Math.max(0, ageMs / 3600000);
-  if (ageHours <= FRESH_HOURS) return { state: "FRESH", ageHours };
-  if (ageHours <= STALE_LIMITED_HOURS) return { state: "STALE_LIMITED", ageHours };
-  return { state: "UNAVAILABLE", ageHours };
+  const freshness = classifyBtcMarketSnapshotFreshness(generatedAt, now);
+  return { state: freshness.state, ageHours: freshness.ageHours };
 }
 
 async function fetchJson(url: string, fetchImpl: typeof fetch): Promise<unknown> {

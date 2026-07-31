@@ -104,6 +104,12 @@ assert(incompatible.ok, "incompatible metric is suppressed rather than invented"
 assert(!incompatible.value.memory.methodology_compatible, "methodology mismatch visible");
 assert(incompatible.value.memory.unavailable_metrics.includes("defi_tvl_usd"), "incompatible metric unavailable");
 
+const justOverFresh = buildBtcMarketEnvelopeFromDocuments("What changed?", {
+  snapshot: current, previousSnapshot: previous, proof, marketField, bindings, registry, delta,
+}, { now: new Date("2026-07-23T12:00:01Z") });
+assert(justOverFresh.ok && justOverFresh.value.current.source_freshness === "STALE_LIMITED", "24h plus 1s must be stale limited");
+assert(justOverFresh.value.synthesis.state === "INSUFFICIENT_EVIDENCE", "24h plus 1s must suppress strong synthesis");
+
 const stale = buildBtcMarketEnvelopeFromDocuments("What changed?", {
   snapshot: current, previousSnapshot: previous, proof, marketField, bindings, registry, delta,
 }, { now: new Date("2026-07-27T00:00:00Z") });
