@@ -37,8 +37,24 @@ check("july_cluster_source", ["2026-07-20", "2026-07-21"].every((date) => astroD
 check("slow_context_source", astroData.aspects.some((row) => row.a === "neptune" && row.b === "pluto"));
 check("workflow_local_gate", workflowSource.includes("BTC_LOCAL_RC: \"1\""));
 check("workflow_runtime_fixture", workflowSource.includes("BTC_COSMOGRAPHER_LOCAL_RC_BASE"));
-check("complete_transition_renderer", componentSource.includes("completeTransitionBullets"));
-check("unique_cluster_transition_count", componentSource.includes("uniqueTransitionCount"));
+check(
+  "cyrillic_multi_body_detector",
+  moduleSource.includes("аспект[а-яё]*") &&
+    moduleSource.includes("планет[а-яё]*") &&
+    moduleSource.includes("/iu;"),
+);
+check(
+  "complete_transition_renderer",
+  moduleSource.includes("function transitionBullets") &&
+    moduleSource.includes("SIGN_GENITIVE_RU") &&
+    moduleSource.includes("bullets: transitions,"),
+);
+check(
+  "unique_cluster_transition_count",
+  moduleSource.includes("uniqueTransitionCount(cluster.events)") &&
+    !moduleSource.includes("cluster.events.reduce((sum, item) => sum + item.overlapCount, 0)"),
+);
+check("ru_numeral_morphology", moduleSource.includes("function russianIntersectionPhrase"));
 check("market_source_usage_label", componentSource.includes("не используется в этом ответе") && componentSource.includes("not used in this answer"));
 
 const previewBase = process.env.BTC_COSMOGRAPHER_LOCAL_RC_BASE?.replace(/\/$/, "");
