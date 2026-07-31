@@ -42,20 +42,20 @@ The exact-head browser sequence proved and repaired:
 6. the bounded validator now allows 24 bullets, preserving the accepted chronology without removing the session-size boundary;
 7. the multi-turn session advances through focused follow-up, market-first bridge, halving and restored Astro return instead of resetting;
 8. active focus alone was insufficient because native/Next scroll restoration could retain an earlier document position after SSR navigation;
-9. newest-answer alignment now uses the absolute document coordinate through `window.scrollTo`, with immediate, double-animation-frame, 80 ms and 240 ms passes;
+9. newest-answer alignment uses the absolute document coordinate through `window.scrollTo`, with immediate, double-animation-frame, 80 ms and 240 ms passes;
 10. the verifier waits for both active focus and answer top position `0–64 px` before measuring the viewport.
 
 ## Exact-head acceptance
 
-- exact head: `3a96e0ecc121e03f7cde608f1a8569686f40e394`;
-- visual workflow: `30631037636` — PASS;
+- exact head: `385e56172afa9bf68923273bdcb57dbf34078d16`;
+- visual workflow: `30631281893` — PASS;
 - checks: `145/145`;
 - failures: `0`;
-- screenshot artifact: `8793352389`;
-- artifact digest: `sha256:59e109c2720f372c249d0fce75d464dccd55b23c0a86abafb6743534ed73fdbd`;
-- public projection workflow: `30631037628` — PASS;
-- temporal boundary workflow: `30631037691` — PASS;
-- independent field visual workflow: `30631037629` — PASS;
+- screenshot artifact: `8793446061`;
+- artifact digest: `sha256:688dc2c8e57d55eb4465f2fa84edca5441dc58fffb568e7bf3e59faa241ba718`;
+- public projection workflow: `30631281877` — PASS;
+- temporal boundary workflow: `30631281891` — PASS;
+- independent field visual workflow: `30631281960` — PASS;
 - severe application browser errors: `0`.
 
 ## Status
