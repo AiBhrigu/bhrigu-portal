@@ -49,8 +49,9 @@ check("follow_no_full_transition_inventory", !follow.text.includes('data-complet
 const bridge = await page({ case: "bridge_ru", lang: "ru", q: "Ликвидность подтверждает?", ...annualContext });
 check("bridge_relation", bridge.text.includes('data-semantic-context-relation="CROSS_MODULE_BRIDGE"'));
 check("bridge_split", bridge.text.includes('data-answer-state="SPLIT"'));
-const marketIndex = bridge.text.indexOf('data-semantic-answer-section="market_layer"');
-const windowsIndex = bridge.text.indexOf('data-semantic-answer-section="main_windows"');
+const renderedBridge = bridge.text.slice(bridge.text.indexOf('<main'));
+const marketIndex = renderedBridge.indexOf('data-semantic-answer-section="market_layer"');
+const windowsIndex = renderedBridge.indexOf('data-semantic-answer-section="main_windows"');
 check("bridge_market_first", marketIndex >= 0 && windowsIndex >= 0 && marketIndex < windowsIndex, `${marketIndex}/${windowsIndex}`);
 
 const halving = await page({ case: "halving_ru", lang: "ru", q: "Теперь расскажи о халвинге", ...annualContext, cd: "astro_btc_bridge", cm: "liquidity", ca: "SPLIT" });
