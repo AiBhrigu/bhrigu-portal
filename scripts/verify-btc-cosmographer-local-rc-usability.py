@@ -2,7 +2,7 @@ import base64
 import json
 import os
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -77,13 +77,20 @@ def article_metrics(label, width, height):
     full_page_screenshot(ARTIFACTS / f"{label}.png")
 
 
+def current_question(driver_instance):
+    return parse_qs(urlparse(driver_instance.current_url).query).get("q", [""])[0]
+
+
 def submit_continuation(question):
     form = wait("form[data-question-form='continuation']")
     field = form.find_element(By.CSS_SELECTOR, "input[name='q']")
     field.clear()
     field.send_keys(question)
-    form.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 45).until(lambda d: quote(question, safe="") in d.current_url or question in d.current_url)
+    button = form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+    driver.execute_script("arguments[0].scrollIntoView({block:'center',inline:'nearest'});", button)
+    WebDriverWait(driver, 20).until(lambda d: button.is_displayed() and button.is_enabled())
+    driver.execute_script("arguments[0].requestSubmit(arguments[1]);", form, button)
+    WebDriverWait(driver, 45).until(lambda d: current_question(d) == question)
     wait("#answer")
 
 
