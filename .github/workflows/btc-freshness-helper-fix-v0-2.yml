@@ -31,7 +31,9 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin master
-          test "$(git rev-parse origin/master)" = "c3d38c1d67d8ef3b89ba7fc686f4a683e314cf18"
+          test "$(git merge-base HEAD origin/master)" = "c3d38c1d67d8ef3b89ba7fc686f4a683e314cf18"
+          MASTER_DELTA=$(git diff --name-only c3d38c1d67d8ef3b89ba7fc686f4a683e314cf18..origin/master | sort)
+          test "$MASTER_DELTA" = ".github/workflows/btc-freshness-helper-fix-v0-2.yml"
           python3 - <<'PY'
           from pathlib import Path
           path = Path('.github/workflows/btc-freshness-contract-repair-apply.yml')
