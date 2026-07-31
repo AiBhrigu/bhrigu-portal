@@ -29,8 +29,30 @@ The verifier must prove:
 - continuation composer is no more than one viewport after the newest answer;
 - severe application browser errors are zero.
 
+## Proven first-pass findings
+
+The first exact-head browser pass proved:
+
+1. the newest annual heading and direct answer were already inside the desktop first viewport;
+2. horizontal overflow was absent;
+3. the complete 14-item station/ingress chronology was closed by default;
+4. annual windows were only CSS-framed list items: rank, range, peak, title and basis competed inside one text block;
+5. the default proof layer exposed the raw route enum `astromodule`;
+6. the first continuation was submitted before the initial session turn had been durably written to `sessionStorage` by hydration, so the verifier required an explicit session-ready wait.
+
+## Targeted repair
+
+The bounded repair adds:
+
+- structured `astroWindowCard` markup;
+- separate `astroWindowRank`, `astroWindowRange`, peak, title and basis fields;
+- chronological `data-window-start` binding;
+- human-facing public domain labels;
+- a sessionStorage turn-count gate before each continuation traversal;
+- diagnostic state output if a transition does not settle.
+
 ## Current state
 
-`RUNNING · NO MERGE · NO PRODUCTION`
+`TARGETED_REPAIR_APPLIED · EXACT_HEAD_REVERIFYING · NO MERGE · NO PRODUCTION`
 
-This document is updated only after exact-head screenshots and the machine-readable acceptance report are inspected.
+Final PASS is recorded only after the full desktop/mobile RU/EN screenshot artifact and machine-readable report are inspected.
