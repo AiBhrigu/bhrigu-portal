@@ -41,7 +41,8 @@ check(
   "cyrillic_multi_body_detector",
   moduleSource.includes("аспект[а-яё]*") &&
     moduleSource.includes("планет[а-яё]*") &&
-    moduleSource.includes("/iu;"),
+    moduleSource.includes("/i;") &&
+    !moduleSource.includes("/iu;"),
 );
 check(
   "complete_transition_renderer",
