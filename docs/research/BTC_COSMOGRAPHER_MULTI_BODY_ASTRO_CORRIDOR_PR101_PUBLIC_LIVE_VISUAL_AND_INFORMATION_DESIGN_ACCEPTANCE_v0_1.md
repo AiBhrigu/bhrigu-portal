@@ -47,15 +47,15 @@ The exact-head browser sequence proved and repaired:
 
 ## Exact-head acceptance
 
-- exact head: `385e56172afa9bf68923273bdcb57dbf34078d16`;
-- visual workflow: `30631281893` — PASS;
+- exact head: `acbc69b7ff681f5d539fe6bdd6ba904c35df285f`;
+- visual workflow: `30631444318` — PASS;
 - checks: `145/145`;
 - failures: `0`;
-- screenshot artifact: `8793446061`;
-- artifact digest: `sha256:688dc2c8e57d55eb4465f2fa84edca5441dc58fffb568e7bf3e59faa241ba718`;
-- public projection workflow: `30631281877` — PASS;
-- temporal boundary workflow: `30631281891` — PASS;
-- independent field visual workflow: `30631281960` — PASS;
+- screenshot artifact: `8793507812`;
+- artifact digest: `sha256:8d31b78bfd71702294a03e04f43e406577c6f49272390f30cf698a4f9dc23c1e`;
+- public projection workflow: `30631444273` — PASS;
+- temporal boundary workflow: `30631444234` — PASS;
+- independent field visual workflow: `30631444313` — PASS;
 - severe application browser errors: `0`.
 
 ## Status
