@@ -89,6 +89,17 @@ function hidden(html, name) {
   );
 }
 
+function visibleSection(html, sectionId) {
+  return lastMatch(
+    html,
+    new RegExp(
+      `<section[^>]+data-answer-section="${sectionId}"[^>]*>([\\s\\S]*?)<\\/section>`,
+      "g",
+    ),
+    `visible:${sectionId}`,
+  );
+}
+
 function packet(html) {
   const result = {};
   for (const name of ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb", "rad", "ras", "rat0", "rat1"]) {
@@ -176,13 +187,15 @@ async function runRuntime(base) {
       "runtime_december_13_complete",
       overview.html.split("2026-12-13").length - 1 >= 2,
     );
+    const visibleMainWindows = visibleSection(overview.html, "main_windows");
     check(
       "runtime_ru_numeral_morphology",
-      !/[234]\s+пересечений\s+со\s+станциями\/ингрессиями/.test(overview.html),
+      !/[234]\s+пересечений\s+со\s+станциями\/ингрессиями/.test(visibleMainWindows),
+      visibleMainWindows.match(/[234]\s+пересечени(?:е|я|й)\s+со\s+станциями\/ингрессиями/g)?.join(" | ") ?? "no 2-4 transition phrase",
     );
     check(
       "runtime_july_unique_transition_count",
-      overview.html.includes("2 пересечения со станциями/ингрессиями"),
+      visibleMainWindows.includes("2 пересечения со станциями/ингрессиями"),
     );
     check(
       "runtime_ru_ingress_case",
