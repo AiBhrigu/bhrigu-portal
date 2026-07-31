@@ -3,6 +3,7 @@ name: BTC Cosmographer Pinned v0.5 Linux Acceptance
 on:
   pull_request:
     paths:
+      - ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml"
       - ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml"
       - "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh"
       - "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs"
@@ -48,13 +49,13 @@ jobs:
               text=True,
           ).splitlines()
           allowed = {
+              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
               ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
               "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
               "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
           }
           candidate = {
-              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
               "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
               "lib/btc-cosmographer-multi-body-astro-rc.ts",
