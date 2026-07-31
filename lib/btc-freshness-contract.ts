@@ -36,3 +36,4 @@ export function classifyBtcMarketSnapshotFreshness(
   }
   return { state: "UNAVAILABLE", ageHours, reason: "TOO_OLD" };
 }
+
