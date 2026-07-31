@@ -52,3 +52,9 @@ The authoritative exact-head receipt is maintained in PR metadata and the GitHub
 ## Status
 
 `PASS_ACCEPTANCE · DRAFT · UNMERGED · NO PRODUCTION`
+
+## COPY_CANON_APPLY_DIAGNOSTIC
+
+```text
+.github/workflows/btc-public-live-multi-body-projection-pr.yml: expected one match, found 0: 'Verify exact twelve-file scope'
+```
