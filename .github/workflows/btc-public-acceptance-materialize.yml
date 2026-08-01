@@ -1,0 +1,49 @@
+name: BTC Public Acceptance Materialize
+
+on:
+  push:
+    branches:
+      - repair/btc-cosmographer-public-acceptance-01-v0-1
+    paths:
+      - ops/materialize/READY
+
+permissions:
+  contents: write
+
+concurrency:
+  group: btc-public-acceptance-materialize
+  cancel-in-progress: false
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout transport head
+        uses: actions/checkout@v4
+        with:
+          ref: repair/btc-cosmographer-public-acceptance-01-v0-1
+          fetch-depth: 0
+
+      - name: Materialize exact repair payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat ops/materialize/chunk-* | base64 -d > /tmp/btc-public-acceptance-payload.tar.gz
+          tar -xzf /tmp/btc-public-acceptance-payload.tar.gz -C .
+          rm -rf ops/materialize
+          rm -f .github/workflows/btc-public-acceptance-materialize.yml
+          rm -f tmp/ignore tmp/ignore2 tmp/ignore3 tmp/ignore4
+          rmdir tmp 2>/dev/null || true
+          git status --short
+
+      - name: Commit one controlled product repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && { echo "No materialized change" >&2; exit 1; }
+          git commit -m "BTC: materialize public acceptance repair and two-screen product pass"
+          git push origin HEAD:repair/btc-cosmographer-public-acceptance-01-v0-1
