@@ -9,6 +9,7 @@ on:
       - lib/btc-cosmographer-public-multi-body-projection.ts
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
+      - scripts/verify-btc-public-live-copy-canon.mjs
       - scripts/verify-btc-public-live-visual-information-acceptance.py
   workflow_dispatch:
 
