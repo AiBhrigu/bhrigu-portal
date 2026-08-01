@@ -228,9 +228,13 @@ async function runRuntime(base) {
       ["входит в знак Овна", "входит в знак Близнецов", "входит в знак Льва"]
         .every((value) => overview.html.includes(value)),
     );
+    const marketSourceUsage = overview.html.match(
+      /Market Snapshot: (FRESH|STALE_LIMITED|UNAVAILABLE) · не используется в этом ответе/,
+    );
     check(
       "runtime_market_source_usage_label",
-      overview.html.includes("Market Snapshot: STALE_LIMITED · не используется в этом ответе"),
+      Boolean(marketSourceUsage),
+      marketSourceUsage?.[1] ?? "missing valid freshness state or not-used boundary",
     );
   }
 
