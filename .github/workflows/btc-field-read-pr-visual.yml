@@ -7,10 +7,12 @@ on:
       - ".github/scripts/verify-btc-public-acceptance-scope.py"
       - ".github/workflows/btc-field-read-pr-visual.yml"
       - "pages/crypto-astro/btc.tsx"
+      - "pages/crypto-astro/btc/live.tsx"
       - "components/btc/**"
+      - "lib/btc-live-dialogue-style.ts"
       - "lib/btc-product-rebalance-style.ts"
       - "lib/btc-public-language-contract.ts"
-      - "scripts/verify-btc-bilingual-surface.py"
+      - "scripts/verify-btc-public-acceptance-two-screen.py"
 
 permissions:
   contents: read
@@ -82,8 +84,10 @@ jobs:
           print(f"BTC_DEPLOYMENT_SOURCE_SHA_BINDING=PASS source_sha={expected}")
           PY
 
-      - name: Verify bilingual membrane, glyph binding, Φ geometry and mobile clearance
-        run: python3 scripts/verify-btc-bilingual-surface.py
+      - name: Verify two-screen bilingual hierarchy, proof and mobile clearance
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3000
+        run: python3 scripts/verify-btc-public-acceptance-two-screen.py
 
       - name: Stop preview
         if: always()
@@ -96,7 +100,7 @@ jobs:
         with:
           name: btc-field-read-public-acceptance-${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           path: |
-            artifacts/
+            artifacts/btc-public-acceptance-two-screen/
             /tmp/btc-field-read.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
