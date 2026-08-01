@@ -36,16 +36,16 @@ jobs:
 
           p = Path('components/btc/BtcCosmographerDialogue.tsx')
           s = p.read_text()
-          ru_anchor = '    "Память предыдущего принятого Snapshot": "Память изменений",\n'
-          ru_add = '    "Халвинг запускается высотой блока": "Халвинг определяется высотой блока, а не календарной датой",\n'
-          en_anchor = '    "Previous accepted Snapshot memory": "Change memory",\n'
-          en_add = '    "Halving is triggered by block height": "Halving is determined by block height, not a calendar date",\n'
+          ru_anchor = '    ["Astromodule", "Астрономические данные"],\n'
+          ru_add = '    ["Халвинг запускается высотой блока", "Халвинг определяется высотой блока, а не календарной датой"],\n'
+          en_anchor = '    ["Astromodule", "Astronomical data"],\n'
+          en_add = '    ["Halving is triggered by block height", "Halving is determined by block height, not a calendar date"],\n'
           if ru_add not in s:
               if ru_anchor not in s: raise SystemExit('RU copy anchor missing')
-              s = s.replace(ru_anchor, ru_anchor + ru_add, 1)
+              s = s.replace(ru_anchor, ru_add + ru_anchor, 1)
           if en_add not in s:
               if en_anchor not in s: raise SystemExit('EN copy anchor missing')
-              s = s.replace(en_anchor, en_anchor + en_add, 1)
+              s = s.replace(en_anchor, en_add + en_anchor, 1)
 
           old = '<details className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">'
           new = '<details open={newest} className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">'
