@@ -110,7 +110,7 @@ function validSections(value: unknown): value is BtcCosmographerSection[] {
   return value.every((item) => {
     if (!isRecord(item) || !isText(item.id, 64) || !isText(item.label, 160)) return false;
     if (item.paragraph !== undefined && !isText(item.paragraph, 2400)) return false;
-    if (item.bullets !== undefined && !stringList(item.bullets, 12, 1200)) return false;
+    if (item.bullets !== undefined && !stringList(item.bullets, 24, 1200)) return false;
     return true;
   });
 }

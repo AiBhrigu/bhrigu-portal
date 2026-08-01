@@ -14,6 +14,15 @@ import {
   type BtcCosmographerRoute,
 } from "../../../lib/btc-cosmographer-route-graph";
 import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
+import {
+  routeBtcCosmographerLocalRc,
+  type BtcMultiBodyAstroMemory,
+  type BtcMultiBodyAstroRcRoute,
+} from "../../../lib/btc-cosmographer-multi-body-astro-rc";
+import {
+  buildPublicMultiBodyAnswer,
+  isPublicMultiBodyRoute,
+} from "../../../lib/btc-cosmographer-public-multi-body-projection";
 import type { BtcCosmographerAnswerProjection } from "../../../lib/btc-protocol-evidence";
 import {
   loadBtcMarketEnvelope,
@@ -150,6 +159,35 @@ function needsMarket(route: BtcCosmographerRoute): boolean {
   return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
 }
 
+function parseRetainedAstroMemory(
+  query: Record<string, string | string[] | undefined>,
+): BtcMultiBodyAstroMemory | null {
+  const domain = first(query.rad);
+  const subject = first(query.ras);
+  const start = first(query.rat0);
+  const end = first(query.rat1);
+  if (
+    domain !== "astromodule" ||
+    subject !== "planetary_aspects" ||
+    !validObservationDate(start) ||
+    !validObservationDate(end) ||
+    end < start
+  ) return null;
+  return { domain, subject, start, end };
+}
+
+function marketOnlyRoute(route: BtcMultiBodyAstroRcRoute): BtcCosmographerRoute {
+  const marketClass = route.market_question_class ?? "liquidity";
+  return {
+    ...route,
+    domain: "btc_market",
+    subject: marketClass,
+    market_question_class: marketClass,
+    capability_id: `btc_market.${marketClass}`,
+    explicit_entities: [marketClass],
+  };
+}
+
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
@@ -200,7 +238,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const packet = parsed.malformed
     ? null
     : parsed.packet ?? parseLegacyContext(query);
-  const route = routeBtcCosmographerQuestion(resolvedLocale.locale, initialQuestion, packet, initialDate || undefined);
+  const retainedAstroMemory = parseRetainedAstroMemory(query);
+  const route = routeBtcCosmographerLocalRc(
+    resolvedLocale.locale,
+    initialQuestion,
+    packet,
+    initialDate || undefined,
+    retainedAstroMemory,
+  );
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
@@ -230,7 +275,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     }
   }
 
-  const answer = buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
+  const answer = isPublicMultiBodyRoute(route)
+    ? buildPublicMultiBodyAnswer(
+        resolvedLocale.locale,
+        route,
+        snapshot && envelope
+          ? buildBtcCosmographerAnswer(
+              resolvedLocale.locale,
+              marketOnlyRoute(route),
+              { snapshot, envelope },
+            )
+          : null,
+      ) as unknown as BtcCosmographerAnswerProjection
+    : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
   const sourceBindingChanged = Boolean(
     packet?.prior_snapshot_generated_at_utc &&
     sourceTimestamp &&
@@ -250,11 +307,11 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
 
 export default function BtcLivePage(props: Props) {
   const title = props.locale === "ru"
-    ? "BTC Космограф · Bitcoin Corridor"
-    : "BTC Cosmographer · Bitcoin Corridor";
+    ? "Чтение поля BTC · Market Cosmographer"
+    : "BTC Field Read · Market Cosmographer";
   const description = props.locale === "ru"
-    ? "Навигационный диалог по протоколу Bitcoin, BTC Market, Snapshot Memory и Astromodule."
-    : "A navigational dialogue across Bitcoin Protocol, BTC Market, Snapshot Memory and Astromodule.";
+    ? "Аналитический диалог о протоколе Bitcoin, рынке BTC, памяти снимков и астрономических данных."
+    : "Analytical dialogue about the Bitcoin protocol, the BTC market, snapshot memory, and astronomical data.";
   return <>
     <Head>
       <title>{title}</title>

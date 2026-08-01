@@ -1,0 +1,45 @@
+name: BTC Public Live Multi-Body Projection Apply
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-copy-canon.mjs
+      - scripts/verify-btc-public-live-visual-information-acceptance.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-public-live-copy-canon-closure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-closed-copy-atom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Enforce accepted ancestry
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor 75bd42151c02931260e7c9b30fc93a02d54ab763 HEAD
+
+      - name: Verify canonical product copy and headings
+        run: node scripts/verify-btc-public-live-copy-canon.mjs
+
+      - name: Prove apply recipe is closed and non-mutating
+        run: |
+          set -euo pipefail
+          grep -q 'COPY_CANON_TARGETED_REPAIR_v0_1' scripts/apply-btc-public-live-multi-body-projection.py
+          ! grep -q 'git push' scripts/apply-btc-public-live-multi-body-projection.py
+          git diff --exit-code
