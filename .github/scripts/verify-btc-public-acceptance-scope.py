@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+import os
+import subprocess
+
+EXPECTED = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-field-read-pr-visual.yml",
+    ".github/workflows/btc-free-question-live-dialogue-pr.yml",
+    ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
+    ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+    "components/btc/BtcCosmographerDialogue.tsx",
+    "components/btc/BtcHeroQuestionLaunch.tsx",
+    "components/btc/BtcQuestionMembrane.tsx",
+    "docs/research/BTC_COSMOGRAPHER_PUBLIC_USER_ACCEPTANCE_REPORT_01_v0_1.md",
+    "lib/btc-cosmographer-answer.ts",
+    "lib/btc-cosmographer-public-multi-body-projection.ts",
+    "lib/btc-cosmographer-route-graph.ts",
+    "lib/btc-live-dialogue-style.ts",
+    "lib/btc-product-rebalance-style.ts",
+    "lib/btc-public-astro-evidence.ts",
+    "pages/crypto-astro/btc.tsx",
+    "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
+    "scripts/verify-btc-public-acceptance-two-screen.py",
+}
+
+if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
+    print("workflow_dispatch: exact PR diff gate deferred")
+    raise SystemExit(0)
+
+base = os.environ["BTC_ACCEPTANCE_BASE_SHA"]
+head = os.environ["BTC_ACCEPTANCE_HEAD_SHA"]
+actual = set(subprocess.check_output(
+    ["git", "diff", "--name-only", base, head], text=True
+).splitlines())
+
+if actual != EXPECTED:
+    raise SystemExit(
+        "public acceptance scope mismatch: "
+        f"unexpected={sorted(actual - EXPECTED)}, "
+        f"missing={sorted(EXPECTED - actual)}, "
+        f"actual_count={len(actual)}, expected_count={len(EXPECTED)}"
+    )
+print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_18_FILE_SCOPE", "changed": sorted(actual)})

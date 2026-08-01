@@ -173,6 +173,24 @@ function validTimestamp(value: string): boolean {
   return value.length === 0 || Number.isFinite(new Date(value).getTime());
 }
 
+function hasBtcReference(question: string): boolean {
+  return /\bbtc\b|\bbitcoin\b|бит(?:коин|койн|окин|окйн|коина|койна)/i.test(question);
+}
+
+function isMultiBodyLanguage(question: string): boolean {
+  return /(?:planetary\s+aspects?|aspects?\s+(?:between|of)\s+planets?|аспект[а-яё]*\s+планет[а-яё]*|планет[а-яё]*\s+аспект[а-яё]*|напряж[её]нн[а-яё]*\s+(?:дн|дат|период)[а-яё]*.*(?:планет|аспект)|(?:планет|аспект).*напряж[её]нн[а-яё]*\s+(?:дн|дат|период)[а-яё]*)/i.test(question);
+}
+
+function isBitcoinGenesisChartQuestion(question: string): boolean {
+  return hasBtcReference(question) &&
+    /(?:genesis|генезис|рождени[ея]|натальн|карта)/i.test(question) &&
+    /(?:planet|планет|astro|астро|where.*stand|где\s+сто)/i.test(question);
+}
+
+function isVolatilityQuestion(question: string): boolean {
+  return /volatil|волатиль|напряж[её]нн[а-яё]*\s+(?:день|дни|дата|период)|сам(?:ый|ая|ые)\s+резк/i.test(question);
+}
+
 function yearRange(
   year: number,
   firstHalf: boolean,
@@ -295,8 +313,8 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
   if (/breadth|rotation|altcoin|participation|eth|ширин|ротац|альткоин|участи/i.test(question)) return "market_participation_rotation";
   if (/structure|regime|field score|market cap|структур|режим|капитализац/i.test(question)) return "market_structure";
   if (/snapshot|memory|previous checkpoint|delta|снимок|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
-  if (/temporal pressure|market timing|market cycle|временн.*давлен|рыночн.*цикл/i.test(question)) return "temporal_pressure";
-  if (/btc field|market field|поле btc|общее поле|рынок btc|рынок биткоин/i.test(question)) return "general_btc_field";
+  if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль/i.test(question)) return "temporal_pressure";
+  if (/btc field|market field|поле btc|общее поле|рынок btc|рынок биткоин|btc\s+today|bitcoin\s+today|btc\s+now|биткоин\s+(?:сегодня|сейчас)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
   return null;
 }
 
@@ -313,7 +331,7 @@ function isReturn(question: string): boolean {
 }
 
 function isReferential(question: string): boolean {
-  return /^(?:why|why\?|what about that|and this|it|this|that|them|so|then|почему|почему\?|а это|это|этот|эта|они|там|а\s|и\s|тогда|что важнее|какие показатели|что изменит)/i.test(question.trim());
+  return /^(?:why|why\?|what about that|and this|it|this|that|them|so|then|почему|почему\?|а это|это|этот|эта|они|там|а\s|и\s|тогда|что важнее|какие показатели|что изменит|какой день|какие дни)/i.test(question.trim());
 }
 
 function inferDomain(
@@ -322,15 +340,19 @@ function inferDomain(
   body: string | null,
   market: BtcEnvelopeQuestionClass | null,
 ): BtcCosmographerDomain {
-  const hasBtc = /\bbtc\b|\bbitcoin\b|биткоин/i.test(question);
-  if (body && (market || hasBtc)) return "astro_btc_bridge";
+  const hasBtc = hasBtcReference(question);
+  if (isBitcoinGenesisChartQuestion(question)) return "unsupported";
+  if (body && hasBtc) return "astro_btc_bridge";
+  if (body && market) return "astro_btc_bridge";
+  if (isMultiBodyLanguage(question) && hasBtc) return "astro_btc_bridge";
+  if (isMultiBodyLanguage(question)) return "astromodule";
   if (body || /astromodule|астромодул|planet|планет|retrograd|ретроград|aspect|аспект|eclipse|затмени/i.test(question)) return "astromodule";
   if (protocol) return "bitcoin_protocol";
   if (market === "change_memory") return "snapshot_memory";
   if (market) return "btc_market";
   if (isMethodology(question)) return "methodology";
   if (isNavigation(question)) return "navigation";
-  if (hasBtc) return "bitcoin_protocol";
+  if (hasBtc) return "btc_market";
   return "unsupported";
 }
 
@@ -345,10 +367,10 @@ function classifyIntents(
   if (timeRange && (domain === "astromodule" || domain === "astro_btc_bridge")) values.push("interval_analysis");
   if (/compare|versus|\bvs\b|сравн|отличи|между/i.test(question)) values.push("compare");
   if (/what changed|changed|change since|что измен|изменени/i.test(question)) values.push("change");
-  if (/why|matter|reason|important|почему|важно|причин/i.test(question)) values.push("reason");
+  if (/why|matter|reason|important|почему|важно|причин|напряж|volatil|волатиль/i.test(question)) values.push("reason");
   if (/confirm|support|agree|подтверж|соглас/i.test(question)) values.push("confirmation");
-  if (/watch|next|condition|наблюд|дальше|услов/i.test(question)) values.push("watch");
-  if (/impact|influence|affect|correlat|coincid|relation|повлиял|влияни|связ|совпал|корреляц/i.test(question)) values.push("bridge");
+  if (/watch|next|condition|наблюд|дальше|услов|today|now|сегодня|сейчас/i.test(question)) values.push("watch");
+  if (/impact|influence|affect|correlat|coincid|relation|повлиял|влияни|связ|совпал|корреляц|показател.*(?:btc|бит)/i.test(question)) values.push("bridge");
   if (domain === "navigation") values.push("navigate");
   if (!values.length) values.push(domain === "bitcoin_protocol" ? "explain" : "fact");
   return unique(values);
@@ -358,8 +380,14 @@ function explicitEntities(
   body: string | null,
   protocol: string | null,
   market: BtcEnvelopeQuestionClass | null,
+  multiBody: boolean,
 ): string[] {
-  return unique([body, protocol, market].filter((value): value is string => Boolean(value)));
+  return unique([
+    body,
+    protocol,
+    market,
+    multiBody ? "planetary_aspects" : null,
+  ].filter((value): value is string => Boolean(value)));
 }
 
 export function routeBtcCosmographerQuestion(
@@ -372,8 +400,28 @@ export function routeBtcCosmographerQuestion(
   const q = normalized.toLowerCase();
   const protocol = protocolSubject(q);
   const body = bodySubject(q);
+  const multiBody = isMultiBodyLanguage(q);
   const market = marketClass(q);
-  const inferredDomain = inferDomain(q, protocol, body, market);
+  const genesisChart = isBitcoinGenesisChartQuestion(q);
+  let inferredDomain = inferDomain(q, protocol, body, market);
+  let forcedSubject: string | null = genesisChart
+    ? "bitcoin_genesis_chart"
+    : multiBody
+      ? "planetary_aspects"
+      : null;
+
+  if (isVolatilityQuestion(q) && !body && !multiBody && !market && packet) {
+    if (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") {
+      inferredDomain = packet.prior_domain === "astro_btc_bridge"
+        ? "astro_btc_bridge"
+        : "astromodule";
+      forcedSubject = packet.prior_subject;
+    } else if (packet.prior_domain === "btc_market" || packet.prior_domain === "snapshot_memory") {
+      inferredDomain = "btc_market";
+      forcedSubject = "temporal_pressure";
+    }
+  }
+
   const contextBridge = Boolean(
     packet &&
     market &&
@@ -385,6 +433,7 @@ export function routeBtcCosmographerQuestion(
     : inferredDomain;
   const timeRange = extractBtcCosmographerTimeRange(q, selectedDate);
   const subject =
+    forcedSubject ??
     (contextBridge ? packet?.prior_subject ?? null : null) ??
     body ??
     protocol ??
@@ -392,16 +441,18 @@ export function routeBtcCosmographerQuestion(
     (domain === "methodology" ? "source_and_method" :
       domain === "navigation" ? "capabilities" :
         domain === "bitcoin_protocol" ? "overview" :
-          domain === "unsupported" ? "unknown" : "general");
-  const entities = explicitEntities(body, protocol, market);
-  const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation";
+          domain === "btc_market" ? "general_btc_field" :
+            domain === "unsupported" ? "unknown" : "general");
+  const entities = explicitEntities(body, protocol, market, multiBody);
+  if (genesisChart) entities.push("bitcoin_genesis_chart");
+  const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation" || genesisChart;
 
   let relation: BtcCosmographerContextRelation;
   if (contextBridge) relation = "CROSS_MODULE_BRIDGE";
   else if (isReturn(q)) relation = "RETURN_TO_PREVIOUS_TOPIC";
   else if (!packet) relation = explicit ? "NEW_TOPIC" : "GENUINELY_AMBIGUOUS";
   else if (explicit && (domain !== packet.prior_domain || subject !== packet.prior_subject)) relation = "NEW_TOPIC";
-  else if (explicit || isReferential(q)) relation = "FOLLOW_UP";
+  else if (explicit || isReferential(q) || (isVolatilityQuestion(q) && Boolean(forcedSubject))) relation = "FOLLOW_UP";
   else relation = "GENUINELY_AMBIGUOUS";
 
   const resolvedDomain =
@@ -450,7 +501,7 @@ export function routeBtcCosmographerQuestion(
     market_question_class: resolvedMarket,
     capability_id: `${resolvedDomain}.${resolvedSubject}`,
     confidence,
-    explicit_entities: entities,
+    explicit_entities: unique(entities),
   };
 }
 

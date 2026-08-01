@@ -38,6 +38,12 @@ type PublicAstroEvidence = {
   aspects: AspectWindow[];
 };
 
+type TimelineItem = {
+  date: string;
+  order: number;
+  text: string;
+};
+
 const data = astroEvidence as unknown as PublicAstroEvidence;
 
 const SIGN_KEYS = [
@@ -54,6 +60,21 @@ const SIGNS: Record<BtcPublicLocale, string[]> = {
     "Овне", "Тельце", "Близнецах", "Раке", "Льве", "Деве",
     "Весах", "Скорпионе", "Стрельце", "Козероге", "Водолее", "Рыбах",
   ],
+};
+
+const SIGN_GENITIVE_RU: Record<string, string> = {
+  aries: "Овна",
+  taurus: "Тельца",
+  gemini: "Близнецов",
+  cancer: "Рака",
+  leo: "Льва",
+  virgo: "Девы",
+  libra: "Весов",
+  scorpio: "Скорпиона",
+  sagittarius: "Стрельца",
+  capricorn: "Козерога",
+  aquarius: "Водолея",
+  pisces: "Рыб",
 };
 
 const BODY_LABELS: Record<BtcPublicLocale, Record<string, string>> = {
@@ -80,6 +101,8 @@ const ASPECT_LABELS: Record<BtcPublicLocale, Record<number, string>> = {
   },
 };
 
+const FAST_BODIES = new Set(["sun", "moon", "mercury", "venus", "mars"]);
+
 function bodyLabel(locale: BtcPublicLocale, body: string): string {
   return BODY_LABELS[locale][body] ?? body;
 }
@@ -103,10 +126,7 @@ function closestAnchor(target: string, body: string): Anchor | null {
   });
 }
 
-function positionText(
-  locale: BtcPublicLocale,
-  state: BodyState,
-): string {
+function positionText(locale: BtcPublicLocale, state: BodyState): string {
   const [longitude, speed] = state;
   const normalized = ((longitude % 360) + 360) % 360;
   const signIndex = Math.floor(normalized / 30);
@@ -119,29 +139,35 @@ function positionText(
     : `${degree.toFixed(1)}° ${SIGNS.en[signIndex]}, ${motion}`;
 }
 
-function eventLines(
+function exactEventItems(
   locale: BtcPublicLocale,
   body: string,
   start: string,
   end: string,
-): string[] {
-  const lines: string[] = [];
+): TimelineItem[] {
+  const items: TimelineItem[] = [];
   for (const station of data.stations) {
     if (station.body !== body || !inRange(station.date, start, end)) continue;
     const movement = station.motion === "direct"
       ? (locale === "ru" ? "переход к директному движению" : "station direct")
       : (locale === "ru" ? "переход к ретроградному движению" : "station retrograde");
-    lines.push(`${station.date}: ${movement}.`);
+    items.push({ date: station.date, order: 1, text: `${station.date}: ${movement}.` });
   }
   for (const ingress of data.ingresses) {
     if (ingress.body !== body || !inRange(ingress.date, start, end)) continue;
     const signIndex = SIGN_KEYS.indexOf(ingress.sign);
-    const sign = signIndex >= 0 ? SIGNS[locale][signIndex] : ingress.sign;
-    lines.push(locale === "ru"
-      ? `${ingress.date}: вход в ${sign}.`
-      : `${ingress.date}: ingress into ${sign}.`);
+    const sign = locale === "ru"
+      ? (SIGN_GENITIVE_RU[ingress.sign] ?? ingress.sign)
+      : (signIndex >= 0 ? SIGNS.en[signIndex] : ingress.sign);
+    items.push({
+      date: ingress.date,
+      order: 2,
+      text: locale === "ru"
+        ? `${ingress.date}: вход в знак ${sign}.`
+        : `${ingress.date}: ingress into ${sign}.`,
+    });
   }
-  return lines;
+  return items.sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
 }
 
 function aspectLines(
@@ -155,6 +181,7 @@ function aspectLines(
       (event.a === body || event.b === body) &&
       event.end >= start &&
       event.start <= end)
+    .sort((a, b) => a.peak.localeCompare(b.peak) || a.start.localeCompare(b.start))
     .map((event) => {
       const other = event.a === body ? event.b : event.a;
       const aspect = ASPECT_LABELS[locale][event.angle] ?? `${event.angle}°`;
@@ -162,6 +189,44 @@ function aspectLines(
         ? `${event.peak}: ${aspect} с ${bodyLabel(locale, other)}; окно ${event.start}–${event.end}, минимальный дневной orb ${event.orb.toFixed(3)}°.`
         : `${event.peak}: ${aspect} to ${bodyLabel(locale, other)}; window ${event.start}–${event.end}, minimum daily orb ${event.orb.toFixed(3)}°.`;
     });
+}
+
+function monthlyAnchorLines(
+  locale: BtcPublicLocale,
+  body: string,
+  start: string,
+  end: string,
+): string[] {
+  return data.anchors
+    .filter((anchor) => anchor.b[body] && inRange(anchor.date, start, end))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((anchor) => `${anchor.date}: ${positionText(locale, anchor.b[body])}.`);
+}
+
+function motionChangeBrackets(
+  locale: BtcPublicLocale,
+  body: string,
+  start: string,
+  end: string,
+): string[] {
+  const anchors = data.anchors
+    .filter((anchor) => anchor.b[body] && anchor.date >= start && anchor.date <= end)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const lines: string[] = [];
+  for (let index = 1; index < anchors.length; index += 1) {
+    const previous = anchors[index - 1];
+    const current = anchors[index];
+    const previousMotion = previous.b[body][1] < 0 ? "retrograde" : "direct";
+    const currentMotion = current.b[body][1] < 0 ? "retrograde" : "direct";
+    if (previousMotion === currentMotion) continue;
+    const movement = currentMotion === "direct"
+      ? (locale === "ru" ? "переход к директному движению" : "a change to direct motion")
+      : (locale === "ru" ? "переход к ретроградному движению" : "a change to retrograde motion");
+    lines.push(locale === "ru"
+      ? `${previous.date}–${current.date}: месячные якоря ограничивают ${movement}; точная дата в публичном индексе не опубликована.`
+      : `${previous.date}–${current.date}: monthly anchors bracket ${movement}; the exact date is not published in the public index.`);
+  }
+  return lines;
 }
 
 function limitedAnswer(
@@ -176,9 +241,9 @@ function limitedAnswer(
     direct_answer: direct,
     sections: [],
     source_boundary: locale === "ru"
-      ? "Astromodule отвечает только по опубликованному checksum-bound evidence index и не заменяет отсутствующие данные догадкой."
-      : "Astromodule answers only from the published checksum-bound evidence index and does not replace missing data with a guess.",
-    proof_label: locale === "ru" ? "Astro proof ограничен" : "Astro proof limited",
+      ? "Астрономический ответ строится только по опубликованному evidence index и не заменяет отсутствующие данные догадкой."
+      : "The astronomical answer uses only the published evidence index and does not replace missing data with a guess.",
+    proof_label: locale === "ru" ? "Астрономические доказательства ограничены" : "Astronomical evidence limited",
   };
 }
 
@@ -186,7 +251,19 @@ export function buildBtcAstroAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
 ): BtcCosmographerAnswerProjection {
-  const body = data.bodies.includes(route.subject) ? route.subject : "jupiter";
+  if (!data.bodies.includes(route.subject)) {
+    return limitedAnswer(
+      locale,
+      locale === "ru"
+        ? "Для указанного предмета нет принятого астрономического evidence"
+        : "No accepted astronomical evidence exists for this subject",
+      locale === "ru"
+        ? "Космограф не подменяет неизвестный предмет Юпитером или другой планетой. Уточните тело или используйте годовой обзор аспектов планет."
+        : "Cosmographer does not replace an unknown subject with Jupiter or another body. Name the body or use the annual planetary-aspect overview.",
+    );
+  }
+
+  const body = route.subject;
   const label = bodyLabel(locale, body);
   const requested = route.time_range ?? {
     start: data.range.start,
@@ -199,60 +276,83 @@ export function buildBtcAstroAnswer(
     return limitedAnswer(
       locale,
       locale === "ru"
-        ? "Запрошенный период пока вне публичного Astro Evidence"
-        : "Requested period is outside public Astro Evidence",
+        ? "Запрошенный период пока вне публичного астрономического evidence"
+        : "Requested period is outside public astronomical evidence",
       locale === "ru"
-        ? `Публичный индекс сейчас покрывает ${data.range.start}–${data.range.end}. Я не буду заменять отсутствующие эфемеридные данные догадкой.`
-        : `The public index currently covers ${data.range.start}–${data.range.end}. Missing ephemeris evidence will not be replaced with a guess.`,
+        ? `Публичный индекс сейчас покрывает ${data.range.start}–${data.range.end}. Отсутствующие эфемеридные данные не заменяются догадкой.`
+        : `The public index currently covers ${data.range.start}–${data.range.end}. Missing ephemeris evidence is not replaced with a guess.`,
     );
   }
 
-  const start = requested.start < data.range.start
-    ? data.range.start
-    : requested.start;
-  const end = requested.end > data.range.end
-    ? data.range.end
-    : requested.end;
+  const start = requested.start < data.range.start ? data.range.start : requested.start;
+  const end = requested.end > data.range.end ? data.range.end : requested.end;
   const startAnchor = closestAnchor(start, body);
   const endAnchor = closestAnchor(end, body);
   if (!startAnchor || !endAnchor) {
     return limitedAnswer(
       locale,
-      locale === "ru"
-        ? "Astro Evidence для тела недоступен"
-        : "Astro Evidence is unavailable for this body",
-      locale === "ru"
-        ? "Положение не будет восстановлено из предположений."
-        : "The position will not be reconstructed from assumptions.",
+      locale === "ru" ? "Астрономические данные для тела недоступны" : "Astronomical evidence is unavailable for this body",
+      locale === "ru" ? "Положение не будет восстановлено из предположений." : "The position will not be reconstructed from assumptions.",
     );
   }
 
-  const events = eventLines(locale, body, start, end);
+  const exactEvents = exactEventItems(locale, body, start, end);
   const aspects = aspectLines(locale, body, start, end);
+  const anchors = monthlyAnchorLines(locale, body, start, end);
+  const brackets = motionChangeBrackets(locale, body, start, end);
   const startText = positionText(locale, startAnchor.b[body]);
   const endText = positionText(locale, endAnchor.b[body]);
   const interval = start !== end || route.intents.includes("interval_analysis");
+  const fastBodyLimited = interval && FAST_BODIES.has(body) && exactEvents.length === 0;
+
+  const timeline: TimelineItem[] = [
+    {
+      date: startAnchor.date,
+      order: 0,
+      text: locale === "ru"
+        ? `Ближайший принятый якорь к началу: ${startAnchor.date} · ${startText}.`
+        : `Nearest accepted opening anchor: ${startAnchor.date} · ${startText}.`,
+    },
+    ...exactEvents,
+    {
+      date: endAnchor.date,
+      order: 3,
+      text: locale === "ru"
+        ? `Последний доступный месячный якорь к концу периода: ${endAnchor.date} · ${endText}.`
+        : `Last available monthly anchor near the period end: ${endAnchor.date} · ${endText}.`,
+    },
+  ].sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
 
   const direct = locale === "ru"
-    ? `${label} проходит от ближайшего принятого якоря ${startAnchor.date} (${startText}) к ${endAnchor.date} (${endText}). ${events.length ? "Внутри периода есть подтверждённые переходы движения или знака." : "Отдельный переход движения или знака в этом диапазоне не зафиксирован."}`
-    : `${label} moves from the nearest accepted anchor ${startAnchor.date} (${startText}) to ${endAnchor.date} (${endText}). ${events.length ? "The interval contains accepted motion or sign transitions." : "No separate motion or sign transition is recorded in this interval."}`;
+    ? fastBodyLimited
+      ? `${label}: публичный индекс содержит месячные якоря положения, но не публикует точные дневные станции и ингрессии для этого быстрого тела. Поэтому ниже показана доказательная месячная траектория и интервалы смены направления без выдумывания точных дат.`
+      : `${label} проходит от ближайшего принятого якоря ${startAnchor.date} (${startText}) к последнему доступному месячному якорю ${endAnchor.date} (${endText}). ${exactEvents.length ? "Точные опубликованные переходы включены в общую хронологию." : "Отдельные дневные переходы в опубликованном индексе не зафиксированы."}`
+    : fastBodyLimited
+      ? `${label}: the public index contains monthly position anchors but does not publish exact daily stations and ingresses for this fast body. The answer therefore shows the evidence-bound monthly trajectory and motion-change brackets without inventing exact dates.`
+      : `${label} moves from the nearest accepted anchor ${startAnchor.date} (${startText}) to the last available monthly anchor ${endAnchor.date} (${endText}). ${exactEvents.length ? "Published exact transitions are included in one chronology." : "No separate daily transition is recorded in the published index."}`;
 
   const sections: BtcCosmographerAnswerProjection["sections"] = [
     {
       id: "timeline",
-      label: locale === "ru" ? "Временная линия" : "Timeline",
-      bullets: [
-        locale === "ru"
-          ? `Начальный якорь: ${startAnchor.date} · ${startText}.`
-          : `Opening anchor: ${startAnchor.date} · ${startText}.`,
-        ...events,
-        locale === "ru"
-          ? `Конечный якорь: ${endAnchor.date} · ${endText}.`
-          : `Closing anchor: ${endAnchor.date} · ${endText}.`,
-      ],
+      label: locale === "ru" ? "Единая хронология" : "Single chronology",
+      bullets: timeline.map((item) => item.text),
     },
   ];
 
+  if (fastBodyLimited && anchors.length) {
+    sections.push({
+      id: "monthly_anchors",
+      label: locale === "ru" ? "Месячные доказательные якоря" : "Monthly evidence anchors",
+      bullets: anchors,
+    });
+  }
+  if (brackets.length) {
+    sections.push({
+      id: "motion_brackets",
+      label: locale === "ru" ? "Интервалы смены направления" : "Motion-change brackets",
+      bullets: brackets,
+    });
+  }
   if (aspects.length) {
     sections.push({
       id: "aspects",
@@ -265,26 +365,22 @@ export function buildBtcAstroAnswer(
     id: "interpretation",
     label: locale === "ru" ? "Как читать результат" : "How to read it",
     paragraph: locale === "ru"
-      ? "Это описание наблюдаемой конфигурации и её переходов. Слово «влияние» здесь не превращается в причинное утверждение о цене BTC."
-      : "This describes the observed configuration and its transitions. The word “influence” does not turn it into a causal claim about BTC price.",
+      ? "Это описание наблюдаемой конфигурации и её переходов. Совпадение с рынком не является доказательством причинного влияния на цену BTC."
+      : "This describes the observed configuration and its transitions. A market coincidence is not proof of a causal effect on BTC price.",
   });
 
   return {
-    answer_state: "CONFIRMED",
+    answer_state: fastBodyLimited ? "LIMITED" : "CONFIRMED",
     answer_mode: interval ? "ASTRO_INTERVAL" : "ASTRO_STATE",
     headline: locale === "ru"
-      ? (interval
-          ? `${label}: движение в периоде ${requested.label}`
-          : `${label}: состояние на выбранную дату`)
-      : (interval
-          ? `${label}: movement across ${requested.label}`
-          : `${label}: state at the selected date`),
+      ? (interval ? `${label}: движение в периоде ${requested.label}` : `${label}: состояние на выбранную дату`)
+      : (interval ? `${label}: movement across ${requested.label}` : `${label}: state at the selected date`),
     direct_answer: direct,
     sections,
     source_boundary: locale === "ru"
-      ? `Источник: Public Astromodule Evidence ${data.schema}; ${data.source.mode}, ${data.source.coordinate}; месячные якоря и дневные окна событий. Публичный диапазон ${data.range.start}–${data.range.end}.`
-      : `Source: Public Astromodule Evidence ${data.schema}; ${data.source.mode}, ${data.source.coordinate}; monthly anchors and daily event windows. Public range ${data.range.start}–${data.range.end}.`,
-    proof_label: locale === "ru" ? "Astro proof доступен" : "Astro proof available",
+      ? `Источник: публичный астрономический индекс ${data.schema}; ${data.source.mode}, ${data.source.coordinate}; месячные якоря и опубликованные дневные окна событий. Диапазон ${data.range.start}–${data.range.end}.`
+      : `Source: public astronomical index ${data.schema}; ${data.source.mode}, ${data.source.coordinate}; monthly anchors and published daily event windows. Range ${data.range.start}–${data.range.end}.`,
+    proof_label: locale === "ru" ? "Астрономические доказательства доступны" : "Astronomical evidence available",
   };
 }
 
@@ -297,19 +393,19 @@ export function buildAstroBtcBridgeBoundary(
     answer_state: "SPLIT",
     answer_mode: "ASTRO_BTC_BRIDGE",
     headline: locale === "ru"
-      ? "Astromodule и BTC нужно читать как два независимых слоя"
-      : "Astromodule and BTC must be read as two independent layers",
+      ? "Астрономические данные и BTC читаются как независимые слои"
+      : "Astronomical data and BTC are read as independent layers",
     direct_answer: locale === "ru"
-      ? `${astro.direct_answer} Рыночная часть должна быть проверена отдельным Snapshot; совпадение по времени не доказывает влияние.`
+      ? `${astro.direct_answer} Рыночная часть должна быть проверена отдельным Snapshot; временное совпадение не доказывает влияние.`
       : `${astro.direct_answer} The market side must be checked against a separate Snapshot; timing coincidence does not prove influence.`,
     sections: [
       ...astro.sections,
       {
         id: "bridge_boundary",
-        label: locale === "ru" ? "Граница моста Astro × BTC" : "Astro × BTC bridge boundary",
+        label: locale === "ru" ? "Граница сопоставления" : "Comparison boundary",
         paragraph: locale === "ru"
-          ? "Разрешено сравнивать даты, состояния и расхождения. Запрещено превращать совпадение в причинность, прогноз или торговый сигнал."
-          : "Dates, states and divergences may be compared. Coincidence may not be converted into causality, a forecast or a trading signal.",
+          ? "Разрешено сравнивать даты, состояния и расхождения. Это сопоставление само по себе не создаёт причинного вывода или торгового сигнала."
+          : "Dates, states, and divergences may be compared. The comparison itself does not create a causal conclusion or trading signal.",
       },
     ],
   };

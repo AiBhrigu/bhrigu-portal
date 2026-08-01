@@ -81,14 +81,14 @@ function marketAnswer(
       },
       {
         id: "market_watch",
-        label: locale === "ru" ? "Следующее условие" : "Next condition",
+        label: locale === "ru" ? "Что изменит чтение" : "What would change the read",
         paragraph: raw.what_would_change_the_read,
       },
     ],
     source_boundary: locale === "ru"
-      ? "Рыночные числа заново построены из принятого Snapshot и Delta. Прошлый разговор определяет навигацию, но не подменяет текущие данные. Это не прогноз, ценовая цель или торговый сигнал."
-      : "Market values are rebuilt from the accepted Snapshot and Delta. Prior dialogue guides navigation but does not replace current data. This is not a forecast, price target or trading signal.",
-    proof_label: locale === "ru" ? "Market proof доступен" : "Market proof available",
+      ? "Рыночные значения заново построены из принятого Snapshot и Delta. Прошлый разговор направляет навигацию, но не подменяет текущие данные. Это не финансовый совет и не торговый сигнал. Прогнозные окна допустимы только при наличии валидированного метода, условий и доказательной границы."
+      : "Market values are rebuilt from the accepted Snapshot and Delta. Prior dialogue guides navigation but does not replace current data. This is not financial advice or a trading signal. Forecast windows are allowed only when a validated method, conditions, and an evidence boundary are present.",
+    proof_label: locale === "ru" ? "Рыночные доказательства доступны" : "Market evidence available",
   };
 }
 
@@ -97,8 +97,8 @@ function methodologyAnswer(locale: BtcPublicLocale): BtcCosmographerAnswerProjec
     answer_state: "CONFIRMED",
     answer_mode: "METHODOLOGY",
     headline: locale === "ru"
-      ? "Космограф разделяет факт, метод и интерпретацию"
-      : "Cosmographer separates fact, method and interpretation",
+      ? "Космограф разделяет факт, метод, интерпретацию и прогнозное условие"
+      : "Cosmographer separates fact, method, interpretation, and forecast condition",
     direct_answer: locale === "ru"
       ? "Каждый ответ сначала выбирает домен и доказательный источник, затем строит объяснение. Языковая форма не может добавлять числа или события, которых нет в evidence packet."
       : "Each answer first selects a domain and evidence source, then builds an explanation. The language layer may not add numbers or events absent from the evidence packet.",
@@ -108,16 +108,16 @@ function methodologyAnswer(locale: BtcPublicLocale): BtcCosmographerAnswerProjec
         label: locale === "ru" ? "Контуры источников" : "Evidence lanes",
         bullets: locale === "ru"
           ? [
-              "Bitcoin Protocol: правила консенсуса, эмиссия, халвинг, блоки и комиссии.",
-              "BTC Market: принятый Snapshot, Delta и память изменений.",
-              "Astromodule: публичные эфемеридные якоря и события.",
-              "Astro × BTC: только сопоставление независимых слоёв.",
+              "Протокол Bitcoin: правила консенсуса, эмиссия, халвинг, блоки и комиссии.",
+              "Рынок BTC: принятый Snapshot, Delta и память изменений.",
+              "Астрономические данные: публичные эфемеридные якоря и события.",
+              "Астрономия × BTC: сопоставление независимых слоёв.",
             ]
           : [
-              "Bitcoin Protocol: consensus, issuance, halving, blocks and fees.",
-              "BTC Market: accepted Snapshot, Delta and change memory.",
-              "Astromodule: public ephemeris anchors and events.",
-              "Astro × BTC: comparison of independent layers only.",
+              "Bitcoin Protocol: consensus, issuance, halving, blocks, and fees.",
+              "BTC Market: accepted Snapshot, Delta, and change memory.",
+              "Astronomical data: public ephemeris anchors and events.",
+              "Astronomy × BTC: comparison of independent layers.",
             ],
       },
       {
@@ -127,11 +127,18 @@ function methodologyAnswer(locale: BtcPublicLocale): BtcCosmographerAnswerProjec
           ? "Она не должна превращать отсутствие данных в догадку, совпадение — в причинность, а исследовательское чтение — в торговый сигнал."
           : "It must not turn missing data into a guess, coincidence into causality, or a research read into a trading signal.",
       },
+      {
+        id: "forecast_boundary",
+        label: locale === "ru" ? "Граница прогнозного слоя" : "Forecast-layer boundary",
+        paragraph: locale === "ru"
+          ? "Прогнозное окно публикуется только вместе с методом, горизонтом, условиями усиления или ослабления, признаками отмены и последующей проверкой."
+          : "A forecast window is published only with its method, horizon, strengthening or weakening conditions, invalidation signals, and later verification.",
+      },
     ],
     source_boundary: locale === "ru"
       ? "Методологическая граница является частью публичного ответа."
       : "The methodology boundary is part of the public answer.",
-    proof_label: locale === "ru" ? "Method proof доступен" : "Method proof available",
+    proof_label: locale === "ru" ? "Доказательства метода доступны" : "Method evidence available",
   };
 }
 
@@ -139,23 +146,30 @@ function navigationAnswer(
   locale: BtcPublicLocale,
   unknownQuestion?: string,
 ): BtcCosmographerAnswerProjection {
+  const visualRequest = Boolean(unknownQuestion && /visual|picture|image|картин|визуал|схем/i.test(unknownQuestion));
   return {
     answer_state: unknownQuestion ? "CLARIFICATION" : "LIMITED",
     answer_mode: unknownQuestion ? "CLARIFICATION" : "NAVIGATION",
-    headline: unknownQuestion
+    headline: visualRequest
+      ? (locale === "ru" ? "Уточните, что нужно визуализировать" : "Specify what should be visualized")
+      : unknownQuestion
+        ? (locale === "ru"
+            ? "Предмет вопроса нужно уточнить"
+            : "The subject of the question needs clarification")
+        : (locale === "ru"
+            ? "Основные маршруты поля BTC"
+            : "Main BTC field routes"),
+    direct_answer: visualRequest
       ? (locale === "ru"
-          ? "Я не буду подменять неизвестный предмет рыночным шаблоном"
-          : "I will not replace an unknown subject with a market template")
-      : (locale === "ru"
-          ? "Основные маршруты Bitcoin Corridor"
-          : "Main Bitcoin Corridor routes"),
-    direct_answer: unknownQuestion
-      ? (locale === "ru"
-          ? "Вопрос не распознан как поддерживаемый домен. Вместо случайного ответа Космограф показывает доступные направления."
-          : "The question was not recognized as a supported domain. Instead of a random answer, Cosmographer shows the available directions.")
-      : (locale === "ru"
-          ? "Можно свободно переходить между протоколом Bitcoin, рынком, памятью Snapshot, Astromodule и мостом Astro × BTC."
-          : "You can move freely between Bitcoin protocol, market, Snapshot memory, Astromodule and the Astro × BTC bridge."),
+          ? "Назовите объект: текущее поле BTC, временную линию планеты, карту аспектов или сопоставление Астрономия × BTC. Космограф не выбирает визуальный предмет случайно."
+          : "Name the object: current BTC field, a planetary timeline, an aspect map, or an Astronomy × BTC comparison. Cosmographer does not choose a visual subject at random.")
+      : unknownQuestion
+        ? (locale === "ru"
+            ? "Космограф не будет подменять неизвестный предмет предыдущей планетой или случайным рыночным шаблоном."
+            : "Cosmographer will not replace an unknown subject with the previous planet or a random market template.")
+        : (locale === "ru"
+            ? "Можно свободно переходить между протоколом Bitcoin, рынком, памятью Snapshot, астрономическими данными и сопоставлением Астрономия × BTC."
+            : "You can move between Bitcoin protocol, market, Snapshot memory, astronomical data, and the Astronomy × BTC comparison."),
     sections: [
       {
         id: "routes",
@@ -163,18 +177,18 @@ function navigationAnswer(
         bullets: locale === "ru"
           ? [
               "Протокол: «Сколько всего BTC?», «Что нужно знать о халвинге?»",
-              "Рынок: «Что сейчас происходит с ликвидностью и доминированием?»",
+              "Рынок: «Что происходит с BTC сегодня?»",
               "Память: «Что изменилось с прошлого Snapshot?»",
-              "Astromodule: «Как двигался Юпитер в первой половине 2026 года?»",
-              "Мост: «Как конфигурация Юпитера совпала со структурой BTC?»",
+              "Астрономические данные: «Какие самые напряжённые окна аспектов в 2026 году?»",
+              "Сопоставление: «Как конфигурация Юпитера совпадает со структурой BTC?»",
               "Метод: «Какие источники использованы и где граница вывода?»",
             ]
           : [
               "Protocol: “How many BTC can exist?” “What should I know about halving?”",
-              "Market: “What is happening with liquidity and dominance?”",
+              "Market: “What is happening with BTC today?”",
               "Memory: “What changed since the previous Snapshot?”",
-              "Astromodule: “How did Jupiter move in the first half of 2026?”",
-              "Bridge: “How did Jupiter's configuration coincide with BTC structure?”",
+              "Astronomical data: “Which aspect windows are most intense in 2026?”",
+              "Comparison: “How does Jupiter's configuration coincide with BTC structure?”",
               "Method: “Which sources are used and where is the inference boundary?”",
             ],
       },
@@ -182,7 +196,41 @@ function navigationAnswer(
     source_boundary: locale === "ru"
       ? "Уточнение используется только когда предмет действительно нельзя определить."
       : "Clarification is used only when the subject genuinely cannot be resolved.",
-    proof_label: "Capability registry",
+    proof_label: locale === "ru" ? "Реестр возможностей" : "Capability registry",
+  };
+}
+
+function genesisChartClarification(locale: BtcPublicLocale): BtcCosmographerAnswerProjection {
+  return {
+    answer_state: "CLARIFICATION",
+    answer_mode: "CLARIFICATION",
+    headline: locale === "ru"
+      ? "Нужна точная модель карты генезиса Bitcoin"
+      : "A precise Bitcoin genesis-chart model is required",
+    direct_answer: locale === "ru"
+      ? "Текущий публичный evidence index не содержит принятого времени и координат для натальной карты Bitcoin. Поэтому Космограф не подменяет этот запрос движением Юпитера."
+      : "The current public evidence index does not contain an accepted time and location for a Bitcoin natal chart. Cosmographer therefore does not replace this request with Jupiter's movement.",
+    sections: [
+      {
+        id: "genesis_options",
+        label: locale === "ru" ? "Что нужно определить" : "What must be defined",
+        bullets: locale === "ru"
+          ? [
+              "событие-основание: публикация white paper или genesis block",
+              "точное время UTC",
+              "географическая модель или правило геоцентрической карты",
+            ]
+          : [
+              "founding event: white-paper publication or genesis block",
+              "exact UTC time",
+              "geographic model or geocentric-chart rule",
+            ],
+      },
+    ],
+    source_boundary: locale === "ru"
+      ? "До принятия этих параметров карта генезиса не публикуется как факт."
+      : "Until these parameters are accepted, the genesis chart is not published as fact.",
+    proof_label: locale === "ru" ? "Доказательства карты пока не приняты" : "Chart evidence not yet accepted",
   };
 }
 
@@ -207,13 +255,13 @@ export function buildBtcCosmographerAnswer(
           answer_state: "SPLIT",
           answer_mode: "ASTRO_BTC_BRIDGE",
           headline: locale === "ru"
-            ? "Astromodule и BTC сопоставлены без причинного утверждения"
-            : "Astromodule and BTC are compared without a causal claim",
+            ? "Астрономические данные и BTC сопоставлены без причинного утверждения"
+            : "Astronomical data and BTC are compared without a causal claim",
           direct_answer: locale === "ru"
             ? `${astro.direct_answer} Рыночный слой отвечает отдельно: ${market.direct_answer}`
             : `${astro.direct_answer} The market layer answers separately: ${market.direct_answer}`,
           sections: [
-            ...astro.sections.slice(0, 2),
+            ...astro.sections.slice(0, 3),
             {
               id: "market_layer",
               label: locale === "ru" ? "Независимый рыночный слой" : "Independent market layer",
@@ -225,12 +273,14 @@ export function buildBtcCosmographerAnswer(
               id: "bridge_boundary",
               label: locale === "ru" ? "Что можно и нельзя заключать" : "What can and cannot be concluded",
               paragraph: locale === "ru"
-                ? "Можно описать совпадение дат, состояний и расхождений. Нельзя называть это доказанным влиянием, прогнозом или торговым сигналом."
-                : "Dates, states and divergences may be compared. This may not be called proven influence, a forecast or a trading signal.",
+                ? "Можно описать совпадение дат, состояний и расхождений. Нельзя называть это доказанным влиянием или торговым сигналом. Само сопоставление ещё не является валидированным прогнозом."
+                : "Dates, states, and divergences may be compared. This may not be called proven influence or a trading signal. The comparison alone is not yet a validated forecast.",
             },
           ],
           source_boundary: `${astro.source_boundary} ${market.source_boundary}`,
-          proof_label: locale === "ru" ? "Astro proof + Market proof" : "Astro proof + Market proof",
+          proof_label: locale === "ru"
+            ? "Астрономические и рыночные доказательства доступны"
+            : "Astronomical and market evidence available",
         };
       }
       return buildAstroBtcBridgeBoundary(locale, astro);
@@ -244,22 +294,24 @@ export function buildBtcCosmographerAnswer(
         answer_state: "LIMITED",
         answer_mode: "MARKET_DIAGNOSIS",
         headline: locale === "ru"
-          ? "Рыночный evidence временно недоступен"
+          ? "Рыночные доказательства временно недоступны"
           : "Market evidence is temporarily unavailable",
         direct_answer: locale === "ru"
-          ? "Я сохранил предмет вопроса, но не буду строить рыночный вывод без принятого Snapshot."
-          : "The subject was preserved, but no market conclusion will be built without an accepted Snapshot.",
+          ? "Предмет вопроса сохранён, но рыночный вывод не строится без принятого Snapshot."
+          : "The subject was preserved, but no market conclusion is built without an accepted Snapshot.",
         sections: [],
         source_boundary: locale === "ru"
           ? "Требуется принятый Market Snapshot."
           : "An accepted Market Snapshot is required.",
-        proof_label: locale === "ru" ? "Market proof недоступен" : "Market proof unavailable",
+        proof_label: locale === "ru" ? "Рыночные доказательства недоступны" : "Market evidence unavailable",
       };
     case "methodology":
       return methodologyAnswer(locale);
     case "navigation":
       return navigationAnswer(locale);
     case "unsupported":
+      if (route.subject === "bitcoin_genesis_chart") return genesisChartClarification(locale);
+      return navigationAnswer(locale, route.raw_question);
     default:
       return navigationAnswer(locale, route.raw_question);
   }
