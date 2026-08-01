@@ -48,15 +48,15 @@ jobs:
           import os
           import subprocess
 
-          base = os.environ.get("GITHUB_BASE_REF")
-          if not base:
+          if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
               print("workflow_dispatch: exact pull-request diff gate deferred")
               raise SystemExit(0)
 
-          subprocess.run(["git", "fetch", "origin", base, "--depth=1"], check=True)
+          base = "${{ github.event.pull_request.base.sha }}"
+          head = "${{ github.event.pull_request.head.sha }}"
           changed = set(
               subprocess.check_output(
-                  ["git", "diff", "--name-only", f"origin/{base}...HEAD"],
+                  ["git", "diff", "--name-only", base, head],
                   text=True,
               ).splitlines()
           )
