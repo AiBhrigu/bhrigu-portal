@@ -39,27 +39,66 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify exact thirteen-file scope
+      - name: Verify isolated or combined exact scope
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
-          git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | sort > /tmp/actual.txt
-          cat > /tmp/expected.txt <<'EOF'
-          .github/workflows/btc-public-live-multi-body-projection-apply.yml
-          .github/workflows/btc-public-live-multi-body-projection-pr.yml
-          .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
-          components/btc/BtcCosmographerDialogue.tsx
-          docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
-          lib/btc-cosmographer-public-multi-body-projection.ts
-          lib/btc-live-dialogue-session.ts
-          lib/btc-live-dialogue-style.ts
-          pages/crypto-astro/btc/live.tsx
-          scripts/apply-btc-public-live-multi-body-projection.py
-          scripts/verify-btc-public-live-copy-canon.mjs
-          scripts/verify-btc-public-live-multi-body-projection.mjs
-          scripts/verify-btc-public-live-visual-information-acceptance.py
-          EOF
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          python - <<'PY'
+          import subprocess
+
+          base = "${{ github.event.pull_request.base.sha }}"
+          head = "${{ github.event.pull_request.head.sha }}"
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--name-only", base, head],
+                  text=True,
+              ).splitlines()
+          )
+          projection_scope = {
+              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
+              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
+              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+              "components/btc/BtcCosmographerDialogue.tsx",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
+              "lib/btc-cosmographer-public-multi-body-projection.ts",
+              "lib/btc-live-dialogue-session.ts",
+              "lib/btc-live-dialogue-style.ts",
+              "pages/crypto-astro/btc/live.tsx",
+              "scripts/apply-btc-public-live-multi-body-projection.py",
+              "scripts/verify-btc-public-live-copy-canon.mjs",
+              "scripts/verify-btc-public-live-multi-body-projection.mjs",
+              "scripts/verify-btc-public-live-visual-information-acceptance.py",
+          }
+          local_scope = {
+              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+              ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
+              "lib/btc-cosmographer-multi-body-astro-rc.ts",
+              "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
+              "pages/crypto-astro/btc/local-rc.tsx",
+              "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
+              "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
+              "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
+              "scripts/verify-btc-cosmographer-local-rc-usability.py",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
+          }
+          combined_scope = projection_scope | local_scope
+
+          if changed == projection_scope:
+              status = "PASS_PUBLIC_VISUAL_ISOLATED_13_FILE_SCOPE"
+          elif changed == combined_scope:
+              status = "PASS_PUBLIC_VISUAL_COMBINED_25_FILE_SCOPE"
+          else:
+              expected = combined_scope if local_scope & changed else projection_scope
+              raise SystemExit(
+                  "scope mismatch: "
+                  f"unexpected={sorted(changed - expected)}, "
+                  f"missing={sorted(expected - changed)}, "
+                  f"actual_count={len(changed)}"
+              )
+          print({"status": status, "changed": sorted(changed)})
+          PY
 
       - name: Set up Node 20
         uses: actions/setup-node@v4

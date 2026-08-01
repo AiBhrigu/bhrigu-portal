@@ -29,10 +29,32 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - name: Enforce accepted ancestry
+      - name: Enforce accepted direct or squash-integrated ancestry
         run: |
           set -euo pipefail
-          git merge-base --is-ancestor 75bd42151c02931260e7c9b30fc93a02d54ab763 HEAD
+          direct_anchor="75bd42151c02931260e7c9b30fc93a02d54ab763"
+          source_head="d395ab956c81eab919dc94e06295362f380aecdc"
+          accepted_base="86815de0c90aa26e67213e02ec3eee02012782a6"
+
+          if git merge-base --is-ancestor "$direct_anchor" HEAD; then
+            echo "PASS_DIRECT_ACCEPTED_ANCESTRY"
+            exit 0
+          fi
+
+          git merge-base --is-ancestor "$accepted_base" HEAD
+          git cat-file -e "${source_head}^{commit}"
+          git diff --quiet "$source_head" HEAD -- \
+            components/btc/BtcCosmographerDialogue.tsx \
+            docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md \
+            lib/btc-cosmographer-public-multi-body-projection.ts \
+            lib/btc-live-dialogue-session.ts \
+            lib/btc-live-dialogue-style.ts \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/apply-btc-public-live-multi-body-projection.py \
+            scripts/verify-btc-public-live-copy-canon.mjs \
+            scripts/verify-btc-public-live-multi-body-projection.mjs \
+            scripts/verify-btc-public-live-visual-information-acceptance.py
+          echo "PASS_SQUASH_INTEGRATED_ACCEPTED_CONTENT"
 
       - name: Verify canonical product copy and headings
         run: node scripts/verify-btc-public-live-copy-canon.mjs

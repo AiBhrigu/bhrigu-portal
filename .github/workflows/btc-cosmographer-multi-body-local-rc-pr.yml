@@ -40,7 +40,7 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify local-only exact scope
+      - name: Verify isolated or combined exact scope
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA"
@@ -52,12 +52,16 @@ jobs:
           if not base:
               print("workflow_dispatch: exact pull-request diff gate deferred")
               raise SystemExit(0)
+
           subprocess.run(["git", "fetch", "origin", base, "--depth=1"], check=True)
-          changed = subprocess.check_output(
-              ["git", "diff", "--name-only", f"origin/{base}...HEAD"],
-              text=True,
-          ).splitlines()
-          allowed = {
+          changed = set(
+              subprocess.check_output(
+                  ["git", "diff", "--name-only", f"origin/{base}...HEAD"],
+                  text=True,
+              ).splitlines()
+          )
+
+          local_scope = {
               ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
               ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
               "lib/btc-cosmographer-multi-body-astro-rc.ts",
@@ -71,11 +75,37 @@ jobs:
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
           }
-          unexpected = sorted(set(changed) - allowed)
-          missing = sorted(allowed - set(changed))
-          if unexpected or missing:
-              raise SystemExit(f"scope mismatch: unexpected={unexpected}, missing={missing}")
-          print({"status": "PASS_LOCAL_RC_USABILITY_REPAIR_SCOPE", "changed": changed})
+          projection_scope = {
+              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
+              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
+              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+              "components/btc/BtcCosmographerDialogue.tsx",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
+              "lib/btc-cosmographer-public-multi-body-projection.ts",
+              "lib/btc-live-dialogue-session.ts",
+              "lib/btc-live-dialogue-style.ts",
+              "pages/crypto-astro/btc/live.tsx",
+              "scripts/apply-btc-public-live-multi-body-projection.py",
+              "scripts/verify-btc-public-live-copy-canon.mjs",
+              "scripts/verify-btc-public-live-multi-body-projection.mjs",
+              "scripts/verify-btc-public-live-visual-information-acceptance.py",
+          }
+          combined_scope = local_scope | projection_scope
+
+          if changed == local_scope:
+              status = "PASS_LOCAL_RC_ISOLATED_12_FILE_SCOPE"
+          elif changed == combined_scope:
+              status = "PASS_LOCAL_RC_COMBINED_25_FILE_SCOPE"
+          else:
+              expected = combined_scope if projection_scope & changed else local_scope
+              raise SystemExit(
+                  "scope mismatch: "
+                  f"unexpected={sorted(changed - expected)}, "
+                  f"missing={sorted(expected - changed)}, "
+                  f"actual_count={len(changed)}"
+              )
+
+          print({"status": status, "changed": sorted(changed)})
           PY
 
       - name: Set up Node 20
