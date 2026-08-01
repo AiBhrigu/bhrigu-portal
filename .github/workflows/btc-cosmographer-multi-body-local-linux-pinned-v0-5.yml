@@ -1,0 +1,88 @@
+name: BTC Cosmographer Pinned v0.5 Linux Acceptance
+
+# Historical proof for the pre-usability exact overlay. The accepted artifact remains
+# bound to pinned source 7f6bc7fa... and overlay head 9ad09064.... After the explicitly
+# authorized usability repair, current-head acceptance is owned by the Local RC workflow.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-cosmographer-pinned-v0-5-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pinned-v0-5-linux-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PINNED_SOURCE_SHA: 7f6bc7fa981d851d5d7928f7809c173f3c226a09
+      OVERLAY_HEAD_SHA: 9ad090644dda8d772c1704fb533ae17a6a5704e7
+      BTC_PINNED_V05_ARTIFACT_DIR: artifacts/btc-pinned-v0.5
+
+    steps:
+      - name: Checkout historical exact overlay head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.OVERLAY_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Verify historical pinned overlay topology
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$OVERLAY_HEAD_SHA"
+          git cat-file -e "${PINNED_SOURCE_SHA}^{commit}"
+          git merge-base --is-ancestor "$PINNED_SOURCE_SHA" HEAD
+          python - <<'PY'
+          import os
+          import subprocess
+
+          pinned = os.environ["PINNED_SOURCE_SHA"]
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", f"{pinned}...HEAD"],
+              text=True,
+          ).splitlines()
+          allowed = {
+              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+              ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
+              "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
+              "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
+          }
+          candidate = {
+              "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
+              "lib/btc-cosmographer-multi-body-astro-rc.ts",
+              "pages/crypto-astro/btc/local-rc.tsx",
+              "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
+          }
+          unexpected = sorted(set(changed) - allowed)
+          missing = sorted(allowed - set(changed))
+          if unexpected or missing:
+              raise SystemExit(f"overlay scope mismatch: unexpected={unexpected}, missing={missing}")
+          for path in sorted(candidate):
+              subprocess.run(["git", "diff", "--quiet", pinned, "--", path], check=True)
+          print({"status": "PASS_HISTORICAL_PINNED_OVERLAY_TOPOLOGY", "changed": changed})
+          PY
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Run historical pinned v0.5 launcher
+        env:
+          BTC_PINNED_V05_PORT: "4195"
+        run: bash scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh accept
+
+      - name: Upload historical pinned v0.5 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-cosmographer-pinned-v0.5-${{ env.PINNED_SOURCE_SHA }}-${{ env.OVERLAY_HEAD_SHA }}
+          path: artifacts/btc-pinned-v0.5/
+          if-no-files-found: error
+          retention-days: 30
