@@ -6,6 +6,7 @@ EXPECTED = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-field-read-pr-visual.yml",
     ".github/workflows/btc-free-question-live-dialogue-pr.yml",
+    ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
     ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
     ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
     "components/btc/BtcCosmographerDialogue.tsx",
@@ -40,4 +41,4 @@ if actual != EXPECTED:
         f"missing={sorted(EXPECTED - actual)}, "
         f"actual_count={len(actual)}, expected_count={len(EXPECTED)}"
     )
-print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_18_FILE_SCOPE", "changed": sorted(actual)})
+print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_19_FILE_SCOPE", "changed": sorted(actual)})

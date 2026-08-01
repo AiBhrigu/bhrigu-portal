@@ -56,7 +56,7 @@ check("generic_section_renderer", componentSource.includes("sections.map") && co
 check("information_hierarchy", componentSource.includes("answerNextStep") && componentSource.includes("Источники, период и граница") && componentSource.includes("olderTurnsDisclosure"));
 check("compact_context", ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb"].every((field) => componentSource.includes(`${field}:`)));
 check("session_tab_only", sessionSource.includes("window.sessionStorage") && !sessionSource.includes("localStorage") && !sessionSource.includes("indexedDB"));
-check("workflow_scope", ["btc-cosmographer-route-graph.ts", "btc-protocol-evidence.ts", "btc-public-astro-evidence.ts", "btc_public_astro_evidence_v0_1.json"].every((value) => workflowSource.includes(value)));
+check("workflow_scope", ["btc-cosmographer-route-graph.ts", "btc-cosmographer-answer.ts", "btc-public-astro-evidence.ts", "run-btc-cosmographer-semantic-route-fixture.mjs"].every((value) => workflowSource.includes(value)));
 
 const previewBase = process.env.BTC_COSMOGRAPHER_PREVIEW_BASE?.replace(/\/$/, "");
 if (previewBase) await runRuntime(previewBase);

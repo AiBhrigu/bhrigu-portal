@@ -211,7 +211,7 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
 
 function nextQuestion(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
   const ru = locale === "ru";
-  if (turn.answer_mode === "ASTRO_YEAR_OVERVIEW") {
+  if (String(turn.answer_mode) === "ASTRO_YEAR_OVERVIEW") {
     return ru ? "Какое окно имеет наивысший рейтинг и почему?" : "Which window has the highest rank and why?";
   }
   if (turn.answer_mode === "ASTRO_BTC_BRIDGE") {

@@ -82,7 +82,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
   const resolved = resolveBtcPublicLocale(first(query.lang), initialQuestion);
-  const source = await loadBtcStaticSource();
+  const source=await loadBtcStaticSource();
   const observationBridge = await loadBtcBinanceFreeObservationBridge();
   const binanceObservation = observationBridge.status === "READY_PUBLIC" ? observationBridge.packet : null;
   let sourceContext: SourceContext;
@@ -176,16 +176,16 @@ function BoundedFallback({ locale, result, envelopeFailure }: { locale: BtcPubli
   </>;
 }
 
-export default function Page(props: Props) {
-  const copy = getBtcPublicCopy(props.locale);
-  const ru = props.locale === "ru";
-  const inputFailure = props.failure?.code === "invalid_input";
+export default function Page(p: Props) {
+  const copy = getBtcPublicCopy(p.locale);
+  const ru = p.locale === "ru";
+  const inputFailure = p.failure?.code === "invalid_input";
   const truth = formatBtcSnapshotTruth(
-    props.locale,
-    props.sourceContext.state,
-    props.sourceContext.generated_at_utc,
-    props.sourceContext.age_hours,
-    props.sourceContext.proof_available,
+    p.locale,
+    p.sourceContext.state,
+    p.sourceContext.generated_at_utc,
+    p.sourceContext.age_hours,
+    p.sourceContext.proof_available,
   );
   const pageTitle = ru ? "BTC Field Read · Market Cosmographer" : "BTC Field Read · Market Cosmographer";
   const metaDescription = ru
@@ -196,18 +196,18 @@ export default function Page(props: Props) {
       <title>{pageTitle}</title>
       <meta name="description" content={metaDescription}/>
       <meta name="btc-glyph-canon-sha256" content={MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256}/>
-      <meta name="btc-deployment-source-sha" content={props.deploymentSourceSha ?? ""}/>
+      <meta name="btc-deployment-source-sha" content={p.deploymentSourceSha ?? ""}/>
     </Head>
     <style dangerouslySetInnerHTML={{ __html: BTC_BILINGUAL_SURFACE_CSS }}/>
     <style dangerouslySetInnerHTML={{ __html: BTC_PRODUCT_REBALANCE_CSS }}/>
     <style dangerouslySetInnerHTML={{ __html: BTC_BINANCE_FREE_OBSERVATION_CSS }}/>
     <style dangerouslySetInnerHTML={{ __html: "html{scroll-behavior:auto!important}" }}/>
     <main
-      lang={props.locale}
+      lang={p.locale}
       data-btc-static-proof="true"
-      data-locale={props.locale}
-      data-locale-source={props.localeSource}
-      data-deployment-source-sha={props.deploymentSourceSha ?? ""}
+      data-locale={p.locale}
+      data-locale-source={p.localeSource}
+      data-deployment-source-sha={p.deploymentSourceSha ?? ""}
     >
       <section className="hero heroProductEntry">
         <div className="heroProductCopy">
@@ -217,45 +217,45 @@ export default function Page(props: Props) {
             ? "Поймите, что меняется в поле Bitcoin, почему это важно, что может произойти дальше и какие условия изменят чтение."
             : "Understand what is changing in the Bitcoin field, why it matters, what may happen next, and which conditions would change the read."}</p>
         </div>
-        <BtcHeroQuestionLaunch locale={props.locale} initialDate={props.initialDate}/>
+        <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
       </section>
 
       <section
         className="snapshotTruthStrip"
-        data-freshness-state={props.sourceContext.state}
-        data-source-generated-at={props.sourceContext.generated_at_utc ?? ""}
+        data-freshness-state={p.sourceContext.state}
+        data-source-generated-at={p.sourceContext.generated_at_utc ?? ""}
         aria-label={truth.stateLabel}
       >
         <strong>{truth.stateLabel}</strong>
         <p>{truth.snapshotLine}</p>
         {truth.ageLine && <p>{truth.ageLine}</p>}
         <p>{truth.proofLine}</p>
-        {props.deploymentSourceSha && <p>{ru ? "Источник публикации" : "Deployment source"} · <code>{props.deploymentSourceSha.slice(0, 12)}</code></p>}
+        {p.deploymentSourceSha && <p>{ru ? "Источник публикации" : "Deployment source"} · <code>{p.deploymentSourceSha.slice(0, 12)}</code></p>}
       </section>
 
       <BtcQuestionMembrane
-        locale={props.locale}
-        initialQuestion={props.initialQuestion}
-        initialDate={props.initialDate}
-        result={props.result}
+        locale={p.locale}
+        initialQuestion={p.initialQuestion}
+        initialDate={p.initialDate}
+        result={p.result}
       />
 
-      {props.binanceObservation && <BtcBinanceFreeObservationPanel locale={props.locale} observation={props.binanceObservation}/>} 
-      {props.failure && <section className="failure" role="alert">
+      {p.binanceObservation&&<BtcBinanceFreeObservationPanel locale={p.locale} observation={p.binanceObservation}/>} 
+      {p.failure && <section className="failure" role="alert">
         <p className="eyebrow">{inputFailure ? copy.questionCheck : copy.sourceFailure}</p>
         <h2>{inputFailure ? copy.adjustQuestion : copy.fieldUnavailable}</h2>
-        <p>{formatBtcFailureMessage(props.locale, props.failure.code, props.failure.message)}</p>
-        {props.failure.last_verified_at_utc && <p>{copy.lastVerified}: {formatBtcUtcTimestamp(props.locale, props.failure.last_verified_at_utc)}</p>}
-        <details><summary>{copy.technicalDetails}</summary><code>{props.failure.code}</code></details>
+        <p>{formatBtcFailureMessage(p.locale, p.failure.code, p.failure.message)}</p>
+        {p.failure.last_verified_at_utc && <p>{copy.lastVerified}: {formatBtcUtcTimestamp(p.locale, p.failure.last_verified_at_utc)}</p>}
+        <details><summary>{copy.technicalDetails}</summary><code>{p.failure.code}</code></details>
       </section>}
-      {props.result && <section className="reading" aria-label={ru ? "Чтение Космографа BTC" : "BTC Cosmographer reading"}>
-        {props.envelope
+      {p.result && <section className="reading" aria-label={ru ? "Чтение Космографа BTC" : "BTC Cosmographer reading"}>
+        {p.envelope
           ? <>
-              <BtcObservationZone locale={props.locale} envelope={props.envelope} result={props.result}/>
-              <BtcPhiZone locale={props.locale} envelope={props.envelope}/>
-              <BtcEvidenceZone locale={props.locale} envelope={props.envelope} result={props.result}/>
+              <BtcObservationZone locale={p.locale} envelope={p.envelope} result={p.result}/>
+              <BtcPhiZone locale={p.locale} envelope={p.envelope}/>
+              <BtcEvidenceZone locale={p.locale} envelope={p.envelope} result={p.result}/>
             </>
-          : <BoundedFallback locale={props.locale} result={props.result} envelopeFailure={props.envelopeFailure}/>} 
+          : <BoundedFallback locale={p.locale} result={p.result} envelopeFailure={p.envelopeFailure}/>} 
       </section>}
       <div className="closingField" aria-hidden="true"><span/></div>
     </main>
