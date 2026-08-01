@@ -9,6 +9,7 @@ EXPECTED = {
     ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
     ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
     ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+    ".github/workflows/btc-temporal-boundary-pr.yml",
     "components/btc/BtcCosmographerDialogue.tsx",
     "components/btc/BtcHeroQuestionLaunch.tsx",
     "components/btc/BtcQuestionMembrane.tsx",
@@ -41,4 +42,4 @@ if actual != EXPECTED:
         f"missing={sorted(EXPECTED - actual)}, "
         f"actual_count={len(actual)}, expected_count={len(EXPECTED)}"
     )
-print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_19_FILE_SCOPE", "changed": sorted(actual)})
+print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_20_FILE_SCOPE", "changed": sorted(actual)})
