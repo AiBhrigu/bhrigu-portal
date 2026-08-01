@@ -1,0 +1,58 @@
+name: BTC Public Live Multi-Body Projection Apply
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/verify-btc-public-live-copy-canon.mjs
+      - scripts/verify-btc-public-live-visual-information-acceptance.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-public-live-copy-canon-closure-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-closed-copy-atom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Enforce accepted direct or integrated ancestry
+        run: |
+          set -euo pipefail
+          direct_anchor="75bd42151c02931260e7c9b30fc93a02d54ab763"
+          pr101_to_pr100_anchor="293e7d3e4c00a2fead2c8cc53098164ece942d6f"
+          pr100_to_pr99_anchor="b40cb1c7e8c3d79073c26c6f23a118dbda324a86"
+
+          if git merge-base --is-ancestor "$direct_anchor" HEAD; then
+            echo "PASS_DIRECT_ACCEPTED_ANCESTRY"
+          elif git merge-base --is-ancestor "$pr101_to_pr100_anchor" HEAD; then
+            echo "PASS_PR101_TO_PR100_SQUASH_ANCESTRY"
+          elif git merge-base --is-ancestor "$pr100_to_pr99_anchor" HEAD; then
+            echo "PASS_PR100_TO_PR99_SQUASH_ANCESTRY"
+          else
+            echo "No accepted direct or integration anchor is present" >&2
+            exit 1
+          fi
+
+      - name: Verify canonical product copy and headings
+        run: node scripts/verify-btc-public-live-copy-canon.mjs
+
+      - name: Prove apply recipe is closed and non-mutating
+        run: |
+          set -euo pipefail
+          grep -q 'COPY_CANON_TARGETED_REPAIR_v0_1' scripts/apply-btc-public-live-multi-body-projection.py
+          ! grep -q 'git push' scripts/apply-btc-public-live-multi-body-projection.py
+          git diff --exit-code
