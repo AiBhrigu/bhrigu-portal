@@ -1,0 +1,58 @@
+name: BTC Public Acceptance Proof Verifier Repair
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'repair/btc-cosmographer-public-acceptance-01-v0-1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Align proof verifier with semantic disclosure structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('scripts/verify-btc-public-live-visual-information-acceptance.py')
+          s = p.read_text()
+          old = 'spans = proof.find_elements(By.CSS_SELECTOR, ":scope > span")'
+          new = 'spans = proof.find_elements(By.CSS_SELECTOR, ":scope > div > span")'
+          if old not in s:
+              raise SystemExit('proof verifier anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('.github/scripts/verify-btc-public-acceptance-scope.py')
+          s = p.read_text()
+          anchor = '    "scripts/verify-btc-public-acceptance-two-screen.py",\n'
+          add = '    "scripts/verify-btc-public-live-visual-information-acceptance.py",\n'
+          if add not in s:
+              if anchor not in s:
+                  raise SystemExit('scope anchor missing')
+              s = s.replace(anchor, anchor + add, 1)
+          s = s.replace('PASS_PUBLIC_ACCEPTANCE_EXACT_20_FILE_SCOPE', 'PASS_PUBLIC_ACCEPTANCE_EXACT_21_FILE_SCOPE')
+          p.write_text(s)
+          PY
+
+      - name: Commit exact verifier repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/verify-btc-public-live-visual-information-acceptance.py .github/scripts/verify-btc-public-acceptance-scope.py
+          git diff --cached --quiet && { echo 'No verifier repair change' >&2; exit 1; }
+          git commit -m "CI: align human proof-label verifier with disclosure structure"
+          git push origin HEAD:repair/btc-cosmographer-public-acceptance-01-v0-1
