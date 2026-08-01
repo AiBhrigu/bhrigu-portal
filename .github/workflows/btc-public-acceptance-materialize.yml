@@ -1,28 +1,27 @@
 name: BTC Public Acceptance Materialize
 
 on:
-  push:
-    branches:
-      - repair/btc-cosmographer-public-acceptance-01-v0-1
-    paths:
-      - ops/materialize/READY
+  pull_request:
+    types: [reopened]
+    branches: [master]
 
 permissions:
   contents: write
 
 concurrency:
-  group: btc-public-acceptance-materialize
+  group: btc-public-acceptance-materialize-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
 jobs:
   materialize:
+    if: github.event.pull_request.head.ref == 'repair/btc-cosmographer-public-acceptance-01-v0-1'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout transport head
+      - name: Checkout exact transport head
         uses: actions/checkout@v4
         with:
-          ref: repair/btc-cosmographer-public-acceptance-01-v0-1
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Materialize exact repair payload
