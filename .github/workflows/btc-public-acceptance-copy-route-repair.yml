@@ -1,0 +1,71 @@
+name: BTC Public Acceptance Copy Route Repair
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'repair/btc-cosmographer-public-acceptance-01-v0-1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Apply exact semantic and public-copy repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('lib/btc-cosmographer-route-graph.ts')
+          s = p.read_text()
+          old = 'if (isVolatilityQuestion(q) && !body && !multiBody && !market && packet) {'
+          new = 'if (isVolatilityQuestion(q) && !body && !multiBody && (market === null || market === "temporal_pressure") && packet) {'
+          if old not in s:
+              raise SystemExit('volatility route anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('components/btc/BtcCosmographerDialogue.tsx')
+          s = p.read_text()
+          ru_anchor = '    "Память предыдущего принятого Snapshot": "Память изменений",\n'
+          ru_add = '    "Халвинг запускается высотой блока": "Халвинг определяется высотой блока, а не календарной датой",\n'
+          en_anchor = '    "Previous accepted Snapshot memory": "Change memory",\n'
+          en_add = '    "Halving is triggered by block height": "Halving is determined by block height, not a calendar date",\n'
+          if ru_add not in s:
+              if ru_anchor not in s: raise SystemExit('RU copy anchor missing')
+              s = s.replace(ru_anchor, ru_anchor + ru_add, 1)
+          if en_add not in s:
+              if en_anchor not in s: raise SystemExit('EN copy anchor missing')
+              s = s.replace(en_anchor, en_anchor + en_add, 1)
+
+          old = '<details className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">'
+          new = '<details open={newest} className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">'
+          if old not in s: raise SystemExit('source disclosure anchor missing')
+          s = s.replace(old, new, 1)
+
+          old = '<p className="eyebrow">{ru ? "BTC Field · живой доказательный диалог" : "BTC Field · live evidence dialogue"}</p>'
+          new = '<p className="eyebrow">Market Cosmographer</p>'
+          if old not in s: raise SystemExit('live hero eyebrow anchor missing')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+          PY
+
+      - name: Commit exact ordinary-file repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/btc-cosmographer-route-graph.ts components/btc/BtcCosmographerDialogue.tsx
+          git diff --cached --quiet && { echo 'No repair change' >&2; exit 1; }
+          git commit -m "BTC: close contextual volatility, proof disclosure, and copy-canon gaps"
+          git push origin HEAD:repair/btc-cosmographer-public-acceptance-01-v0-1
