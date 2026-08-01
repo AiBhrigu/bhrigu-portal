@@ -24,11 +24,43 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Materialize exact repair payload
+      - name: Verify and materialize exact repair payload
         shell: bash
         run: |
           set -euo pipefail
-          cat ops/materialize/chunk-* | base64 -d > /tmp/btc-public-acceptance-payload.tar.gz
+          python - <<'PY'
+          import base64, glob, hashlib, pathlib
+
+          expected = {
+              "chunk-000": "56924139ca51749a701894eca7018a2f0e86aa92fef98de1bb1b24ccd628904f",
+              "chunk-001": "1b4f8847ba22092abf56d55560e4bd14f8926c4ae7421118426f7f1bbbb70776",
+              "chunk-002": "007be1c88c8f9e70cc699ae7cb7233ed10d554294172d32a0db4ed9df7b79d83",
+              "chunk-004": "02ce1325db0b7bb5e1c051a5699cdee5a21c4e790a9cb9df0112d7f4a92840e1",
+              "chunk-006": "d459b3dadc879af674f087a4752551ac8e004d3f470b5b6d5a4ae576265fb8e6",
+              "chunk-007": "2d16f33545909b2245e5d4a834b9eb2981a45320eb9554f9e17d4eab0b3ede87",
+              "chunk-008": "6030d098cfa6d2a158ad69f4bef69022af7f8bab30dbdd42421fbada231098b1",
+              "chunk-009": "340451a24f97ae53186602a5e1a21d09197bbe89a85421fd25231fee33682ec6",
+              "chunk-010": "1c6c8f06ecc8089fb31537a7634b94427e1a4301b863a73ab5fd74ee50a0baea",
+          }
+          parts = []
+          for item in sorted(glob.glob("ops/materialize/chunk-*")):
+              raw = pathlib.Path(item).read_bytes().strip()
+              name = pathlib.Path(item).name
+              actual = hashlib.sha256(raw).hexdigest()
+              print(name, len(raw), actual)
+              if expected.get(name) != actual:
+                  raise SystemExit(f"chunk mismatch: {name}")
+              parts.append(raw)
+          encoded = b"".join(parts)
+          if len(encoded) != 61236:
+              raise SystemExit(f"encoded length mismatch: {len(encoded)}")
+          if hashlib.sha256(encoded).hexdigest() != "1bc86dd6b0cd23303a5b5bd8a00cf84d5d54a14ed7b1400453e24947eb734d38":
+              raise SystemExit("encoded payload checksum mismatch")
+          payload = base64.b64decode(encoded, validate=True)
+          if hashlib.sha256(payload).hexdigest() != "0f8ce81cac4dc42f3d2f1a41e45a75f4cc58381b7970b3d7b1a6ee5d70267b26":
+              raise SystemExit("tar payload checksum mismatch")
+          pathlib.Path("/tmp/btc-public-acceptance-payload.tar.gz").write_bytes(payload)
+          PY
           tar -xzf /tmp/btc-public-acceptance-payload.tar.gz -C .
           rm -rf ops/materialize
           rm -f .github/workflows/btc-public-acceptance-materialize.yml
