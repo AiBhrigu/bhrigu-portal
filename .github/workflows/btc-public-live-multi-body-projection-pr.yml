@@ -39,7 +39,7 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify isolated or combined exact scope
+      - name: Verify isolated, combined, or integrated exact scope
         if: github.event_name == 'pull_request'
         run: |
           set -euo pipefail
@@ -54,20 +54,18 @@ jobs:
                   text=True,
               ).splitlines()
           )
-          projection_scope = {
-              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
-              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
-              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+          semantic_scope = {
+              ".github/workflows/btc-free-question-live-dialogue-pr.yml",
               "components/btc/BtcCosmographerDialogue.tsx",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
-              "lib/btc-cosmographer-public-multi-body-projection.ts",
+              "data/btc_public_astro_evidence_v0_1.json",
+              "lib/btc-cosmographer-answer.ts",
+              "lib/btc-cosmographer-route-graph.ts",
               "lib/btc-live-dialogue-session.ts",
-              "lib/btc-live-dialogue-style.ts",
+              "lib/btc-protocol-evidence.ts",
+              "lib/btc-public-astro-evidence.ts",
               "pages/crypto-astro/btc/live.tsx",
-              "scripts/apply-btc-public-live-multi-body-projection.py",
-              "scripts/verify-btc-public-live-copy-canon.mjs",
-              "scripts/verify-btc-public-live-multi-body-projection.mjs",
-              "scripts/verify-btc-public-live-visual-information-acceptance.py",
+              "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
+              "scripts/verify-btc-cosmographer-route-surface.py",
           }
           local_scope = {
               ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
@@ -83,14 +81,36 @@ jobs:
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
               "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
           }
+          projection_scope = {
+              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
+              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
+              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
+              "components/btc/BtcCosmographerDialogue.tsx",
+              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
+              "lib/btc-cosmographer-public-multi-body-projection.ts",
+              "lib/btc-live-dialogue-session.ts",
+              "lib/btc-live-dialogue-style.ts",
+              "pages/crypto-astro/btc/live.tsx",
+              "scripts/apply-btc-public-live-multi-body-projection.py",
+              "scripts/verify-btc-public-live-copy-canon.mjs",
+              "scripts/verify-btc-public-live-multi-body-projection.mjs",
+              "scripts/verify-btc-public-live-visual-information-acceptance.py",
+          }
           combined_scope = projection_scope | local_scope
-
+          integrated_scope = semantic_scope | combined_scope
           if changed == projection_scope:
               status = "PASS_PUBLIC_PROJECTION_ISOLATED_13_FILE_SCOPE"
           elif changed == combined_scope:
               status = "PASS_PUBLIC_PROJECTION_COMBINED_25_FILE_SCOPE"
+          elif changed == integrated_scope:
+              status = "PASS_PUBLIC_PROJECTION_INTEGRATED_33_FILE_SCOPE"
           else:
-              expected = combined_scope if local_scope & changed else projection_scope
+              if semantic_scope & changed:
+                  expected = integrated_scope
+              elif local_scope & changed:
+                  expected = combined_scope
+              else:
+                  expected = projection_scope
               raise SystemExit(
                   "scope mismatch: "
                   f"unexpected={sorted(changed - expected)}, "

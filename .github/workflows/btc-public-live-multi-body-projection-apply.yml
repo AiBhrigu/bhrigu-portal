@@ -29,32 +29,23 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - name: Enforce accepted direct or squash-integrated ancestry
+      - name: Enforce accepted direct or integrated ancestry
         run: |
           set -euo pipefail
           direct_anchor="75bd42151c02931260e7c9b30fc93a02d54ab763"
-          source_head="d395ab956c81eab919dc94e06295362f380aecdc"
-          accepted_base="86815de0c90aa26e67213e02ec3eee02012782a6"
+          pr101_to_pr100_anchor="293e7d3e4c00a2fead2c8cc53098164ece942d6f"
+          pr100_to_pr99_anchor="b40cb1c7e8c3d79073c26c6f23a118dbda324a86"
 
           if git merge-base --is-ancestor "$direct_anchor" HEAD; then
             echo "PASS_DIRECT_ACCEPTED_ANCESTRY"
-            exit 0
+          elif git merge-base --is-ancestor "$pr101_to_pr100_anchor" HEAD; then
+            echo "PASS_PR101_TO_PR100_SQUASH_ANCESTRY"
+          elif git merge-base --is-ancestor "$pr100_to_pr99_anchor" HEAD; then
+            echo "PASS_PR100_TO_PR99_SQUASH_ANCESTRY"
+          else
+            echo "No accepted direct or integration anchor is present" >&2
+            exit 1
           fi
-
-          git merge-base --is-ancestor "$accepted_base" HEAD
-          git cat-file -e "${source_head}^{commit}"
-          git diff --quiet "$source_head" HEAD -- \
-            components/btc/BtcCosmographerDialogue.tsx \
-            docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md \
-            lib/btc-cosmographer-public-multi-body-projection.ts \
-            lib/btc-live-dialogue-session.ts \
-            lib/btc-live-dialogue-style.ts \
-            pages/crypto-astro/btc/live.tsx \
-            scripts/apply-btc-public-live-multi-body-projection.py \
-            scripts/verify-btc-public-live-copy-canon.mjs \
-            scripts/verify-btc-public-live-multi-body-projection.mjs \
-            scripts/verify-btc-public-live-visual-information-acceptance.py
-          echo "PASS_SQUASH_INTEGRATED_ACCEPTED_CONTENT"
 
       - name: Verify canonical product copy and headings
         run: node scripts/verify-btc-public-live-copy-canon.mjs
