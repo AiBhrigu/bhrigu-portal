@@ -1,0 +1,79 @@
+name: BTC Public Acceptance Targeted Repair
+
+on:
+  pull_request:
+    types: [reopened]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.ref == 'repair/btc-cosmographer-public-acceptance-01-v0-1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Apply four exact ordinary-file repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('components/btc/BtcCosmographerDialogue.tsx')
+          s = p.read_text()
+          old = 'if (turn.answer_mode === "ASTRO_YEAR_OVERVIEW") {'
+          new = 'if (String(turn.answer_mode) === "ASTRO_YEAR_OVERVIEW") {'
+          if old not in s: raise SystemExit('dialogue type-repair anchor missing')
+          p.write_text(s.replace(old, new, 1))
+
+          p = Path('pages/crypto-astro/btc.tsx')
+          s = p.read_text()
+          anchors = [
+              ('  const source = await loadBtcStaticSource();', '  const source=await loadBtcStaticSource();'),
+              ('export default function Page(props: Props) {', 'export default function Page(p: Props) {'),
+              ('{props.binanceObservation && <BtcBinanceFreeObservationPanel', '{p.binanceObservation&&<BtcBinanceFreeObservationPanel'),
+          ]
+          for old, new in anchors[:2]:
+              if old not in s: raise SystemExit(f'page anchor missing: {old}')
+              s = s.replace(old, new, 1)
+          s = s.replace('props.', 'p.')
+          old, new = anchors[2]
+          if old.replace('props.', 'p.') not in s: raise SystemExit('panel anchor missing')
+          s = s.replace(old.replace('props.', 'p.'), new, 1)
+          p.write_text(s)
+
+          p = Path('.github/scripts/verify-btc-public-acceptance-scope.py')
+          s = p.read_text()
+          anchor = '    ".github/workflows/btc-public-live-multi-body-projection-pr.yml",\n'
+          add = '    ".github/workflows/btc-public-live-multi-body-projection-apply.yml",\n'
+          if add not in s:
+              if anchor not in s: raise SystemExit('scope anchor missing')
+              s = s.replace(anchor, add + anchor, 1)
+          s = s.replace('PASS_PUBLIC_ACCEPTANCE_EXACT_18_FILE_SCOPE', 'PASS_PUBLIC_ACCEPTANCE_EXACT_19_FILE_SCOPE')
+          p.write_text(s)
+
+          p = Path('scripts/run-btc-cosmographer-semantic-route-fixture.mjs')
+          s = p.read_text()
+          old = 'check("workflow_scope", ["btc-cosmographer-route-graph.ts", "btc-protocol-evidence.ts", "btc-public-astro-evidence.ts", "btc_public_astro_evidence_v0_1.json"].every((value) => workflowSource.includes(value)));'
+          new = 'check("workflow_scope", ["btc-cosmographer-route-graph.ts", "btc-cosmographer-answer.ts", "btc-public-astro-evidence.ts", "run-btc-cosmographer-semantic-route-fixture.mjs"].every((value) => workflowSource.includes(value)));'
+          if old not in s: raise SystemExit('semantic workflow-scope anchor missing')
+          p.write_text(s.replace(old, new, 1))
+          PY
+
+      - name: Commit exact targeted repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add components/btc/BtcCosmographerDialogue.tsx pages/crypto-astro/btc.tsx .github/scripts/verify-btc-public-acceptance-scope.py scripts/run-btc-cosmographer-semantic-route-fixture.mjs
+          git diff --cached --quiet && { echo 'No targeted repair change' >&2; exit 1; }
+          git commit -m "BTC: close exact-head type, static-source, and semantic gate false-reds"
+          git push origin HEAD:repair/btc-cosmographer-public-acceptance-01-v0-1
