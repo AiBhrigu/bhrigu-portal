@@ -410,7 +410,7 @@ export function routeBtcCosmographerQuestion(
       ? "planetary_aspects"
       : null;
 
-  if (isVolatilityQuestion(q) && !body && !multiBody && !market && packet) {
+  if (isVolatilityQuestion(q) && !body && !multiBody && (market === null || market === "temporal_pressure") && packet) {
     if (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") {
       inferredDomain = packet.prior_domain === "astro_btc_bridge"
         ? "astro_btc_bridge"

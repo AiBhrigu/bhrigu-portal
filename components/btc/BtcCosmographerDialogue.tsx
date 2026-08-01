@@ -130,6 +130,7 @@ const CANONICAL_PUBLIC_COPY: Record<BtcPublicLocale, Array<[string, string]>> = 
     ["Market proof недоступен", "Рыночные доказательства недоступны"],
     ["Method proof доступен", "Доказательства метода доступны"],
     ["Capability registry", "Реестр возможностей"],
+    ["Халвинг запускается высотой блока", "Халвинг определяется высотой блока, а не календарной датой"],
     ["Astromodule", "Астрономические данные"],
   ],
   en: [
@@ -150,6 +151,7 @@ const CANONICAL_PUBLIC_COPY: Record<BtcPublicLocale, Array<[string, string]>> = 
     ["Market proof available", "Market evidence available"],
     ["Market proof unavailable", "Market evidence unavailable"],
     ["Method proof available", "Method evidence available"],
+    ["Halving is triggered by block height", "Halving is determined by block height, not a calendar date"],
     ["Astromodule", "Astronomical data"],
   ],
 };
@@ -392,7 +394,7 @@ function Exchange({
           <span>{turn.locale === "ru" ? "Следующий точный вопрос" : "Next precise question"}</span>
           <strong>{nextQuestion(turn.locale, turn)}</strong>
         </aside>
-        <details className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
+        <details open={newest} className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
           <summary>{turn.locale === "ru" ? "Источники, период и граница" : "Sources, period, and boundary"}</summary>
           <div>
             <span>{publicDomainLabel(turn.locale, domain)}</span>
@@ -500,7 +502,7 @@ export function BtcCosmographerDialogue(props: Props) {
 
     <section className="liveDialogueShell" aria-labelledby="btc-cosmographer-title">
       <header className="liveDialogueIntro">
-        <p className="eyebrow">{ru ? "BTC Field · живой доказательный диалог" : "BTC Field · live evidence dialogue"}</p>
+        <p className="eyebrow">Market Cosmographer</p>
         <h1 id="btc-cosmographer-title">{ru ? "Чтение поля BTC" : "BTC Field Read"}</h1>
         <p>{ru
           ? "Спросите, что изменилось, почему это важно, что может произойти дальше и какие условия изменят чтение."
