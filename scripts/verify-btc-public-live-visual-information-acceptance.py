@@ -222,7 +222,7 @@ def visual_metrics(driver, label):
 
 def proof_layer_check(driver, label):
     proof = newest(driver).find_element(By.CSS_SELECTOR, ".answerSource")
-    spans = proof.find_elements(By.CSS_SELECTOR, ":scope > span")
+    spans = proof.find_elements(By.CSS_SELECTOR, ":scope > div > span")
     first = spans[0].text.strip() if spans else ""
     check(
         f"{label}_public_proof_uses_human_domain_label",

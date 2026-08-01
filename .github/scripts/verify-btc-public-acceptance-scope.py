@@ -23,6 +23,7 @@ EXPECTED = {
     "pages/crypto-astro/btc.tsx",
     "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
     "scripts/verify-btc-public-acceptance-two-screen.py",
+    "scripts/verify-btc-public-live-visual-information-acceptance.py",
 }
 
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
@@ -42,4 +43,4 @@ if actual != EXPECTED:
         f"missing={sorted(EXPECTED - actual)}, "
         f"actual_count={len(actual)}, expected_count={len(EXPECTED)}"
     )
-print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_20_FILE_SCOPE", "changed": sorted(actual)})
+print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_21_FILE_SCOPE", "changed": sorted(actual)})
