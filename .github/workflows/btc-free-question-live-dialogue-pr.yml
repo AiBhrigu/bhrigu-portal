@@ -116,14 +116,24 @@ jobs:
           if (semantic.runtime_head_sha !== process.env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA) throw new Error("runtime head mismatch");
           if (twoScreen.status !== "PASS") throw new Error("two-screen acceptance failed");
           const required = [
-            "btc_today_current_market",
-            "multi_body_salience",
-            "astro_btc_typo_bridge",
-            "volatility_retains_multi_body",
-            "genesis_chart_no_stale_planet",
-            "chronological_single_body",
-            "mercury_bounded_completeness",
+            "btc_today_market_route",
+            "bitcoin_typo_bridge",
+            "genesis_chart_no_fallback",
+            "contextual_volatility",
+            "no_public_jupiter_fallback",
+            "chronological_timeline",
+            "russian_ingress_case",
+            "fast_planet_evidence_boundary",
+            "forecast_boundary",
+            "runtime:BTC today",
+            "runtime:Какие самые напряженные дни в 2026 году у планет и их аспектов",
+            "runtime:как влияет Юпитер на Битокин?",
+            "runtime:Меркурий и его движения в 2026 году",
+            "contextual_volatility_keeps_multi_body_subject",
+            "genesis_chart_does_not_inherit_mercury_or_jupiter",
+            "mercury_monthly_evidence_visible",
             "repeat_determinism",
+            "known_domain_generic_fallback_zero",
           ];
           for (const name of required) {
             const row = semantic.checks.find((item) => item.name === name);
