@@ -24,7 +24,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify and materialize exact repair payload
+      - name: Verify and materialize ordinary repair files
         shell: bash
         run: |
           set -euo pipefail
@@ -47,7 +47,6 @@ jobs:
               raw = pathlib.Path(item).read_bytes().strip()
               name = pathlib.Path(item).name
               actual = hashlib.sha256(raw).hexdigest()
-              print(name, len(raw), actual)
               if expected.get(name) != actual:
                   raise SystemExit(f"chunk mismatch: {name}")
               parts.append(raw)
@@ -62,13 +61,22 @@ jobs:
           pathlib.Path("/tmp/btc-public-acceptance-payload.tar.gz").write_bytes(payload)
           PY
           tar -xzf /tmp/btc-public-acceptance-payload.tar.gz -C .
+
+          # The GitHub Actions token cannot update workflow files. Keep their
+          # current bytes here; the owner-authenticated connector applies the
+          # four exact workflow changes in the same PR after this commit.
+          git checkout HEAD -- \
+            .github/workflows/btc-field-read-pr-visual.yml \
+            .github/workflows/btc-free-question-live-dialogue-pr.yml \
+            .github/workflows/btc-public-live-multi-body-projection-pr.yml \
+            .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
+
           rm -rf ops/materialize
-          rm -f .github/workflows/btc-public-acceptance-materialize.yml
           rm -f tmp/ignore tmp/ignore2 tmp/ignore3 tmp/ignore4
           rmdir tmp 2>/dev/null || true
           git status --short
 
-      - name: Commit one controlled product repair
+      - name: Commit ordinary product repair files
         shell: bash
         run: |
           set -euo pipefail
