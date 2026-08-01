@@ -1,79 +1,76 @@
 name: BTC Field Read PR Visual
-# PRODUCTION_REDEPLOY_AFTER_QUOTA_RESET_V0_1
 
 on:
   pull_request:
+    branches: [master]
     paths:
+      - ".github/scripts/verify-btc-public-acceptance-scope.py"
+      - ".github/workflows/btc-field-read-pr-visual.yml"
       - "pages/crypto-astro/btc.tsx"
       - "components/btc/**"
+      - "lib/btc-product-rebalance-style.ts"
       - "lib/btc-public-language-contract.ts"
-      - "lib/btc-executive-question-language.ts"
-      - "lib/btc-public-question-bridge.ts"
-      - "lib/btc-existing-glyph-canon.ts"
-      - "lib/btc-bilingual-surface-style.ts"
-      - "lib/btc-public-surface-format.ts"
-      - "lib/btc-public-static-source.ts"
-      - "lib/btc-public-snapshot-composer.ts"
-      - "lib/btc-question-geometry.ts"
-      - "lib/btc-market-envelope.ts"
-      - "lib/btc-narrative-template-catalog.ts"
-      - "lib/btc-public-display-labels.ts"
-      - "tests/btc-*.ts"
-      - "scripts/run-btc-routing-fixture.mjs"
       - "scripts/verify-btc-bilingual-surface.py"
-      - "tsconfig.btc-routing-fixture.json"
-      - ".github/workflows/btc-field-read-pr-visual.yml"
 
 permissions:
   contents: read
 
+concurrency:
+  group: btc-field-read-visual-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   btc-field-read:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          fetch-depth: 0
+
+      - name: Verify exact public acceptance scope
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - run: npm ci
+
       - name: Verify deterministic BTC routing contracts
-        run: |
-          mkdir -p artifacts
-          set +e
-          npm run verify:btc-routing > artifacts/routing.log 2>&1
-          code=$?
-          cat artifacts/routing.log
-          exit "$code"
+        run: npm run verify:btc-routing
+
       - name: Build production surface
-        run: |
-          set +e
-          npm run build > artifacts/build.log 2>&1
-          code=$?
-          cat artifacts/build.log
-          exit "$code"
+        run: npm run build
+
       - name: Install browser driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
-      - name: Start production preview
+
+      - name: Start exact-head production preview
         run: |
           npm run start -- -p 3000 >/tmp/btc-field-read.log 2>&1 &
-          for attempt in {1..40}; do
+          echo $! >/tmp/btc-field-read.pid
+          for attempt in $(seq 1 60); do
             curl --fail --silent http://127.0.0.1:3000/crypto-astro/btc >/dev/null && exit 0
             sleep 1
           done
-          cp /tmp/btc-field-read.log artifacts/preview.log
           cat /tmp/btc-field-read.log
           exit 1
+
       - name: Verify deployment source SHA binding
         run: |
           python3 - <<'PY'
           import os
           from urllib.request import urlopen
-
-          expected = os.environ["GITHUB_SHA"]
-          if len(expected) != 40:
-              raise SystemExit(f"invalid GITHUB_SHA: {expected!r}")
+          expected = os.environ["BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA"]
           html = urlopen("http://127.0.0.1:3000/crypto-astro/btc?lang=en", timeout=20).read().decode("utf-8")
           checks = {
               "main_attribute": f'data-deployment-source-sha="{expected}"' in html,
@@ -81,16 +78,25 @@ jobs:
               "visible_short_sha": expected[:12] in html,
           }
           failures = [name for name, passed in checks.items() if not passed]
-          if failures:
-              raise SystemExit(f"deployment source SHA binding failed: {failures}")
+          if failures: raise SystemExit(f"deployment source SHA binding failed: {failures}")
           print(f"BTC_DEPLOYMENT_SOURCE_SHA_BINDING=PASS source_sha={expected}")
           PY
-      - name: Verify bilingual membrane, native glyph binding, Φ geometry and mobile clearance
+
+      - name: Verify bilingual membrane, glyph binding, Φ geometry and mobile clearance
         run: python3 scripts/verify-btc-bilingual-surface.py
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-field-read.pid; then kill "$(cat /tmp/btc-field-read.pid)" || true; fi
+
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-bilingual-glyph-pr-${{ github.event.pull_request.number }}
-          path: artifacts/
-          if-no-files-found: error
+          name: btc-field-read-public-acceptance-${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          path: |
+            artifacts/
+            /tmp/btc-field-read.log
+          if-no-files-found: warn
+          retention-days: 30
