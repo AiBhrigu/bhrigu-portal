@@ -34,6 +34,19 @@ jobs:
           test -f .github/workflows/btc-pr114-preview-identity-founder-routes-apply.yml
           git merge-base --is-ancestor edf9eaae049aeb7b93d7885818ab6880fe17a0a0 HEAD
 
+      - name: Normalize regex target compatibility
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/apply-btc-pr114-preview-identity-founder-routes-v0-2.py")
+          value = path.read_text(encoding="utf-8")
+          count = value.count("*/iu;")
+          if count != 2:
+              raise SystemExit(f"expected two unicode regex flags, found {count}")
+          path.write_text(value.replace("*/iu;", "*/i;"), encoding="utf-8")
+          print({"status": "PASS_REGEX_TARGET_NORMALIZATION", "replacements": count})
+          PY
+
       - name: Apply exact runtime and acceptance repair
         run: python3 scripts/apply-btc-pr114-preview-identity-founder-routes-v0-2.py
 
