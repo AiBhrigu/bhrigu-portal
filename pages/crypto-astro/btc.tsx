@@ -211,11 +211,14 @@ export default function Page(p: Props) {
     >
       <section className="hero heroProductEntry">
         <div className="heroProductCopy">
-          <p className="eyebrow">{ru ? "Market Cosmographer · первый живой коридор" : "Market Cosmographer · first live corridor"}</p>
+          <p className="eyebrow heroProductIdentity">
+            <span>Market Cosmographer</span>
+            <small>{ru ? "AI-аналитика рынков" : "AI market intelligence"}</small>
+          </p>
           <h1>BTC Field Read</h1>
           <p>{ru
-            ? "Поймите, что меняется в поле Bitcoin, почему это важно, что может произойти дальше и какие условия изменят чтение."
-            : "Understand what is changing in the Bitcoin field, why it matters, what may happen next, and which conditions would change the read."}</p>
+            ? "Что изменилось в Bitcoin, почему это важно и что может произойти дальше."
+            : "What changed in Bitcoin, why it matters, and what may happen next."}</p>
         </div>
         <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
       </section>

@@ -2,7 +2,7 @@
 import os
 import subprocess
 
-EXPECTED = {
+PUBLIC_ACCEPTANCE_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-field-read-pr-visual.yml",
     ".github/workflows/btc-free-question-live-dialogue-pr.yml",
@@ -27,6 +27,13 @@ EXPECTED = {
     "scripts/verify-btc-public-live-visual-information-acceptance.py",
 }
 
+BTC_ENTRY_CLEAN_PREMIUM_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "components/btc/BtcHeroQuestionLaunch.tsx",
+    "lib/btc-product-rebalance-style.ts",
+    "pages/crypto-astro/btc.tsx",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -37,11 +44,18 @@ actual = set(subprocess.check_output(
     ["git", "diff", "--name-only", base, head], text=True
 ).splitlines())
 
-if actual != EXPECTED:
-    raise SystemExit(
-        "public acceptance scope mismatch: "
-        f"unexpected={sorted(actual - EXPECTED)}, "
-        f"missing={sorted(EXPECTED - actual)}, "
-        f"actual_count={len(actual)}, expected_count={len(EXPECTED)}"
-    )
-print({"status": "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE", "changed": sorted(actual)})
+accepted_scopes = {
+    "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE": PUBLIC_ACCEPTANCE_SCOPE,
+    "PASS_BTC_ENTRY_CLEAN_PREMIUM_EXACT_4_FILE_SCOPE": BTC_ENTRY_CLEAN_PREMIUM_SCOPE,
+}
+
+for status, expected in accepted_scopes.items():
+    if actual == expected:
+        print({"status": status, "changed": sorted(actual)})
+        raise SystemExit(0)
+
+raise SystemExit(
+    "public acceptance scope mismatch: "
+    f"actual={sorted(actual)}, actual_count={len(actual)}, "
+    f"accepted_counts={sorted(len(scope) for scope in accepted_scopes.values())}"
+)
