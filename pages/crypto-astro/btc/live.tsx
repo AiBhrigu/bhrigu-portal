@@ -15,6 +15,11 @@ import {
 } from "../../../lib/btc-cosmographer-route-graph";
 import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
 import {
+  applyBtcRelationIntentPrecedence,
+  buildBtcEvidenceNavigationRuntimeDecision,
+  type BtcEvidenceNavigationRuntimeDecision,
+} from "../../../lib/btc-cosmographer-evidence-navigation-runtime";
+import {
   routeBtcCosmographerLocalRc,
   type BtcMultiBodyAstroMemory,
   type BtcMultiBodyAstroRcRoute,
@@ -120,6 +125,7 @@ type Props = {
   initialDate: string;
   route: BtcCosmographerRoute | null;
   answer: BtcCosmographerAnswerProjection | null;
+  runtimeDecision: BtcEvidenceNavigationRuntimeDecision | null;
   sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
@@ -214,6 +220,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     initialDate,
     route: null,
     answer: null,
+    runtimeDecision: null,
     sourceContext,
     deploymentSourceSha: deploymentSourceSha(),
     sourceBindingChanged: false,
@@ -239,13 +246,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     ? null
     : parsed.packet ?? parseLegacyContext(query);
   const retainedAstroMemory = parseRetainedAstroMemory(query);
-  const route = routeBtcCosmographerLocalRc(
+  const initialRoute = routeBtcCosmographerLocalRc(
     resolvedLocale.locale,
     initialQuestion,
     packet,
     initialDate || undefined,
     retainedAstroMemory,
   );
+  const relationResolution = applyBtcRelationIntentPrecedence(
+    initialRoute,
+    initialQuestion,
+    packet,
+  );
+  const route = relationResolution.route;
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
@@ -288,6 +301,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
           : null,
       ) as unknown as BtcCosmographerAnswerProjection
     : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
+  const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
+    resolvedLocale.locale,
+    route,
+    answer,
+    sourceContext,
+    relationResolution.relation_resolution,
+    relationResolution.btc_side_state_type,
+  );
   const sourceBindingChanged = Boolean(
     packet?.prior_snapshot_generated_at_utc &&
     sourceTimestamp &&
@@ -300,6 +321,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
       initialQuestion,
       route,
       answer,
+      runtimeDecision,
       sourceBindingChanged,
     },
   };
