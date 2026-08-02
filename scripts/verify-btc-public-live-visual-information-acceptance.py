@@ -421,7 +421,7 @@ def run_named_body_sequence(driver, width, height, suffix):
         field_values,
     )
 
-    follow_question = "Какие самые напряжённые дни?"
+    follow_question = "Какие самые напряжённые даты?"
     submit(driver, follow_question, "ASTRO_INTERVAL", "FOLLOW_UP", "jupiter", 2)
     follow_state = state_record(driver, f"jupiter-ranked-{suffix}")
     direct = newest(driver).find_element(By.CSS_SELECTOR, "[data-answer-direct='true']")

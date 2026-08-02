@@ -198,7 +198,7 @@ function aspectLines(
 }
 
 function asksForRankedIntensity(question: string): boolean {
-  return /(?:most|highest|ranked|top)\s+(?:intense|tension|dates?|days?|windows?)|(?:intense|tension)\s+(?:dates?|days?|windows?)|сам(?:ые|ая|ый)\s+напряж[её]нн|наиболее\s+напряж[её]нн|рейтинг[а-яё]*\s+(?:дат|дн|окон)|напряж[её]нн[а-яё]*\s+(?:дат|дн|окон|период)/i.test(question);
+  return /(?:most|highest|ranked|top)\s+(?:intense|tension|dates?|days?|windows?)|(?:intense|tension)\s+(?:dates?|days?|windows?)|(?:dates?|days?|windows?)\s+(?:are\s+)?(?:the\s+)?(?:(?:most|highest)\s+)?(?:intense|tense)|сам(?:ые|ая|ый)\s+напряж[её]нн|наиболее\s+напряж[её]нн|рейтинг[а-яё]*\s+(?:дат|дн|окон)|напряж[её]нн[а-яё]*\s+(?:дат|дн|окон|период)|(?:дат[а-яё]*|дн[а-яё]*|окон[а-яё]*|период[а-яё]*)\s+(?:сам[а-яё]*\s+|наиболее\s+)?напряж[её]нн[а-яё]*/i.test(question);
 }
 
 function rankedBodyAspectLine(
@@ -223,12 +223,49 @@ function rankedBodyIntensityAnswer(
   const ranked = data.aspects
     .filter((event) =>
       (event.a === body || event.b === body) &&
-      event.end >= start &&
-      event.start <= end)
+      inRange(event.peak, start, end))
     .sort((a, b) => a.orb - b.orb || a.peak.localeCompare(b.peak));
-  if (!ranked.length) return null;
-
   const label = bodyLabel(locale, body);
+  if (!ranked.length) {
+    return {
+      answer_state: "LIMITED",
+      answer_mode: "ASTRO_INTERVAL",
+      headline: locale === "ru"
+        ? `${label}: в периоде нет опубликованных пиков`
+        : `${label}: no published peaks in the retained period`,
+      direct_answer: locale === "ru"
+        ? `Внутри сохранённого периода ${start}–${end} нет опубликованных точных пиков аспектов ${label}; даты за его пределами не включены в рейтинг.`
+        : `No published exact ${label} aspect peaks fall inside the retained period ${start}–${end}; dates outside it are excluded from the ranking.`,
+      sections: [
+        {
+          id: "top_dates_or_windows",
+          label: locale === "ru" ? "Главные даты и окна — по рейтингу" : "Top dates and windows — ranked",
+          paragraph: locale === "ru"
+            ? "Ранг не присвоен: в принятом evidence нет peak date внутри сохранённого периода."
+            : "No rank is assigned because the accepted evidence contains no peak date inside the retained period.",
+        },
+        {
+          id: "significance",
+          label: locale === "ru" ? "Почему это значимо" : "Why this matters",
+          paragraph: locale === "ru"
+            ? "Отсутствие опубликованного пика — это граница evidence, а не основание переносить ближайшую дату из соседнего периода."
+            : "The absence of a published peak is an evidence boundary, not a reason to import the nearest date from an adjacent period.",
+        },
+        {
+          id: "conditions_and_limits",
+          label: locale === "ru" ? "Условия и границы" : "Conditions and limits",
+          paragraph: locale === "ru"
+            ? "Рейтинг не измеряет волатильность BTC, не доказывает влияние на цену, не является прогнозом или торговым сигналом."
+            : "The ranking does not measure BTC volatility, prove an effect on price, constitute a forecast, or create a trading signal.",
+        },
+      ],
+      source_boundary: locale === "ru"
+        ? `Источник: публичный астрономический индекс ${data.schema}; ${data.source.engine} ${data.source.version}; ${data.source.mode}; ${data.source.coordinate}; evidence coverage ${data.range.start}–${data.range.end}.`
+        : `Source: public astronomical index ${data.schema}; ${data.source.engine} ${data.source.version}; ${data.source.mode}; ${data.source.coordinate}; evidence coverage ${data.range.start}–${data.range.end}.`,
+      proof_label: locale === "ru" ? "Астрономические доказательства ограничены" : "Astronomical evidence limited",
+    };
+  }
+
   const top = ranked.slice(0, 5);
   const first = top[0];
   const firstOther = first.a === body ? first.b : first.a;
@@ -259,8 +296,8 @@ function rankedBodyIntensityAnswer(
         id: "conditions_and_limits",
         label: locale === "ru" ? "Условия и границы" : "Conditions and limits",
         paragraph: locale === "ru"
-          ? `Учтены только опубликованные окна ${label} внутри ${start}–${end}. Рейтинг не измеряет волатильность BTC, не доказывает влияние на цену, не является прогнозом или торговым сигналом.`
-          : `Only published ${label} windows within ${start}–${end} are included. The ranking does not measure BTC volatility, prove an effect on price, constitute a forecast, or create a trading signal.`,
+          ? `В рейтинг входят только пики ${label} внутри ${start}–${end}; доказательные окна показываются полностью и могут выходить за границы периода. Рейтинг не измеряет волатильность BTC, не доказывает влияние на цену, не является прогнозом или торговым сигналом.`
+          : `Only ${label} peaks inside ${start}–${end} are ranked; evidence windows are shown in full and may extend beyond the period. The ranking does not measure BTC volatility, prove an effect on price, constitute a forecast, or create a trading signal.`,
       },
     ],
     source_boundary: locale === "ru"

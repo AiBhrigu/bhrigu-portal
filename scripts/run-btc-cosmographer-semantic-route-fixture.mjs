@@ -116,8 +116,8 @@ function contextPacket(html) {
   return packet;
 }
 
-async function getPage(base, question, packet = null) {
-  const params = new URLSearchParams({ lang: "ru", q: question });
+async function getPage(base, question, packet = null, locale = "ru") {
+  const params = new URLSearchParams({ lang: locale, q: question });
   if (packet) for (const [key, value] of Object.entries(packet)) params.set(key, value);
   const response = await fetch(`${base}/crypto-astro/btc/live?${params}`, { headers: { "Cache-Control": "no-cache" } });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -246,7 +246,7 @@ async function runRuntime(base) {
   if (jupiterAnnual) {
     const rankedJupiter = await safeTransition(
       "jupiter_followup_ranked_dates_direct_first",
-      () => getPage(base, "Какие самые напряжённые дни?", contextPacket(jupiterAnnual.html)),
+      () => getPage(base, "Какие самые напряжённые даты?", contextPacket(jupiterAnnual.html)),
       (result) => {
         const direct = result.html.indexOf('data-answer-direct="true"');
         const ranked = result.html.indexOf('data-semantic-answer-section="top_dates_or_windows"');
@@ -263,6 +263,39 @@ async function runRuntime(base) {
       },
     );
     if (rankedJupiter) {
+      await safeTransition(
+        "jupiter_english_ranked_dates_retains_context",
+        () => getPage(base, "What are the most intense dates?", contextPacket(jupiterAnnual.html), "en"),
+        (result) =>
+          result.domain === "astromodule" &&
+          result.subject === "jupiter" &&
+          result.relation === "FOLLOW_UP" &&
+          result.mode === "ASTRO_INTERVAL" &&
+          result.html.includes("Jupiter: ranked high-intensity dates") &&
+          result.html.indexOf('data-answer-direct="true"') <
+            result.html.indexOf('data-semantic-answer-section="top_dates_or_windows"'),
+      );
+      const narrowPacket = {
+        ...contextPacket(jupiterAnnual.html),
+        ct0: "2026-07-01",
+        ct1: "2026-07-10",
+      };
+      await safeTransition(
+        "jupiter_ranked_dates_respect_retained_period",
+        () => getPage(base, "Какие самые напряжённые даты?", narrowPacket),
+        (result) =>
+          result.domain === "astromodule" &&
+          result.subject === "jupiter" &&
+          result.relation === "FOLLOW_UP" &&
+          result.mode === "ASTRO_INTERVAL" &&
+          result.state === "LIMITED" &&
+          result.html.includes("2026-07-01–2026-07-10") &&
+          !result.html.includes("2026-07-20") &&
+          !result.html.includes("2026-07-21") &&
+          result.html.includes('data-semantic-answer-section="top_dates_or_windows"') &&
+          result.html.includes('data-semantic-answer-section="significance"') &&
+          result.html.includes('data-semantic-answer-section="conditions_and_limits"'),
+      );
       check(
         "astro_evidence_coverage_and_revision_distinct",
         rankedJupiter.html.includes('data-evidence-field="observation-period"') &&
@@ -280,11 +313,15 @@ async function runRuntime(base) {
           result.html.includes('data-active-period="2026"'),
       );
     } else {
+      check("jupiter_english_ranked_dates_retains_context", false, "Jupiter ranked follow-up unavailable");
+      check("jupiter_ranked_dates_respect_retained_period", false, "Jupiter ranked follow-up unavailable");
       check("astro_evidence_coverage_and_revision_distinct", false, "Jupiter ranked follow-up unavailable");
       check("explicit_mercury_override_updates_active_subject", false, "Jupiter ranked follow-up unavailable");
     }
   } else {
     check("jupiter_followup_ranked_dates_direct_first", false, "Jupiter annual context unavailable");
+    check("jupiter_english_ranked_dates_retains_context", false, "Jupiter annual context unavailable");
+    check("jupiter_ranked_dates_respect_retained_period", false, "Jupiter annual context unavailable");
     check("astro_evidence_coverage_and_revision_distinct", false, "Jupiter annual context unavailable");
     check("explicit_mercury_override_updates_active_subject", false, "Jupiter annual context unavailable");
   }
