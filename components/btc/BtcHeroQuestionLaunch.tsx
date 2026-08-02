@@ -14,12 +14,12 @@ export function BtcHeroQuestionLaunch({
       <FieldAnchorGlyph className="heroQuestionGlyph" />
       <div>
         <p className="eyebrow">{ru ? "BTC Field · первый живой коридор" : "BTC Field · first live corridor"}</p>
-        <h2 id="hero-dialogue-title">{ru ? "Задайте один вопрос о Bitcoin" : "Ask one Bitcoin question"}</h2>
+        <h2 id="hero-dialogue-title">{ru ? "Задайте один вопрос о BTC" : "Ask one BTC question"}</h2>
       </div>
     </header>
     <p className="heroQuestionLead">{ru
-      ? "Одно доказательное чтение текущего поля BTC, памяти изменений, временного контекста и источников."
-      : "One evidence-grounded read across the current BTC field, change memory, temporal context, and sources."}</p>
+      ? "Проверяемое чтение текущего BTC, памяти изменений, времени и источников."
+      : "A verifiable read across current BTC, change memory, timing, and sources."}</p>
     <div className="heroValuePath" aria-label={ru ? "Путь чтения" : "Reading path"}>
       <span>{ru ? "Изменение" : "Change"}</span>
       <span>{ru ? "Смысл" : "Meaning"}</span>
