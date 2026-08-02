@@ -1,0 +1,62 @@
+name: BTC Evidence and Navigation Runtime
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-evidence-navigation-runtime-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - lib/btc-cosmographer-answer.ts
+      - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-live-dialogue-session.ts
+      - lib/btc-live-dialogue-style.ts
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  runtime-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify exact product scope
+        if: github.event_name == 'pull_request'
+        env:
+          BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
+      - name: Verify evidence and navigation runtime
+        run: node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+      - name: Verify inherited BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Verify public safety boundary
+        run: |
+          ! grep -RniE 'personalized (buy|sell)|guaranteed return|guaranteed profit' \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-cosmographer-answer.ts \
+            components/btc/BtcCosmographerDialogue.tsx
