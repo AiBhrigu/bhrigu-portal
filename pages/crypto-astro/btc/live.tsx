@@ -134,6 +134,7 @@ type Props = {
   inputError: string | null;
 };
 
+// Connector-authored deployment pulse: PR114 exact Preview identity v0.2.
 function deploymentSourceSha(): string | null {
   const value = process.env.VERCEL_GIT_COMMIT_SHA ??
     process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ??
