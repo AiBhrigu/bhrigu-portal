@@ -1,0 +1,103 @@
+name: BTC PR114 Preview Membrane Diagnostic
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/btc-pr114-preview-membrane-diagnostic.yml
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Inspect Vercel Preview response membrane
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.request
+
+          comments_url = (
+              f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}"
+              f"/issues/{os.environ['PR_NUMBER']}/comments?per_page=100"
+          )
+          request = urllib.request.Request(
+              comments_url,
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "btc-pr114-preview-membrane-diagnostic",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=20) as response:
+              comments = json.load(response)
+
+          preview = None
+          for comment in comments:
+              if comment.get("user", {}).get("login") != "vercel[bot]":
+                  continue
+              match = re.search(r"\[Preview\]\((https://[^)]+\.vercel\.app)\)", comment.get("body", ""))
+              if match:
+                  preview = match.group(1).rstrip("/")
+                  break
+          if not preview:
+              raise SystemExit("Vercel Preview URL not found")
+
+          target = f"{preview}/crypto-astro/btc/live?lang=ru&membrane_diagnostic=1"
+          page_request = urllib.request.Request(
+              target,
+              headers={
+                  "Cache-Control": "no-cache, no-store, max-age=0",
+                  "Pragma": "no-cache",
+                  "User-Agent": "btc-pr114-preview-membrane-diagnostic",
+              },
+          )
+          with urllib.request.urlopen(page_request, timeout=30) as response:
+              body = response.read().decode("utf-8", errors="replace")
+              headers = {
+                  key.lower(): value
+                  for key, value in response.headers.items()
+                  if key.lower() not in {"set-cookie"}
+              }
+              final_url = response.geturl()
+              status = response.status
+
+          title = re.search(r"<title>(.*?)</title>", body, re.I | re.S)
+          fingerprint = {
+              "preview": preview,
+              "target": target,
+              "final_url": final_url,
+              "status": status,
+              "title": re.sub(r"\s+", " ", title.group(1)).strip() if title else None,
+              "cache_control": headers.get("cache-control"),
+              "content_type": headers.get("content-type"),
+              "x_vercel_cache": headers.get("x-vercel-cache"),
+              "x_vercel_id": headers.get("x-vercel-id"),
+              "x_vercel_mitigated": headers.get("x-vercel-mitigated"),
+              "x_btc_head": headers.get("x-btc-deployment-source-sha"),
+              "has_btc_meta": "btc-deployment-source-sha" in body,
+              "has_runtime_schema": "btc_cosmographer_evidence_navigation_runtime_v0_1" in body,
+              "has_session_schema": "btc_cosmographer_dialogue_session_v0_3" in body,
+              "looks_like_vercel_auth": any(token in body.casefold() for token in (
+                  "authentication required",
+                  "vercel authentication",
+                  "sso protection",
+                  "deployment protection",
+                  "vercel security checkpoint",
+              )),
+              "body_prefix": re.sub(r"\s+", " ", body[:800]).strip(),
+          }
+          print(json.dumps(fingerprint, ensure_ascii=False, indent=2))
+          PY
