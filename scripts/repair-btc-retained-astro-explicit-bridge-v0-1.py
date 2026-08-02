@@ -15,6 +15,23 @@ def replace_once(path: Path, old: str, new: str, label: str) -> None:
 component = root / "components/btc/BtcCosmographerDialogue.tsx"
 replace_once(
     component,
+    '''  const contextSafe = !latestTurn || (
+    latestTurn.route_disposition === "CONTINUE" &&
+    latestTurn.context_safe_composer !== false
+  );
+''',
+    '''  const contextSafe = !latestTurn || (
+    latestTurn.context_safe_composer !== false &&
+    (
+      latestTurn.route_disposition === "CONTINUE" ||
+      latestTurn.stop_reason === "REPEATED_ROUTE"
+    )
+  );
+''',
+    "context-safe repeated next-question rule",
+)
+replace_once(
+    component,
     '''  const retainedAstroTurn = contextSafe ? [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
     (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
@@ -159,6 +176,18 @@ replace_once(
 ''',
     "bridge retained period",
 )
+replace_once(
+    runtime,
+    '''    context_safe_composer: false,
+    render_gate: {
+''',
+    '''    context_safe_composer: repeatedNext && !repeatedClarification
+      ? decision.context_safe_composer
+      : false,
+    render_gate: {
+''',
+    "anti-loop accepted-context preservation",
+)
 
 live = root / "pages/crypto-astro/btc/live.tsx"
 replace_once(
@@ -228,11 +257,24 @@ replace_once(
 ''',
     "retained Astro explicit bridge fixture",
 )
-replace_once(fixture, '    checks: 34,\n', '    checks: 40,\n', "fixture check count")
+replace_once(
+    fixture,
+    '''  assert.equal(repeated.anti_loop_blocked, true);
+  assert.equal(repeated.show_next_question, false);
+''',
+    '''  assert.equal(repeated.anti_loop_blocked, true);
+  assert.equal(repeated.show_next_question, false);
+  assert.equal(repeated.context_safe_composer, true);
+''',
+    "anti-loop accepted context fixture",
+)
+replace_once(fixture, '    checks: 34,\n', '    checks: 41,\n', "fixture check count")
 
 print({
-    "status": "PASS_RETAINED_ASTRO_RELATION_RESOLVER_REPAIR",
+    "status": "PASS_RETAINED_ASTRO_RELATION_AND_ANTI_LOOP_CONTEXT_REPAIR",
     "context_packet_remains_gated": True,
+    "repeated_next_question_preserves_answer_context": True,
+    "repeated_clarification_still_closes_context": True,
     "retained_astro_memory_bound_to_relation_resolver": True,
     "retained_scope": 9,
 })
