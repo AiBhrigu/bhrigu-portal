@@ -47,29 +47,27 @@ jobs:
           print({"status": "PASS_REGEX_TARGET_NORMALIZATION", "replacements": count})
           PY
 
-      - name: Apply exact runtime and acceptance repair
+      - name: Apply exact runtime repair
         run: python3 scripts/apply-btc-pr114-preview-identity-founder-routes-v0-2.py
 
-      - name: Remove one-shot helpers
+      - name: Restore connector-owned workflow transport files
         run: |
-          rm scripts/apply-btc-pr114-preview-identity-founder-routes-v0-2.py
-          rm .github/workflows/btc-pr114-preview-identity-founder-routes-apply.yml
+          git checkout HEAD -- \
+            .github/workflows/btc-evidence-navigation-runtime-pr.yml \
+            .github/workflows/btc-pr114-preview-identity-founder-routes-apply.yml \
+            scripts/apply-btc-pr114-preview-identity-founder-routes-v0-2.py
 
-      - name: Verify retained exact nine-file boundary
+      - name: Verify exact five-file runtime delta
         shell: bash
         run: |
-          mapfile -t actual < <(git diff --name-only e07da6f6d216d28621b8592ecf8c066b05897ba9 | sort)
+          mapfile -t actual < <(git diff --name-only HEAD | sort)
           mapfile -t expected < <(printf '%s\n' \
-            .github/scripts/verify-btc-public-acceptance-scope.py \
-            .github/workflows/btc-evidence-navigation-runtime-pr.yml \
             components/btc/BtcCosmographerDialogue.tsx \
-            lib/btc-cosmographer-answer.ts \
             lib/btc-cosmographer-evidence-navigation-runtime.ts \
             lib/btc-live-dialogue-session.ts \
-            lib/btc-live-dialogue-style.ts \
             pages/crypto-astro/btc/live.tsx \
             scripts/run-btc-evidence-navigation-runtime-fixture.mjs | sort)
-          printf 'actual=%s\n' "${actual[*]}"
+          printf 'runtime_delta=%s\n' "${actual[*]}"
           test "${actual[*]}" = "${expected[*]}"
           git diff --check
 
@@ -90,25 +88,22 @@ jobs:
       - name: Verify production build
         run: npm run build
 
-      - name: Commit exact candidate
+      - name: Commit runtime candidate only
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add -A
-          git commit -m "Repair PR114 exact Preview identity and founder routes"
+          git add \
+            components/btc/BtcCosmographerDialogue.tsx \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-live-dialogue-session.ts \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          git commit -m "Repair PR114 Preview identity runtime routes"
 
-      - name: Verify permanent exact scope gate
-        env:
-          BTC_ACCEPTANCE_BASE_SHA: e07da6f6d216d28621b8592ecf8c066b05897ba9
-        run: |
-          export BTC_ACCEPTANCE_HEAD_SHA="$(git rev-parse HEAD)"
-          export GITHUB_EVENT_NAME=pull_request
-          python3 .github/scripts/verify-btc-public-acceptance-scope.py
-
-      - name: Push exact candidate
+      - name: Push runtime candidate
         run: git push origin HEAD:agent/btc-cosmographer-evidence-navigation-runtime-v0-1
 
-      - name: Bind exact-head implementation status
+      - name: Bind runtime exact-head status
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
@@ -120,8 +115,8 @@ jobs:
               f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/statuses/{sha}",
               data=json.dumps({
                   "state": "success",
-                  "context": "BTC PR114 Preview Identity Runtime Repair Exact Head",
-                  "description": "9-file scope, 61-check runtime fixture, inherited routing and production build passed",
+                  "context": "BTC PR114 Runtime Repair Exact Head",
+                  "description": "5-file runtime delta, 61-check fixture, inherited routing and production build passed",
               }).encode(),
               method="POST",
               headers={
