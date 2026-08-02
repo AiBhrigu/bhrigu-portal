@@ -18,17 +18,19 @@ export function BtcHeroQuestionLaunch({
       </div>
     </header>
     <p className="heroQuestionLead">{ru
-      ? "Космограф соединяет текущее поле BTC, принятый Snapshot, память изменений и валидированные временные методы в одном доказательном чтении."
-      : "Cosmographer combines the current BTC field, the accepted Snapshot, change memory, and validated temporal methods in one evidence-grounded read."}</p>
+      ? "Одно доказательное чтение текущего поля BTC, памяти изменений, временного контекста и источников."
+      : "One evidence-grounded read across the current BTC field, change memory, temporal context, and sources."}</p>
     <div className="heroValuePath" aria-label={ru ? "Путь чтения" : "Reading path"}>
-      <span>{ru ? "Что изменилось" : "What changed"}</span>
-      <span>{ru ? "Почему это важно" : "Why it matters"}</span>
-      <span>{ru ? "Что может произойти дальше" : "What may happen next"}</span>
-      <span>{ru ? "Что изменит чтение" : "What changes the read"}</span>
+      <span>{ru ? "Изменение" : "Change"}</span>
+      <span>{ru ? "Смысл" : "Meaning"}</span>
+      <span>{ru ? "Что дальше" : "What next"}</span>
+      <span>{ru ? "Условия" : "Conditions"}</span>
     </div>
     <a className="heroDialogueCta" href={liveHref}>{ru ? "Открыть BTC Field" : "Open BTC Field"}<span aria-hidden="true">→</span></a>
-    <p className="heroQuestionBoundary">{ru
-      ? "Без регистрации · Без оплаты · Проверенные источники · Не финансовый совет и не торговый сигнал"
-      : "No account · No payment · Verified sources · Not financial advice or a trading signal"}</p>
+    <p className="heroQuestionBoundary">
+      <span>{ru ? "Без регистрации · Без оплаты" : "No account · No payment"}</span>
+      <span>{ru ? "Проверенные источники" : "Verified sources"}</span>
+      <small>{ru ? "Не финансовый совет и не торговый сигнал" : "Not financial advice or a trading signal"}</small>
+    </p>
   </aside>;
 }
