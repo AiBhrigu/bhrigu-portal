@@ -87,6 +87,7 @@ try {
     applyBtcRelationIntentPrecedence,
     applyBtcRuntimeAntiLoop,
     buildBtcEvidenceNavigationRuntimeDecision,
+    detectBtcRelationIntent,
   } = runtime;
 
   const astroRoute = {
@@ -105,6 +106,88 @@ try {
   assert.equal(relation.btc_side_state_type, "MARKET");
   assert.equal(relation.route.domain, "astro_btc_bridge");
   assert.equal(relation.route.context_relation, "CROSS_MODULE_BRIDGE");
+
+  const russianRelationForms = [
+    "Высота блоков совпадала с окнами",
+    "Высота блоков соотносилась с окнами",
+    "Высота блоков связана с окнами",
+    "Высота блоков сравнивалась с окнами",
+    "Высота блоков и окна были одновременными",
+  ];
+  russianRelationForms.forEach((question) => assert.equal(detectBtcRelationIntent(question), true));
+
+  const genericPlanetRoute = {
+    ...astroRoute,
+    raw_question: "Текущее положение планет?",
+    normalized_question: "текущее положение планет?",
+    domain: "astromodule",
+    subject: "planetary_aspects",
+    intents: ["watch"],
+    context_relation: "NEW_TOPIC",
+    time_range: null,
+    market_question_class: null,
+    capability_id: "astromodule.planetary_aspects",
+    explicit_entities: ["planetary_aspects"],
+  };
+  const genericPlanetDecision = buildBtcEvidenceNavigationRuntimeDecision(
+    "ru",
+    genericPlanetRoute,
+    {
+      ...baseAnswer,
+      answer_state: "CONFIRMED",
+      answer_mode: "ASTRO_STATE",
+      direct_answer: "Положение этой планеты рассчитано.",
+    },
+    sourceAvailable,
+    "SINGLE_DOMAIN",
+    null,
+  );
+  assert.equal(genericPlanetDecision.route_disposition, "CLARIFY");
+  assert.equal(genericPlanetDecision.clarification_target, "SUBJECT");
+  assert.equal(genericPlanetDecision.show_clarification, true);
+  assert.equal(genericPlanetDecision.show_next_question, false);
+  assert.equal(genericPlanetDecision.next_question_text, null);
+  assert.equal(genericPlanetDecision.relation_intent_detected, false);
+
+  const blockHeightRelationRoute = {
+    ...baseRoute,
+    locale: "ru",
+    raw_question: "В какое время высота блоков совпадала с наиболее сильными окнами?",
+    normalized_question: "в какое время высота блоков совпадала с наиболее сильными окнами?",
+    domain: "bitcoin_protocol",
+    subject: "block_height",
+    intents: ["compare"],
+    context_relation: "NEW_TOPIC",
+    time_range: null,
+    market_question_class: null,
+    capability_id: "bitcoin_protocol.block_height",
+    explicit_entities: ["block_height"],
+  };
+  const blockHeightRelation = applyBtcRelationIntentPrecedence(
+    blockHeightRelationRoute,
+    blockHeightRelationRoute.raw_question,
+    null,
+  );
+  assert.equal(blockHeightRelation.relation_resolution, "SECOND_DOMAIN_UNRESOLVED");
+  assert.equal(blockHeightRelation.btc_side_state_type, "PROTOCOL");
+  assert.equal(blockHeightRelation.route.domain, "bitcoin_protocol");
+  const blockHeightDecision = buildBtcEvidenceNavigationRuntimeDecision(
+    "ru",
+    blockHeightRelation.route,
+    {
+      ...baseAnswer,
+      answer_state: "CONFIRMED",
+      answer_mode: "PROTOCOL_EXPLAIN",
+      direct_answer: "Высота блока — это номер блока в цепочке.",
+    },
+    sourceAvailable,
+    blockHeightRelation.relation_resolution,
+    blockHeightRelation.btc_side_state_type,
+  );
+  assert.equal(blockHeightDecision.relation_intent_detected, true);
+  assert.equal(blockHeightDecision.route_disposition, "CLARIFY");
+  assert.equal(blockHeightDecision.clarification_target, "RELATION_OBJECT");
+  assert.equal(blockHeightDecision.show_next_question, false);
 
   const priorProtocolPacket = {
     schema: "btc_cosmographer_context_v0_1",
@@ -315,7 +398,7 @@ try {
   console.log(JSON.stringify({
     status: "PASS",
     schema: marketDecision.schema,
-    checks: 41,
+    checks: 61,
     route_dispositions: ["CONTINUE", "CLARIFY", "STOP"],
     bridge_results: [
       "MARKET_CONFIRMED",

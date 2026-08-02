@@ -12,6 +12,7 @@ import type {
   BtcClarificationTarget,
   BtcEvidenceLevel,
   BtcNextQuestionType,
+  BtcRelationResolution,
   BtcRouteDisposition,
   BtcSideStateType,
   BtcStopReason,
@@ -22,13 +23,14 @@ import type {
 } from "./btc-protocol-evidence";
 
 export const BTC_DIALOGUE_SESSION_SCHEMA =
-  "btc_cosmographer_dialogue_session_v0_2" as const;
-const BTC_DIALOGUE_LEGACY_SESSION_SCHEMA =
-  "btc_free_dialogue_session_v0_1" as const;
+  "btc_cosmographer_dialogue_session_v0_3" as const;
 export const BTC_DIALOGUE_SESSION_KEY =
-  "bhrigu:btc-free-dialogue:session:v0_1" as const;
-const BTC_DIALOGUE_PREVIOUS_SESSION_KEY =
-  "bhrigu:btc-cosmographer:session:v0_2" as const;
+  "bhrigu:btc-cosmographer:session:v0_3" as const;
+const BTC_DIALOGUE_STALE_SESSION_KEYS = [
+  "bhrigu:btc-free-dialogue:session:v0_1",
+  "bhrigu:btc-cosmographer:session:v0_1",
+  "bhrigu:btc-cosmographer:session:v0_2",
+] as const;
 export const BTC_DIALOGUE_SESSION_MAX_TURNS = 20;
 export const BTC_DIALOGUE_SESSION_MIN_RETAINED_TURNS = 6;
 export const BTC_DIALOGUE_SESSION_MAX_BYTES = 64 * 1024;
@@ -74,6 +76,8 @@ export type BtcDialogueTurn = {
   evidence_levels?: BtcEvidenceLevel[];
   btc_side_state_type?: BtcSideStateType | null;
   bridge_result?: BtcBridgeResult | null;
+  relation_intent_detected?: boolean;
+  relation_resolution?: BtcRelationResolution;
   show_next_question?: boolean;
   next_precise_question_type?: BtcNextQuestionType | null;
   next_precise_question_text?: string | null;
@@ -172,6 +176,8 @@ function validTurn(value: unknown): value is BtcDialogueTurn {
   if (value.evidence_levels !== undefined && !stringList(value.evidence_levels, 6, 4)) return false;
   if (value.btc_side_state_type !== undefined && value.btc_side_state_type !== null && !["MARKET", "SNAPSHOT", "PROTOCOL"].includes(String(value.btc_side_state_type))) return false;
   if (value.bridge_result !== undefined && value.bridge_result !== null && !["MARKET_CONFIRMED", "TEMPORAL_CONCURRENCE_ONLY", "DIVERGENCE", "INSUFFICIENT_DUAL_EVIDENCE"].includes(String(value.bridge_result))) return false;
+  if (value.relation_intent_detected !== undefined && typeof value.relation_intent_detected !== "boolean") return false;
+  if (value.relation_resolution !== undefined && !["SINGLE_DOMAIN", "TWO_DOMAINS_RESOLVED", "SECOND_DOMAIN_UNRESOLVED"].includes(String(value.relation_resolution))) return false;
   if (value.show_next_question !== undefined && typeof value.show_next_question !== "boolean") return false;
   if (value.next_precise_question_type !== undefined && value.next_precise_question_type !== null && !["FACT", "CONTRADICTION", "TIME", "EXPLICIT_BRIDGE", "PROOF"].includes(String(value.next_precise_question_type))) return false;
   if (value.next_precise_question_text !== undefined && !nullableText(value.next_precise_question_text, 500)) return false;
@@ -209,7 +215,7 @@ export function createBtcDialogueSession(
 
 export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | null {
   if (!isRecord(value)) return null;
-  if (value.schema !== BTC_DIALOGUE_SESSION_SCHEMA && value.schema !== BTC_DIALOGUE_LEGACY_SESSION_SCHEMA) return null;
+  if (value.schema !== BTC_DIALOGUE_SESSION_SCHEMA) return null;
   if (!isText(value.session_id, 160)) return null;
   if (value.locale !== "ru" && value.locale !== "en") return null;
   if (!isText(value.created_at_utc, 40) || !isText(value.updated_at_utc, 40)) return null;
@@ -232,31 +238,30 @@ export function parseBtcDialogueSession(value: unknown): BtcDialogueSession | nu
   });
 }
 
+function clearStaleBtcDialogueSessionKeys(): void {
+  if (!storageAvailable()) return;
+  BTC_DIALOGUE_STALE_SESSION_KEYS.forEach((key) => window.sessionStorage.removeItem(key));
+}
+
 export function readBtcDialogueSession(
   locale: BtcPublicLocale,
   deploymentSha: string | null,
 ): BtcDialogueSession {
   if (!storageAvailable()) return createBtcDialogueSession(locale, deploymentSha);
-  const raw = window.sessionStorage.getItem(BTC_DIALOGUE_SESSION_KEY) ??
-    window.sessionStorage.getItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
+  clearStaleBtcDialogueSessionKeys();
+  const raw = window.sessionStorage.getItem(BTC_DIALOGUE_SESSION_KEY);
   if (!raw) return createBtcDialogueSession(locale, deploymentSha);
   try {
     const parsed = parseBtcDialogueSession(JSON.parse(raw));
     if (!parsed) throw new Error("invalid session");
-    const migrated = {
-      ...parsed,
-      locale,
-      source_binding: {
-        ...parsed.source_binding,
-        deployment_sha: deploymentSha ?? parsed.source_binding.deployment_sha,
-      },
-    };
-    window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, JSON.stringify(migrated));
-    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
-    return migrated;
+    if (parsed.locale !== locale) throw new Error("locale changed");
+    if (deploymentSha && parsed.source_binding.deployment_sha !== deploymentSha) {
+      throw new Error("deployment changed");
+    }
+    return parsed;
   } catch {
     window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
-    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
+    clearStaleBtcDialogueSessionKeys();
     return createBtcDialogueSession(locale, deploymentSha);
   }
 }
@@ -307,7 +312,7 @@ export function writeBtcDialogueSession(
   });
   if (storageAvailable()) {
     window.sessionStorage.setItem(BTC_DIALOGUE_SESSION_KEY, JSON.stringify(compacted));
-    window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
+    clearStaleBtcDialogueSessionKeys();
   }
   return compacted;
 }
@@ -334,7 +339,7 @@ export function upsertBtcDialogueTurn(
 export function clearBtcDialogueSession(): void {
   if (!storageAvailable()) return;
   window.sessionStorage.removeItem(BTC_DIALOGUE_SESSION_KEY);
-  window.sessionStorage.removeItem(BTC_DIALOGUE_PREVIOUS_SESSION_KEY);
+  clearStaleBtcDialogueSessionKeys();
 }
 
 export function latestContextTurn(

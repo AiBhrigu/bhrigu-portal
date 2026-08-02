@@ -5,10 +5,12 @@ import {
 } from "../../lib/btc-cosmographer-route-graph";
 import {
   applyBtcRuntimeAntiLoop,
+  BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
   type BtcEvidenceNavigationRuntimeDecision,
 } from "../../lib/btc-cosmographer-evidence-navigation-runtime";
 import type { BtcCosmographerAnswerProjection } from "../../lib/btc-protocol-evidence";
 import {
+  BTC_DIALOGUE_SESSION_SCHEMA,
   clearBtcDialogueSession,
   latestContextTurn,
   makeBtcDialogueTurnId,
@@ -300,13 +302,24 @@ function applyRuntimeDecisionToTurn(
   turn: BtcDialogueTurn,
   decision: BtcEvidenceNavigationRuntimeDecision,
 ): BtcDialogueTurn {
+  const clarificationOnly = decision.route_disposition === "CLARIFY";
   return {
     ...turn,
+    answer_state: clarificationOnly ? "CLARIFICATION" : turn.answer_state,
+    answer_mode: clarificationOnly ? "CLARIFICATION" : turn.answer_mode,
+    headline: clarificationOnly
+      ? (turn.locale === "ru" ? "Нужно уточнить предмет" : "The subject needs clarification")
+      : turn.headline,
+    direct_answer: clarificationOnly ? null : turn.direct_answer,
+    evidence_lines: clarificationOnly ? [] : turn.evidence_lines,
+    sections: clarificationOnly ? [] : turn.sections,
     route_disposition: decision.route_disposition,
     primary_authority: decision.primary_authority,
     evidence_levels: decision.evidence_levels,
     btc_side_state_type: decision.btc_side_state_type,
     bridge_result: decision.bridge_result,
+    relation_intent_detected: decision.relation_intent_detected,
+    relation_resolution: decision.relation_resolution,
     show_next_question: decision.show_next_question,
     next_precise_question_type: decision.next_question_type,
     next_precise_question_text: decision.next_question_text,
@@ -481,6 +494,10 @@ function Exchange({
       data-primary-authority={turn.primary_authority ?? "UNBOUND"}
       data-btc-side-state-type={turn.btc_side_state_type ?? "NOT_APPLICABLE"}
       data-bridge-result={turn.bridge_result ?? "NOT_APPLICABLE"}
+      data-relation-intent-detected={turn.relation_intent_detected ? "true" : "false"}
+      data-relation-resolution={turn.relation_resolution ?? "SINGLE_DOMAIN"}
+      data-clarification-target={turn.clarification_target ?? "NOT_APPLICABLE"}
+      data-anti-loop-blocked={turn.anti_loop_blocked ? "true" : "false"}
       data-show-next-question={turn.show_next_question ? "true" : "false"}
       data-show-clarification={turn.show_clarification ? "true" : "false"}
     >
@@ -667,7 +684,16 @@ export function BtcCosmographerDialogue(props: Props) {
     window.location.assign(`/crypto-astro/btc/live?lang=${locale}`);
   };
 
-  return <main className="liveDialoguePage" lang={locale} data-live-dialogue="btc-cosmographer-route-v0-1" data-session-local="true">
+  return <main
+    className="liveDialoguePage"
+    lang={locale}
+    data-live-dialogue="btc-cosmographer-route-v0-1"
+    data-session-local="true"
+    data-deployment-head-sha={deploymentSourceSha ?? "UNAVAILABLE"}
+    data-runtime-schema={BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA}
+    data-session-schema={BTC_DIALOGUE_SESSION_SCHEMA}
+    data-cache-policy="no-store"
+  >
     <header className="liveDialogueTopbar">
       <a className="liveBackLink" href={`/crypto-astro/btc?lang=${locale}`}>← {ru ? "BTC Field" : "BTC Field"}</a>
       <div className="liveIdentity"><FieldAnchorGlyph className="liveIdentityGlyph"/><span>Market Cosmographer</span></div>

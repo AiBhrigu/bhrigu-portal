@@ -45,6 +45,7 @@ export type BtcEvidenceNavigationRuntimeDecision = {
   evidence_levels: BtcEvidenceLevel[];
   btc_side_state_type: BtcSideStateType | null;
   bridge_result: BtcBridgeResult | null;
+  relation_intent_detected: boolean;
   relation_resolution: BtcRelationResolution;
   clarification_target: BtcClarificationTarget | null;
   clarification_text: string | null;
@@ -121,7 +122,8 @@ const BTC_REFERENCE = /\bbtc\b|\bbitcoin\b|бит(?:коин|койн|окин|�
 const SNAPSHOT_REFERENCE = /snapshot|снимок|памят|previous checkpoint|delta|дельт/i;
 const PROTOCOL_REFERENCE = /halving|халвинг|protocol|протокол|block height|высот.*блок|supply|эмисси|consensus|консенсус/i;
 const MARKET_REFERENCE = /market|рынок|liquid|ликвид|structure|структур|regime|режим|dominance|доминир|volatil|волатиль/i;
-const RELATION_OPERATOR = /impact|influence|affect|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влияни|связ|совпал|корреляц|сравн|между|подтверж/i;
+const RELATION_OPERATOR = /impact|influence|affect|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влияни|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|одновремен[а-яё]*/i;
+const GENERIC_PLANET_POSITION = /(?:текущ[а-яё]*|сейчас)[^?!.]{0,48}положен[а-яё]*[^?!.]{0,24}планет[а-яё]*/i;
 const UNRESOLVED_PRONOUN = /^(?:it|this|that|them|what about it|and this|это|этот|эта|они|а это|и это|там)\b/i;
 const RELATION_OBJECT_PRONOUN = /\b(?:it|this|that|them|это|этот|эта|они|там)\b/i;
 const TEMPORAL_LANGUAGE = /when|period|window|date|day|month|year|когда|период|окно|дата|день|месяц|год/i;
@@ -130,6 +132,10 @@ const UNSUPPORTED_ASSET = /\beth\b|ethereum|эфириум|\bsol\b|solana|сол
 
 function unique<T>(values: T[]): T[] {
   return Array.from(new Set(values));
+}
+
+export function detectBtcRelationIntent(rawQuestion: string): boolean {
+  return RELATION_OPERATOR.test(rawQuestion.trim());
 }
 
 function hasAstroObject(
@@ -183,7 +189,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   retainedAstroMemory: BtcRetainedAstroRelationMemory | null = null,
 ): BtcRelationIntentResolution<T> {
   const question = rawQuestion.trim();
-  if (!RELATION_OPERATOR.test(question)) {
+  if (!detectBtcRelationIntent(question)) {
     return {
       route,
       relation_resolution: "SINGLE_DOMAIN",
@@ -254,7 +260,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
 function clarificationTarget(route: BtcCosmographerRoute, relationResolution: BtcRelationResolution): BtcClarificationTarget {
   const question = route.normalized_question;
   if (UNSUPPORTED_ASSET.test(question) && !BTC_REFERENCE.test(question)) return "ASSET";
-  if (relationResolution === "SECOND_DOMAIN_UNRESOLVED" || RELATION_OPERATOR.test(question)) return "RELATION_OBJECT";
+  if (relationResolution === "SECOND_DOMAIN_UNRESOLVED" || detectBtcRelationIntent(question)) return "RELATION_OBJECT";
   if (TEMPORAL_LANGUAGE.test(question) && !route.time_range) return "PERIOD";
   return "SUBJECT";
 }
@@ -359,6 +365,8 @@ export function buildBtcEvidenceNavigationRuntimeDecision(
 ): BtcEvidenceNavigationRuntimeDecision {
   const authority = AUTHORITY_BY_DOMAIN[route.domain];
   const bridge = bridgeResult(route, answer, source);
+  const relationIntentDetected = detectBtcRelationIntent(route.raw_question || route.normalized_question);
+  const genericPlanetSubject = GENERIC_PLANET_POSITION.test(route.normalized_question);
   const outOfScope = OUT_OF_SCOPE_TRADING.test(route.normalized_question);
   const genuinelyAmbiguous = route.context_relation === "GENUINELY_AMBIGUOUS" ||
     route.domain === "unsupported" ||
@@ -372,6 +380,9 @@ export function buildBtcEvidenceNavigationRuntimeDecision(
   if (outOfScope) {
     routeDisposition = "STOP";
     stopReason = "OUT_OF_SCOPE";
+  } else if (genericPlanetSubject) {
+    routeDisposition = "CLARIFY";
+    target = "SUBJECT";
   } else if (relationResolution === "SECOND_DOMAIN_UNRESOLVED" || answer.answer_state === "CLARIFICATION" || genuinelyAmbiguous) {
     routeDisposition = "CLARIFY";
     target = clarificationTarget(route, relationResolution);
@@ -417,6 +428,7 @@ export function buildBtcEvidenceNavigationRuntimeDecision(
       ? btcSideStateType ?? "MARKET"
       : null,
     bridge_result: bridge,
+    relation_intent_detected: relationIntentDetected,
     relation_resolution: relationResolution,
     clarification_target: target,
     clarification_text: clarification,
