@@ -10,6 +10,7 @@ on:
     paths:
       - .github/workflows/btc-evidence-navigation-runtime-apply.yml
       - scripts/apply-btc-evidence-navigation-runtime-v0-1.py
+      - scripts/repair-btc-evidence-navigation-relation-operator-v0-1.py
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
       - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
 
@@ -35,12 +36,15 @@ jobs:
           git merge-base --is-ancestor e07da6f6d216d28621b8592ecf8c066b05897ba9 HEAD
 
       - name: Apply accepted runtime contract
-        run: python3 scripts/apply-btc-evidence-navigation-runtime-v0-1.py
+        run: |
+          python3 scripts/apply-btc-evidence-navigation-runtime-v0-1.py
+          python3 scripts/repair-btc-evidence-navigation-relation-operator-v0-1.py
 
-      - name: Remove one-shot helper
+      - name: Remove one-shot helpers
         run: |
           rm .github/workflows/btc-evidence-navigation-runtime-apply.yml
           rm scripts/apply-btc-evidence-navigation-runtime-v0-1.py
+          rm scripts/repair-btc-evidence-navigation-relation-operator-v0-1.py
 
       - name: Verify exact nine-file product scope
         shell: bash
@@ -101,10 +105,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
         run: |
-          final_sha="$(git rev-parse HEAD)"
           python3 - <<'PY'
-          import json, os, urllib.request
-          sha = os.popen('git rev-parse HEAD').read().strip()
+          import json, os, subprocess, urllib.request
+          sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
           request = urllib.request.Request(
               f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/statuses/{sha}",
               data=json.dumps({
