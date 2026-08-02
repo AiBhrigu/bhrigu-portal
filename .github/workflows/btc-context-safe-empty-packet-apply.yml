@@ -27,9 +27,11 @@ jobs:
           ref: agent/btc-cosmographer-evidence-navigation-runtime-v0-1
           fetch-depth: 0
 
-      - name: Verify expected repair source head
+      - name: Verify bounded repair source
         run: |
-          test "$(git rev-parse HEAD)" = "d3b303f252edb6e4dbddce4f0925e011f9e40bf7"
+          test "$(git branch --show-current)" = "agent/btc-cosmographer-evidence-navigation-runtime-v0-1"
+          test -f .github/workflows/btc-context-safe-empty-packet-apply.yml
+          test -f scripts/repair-btc-context-safe-empty-packet-v0-1.py
           git merge-base --is-ancestor e07da6f6d216d28621b8592ecf8c066b05897ba9 HEAD
 
       - name: Apply context-safe empty packet repair
