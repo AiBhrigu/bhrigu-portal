@@ -52,6 +52,13 @@ def run_entry(driver, suffix):
     check(f"entry_no_overflow_{suffix}", no_overflow(driver))
     family = font_family(driver, ".heroProductCopy h1").lower()
     check(f"entry_non_mono_voice_{suffix}", "mono" not in family and "consolas" not in family, family)
+    body = driver.find_element(By.TAG_NAME, "body").text
+    check(
+        f"entry_no_public_deployment_debug_{suffix}",
+        "Deployment source" not in body and "Источник публикации" not in body,
+    )
+    snapshot_height = driver.find_element(By.CSS_SELECTOR, ".snapshotTruthStrip").rect["height"]
+    check(f"entry_compact_snapshot_{suffix}", snapshot_height < 150, snapshot_height)
     driver.save_screenshot(str(OUT / f"entry-{suffix}.png"))
 
 def run_live(driver, suffix):
