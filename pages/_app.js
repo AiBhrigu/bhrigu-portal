@@ -97,7 +97,7 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
-  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '' : path);
+  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '/' : path);
 
 
   return (
