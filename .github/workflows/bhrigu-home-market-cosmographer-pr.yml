@@ -235,6 +235,10 @@ jobs:
               )
               check("primary_cta_destination_200", "BTC Field Read" in driver.find_element(By.TAG_NAME, "body").text)
 
+              driver.get(f"{base}/?lang=en")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.ID, "home-title").is_displayed()
+              )
               scripts = driver.find_elements(By.CSS_SELECTOR, "script[type='application/ld+json']")
               graph = []
               for script in scripts:
