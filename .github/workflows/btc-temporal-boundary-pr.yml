@@ -6,8 +6,11 @@ on:
       - "lib/btc-public-snapshot-composer.ts"
       - "lib/btc-market-envelope.ts"
       - "lib/btc-public-language-contract.ts"
+      - "lib/btc-cosmographer-route-graph.ts"
+      - "lib/btc-cosmographer-answer.ts"
       - "components/btc/BtcQuestionMembrane.tsx"
       - "components/btc/BtcLiveDialogue.tsx"
+      - "components/btc/BtcCosmographerDialogue.tsx"
       - "pages/crypto-astro/btc.tsx"
       - "pages/crypto-astro/btc/live.tsx"
       - ".github/workflows/btc-temporal-boundary-pr.yml"
@@ -19,8 +22,13 @@ jobs:
   temporal-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 18
+    env:
+      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -92,7 +100,7 @@ jobs:
             report['checks']['invalid_calendar_date_rejected']=invalid['failure_visible']
             report['checks']['invalid_calendar_date_message']='real UTC date in YYYY-MM-DD format' in invalid['body']
             report['checks']['memory_answer_visible']=memory['answer_visible'] and not memory['failure_visible']
-            report['checks']['trading_reframe_preserved']=trading['answer_visible'] and 'No forecast or trading signal' in trading['body']
+            report['checks']['trading_reframe_preserved']=trading['answer_visible'] and 'Not financial advice or a trading signal' in trading['body']
             report['checks']['one_composer_only']=len(driver.find_elements(By.CSS_SELECTOR,'textarea[name="q"]'))==1
             report['checks']['analytics_dashboard_absent']=sum(len(driver.find_elements(By.CSS_SELECTOR,s)) for s in ('.phiPlane','.metricRibbon','.readingZone','.memoryAxis'))==0
             report['checks']['freshness_language_24h']='72-hour' not in '\n'.join(Path(p).read_text() for p in ('lib/btc-public-snapshot-composer.ts','lib/btc-market-envelope.ts','lib/btc-public-language-contract.ts'))

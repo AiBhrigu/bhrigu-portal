@@ -3,19 +3,18 @@ name: BTC Public Live Multi-Body Projection
 on:
   pull_request:
     paths:
-      - .github/workflows/btc-public-live-multi-body-projection-apply.yml
+      - .github/scripts/verify-btc-public-acceptance-scope.py
       - .github/workflows/btc-public-live-multi-body-projection-pr.yml
-      - .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
       - components/btc/BtcCosmographerDialogue.tsx
-      - docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md
+      - lib/btc-cosmographer-answer.ts
       - lib/btc-cosmographer-public-multi-body-projection.ts
-      - lib/btc-live-dialogue-session.ts
+      - lib/btc-cosmographer-route-graph.ts
       - lib/btc-live-dialogue-style.ts
+      - lib/btc-public-astro-evidence.ts
       - pages/crypto-astro/btc/live.tsx
-      - scripts/apply-btc-public-live-multi-body-projection.py
+      - scripts/run-btc-cosmographer-semantic-route-fixture.mjs
       - scripts/verify-btc-public-live-copy-canon.mjs
       - scripts/verify-btc-public-live-multi-body-projection.mjs
-      - scripts/verify-btc-public-live-visual-information-acceptance.py
   workflow_dispatch:
 
 permissions:
@@ -31,6 +30,8 @@ jobs:
     timeout-minutes: 45
     env:
       BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
     steps:
       - name: Checkout exact head
@@ -39,86 +40,8 @@ jobs:
           ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Verify isolated, combined, or integrated exact scope
-        if: github.event_name == 'pull_request'
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import subprocess
-
-          base = "${{ github.event.pull_request.base.sha }}"
-          head = "${{ github.event.pull_request.head.sha }}"
-          changed = set(
-              subprocess.check_output(
-                  ["git", "diff", "--name-only", base, head],
-                  text=True,
-              ).splitlines()
-          )
-          semantic_scope = {
-              ".github/workflows/btc-free-question-live-dialogue-pr.yml",
-              "components/btc/BtcCosmographerDialogue.tsx",
-              "data/btc_public_astro_evidence_v0_1.json",
-              "lib/btc-cosmographer-answer.ts",
-              "lib/btc-cosmographer-route-graph.ts",
-              "lib/btc-live-dialogue-session.ts",
-              "lib/btc-protocol-evidence.ts",
-              "lib/btc-public-astro-evidence.ts",
-              "pages/crypto-astro/btc/live.tsx",
-              "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
-              "scripts/verify-btc-cosmographer-route-surface.py",
-          }
-          local_scope = {
-              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
-              ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
-              "lib/btc-cosmographer-multi-body-astro-rc.ts",
-              "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
-              "pages/crypto-astro/btc/local-rc.tsx",
-              "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
-              "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
-              "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
-              "scripts/verify-btc-cosmographer-local-rc-usability.py",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
-          }
-          projection_scope = {
-              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
-              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
-              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
-              "components/btc/BtcCosmographerDialogue.tsx",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
-              "lib/btc-cosmographer-public-multi-body-projection.ts",
-              "lib/btc-live-dialogue-session.ts",
-              "lib/btc-live-dialogue-style.ts",
-              "pages/crypto-astro/btc/live.tsx",
-              "scripts/apply-btc-public-live-multi-body-projection.py",
-              "scripts/verify-btc-public-live-copy-canon.mjs",
-              "scripts/verify-btc-public-live-multi-body-projection.mjs",
-              "scripts/verify-btc-public-live-visual-information-acceptance.py",
-          }
-          combined_scope = projection_scope | local_scope
-          integrated_scope = semantic_scope | combined_scope
-          if changed == projection_scope:
-              status = "PASS_PUBLIC_PROJECTION_ISOLATED_13_FILE_SCOPE"
-          elif changed == combined_scope:
-              status = "PASS_PUBLIC_PROJECTION_COMBINED_25_FILE_SCOPE"
-          elif changed == integrated_scope:
-              status = "PASS_PUBLIC_PROJECTION_INTEGRATED_33_FILE_SCOPE"
-          else:
-              if semantic_scope & changed:
-                  expected = integrated_scope
-              elif local_scope & changed:
-                  expected = combined_scope
-              else:
-                  expected = projection_scope
-              raise SystemExit(
-                  "scope mismatch: "
-                  f"unexpected={sorted(changed - expected)}, "
-                  f"missing={sorted(expected - changed)}, "
-                  f"actual_count={len(changed)}"
-              )
-          print({"status": status, "changed": sorted(changed)})
-          PY
+      - name: Verify exact public acceptance scope
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
 
       - name: Set up Node 20
         uses: actions/setup-node@v4
@@ -154,7 +77,7 @@ jobs:
           cat /tmp/btc-public-projection.log
           exit 1
 
-      - name: Verify six-state public projection
+      - name: Verify public projection states
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
         run: node scripts/verify-btc-public-live-multi-body-projection.mjs
@@ -172,5 +95,6 @@ jobs:
           path: |
             artifacts/btc-public-live-multi-body-projection-report.json
             artifacts/btc-public-live-copy-canon-report.json
+            /tmp/btc-public-projection.log
           if-no-files-found: warn
           retention-days: 30

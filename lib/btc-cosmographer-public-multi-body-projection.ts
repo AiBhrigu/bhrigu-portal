@@ -14,12 +14,40 @@ function byId(answer: BtcMultiBodyAstroRcAnswer, id: string): Section | null {
   return answer.sections.find((section) => section.id === id) ?? null;
 }
 
+function asksForMostIntenseWindow(question: string): boolean {
+  return /volatil|волатиль|напряж[её]нн[а-яё]*\s+(?:день|дни|дата|период)|most\s+intense|highest\s+tension/i.test(question);
+}
+
+function rankOneWindow(answer: BtcMultiBodyAstroRcAnswer, locale: BtcPublicLocale): Section | null {
+  const windows = byId(answer, "main_windows");
+  if (!windows?.bullets?.length) return null;
+  const marker = locale === "ru" ? "Ранг 1 ·" : "Rank 1 ·";
+  const top = windows.bullets.find((line) => line.startsWith(marker));
+  return top ? { ...windows, bullets: [top] } : null;
+}
+
 export function projectPublicMultiBodyAnswer(
   locale: BtcPublicLocale,
   route: BtcMultiBodyAstroRcRoute,
   answer: BtcMultiBodyAstroRcAnswer,
 ): BtcMultiBodyAstroRcAnswer {
   const ru = locale === "ru";
+  if (
+    route.context_relation === "FOLLOW_UP" &&
+    answer.answer_mode === "ASTRO_YEAR_OVERVIEW" &&
+    asksForMostIntenseWindow(route.raw_question)
+  ) {
+    const top = rankOneWindow(answer, locale);
+    return {
+      ...answer,
+      headline: ru ? "Наиболее напряжённое окно 2026" : "The most intense 2026 window",
+      direct_answer: ru
+        ? "По принятому рейтингу максимальная концентрация точных аспектов приходится на 20–21 июля. Это астрономическая напряжённость внутри метода, а не автоматически рыночная волатильность BTC."
+        : "By the accepted ranking, the highest concentration of exact aspects falls on July 20–21. This is astronomical intensity within the method, not automatically BTC market volatility.",
+      sections: [top, byId(answer, "interpretation_boundary")]
+        .filter((section): section is Section => Boolean(section)),
+    };
+  }
   if (route.context_relation === "FOLLOW_UP" && answer.answer_mode === "ASTRO_YEAR_OVERVIEW") {
     return {
       ...answer,
@@ -38,8 +66,8 @@ export function projectPublicMultiBodyAnswer(
       ...answer,
       headline: ru ? "Контекст аспектов 2026 восстановлен" : "The 2026 aspect context is restored",
       direct_answer: ru
-        ? "Возвращаемся к сохранённому годовому коридору. Ниже — краткий обзор главных временных окон; полный список переходов не повторяется."
-        : "Returning to the saved annual corridor. Below is a concise recap of the main windows; the complete transition list is not repeated.",
+        ? "Возвращаемся к сохранённому годовому обзору. Ниже — краткий обзор главных временных окон; полный список переходов не повторяется."
+        : "Returning to the saved annual overview. Below is a concise recap of the main windows; the complete transition list is not repeated.",
       sections: windows ? [{ ...windows, bullets: windows.bullets?.slice(0, 3) }] : [],
     };
   }

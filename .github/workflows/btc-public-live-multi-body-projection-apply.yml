@@ -29,12 +29,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - name: Enforce accepted direct or integrated ancestry
+      - name: Enforce accepted direct, integrated, or released ancestry
         run: |
           set -euo pipefail
           direct_anchor="75bd42151c02931260e7c9b30fc93a02d54ab763"
           pr101_to_pr100_anchor="293e7d3e4c00a2fead2c8cc53098164ece942d6f"
           pr100_to_pr99_anchor="b40cb1c7e8c3d79073c26c6f23a118dbda324a86"
+          released_master_anchor="bfbb2679f24ac8568ada8a3a542f41dcc867ebf5"
 
           if git merge-base --is-ancestor "$direct_anchor" HEAD; then
             echo "PASS_DIRECT_ACCEPTED_ANCESTRY"
@@ -42,8 +43,10 @@ jobs:
             echo "PASS_PR101_TO_PR100_SQUASH_ANCESTRY"
           elif git merge-base --is-ancestor "$pr100_to_pr99_anchor" HEAD; then
             echo "PASS_PR100_TO_PR99_SQUASH_ANCESTRY"
+          elif git merge-base --is-ancestor "$released_master_anchor" HEAD; then
+            echo "PASS_RELEASED_MASTER_ANCESTRY"
           else
-            echo "No accepted direct or integration anchor is present" >&2
+            echo "No accepted direct, integration, or released anchor is present" >&2
             exit 1
           fi
 

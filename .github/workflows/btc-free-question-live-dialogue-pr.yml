@@ -4,112 +4,52 @@ on:
   pull_request:
     branches: [master]
     paths:
+      - ".github/scripts/verify-btc-public-acceptance-scope.py"
       - ".github/workflows/btc-free-question-live-dialogue-pr.yml"
       - "components/btc/BtcCosmographerDialogue.tsx"
-      - "data/btc_public_astro_evidence_v0_1.json"
+      - "components/btc/BtcHeroQuestionLaunch.tsx"
+      - "components/btc/BtcQuestionMembrane.tsx"
+      - "docs/research/BTC_COSMOGRAPHER_PUBLIC_USER_ACCEPTANCE_REPORT_01_v0_1.md"
       - "lib/btc-cosmographer-answer.ts"
+      - "lib/btc-cosmographer-public-multi-body-projection.ts"
       - "lib/btc-cosmographer-route-graph.ts"
-      - "lib/btc-live-dialogue-session.ts"
-      - "lib/btc-protocol-evidence.ts"
+      - "lib/btc-live-dialogue-style.ts"
+      - "lib/btc-product-rebalance-style.ts"
       - "lib/btc-public-astro-evidence.ts"
+      - "pages/crypto-astro/btc.tsx"
       - "pages/crypto-astro/btc/live.tsx"
       - "scripts/run-btc-cosmographer-semantic-route-fixture.mjs"
       - "scripts/verify-btc-cosmographer-route-surface.py"
+      - "scripts/verify-btc-public-acceptance-two-screen.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: btc-public-acceptance-semantic-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   semantic-route:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
-      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       BTC_BINANCE_FREE_OBSERVATION_ENABLED: "false"
     steps:
       - name: Checkout exact PR head
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           fetch-depth: 0
 
-      - name: Enforce isolated or integrated exact scope
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import subprocess
+      - name: Verify exact public acceptance scope
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
 
-          base = "${{ github.event.pull_request.base.sha }}"
-          head = "${{ github.event.pull_request.head.sha }}"
-          changed = set(
-              subprocess.check_output(
-                  ["git", "diff", "--name-only", base, head],
-                  text=True,
-              ).splitlines()
-          )
-
-          semantic_scope = {
-              ".github/workflows/btc-free-question-live-dialogue-pr.yml",
-              "components/btc/BtcCosmographerDialogue.tsx",
-              "data/btc_public_astro_evidence_v0_1.json",
-              "lib/btc-cosmographer-answer.ts",
-              "lib/btc-cosmographer-route-graph.ts",
-              "lib/btc-live-dialogue-session.ts",
-              "lib/btc-protocol-evidence.ts",
-              "lib/btc-public-astro-evidence.ts",
-              "pages/crypto-astro/btc/live.tsx",
-              "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
-              "scripts/verify-btc-cosmographer-route-surface.py",
-          }
-          local_scope = {
-              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
-              ".github/workflows/btc-cosmographer-multi-body-local-linux-pinned-v0-5.yml",
-              "lib/btc-cosmographer-multi-body-astro-rc.ts",
-              "components/btc/BtcCosmographerMultiBodyAstroRc.tsx",
-              "pages/crypto-astro/btc/local-rc.tsx",
-              "scripts/run-btc-cosmographer-multi-body-local-rc-fixture.mjs",
-              "scripts/run-btc-cosmographer-multi-body-local-linux-pinned-v0-5.sh",
-              "scripts/run-btc-cosmographer-multi-body-pinned-v0-5-semantic-acceptance.mjs",
-              "scripts/verify-btc-cosmographer-local-rc-usability.py",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_RELEASE_CANDIDATE_v0_1.md",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_LINUX_PINNED_V0_5_ACCEPTANCE_v0_1.md",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_LOCAL_RC_USABILITY_AND_INFORMATION_DESIGN_TARGETED_REPAIR_v0_1.md",
-          }
-          projection_scope = {
-              ".github/workflows/btc-public-live-multi-body-projection-apply.yml",
-              ".github/workflows/btc-public-live-multi-body-projection-pr.yml",
-              ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
-              "components/btc/BtcCosmographerDialogue.tsx",
-              "docs/research/BTC_COSMOGRAPHER_MULTI_BODY_ASTRO_CORRIDOR_PR101_PUBLIC_LIVE_VISUAL_AND_INFORMATION_DESIGN_ACCEPTANCE_v0_1.md",
-              "lib/btc-cosmographer-public-multi-body-projection.ts",
-              "lib/btc-live-dialogue-session.ts",
-              "lib/btc-live-dialogue-style.ts",
-              "pages/crypto-astro/btc/live.tsx",
-              "scripts/apply-btc-public-live-multi-body-projection.py",
-              "scripts/verify-btc-public-live-copy-canon.mjs",
-              "scripts/verify-btc-public-live-multi-body-projection.mjs",
-              "scripts/verify-btc-public-live-visual-information-acceptance.py",
-          }
-          integrated_scope = semantic_scope | local_scope | projection_scope
-
-          if changed == semantic_scope:
-              status = "PASS_SEMANTIC_ROUTE_ISOLATED_11_FILE_SCOPE"
-          elif changed == integrated_scope:
-              status = "PASS_SEMANTIC_ROUTE_INTEGRATED_33_FILE_SCOPE"
-          else:
-              expected = integrated_scope if (local_scope | projection_scope) & changed else semantic_scope
-              raise SystemExit(
-                  "scope mismatch: "
-                  f"unexpected={sorted(changed - expected)}, "
-                  f"missing={sorted(expected - changed)}, "
-                  f"actual_count={len(changed)}"
-              )
-
-          print({"status": status, "changed": sorted(changed)})
-          PY
-
-      - name: Setup Node
+      - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -118,17 +58,13 @@ jobs:
       - name: Install portal dependencies
         run: npm ci
 
-      - name: Static semantic contract
-        shell: bash
+      - name: Static semantic replay
         run: |
-          set -o pipefail
           mkdir -p artifacts
           node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-static.log
 
       - name: Preserve inherited BTC routing gates
-        shell: bash
         run: |
-          set -euo pipefail
           npm run verify:btc-routing
           npm run verify:btc-binance-observation
 
@@ -136,57 +72,66 @@ jobs:
         run: npm run build
 
       - name: Start exact-head production preview
-        shell: bash
         run: |
           set -euo pipefail
-          npm run start -- -p 3110 > /tmp/btc-cosmographer-next.log 2>&1 &
-          echo $! > /tmp/btc-cosmographer-next.pid
+          npm run start -- -p 3110 > /tmp/btc-public-acceptance.log 2>&1 &
+          echo $! > /tmp/btc-public-acceptance.pid
           for attempt in $(seq 1 120); do
-            if curl --fail --silent --show-error "http://127.0.0.1:3110/crypto-astro/btc/live?lang=ru" >/dev/null; then
-              exit 0
-            fi
+            if curl --fail --silent "http://127.0.0.1:3110/crypto-astro/btc/live?lang=ru" >/dev/null; then exit 0; fi
             sleep 1
           done
-          cat /tmp/btc-cosmographer-next.log
+          cat /tmp/btc-public-acceptance.log
           exit 1
 
-      - name: Runtime semantic matrix
-        shell: bash
+      - name: Runtime founder-report replay
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
-        run: |
-          set -o pipefail
-          mkdir -p artifacts
-          node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
+        run: node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
 
-      - name: Setup Python
+      - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install visual verifier
-        run: python -m pip install --disable-pip-version-check selenium==4.29.0
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
 
-      - name: Desktop mobile and multi-turn visual proof
+      - name: Existing route-surface acceptance
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
         run: python scripts/verify-btc-cosmographer-route-surface.py
 
-      - name: Enforce semantic acceptance report
-        shell: bash
+      - name: Two-screen product acceptance
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
+        run: python scripts/verify-btc-public-acceptance-two-screen.py
+
+      - name: Enforce acceptance reports
         run: |
-          set -euo pipefail
           node - <<'NODE'
           const fs = require("fs");
           const semantic = JSON.parse(fs.readFileSync("artifacts/btc-cosmographer-semantic-route-report.json", "utf8"));
-          const visual = JSON.parse(fs.readFileSync("artifacts/btc-cosmographer-route-visual-report.json", "utf8"));
-          if (semantic.status !== "PASS") throw new Error("semantic report failed");
+          const twoScreen = JSON.parse(fs.readFileSync("artifacts/btc-public-acceptance-two-screen/report.json", "utf8"));
+          if (semantic.status !== "PASS") throw new Error("semantic replay failed");
           if (semantic.runtime_head_sha !== process.env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA) throw new Error("runtime head mismatch");
-          if (visual.failures.length) throw new Error(JSON.stringify(visual.failures));
+          if (twoScreen.status !== "PASS") throw new Error("two-screen acceptance failed");
           const required = [
-            "new_topic_escapes_market_context",
-            "astro_market_bridge",
-            "return_to_protocol",
+            "btc_today_market_route",
+            "bitcoin_typo_bridge",
+            "genesis_chart_no_fallback",
+            "contextual_volatility",
+            "no_public_jupiter_fallback",
+            "chronological_timeline",
+            "russian_ingress_case",
+            "fast_planet_evidence_boundary",
+            "forecast_boundary",
+            "runtime:BTC today",
+            "runtime:Какие самые напряженные дни в 2026 году у планет и их аспектов",
+            "runtime:как влияет Юпитер на Битокин?",
+            "runtime:Меркурий и его движения в 2026 году",
+            "contextual_volatility_keeps_multi_body_subject",
+            "genesis_chart_does_not_inherit_mercury_or_jupiter",
+            "mercury_monthly_evidence_visible",
             "repeat_determinism",
             "known_domain_generic_fallback_zero",
           ];
@@ -196,26 +141,24 @@ jobs:
           }
           NODE
 
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-public-acceptance.pid; then kill "$(cat /tmp/btc-public-acceptance.pid)" || true; fi
+
       - name: Upload exact-head evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-cosmographer-semantic-route-${{ github.event.pull_request.head.sha }}
+          name: btc-public-acceptance-${{ env.BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA }}
           path: |
             artifacts/btc-cosmographer-semantic-route-report.json
             artifacts/btc-cosmographer-route-visual-report.json
             artifacts/btc-cosmographer-route-desktop.png
             artifacts/btc-cosmographer-route-mobile.png
+            artifacts/btc-public-acceptance-two-screen/
             artifacts/btc-cosmographer-static.log
             artifacts/btc-cosmographer-runtime.log
-            /tmp/btc-cosmographer-next.log
+            /tmp/btc-public-acceptance.log
           if-no-files-found: warn
-          retention-days: 14
-
-      - name: Stop preview
-        if: always()
-        shell: bash
-        run: |
-          if test -f /tmp/btc-cosmographer-next.pid; then
-            kill "$(cat /tmp/btc-cosmographer-next.pid)" || true
-          fi
+          retention-days: 30

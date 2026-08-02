@@ -13,16 +13,22 @@ export function BtcHeroQuestionLaunch({
     <header className="heroQuestionHeader">
       <FieldAnchorGlyph className="heroQuestionGlyph" />
       <div>
-        <p className="eyebrow">{ru ? "Бесплатный диалог" : "Free dialogue"}</p>
-        <h2 id="hero-dialogue-title">{ru ? "Открыть BTC Космографа" : "Open the BTC Cosmographer"}</h2>
+        <p className="eyebrow">{ru ? "BTC Field · первый живой коридор" : "BTC Field · first live corridor"}</p>
+        <h2 id="hero-dialogue-title">{ru ? "Задайте один вопрос о Bitcoin" : "Ask one Bitcoin question"}</h2>
       </div>
     </header>
     <p className="heroQuestionLead">{ru
-      ? "Один вопрос — один ясный ответ, построенный по текущему проверенному BTC snapshot."
-      : "One question. One clear answer grounded in the current verified BTC snapshot."}</p>
-    <a className="heroDialogueCta" href={liveHref}>{ru ? "Начать бесплатный диалог" : "Start free dialogue"}<span aria-hidden="true">→</span></a>
+      ? "Космограф соединяет текущее поле BTC, принятый Snapshot, память изменений и валидированные временные методы в одном доказательном чтении."
+      : "Cosmographer combines the current BTC field, the accepted Snapshot, change memory, and validated temporal methods in one evidence-grounded read."}</p>
+    <div className="heroValuePath" aria-label={ru ? "Путь чтения" : "Reading path"}>
+      <span>{ru ? "Что изменилось" : "What changed"}</span>
+      <span>{ru ? "Почему это важно" : "Why it matters"}</span>
+      <span>{ru ? "Что может произойти дальше" : "What may happen next"}</span>
+      <span>{ru ? "Что изменит чтение" : "What changes the read"}</span>
+    </div>
+    <a className="heroDialogueCta" href={liveHref}>{ru ? "Открыть BTC Field" : "Open BTC Field"}<span aria-hidden="true">→</span></a>
     <p className="heroQuestionBoundary">{ru
-      ? "Без регистрации · Без оплаты · Не прогноз и не торговый сигнал"
-      : "No account · No payment · No forecast or trading signal"}</p>
+      ? "Без регистрации · Без оплаты · Проверенные источники · Не финансовый совет и не торговый сигнал"
+      : "No account · No payment · Verified sources · Not financial advice or a trading signal"}</p>
   </aside>;
 }
