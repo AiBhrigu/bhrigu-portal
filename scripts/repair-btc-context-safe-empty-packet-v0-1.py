@@ -159,7 +159,7 @@ replace_once(
 ''',
     "single-domain regression fixture",
 )
-replace_once(fixture, '    "checks": 30,\n', '    "checks": 34,\n', "fixture check count")
+replace_once(fixture, '    checks: 30,\n', '    checks: 34,\n', "fixture check count")
 
 print({
     "status": "PASS_CONTEXT_SAFE_PACKET_AND_RELATION_PRECEDENCE_REPAIR",
