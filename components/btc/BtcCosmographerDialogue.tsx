@@ -640,7 +640,17 @@ export function BtcCosmographerDialogue(props: Props) {
     ct0: contextTurn.time_start ?? contextTurn.observation_date ?? "",
     ct1: contextTurn.time_end ?? contextTurn.observation_date ?? "",
     cb: contextTurn.source_snapshot_generated_at_utc ?? "",
-  } : null;
+  } : {
+    cc: "",
+    cd: "",
+    cs: "",
+    ci: "",
+    ca: "",
+    cm: "",
+    ct0: "",
+    ct1: "",
+    cb: "",
+  };
   const hasConversation = turns.length > 0;
   const olderTurns = turns.length > 4 ? turns.slice(0, -4) : [];
   const visibleTurns = turns.slice(-4);
@@ -719,7 +729,7 @@ export function BtcCosmographerDialogue(props: Props) {
       <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>
         {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
-        {contextFields && Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
+        {Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         <label>
           <span>{clarificationPrompt ?? (hasConversation
             ? (ru ? "Продолжить или задать новый предмет" : "Continue or introduce a new subject")

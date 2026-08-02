@@ -116,6 +116,7 @@ const PROTOCOL_REFERENCE = /halving|халвинг|protocol|протокол|blo
 const MARKET_REFERENCE = /market|рынок|liquid|ликвид|structure|структур|regime|режим|dominance|доминир|volatil|волатиль/i;
 const RELATION_OPERATOR = /impact|influence|affect|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влияни|связ|совпал|корреляц|сравн|между|подтверж/i;
 const UNRESOLVED_PRONOUN = /^(?:it|this|that|them|what about it|and this|это|этот|эта|они|а это|и это|там)\b/i;
+const RELATION_OBJECT_PRONOUN = /\b(?:it|this|that|them|это|этот|эта|они|там)\b/i;
 const TEMPORAL_LANGUAGE = /when|period|window|date|day|month|year|когда|период|окно|дата|день|месяц|год/i;
 const OUT_OF_SCOPE_TRADING = /buy|sell|long|short|leverage|position size|stop[- ]?loss|take[- ]?profit|allocate|portfolio|купить|продать|лонг|шорт|плечо|стоп[- ]?лосс|тейк[- ]?профит|дол[юя].*портфел/i;
 const UNSUPPORTED_ASSET = /\beth\b|ethereum|эфириум|\bsol\b|solana|солан/i;
@@ -174,12 +175,30 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   }
 
   const astroResolved = hasAstroObject(route, question, packet);
-  const btcSide = explicitBtcSideType(route, question) ?? priorBtcSideType(packet);
-  if (!astroResolved || !btcSide) {
+  const explicitBtcSide = explicitBtcSideType(route, question);
+  const inheritedBtcSide = route.context_relation === "FOLLOW_UP" || route.context_relation === "CROSS_MODULE_BRIDGE"
+    ? priorBtcSideType(packet)
+    : null;
+  const btcSide = explicitBtcSide ?? inheritedBtcSide;
+  if (!astroResolved) {
     return {
       route,
       relation_resolution: "SECOND_DOMAIN_UNRESOLVED",
       btc_side_state_type: btcSide,
+    };
+  }
+  if (!btcSide) {
+    if (RELATION_OBJECT_PRONOUN.test(question)) {
+      return {
+        route,
+        relation_resolution: "SECOND_DOMAIN_UNRESOLVED",
+        btc_side_state_type: null,
+      };
+    }
+    return {
+      route,
+      relation_resolution: "SINGLE_DOMAIN",
+      btc_side_state_type: null,
     };
   }
 

@@ -106,6 +106,42 @@ try {
   assert.equal(relation.route.domain, "astro_btc_bridge");
   assert.equal(relation.route.context_relation, "CROSS_MODULE_BRIDGE");
 
+  const priorProtocolPacket = {
+    schema: "btc_cosmographer_context_v0_1",
+    prior_domain: "bitcoin_protocol",
+    prior_subject: "supply",
+    prior_intents: ["fact"],
+    prior_answer_state: "CONFIRMED",
+    prior_market_question_class: null,
+    prior_time_start: null,
+    prior_time_end: null,
+    prior_snapshot_generated_at_utc: "2026-08-01T18:24:47Z",
+  };
+  const singleDomainAstroRoute = {
+    ...astroRoute,
+    raw_question: "Юпитер как повлиял за 6 месяцев в 2026 году?",
+    normalized_question: "юпитер как повлиял за 6 месяцев в 2026 году?",
+    intents: ["interval_analysis"],
+    context_relation: "NEW_TOPIC",
+    time_range: {
+      start: "2026-01-01",
+      end: "2026-06-30",
+      label: "6 months in 2026",
+      source: "QUESTION",
+    },
+    market_question_class: null,
+    explicit_entities: ["jupiter"],
+  };
+  const singleDomainAstro = applyBtcRelationIntentPrecedence(
+    singleDomainAstroRoute,
+    singleDomainAstroRoute.raw_question,
+    priorProtocolPacket,
+  );
+  assert.equal(singleDomainAstro.relation_resolution, "SINGLE_DOMAIN");
+  assert.equal(singleDomainAstro.btc_side_state_type, null);
+  assert.equal(singleDomainAstro.route.domain, "astromodule");
+  assert.equal(singleDomainAstro.route.context_relation, "NEW_TOPIC");
+
   const unresolvedRelationRoute = {
     ...astroRoute,
     raw_question: "How does Jupiter relate to it?",
@@ -242,7 +278,7 @@ try {
   console.log(JSON.stringify({
     status: "PASS",
     schema: marketDecision.schema,
-    checks: 30,
+    checks: 34,
     route_dispositions: ["CONTINUE", "CLARIFY", "STOP"],
     bridge_results: [
       "MARKET_CONFIRMED",
