@@ -138,7 +138,7 @@ jobs:
               )
               body = driver.find_element(By.TAG_NAME, "body").text
               h1 = driver.find_element(By.ID, "home-title").text
-              category = driver.find_element(By.CSS_SELECTOR, "main .category").text
+              category = driver.find_element(By.XPATH, "//*[normalize-space(text())='AI MARKET INTELLIGENCE AND FORECASTING SYSTEM']").text
               primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-field']")
               secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
               primary_rect = rect("[data-primary-cta='btc-field']")
