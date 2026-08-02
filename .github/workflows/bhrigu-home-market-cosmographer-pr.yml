@@ -142,6 +142,17 @@ jobs:
               primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-field']")
               secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
               primary_rect = rect("[data-primary-cta='btc-field']")
+              primary_center_clear = driver.execute_script(
+                  """
+                  const primary = document.querySelector("[data-primary-cta='btc-field']");
+                  const bounds = primary.getBoundingClientRect();
+                  const top = document.elementFromPoint(
+                    bounds.left + bounds.width / 2,
+                    bounds.top + bounds.height / 2
+                  );
+                  return top === primary || primary.contains(top);
+                  """
+              )
               copy_rect = rect("section[aria-labelledby='home-title'] > div:first-child")
               glyph_rect = rect("section[aria-labelledby='home-title'] > div:last-child")
               positions = driver.execute_script(
@@ -193,6 +204,8 @@ jobs:
               check(f"{name}_primary_cta_target", primary.get_attribute("href").endswith("/crypto-astro/btc?lang=en"))
               check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
               check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
+              check(f"{name}_primary_cta_not_occluded", primary_center_clear)
+              check(f"{name}_no_portal_dock", not driver.find_elements(By.CSS_SELECTOR, "nav[data-pn-root='PORTAL_PREVNEXT_V0_2']"))
               check(f"{name}_one_visible_phi", body.count("Φ") == 1, body.count("Φ"))
               check(f"{name}_ai_identity_once", len(re.findall(r"\bAI\b", body)) == 1)
               check(f"{name}_section_order", all(value is not None for value in positions) and positions == sorted(positions), positions)
