@@ -257,6 +257,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     initialRoute,
     initialQuestion,
     packet,
+    retainedAstroMemory,
   );
   const route = relationResolution.route;
   let snapshot: BtcPublicSnapshot | null = null;

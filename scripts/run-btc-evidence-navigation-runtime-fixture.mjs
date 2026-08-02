@@ -142,6 +142,42 @@ try {
   assert.equal(singleDomainAstro.route.domain, "astromodule");
   assert.equal(singleDomainAstro.route.context_relation, "NEW_TOPIC");
 
+  const retainedAstroMemory = {
+    domain: "astromodule",
+    subject: "planetary_aspects",
+    start: "2026-01-01",
+    end: "2026-12-31",
+  };
+  const liquidityConfirmationRoute = {
+    ...baseRoute,
+    raw_question: "Ликвидность подтверждает?",
+    normalized_question: "ликвидность подтверждает?",
+    domain: "btc_market",
+    subject: "liquidity",
+    intents: ["confirmation"],
+    context_relation: "NEW_TOPIC",
+    market_question_class: "liquidity",
+    capability_id: "btc_market.liquidity",
+    explicit_entities: ["liquidity"],
+  };
+  const retainedBridge = applyBtcRelationIntentPrecedence(
+    liquidityConfirmationRoute,
+    liquidityConfirmationRoute.raw_question,
+    null,
+    retainedAstroMemory,
+  );
+  assert.equal(retainedBridge.relation_resolution, "TWO_DOMAINS_RESOLVED");
+  assert.equal(retainedBridge.btc_side_state_type, "MARKET");
+  assert.equal(retainedBridge.route.domain, "astro_btc_bridge");
+  assert.equal(retainedBridge.route.subject, "planetary_aspects");
+  assert.equal(retainedBridge.route.context_relation, "CROSS_MODULE_BRIDGE");
+  assert.deepEqual(retainedBridge.route.time_range, {
+    start: "2026-01-01",
+    end: "2026-12-31",
+    label: "2026-01-01–2026-12-31",
+    source: "CONTEXT",
+  });
+
   const unresolvedRelationRoute = {
     ...astroRoute,
     raw_question: "How does Jupiter relate to it?",
@@ -257,6 +293,7 @@ try {
   assert.equal(repeated.stop_reason, "REPEATED_ROUTE");
   assert.equal(repeated.anti_loop_blocked, true);
   assert.equal(repeated.show_next_question, false);
+  assert.equal(repeated.context_safe_composer, true);
 
   const tradingRoute = {
     ...baseRoute,
@@ -278,7 +315,7 @@ try {
   console.log(JSON.stringify({
     status: "PASS",
     schema: marketDecision.schema,
-    checks: 34,
+    checks: 41,
     route_dispositions: ["CONTINUE", "CLARIFY", "STOP"],
     bridge_results: [
       "MARKET_CONFIRMED",

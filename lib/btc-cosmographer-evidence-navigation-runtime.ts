@@ -74,6 +74,13 @@ type SourceContext = {
   proof_available: boolean;
 };
 
+export type BtcRetainedAstroRelationMemory = {
+  domain: "astromodule";
+  subject: string;
+  start: string;
+  end: string;
+};
+
 const AUTHORITY_BY_DOMAIN: Record<BtcCosmographerDomain, { authority: string; levels: BtcEvidenceLevel[] }> = {
   bitcoin_protocol: {
     authority: "AUTHORITATIVE_PROTOCOL_SOURCE_OR_ACCEPTED_CHAIN_STATE",
@@ -125,12 +132,18 @@ function unique<T>(values: T[]): T[] {
   return Array.from(new Set(values));
 }
 
-function hasAstroObject(route: BtcCosmographerRoute, question: string, packet: BtcCosmographerContextPacket | null): boolean {
+function hasAstroObject(
+  route: BtcCosmographerRoute,
+  question: string,
+  packet: BtcCosmographerContextPacket | null,
+  retainedAstroMemory: BtcRetainedAstroRelationMemory | null,
+): boolean {
   return route.domain === "astromodule" ||
     route.domain === "astro_btc_bridge" ||
     BODY_REFERENCE.test(question) ||
     packet?.prior_domain === "astromodule" ||
-    packet?.prior_domain === "astro_btc_bridge";
+    packet?.prior_domain === "astro_btc_bridge" ||
+    retainedAstroMemory?.domain === "astromodule";
 }
 
 function btcSideTypeFromDomain(domain: BtcCosmographerDomain): BtcSideStateType | null {
@@ -151,9 +164,14 @@ function priorBtcSideType(packet: BtcCosmographerContextPacket | null): BtcSideS
   return packet ? btcSideTypeFromDomain(packet.prior_domain) : null;
 }
 
-function resolvedAstroSubject(route: BtcCosmographerRoute, packet: BtcCosmographerContextPacket | null): string | null {
+function resolvedAstroSubject(
+  route: BtcCosmographerRoute,
+  packet: BtcCosmographerContextPacket | null,
+  retainedAstroMemory: BtcRetainedAstroRelationMemory | null,
+): string | null {
   if (route.domain === "astromodule" || route.domain === "astro_btc_bridge") return route.subject;
   if (packet?.prior_domain === "astromodule" || packet?.prior_domain === "astro_btc_bridge") return packet.prior_subject;
+  if (retainedAstroMemory?.domain === "astromodule") return retainedAstroMemory.subject;
   const explicitBody = route.explicit_entities.find((value) => !value.startsWith("btc_") && value !== route.market_question_class);
   return explicitBody ?? null;
 }
@@ -162,6 +180,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   route: T,
   rawQuestion: string,
   packet: BtcCosmographerContextPacket | null,
+  retainedAstroMemory: BtcRetainedAstroRelationMemory | null = null,
 ): BtcRelationIntentResolution<T> {
   const question = rawQuestion.trim();
   if (!RELATION_OPERATOR.test(question)) {
@@ -174,7 +193,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
     };
   }
 
-  const astroResolved = hasAstroObject(route, question, packet);
+  const astroResolved = hasAstroObject(route, question, packet, retainedAstroMemory);
   const explicitBtcSide = explicitBtcSideType(route, question);
   const inheritedBtcSide = route.context_relation === "FOLLOW_UP" || route.context_relation === "CROSS_MODULE_BRIDGE"
     ? priorBtcSideType(packet)
@@ -202,14 +221,23 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
     };
   }
 
-  const subject = resolvedAstroSubject(route, packet) ?? route.subject;
+  const subject = resolvedAstroSubject(route, packet, retainedAstroMemory) ?? route.subject;
   const marketQuestionClass = route.market_question_class ?? packet?.prior_market_question_class ?? "general_btc_field";
+  const retainedTimeRange = retainedAstroMemory
+    ? {
+        start: retainedAstroMemory.start,
+        end: retainedAstroMemory.end,
+        label: `${retainedAstroMemory.start}–${retainedAstroMemory.end}`,
+        source: "CONTEXT" as const,
+      }
+    : null;
   const bridgeRoute = {
     ...route,
     domain: "astro_btc_bridge",
     subject,
     intents: unique<BtcCosmographerIntent>([...route.intents, "bridge"]),
     context_relation: "CROSS_MODULE_BRIDGE",
+    time_range: route.time_range ?? retainedTimeRange,
     market_question_class: marketQuestionClass,
     capability_id: `astro_btc_bridge.${subject}`,
     confidence: "HIGH",
@@ -441,7 +469,9 @@ export function applyBtcRuntimeAntiLoop(
     anti_loop_blocked: true,
     valid_route_stop: true,
     stop_reason: "REPEATED_ROUTE",
-    context_safe_composer: false,
+    context_safe_composer: repeatedNext && !repeatedClarification
+      ? decision.context_safe_composer
+      : false,
     render_gate: {
       ...decision.render_gate,
       semantic_repeat: true,

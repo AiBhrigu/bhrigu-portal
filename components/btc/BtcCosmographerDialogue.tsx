@@ -612,18 +612,21 @@ export function BtcCosmographerDialogue(props: Props) {
 
   const latestTurn = turns.at(-1) ?? null;
   const contextSafe = !latestTurn || (
-    latestTurn.route_disposition === "CONTINUE" &&
-    latestTurn.context_safe_composer !== false
+    latestTurn.context_safe_composer !== false &&
+    (
+      latestTurn.route_disposition === "CONTINUE" ||
+      latestTurn.stop_reason === "REPEATED_ROUTE"
+    )
   );
   const clarificationPrompt = latestTurn?.route_disposition === "CLARIFY"
     ? latestTurn.clarification_text ?? (ru ? "Уточните предмет вопроса." : "Clarify the question subject.")
     : null;
   const contextTurn = contextSafe ? latestContextTurn(turns) : null;
-  const retainedAstroTurn = contextSafe ? [...turns].reverse().find((turn) =>
+  const retainedAstroTurn = [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
     (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
     Boolean(turn.time_start && turn.time_end),
-  ) : undefined;
+  );
   const retainedAstroFields = retainedAstroTurn ? {
     rad: "astromodule",
     ras: "planetary_aspects",
