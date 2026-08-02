@@ -1,0 +1,288 @@
+name: BHRIGU Home Market Cosmographer Acceptance
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/bhrigu-home-market-cosmographer-pr.yml"
+      - "components/BhriguPhiHeader.jsx"
+      - "pages/_app.js"
+      - "pages/index.js"
+      - "pages/index.module.css"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  home-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      HOME_ACCEPTANCE_BASE: http://127.0.0.1:3100
+      HOME_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build exact source
+        run: npm run build
+
+      - name: Verify BTC deterministic routing unchanged
+        run: npm run verify:btc-routing
+
+      - name: Start exact-head preview
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run start -- -p 3100 > artifacts/bhrigu-home-preview.log 2>&1 &
+          echo $! > /tmp/bhrigu-home-preview.pid
+          for attempt in {1..45}; do
+            curl --fail --silent "$HOME_ACCEPTANCE_BASE/?lang=en" >/dev/null && exit 0
+            sleep 1
+          done
+          cat artifacts/bhrigu-home-preview.log
+          exit 1
+
+      - name: Install visual driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify desktop mobile semantics and routes
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["HOME_ACCEPTANCE_BASE"].rstrip("/")
+          head_sha = os.environ["HOME_ACCEPTANCE_HEAD_SHA"]
+          artifacts = Path("artifacts")
+          ids = [
+              "market-cosmographer",
+              "product",
+              "outcomes",
+              "btc-field",
+              "question-to-knowledge",
+              "proof",
+              "method",
+              "system-roles",
+              "continuity",
+              "markets",
+              "open-btc-field",
+          ]
+          proof_url = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed"
+          report = {
+              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_1",
+              "head_sha": head_sha,
+              "views": {},
+              "checks": {},
+              "failures": [],
+          }
+
+          options = Options()
+          options.add_argument("--headless=new")
+          options.add_argument("--no-sandbox")
+          options.add_argument("--disable-dev-shm-usage")
+          options.add_argument("--disable-gpu")
+          options.add_argument("--hide-scrollbars")
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+
+          def check(name, value, detail=None):
+              passed = bool(value)
+              report["checks"][name] = passed
+              if not passed:
+                  report["failures"].append(name)
+                  if detail is not None:
+                      report.setdefault("failure_detail", {})[name] = detail
+
+          def rect(selector):
+              return driver.execute_script(
+                  """
+                  const element = document.querySelector(arguments[0]);
+                  if (!element) return null;
+                  const value = element.getBoundingClientRect();
+                  return {
+                    x:value.x,y:value.y,width:value.width,height:value.height,
+                    top:value.top,bottom:value.bottom,right:value.right,left:value.left
+                  };
+                  """,
+                  selector,
+              )
+
+          def run_view(name, width, height):
+              driver.set_window_size(width, height)
+              driver.get(f"{base}/?lang=en")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.ID, "home-title").is_displayed()
+              )
+              body = driver.find_element(By.TAG_NAME, "body").text
+              h1 = driver.find_element(By.ID, "home-title").text
+              category = driver.find_element(By.CSS_SELECTOR, "main .category").text
+              primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-field']")
+              secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
+              primary_rect = rect("[data-primary-cta='btc-field']")
+              copy_rect = rect("section[aria-labelledby='home-title'] > div:first-child")
+              glyph_rect = rect("section[aria-labelledby='home-title'] > div:last-child")
+              positions = driver.execute_script(
+                  """
+                  return arguments[0].map((id) => {
+                    const element = document.getElementById(id);
+                    return element ? element.getBoundingClientRect().top + window.scrollY : null;
+                  });
+                  """,
+                  ids,
+              )
+              no_overflow = driver.execute_script(
+                  "return document.documentElement.scrollWidth <= window.innerWidth + 1"
+              )
+              viewport = driver.execute_script(
+                  "return {width:window.innerWidth,height:window.innerHeight}"
+              )
+              role_text = [
+                  item.text.replace("\n", " ")
+                  for item in driver.find_elements(By.CSS_SELECTOR, "#system-roles dl > div")
+              ]
+              severe = [
+                  entry
+                  for entry in driver.get_log("browser")
+                  if entry.get("level") == "SEVERE"
+                  and "favicon" not in entry.get("message", "").lower()
+              ]
+              screenshot = artifacts / f"bhrigu-home-pr113-{name}.png"
+              driver.save_screenshot(str(screenshot))
+
+              report["views"][name] = {
+                  "viewport": viewport,
+                  "document_width": driver.execute_script(
+                      "return document.documentElement.scrollWidth"
+                  ),
+                  "primary_cta": primary_rect,
+                  "copy_rect": copy_rect,
+                  "glyph_rect": glyph_rect,
+                  "screenshot": str(screenshot),
+                  "severe_errors": severe,
+              }
+              check(f"{name}_h1_exact", " ".join(h1.split()) == "Know what changed — and what may happen next.", h1)
+              check(
+                  f"{name}_category_exact",
+                  category == "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
+                  category,
+              )
+              check(f"{name}_market_cosmographer_primary", "MARKET COSMOGRAPHER" in body)
+              check(f"{name}_primary_cta_target", primary.get_attribute("href").endswith("/crypto-astro/btc?lang=en"))
+              check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
+              check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
+              check(f"{name}_one_visible_phi", body.count("Φ") == 1, body.count("Φ"))
+              check(f"{name}_ai_identity_once", len(re.findall(r"\bAI\b", body)) == 1)
+              check(f"{name}_section_order", all(value is not None for value in positions) and positions == sorted(positions), positions)
+              check(f"{name}_no_horizontal_overflow", no_overflow, {"viewport": viewport, "document_width": report["views"][name]["document_width"]})
+              check(f"{name}_no_competing_frey_header", not driver.find_elements(By.CSS_SELECTOR, "header [data-bh='FREY_CTA_PRIMARY_V0_6']"))
+              check(f"{name}_role_contract", role_text == [
+                  "BHRIGU opens public access",
+                  "Frey holds the dialogue",
+                  "Cosmographer owns the reading and forecast",
+                  "ORION protects the research core",
+              ], role_text)
+              check(f"{name}_no_severe_browser_errors", not severe, severe)
+              if name == "desktop":
+                  ratio = copy_rect["width"] / glyph_rect["width"]
+                  report["views"][name]["semantic_ratio"] = ratio
+                  check("desktop_61_8_38_2_composition", 1.55 <= ratio <= 1.68, ratio)
+
+          try:
+              run_view("desktop", 1440, 1100)
+              run_view("mobile", 390, 844)
+
+              driver.get(f"{base}/?lang=ru")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.ID, "home-title").is_displayed()
+              )
+              check(
+                  "ru_primary_cta_target",
+                  driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-field']")
+                  .get_attribute("href")
+                  .endswith("/crypto-astro/btc?lang=ru"),
+              )
+              check(
+                  "ru_product_identity",
+                  "MARKET COSMOGRAPHER" in driver.find_element(By.TAG_NAME, "body").text,
+              )
+
+              driver.get(f"{base}/crypto-astro/btc?lang=en")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.CSS_SELECTOR, "main[data-btc-static-proof='true']")
+              )
+              check("primary_cta_destination_200", "BTC Field Read" in driver.find_element(By.TAG_NAME, "body").text)
+
+              scripts = driver.find_elements(By.CSS_SELECTOR, "script[type='application/ld+json']")
+              graph = []
+              for script in scripts:
+                  value = json.loads(script.get_attribute("innerHTML"))
+                  graph.extend(value.get("@graph", []))
+              graph_types = {item.get("@type") for item in graph}
+              check(
+                  "jsonld_graph",
+                  {"Organization", "WebSite", "WebPage", "SoftwareApplication", "BreadcrumbList"}.issubset(graph_types),
+                  sorted(graph_types),
+              )
+
+              driver.get(f"{base}/?lang=en")
+              canonical = driver.find_element(By.CSS_SELECTOR, "link[rel='canonical']").get_attribute("href")
+              check("canonical_exact", canonical == "https://www.bhrigu.io/", canonical)
+
+              try:
+                  urllib.request.urlopen(f"{base}/market-cosmographer", timeout=30)
+                  no_route_status = 200
+              except urllib.error.HTTPError as error:
+                  no_route_status = error.code
+              check("no_market_cosmographer_route", no_route_status == 404, no_route_status)
+          finally:
+              driver.quit()
+
+          report["status"] = "PASS" if not report["failures"] else "FAIL"
+          (artifacts / "bhrigu-home-pr113-visual-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          if report["failures"]:
+              raise SystemExit(f"BHRIGU_HOME_ACCEPTANCE=FAIL {report['failures']}")
+          print("BHRIGU_HOME_ACCEPTANCE=PASS")
+          PY
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/bhrigu-home-preview.pid; then
+            kill "$(cat /tmp/bhrigu-home-preview.pid)" || true
+          fi
+
+      - name: Upload visual acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-home-market-cosmographer-${{ github.event.pull_request.number || github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
