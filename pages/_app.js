@@ -119,7 +119,7 @@ export default function App({ Component, pageProps }) {
 
       <BhriguPhiHeader />
       <Component {...pageProps} />
-      <PrevNextBlock route={router.asPath} />
+      {path !== "/" ? <PrevNextBlock route={router.asPath} /> : null}
     </>
   );
 }
