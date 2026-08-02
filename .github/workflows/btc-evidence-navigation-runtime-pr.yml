@@ -1,5 +1,5 @@
 name: BTC Evidence and Navigation Runtime
-# Trusted exact-head retrigger after context-safe relation repair.
+# Trusted exact-head retrigger after retained Astro and anti-loop context repair.
 
 on:
   pull_request:
