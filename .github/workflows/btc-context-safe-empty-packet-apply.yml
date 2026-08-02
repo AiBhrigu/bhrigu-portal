@@ -101,6 +101,26 @@ jobs:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
         run: python scripts/verify-btc-cosmographer-route-surface.py
 
+      - name: Remove verifier-only artifacts
+        run: |
+          rm -f \
+            artifacts/btc-cosmographer-route-desktop.png \
+            artifacts/btc-cosmographer-route-mobile.png \
+            artifacts/btc-cosmographer-route-visual-report.json
+          mapfile -t actual < <(git diff --name-only e07da6f6d216d28621b8592ecf8c066b05897ba9 | sort)
+          mapfile -t expected < <(printf '%s\n' \
+            .github/scripts/verify-btc-public-acceptance-scope.py \
+            .github/workflows/btc-evidence-navigation-runtime-pr.yml \
+            components/btc/BtcCosmographerDialogue.tsx \
+            lib/btc-cosmographer-answer.ts \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-live-dialogue-session.ts \
+            lib/btc-live-dialogue-style.ts \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/run-btc-evidence-navigation-runtime-fixture.mjs | sort)
+          test "${actual[*]}" = "${expected[*]}"
+          git diff --check
+
       - name: Stop preview
         if: always()
         run: |
