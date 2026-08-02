@@ -188,7 +188,7 @@ function isBitcoinGenesisChartQuestion(question: string): boolean {
 }
 
 function isVolatilityQuestion(question: string): boolean {
-  return /volatil|волатиль|напряж[её]нн[а-яё]*\s+(?:день|дни|дата|период)|сам(?:ый|ая|ые)\s+резк/i.test(question);
+  return /volatil|волатиль|(?:most|highest)\s+(?:intense|tense|high-pressure)\s+(?:dates?|days?|windows?|periods?)|(?:dates?|days?|windows?|periods?)\s+(?:are\s+)?(?:the\s+)?(?:(?:most|highest)\s+)?(?:intense|tense|high-pressure)|напряж[её]нн[а-яё]*\s+(?:день|дн[а-яё]*|дат[а-яё]*|период[а-яё]*|окн[а-яё]*)|(?:день|дн[а-яё]*|дат[а-яё]*|период[а-яё]*|окн[а-яё]*)\s+(?:сам[а-яё]*\s+|наиболее\s+)?напряж[её]нн[а-яё]*|сам(?:ый|ая|ые)\s+резк/i.test(question);
 }
 
 function yearRange(

@@ -34,6 +34,16 @@ BTC_ENTRY_CLEAN_PREMIUM_SCOPE = {
     "pages/crypto-astro/btc.tsx",
 }
 
+BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "components/btc/BtcCosmographerDialogue.tsx",
+    "lib/btc-cosmographer-route-graph.ts",
+    "lib/btc-live-dialogue-style.ts",
+    "lib/btc-public-astro-evidence.ts",
+    "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
+    "scripts/verify-btc-public-live-visual-information-acceptance.py",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -47,6 +57,7 @@ actual = set(subprocess.check_output(
 accepted_scopes = {
     "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE": PUBLIC_ACCEPTANCE_SCOPE,
     "PASS_BTC_ENTRY_CLEAN_PREMIUM_EXACT_4_FILE_SCOPE": BTC_ENTRY_CLEAN_PREMIUM_SCOPE,
+    "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

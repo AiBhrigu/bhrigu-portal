@@ -75,6 +75,23 @@ def wait(driver, selector, timeout=45):
     )
 
 
+def capture_centered(driver, element, path):
+    driver.execute_script(
+        "document.documentElement.style.scrollBehavior='auto';"
+        "document.body.style.scrollBehavior='auto';"
+        "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
+        element,
+    )
+    WebDriverWait(driver, 10).until(
+        lambda instance: instance.execute_script(
+            "const rect=arguments[0].getBoundingClientRect();"
+            "return rect.top >= 0 && rect.bottom <= window.innerHeight;",
+            element,
+        )
+    )
+    driver.save_screenshot(str(path))
+
+
 def current_question(driver):
     return parse_qs(urlparse(driver.current_url).query).get("q", [""])[0]
 
@@ -359,6 +376,92 @@ def run_en_annual(driver, width, height, suffix):
     return state
 
 
+def run_named_body_sequence(driver, width, height, suffix):
+    driver.set_window_size(width, height)
+    driver.get(f"{BASE}/crypto-astro/btc/live?lang=ru")
+    driver.execute_script("sessionStorage.clear(); localStorage.removeItem('btc-live-dialogue');")
+    driver.refresh()
+    wait(driver, ".liveComposer")
+    check(
+        f"named_{suffix}_clean_session_no_active_subject",
+        not driver.find_elements(By.CSS_SELECTOR, "[data-active-context='true']"),
+    )
+
+    annual_question = "Как движется Юпитер в 2026 году?"
+    driver.get(f"{BASE}/crypto-astro/btc/live?lang=ru&q={quote(annual_question)}")
+    wait_state(driver, annual_question, "ASTRO_INTERVAL", "NEW_TOPIC", "jupiter", 1)
+    active = wait(driver, "[data-active-context='true']")
+    composer = wait(driver, "form.liveComposer")
+    active_before_composer = driver.execute_script(
+        "return Boolean(arguments[0].compareDocumentPosition(arguments[1]) & Node.DOCUMENT_POSITION_FOLLOWING);",
+        active,
+        composer,
+    )
+    check(f"named_{suffix}_active_subject_jupiter", active.get_attribute("data-active-subject") == "jupiter")
+    check(f"named_{suffix}_active_period_2026", active.get_attribute("data-active-period") == "2026")
+    check(f"named_{suffix}_active_context_before_composer", active.is_displayed() and active_before_composer)
+
+    fields = newest(driver).find_elements(By.CSS_SELECTOR, "[data-evidence-field]")
+    field_values = {item.get_attribute("data-evidence-field"): item.text for item in fields}
+    check(f"named_{suffix}_three_distinct_evidence_fields", set(field_values) == {
+        "observation-period",
+        "evidence-coverage",
+        "evidence-revision-or-generated-time",
+    }, field_values)
+    check(
+        f"named_{suffix}_evidence_coverage_is_not_freshness",
+        "2026-01-01" in field_values.get("evidence-coverage", "") and
+        "2026-12-31" in field_values.get("evidence-coverage", "") and
+        "проверен" not in field_values.get("evidence-coverage", "").casefold(),
+        field_values,
+    )
+    check(
+        f"named_{suffix}_astro_revision_unavailable_explicit",
+        "не опубликовано" in field_values.get("evidence-revision-or-generated-time", "").casefold(),
+        field_values,
+    )
+
+    follow_question = "Какие самые напряжённые даты?"
+    submit(driver, follow_question, "ASTRO_INTERVAL", "FOLLOW_UP", "jupiter", 2)
+    follow_state = state_record(driver, f"jupiter-ranked-{suffix}")
+    direct = newest(driver).find_element(By.CSS_SELECTOR, "[data-answer-direct='true']")
+    top_windows = newest(driver).find_element(By.CSS_SELECTOR, "[data-semantic-answer-section='top_dates_or_windows']")
+    direct_before_windows = driver.execute_script(
+        "return arguments[0].getBoundingClientRect().top < arguments[1].getBoundingClientRect().top;",
+        direct,
+        top_windows,
+    )
+    check(f"named_{suffix}_ranked_answer_order", direct_before_windows, follow_state["sections"])
+    check(
+        f"named_{suffix}_ranked_sections_exact",
+        follow_state["sections"] == ["top_dates_or_windows", "significance", "conditions_and_limits"],
+        follow_state["sections"],
+    )
+    check(f"named_{suffix}_full_annual_timeline_not_repeated", "timeline" not in follow_state["sections"], follow_state["sections"])
+    active = wait(driver, "[data-active-context='true']")
+    check(f"named_{suffix}_jupiter_context_retained", active.get_attribute("data-active-subject") == "jupiter")
+    boundary_text = newest(driver).text.casefold()
+    check(
+        f"named_{suffix}_proof_and_safety_boundaries_present",
+        "не доказывает влияние" in boundary_text and "торговым сигналом" in boundary_text and
+        bool(newest(driver).find_elements(By.CSS_SELECTOR, "[data-answer-source-boundary='true']")),
+    )
+    visual_metrics(driver, f"jupiter-ranked-{suffix}")
+    active = wait(driver, "[data-active-context='true']")
+    capture_centered(driver, active, ARTIFACTS / f"active-subject-jupiter-{suffix}.png")
+
+    mercury_question = "Теперь Меркурий в 2026 году"
+    submit(driver, mercury_question, "ASTRO_INTERVAL", "NEW_TOPIC", "mercury", 3)
+    active = wait(driver, "[data-active-context='true']")
+    check(f"named_{suffix}_explicit_mercury_override", active.get_attribute("data-active-subject") == "mercury")
+    check(f"named_{suffix}_mercury_period_2026", active.get_attribute("data-active-period") == "2026")
+    check(
+        f"named_{suffix}_no_horizontal_overflow_after_override",
+        driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 1;"),
+    )
+    capture_centered(driver, active, ARTIFACTS / f"active-subject-mercury-{suffix}.png")
+
+
 def write_gallery():
     cards = []
     for image in sorted(ARTIFACTS.glob("*-viewport.png")):
@@ -379,11 +482,13 @@ try:
     drivers.append(desktop_driver)
     ru_desktop, bridge_desktop = run_ru_sequence(desktop_driver, 1440, 1100, "desktop")
     en_desktop = run_en_annual(desktop_driver, 1440, 1100, "desktop")
+    run_named_body_sequence(desktop_driver, 1440, 1100, "desktop")
 
     mobile_driver = webdriver.Chrome(options=options())
     drivers.append(mobile_driver)
     ru_mobile, bridge_mobile = run_ru_sequence(mobile_driver, 390, 844, "mobile")
     en_mobile = run_en_annual(mobile_driver, 390, 844, "mobile")
+    run_named_body_sequence(mobile_driver, 390, 844, "mobile")
 
     check("ru_en_desktop_section_parity", ru_desktop["sections"] == en_desktop["sections"], f"{ru_desktop['sections']} / {en_desktop['sections']}")
     check("ru_en_mobile_section_parity", ru_mobile["sections"] == en_mobile["sections"], f"{ru_mobile['sections']} / {en_mobile['sections']}")
