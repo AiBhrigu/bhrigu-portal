@@ -75,6 +75,23 @@ def wait(driver, selector, timeout=45):
     )
 
 
+def capture_centered(driver, element, path):
+    driver.execute_script(
+        "document.documentElement.style.scrollBehavior='auto';"
+        "document.body.style.scrollBehavior='auto';"
+        "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
+        element,
+    )
+    WebDriverWait(driver, 10).until(
+        lambda instance: instance.execute_script(
+            "const rect=arguments[0].getBoundingClientRect();"
+            "return rect.top >= 0 && rect.bottom <= window.innerHeight;",
+            element,
+        )
+    )
+    driver.save_screenshot(str(path))
+
+
 def current_question(driver):
     return parse_qs(urlparse(driver.current_url).query).get("q", [""])[0]
 
@@ -431,8 +448,7 @@ def run_named_body_sequence(driver, width, height, suffix):
     )
     visual_metrics(driver, f"jupiter-ranked-{suffix}")
     active = wait(driver, "[data-active-context='true']")
-    driver.execute_script("arguments[0].scrollIntoView({block:'center',inline:'nearest'});", active)
-    driver.save_screenshot(str(ARTIFACTS / f"active-subject-jupiter-{suffix}.png"))
+    capture_centered(driver, active, ARTIFACTS / f"active-subject-jupiter-{suffix}.png")
 
     mercury_question = "Теперь Меркурий в 2026 году"
     submit(driver, mercury_question, "ASTRO_INTERVAL", "NEW_TOPIC", "mercury", 3)
@@ -443,8 +459,7 @@ def run_named_body_sequence(driver, width, height, suffix):
         f"named_{suffix}_no_horizontal_overflow_after_override",
         driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 1;"),
     )
-    driver.execute_script("arguments[0].scrollIntoView({block:'center',inline:'nearest'});", active)
-    driver.save_screenshot(str(ARTIFACTS / f"active-subject-mercury-{suffix}.png"))
+    capture_centered(driver, active, ARTIFACTS / f"active-subject-mercury-{suffix}.png")
 
 
 def write_gallery():
