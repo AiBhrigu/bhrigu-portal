@@ -1,0 +1,152 @@
+name: BTC Context Safe Empty Packet Apply
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/btc-context-safe-empty-packet-apply.yml
+      - scripts/repair-btc-context-safe-empty-packet-v0-1.py
+
+concurrency:
+  group: btc-context-safe-empty-packet-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  repair-and-verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact implementation branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/btc-cosmographer-evidence-navigation-runtime-v0-1
+          fetch-depth: 0
+
+      - name: Verify expected repair source head
+        run: |
+          test "$(git rev-parse HEAD)" = "d3b303f252edb6e4dbddce4f0925e011f9e40bf7"
+          git merge-base --is-ancestor e07da6f6d216d28621b8592ecf8c066b05897ba9 HEAD
+
+      - name: Apply context-safe empty packet repair
+        run: python3 scripts/repair-btc-context-safe-empty-packet-v0-1.py
+
+      - name: Remove one-shot repair helpers
+        run: |
+          rm .github/workflows/btc-context-safe-empty-packet-apply.yml
+          rm scripts/repair-btc-context-safe-empty-packet-v0-1.py
+
+      - name: Verify retained exact nine-file scope
+        shell: bash
+        run: |
+          mapfile -t actual < <(git diff --name-only e07da6f6d216d28621b8592ecf8c066b05897ba9 | sort)
+          mapfile -t expected < <(printf '%s\n' \
+            .github/scripts/verify-btc-public-acceptance-scope.py \
+            .github/workflows/btc-evidence-navigation-runtime-pr.yml \
+            components/btc/BtcCosmographerDialogue.tsx \
+            lib/btc-cosmographer-answer.ts \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-live-dialogue-session.ts \
+            lib/btc-live-dialogue-style.ts \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/run-btc-evidence-navigation-runtime-fixture.mjs | sort)
+          printf 'actual=%s\n' "${actual[*]}"
+          test "${actual[*]}" = "${expected[*]}"
+          git diff --check
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify runtime and inherited routing
+        run: |
+          node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          npm run verify:btc-routing
+
+      - name: Build exact candidate
+        run: npm run build
+
+      - name: Start exact-head preview
+        run: |
+          npm run start -- -p 3110 > /tmp/btc-context-safe-preview.log 2>&1 &
+          echo $! > /tmp/btc-context-safe-preview.pid
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent "http://127.0.0.1:3110/crypto-astro/btc/live?lang=ru" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/btc-context-safe-preview.log
+          exit 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install route-surface verifier
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify inherited route surface
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
+        run: python scripts/verify-btc-cosmographer-route-surface.py
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-context-safe-preview.pid; then
+            kill "$(cat /tmp/btc-context-safe-preview.pid)" || true
+          fi
+
+      - name: Commit exact repair candidate
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Preserve context-safe empty packet geometry"
+
+      - name: Verify permanent scope gate
+        env:
+          BTC_ACCEPTANCE_BASE_SHA: e07da6f6d216d28621b8592ecf8c066b05897ba9
+        run: |
+          export BTC_ACCEPTANCE_HEAD_SHA="$(git rev-parse HEAD)"
+          export GITHUB_EVENT_NAME=pull_request
+          python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
+      - name: Push exact repair candidate
+        run: git push origin HEAD:agent/btc-cosmographer-evidence-navigation-runtime-v0-1
+
+      - name: Bind exact-head repair status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, urllib.request
+          sha = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/statuses/{sha}",
+              data=json.dumps({
+                  "state": "success",
+                  "context": "BTC Context Safe Composer Exact Head",
+                  "description": "Empty packet geometry preserves anti-loop safety and inherited route-surface acceptance",
+              }).encode(),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+              },
+          )
+          with urllib.request.urlopen(request) as response:
+              assert response.status == 201, response.status
+          PY
