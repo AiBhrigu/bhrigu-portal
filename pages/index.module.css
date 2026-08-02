@@ -538,7 +538,32 @@
     grid-template-columns: 1fr;
   }
 
+  .hero {
+    position: relative;
+  }
+
+  .heroCopy {
+    position: relative;
+    z-index: 1;
+  }
+
   .heroGlyph {
+    position: absolute;
+    top: 84px;
+    right: 0;
+    width: 120px;
+    height: 150px;
+    display: flex;
+    overflow: hidden;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+
+  .phiGlyph {
+    font-size: 110px;
+  }
+
+  .glyphLabel {
     display: none;
   }
 
