@@ -1,5 +1,5 @@
 name: BTC Evidence and Navigation Runtime
-# Trusted exact-head retrigger after the one-shot apply commit.
+# Trusted exact-head retrigger after context-safe relation repair.
 
 on:
   pull_request:
