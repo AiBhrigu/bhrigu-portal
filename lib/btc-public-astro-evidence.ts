@@ -46,6 +46,12 @@ type TimelineItem = {
 
 const data = astroEvidence as unknown as PublicAstroEvidence;
 
+export const BTC_PUBLIC_ASTRO_EVIDENCE_META = {
+  coverage_start: data.range.start,
+  coverage_end: data.range.end,
+  revision_or_generated_at_utc: null,
+} as const;
+
 const SIGN_KEYS = [
   "aries", "taurus", "gemini", "cancer", "leo", "virgo",
   "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
@@ -191,6 +197,79 @@ function aspectLines(
     });
 }
 
+function asksForRankedIntensity(question: string): boolean {
+  return /(?:most|highest|ranked|top)\s+(?:intense|tension|dates?|days?|windows?)|(?:intense|tension)\s+(?:dates?|days?|windows?)|сам(?:ые|ая|ый)\s+напряж[её]нн|наиболее\s+напряж[её]нн|рейтинг[а-яё]*\s+(?:дат|дн|окон)|напряж[её]нн[а-яё]*\s+(?:дат|дн|окон|период)/i.test(question);
+}
+
+function rankedBodyAspectLine(
+  locale: BtcPublicLocale,
+  body: string,
+  event: AspectWindow,
+  rank: number,
+): string {
+  const other = event.a === body ? event.b : event.a;
+  const aspect = ASPECT_LABELS[locale][event.angle] ?? `${event.angle}°`;
+  return locale === "ru"
+    ? `Ранг ${rank} · пик ${event.peak} · окно ${event.start}–${event.end}: ${aspect} с ${bodyLabel(locale, other)}; минимальный дневной orb ${event.orb.toFixed(3)}°.`
+    : `Rank ${rank} · peak ${event.peak} · window ${event.start}–${event.end}: ${aspect} to ${bodyLabel(locale, other)}; minimum daily orb ${event.orb.toFixed(3)}°.`;
+}
+
+function rankedBodyIntensityAnswer(
+  locale: BtcPublicLocale,
+  body: string,
+  start: string,
+  end: string,
+): BtcCosmographerAnswerProjection | null {
+  const ranked = data.aspects
+    .filter((event) =>
+      (event.a === body || event.b === body) &&
+      event.end >= start &&
+      event.start <= end)
+    .sort((a, b) => a.orb - b.orb || a.peak.localeCompare(b.peak));
+  if (!ranked.length) return null;
+
+  const label = bodyLabel(locale, body);
+  const top = ranked.slice(0, 5);
+  const first = top[0];
+  const firstOther = first.a === body ? first.b : first.a;
+  const firstAspect = ASPECT_LABELS[locale][first.angle] ?? `${first.angle}°`;
+  return {
+    answer_state: "CONFIRMED",
+    answer_mode: "ASTRO_INTERVAL",
+    headline: locale === "ru"
+      ? `${label}: ранжированные напряжённые даты`
+      : `${label}: ranked high-intensity dates`,
+    direct_answer: locale === "ru"
+      ? `По точности опубликованных аспектов ранг 1 занимает ${first.peak}: ${firstAspect} с ${bodyLabel(locale, firstOther)}, минимальный дневной orb ${first.orb.toFixed(3)}°; доказательное окно ${first.start}–${first.end}.`
+      : `By exactness of the published aspects, rank 1 is ${first.peak}: ${firstAspect} to ${bodyLabel(locale, firstOther)}, minimum daily orb ${first.orb.toFixed(3)}°; evidence window ${first.start}–${first.end}.`,
+    sections: [
+      {
+        id: "top_dates_or_windows",
+        label: locale === "ru" ? "Главные даты и окна — по рейтингу" : "Top dates and windows — ranked",
+        bullets: top.map((event, index) => rankedBodyAspectLine(locale, body, event, index + 1)),
+      },
+      {
+        id: "significance",
+        label: locale === "ru" ? "Почему они значимы" : "Why they are significant",
+        paragraph: locale === "ru"
+          ? "Рейтинг отвечает только на вопрос о точности внутри опубликованного набора: меньший минимальный дневной orb получает более высокий ранг; при равенстве раньше идёт более ранний пик. Близкие пики читаются как временная концентрация, но не как причинный механизм."
+          : "The ranking answers exactness only within the published set: a smaller minimum daily orb receives the higher rank; ties are ordered by the earlier peak. Nearby peaks are read as a timing concentration, not as a causal mechanism.",
+      },
+      {
+        id: "conditions_and_limits",
+        label: locale === "ru" ? "Условия и границы" : "Conditions and limits",
+        paragraph: locale === "ru"
+          ? `Учтены только опубликованные окна ${label} внутри ${start}–${end}. Рейтинг не измеряет волатильность BTC, не доказывает влияние на цену, не является прогнозом или торговым сигналом.`
+          : `Only published ${label} windows within ${start}–${end} are included. The ranking does not measure BTC volatility, prove an effect on price, constitute a forecast, or create a trading signal.`,
+      },
+    ],
+    source_boundary: locale === "ru"
+      ? `Источник: публичный астрономический индекс ${data.schema}; ${data.source.engine} ${data.source.version}; ${data.source.mode}; ${data.source.coordinate}; evidence coverage ${data.range.start}–${data.range.end}.`
+      : `Source: public astronomical index ${data.schema}; ${data.source.engine} ${data.source.version}; ${data.source.mode}; ${data.source.coordinate}; evidence coverage ${data.range.start}–${data.range.end}.`,
+    proof_label: locale === "ru" ? "Астрономические доказательства доступны" : "Astronomical evidence available",
+  };
+}
+
 function monthlyAnchorLines(
   locale: BtcPublicLocale,
   body: string,
@@ -286,6 +365,10 @@ export function buildBtcAstroAnswer(
 
   const start = requested.start < data.range.start ? data.range.start : requested.start;
   const end = requested.end > data.range.end ? data.range.end : requested.end;
+  if (route.context_relation === "FOLLOW_UP" && asksForRankedIntensity(route.raw_question)) {
+    const ranked = rankedBodyIntensityAnswer(locale, body, start, end);
+    if (ranked) return ranked;
+  }
   const startAnchor = closestAnchor(start, body);
   const endAnchor = closestAnchor(end, body);
   if (!startAnchor || !endAnchor) {

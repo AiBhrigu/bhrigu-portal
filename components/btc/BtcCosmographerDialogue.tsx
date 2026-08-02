@@ -50,6 +50,86 @@ function observationDateLabel(locale: BtcPublicLocale, value: string | null): st
   return `${String(day).padStart(2, "0")} ${EN_MONTHS[month - 1]} ${year}`;
 }
 
+function publicSubjectLabel(locale: BtcPublicLocale, subject: string): string {
+  const labels: Record<string, [string, string]> = {
+    sun: ["Солнце", "Sun"],
+    moon: ["Луна", "Moon"],
+    mercury: ["Меркурий", "Mercury"],
+    venus: ["Венера", "Venus"],
+    mars: ["Марс", "Mars"],
+    jupiter: ["Юпитер", "Jupiter"],
+    saturn: ["Сатурн", "Saturn"],
+    uranus: ["Уран", "Uranus"],
+    neptune: ["Нептун", "Neptune"],
+    pluto: ["Плутон", "Pluto"],
+    planetary_aspects: ["Планетарные аспекты", "Planetary aspects"],
+    bitcoin_genesis_chart: ["Карта генезиса Bitcoin", "Bitcoin genesis chart"],
+    btc_gravity: ["Гравитация BTC", "BTC gravity"],
+    market_structure: ["Структура рынка", "Market structure"],
+    liquidity: ["Ликвидность", "Liquidity"],
+    change_memory: ["Память Snapshot", "Snapshot memory"],
+    halving: ["Халвинг", "Halving"],
+    supply: ["Предложение BTC", "BTC supply"],
+  };
+  const value = labels[subject];
+  if (!value) return subject.replaceAll("_", " ");
+  return locale === "ru" ? value[0] : value[1];
+}
+
+function turnPeriodLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
+  if (turn.time_start && turn.time_end) {
+    const startYear = turn.time_start.slice(0, 4);
+    if (turn.time_start === `${startYear}-01-01` && turn.time_end === `${startYear}-12-31`) {
+      return startYear;
+    }
+    return turn.time_start === turn.time_end
+      ? (observationDateLabel(locale, turn.time_start) ?? turn.time_start)
+      : `${turn.time_start} — ${turn.time_end}`;
+  }
+  return observationDateLabel(locale, turn.observation_date) ?? (locale === "ru" ? "не указан" : "not specified");
+}
+
+function contextRelationLabel(locale: BtcPublicLocale, relation: string | null): string {
+  const labels: Record<string, [string, string]> = {
+    NEW_TOPIC: ["Новый предмет", "New subject"],
+    FOLLOW_UP: ["Продолжение", "Follow-up"],
+    CROSS_MODULE_BRIDGE: ["Межмодульное сопоставление", "Cross-module comparison"],
+    RETURN_TO_PREVIOUS_TOPIC: ["Возврат к предмету", "Return to subject"],
+    GENUINELY_AMBIGUOUS: ["Требуется уточнение", "Clarification needed"],
+  };
+  const value = labels[relation ?? "GENUINELY_AMBIGUOUS"] ?? labels.GENUINELY_AMBIGUOUS;
+  return locale === "ru" ? value[0] : value[1];
+}
+
+function evidenceCoverageLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn, domain: string): string {
+  if (domain === "astromodule" || domain === "astro_btc_bridge") {
+    const match = turn.source_boundary?.match(/(20\d{2}-\d{2}-\d{2})\s*[–—]\s*(20\d{2}-\d{2}-\d{2})/);
+    return match ? `${match[1]} — ${match[2]}` : (locale === "ru" ? "Не опубликовано" : "Not published");
+  }
+  if (domain === "btc_market" || domain === "snapshot_memory") {
+    return locale === "ru" ? "Принятый Market Snapshot" : "Accepted Market Snapshot";
+  }
+  return locale === "ru" ? "Заявленная доказательная область" : "Declared evidence lane";
+}
+
+function evidenceRevisionLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn, domain: string): string {
+  if (domain === "astromodule" || domain === "astro_btc_bridge") {
+    const unavailable = locale === "ru"
+      ? "Не опубликовано в принятом астрономическом evidence index"
+      : "Not published in the accepted astronomical evidence index";
+    if (domain === "astro_btc_bridge" && turn.source_snapshot_generated_at_utc) {
+      return locale === "ru"
+        ? `${unavailable}; Market Snapshot создан ${formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc)}`
+        : `${unavailable}; Market Snapshot generated ${formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc)}`;
+    }
+    return unavailable;
+  }
+  if (turn.source_snapshot_generated_at_utc) {
+    return formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc);
+  }
+  return locale === "ru" ? "Не опубликовано" : "Not published";
+}
+
 function legacySectionId(id: string): string {
   if (id === "market_evidence") return "evidence";
   if (id === "market_limit") return "limit";
@@ -359,7 +439,9 @@ function Exchange({
   const subject = turn.route_subject ?? turn.question_class ?? "unknown";
   const questionClass = turn.market_question_class ?? turn.question_class ?? "";
   const facets = (turn.route_intents ?? turn.question_facets).join(",");
-  const observationLabel = observationDateLabel(turn.locale, turn.observation_date);
+  const observationPeriod = turnPeriodLabel(turn.locale, turn);
+  const evidenceCoverage = evidenceCoverageLabel(turn.locale, turn, domain);
+  const evidenceRevision = evidenceRevisionLabel(turn.locale, turn, domain);
   return <div className="dialogueExchange" data-dialogue-turn-id={turn.turn_id}>
     <article className="dialogueTurn userTurn">
       <div className="turnRole">{turn.locale === "ru" ? "Вы" : "You"}</div>
@@ -398,8 +480,20 @@ function Exchange({
           <summary>{turn.locale === "ru" ? "Источники, период и граница" : "Sources, period, and boundary"}</summary>
           <div>
             <span>{publicDomainLabel(turn.locale, domain)}</span>
-            {observationLabel && <span data-observation-date>{observationLabel}</span>}
-            {turn.time_start && turn.time_end && <span>{turn.time_start} — {turn.time_end}</span>}
+            <dl className="answerEvidenceMeta" data-evidence-metadata="distinct-fields">
+              <div data-evidence-field="observation-period" data-evidence-value={observationPeriod}>
+                <dt>{turn.locale === "ru" ? "Период наблюдения" : "Observation period"}</dt>
+                <dd>{observationPeriod}</dd>
+              </div>
+              <div data-evidence-field="evidence-coverage" data-evidence-value={evidenceCoverage}>
+                <dt>{turn.locale === "ru" ? "Покрытие evidence" : "Evidence coverage"}</dt>
+                <dd>{evidenceCoverage}</dd>
+              </div>
+              <div data-evidence-field="evidence-revision-or-generated-time" data-evidence-value={evidenceRevision}>
+                <dt>{turn.locale === "ru" ? "Ревизия / время создания evidence" : "Evidence revision / generated time"}</dt>
+                <dd>{evidenceRevision}</dd>
+              </div>
+            </dl>
             <span>{turn.proof_label ?? (turn.proof_available
               ? (turn.locale === "ru" ? "Доказательства доступны" : "Evidence available")
               : (turn.locale === "ru" ? "Доказательства недоступны" : "Evidence unavailable"))}</span>
@@ -509,7 +603,7 @@ export function BtcCosmographerDialogue(props: Props) {
           : "Ask what changed, why it matters, what may happen next, and which conditions would change the read."}</p>
         <div className="liveTrustLine">
           <span>{sourceState(locale, sourceContext)}</span>
-          {sourceContext.generated_at_utc && <span>{formatBtcUtcTimestamp(locale, sourceContext.generated_at_utc)}</span>}
+          {sourceContext.generated_at_utc && <span data-market-snapshot-generated-at>{ru ? "Market Snapshot создан" : "Market Snapshot generated"} · {formatBtcUtcTimestamp(locale, sourceContext.generated_at_utc)}</span>}
           <span>{ru ? "Источники и границы доступны" : "Sources and boundaries available"}</span>
         </div>
         <div className="liveSessionLine" data-session-memory-note="tab-only">
@@ -541,6 +635,19 @@ export function BtcCosmographerDialogue(props: Props) {
           newestRef={newestRef}
         />)}
       </section>}
+
+      {contextTurn && <div
+        className="activeContextLine"
+        aria-label={ru ? "Активный контекст диалога" : "Active dialogue context"}
+        data-active-context="true"
+        data-active-subject={contextTurn.route_subject ?? contextTurn.question_class ?? "unknown"}
+        data-active-period={turnPeriodLabel(locale, contextTurn)}
+        data-active-context-relation={contextTurn.context_relation ?? "GENUINELY_AMBIGUOUS"}
+      >
+        <span><b>{ru ? "Активный предмет" : "Active subject"}</b> · {publicSubjectLabel(locale, contextTurn.route_subject ?? contextTurn.question_class ?? "unknown")}</span>
+        <span><b>{ru ? "Период" : "Period"}</b> · {turnPeriodLabel(locale, contextTurn)}</span>
+        <span><b>{ru ? "Контекст" : "Context"}</b> · {contextRelationLabel(locale, contextTurn.context_relation)}</span>
+      </div>}
 
       <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>

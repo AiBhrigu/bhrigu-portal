@@ -56,6 +56,19 @@ check("generic_section_renderer", componentSource.includes("sections.map") && co
 check("information_hierarchy", componentSource.includes("answerNextStep") && componentSource.includes("Источники, период и граница") && componentSource.includes("olderTurnsDisclosure"));
 check("compact_context", ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb"].every((field) => componentSource.includes(`${field}:`)));
 check("session_tab_only", sessionSource.includes("window.sessionStorage") && !sessionSource.includes("localStorage") && !sessionSource.includes("indexedDB"));
+check("named_body_followup_directness_projection", [
+  "asksForRankedIntensity",
+  "top_dates_or_windows",
+  "significance",
+  "conditions_and_limits",
+].every((value) => astroSource.includes(value)));
+check("active_subject_ui_projection", componentSource.includes('data-active-context="true"') && componentSource.includes("data-active-subject") && componentSource.includes("data-active-period"));
+check("astro_evidence_labels_are_distinct", [
+  "observation-period",
+  "evidence-coverage",
+  "evidence-revision-or-generated-time",
+].every((value) => componentSource.includes(value)) && astroSource.includes("revision_or_generated_at_utc: null"));
+check("session_storage_contract_unchanged", sessionSource.includes('"bhrigu:btc-free-dialogue:session:v0_1"') && sessionSource.includes("BTC_DIALOGUE_SESSION_MAX_TURNS = 20"));
 check("workflow_scope", ["btc-cosmographer-route-graph.ts", "btc-cosmographer-answer.ts", "btc-public-astro-evidence.ts", "run-btc-cosmographer-semantic-route-fixture.mjs"].every((value) => workflowSource.includes(value)));
 
 const previewBase = process.env.BTC_COSMOGRAPHER_PREVIEW_BASE?.replace(/\/$/, "");
@@ -210,6 +223,70 @@ async function runRuntime(base) {
   } else {
     check("genesis_chart_does_not_inherit_mercury_or_jupiter", false, "Mercury context unavailable");
     check("mercury_monthly_evidence_visible", false, "Mercury context unavailable");
+  }
+
+  try {
+    const clean = await fetch(`${base}/crypto-astro/btc/live?lang=ru`, { headers: { "Cache-Control": "no-cache" } });
+    const cleanHtml = await clean.text();
+    check("clean_session_has_no_active_subject_indicator", !cleanHtml.includes('data-active-context="true"'));
+  } catch (error) {
+    check("clean_session_has_no_active_subject_indicator", false, error instanceof Error ? error.message : String(error));
+  }
+
+  const jupiterAnnual = await safeTransition(
+    "jupiter_annual_context",
+    () => getPage(base, "Как движется Юпитер в 2026 году?"),
+    (result) =>
+      result.domain === "astromodule" &&
+      result.subject === "jupiter" &&
+      result.relation === "NEW_TOPIC" &&
+      result.html.includes('data-active-subject="jupiter"') &&
+      result.html.includes('data-active-period="2026"'),
+  );
+  if (jupiterAnnual) {
+    const rankedJupiter = await safeTransition(
+      "jupiter_followup_ranked_dates_direct_first",
+      () => getPage(base, "Какие самые напряжённые дни?", contextPacket(jupiterAnnual.html)),
+      (result) => {
+        const direct = result.html.indexOf('data-answer-direct="true"');
+        const ranked = result.html.indexOf('data-semantic-answer-section="top_dates_or_windows"');
+        return result.domain === "astromodule" &&
+          result.subject === "jupiter" &&
+          result.relation === "FOLLOW_UP" &&
+          direct >= 0 &&
+          ranked > direct &&
+          result.html.includes('data-semantic-answer-section="significance"') &&
+          result.html.includes('data-semantic-answer-section="conditions_and_limits"') &&
+          !result.html.includes('data-semantic-answer-section="timeline"') &&
+          result.html.includes('data-active-subject="jupiter"') &&
+          result.html.includes('data-active-context-relation="FOLLOW_UP"');
+      },
+    );
+    if (rankedJupiter) {
+      check(
+        "astro_evidence_coverage_and_revision_distinct",
+        rankedJupiter.html.includes('data-evidence-field="observation-period"') &&
+          rankedJupiter.html.includes('data-evidence-field="evidence-coverage"') &&
+          rankedJupiter.html.includes('data-evidence-field="evidence-revision-or-generated-time"') &&
+          rankedJupiter.html.includes("Не опубликовано в принятом астрономическом evidence index"),
+      );
+      await safeTransition(
+        "explicit_mercury_override_updates_active_subject",
+        () => getPage(base, "Теперь Меркурий в 2026 году", contextPacket(rankedJupiter.html)),
+        (result) =>
+          result.subject === "mercury" &&
+          result.relation === "NEW_TOPIC" &&
+          result.html.includes('data-active-subject="mercury"') &&
+          result.html.includes('data-active-period="2026"'),
+      );
+    } else {
+      check("astro_evidence_coverage_and_revision_distinct", false, "Jupiter ranked follow-up unavailable");
+      check("explicit_mercury_override_updates_active_subject", false, "Jupiter ranked follow-up unavailable");
+    }
+  } else {
+    check("jupiter_followup_ranked_dates_direct_first", false, "Jupiter annual context unavailable");
+    check("astro_evidence_coverage_and_revision_distinct", false, "Jupiter annual context unavailable");
+    check("explicit_mercury_override_updates_active_subject", false, "Jupiter annual context unavailable");
   }
 
   const market = await safeTransition(
