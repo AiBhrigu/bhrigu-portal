@@ -4,13 +4,22 @@ on:
   push:
     branches:
       - agent/btc-cosmographer-evidence-navigation-runtime-v0-1
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/btc-evidence-navigation-runtime-apply.yml
+      - scripts/apply-btc-evidence-navigation-runtime-v0-1.py
+      - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
 
 permissions:
   contents: write
+  statuses: write
 
 jobs:
   apply-and-verify:
-    if: github.event.head_commit.message != 'Implement BTC evidence and navigation runtime'
+    if: github.event_name == 'pull_request' || github.event.head_commit.message != 'Implement BTC evidence and navigation runtime'
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
@@ -86,3 +95,31 @@ jobs:
 
       - name: Push exact candidate
         run: git push origin HEAD:agent/btc-cosmographer-evidence-navigation-runtime-v0-1
+
+      - name: Bind exact-head success status
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+        run: |
+          final_sha="$(git rev-parse HEAD)"
+          python3 - <<'PY'
+          import json, os, urllib.request
+          sha = os.popen('git rev-parse HEAD').read().strip()
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/statuses/{sha}",
+              data=json.dumps({
+                  "state": "success",
+                  "context": "BTC Evidence Navigation Runtime Exact Head",
+                  "description": "9-file scope, runtime fixture, inherited routing and production build passed",
+              }).encode(),
+              method="POST",
+              headers={
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "Content-Type": "application/json",
+              },
+          )
+          with urllib.request.urlopen(request) as response:
+              assert response.status == 201, response.status
+          PY
