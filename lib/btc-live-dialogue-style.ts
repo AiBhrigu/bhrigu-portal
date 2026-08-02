@@ -5,8 +5,8 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .liveBackLink,.liveLocaleLink{text-decoration:none}.liveBackLink:hover,.liveLocaleLink:hover{color:var(--t)}
 .liveLocaleLink{justify-self:end;border:1px solid rgba(106,168,255,.28);border-radius:999px;padding:8px 12px}
 .liveIdentity{display:flex;align-items:center;gap:10px;color:var(--t)}.liveIdentityGlyph{width:30px;height:30px}
-.liveDialogueShell{width:min(920px,100%);margin:0 auto;padding:clamp(42px,7vw,82px) 0 0}
-.liveDialogueIntro{display:grid;gap:12px;margin-bottom:clamp(30px,5vw,48px)}
+.liveDialogueShell{width:min(920px,100%);margin:0 auto;padding:clamp(32px,5vw,58px) 0 0}.liveDialogueShell:not(:has(.liveThread)){padding-top:clamp(28px,4vw,44px)}
+.liveDialogueIntro{display:grid;gap:12px;margin-bottom:clamp(24px,3.6vw,34px)}.liveDialogueShell:not(:has(.liveThread)) .liveDialogueIntro{margin-bottom:22px}
 .liveDialogueIntro h1{max-width:780px;margin:0;font-size:clamp(46px,6vw,72px);line-height:.98;letter-spacing:-.055em;text-wrap:balance}
 .liveDialogueIntro>p:not(.eyebrow):not(.liveCompactionNotice){max-width:720px;margin:0;color:var(--t2);font-size:clamp(17px,2vw,21px);line-height:1.55}
 .liveTrustLine{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:8px;color:var(--m);font-size:10px;letter-spacing:.07em;text-transform:uppercase}
@@ -45,21 +45,21 @@ body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePag
 .answerDisclosure{border:0}.answerDisclosure summary{cursor:pointer;color:var(--t);font-weight:600}.answerDisclosure[open] summary{margin-bottom:10px}.answerDisclosure ul{padding-left:19px}
 .answerNextStep{display:grid;gap:5px;margin-top:18px;padding:14px 16px;border:1px solid rgba(143,124,244,.25);border-radius:14px;background:rgba(143,124,244,.055)}
 .answerNextStep span{color:var(--m);font-size:9px;letter-spacing:.09em;text-transform:uppercase}.answerNextStep strong{color:var(--t);font-size:14px;line-height:1.45;font-weight:600}
-.answerSource,.answerSourceHistory{margin-top:18px;padding-top:13px;border-top:1px solid var(--bl);color:var(--m);font-size:11px}
-.answerSource summary,.answerSourceHistory summary{cursor:pointer;color:var(--m);letter-spacing:.04em;text-transform:uppercase}.answerSource>div,.answerSourceHistory>div{display:grid;gap:6px;margin-top:10px}.answerSource span,.answerSourceHistory span{display:block;line-height:1.55;overflow-wrap:anywhere}.answerSource span:nth-child(2),.answerSource span:nth-child(3),.answerSourceHistory span:nth-child(2),.answerSourceHistory span:nth-child(3){font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace}
+.answerSource,.answerSourceHistory{margin-top:18px;padding-top:14px;border-top:1px solid var(--bl);color:var(--t2);font-size:12px}
+.answerSource summary,.answerSourceHistory summary{cursor:pointer;color:var(--t2);letter-spacing:.035em;text-transform:uppercase}.answerSource>div,.answerSourceHistory>div{display:grid;gap:8px;margin-top:11px}.answerSource span,.answerSourceHistory span{display:block;line-height:1.55;overflow-wrap:anywhere}.answerSource span:nth-child(2),.answerSource span:nth-child(3),.answerSourceHistory span:nth-child(2),.answerSourceHistory span:nth-child(3){font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace}
 .sourceChangedNote{margin:18px 0 0;padding:11px 13px;border:1px solid rgba(106,168,255,.22);border-radius:12px;background:rgba(106,168,255,.055);color:var(--t2);font-size:12px;line-height:1.55}
 .dialogueStateFAILURE .turnBody,.dialogueStateCLARIFICATION .turnBody{border-color:rgba(215,134,127,.45)}
 .dialogueStateCLARIFICATION .turnBody:before{background:linear-gradient(90deg,rgba(215,134,127,.8),rgba(210,164,95,.5),transparent)}
 .dialogueStateLIMITED .turnBody,.dialogueStateBOUNDED .turnBody{border-color:rgba(210,164,95,.32)}
 .liveComposer{display:grid;grid-template-columns:minmax(0,1fr);align-items:stretch;gap:12px;padding:20px;border:1px solid rgba(106,168,255,.3);border-radius:20px;background:linear-gradient(145deg,rgba(9,20,35,.95),rgba(5,10,18,.97));box-shadow:0 18px 56px rgba(0,0,0,.24)}
 .liveComposer>label,.liveComposerControls,.liveComposerControls>label,.liveComposerControls>button{min-width:0}
-.liveComposer label{display:grid;gap:8px;color:var(--t2);font-size:12px}.liveComposer textarea{min-height:92px;resize:vertical;background:rgba(2,7,14,.66);font-family:inherit;font-size:16px;line-height:1.5}
+.liveComposer label{display:grid;gap:8px;color:var(--t2);font-size:12px}.liveComposer textarea{min-height:84px;resize:vertical;background:rgba(2,7,14,.66);font-family:inherit;font-size:16px;line-height:1.5}
 .liveComposerControls{display:grid;grid-template-columns:minmax(180px,.38fr) minmax(220px,.62fr);gap:12px;align-items:end}
 .liveComposer button{width:100%;min-height:50px;border-color:rgba(210,164,95,.68);background:linear-gradient(110deg,rgba(210,164,95,.24),rgba(106,168,255,.18));font-family:inherit;font-weight:700}
-.liveComposerAfterAnswer{margin-top:4px}.liveBoundary{max-width:760px;margin:14px auto 0;color:var(--m);font-size:10px;line-height:1.55;letter-spacing:.035em;text-align:center}
+.liveComposerAfterAnswer{margin-top:4px}.liveComposerPrimary{margin-top:0}.liveBoundary{max-width:720px;margin:12px auto 0;color:var(--m);font-size:10px;line-height:1.55;letter-spacing:.03em;text-align:center}
 .dialogueFailure{margin-bottom:20px;padding:16px;border:1px solid rgba(215,134,127,.45);border-radius:14px;background:rgba(215,134,127,.06)}
 @media(max-width:760px){
-.liveDialoguePage{padding-inline:14px}.liveDialogueTopbar{grid-template-columns:1fr auto}.liveIdentity{display:none}.liveDialogueShell{padding-top:30px}.liveDialogueIntro{margin-bottom:24px}.liveDialogueIntro h1{font-size:clamp(38px,12vw,52px)}.liveTrustLine{gap:7px 12px}
+.liveDialoguePage{padding-inline:14px}.liveDialogueTopbar{grid-template-columns:1fr auto}.liveIdentity{display:none}.liveDialogueShell{padding-top:24px}.liveDialogueIntro{margin-bottom:20px}.liveDialogueIntro h1{font-size:clamp(38px,12vw,52px)}.liveTrustLine{gap:7px 12px}
 .liveDialogueShell:has(.liveThread){padding-top:18px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro{gap:6px;margin-bottom:16px}.liveDialogueShell:has(.liveThread) .liveDialogueIntro>.eyebrow,.liveDialogueShell:has(.liveThread) .liveDialogueIntro>p:not(.eyebrow):not(.liveCompactionNotice){display:none}.liveDialogueShell:has(.liveThread) .liveDialogueIntro h1{font-size:30px;line-height:1}.liveDialogueShell:has(.liveThread) .liveTrustLine{margin-top:5px;font-size:8px}
 .liveSessionLine{gap:7px 10px;font-size:8px}.liveSessionLine span+span:before{margin-right:10px}.liveNewConversation{width:100%;margin-left:0}
 .liveThread{gap:24px}.dialogueExchange{gap:11px}.userTurn .turnBody{width:94%;padding:13px 15px}.turnBody{padding:20px 16px;border-radius:17px}.answerHeader h2{font-size:clamp(27px,8.4vw,36px)}.answerLead{margin-top:16px;padding:14px 14px;font-size:17px}.answerNarrative{grid-template-columns:1fr;gap:10px;margin-top:14px}.answerSection{padding:14px}.astroWindowGrid{grid-template-columns:1fr}.astroWindowPrimary{grid-column:auto}.astroWindowCard{grid-template-columns:46px minmax(0,1fr);padding:12px}.liveComposer{padding:16px}.liveComposerControls{grid-template-columns:1fr}.liveBoundary{text-align:left}
