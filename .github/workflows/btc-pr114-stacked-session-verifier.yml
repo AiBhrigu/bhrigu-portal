@@ -1,0 +1,83 @@
+name: BTC PR114 Stacked Session Verifier
+
+on:
+  pull_request:
+    branches:
+      - agent/btc-cosmographer-evidence-navigation-runtime-v0-1
+    paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-pr114-stacked-session-verifier.yml
+      - scripts/verify-btc-cosmographer-route-surface.py
+
+permissions:
+  contents: read
+
+jobs:
+  stacked-session-verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact stacked candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact stacked acceptance scope
+        env:
+          BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify production build
+        env:
+          BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.base.sha }}
+        run: npm run build
+
+      - name: Start exact stacked preview
+        env:
+          BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          npm run start -- -p 3110 > /tmp/btc-pr114-stacked.log 2>&1 &
+          echo $! > /tmp/btc-pr114-stacked.pid
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent 'http://127.0.0.1:3110/crypto-astro/btc/live?lang=ru' >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/btc-pr114-stacked.log
+          exit 1
+
+      - name: Install browser verifier
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify session v0.3 desktop and mobile
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
+        run: python scripts/verify-btc-cosmographer-route-surface.py
+
+      - name: Upload stacked acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-pr114-stacked-session-verifier-${{ github.event.pull_request.head.sha }}
+          path: |
+            artifacts/btc-cosmographer-route-visual-report.json
+            artifacts/btc-cosmographer-route-desktop.png
+            artifacts/btc-cosmographer-route-mobile.png
+            /tmp/btc-pr114-stacked.log
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/btc-pr114-stacked.pid; then kill "$(cat /tmp/btc-pr114-stacked.pid)" || true; fi
