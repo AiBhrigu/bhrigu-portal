@@ -44,13 +44,8 @@ jobs:
 
           runtime = Path('lib/btc-cosmographer-evidence-navigation-runtime.ts')
           runtime_text = runtime.read_text(encoding='utf-8')
-          broad = '''  const explicitProtocolTopic =
-    route.domain === "bitcoin_protocol" &&
-    route.context_relation === "NEW_TOPIC" &&'''
-          narrow = '''  const explicitProtocolTopic =
-    route.domain === "bitcoin_protocol" &&
-    route.subject === "halving" &&
-    route.context_relation === "NEW_TOPIC" &&'''
+          broad = '  const explicitProtocolTopic =\n    route.domain === "bitcoin_protocol" &&\n    route.context_relation === "NEW_TOPIC" &&'
+          narrow = '  const explicitProtocolTopic =\n    route.domain === "bitcoin_protocol" &&\n    route.subject === "halving" &&\n    route.context_relation === "NEW_TOPIC" &&'
           if runtime_text.count(broad) != 1:
               raise SystemExit(f'explicit protocol rule count: {runtime_text.count(broad)}')
           runtime.write_text(runtime_text.replace(broad, narrow, 1), encoding='utf-8')
