@@ -1,0 +1,173 @@
+name: BTC PR114 Post-Merge Public Runtime Final
+
+on:
+  push:
+    branches:
+      - agent/btc-pr114-stacked-session-verifier-v0-3
+    paths:
+      - .github/workflows/btc-pr114-post-merge-public-runtime-final.yml
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: btc-pr114-post-merge-public-runtime-final
+  cancel-in-progress: true
+
+jobs:
+  final-public-runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PUBLIC_BASE: https://www.bhrigu.io
+      EXPECTED_MERGE_SHA: ee686e200a6de11bcbbbefc56e80287f6d8ef3f8
+      CALLBACK_PR: '117'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install browser driver
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Execute final public runtime acceptance
+        id: acceptance
+        run: |
+          python3 - <<'PY'
+          import json, os, time, urllib.request
+          from pathlib import Path
+          from urllib.parse import urlencode
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base=os.environ['PUBLIC_BASE'].rstrip('/')
+          expected=os.environ['EXPECTED_MERGE_SHA']
+          out=Path('artifacts/pr114-post-merge-public-final'); out.mkdir(parents=True,exist_ok=True)
+          key='bhrigu:btc-cosmographer:session:v0_3'
+          old=['bhrigu:btc-free-dialogue:session:v0_1','bhrigu:btc-cosmographer:session:v0_1','bhrigu:btc-cosmographer:session:v0_2']
+
+          def fetch(path):
+            req=urllib.request.Request(base+path,headers={'Cache-Control':'no-cache, no-store, max-age=0','Pragma':'no-cache','User-Agent':'pr114-public-final'})
+            with urllib.request.urlopen(req,timeout=30) as r:
+              return r.status,r.geturl(),{k.lower():v for k,v in r.headers.items()},r.read().decode('utf-8','replace')
+
+          last=None
+          for _ in range(72):
+            last=fetch('/crypto-astro/btc/live?lang=ru')
+            status,url,headers,html=last
+            if status==200 and headers.get('x-btc-deployment-source-sha')==expected and expected in html: break
+            time.sleep(5)
+          else:
+            raise AssertionError({'public_identity':last[2].get('x-btc-deployment-source-sha'),'expected':expected})
+
+          es,eu,eh,entry=fetch('/crypto-astro/btc?lang=ru')
+          assert es==200 and 'Открыть BTC Field' in entry and 'Start free dialogue' not in entry and '/crypto-astro/btc/live?lang=ru' in entry
+          assert headers.get('cache-control','').lower().find('no-store')>=0
+          assert 'btc_cosmographer_evidence_navigation_runtime_v0_1' in html
+          assert 'btc_cosmographer_dialogue_session_v0_3' in html
+
+          def driver(width,height):
+            o=webdriver.ChromeOptions()
+            for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu'): o.add_argument(arg)
+            o.add_argument(f'--window-size={width},{height}')
+            o.set_capability('goog:loggingPrefs',{'browser':'ALL'})
+            d=webdriver.Chrome(options=o); d.set_window_size(width,height); return d
+
+          def wait(d,selector,t=35):
+            return WebDriverWait(d,t).until(lambda x:x.find_element(By.CSS_SELECTOR,selector))
+
+          def severe(d):
+            return [e for e in d.get_log('browser') if e.get('level')=='SEVERE' and not ('favicon.ico' in e.get('message','') and '404' in e.get('message',''))]
+
+          results=[]
+          cases=[('planet','Текущее положение планет?'),('relation','В какое время высота блоков совпадала с наиболее сильными окнами?')]
+          for vp,w,h in [('desktop',1440,1000),('mobile',390,844)]:
+            for name,q in cases:
+              d=driver(w,h)
+              try:
+                d.get(f'{base}/crypto-astro/btc/live?lang=ru&seed={time.time_ns()}')
+                wait(d,'main[data-deployment-head-sha]')
+                d.execute_script('sessionStorage.clear(); localStorage.clear();')
+                query=urlencode({'lang':'ru','q':q,'acceptance':f'{name}-{vp}','nonce':str(time.time_ns())})
+                d.get(f'{base}/crypto-astro/btc/live?{query}')
+                root=wait(d,'main[data-deployment-head-sha]'); turn=wait(d,'article.cosmographerTurn')
+                assert d.current_url.startswith(base+'/crypto-astro/btc/live?')
+                assert root.get_attribute('data-deployment-head-sha')==expected
+                assert root.get_attribute('data-runtime-schema')=='btc_cosmographer_evidence_navigation_runtime_v0_1'
+                assert root.get_attribute('data-session-schema')=='btc_cosmographer_dialogue_session_v0_3'
+                assert root.get_attribute('data-cache-policy')=='no-store'
+                WebDriverWait(d,25).until(lambda x:x.execute_script('return sessionStorage.getItem(arguments[0]);',key) is not None)
+                session=json.loads(d.execute_script('return sessionStorage.getItem(arguments[0]);',key))
+                assert session['schema']=='btc_cosmographer_dialogue_session_v0_3'
+                assert session['source_binding']['deployment_sha']==expected
+                assert len(session['turns'])==1
+                assert all(d.execute_script('return sessionStorage.getItem(arguments[0]);',k) is None for k in old)
+                overflow=d.execute_script('return document.documentElement.scrollWidth > document.documentElement.clientWidth;')
+                errors=severe(d); assert overflow is False and not errors,errors
+                disposition=turn.get_attribute('data-route-disposition'); domain=turn.get_attribute('data-route-domain'); mode=turn.get_attribute('data-answer-mode')
+                record={'viewport':vp,'case':name,'served_head':expected,'session_turns':1,'overflow':False,'severe_browser_errors':0,'route_disposition':disposition,'route_domain':domain,'answer_mode':mode}
+                if name=='planet':
+                  assert disposition=='CLARIFY'
+                  assert turn.get_attribute('data-clarification-target')=='SUBJECT'
+                  assert turn.get_attribute('data-show-next-question')=='false'
+                  assert turn.get_attribute('data-show-clarification')=='true'
+                  assert turn.get_attribute('data-anti-loop-blocked')=='false'
+                  assert mode=='CLARIFICATION' and 'этой планеты' not in turn.text.casefold()
+                  assert not turn.find_elements(By.CSS_SELECTOR,'[data-route-surface="next-precise-question"]')
+                  record.update({'clarification_target':'SUBJECT','self_loop':False})
+                else:
+                  assert turn.get_attribute('data-relation-intent-detected')=='true'
+                  resolution=turn.get_attribute('data-relation-resolution')
+                  bridge=turn.get_attribute('data-bridge-result')
+                  assert resolution in {'SECOND_DOMAIN_UNRESOLVED','TWO_DOMAINS_RESOLVED'}
+                  assert domain=='astro_btc_bridge' or disposition=='CLARIFY' or bridge=='INSUFFICIENT_DUAL_EVIDENCE'
+                  assert not (domain=='bitcoin_protocol' and disposition=='CONTINUE')
+                  assert mode!='PROTOCOL_EXPLAIN' and 'высота блока — это' not in turn.text.casefold()
+                  if disposition=='CLARIFY': assert not turn.find_elements(By.CSS_SELECTOR,'[data-answer-direct="true"]')
+                  record.update({'relation_intent':True,'relation_resolution':resolution,'bridge_result':bridge,'generic_protocol_fallback':False})
+                d.save_screenshot(str(out/f'{vp}-{name}.png')); results.append(record)
+              finally:
+                d.quit()
+
+          report={'status':'PASS_BTC_COSMOGRAPHER_PR_114_AUTHORIZED_MERGE_AND_POST_MERGE_PUBLIC_RUNTIME_ACCEPTANCE','merge_sha':expected,'entry_status':es,'live_status':status,'served_header_sha':headers.get('x-btc-deployment-source-sha'),'cache_control':headers.get('cache-control'),'runtime_schema':'btc_cosmographer_evidence_navigation_runtime_v0_1','session_schema':'btc_cosmographer_dialogue_session_v0_3','desktop_cases':2,'mobile_cases':2,'cases':results}
+          (out/'report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          PY
+
+      - name: Upload final public evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-pr114-post-merge-public-final-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/pr114-post-merge-public-final/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Publish sanitized completion callback
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          OUTCOME: ${{ steps.acceptance.outcome }}
+          ACCEPTANCE_HEAD: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request
+          body='\n'.join([
+            'PR114_POST_MERGE_PUBLIC_RUNTIME_FINAL_V1',
+            f"RUN_ID={os.environ['RUN_ID']}",
+            f"RUN_ATTEMPT={os.environ['RUN_ATTEMPT']}",
+            f"ACCEPTANCE_HEAD={os.environ['ACCEPTANCE_HEAD']}",
+            f"MERGE_SHA={os.environ['EXPECTED_MERGE_SHA']}",
+            f"OUTCOME={os.environ['OUTCOME'].upper()}",
+            f"ARTIFACT=btc-pr114-post-merge-public-final-{os.environ['RUN_ID']}-{os.environ['RUN_ATTEMPT']}",
+          ])
+          url=f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/issues/{os.environ['CALLBACK_PR']}/comments"
+          req=urllib.request.Request(url,data=json.dumps({'body':body}).encode(),method='POST',headers={'Authorization':f"Bearer {os.environ['GH_TOKEN']}",'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json','User-Agent':'pr114-post-merge-public-final'})
+          with urllib.request.urlopen(req,timeout=30) as r: assert r.status==201
+          print('SANITIZED_CALLBACK=PASS')
+          PY
