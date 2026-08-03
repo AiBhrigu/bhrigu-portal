@@ -44,6 +44,11 @@ BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE = {
     "scripts/verify-btc-public-live-visual-information-acceptance.py",
 }
 
+BTC_LEGACY_SESSION_VERIFIER_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "scripts/verify-btc-cosmographer-route-surface.py",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -58,6 +63,7 @@ accepted_scopes = {
     "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE": PUBLIC_ACCEPTANCE_SCOPE,
     "PASS_BTC_ENTRY_CLEAN_PREMIUM_EXACT_4_FILE_SCOPE": BTC_ENTRY_CLEAN_PREMIUM_SCOPE,
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
+    "PASS_BTC_LEGACY_SESSION_VERIFIER_EXACT_2_FILE_SCOPE": BTC_LEGACY_SESSION_VERIFIER_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
