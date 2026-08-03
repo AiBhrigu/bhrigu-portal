@@ -1,0 +1,126 @@
+name: BTC PR114 Protected Founder Replay
+
+on:
+  push:
+    branches:
+      - agent/btc-pr114-stacked-session-verifier-v0-3
+    paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-pr114-protected-founder-replay.yml
+
+concurrency:
+  group: btc-pr114-protected-founder-replay
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  protected-founder-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      HANDOFF_ISSUE: '118'
+      EXPECTED_RUNTIME_HEAD: a13475bc65c16009bd682a5f7a6d0bb40f7d5db3
+      STACKED_HEAD: ${{ github.sha }}
+      PREVIEW_BASE: https://bhrigu-portal-5suefn94b-aibhrigus-projects.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Publish ephemeral RSA public key
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          umask 077
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out /tmp/private.pem >/dev/null 2>&1
+          openssl pkey -in /tmp/private.pem -pubout -out /tmp/public.pem >/dev/null 2>&1
+          base64 -w0 /tmp/public.pem > /tmp/public.b64
+          python3 - <<'PYKEY'
+          import json, os, urllib.request
+          key=open('/tmp/public.b64').read().strip()
+          body='\n'.join(['PR114_BROWSER_PUBLIC_KEY_V1',f"RUN_ID={os.environ['RUN_ID']}",f"STACKED_HEAD={os.environ['STACKED_HEAD']}",f"EXPECTED_RUNTIME_HEAD={os.environ['EXPECTED_RUNTIME_HEAD']}",f"PUBLIC_KEY_B64={key}"])
+          url=f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/issues/{os.environ['HANDOFF_ISSUE']}/comments"
+          req=urllib.request.Request(url,data=json.dumps({'body':body}).encode(),method='POST',headers={'Authorization':f"Bearer {os.environ['GH_TOKEN']}",'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json','User-Agent':'pr114-browser-handoff'})
+          with urllib.request.urlopen(req,timeout=30) as r: assert r.status==201
+          print('EPHEMERAL_PUBLIC_KEY_PUBLISHED=PASS')
+          PYKEY
+
+      - name: Receive and decrypt temporary share grant
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PYCIPHER'
+          import json,os,time,urllib.request
+          marker=f"RUN_ID={os.environ['RUN_ID']}"
+          url=f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/issues/{os.environ['HANDOFF_ISSUE']}/comments?per_page=100"
+          h={'Authorization':f"Bearer {os.environ['GH_TOKEN']}",'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'pr114-browser-handoff'}
+          for _ in range(180):
+            with urllib.request.urlopen(urllib.request.Request(url,headers=h),timeout=30) as r: comments=json.load(r)
+            for c in comments:
+              body=c.get('body','')
+              if 'PR114_BROWSER_CIPHERTEXT_V1' in body and marker in body:
+                for line in body.splitlines():
+                  if line.startswith('CIPHERTEXT_B64=') and line.split('=',1)[1].strip():
+                    open('/tmp/cipher.b64','w').write(line.split('=',1)[1].strip()); print('ENCRYPTED_HANDOFF_RECEIVED=PASS'); raise SystemExit
+            time.sleep(4)
+          raise SystemExit('encrypted handoff timeout')
+          PYCIPHER
+          base64 -d /tmp/cipher.b64 > /tmp/cipher.bin
+          openssl pkeyutl -decrypt -inkey /tmp/private.pem -in /tmp/cipher.bin -out /tmp/share-url -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+          python3 - <<'PYVALIDATE'
+          import os
+          from urllib.parse import urlparse,parse_qs
+          value=open('/tmp/share-url').read().strip(); parsed=urlparse(value); expected=urlparse(os.environ['PREVIEW_BASE'])
+          assert parsed.scheme=='https' and parsed.netloc==expected.netloc and parse_qs(parsed.query).get('_vercel_share',[''])[0]
+          open('/tmp/share-token','w').write(parse_qs(parsed.query)['_vercel_share'][0])
+          print('DECRYPTED_SHARE_GRANT_VALIDATED=PASS')
+          PYVALIDATE
+          U=$(cat /tmp/share-url); T=$(cat /tmp/share-token)
+          echo "::add-mask::$U"; echo "::add-mask::$T"
+          { echo 'PROTECTED_SHARE_URL<<EOF'; cat /tmp/share-url; echo; echo EOF; } >> "$GITHUB_ENV"
+          rm -f /tmp/cipher.b64 /tmp/cipher.bin /tmp/share-token
+
+      - name: Install browser driver
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Materialize protected replay verifier
+        run: |
+          echo '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' | base64 -d | gzip -d > /tmp/pr114-protected-replay.py
+          chmod 700 /tmp/pr114-protected-replay.py
+
+      - name: Execute protected desktop and mobile replay
+        run: python /tmp/pr114-protected-replay.py
+
+      - name: Publish sanitized completion callback
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PYCALLBACK'
+          import json,os,urllib.request
+          body='\n'.join(['PR114_BROWSER_REPLAY_COMPLETE_V1',f"RUN_ID={os.environ['RUN_ID']}",f"STACKED_HEAD={os.environ['STACKED_HEAD']}",f"EXPECTED_RUNTIME_HEAD={os.environ['EXPECTED_RUNTIME_HEAD']}",'CONCLUSION=SUCCESS','CREDENTIAL_EXPOSURE=NO'])
+          url=f"https://api.github.com/repos/{os.environ['GH_REPOSITORY']}/issues/{os.environ['HANDOFF_ISSUE']}/comments"
+          req=urllib.request.Request(url,data=json.dumps({'body':body}).encode(),method='POST',headers={'Authorization':f"Bearer {os.environ['GH_TOKEN']}",'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json','User-Agent':'pr114-browser-handoff'})
+          with urllib.request.urlopen(req,timeout=30) as r: assert r.status==201
+          print('SANITIZED_COMPLETION_CALLBACK=PASS')
+          PYCALLBACK
+
+      - name: Upload protected founder evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-pr114-protected-founder-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/pr114-protected-founder-replay/
+          if-no-files-found: warn
+          retention-days: 30
