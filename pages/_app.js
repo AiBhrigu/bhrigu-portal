@@ -10,8 +10,8 @@ const BASE_URL = "https://www.bhrigu.io";
 
 const ROUTE_META = {
   "/": {
-    "title": "BHRIGU · Frey / ORION",
-    "desc": "Cosmography, signals, and a constrained research interface — built for clarity, trust, and reproducible surfaces."
+    "title": "Market Cosmographer · AI Market Intelligence | BHRIGU",
+    "desc": "Verified market data, field context and explicit forecast conditions combined into one evidence-linked read — starting with Bitcoin."
   },
   "/start": {
     "title": "Start · BHRIGU",
@@ -85,8 +85,8 @@ function buildCanonical(pathname) {
 
 function getMeta(pathname) {
   const hit = ROUTE_META[pathname] || null;
-  const title = (hit && hit.title) ? hit.title : "BHRIGU · Frey / ORION";
-  const desc  = (hit && hit.desc)  ? hit.desc  : "A structural portal for Frey / ORION: cosmography, signals, and carefully constrained research interfaces.";
+  const title = (hit && hit.title) ? hit.title : "BHRIGU";
+  const desc  = (hit && hit.desc)  ? hit.desc  : "BHRIGU public product and research surfaces.";
   const canonical = buildCanonical(pathname);
   return { title, desc, canonical };
 }
@@ -97,7 +97,7 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
-  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '' : path);
+  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '/' : path);
 
 
   return (
@@ -119,7 +119,7 @@ export default function App({ Component, pageProps }) {
 
       <BhriguPhiHeader />
       <Component {...pageProps} />
-      <PrevNextBlock route={router.asPath} />
+      {path !== "/" ? <PrevNextBlock route={router.asPath} /> : null}
     </>
   );
 }
