@@ -1,0 +1,158 @@
+name: BTC PR114 Legacy Session Verifier Acceptance
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/scripts/verify-btc-public-acceptance-scope.py"
+      - ".github/workflows/btc-pr114-legacy-session-verifier-acceptance.yml"
+      - "scripts/verify-btc-cosmographer-route-surface.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-pr114-legacy-session-verifier-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  PR114_EXPECTED_HEAD: a13475bc65c16009bd682a5f7a6d0bb40f7d5db3
+  PR114_REQUIRED_SESSION_SCHEMA: btc_cosmographer_dialogue_session_v0_3
+
+jobs:
+  exact-pr114-verifier-replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - name: Checkout acceptance-only candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify isolated three-file scope
+        env:
+          BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
+      - name: Preserve candidate verifier
+        run: cp scripts/verify-btc-cosmographer-route-surface.py /tmp/verify-btc-cosmographer-route-surface.py
+
+      - name: Checkout exact PR114 head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.PR114_EXPECTED_HEAD }}
+          fetch-depth: 0
+          path: pr114
+
+      - name: Overlay acceptance-only verifier
+        run: cp /tmp/verify-btc-cosmographer-route-surface.py pr114/scripts/verify-btc-cosmographer-route-surface.py
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: pr114/package-lock.json
+
+      - name: Install locked dependencies
+        working-directory: pr114
+        run: npm ci --ignore-scripts
+
+      - name: Verify exact PR114 runtime and production build
+        working-directory: pr114
+        env:
+          BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+        run: |
+          node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          npm run verify:btc-routing
+          npm run build
+
+      - name: Start exact-head production preview
+        working-directory: pr114
+        env:
+          BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+        run: |
+          npm run start -- -p 3114 > /tmp/pr114-session-verifier.log 2>&1 &
+          echo $! > /tmp/pr114-session-verifier.pid
+          for attempt in $(seq 1 120); do
+            if curl --fail --silent "http://127.0.0.1:3114/crypto-astro/btc/live?lang=ru" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/pr114-session-verifier.log
+          exit 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install browser verifier
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Replay v0_3 desktop and mobile session contract
+        working-directory: pr114
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3114
+          BTC_COSMOGRAPHER_REQUIRED_SESSION_SCHEMA: ${{ env.PR114_REQUIRED_SESSION_SCHEMA }}
+          BTC_COSMOGRAPHER_EXPECTED_DEPLOYMENT_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+        run: |
+          python scripts/verify-btc-cosmographer-route-surface.py
+          cp artifacts/btc-cosmographer-route-visual-report.json artifacts/btc-pr114-session-v0-3-pass.json
+          cp artifacts/btc-cosmographer-route-desktop.png artifacts/btc-pr114-session-v0-3-desktop.png
+          cp artifacts/btc-cosmographer-route-mobile.png artifacts/btc-pr114-session-v0-3-mobile.png
+
+      - name: Prove absent session state fails closed
+        working-directory: pr114
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3114
+          BTC_COSMOGRAPHER_REQUIRED_SESSION_SCHEMA: ${{ env.PR114_REQUIRED_SESSION_SCHEMA }}
+          BTC_COSMOGRAPHER_EXPECTED_DEPLOYMENT_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+        run: |
+          cp scripts/verify-btc-cosmographer-route-surface.py /tmp/pr114-verifier-pass.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/verify-btc-cosmographer-route-surface.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              '"key": "bhrigu:btc-cosmographer:session:v0_3"',
+              '"key": "bhrigu:acceptance:missing-session:v0"',
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
+          PY
+          set +e
+          python scripts/verify-btc-cosmographer-route-surface.py
+          verifier_exit=$?
+          set -e
+          test "$verifier_exit" -ne 0
+          cp artifacts/btc-cosmographer-route-visual-report.json artifacts/btc-pr114-session-absent-fail-closed.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("artifacts/btc-pr114-session-absent-fail-closed.json").read_text(encoding="utf-8"))
+          failures = report.get("failures", [])
+          assert any(row.get("check") == "session_storage_present" for row in failures), failures
+          assert not any("NoneType" in str(row.get("detail")) for row in failures), failures
+          print("PASS_SESSION_STATE_ABSENT_FAILS_CLOSED")
+          PY
+          cp /tmp/pr114-verifier-pass.py scripts/verify-btc-cosmographer-route-surface.py
+
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/pr114-session-verifier.pid; then kill "$(cat /tmp/pr114-session-verifier.pid)" || true; fi
+
+      - name: Upload exact-head verifier evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-pr114-legacy-session-verifier-${{ env.PR114_EXPECTED_HEAD }}
+          path: |
+            pr114/artifacts/btc-pr114-session-v0-3-pass.json
+            pr114/artifacts/btc-pr114-session-v0-3-desktop.png
+            pr114/artifacts/btc-pr114-session-v0-3-mobile.png
+            pr114/artifacts/btc-pr114-session-absent-fail-closed.json
+            /tmp/pr114-session-verifier.log
+          if-no-files-found: error
+          retention-days: 30
