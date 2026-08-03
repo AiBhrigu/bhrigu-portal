@@ -1,0 +1,205 @@
+name: BTC Clarification Resolution PR
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/btc-clarification-resolution-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-cosmographer-route-graph.ts
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-clarification-resolution-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact base and six-file scope
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "ee686e200a6de11bcbbbefc56e80287f6d8ef3f8"
+          git diff --name-only ee686e200a6de11bcbbbefc56e80287f6d8ef3f8 HEAD | sort > /tmp/actual
+          cat > /tmp/expected <<'EOF'
+          .github/workflows/btc-clarification-resolution-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          lib/btc-cosmographer-evidence-navigation-runtime.ts
+          lib/btc-cosmographer-route-graph.ts
+          pages/crypto-astro/btc/live.tsx
+          scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          EOF
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify targeted decision runtime
+        run: node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+      - name: Verify inherited BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Start exact-head production server
+        run: |
+          npm start > /tmp/btc-next.log 2>&1 &
+          echo $! > /tmp/btc-next.pid
+          for attempt in $(seq 1 60); do
+            if curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru' >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/btc-next.log
+          exit 1
+
+      - name: Install browser driver client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify real sessionStorage and form-submission chain
+        run: |
+          python3 - <<'PY'
+          import json
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = "http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru"
+          options = webdriver.ChromeOptions()
+          options.add_argument("--headless=new")
+          options.add_argument("--no-sandbox")
+          options.add_argument("--disable-dev-shm-usage")
+          options.add_argument("--window-size=1280,1000")
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 25)
+          checks = []
+
+          def record(name, passed, details=""):
+              checks.append({"name": name, "passed": bool(passed), "details": details})
+              if not passed:
+                  raise AssertionError(f"{name}: {details}")
+
+          def exchanges():
+              return driver.find_elements(By.CSS_SELECTOR, "article[data-route-domain]")
+
+          def latest():
+              wait.until(lambda d: len(exchanges()) > 0)
+              return exchanges()[-1]
+
+          def attr(node, name):
+              return node.get_attribute(name) or ""
+
+          def open_question(question):
+              driver.get(f"{base}&q={quote(question)}")
+              node = latest()
+              wait.until(lambda d: attr(node, "data-route-disposition") != "")
+              return node
+
+          def submit(question):
+              previous = len(exchanges())
+              box = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
+              box.clear()
+              box.send_keys(question)
+              driver.find_element(By.CSS_SELECTOR, 'form.liveComposer button[type="submit"]').click()
+              wait.until(lambda d: len(exchanges()) >= previous + 1)
+              return latest()
+
+          def reset():
+              driver.execute_script("window.sessionStorage.clear()")
+              driver.get(base)
+              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
+
+          try:
+              reset()
+              first = open_question("Текущая позиция Биткоина в каком окне?")
+              record("method_seed_clarifies", attr(first, "data-route-disposition") == "CLARIFY")
+              origin = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'input[name="pof"]')).get_attribute("value")
+              record("pending_origin_present", bool(origin))
+              method = submit("метод")
+              record("method_resolves_domain", attr(method, "data-route-domain") == "methodology", attr(method, "data-route-domain"))
+              record("method_continues", attr(method, "data-route-disposition") == "CONTINUE", attr(method, "data-route-disposition"))
+
+              reset()
+              first = open_question("Текущая позиция Биткоина в каком окне?")
+              record("protocol_seed_clarifies", attr(first, "data-route-disposition") == "CLARIFY")
+              protocol = submit("протокол Bitcoin")
+              record("protocol_resolves_domain", attr(protocol, "data-route-domain") == "bitcoin_protocol", attr(protocol, "data-route-domain"))
+              record("protocol_resolves_subject", attr(protocol, "data-route-subject") == "overview", attr(protocol, "data-route-subject"))
+              record("protocol_continues", attr(protocol, "data-route-disposition") == "CONTINUE", attr(protocol, "data-route-disposition"))
+
+              reset()
+              first = open_question("Текущая позиция Биткоина в каком окне?")
+              record("distinct_seed_clarifies", attr(first, "data-route-disposition") == "CLARIFY")
+              unknown_one = submit("неизвестный предмет один")
+              record("first_unknown_clarifies", attr(unknown_one, "data-route-disposition") == "CLARIFY", attr(unknown_one, "data-route-disposition"))
+              unknown_two = submit("неизвестный предмет два")
+              record("distinct_unknown_not_stopped", attr(unknown_two, "data-route-disposition") == "CLARIFY", attr(unknown_two, "data-route-disposition"))
+              record("distinct_unknown_not_loop", attr(unknown_two, "data-anti-loop-blocked") == "false", attr(unknown_two, "data-anti-loop-blocked"))
+
+              reset()
+              first = open_question("Текущая позиция Биткоина в каком окне?")
+              record("repeat_seed_clarifies", attr(first, "data-route-disposition") == "CLARIFY")
+              repeated = submit("неизвестный предмет")
+              record("first_repeat_clarifies", attr(repeated, "data-route-disposition") == "CLARIFY", attr(repeated, "data-route-disposition"))
+              repeated = submit("неизвестный предмет")
+              record("exact_repeat_stops", attr(repeated, "data-route-disposition") == "STOP", attr(repeated, "data-route-disposition"))
+              record("exact_repeat_loop_flag", attr(repeated, "data-anti-loop-blocked") == "true", attr(repeated, "data-anti-loop-blocked"))
+
+              reset()
+              mars = open_question("Марс и его цикл в 2026 году")
+              record("mars_context_domain", attr(mars, "data-route-domain") == "astromodule", attr(mars, "data-route-domain"))
+              record("mars_context_subject", attr(mars, "data-route-subject") == "mars", attr(mars, "data-route-subject"))
+              halving = submit("Халвинг и его влияние на окна в циклах")
+              record("halving_protocol_domain", attr(halving, "data-route-domain") == "bitcoin_protocol", attr(halving, "data-route-domain"))
+              record("halving_protocol_subject", attr(halving, "data-route-subject") == "halving", attr(halving, "data-route-subject"))
+              record("halving_new_topic", attr(halving, "data-context-relation") == "NEW_TOPIC", attr(halving, "data-context-relation"))
+
+              session = driver.execute_script("return JSON.parse(window.sessionStorage.getItem('bhrigu:btc-cosmographer:session:v0_3'))")
+              record("session_v0_3_present", isinstance(session, dict))
+              record("session_turns_present", len(session.get("turns", [])) >= 2, str(len(session.get("turns", []))))
+          finally:
+              driver.quit()
+
+          report = {
+              "schema": "btc_clarification_resolution_real_chain_v0_1",
+              "status": "PASS" if all(row["passed"] for row in checks) else "FAIL",
+              "checks": checks,
+          }
+          with open("/tmp/btc-clarification-resolution-report.json", "w", encoding="utf-8") as handle:
+              json.dump(report, handle, ensure_ascii=False, indent=2)
+          print(json.dumps(report, ensure_ascii=False))
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          if test -f /tmp/btc-next.pid; then kill "$(cat /tmp/btc-next.pid)" || true; fi
+          if test -f /tmp/btc-next.log; then tail -n 120 /tmp/btc-next.log; fi
+
+      - name: Upload acceptance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-clarification-resolution-${{ github.event.pull_request.head.sha }}
+          path: /tmp/btc-clarification-resolution-report.json
+          if-no-files-found: warn
+          retention-days: 14
