@@ -63,6 +63,7 @@ jobs:
         working-directory: pr114
         env:
           BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+          VERCEL_GIT_COMMIT_SHA: ${{ env.PR114_EXPECTED_HEAD }}
         run: |
           node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
           npm run verify:btc-routing
@@ -72,6 +73,7 @@ jobs:
         working-directory: pr114
         env:
           BTC_COSMOGRAPHER_RUNTIME_HEAD_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+          VERCEL_GIT_COMMIT_SHA: ${{ env.PR114_EXPECTED_HEAD }}
         run: |
           npm run start -- -p 3114 > /tmp/pr114-session-verifier.log 2>&1 &
           echo $! > /tmp/pr114-session-verifier.pid
