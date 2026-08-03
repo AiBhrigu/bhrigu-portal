@@ -124,7 +124,8 @@ jobs:
               textarea = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
               textarea.clear()
               textarea.send_keys(question)
-              driver.find_element(By.CSS_SELECTOR, 'form.liveComposer button[type="submit"]').click()
+              form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+              driver.execute_script("arguments[0].requestSubmit()", form)
               wait.until(lambda _: len(turns()) >= previous + 1)
               return latest()
 
