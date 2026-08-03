@@ -5,18 +5,39 @@ from pathlib import Path
 from urllib.parse import urlencode
 
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 BASE = os.environ.get("BTC_COSMOGRAPHER_PREVIEW_BASE", "http://127.0.0.1:3110").rstrip("/")
-SESSION_KEY = "bhrigu:btc-free-dialogue:session:v0_1"
+REQUIRED_SESSION_SCHEMA = os.environ.get("BTC_COSMOGRAPHER_REQUIRED_SESSION_SCHEMA", "").strip()
+EXPECTED_DEPLOYMENT_SHA = os.environ.get("BTC_COSMOGRAPHER_EXPECTED_DEPLOYMENT_SHA", "").strip()
 CONTEXT_FIELDS = ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb"]
+SESSION_CONTRACTS = {
+    "btc_cosmographer_dialogue_session_v0_2": {
+        "key": "bhrigu:btc-free-dialogue:session:v0_1",
+        "stale_keys": ["bhrigu:btc-cosmographer:session:v0_2"],
+    },
+    "btc_cosmographer_dialogue_session_v0_3": {
+        "key": "bhrigu:btc-cosmographer:session:v0_3",
+        "stale_keys": [
+            "bhrigu:btc-free-dialogue:session:v0_1",
+            "bhrigu:btc-cosmographer:session:v0_1",
+            "bhrigu:btc-cosmographer:session:v0_2",
+        ],
+    },
+}
 
 options = webdriver.ChromeOptions()
 for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
     options.add_argument(argument)
 driver = webdriver.Chrome(options=options)
-report = {"schema": "btc_cosmographer_visual_report_v0_1", "checks": {}, "failures": []}
+report = {
+    "schema": "btc_cosmographer_visual_report_v0_2",
+    "checks": {},
+    "failures": [],
+    "session_contract": None,
+}
 
 
 def mark(name, passed, detail=None):
@@ -74,12 +95,85 @@ def full_screenshot(path):
     Path(path).write_bytes(base64.b64decode(payload["data"]))
 
 
+def resolve_session_contract():
+    schema = driver.execute_script(
+        "const root=document.querySelector('main[data-session-schema]');"
+        "const meta=document.querySelector('meta[name=\"btc-dialogue-session-schema\"]');"
+        "return (root && root.dataset.sessionSchema) || (meta && meta.content) || '';"
+    )
+    if not schema:
+        schema = "btc_cosmographer_dialogue_session_v0_2"
+    supported = schema in SESSION_CONTRACTS
+    mark("session_schema_supported", supported, schema)
+    if REQUIRED_SESSION_SCHEMA:
+        mark("required_session_schema", schema == REQUIRED_SESSION_SCHEMA, {
+            "actual": schema,
+            "required": REQUIRED_SESSION_SCHEMA,
+        })
+    contract = SESSION_CONTRACTS.get(schema)
+    report["session_contract"] = {
+        "schema": schema,
+        "key": contract["key"] if contract else None,
+        "required_schema": REQUIRED_SESSION_SCHEMA or None,
+    }
+    return schema, contract
+
+
+def clear_session(contract):
+    keys = [contract["key"], *contract["stale_keys"]]
+    driver.execute_script(
+        "for (const key of arguments[0]) sessionStorage.removeItem(key);",
+        keys,
+    )
+
+
+def read_session_fail_closed(schema, contract):
+    if contract is None:
+        return None
+    try:
+        stored = WebDriverWait(driver, 30).until(
+            lambda d: d.execute_script(
+                "return sessionStorage.getItem(arguments[0]);",
+                contract["key"],
+            ) or False
+        )
+    except TimeoutException:
+        mark("session_storage_present", False, {"key": contract["key"], "schema": schema})
+        return None
+
+    mark("session_storage_present", True, {"key": contract["key"], "schema": schema})
+    try:
+        session = json.loads(stored)
+    except (TypeError, json.JSONDecodeError) as error:
+        mark("session_json_valid", False, str(error))
+        return None
+    mark("session_json_valid", True)
+    mark("session_schema_matches_runtime", session.get("schema") == schema, {
+        "actual": session.get("schema"),
+        "expected": schema,
+    })
+    return session
+
+
 try:
     Path("artifacts").mkdir(exist_ok=True)
     driver.set_window_size(1440, 1200)
     driver.get(f"{BASE}/crypto-astro/btc/live?lang=ru")
     WebDriverWait(driver, 60).until(lambda d: d.find_element(By.CSS_SELECTOR, "textarea[name='q']"))
-    driver.execute_script("sessionStorage.removeItem(arguments[0])", SESSION_KEY)
+    session_schema, session_contract = resolve_session_contract()
+    if session_contract:
+        clear_session(session_contract)
+
+    if EXPECTED_DEPLOYMENT_SHA:
+        served_head = driver.execute_script(
+            "const root=document.querySelector('main[data-deployment-head-sha]');"
+            "const meta=document.querySelector('meta[name=\"btc-deployment-source-sha\"]');"
+            "return (root && root.dataset.deploymentHeadSha) || (meta && meta.content) || '';"
+        )
+        mark("deployment_sha_matches", served_head == EXPECTED_DEPLOYMENT_SHA, {
+            "actual": served_head,
+            "expected": EXPECTED_DEPLOYMENT_SHA,
+        })
 
     supply = open_question("Какое количество монет BTC?")
     mark("supply_protocol", supply["domain"] == "bitcoin_protocol" and supply["subject"] == "supply", supply)
@@ -102,14 +196,20 @@ try:
     mark("desktop_no_overflow_thread", no_overflow())
     full_screenshot("artifacts/btc-cosmographer-route-desktop.png")
 
-    stored = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY)
-    session = json.loads(stored)
-    mark("session_v0_2", session.get("schema") == "btc_cosmographer_dialogue_session_v0_2")
-    mark("session_four_turns", len(session.get("turns", [])) == 4)
-    mark("session_no_transcript_transport", all("prior_answer_text" not in json.dumps(turn) for turn in session.get("turns", [])))
+    session = read_session_fail_closed(session_schema, session_contract)
+    if session is not None:
+        mark("session_four_turns", len(session.get("turns", [])) == 4)
+        mark("session_no_transcript_transport", all(
+            "prior_answer_text" not in json.dumps(turn)
+            for turn in session.get("turns", [])
+        ))
+    else:
+        mark("session_four_turns", False, "session unavailable")
+        mark("session_no_transcript_transport", False, "session unavailable")
 
     driver.set_window_size(390, 844)
-    driver.execute_script("sessionStorage.removeItem(arguments[0])", SESSION_KEY)
+    if session_contract:
+        clear_session(session_contract)
     mobile = open_question("Юпитер как повлиял за 6 месяцев в 2026 году?")
     mark("mobile_astromodule", mobile["domain"] == "astromodule" and mobile["mode"] == "ASTRO_INTERVAL", mobile)
     mark("mobile_no_overflow", no_overflow())
