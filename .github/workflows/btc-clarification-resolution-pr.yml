@@ -7,6 +7,7 @@ on:
     paths:
       - .github/scripts/verify-btc-public-acceptance-scope.py
       - .github/workflows/btc-clarification-resolution-pr.yml
+      - .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
       - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
       - lib/btc-cosmographer-route-graph.ts
@@ -32,7 +33,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and eight-file scope
+      - name: Verify exact base and nine-file scope
         run: |
           git fetch origin master
           test "$(git merge-base HEAD origin/master)" = "ee686e200a6de11bcbbbefc56e80287f6d8ef3f8"
@@ -40,6 +41,7 @@ jobs:
           cat > /tmp/expected <<'EOF'
           .github/scripts/verify-btc-public-acceptance-scope.py
           .github/workflows/btc-clarification-resolution-pr.yml
+          .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
           components/btc/BtcCosmographerDialogue.tsx
           lib/btc-cosmographer-evidence-navigation-runtime.ts
           lib/btc-cosmographer-route-graph.ts
