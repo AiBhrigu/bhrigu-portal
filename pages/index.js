@@ -7,9 +7,6 @@ const PUBLIC_PROOF_URL =
 
 const COPY = {
   en: {
-    languageLabel: "RU",
-    languageHref: "/?lang=ru",
-    languageAria: "View this page in Russian",
     category: "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
     h1Lead: "Know what changed —",
     h1Close: "and what may happen next.",
@@ -89,9 +86,6 @@ const COPY = {
       "Enter the accepted BTC Field in your language. The evidence boundary remains visible from the first read.",
   },
   ru: {
-    languageLabel: "EN",
-    languageHref: "/?lang=en",
-    languageAria: "Открыть страницу на английском",
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ И ПРОГНОЗНЫХ УСЛОВИЙ",
     h1Lead: "Знайте, что изменилось —",
     h1Close: "и что может произойти дальше.",
@@ -171,18 +165,6 @@ const COPY = {
       "Откройте принятое BTC Field на своём языке. Граница доказательств видна с первого чтения.",
   },
 };
-
-function LanguageLink({ copy }) {
-  return (
-    <Link
-      className={styles.languageLink}
-      href={copy.languageHref}
-      aria-label={copy.languageAria}
-    >
-      {copy.languageLabel}
-    </Link>
-  );
-}
 
 function EditorialList({ items, numbered = false }) {
   return (
@@ -306,10 +288,6 @@ export default function Home({ locale }) {
       >
         <section className={styles.hero} aria-labelledby="home-title">
           <div className={styles.heroCopy}>
-            <div className={styles.heroTopline}>
-              <p className={styles.brand}>BHRIGU</p>
-              <LanguageLink copy={copy} />
-            </div>
             <p className={styles.product}>MARKET COSMOGRAPHER</p>
             <p className={styles.category}>{copy.category}</p>
             <h1 id="home-title">
