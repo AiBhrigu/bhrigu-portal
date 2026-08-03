@@ -32,15 +32,15 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import textwrap
 
           source = Path('.github/workflows/_ops-btc-clarification-repair-v0-1.yml').read_text(encoding='utf-8')
           start = "          python3 - <<'PY'\n"
           end = "\n          PY\n\n      - name: Install and validate"
           if source.count(start) != 1 or source.count(end) != 1:
               raise SystemExit('retained patch block markers are not exact')
-          block = source.split(start, 1)[1].split(end, 1)[0]
-          exec(compile(textwrap.dedent(block), 'btc-clarification-repair', 'exec'))
+          raw = source.split(start, 1)[1].split(end, 1)[0]
+          block = "\n".join(line[10:] if line.startswith("          ") else line for line in raw.splitlines())
+          exec(compile(block, 'btc-clarification-repair', 'exec'))
           PY
 
       - name: Install locked dependencies
