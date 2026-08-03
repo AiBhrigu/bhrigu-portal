@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -90,6 +91,14 @@ try {
     detectBtcRelationIntent,
   } = runtime;
 
+  const pageSource = readFileSync("pages/crypto-astro/btc/live.tsx", "utf8");
+  const componentSource = readFileSync("components/btc/BtcCosmographerDialogue.tsx", "utf8");
+  const routeSource = readFileSync("lib/btc-cosmographer-route-graph.ts", "utf8");
+  assert.match(pageSource, /parsePendingClarification/);
+  assert.match(pageSource, /resolvePendingClarificationQuestion/);
+  assert.match(componentSource, /name="pof"|pendingClarificationFields/);
+  assert.ok(routeSource.includes("протокол\\s+(?:btc|bitcoin|биткоин)"));
+
   const astroRoute = {
     ...baseRoute,
     raw_question: "How does Jupiter relate to BTC market structure?",
@@ -115,6 +124,92 @@ try {
     "Высота блоков и окна были одновременными",
   ];
   russianRelationForms.forEach((question) => assert.equal(detectBtcRelationIntent(question), true));
+
+  const retainedMarsMemory = {
+    domain: "astromodule",
+    subject: "mars",
+    start: "2026-01-01",
+    end: "2026-12-31",
+  };
+  const priorMarsPacket = {
+    schema: "btc_cosmographer_context_v0_1",
+    prior_domain: "astromodule",
+    prior_subject: "mars",
+    prior_intents: ["interval_analysis"],
+    prior_answer_state: "CONFIRMED",
+    prior_market_question_class: null,
+    prior_time_start: "2026-01-01",
+    prior_time_end: "2026-12-31",
+    prior_snapshot_generated_at_utc: null,
+  };
+  const explicitHalvingRoute = {
+    ...baseRoute,
+    locale: "ru",
+    raw_question: "Халвинг и его влияние на окна в циклах",
+    normalized_question: "халвинг и его влияние на окна в циклах",
+    domain: "bitcoin_protocol",
+    subject: "halving",
+    intents: ["explain", "bridge"],
+    context_relation: "NEW_TOPIC",
+    time_range: null,
+    market_question_class: null,
+    capability_id: "bitcoin_protocol.halving",
+    explicit_entities: ["halving"],
+  };
+  const explicitHalving = applyBtcRelationIntentPrecedence(
+    explicitHalvingRoute,
+    explicitHalvingRoute.raw_question,
+    priorMarsPacket,
+    retainedMarsMemory,
+  );
+  assert.equal(explicitHalving.route.domain, "bitcoin_protocol");
+  assert.equal(explicitHalving.route.subject, "halving");
+  assert.equal(explicitHalving.relation_resolution, "SINGLE_DOMAIN");
+
+  const ambiguousAnswer = {
+    ...baseAnswer,
+    answer_state: "CLARIFICATION",
+    answer_mode: "CLARIFICATION",
+    direct_answer: "Clarification is required.",
+  };
+  const ambiguousOne = {
+    ...baseRoute,
+    raw_question: "неизвестный предмет один",
+    normalized_question: "неизвестный предмет один",
+    domain: "unsupported",
+    subject: "unknown",
+    intents: ["fact"],
+    context_relation: "GENUINELY_AMBIGUOUS",
+    market_question_class: null,
+    capability_id: "unsupported.unknown",
+    confidence: "LOW",
+    explicit_entities: [],
+  };
+  const ambiguousTwo = {
+    ...ambiguousOne,
+    raw_question: "неизвестный предмет два",
+    normalized_question: "неизвестный предмет два",
+  };
+  const clarificationOne = buildBtcEvidenceNavigationRuntimeDecision(
+    "ru", ambiguousOne, ambiguousAnswer, sourceAvailable, "SINGLE_DOMAIN", null, "origin-test",
+  );
+  const clarificationTwo = buildBtcEvidenceNavigationRuntimeDecision(
+    "ru", ambiguousTwo, ambiguousAnswer, sourceAvailable, "SINGLE_DOMAIN", null, "origin-test",
+  );
+  assert.notEqual(clarificationOne.clarification_fingerprint, clarificationTwo.clarification_fingerprint);
+  const distinctResolution = applyBtcRuntimeAntiLoop(
+    clarificationTwo,
+    [],
+    [clarificationOne.clarification_fingerprint],
+  );
+  assert.equal(distinctResolution.route_disposition, "CLARIFY");
+  const exactRepeat = applyBtcRuntimeAntiLoop(
+    clarificationOne,
+    [],
+    [clarificationOne.clarification_fingerprint],
+  );
+  assert.equal(exactRepeat.route_disposition, "STOP");
+  assert.equal(exactRepeat.stop_reason, "REPEATED_ROUTE");
 
   const genericPlanetRoute = {
     ...astroRoute,

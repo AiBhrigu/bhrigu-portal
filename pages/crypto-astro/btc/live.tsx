@@ -132,6 +132,7 @@ type Props = {
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
   inputError: string | null;
+  pendingClarificationOriginFingerprint: string | null;
 };
 
 // Connector-authored deployment pulse: PR114 exact Preview identity v0.2.
@@ -169,6 +170,66 @@ function applyFreshnessTruth(envelope: BtcMarketEnvelope, freshness: "FRESH" | "
 
 function needsMarket(route: BtcCosmographerRoute): boolean {
   return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
+}
+
+type PendingClarificationPacket = {
+  origin_fingerprint: string;
+  target: "SUBJECT" | "PERIOD" | "RELATION_OBJECT" | "ASSET";
+  origin_domain: string;
+  origin_subject: string;
+  origin_time_start: string;
+  origin_time_end: string;
+};
+
+function parsePendingClarification(
+  query: Record<string, string | string[] | undefined>,
+): PendingClarificationPacket | null {
+  const originFingerprint = first(query.pof);
+  const target = first(query.pct) as PendingClarificationPacket["target"];
+  const originDomain = first(query.pcd);
+  const originSubject = first(query.pcs);
+  const originTimeStart = first(query.pct0);
+  const originTimeEnd = first(query.pct1);
+  if (!originFingerprint || originFingerprint.length > 1200) return null;
+  if (!["SUBJECT", "PERIOD", "RELATION_OBJECT", "ASSET"].includes(target)) return null;
+  if (!originDomain || originDomain.length > 80 || !originSubject || originSubject.length > 120) return null;
+  if (originTimeStart && !validObservationDate(originTimeStart)) return null;
+  if (originTimeEnd && !validObservationDate(originTimeEnd)) return null;
+  return {
+    origin_fingerprint: originFingerprint,
+    target,
+    origin_domain: originDomain,
+    origin_subject: originSubject,
+    origin_time_start: originTimeStart,
+    origin_time_end: originTimeEnd,
+  };
+}
+
+function resolvePendingClarificationQuestion(
+  locale: BtcPublicLocale,
+  rawQuestion: string,
+  pending: PendingClarificationPacket | null,
+): string {
+  if (!pending) return rawQuestion;
+  const normalized = rawQuestion.trim().toLowerCase().replace(/\s+/g, " ").replace(/[?!.]+$/g, "");
+  if (/^(?:method|methodology|метод|методика)$/.test(normalized)) {
+    return locale === "ru"
+      ? "Какие источники и метод использует Космограф?"
+      : "Which sources and method does Cosmographer use?";
+  }
+  if (/^(?:bitcoin protocol|btc protocol|protocol bitcoin|protocol btc|протокол bitcoin|протокол btc|протокол биткоин)$/.test(normalized)) {
+    return locale === "ru" ? "Что такое протокол Bitcoin?" : "What is the Bitcoin protocol?";
+  }
+  if (/^(?:btc market|bitcoin market|market btc|рынок btc|рынок bitcoin|рынок биткоин)$/.test(normalized)) {
+    return locale === "ru" ? "Что происходит с рынком BTC сейчас?" : "What is happening with the BTC market now?";
+  }
+  if (/^(?:snapshot|снимок|память snapshot)$/.test(normalized)) {
+    return locale === "ru" ? "Что изменилось с прошлого Snapshot?" : "What changed since the previous Snapshot?";
+  }
+  if (/^(?:planet|planets|планета|планеты)$/.test(normalized)) {
+    return locale === "ru" ? "Текущее положение планет?" : "What are the current planetary positions?";
+  }
+  return rawQuestion;
 }
 
 function parseRetainedAstroMemory(
@@ -237,6 +298,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     deploymentSourceSha: servedDeploymentSha,
     sourceBindingChanged: false,
     inputError: null,
+    pendingClarificationOriginFingerprint: null,
   };
 
   if (initialDate && !validObservationDate(initialDate)) {
@@ -257,17 +319,23 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
   const packet = parsed.malformed
     ? null
     : parsed.packet ?? parseLegacyContext(query);
+  const pendingClarification = parsePendingClarification(query);
+  const routingQuestion = resolvePendingClarificationQuestion(
+    resolvedLocale.locale,
+    initialQuestion,
+    pendingClarification,
+  );
   const retainedAstroMemory = parseRetainedAstroMemory(query);
   const initialRoute = routeBtcCosmographerLocalRc(
     resolvedLocale.locale,
-    initialQuestion,
+    routingQuestion,
     packet,
     initialDate || undefined,
     retainedAstroMemory,
   );
   const relationResolution = applyBtcRelationIntentPrecedence(
     initialRoute,
-    initialQuestion,
+    routingQuestion,
     packet,
     retainedAstroMemory,
   );
@@ -321,6 +389,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     sourceContext,
     relationResolution.relation_resolution,
     relationResolution.btc_side_state_type,
+    pendingClarification?.origin_fingerprint ?? null,
   );
   const sourceBindingChanged = Boolean(
     packet?.prior_snapshot_generated_at_utc &&
@@ -336,6 +405,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
       answer,
       runtimeDecision,
       sourceBindingChanged,
+      pendingClarificationOriginFingerprint: pendingClarification?.origin_fingerprint ?? null,
     },
   };
 };

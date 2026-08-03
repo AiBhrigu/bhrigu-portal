@@ -199,6 +199,20 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
     };
   }
 
+  const explicitProtocolTopic =
+    route.domain === "bitcoin_protocol" &&
+    route.subject === "halving" &&
+    route.context_relation === "NEW_TOPIC" &&
+    route.explicit_entities.length > 0 &&
+    !BODY_REFERENCE.test(question);
+  if (explicitProtocolTopic) {
+    return {
+      route,
+      relation_resolution: "SINGLE_DOMAIN",
+      btc_side_state_type: null,
+    };
+  }
+
   const astroResolved = hasAstroObject(route, question, packet, retainedAstroMemory);
   const explicitBtcSide = explicitBtcSideType(route, question);
   const inheritedBtcSide = route.context_relation === "FOLLOW_UP" || route.context_relation === "CROSS_MODULE_BRIDGE"
@@ -362,6 +376,7 @@ export function buildBtcEvidenceNavigationRuntimeDecision(
   source: SourceContext,
   relationResolution: BtcRelationResolution,
   btcSideStateType: BtcSideStateType | null,
+  clarificationOriginFingerprint: string | null = null,
 ): BtcEvidenceNavigationRuntimeDecision {
   const authority = AUTHORITY_BY_DOMAIN[route.domain];
   const bridge = bridgeResult(route, answer, source);
@@ -415,8 +430,10 @@ export function buildBtcEvidenceNavigationRuntimeDecision(
     ? fingerprint([candidate.type, candidate.targetMode, route.subject, candidate.intent, period, candidate.evidenceFamily])
     : null;
   const clarification = target ? clarificationText(locale, target) : null;
+  const originFingerprint = clarificationOriginFingerprint ??
+    fingerprint(["ORIGIN", route.normalized_question, route.subject, period]);
   const clarificationFingerprint = target
-    ? fingerprint(["CLARIFY", target, route.subject, period])
+    ? fingerprint(["CLARIFY", originFingerprint, target, route.normalized_question])
     : null;
 
   return {
