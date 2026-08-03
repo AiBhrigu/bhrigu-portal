@@ -60,8 +60,31 @@ if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
 
-base = os.environ["BTC_ACCEPTANCE_BASE_SHA"]
+event_base = os.environ["BTC_ACCEPTANCE_BASE_SHA"]
 head = os.environ["BTC_ACCEPTANCE_HEAD_SHA"]
+base_ref = os.environ.get("GITHUB_BASE_REF", "master")
+current_base = subprocess.check_output(
+    ["git", "rev-parse", f"origin/{base_ref}"], text=True
+).strip()
+
+base = event_base
+if current_base != event_base:
+    is_forward_base = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", event_base, current_base],
+        check=False,
+    ).returncode == 0
+    if not is_forward_base:
+        raise SystemExit(
+            "pull request base moved non-forward: "
+            f"event_base={event_base}, current_base={current_base}"
+        )
+    base = current_base
+    print({
+        "status": "USE_CURRENT_FORWARD_BASE",
+        "event_base": event_base,
+        "current_base": current_base,
+    })
+
 actual = set(subprocess.check_output(
     ["git", "diff", "--name-only", base, head], text=True
 ).splitlines())
@@ -75,11 +98,12 @@ accepted_scopes = {
 
 for status, expected in accepted_scopes.items():
     if actual == expected:
-        print({"status": status, "changed": sorted(actual)})
+        print({"status": status, "base": base, "head": head, "changed": sorted(actual)})
         raise SystemExit(0)
 
 raise SystemExit(
     "public acceptance scope mismatch: "
-    f"actual={sorted(actual)}, actual_count={len(actual)}, "
+    f"base={base}, head={head}, actual={sorted(actual)}, "
+    f"actual_count={len(actual)}, "
     f"accepted_counts={sorted(len(scope) for scope in accepted_scopes.values())}"
 )
