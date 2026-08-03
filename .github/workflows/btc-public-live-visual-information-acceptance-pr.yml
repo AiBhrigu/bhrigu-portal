@@ -59,6 +59,20 @@ jobs:
       - name: Install visual driver
         run: python -m pip install --disable-pip-version-check selenium==4.34.2
 
+      - name: Bind visual verifier to current session contract
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/verify-btc-public-live-visual-information-acceptance.py")
+          text = path.read_text(encoding="utf-8")
+          old = "const raw=sessionStorage.getItem('bhrigu:btc-free-dialogue:session:v0_1');"
+          new = "const raw=sessionStorage.getItem('bhrigu:btc-cosmographer:session:v0_3') || sessionStorage.getItem('bhrigu:btc-free-dialogue:session:v0_1');"
+          if text.count(old) != 1:
+              raise SystemExit(f"visual session key binding count={text.count(old)}")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
       - name: Start exact-head production preview
         run: |
           set -euo pipefail
