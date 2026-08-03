@@ -1,0 +1,400 @@
+name: BTC Evidence and Navigation Runtime
+# Exact-head runtime, protected Preview identity, cache/session isolation, and founder-route acceptance.
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-evidence-navigation-runtime-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
+      - lib/btc-cosmographer-answer.ts
+      - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-live-dialogue-session.ts
+      - lib/btc-live-dialogue-style.ts
+      - pages/crypto-astro/btc/live.tsx
+      - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+  workflow_dispatch:
+
+concurrency:
+  group: btc-evidence-navigation-runtime-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  runtime-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify exact product scope
+        if: github.event_name == 'pull_request'
+        env:
+          BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+
+      - name: Verify evidence and navigation runtime
+        run: node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+      - name: Verify inherited BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Verify public safety boundary
+        run: |
+          ! grep -RniE 'personalized (buy|sell)|guaranteed return|guaranteed profit' \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-cosmographer-answer.ts \
+            components/btc/BtcCosmographerDialogue.tsx
+
+  deployed-preview-acceptance:
+    if: github.event_name == 'pull_request'
+    needs: runtime-acceptance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+    steps:
+      - name: Verify automation bypass availability
+        run: |
+          if test -z "$VERCEL_AUTOMATION_BYPASS_SECRET"; then
+            echo 'VERCEL_AUTOMATION_BYPASS_SECRET=UNAVAILABLE'
+            echo 'EXACT_DEPLOYED_PREVIEW_BROWSER_ACCEPTANCE=BLOCKED_BY_VERCEL_AUTHENTICATION'
+            exit 1
+          fi
+          echo 'VERCEL_AUTOMATION_BYPASS_SECRET=AVAILABLE'
+
+      - name: Resolve protected Vercel Preview and prove exact served head
+        id: preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import http.cookiejar
+          import json
+          import os
+          import re
+          import time
+          import urllib.parse
+          import urllib.request
+
+          repository = os.environ["GH_REPOSITORY"]
+          pr_number = os.environ["PR_NUMBER"]
+          expected_head = os.environ["EXPECTED_HEAD"]
+          bypass_secret = os.environ["VERCEL_AUTOMATION_BYPASS_SECRET"]
+          comments_url = f"https://api.github.com/repos/{repository}/issues/{pr_number}/comments?per_page=100"
+          github_headers = {
+              "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+              "Accept": "application/vnd.github+json",
+              "X-GitHub-Api-Version": "2022-11-28",
+              "User-Agent": "btc-pr114-preview-identity",
+          }
+          cookie_jar = http.cookiejar.CookieJar()
+          opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
+          preview_base = None
+          last_served_head = None
+          last_cache_control = None
+          last_final_url = None
+
+          for attempt in range(90):
+              request = urllib.request.Request(comments_url, headers=github_headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  comments = json.load(response)
+
+              for comment in comments:
+                  if comment.get("user", {}).get("login") != "vercel[bot]":
+                      continue
+                  match = re.search(r"\[Preview\]\((https://[^)]+\.vercel\.app)\)", comment.get("body", ""))
+                  if match:
+                      preview_base = match.group(1).rstrip("/")
+                      break
+
+              if preview_base:
+                  query = urllib.parse.urlencode({
+                      "lang": "ru",
+                      "preview_identity": expected_head,
+                      "attempt": attempt,
+                  })
+                  page_url = f"{preview_base}/crypto-astro/btc/live?{query}"
+                  page_headers = {
+                      "Cache-Control": "no-cache, no-store, max-age=0",
+                      "Pragma": "no-cache",
+                      "User-Agent": "btc-pr114-preview-identity",
+                      "x-vercel-protection-bypass": bypass_secret,
+                      "x-vercel-set-bypass-cookie": "true",
+                  }
+                  try:
+                      page_request = urllib.request.Request(page_url, headers=page_headers)
+                      with opener.open(page_request, timeout=30) as response:
+                          html = response.read().decode("utf-8", errors="replace")
+                          last_final_url = response.geturl()
+                          last_cache_control = response.headers.get("Cache-Control", "")
+                          header_head = response.headers.get("X-BTC-Deployment-Source-Sha", "")
+
+                      meta_match = re.search(
+                          r'name="btc-deployment-source-sha" content="([0-9a-fA-F]{40})"',
+                          html,
+                      )
+                      root_match = re.search(
+                          r'data-deployment-head-sha="([0-9a-fA-F]{40})"',
+                          html,
+                      )
+                      last_served_head = header_head or (
+                          meta_match.group(1) if meta_match else root_match.group(1) if root_match else None
+                      )
+                      identity_markers = {
+                          header_head,
+                          meta_match.group(1) if meta_match else "",
+                          root_match.group(1) if root_match else "",
+                      }
+                      identity_markers.discard("")
+                      exact_identity = identity_markers == {expected_head}
+                      no_store = "no-store" in last_cache_control.casefold()
+                      session_schema = "btc_cosmographer_dialogue_session_v0_3" in html
+                      runtime_schema = "btc_cosmographer_evidence_navigation_runtime_v0_1" in html
+                      protected_redirect = last_final_url.startswith("https://vercel.com/login")
+
+                      if exact_identity and no_store and session_schema and runtime_schema and not protected_redirect:
+                          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as stream:
+                              stream.write(f"preview_base={preview_base}\n")
+                              stream.write(f"served_head={expected_head}\n")
+                          print(json.dumps({
+                              "status": "PASS_EXACT_PROTECTED_PREVIEW_IDENTITY",
+                              "preview": preview_base,
+                              "expected_head": expected_head,
+                              "identity_markers": sorted(identity_markers),
+                              "cache_control": last_cache_control,
+                              "session_schema": "v0_3",
+                              "protection_bypass": "PASS",
+                          }))
+                          raise SystemExit(0)
+                  except Exception as error:
+                      print(json.dumps({
+                          "attempt": attempt,
+                          "preview": preview_base,
+                          "served_head": last_served_head,
+                          "final_url": last_final_url,
+                          "error": str(error),
+                      }))
+              time.sleep(5)
+
+          raise SystemExit(
+              f"Protected Preview did not serve exact head {expected_head}; "
+              f"preview={preview_base}; served={last_served_head}; "
+              f"cache={last_cache_control}; final_url={last_final_url}"
+          )
+          PY
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install browser acceptance driver
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Replay founder routes on protected desktop and mobile Preview
+        env:
+          PREVIEW_BASE: ${{ steps.preview.outputs.preview_base }}
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          from urllib.parse import urlencode
+
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          preview_base = os.environ["PREVIEW_BASE"].rstrip("/")
+          expected_head = os.environ["EXPECTED_HEAD"]
+          bypass_secret = os.environ["VERCEL_AUTOMATION_BYPASS_SECRET"]
+          session_key = "bhrigu:btc-cosmographer:session:v0_3"
+          stale_keys = [
+              "bhrigu:btc-free-dialogue:session:v0_1",
+              "bhrigu:btc-cosmographer:session:v0_1",
+              "bhrigu:btc-cosmographer:session:v0_2",
+          ]
+
+          def create_driver(width, height):
+              options = webdriver.ChromeOptions()
+              options.add_argument("--headless=new")
+              options.add_argument("--no-sandbox")
+              options.add_argument("--disable-dev-shm-usage")
+              options.add_argument("--disable-gpu")
+              options.add_argument(f"--window-size={width},{height}")
+              driver = webdriver.Chrome(options=options)
+              driver.set_window_size(width, height)
+              driver.execute_cdp_cmd("Network.enable", {})
+              driver.execute_cdp_cmd(
+                  "Network.setExtraHTTPHeaders",
+                  {
+                      "headers": {
+                          "x-vercel-protection-bypass": bypass_secret,
+                          "x-vercel-set-bypass-cookie": "true",
+                          "Cache-Control": "no-cache, no-store, max-age=0",
+                          "Pragma": "no-cache",
+                      }
+                  },
+              )
+              return driver
+
+          def wait_for(driver, selector):
+              return WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.CSS_SELECTOR, selector)
+              )
+
+          def open_question(driver, question, label):
+              query = urlencode({
+                  "lang": "ru",
+                  "q": question,
+                  "preview_head": expected_head,
+                  "acceptance": label,
+                  "nonce": str(time.time_ns()),
+              })
+              driver.get(f"{preview_base}/crypto-astro/btc/live?{query}")
+              assert not driver.current_url.startswith("https://vercel.com/login")
+              root = wait_for(driver, "main[data-deployment-head-sha]")
+              assert root.get_attribute("data-deployment-head-sha") == expected_head
+              assert root.get_attribute("data-runtime-schema") == "btc_cosmographer_evidence_navigation_runtime_v0_1"
+              assert root.get_attribute("data-session-schema") == "btc_cosmographer_dialogue_session_v0_3"
+              assert root.get_attribute("data-cache-policy") == "no-store"
+              meta = driver.find_element(By.CSS_SELECTOR, 'meta[name="btc-deployment-source-sha"]')
+              assert meta.get_attribute("content") == expected_head
+              turn = wait_for(driver, "article.cosmographerTurn")
+              WebDriverWait(driver, 20).until(
+                  lambda current: current.execute_script(
+                      "return sessionStorage.getItem(arguments[0]);",
+                      session_key,
+                  ) is not None
+              )
+              return turn
+
+          results = []
+          for suffix, width, height in (("desktop", 1440, 1000), ("mobile", 390, 844)):
+              driver = create_driver(width, height)
+              try:
+                  driver.get(f"{preview_base}/crypto-astro/btc/live?lang=ru&seed={time.time_ns()}")
+                  assert not driver.current_url.startswith("https://vercel.com/login")
+                  wait_for(driver, "main[data-deployment-head-sha]")
+
+                  stale_session = {
+                      "schema": "btc_cosmographer_dialogue_session_v0_3",
+                      "session_id": "stale-preview-session",
+                      "locale": "ru",
+                      "created_at_utc": "2026-08-01T00:00:00Z",
+                      "updated_at_utc": "2026-08-01T00:00:00Z",
+                      "compacted": False,
+                      "source_binding": {
+                          "deployment_sha": "0" * 40,
+                          "snapshot_generated_at_utc": None,
+                      },
+                      "turns": [],
+                  }
+                  stale_legacy = json.dumps({"schema": "btc_free_dialogue_session_v0_1"})
+                  driver.execute_script(
+                      "sessionStorage.setItem(arguments[0], arguments[1]);"
+                      "sessionStorage.setItem(arguments[2], arguments[3]);"
+                      "sessionStorage.setItem(arguments[4], arguments[3]);"
+                      "sessionStorage.setItem(arguments[5], arguments[3]);",
+                      session_key,
+                      json.dumps(stale_session),
+                      stale_keys[0],
+                      stale_legacy,
+                      stale_keys[1],
+                      stale_keys[2],
+                  )
+
+                  first = open_question(driver, "Текущее положение планет?", f"planet-subject-{suffix}")
+                  assert first.get_attribute("data-route-disposition") == "CLARIFY"
+                  assert first.get_attribute("data-clarification-target") == "SUBJECT"
+                  assert first.get_attribute("data-show-next-question") == "false"
+                  assert first.get_attribute("data-show-clarification") == "true"
+                  assert first.get_attribute("data-anti-loop-blocked") == "false"
+                  assert first.get_attribute("data-answer-mode") == "CLARIFICATION"
+                  assert "этой планеты" not in first.text.casefold()
+                  assert not first.find_elements(By.CSS_SELECTOR, '[data-route-surface="next-precise-question"]')
+
+                  session = json.loads(driver.execute_script(
+                      "return sessionStorage.getItem(arguments[0]);",
+                      session_key,
+                  ))
+                  assert session["schema"] == "btc_cosmographer_dialogue_session_v0_3"
+                  assert session["source_binding"]["deployment_sha"] == expected_head
+                  assert len(session["turns"]) == 1
+                  for key in stale_keys:
+                      assert driver.execute_script("return sessionStorage.getItem(arguments[0]);", key) is None
+
+                  driver.execute_script("sessionStorage.clear();")
+                  second = open_question(
+                      driver,
+                      "В какое время высота блоков совпадала с наиболее сильными окнами?",
+                      f"block-window-relation-{suffix}",
+                  )
+                  assert second.get_attribute("data-relation-intent-detected") == "true"
+                  assert second.get_attribute("data-relation-resolution") in {
+                      "SECOND_DOMAIN_UNRESOLVED",
+                      "TWO_DOMAINS_RESOLVED",
+                  }
+                  disposition = second.get_attribute("data-route-disposition")
+                  domain = second.get_attribute("data-route-domain")
+                  bridge_result = second.get_attribute("data-bridge-result")
+                  answer_mode = second.get_attribute("data-answer-mode")
+                  assert (
+                      domain == "astro_btc_bridge"
+                      or disposition == "CLARIFY"
+                      or bridge_result == "INSUFFICIENT_DUAL_EVIDENCE"
+                  )
+                  assert not (domain == "bitcoin_protocol" and disposition == "CONTINUE")
+                  assert answer_mode != "PROTOCOL_EXPLAIN"
+                  assert "высота блока — это" not in second.text.casefold()
+                  if disposition == "CLARIFY":
+                      assert not second.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+                  if disposition != "CONTINUE":
+                      assert second.get_attribute("data-show-next-question") == "false"
+
+                  results.append({
+                      "viewport": suffix,
+                      "served_head": expected_head,
+                      "planet_route": "CLARIFY_SUBJECT",
+                      "planet_self_loop": False,
+                      "relation_intent": True,
+                      "relation_resolution": second.get_attribute("data-relation-resolution"),
+                      "relation_disposition": disposition,
+                      "relation_domain": domain,
+                  })
+              finally:
+                  driver.quit()
+
+          print(json.dumps({
+              "status": "PASS_PROTECTED_DEPLOYED_EXACT_HEAD_FOUNDER_ROUTE_ACCEPTANCE",
+              "preview": preview_base,
+              "expected_head": expected_head,
+              "results": results,
+          }, ensure_ascii=False, indent=2))
+          PY

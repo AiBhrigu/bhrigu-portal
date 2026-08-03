@@ -3,8 +3,14 @@ import {
   BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
   type BtcCosmographerRoute,
 } from "../../lib/btc-cosmographer-route-graph";
+import {
+  applyBtcRuntimeAntiLoop,
+  BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
+  type BtcEvidenceNavigationRuntimeDecision,
+} from "../../lib/btc-cosmographer-evidence-navigation-runtime";
 import type { BtcCosmographerAnswerProjection } from "../../lib/btc-protocol-evidence";
 import {
+  BTC_DIALOGUE_SESSION_SCHEMA,
   clearBtcDialogueSession,
   latestContextTurn,
   makeBtcDialogueTurnId,
@@ -32,6 +38,7 @@ type Props = {
   initialDate: string;
   route: BtcCosmographerRoute | null;
   answer: BtcCosmographerAnswerProjection | null;
+  runtimeDecision: BtcEvidenceNavigationRuntimeDecision | null;
   sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
@@ -291,21 +298,41 @@ function modeLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
   return locale === "ru" ? value[0] : value[1];
 }
 
-function nextQuestion(locale: BtcPublicLocale, turn: BtcDialogueTurn): string {
-  const ru = locale === "ru";
-  if (String(turn.answer_mode) === "ASTRO_YEAR_OVERVIEW") {
-    return ru ? "Какое окно имеет наивысший рейтинг и почему?" : "Which window has the highest rank and why?";
-  }
-  if (turn.answer_mode === "ASTRO_BTC_BRIDGE") {
-    return ru ? "Какие рыночные условия усиливают или ослабляют это сопоставление?" : "Which market conditions strengthen or weaken this comparison?";
-  }
-  if (turn.answer_mode === "MARKET_DIAGNOSIS") {
-    return ru ? "Что должно измениться, чтобы чтение стало сильнее?" : "What must change for the read to strengthen?";
-  }
-  if (turn.answer_mode === "ASTRO_INTERVAL") {
-    return ru ? "Какие аспекты этой планеты попадают в тот же период?" : "Which aspects of this body fall in the same period?";
-  }
-  return ru ? "Какие источники подтверждают этот ответ?" : "Which sources support this answer?";
+function applyRuntimeDecisionToTurn(
+  turn: BtcDialogueTurn,
+  decision: BtcEvidenceNavigationRuntimeDecision,
+): BtcDialogueTurn {
+  const clarificationOnly = decision.route_disposition === "CLARIFY";
+  return {
+    ...turn,
+    answer_state: clarificationOnly ? "CLARIFICATION" : turn.answer_state,
+    answer_mode: clarificationOnly ? "CLARIFICATION" : turn.answer_mode,
+    headline: clarificationOnly
+      ? (turn.locale === "ru" ? "Нужно уточнить предмет" : "The subject needs clarification")
+      : turn.headline,
+    direct_answer: clarificationOnly ? null : turn.direct_answer,
+    evidence_lines: clarificationOnly ? [] : turn.evidence_lines,
+    sections: clarificationOnly ? [] : turn.sections,
+    route_disposition: decision.route_disposition,
+    primary_authority: decision.primary_authority,
+    evidence_levels: decision.evidence_levels,
+    btc_side_state_type: decision.btc_side_state_type,
+    bridge_result: decision.bridge_result,
+    relation_intent_detected: decision.relation_intent_detected,
+    relation_resolution: decision.relation_resolution,
+    show_next_question: decision.show_next_question,
+    next_precise_question_type: decision.next_question_type,
+    next_precise_question_text: decision.next_question_text,
+    next_precise_question_fingerprint: decision.next_question_fingerprint,
+    show_clarification: decision.show_clarification,
+    clarification_target: decision.clarification_target,
+    clarification_text: decision.clarification_text,
+    clarification_fingerprint: decision.clarification_fingerprint,
+    anti_loop_blocked: decision.anti_loop_blocked,
+    valid_route_stop: decision.valid_route_stop,
+    stop_reason: decision.stop_reason,
+    context_safe_composer: decision.context_safe_composer,
+  };
 }
 
 function makeTurn(props: Props): BtcDialogueTurn | null {
@@ -343,7 +370,7 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
     sections: canonicalSections,
     proof_label: canonicalPublicCopy(props.locale, props.answer.proof_label),
   };
-  return {
+  const turn: BtcDialogueTurn = {
     ...turnWithoutId,
     turn_id: makeBtcDialogueTurnId({
       userText: props.initialQuestion,
@@ -352,6 +379,9 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
       snapshotTimestamp: timestamp,
     }),
   };
+  return props.runtimeDecision
+    ? applyRuntimeDecisionToTurn(turn, props.runtimeDecision)
+    : turn;
 }
 
 function AstroWindowSection({
@@ -460,6 +490,16 @@ function Exchange({
       data-market-question-class={questionClass}
       data-context-relation={turn.context_relation ?? "GENUINELY_AMBIGUOUS"}
       data-semantic-context-relation={turn.context_relation ?? "GENUINELY_AMBIGUOUS"}
+      data-route-disposition={turn.route_disposition ?? "CONTINUE"}
+      data-primary-authority={turn.primary_authority ?? "UNBOUND"}
+      data-btc-side-state-type={turn.btc_side_state_type ?? "NOT_APPLICABLE"}
+      data-bridge-result={turn.bridge_result ?? "NOT_APPLICABLE"}
+      data-relation-intent-detected={turn.relation_intent_detected ? "true" : "false"}
+      data-relation-resolution={turn.relation_resolution ?? "SINGLE_DOMAIN"}
+      data-clarification-target={turn.clarification_target ?? "NOT_APPLICABLE"}
+      data-anti-loop-blocked={turn.anti_loop_blocked ? "true" : "false"}
+      data-show-next-question={turn.show_next_question ? "true" : "false"}
+      data-show-clarification={turn.show_clarification ? "true" : "false"}
     >
       <div className="turnRole"><FieldAnchorGlyph className="turnGlyph"/><span>Cosmographer</span></div>
       <div className="turnBody">
@@ -472,14 +512,31 @@ function Exchange({
         {turn.source_binding_changed && <p className="sourceChangedNote" data-source-changed="true">
           {turn.locale === "ru" ? "Market Snapshot обновился между ходами; рыночная часть перестроена." : "Market Snapshot changed between turns; the market layer was rebuilt."}
         </p>}
-        <aside className="answerNextStep">
+        {turn.show_clarification && turn.clarification_text && <aside className="answerClarification" data-route-surface="clarification">
+          <span>{turn.locale === "ru" ? "Уточнение предмета" : "Clarification"}</span>
+          <strong>{turn.clarification_text}</strong>
+        </aside>}
+        {turn.show_next_question && turn.next_precise_question_text && <aside className="answerNextStep" data-route-surface="next-precise-question">
           <span>{turn.locale === "ru" ? "Следующий точный вопрос" : "Next precise question"}</span>
-          <strong>{nextQuestion(turn.locale, turn)}</strong>
-        </aside>
+          <strong>{turn.next_precise_question_text}</strong>
+        </aside>}
+        {turn.route_disposition === "STOP" && <aside className="answerRouteStop" data-route-surface="valid-stop">
+          <span>{turn.locale === "ru" ? "Маршрут остановлен" : "Route stopped"}</span>
+          <strong>{turn.stop_reason ?? (turn.locale === "ru" ? "Ответ завершён" : "Answer complete")}</strong>
+        </aside>}
         <details open={newest} className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
           <summary>{turn.locale === "ru" ? "Источники, период и граница" : "Sources, period, and boundary"}</summary>
           <div>
             <span>{publicDomainLabel(turn.locale, domain)}</span>
+            {turn.primary_authority && <span className="answerAuthority" data-primary-authority-value={turn.primary_authority}>
+              {turn.locale === "ru" ? "Primary authority" : "Primary authority"} · {turn.primary_authority}
+            </span>}
+            {turn.evidence_levels && <span data-evidence-levels={turn.evidence_levels.join(",")}>
+              Evidence · {turn.evidence_levels.join(" → ")}
+            </span>}
+            {turn.bridge_result && <span data-canonical-bridge-result={turn.bridge_result}>
+              Bridge result · {turn.bridge_result}
+            </span>}
             <dl className="answerEvidenceMeta" data-evidence-metadata="distinct-fields">
               <div data-evidence-field="observation-period" data-evidence-value={observationPeriod}>
                 <dt>{turn.locale === "ru" ? "Период наблюдения" : "Observation period"}</dt>
@@ -515,6 +572,7 @@ export function BtcCosmographerDialogue(props: Props) {
     props.initialDate,
     props.route,
     props.answer,
+    props.runtimeDecision,
     props.sourceContext,
     props.sourceBindingChanged,
     props.inputError,
@@ -526,7 +584,25 @@ export function BtcCosmographerDialogue(props: Props) {
 
   useEffect(() => {
     let session = readBtcDialogueSession(locale, deploymentSourceSha);
-    if (currentTurn) session = upsertBtcDialogueTurn(session, currentTurn);
+    if (currentTurn) {
+      const priorNextFingerprints = session.turns
+        .map((turn) => turn.next_precise_question_fingerprint)
+        .filter((value): value is string => Boolean(value));
+      const priorClarificationFingerprints = session.turns
+        .map((turn) => turn.clarification_fingerprint)
+        .filter((value): value is string => Boolean(value));
+      const turn = props.runtimeDecision
+        ? applyRuntimeDecisionToTurn(
+            currentTurn,
+            applyBtcRuntimeAntiLoop(
+              props.runtimeDecision,
+              priorNextFingerprints,
+              priorClarificationFingerprints,
+            ),
+          )
+        : currentTurn;
+      session = upsertBtcDialogueTurn(session, turn);
+    }
     setTurns(session.turns);
     setCompacted(session.compacted);
     setHydrated(true);
@@ -551,7 +627,18 @@ export function BtcCosmographerDialogue(props: Props) {
     };
   }, [hydrated, turns.length]);
 
-  const contextTurn = latestContextTurn(turns);
+  const latestTurn = turns.at(-1) ?? null;
+  const contextSafe = !latestTurn || (
+    latestTurn.context_safe_composer !== false &&
+    (
+      latestTurn.route_disposition === "CONTINUE" ||
+      latestTurn.stop_reason === "REPEATED_ROUTE"
+    )
+  );
+  const clarificationPrompt = latestTurn?.route_disposition === "CLARIFY"
+    ? latestTurn.clarification_text ?? (ru ? "Уточните предмет вопроса." : "Clarify the question subject.")
+    : null;
+  const contextTurn = contextSafe ? latestContextTurn(turns) : null;
   const retainedAstroTurn = [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
     (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
@@ -573,7 +660,17 @@ export function BtcCosmographerDialogue(props: Props) {
     ct0: contextTurn.time_start ?? contextTurn.observation_date ?? "",
     ct1: contextTurn.time_end ?? contextTurn.observation_date ?? "",
     cb: contextTurn.source_snapshot_generated_at_utc ?? "",
-  } : null;
+  } : {
+    cc: "",
+    cd: "",
+    cs: "",
+    ci: "",
+    ca: "",
+    cm: "",
+    ct0: "",
+    ct1: "",
+    cb: "",
+  };
   const hasConversation = turns.length > 0;
   const olderTurns = turns.length > 4 ? turns.slice(0, -4) : [];
   const visibleTurns = turns.slice(-4);
@@ -587,7 +684,16 @@ export function BtcCosmographerDialogue(props: Props) {
     window.location.assign(`/crypto-astro/btc/live?lang=${locale}`);
   };
 
-  return <main className="liveDialoguePage" lang={locale} data-live-dialogue="btc-cosmographer-route-v0-1" data-session-local="true">
+  return <main
+    className="liveDialoguePage"
+    lang={locale}
+    data-live-dialogue="btc-cosmographer-route-v0-1"
+    data-session-local="true"
+    data-deployment-head-sha={deploymentSourceSha ?? "UNAVAILABLE"}
+    data-runtime-schema={BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA}
+    data-session-schema={BTC_DIALOGUE_SESSION_SCHEMA}
+    data-cache-policy="no-store"
+  >
     <header className="liveDialogueTopbar">
       <a className="liveBackLink" href={`/crypto-astro/btc?lang=${locale}`}>← {ru ? "BTC Field" : "BTC Field"}</a>
       <div className="liveIdentity"><FieldAnchorGlyph className="liveIdentityGlyph"/><span>Market Cosmographer</span></div>
@@ -652,20 +758,20 @@ export function BtcCosmographerDialogue(props: Props) {
       <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>
         {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
-        {contextFields && Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
+        {Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         <label>
-          <span>{hasConversation
+          <span>{clarificationPrompt ?? (hasConversation
             ? (ru ? "Продолжить или задать новый предмет" : "Continue or introduce a new subject")
-            : (ru ? "Ваш вопрос о поле BTC" : "Your question about the BTC field")}</span>
+            : (ru ? "Ваш вопрос о поле BTC" : "Your question about the BTC field"))}</span>
           <textarea
             name="q"
             rows={3}
             minLength={2}
             maxLength={500}
             required
-            placeholder={hasConversation
+            placeholder={clarificationPrompt ?? (hasConversation
               ? (ru ? "Что изменит это чтение? Как это совпадает со структурой BTC? Какие дни наиболее напряжённые?" : "What would change this read? How does it coincide with BTC structure? Which days are most intense?")
-              : (ru ? "Что происходит с BTC сегодня? Какие аспекты планет наиболее напряжённые в 2026?" : "What is happening with BTC today? Which planetary aspects are most intense in 2026?")}
+              : (ru ? "Что происходит с BTC сегодня? Какие аспекты планет наиболее напряжённые в 2026?" : "What is happening with BTC today? Which planetary aspects are most intense in 2026?"))}
           />
         </label>
         <div className="liveComposerControls">

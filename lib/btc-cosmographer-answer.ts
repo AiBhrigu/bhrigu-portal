@@ -251,36 +251,85 @@ export function buildBtcCosmographerAnswer(
       const astro = buildBtcAstroAnswer(locale, route);
       if (inputs.snapshot && inputs.envelope) {
         const market = marketAnswer(locale, route, inputs.snapshot, inputs.envelope);
+        const marketLines = market.sections
+          .flatMap((section) => section.bullets ?? (section.paragraph ? [section.paragraph] : []))
+          .slice(0, 4);
+        const astroLines = astro.sections
+          .flatMap((section) => section.bullets ?? (section.paragraph ? [section.paragraph] : []))
+          .slice(0, 4);
+        const bridgeState = market.answer_state === "SPLIT"
+          ? "SPLIT"
+          : route.intents.includes("confirmation") && market.answer_state === "CONFIRMED"
+            ? "CONFIRMED"
+            : "LIMITED";
+        const relationText = locale === "ru"
+          ? "Сопоставление проверяет временную и структурную связь двух независимых доказательных слоёв."
+          : "The comparison tests a temporal and structural relation between two independent evidence lanes.";
+        const confirmationText = bridgeState === "SPLIT"
+          ? (locale === "ru" ? "Рыночный слой расходится с заявленной связью или не подтверждает её." : "The market layer diverges from or does not confirm the proposed relation.")
+          : bridgeState === "CONFIRMED"
+            ? (locale === "ru" ? "Заранее объявленный рыночный критерий подтверждения выполнен." : "The predeclared market confirmation criterion is met.")
+            : (locale === "ru" ? "Зафиксировано только временное совпадение; направленное подтверждение не установлено." : "Only temporal concurrence is established; directional confirmation is not established.");
         return {
-          answer_state: "SPLIT",
+          answer_state: bridgeState,
           answer_mode: "ASTRO_BTC_BRIDGE",
           headline: locale === "ru"
-            ? "Астрономические данные и BTC сопоставлены без причинного утверждения"
-            : "Astronomical data and BTC are compared without a causal claim",
+            ? "Состояние BTC и астрономическое окно сопоставлены без причинного утверждения"
+            : "BTC-side state and the astronomical window are compared without a causal claim",
           direct_answer: locale === "ru"
-            ? `${astro.direct_answer} Рыночный слой отвечает отдельно: ${market.direct_answer}`
-            : `${astro.direct_answer} The market layer answers separately: ${market.direct_answer}`,
+            ? `Сначала состояние BTC: ${market.direct_answer} Затем астрономическое окно: ${astro.direct_answer}`
+            : `BTC-side state first: ${market.direct_answer} Then the astronomical window: ${astro.direct_answer}`,
           sections: [
-            ...astro.sections.slice(0, 3),
             {
-              id: "market_layer",
-              label: locale === "ru" ? "Независимый рыночный слой" : "Independent market layer",
-              bullets: market.sections
-                .flatMap((section) => section.bullets ?? (section.paragraph ? [section.paragraph] : []))
-                .slice(0, 4),
+              id: "btc_side_state",
+              label: locale === "ru" ? "1 · Состояние стороны BTC" : "1 · BTC-side state",
+              bullets: marketLines,
             },
             {
-              id: "bridge_boundary",
-              label: locale === "ru" ? "Что можно и нельзя заключать" : "What can and cannot be concluded",
+              id: "astro_window",
+              label: locale === "ru" ? "2 · Астрономическое окно" : "2 · Astronomical window",
+              bullets: astroLines,
+            },
+            {
+              id: "relation",
+              label: locale === "ru" ? "3 · Проверяемая связь" : "3 · Relation under test",
+              paragraph: relationText,
+            },
+            {
+              id: "confirmation_or_divergence",
+              label: locale === "ru" ? "4 · Подтверждение или расхождение" : "4 · Confirmation or divergence",
+              paragraph: confirmationText,
+            },
+            {
+              id: "conditions",
+              label: locale === "ru" ? "5 · Условия усиления и ослабления" : "5 · Strengthening and weakening conditions",
+              paragraph: market.sections.find((section) => section.id === "market_watch")?.paragraph ??
+                (locale === "ru" ? "Условия должны быть наблюдаемыми и привязанными к рыночным данным." : "Conditions must be observable and bound to market evidence."),
+            },
+            {
+              id: "dual_proof",
+              label: locale === "ru" ? "6 · Двойное доказательство" : "6 · Dual proof",
+              bullets: [astro.proof_label, market.proof_label],
+            },
+            {
+              id: "non_causal_boundary",
+              label: locale === "ru" ? "7 · Непричинная граница" : "7 · Non-causal boundary",
               paragraph: locale === "ru"
-                ? "Можно описать совпадение дат, состояний и расхождений. Нельзя называть это доказанным влиянием или торговым сигналом. Само сопоставление ещё не является валидированным прогнозом."
-                : "Dates, states, and divergences may be compared. This may not be called proven influence or a trading signal. The comparison alone is not yet a validated forecast.",
+                ? "Совпадение или подтверждение не доказывает, что астрономическая конфигурация вызвала движение BTC."
+                : "Concurrence or confirmation does not prove that an astronomical configuration caused BTC movement.",
+            },
+            {
+              id: "non_trading_boundary",
+              label: locale === "ru" ? "8 · Нет торговой инструкции" : "8 · No trading instruction",
+              paragraph: locale === "ru"
+                ? "Сопоставление не является рекомендацией купить, продать, использовать плечо или выбрать размер позиции."
+                : "The comparison is not advice to buy, sell, use leverage, or choose a position size.",
             },
           ],
-          source_boundary: `${astro.source_boundary} ${market.source_boundary}`,
+          source_boundary: `${market.source_boundary} ${astro.source_boundary}`,
           proof_label: locale === "ru"
-            ? "Астрономические и рыночные доказательства доступны"
-            : "Astronomical and market evidence available",
+            ? "Рыночные и астрономические доказательства проверены отдельно"
+            : "Market and astronomical evidence were checked independently",
         };
       }
       return buildAstroBtcBridgeBoundary(locale, astro);
