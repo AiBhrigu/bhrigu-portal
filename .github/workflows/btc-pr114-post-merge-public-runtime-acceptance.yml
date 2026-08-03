@@ -1,0 +1,284 @@
+name: BTC PR114 Post-Merge Public Runtime Acceptance
+
+on:
+  push:
+    branches:
+      - agent/btc-pr114-stacked-session-verifier-v0-3
+    paths:
+      - .github/workflows/btc-pr114-post-merge-public-runtime-acceptance.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-pr114-post-merge-public-runtime-acceptance
+  cancel-in-progress: true
+
+jobs:
+  public-runtime-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PUBLIC_BASE: https://www.bhrigu.io
+      EXPECTED_MERGE_SHA: ee686e200a6de11bcbbbefc56e80287f6d8ef3f8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install browser driver
+        run: python -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Replay public founder routes on desktop and mobile
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import time
+          import urllib.request
+          from pathlib import Path
+          from urllib.parse import urlencode
+
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ['PUBLIC_BASE'].rstrip('/')
+          expected = os.environ['EXPECTED_MERGE_SHA']
+          out = Path('artifacts/pr114-post-merge-public-runtime')
+          out.mkdir(parents=True, exist_ok=True)
+          session_key = 'bhrigu:btc-cosmographer:session:v0_3'
+          legacy_keys = [
+              'bhrigu:btc-free-dialogue:session:v0_1',
+              'bhrigu:btc-cosmographer:session:v0_1',
+              'bhrigu:btc-cosmographer:session:v0_2',
+          ]
+
+          def fetch(path):
+              request = urllib.request.Request(
+                  base + path,
+                  headers={
+                      'Cache-Control': 'no-cache, no-store, max-age=0',
+                      'Pragma': 'no-cache',
+                      'User-Agent': 'btc-pr114-post-merge-public-runtime-acceptance',
+                  },
+              )
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  body = response.read().decode('utf-8', errors='replace')
+                  headers = {k.lower(): v for k, v in response.headers.items()}
+                  return response.status, response.geturl(), headers, body
+
+          # Allow the production alias to converge, but fail closed on wrong identity.
+          last = None
+          for attempt in range(60):
+              status, final_url, headers, body = fetch('/crypto-astro/btc/live?lang=ru')
+              last = (status, final_url, headers, body)
+              if (
+                  status == 200
+                  and expected in body
+                  and headers.get('x-btc-deployment-source-sha') == expected
+                  and 'btc_cosmographer_evidence_navigation_runtime_v0_1' in body
+                  and 'btc_cosmographer_dialogue_session_v0_3' in body
+              ):
+                  break
+              time.sleep(5)
+          else:
+              status, final_url, headers, body = last
+              raise SystemExit(json.dumps({
+                  'status': 'FAIL_PUBLIC_IDENTITY',
+                  'http_status': status,
+                  'final_url': final_url,
+                  'served_header': headers.get('x-btc-deployment-source-sha'),
+                  'expected': expected,
+              }))
+
+          entry_status, entry_final, entry_headers, entry_html = fetch('/crypto-astro/btc?lang=ru')
+          assert entry_status == 200
+          assert entry_final.startswith(base + '/crypto-astro/btc')
+          assert 'Открыть BTC Field' in entry_html
+          assert 'Start free dialogue' not in entry_html
+          assert '/crypto-astro/btc/live?lang=ru' in entry_html
+
+          def create_driver(width, height):
+              options = webdriver.ChromeOptions()
+              options.add_argument('--headless=new')
+              options.add_argument('--no-sandbox')
+              options.add_argument('--disable-dev-shm-usage')
+              options.add_argument('--disable-gpu')
+              options.add_argument(f'--window-size={width},{height}')
+              options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+              driver = webdriver.Chrome(options=options)
+              driver.set_window_size(width, height)
+              return driver
+
+          def wait_for(driver, selector, timeout=35):
+              return WebDriverWait(driver, timeout).until(
+                  lambda current: current.find_element(By.CSS_SELECTOR, selector)
+              )
+
+          def browser_errors(driver):
+              severe = []
+              for entry in driver.get_log('browser'):
+                  if entry.get('level') != 'SEVERE':
+                      continue
+                  message = entry.get('message', '')
+                  if 'favicon.ico' in message and '404' in message:
+                      continue
+                  severe.append(entry)
+              return severe
+
+          def open_question(driver, question, label):
+              query = urlencode({
+                  'lang': 'ru',
+                  'q': question,
+                  'post_merge_acceptance': label,
+                  'nonce': str(time.time_ns()),
+              })
+              driver.get(f'{base}/crypto-astro/btc/live?{query}')
+              assert driver.current_url.startswith(base + '/crypto-astro/btc/live?')
+              root = wait_for(driver, 'main[data-deployment-head-sha]')
+              assert root.get_attribute('data-deployment-head-sha') == expected
+              assert root.get_attribute('data-runtime-schema') == 'btc_cosmographer_evidence_navigation_runtime_v0_1'
+              assert root.get_attribute('data-session-schema') == 'btc_cosmographer_dialogue_session_v0_3'
+              assert root.get_attribute('data-cache-policy') == 'no-store'
+              meta = driver.find_element(By.CSS_SELECTOR, 'meta[name="btc-deployment-source-sha"]')
+              assert meta.get_attribute('content') == expected
+              turn = wait_for(driver, 'article.cosmographerTurn')
+              WebDriverWait(driver, 25).until(
+                  lambda current: current.execute_script(
+                      'return sessionStorage.getItem(arguments[0]);', session_key
+                  ) is not None
+              )
+              return root, turn
+
+          results = []
+          cases = [
+              ('planet', 'Текущее положение планет?'),
+              ('relation', 'В какое время высота блоков совпадала с наиболее сильными окнами?'),
+          ]
+
+          for viewport, width, height in (
+              ('desktop', 1440, 1000),
+              ('mobile', 390, 844),
+          ):
+              for case_name, question in cases:
+                  driver = create_driver(width, height)
+                  try:
+                      driver.get(f'{base}/crypto-astro/btc/live?lang=ru&seed={time.time_ns()}')
+                      wait_for(driver, 'main[data-deployment-head-sha]')
+                      driver.execute_script('sessionStorage.clear(); localStorage.clear();')
+                      root, turn = open_question(driver, question, f'{case_name}-{viewport}')
+
+                      session = json.loads(driver.execute_script(
+                          'return sessionStorage.getItem(arguments[0]);', session_key
+                      ))
+                      assert session['schema'] == 'btc_cosmographer_dialogue_session_v0_3'
+                      assert session['source_binding']['deployment_sha'] == expected
+                      assert len(session['turns']) == 1
+                      for key in legacy_keys:
+                          assert driver.execute_script(
+                              'return sessionStorage.getItem(arguments[0]);', key
+                          ) is None
+
+                      overflow = driver.execute_script(
+                          'return document.documentElement.scrollWidth > document.documentElement.clientWidth;'
+                      )
+                      assert overflow is False
+                      severe = browser_errors(driver)
+                      assert not severe, severe
+
+                      record = {
+                          'viewport': viewport,
+                          'case': case_name,
+                          'served_head': root.get_attribute('data-deployment-head-sha'),
+                          'session_schema': session['schema'],
+                          'session_turns': len(session['turns']),
+                          'overflow': overflow,
+                          'severe_browser_errors': len(severe),
+                          'route_disposition': turn.get_attribute('data-route-disposition'),
+                          'route_domain': turn.get_attribute('data-route-domain'),
+                          'answer_mode': turn.get_attribute('data-answer-mode'),
+                      }
+
+                      if case_name == 'planet':
+                          assert turn.get_attribute('data-route-disposition') == 'CLARIFY'
+                          assert turn.get_attribute('data-clarification-target') == 'SUBJECT'
+                          assert turn.get_attribute('data-show-next-question') == 'false'
+                          assert turn.get_attribute('data-show-clarification') == 'true'
+                          assert turn.get_attribute('data-anti-loop-blocked') == 'false'
+                          assert turn.get_attribute('data-answer-mode') == 'CLARIFICATION'
+                          assert 'этой планеты' not in turn.text.casefold()
+                          assert not turn.find_elements(By.CSS_SELECTOR, '[data-route-surface="next-precise-question"]')
+                          record.update({
+                              'clarification_target': 'SUBJECT',
+                              'self_loop': False,
+                              'next_precise_question_visible': False,
+                          })
+                      else:
+                          assert turn.get_attribute('data-relation-intent-detected') == 'true'
+                          resolution = turn.get_attribute('data-relation-resolution')
+                          assert resolution in {'SECOND_DOMAIN_UNRESOLVED', 'TWO_DOMAINS_RESOLVED'}
+                          disposition = turn.get_attribute('data-route-disposition')
+                          domain = turn.get_attribute('data-route-domain')
+                          bridge_result = turn.get_attribute('data-bridge-result')
+                          answer_mode = turn.get_attribute('data-answer-mode')
+                          assert (
+                              domain == 'astro_btc_bridge'
+                              or disposition == 'CLARIFY'
+                              or bridge_result == 'INSUFFICIENT_DUAL_EVIDENCE'
+                          )
+                          assert not (domain == 'bitcoin_protocol' and disposition == 'CONTINUE')
+                          assert answer_mode != 'PROTOCOL_EXPLAIN'
+                          assert 'высота блока — это' not in turn.text.casefold()
+                          if disposition == 'CLARIFY':
+                              assert not turn.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+                          if disposition != 'CONTINUE':
+                              assert turn.get_attribute('data-show-next-question') == 'false'
+                          record.update({
+                              'relation_intent': True,
+                              'relation_resolution': resolution,
+                              'bridge_result': bridge_result,
+                              'generic_protocol_fallback': False,
+                          })
+
+                      screenshot = out / f'{viewport}-{case_name}.png'
+                      driver.save_screenshot(str(screenshot))
+                      results.append(record)
+                  finally:
+                      driver.quit()
+
+          report = {
+              'status': 'PASS_PR114_POST_MERGE_PUBLIC_RUNTIME_ACCEPTANCE',
+              'public_base': base,
+              'expected_merge_sha': expected,
+              'entry_route': {
+                  'status': entry_status,
+                  'current_cta': True,
+                  'legacy_cta_absent': True,
+                  'live_link_present': True,
+              },
+              'live_route': {
+                  'status': status,
+                  'served_header_sha': headers.get('x-btc-deployment-source-sha'),
+                  'cache_control': headers.get('cache-control'),
+                  'runtime_schema': 'btc_cosmographer_evidence_navigation_runtime_v0_1',
+                  'session_schema': 'btc_cosmographer_dialogue_session_v0_3',
+              },
+              'cases': results,
+              'desktop_cases': sum(1 for item in results if item['viewport'] == 'desktop'),
+              'mobile_cases': sum(1 for item in results if item['viewport'] == 'mobile'),
+          }
+          (out / 'report.json').write_text(
+              json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8'
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Upload public runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-pr114-post-merge-public-runtime-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/pr114-post-merge-public-runtime/
+          if-no-files-found: warn
+          retention-days: 30
