@@ -15,6 +15,12 @@ import {
 } from "../../../lib/btc-cosmographer-route-graph";
 import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
 import {
+  applyBtcRelationIntentPrecedence,
+  BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
+  buildBtcEvidenceNavigationRuntimeDecision,
+  type BtcEvidenceNavigationRuntimeDecision,
+} from "../../../lib/btc-cosmographer-evidence-navigation-runtime";
+import {
   routeBtcCosmographerLocalRc,
   type BtcMultiBodyAstroMemory,
   type BtcMultiBodyAstroRcRoute,
@@ -36,6 +42,7 @@ import type { BtcPublicSnapshot } from "../../../lib/btc-public-output-contract"
 import { resolveBtcPublicLocale, type BtcPublicLocale } from "../../../lib/btc-public-language-contract";
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../../lib/btc-bilingual-surface-style";
 import { BTC_LIVE_DIALOGUE_CSS } from "../../../lib/btc-live-dialogue-style";
+import { BTC_DIALOGUE_SESSION_SCHEMA } from "../../../lib/btc-live-dialogue-session";
 import { BTC_PRODUCT_REBALANCE_CSS } from "../../../lib/btc-product-rebalance-style";
 
 const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -120,14 +127,19 @@ type Props = {
   initialDate: string;
   route: BtcCosmographerRoute | null;
   answer: BtcCosmographerAnswerProjection | null;
+  runtimeDecision: BtcEvidenceNavigationRuntimeDecision | null;
   sourceContext: BtcCosmographerSourceContext;
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
   inputError: string | null;
 };
 
+// Connector-authored deployment pulse: PR114 exact Preview identity v0.2.
 function deploymentSourceSha(): string | null {
-  const value = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? null;
+  const value = process.env.VERCEL_GIT_COMMIT_SHA ??
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ??
+    process.env.GITHUB_SHA ??
+    null;
   return value && /^[0-9a-f]{40}$/i.test(value) ? value : null;
 }
 
@@ -188,7 +200,13 @@ function marketOnlyRoute(route: BtcMultiBodyAstroRcRoute): BtcCosmographerRoute 
   };
 }
 
-export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res }) => {
+  const servedDeploymentSha = deploymentSourceSha();
+  res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
+  res.setHeader("CDN-Cache-Control", "no-store");
+  res.setHeader("Vercel-CDN-Cache-Control", "no-store");
+  res.setHeader("X-BTC-Deployment-Source-Sha", servedDeploymentSha ?? "UNAVAILABLE");
+  res.setHeader("X-BTC-Dialogue-Session-Schema", BTC_DIALOGUE_SESSION_SCHEMA);
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
   const resolvedLocale = resolveBtcPublicLocale(first(query.lang), initialQuestion);
@@ -214,8 +232,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     initialDate,
     route: null,
     answer: null,
+    runtimeDecision: null,
     sourceContext,
-    deploymentSourceSha: deploymentSourceSha(),
+    deploymentSourceSha: servedDeploymentSha,
     sourceBindingChanged: false,
     inputError: null,
   };
@@ -239,13 +258,20 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     ? null
     : parsed.packet ?? parseLegacyContext(query);
   const retainedAstroMemory = parseRetainedAstroMemory(query);
-  const route = routeBtcCosmographerLocalRc(
+  const initialRoute = routeBtcCosmographerLocalRc(
     resolvedLocale.locale,
     initialQuestion,
     packet,
     initialDate || undefined,
     retainedAstroMemory,
   );
+  const relationResolution = applyBtcRelationIntentPrecedence(
+    initialRoute,
+    initialQuestion,
+    packet,
+    retainedAstroMemory,
+  );
+  const route = relationResolution.route;
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
@@ -288,6 +314,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
           : null,
       ) as unknown as BtcCosmographerAnswerProjection
     : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
+  const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
+    resolvedLocale.locale,
+    route,
+    answer,
+    sourceContext,
+    relationResolution.relation_resolution,
+    relationResolution.btc_side_state_type,
+  );
   const sourceBindingChanged = Boolean(
     packet?.prior_snapshot_generated_at_utc &&
     sourceTimestamp &&
@@ -300,6 +334,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
       initialQuestion,
       route,
       answer,
+      runtimeDecision,
       sourceBindingChanged,
     },
   };
@@ -318,6 +353,9 @@ export default function BtcLivePage(props: Props) {
       <meta name="description" content={description}/>
       <meta name="btc-live-dialogue" content="semantic-route-graph-v0-1"/>
       <meta name="btc-deployment-source-sha" content={props.deploymentSourceSha ?? ""}/>
+      <meta name="btc-runtime-schema" content={BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA}/>
+      <meta name="btc-dialogue-session-schema" content={BTC_DIALOGUE_SESSION_SCHEMA}/>
+      <meta name="btc-preview-cache-policy" content="no-store"/>
     </Head>
     <style dangerouslySetInnerHTML={{ __html: BTC_BILINGUAL_SURFACE_CSS }}/>
     <style dangerouslySetInnerHTML={{ __html: BTC_PRODUCT_REBALANCE_CSS }}/>
