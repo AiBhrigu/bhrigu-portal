@@ -56,6 +56,16 @@ BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE = {
     "scripts/run-btc-evidence-navigation-runtime-fixture.mjs",
 }
 
+BTC_CLARIFICATION_RESOLUTION_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clarification-resolution-pr.yml",
+    "components/btc/BtcCosmographerDialogue.tsx",
+    "lib/btc-cosmographer-evidence-navigation-runtime.ts",
+    "lib/btc-cosmographer-route-graph.ts",
+    "pages/crypto-astro/btc/live.tsx",
+    "scripts/run-btc-evidence-navigation-runtime-fixture.mjs",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -94,6 +104,7 @@ accepted_scopes = {
     "PASS_BTC_ENTRY_CLEAN_PREMIUM_EXACT_4_FILE_SCOPE": BTC_ENTRY_CLEAN_PREMIUM_SCOPE,
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
     "PASS_BTC_EVIDENCE_NAVIGATION_RUNTIME_EXACT_9_FILE_SCOPE": BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE,
+    "PASS_BTC_CLARIFICATION_RESOLUTION_EXACT_7_FILE_SCOPE": BTC_CLARIFICATION_RESOLUTION_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
