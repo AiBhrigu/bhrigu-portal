@@ -42,6 +42,19 @@ jobs:
           block = "\n".join(line[10:] if line.startswith("          ") else line for line in raw.splitlines())
           exec(compile(block, 'btc-clarification-repair', 'exec'))
 
+          runtime = Path('lib/btc-cosmographer-evidence-navigation-runtime.ts')
+          runtime_text = runtime.read_text(encoding='utf-8')
+          broad = '''  const explicitProtocolTopic =
+    route.domain === "bitcoin_protocol" &&
+    route.context_relation === "NEW_TOPIC" &&'''
+          narrow = '''  const explicitProtocolTopic =
+    route.domain === "bitcoin_protocol" &&
+    route.subject === "halving" &&
+    route.context_relation === "NEW_TOPIC" &&'''
+          if runtime_text.count(broad) != 1:
+              raise SystemExit(f'explicit protocol rule count: {runtime_text.count(broad)}')
+          runtime.write_text(runtime_text.replace(broad, narrow, 1), encoding='utf-8')
+
           fixture = Path('scripts/run-btc-evidence-navigation-runtime-fixture.mjs')
           lines = fixture.read_text(encoding='utf-8').splitlines()
           matches = [index for index, line in enumerate(lines) if 'assert.match(routeSource' in line and 'протокол' in line]
