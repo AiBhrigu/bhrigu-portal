@@ -43,12 +43,12 @@ jobs:
           exec(compile(block, 'btc-clarification-repair', 'exec'))
 
           fixture = Path('scripts/run-btc-evidence-navigation-runtime-fixture.mjs')
-          text = fixture.read_text(encoding='utf-8')
-          old = '  assert.match(routeSource, /протокол\\\\s\\\\+\\\\(\\\\?:btc\\\\|bitcoin\\\\|биткоин\\\\)/);'
-          new = '  assert.ok(routeSource.includes("протокол\\\\s+(?:btc|bitcoin|биткоин)"));'
-          if text.count(old) != 1:
-              raise SystemExit(f'generated route assertion mismatch: {text.count(old)}')
-          fixture.write_text(text.replace(old, new, 1), encoding='utf-8')
+          lines = fixture.read_text(encoding='utf-8').splitlines()
+          matches = [index for index, line in enumerate(lines) if 'assert.match(routeSource' in line and 'протокол' in line]
+          if len(matches) != 1:
+              raise SystemExit(f'generated route assertion count: {len(matches)}')
+          lines[matches[0]] = '  assert.ok(routeSource.includes("протокол\\\\s+(?:btc|bitcoin|биткоин)"));'
+          fixture.write_text("\n".join(lines) + "\n", encoding='utf-8')
           PY
 
       - name: Install locked dependencies
