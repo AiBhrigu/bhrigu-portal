@@ -105,10 +105,15 @@ jobs:
           def value(node, name):
               return node.get_attribute(name) or ""
 
+          def wait_for_composer():
+              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
+
           def reset():
+              driver.get(base)
+              wait_for_composer()
               driver.execute_script("window.sessionStorage.clear()")
               driver.get(base)
-              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
+              wait_for_composer()
 
           def open_question(question):
               driver.get(f"{base}&q={quote(question)}")
