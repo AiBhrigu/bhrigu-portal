@@ -9,7 +9,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
 BASE = os.environ.get("BTC_COSMOGRAPHER_PREVIEW_BASE", "http://127.0.0.1:3110").rstrip("/")
-SESSION_KEY = "bhrigu:btc-free-dialogue:session:v0_1"
+SESSION_KEY = "bhrigu:btc-cosmographer:session:v0_3"
+SESSION_SCHEMA = "btc_cosmographer_dialogue_session_v0_3"
 CONTEXT_FIELDS = ["cc", "cd", "cs", "ci", "ca", "cm", "ct0", "ct1", "cb"]
 
 options = webdriver.ChromeOptions()
@@ -74,6 +75,20 @@ def full_screenshot(path):
     Path(path).write_bytes(base64.b64decode(payload["data"]))
 
 
+def read_session():
+    stored = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY)
+    mark("session_state_present", stored is not None, {"key": SESSION_KEY})
+    if stored is None:
+        raise SystemExit(f"required session state absent: {SESSION_KEY}")
+    try:
+        session = json.loads(stored)
+    except (TypeError, json.JSONDecodeError) as error:
+        mark("session_state_valid_json", False, str(error))
+        raise SystemExit(f"invalid session state for {SESSION_KEY}: {error}") from error
+    mark("session_state_valid_json", True)
+    return session
+
+
 try:
     Path("artifacts").mkdir(exist_ok=True)
     driver.set_window_size(1440, 1200)
@@ -102,9 +117,8 @@ try:
     mark("desktop_no_overflow_thread", no_overflow())
     full_screenshot("artifacts/btc-cosmographer-route-desktop.png")
 
-    stored = driver.execute_script("return sessionStorage.getItem(arguments[0])", SESSION_KEY)
-    session = json.loads(stored)
-    mark("session_v0_2", session.get("schema") == "btc_cosmographer_dialogue_session_v0_2")
+    session = read_session()
+    mark("session_v0_3", session.get("schema") == SESSION_SCHEMA, session.get("schema"))
     mark("session_four_turns", len(session.get("turns", [])) == 4)
     mark("session_no_transcript_transport", all("prior_answer_text" not in json.dumps(turn) for turn in session.get("turns", [])))
 
