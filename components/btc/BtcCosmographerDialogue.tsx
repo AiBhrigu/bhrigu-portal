@@ -43,6 +43,7 @@ type Props = {
   deploymentSourceSha: string | null;
   sourceBindingChanged: boolean;
   inputError: string | null;
+  pendingClarificationOriginFingerprint: string | null;
 };
 
 const EN_MONTHS = [
@@ -638,6 +639,29 @@ export function BtcCosmographerDialogue(props: Props) {
   const clarificationPrompt = latestTurn?.route_disposition === "CLARIFY"
     ? latestTurn.clarification_text ?? (ru ? "Уточните предмет вопроса." : "Clarify the question subject.")
     : null;
+  const clarificationPeriod = latestTurn
+    ? `${latestTurn.time_start ?? ""}:${latestTurn.time_end ?? ""}`
+    : "";
+  const derivedClarificationOrigin = latestTurn?.route_disposition === "CLARIFY"
+    ? [
+        "origin",
+        latestTurn.effective_question.trim().toLowerCase().replace(/\s+/g, " "),
+        (latestTurn.route_subject ?? latestTurn.question_class ?? "unknown").trim().toLowerCase(),
+        clarificationPeriod,
+      ].join("\u241f")
+    : null;
+  const pendingClarificationFields = latestTurn?.route_disposition === "CLARIFY" &&
+    latestTurn.clarification_target &&
+    latestTurn.clarification_fingerprint
+    ? {
+        pof: props.pendingClarificationOriginFingerprint ?? derivedClarificationOrigin ?? latestTurn.clarification_fingerprint,
+        pct: latestTurn.clarification_target,
+        pcd: latestTurn.route_domain ?? "unsupported",
+        pcs: latestTurn.route_subject ?? latestTurn.question_class ?? "unknown",
+        pct0: latestTurn.time_start ?? "",
+        pct1: latestTurn.time_end ?? "",
+      }
+    : null;
   const contextTurn = contextSafe ? latestContextTurn(turns) : null;
   const retainedAstroTurn = [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
@@ -757,6 +781,7 @@ export function BtcCosmographerDialogue(props: Props) {
 
       <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>
+        {pendingClarificationFields && Object.entries(pendingClarificationFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         {Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         <label>

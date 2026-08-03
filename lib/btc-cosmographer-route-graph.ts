@@ -303,7 +303,7 @@ function protocolSubject(question: string): string | null {
   if (/genesis|генезис|перв(?:ый|ого)\s+блок/i.test(question)) return "genesis";
   if (/consensus|proof.of.work|chainwork|консенсус|доказательств[ао]\s+работ/i.test(question)) return "consensus";
   if (/\bblock\b|height|chain tip|блок|высот/i.test(question)) return "blocks";
-  if (/что такое\s+(?:btc|bitcoin|биткоин)|how\s+does\s+bitcoin\s+work|bitcoin\s+protocol|протокол\s+биткоин/i.test(question)) return "overview";
+  if (/что такое\s+(?:btc|bitcoin|биткоин)|how\s+does\s+bitcoin\s+work|(?:btc|bitcoin)\s+protocol|протокол\s+(?:btc|bitcoin|биткоин)/i.test(question)) return "overview";
   return null;
 }
 
@@ -319,7 +319,7 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
 }
 
 function isMethodology(question: string): boolean {
-  return /source|proof|method|methodology|where.*data|источник|доказатель|методик|откуда.*данн/i.test(question);
+  return /source|proof|method|methodology|where.*data|источник|доказатель|методик|(?:^|\s)метод(?:\s|$|[?!.])|откуда.*данн/i.test(question);
 }
 
 function isNavigation(question: string): boolean {
