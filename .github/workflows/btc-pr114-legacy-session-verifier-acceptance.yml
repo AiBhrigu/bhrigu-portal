@@ -22,7 +22,7 @@ env:
 jobs:
   exact-pr114-verifier-replay:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 45
     steps:
       - name: Checkout acceptance-only candidate
         uses: actions/checkout@v4
@@ -104,6 +104,186 @@ jobs:
           cp artifacts/btc-cosmographer-route-desktop.png artifacts/btc-pr114-session-v0-3-desktop.png
           cp artifacts/btc-cosmographer-route-mobile.png artifacts/btc-pr114-session-v0-3-mobile.png
 
+      - name: Replay exact founder questions in separate clean sessions
+        working-directory: pr114
+        env:
+          BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3114
+          BTC_COSMOGRAPHER_EXPECTED_DEPLOYMENT_SHA: ${{ env.PR114_EXPECTED_HEAD }}
+        run: |
+          python - <<'PY'
+          import base64
+          import json
+          import os
+          import time
+          from pathlib import Path
+          from urllib.parse import urlencode
+
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["BTC_COSMOGRAPHER_PREVIEW_BASE"].rstrip("/")
+          expected_head = os.environ["BTC_COSMOGRAPHER_EXPECTED_DEPLOYMENT_SHA"]
+          session_key = "bhrigu:btc-cosmographer:session:v0_3"
+          artifacts = Path("artifacts")
+          artifacts.mkdir(exist_ok=True)
+
+          def driver_for(width, height):
+              options = webdriver.ChromeOptions()
+              for value in (
+                  "--headless=new",
+                  "--no-sandbox",
+                  "--disable-dev-shm-usage",
+                  "--disable-gpu",
+                  f"--window-size={width},{height}",
+              ):
+                  options.add_argument(value)
+              driver = webdriver.Chrome(options=options)
+              driver.set_window_size(width, height)
+              return driver
+
+          def full_screenshot(driver, path):
+              metrics = driver.execute_cdp_cmd("Page.getLayoutMetrics", {})
+              size = metrics["cssContentSize"]
+              payload = driver.execute_cdp_cmd("Page.captureScreenshot", {
+                  "format": "png",
+                  "captureBeyondViewport": True,
+                  "clip": {
+                      "x": 0,
+                      "y": 0,
+                      "width": size["width"],
+                      "height": size["height"],
+                      "scale": 1,
+                  },
+              })
+              path.write_bytes(base64.b64decode(payload["data"]))
+
+          def open_clean(question, viewport, case, width, height):
+              driver = driver_for(width, height)
+              query = urlencode({
+                  "lang": "ru",
+                  "q": question,
+                  "acceptance": f"{case}-{viewport}",
+                  "nonce": str(time.time_ns()),
+              })
+              try:
+                  driver.get(f"{base}/crypto-astro/btc/live?{query}")
+                  wait = WebDriverWait(driver, 40)
+                  root = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "main[data-deployment-head-sha]"))
+                  turn = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "article.cosmographerTurn"))
+                  wait.until(lambda d: d.execute_script(
+                      "return sessionStorage.getItem(arguments[0]);",
+                      session_key,
+                  ) is not None)
+                  session = json.loads(driver.execute_script(
+                      "return sessionStorage.getItem(arguments[0]);",
+                      session_key,
+                  ))
+                  assert root.get_attribute("data-deployment-head-sha") == expected_head
+                  assert root.get_attribute("data-runtime-schema") == "btc_cosmographer_evidence_navigation_runtime_v0_1"
+                  assert root.get_attribute("data-session-schema") == "btc_cosmographer_dialogue_session_v0_3"
+                  assert root.get_attribute("data-cache-policy") == "no-store"
+                  assert session["schema"] == "btc_cosmographer_dialogue_session_v0_3"
+                  assert session["source_binding"]["deployment_sha"] == expected_head
+                  assert len(session["turns"]) == 1
+                  screenshot = artifacts / f"btc-pr114-founder-{case}-{viewport}.png"
+                  full_screenshot(driver, screenshot)
+                  return driver, turn, session, screenshot
+              except Exception:
+                  driver.quit()
+                  raise
+
+          results = []
+          for viewport, width, height in (("desktop", 1440, 1000), ("mobile", 390, 844)):
+              driver, first, session, screenshot = open_clean(
+                  "Текущее положение планет?",
+                  viewport,
+                  "clarify-subject",
+                  width,
+                  height,
+              )
+              try:
+                  assert first.get_attribute("data-route-disposition") == "CLARIFY"
+                  assert first.get_attribute("data-clarification-target") == "SUBJECT"
+                  assert first.get_attribute("data-show-clarification") == "true"
+                  assert first.get_attribute("data-show-next-question") == "false"
+                  assert first.get_attribute("data-answer-mode") == "CLARIFICATION"
+                  assert first.get_attribute("data-anti-loop-blocked") == "false"
+                  assert not first.find_elements(By.CSS_SELECTOR, '[data-route-surface="next-precise-question"]')
+                  assert not first.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+                  assert "этой планеты" not in first.text.casefold()
+                  results.append({
+                      "viewport": viewport,
+                      "case": "clarify-subject",
+                      "served_head": expected_head,
+                      "route_disposition": "CLARIFY",
+                      "clarification_target": "SUBJECT",
+                      "show_clarification": True,
+                      "show_next_question": False,
+                      "direct_analytical_answer_suppressed": True,
+                      "unresolved_pronoun_absent": True,
+                      "self_loop": False,
+                      "session_turns": len(session["turns"]),
+                      "screenshot": screenshot.name,
+                  })
+              finally:
+                  driver.quit()
+
+              driver, second, session, screenshot = open_clean(
+                  "В какое время высота блоков совпадала с наиболее сильными окнами?",
+                  viewport,
+                  "relation-block-window",
+                  width,
+                  height,
+              )
+              try:
+                  relation_detected = second.get_attribute("data-relation-intent-detected") == "true"
+                  resolution = second.get_attribute("data-relation-resolution")
+                  disposition = second.get_attribute("data-route-disposition")
+                  domain = second.get_attribute("data-route-domain")
+                  bridge_result = second.get_attribute("data-bridge-result")
+                  answer_mode = second.get_attribute("data-answer-mode")
+                  assert relation_detected
+                  assert resolution in {"SECOND_DOMAIN_UNRESOLVED", "TWO_DOMAINS_RESOLVED"}
+                  assert domain == "astro_btc_bridge" or disposition == "CLARIFY" or bridge_result == "INSUFFICIENT_DUAL_EVIDENCE"
+                  assert not (domain == "bitcoin_protocol" and disposition == "CONTINUE")
+                  assert answer_mode != "PROTOCOL_EXPLAIN"
+                  assert "высота блока — это" not in second.text.casefold()
+                  if disposition != "CONTINUE":
+                      assert second.get_attribute("data-show-next-question") == "false"
+                  results.append({
+                      "viewport": viewport,
+                      "case": "relation-block-window",
+                      "served_head": expected_head,
+                      "relation_intent_detected": relation_detected,
+                      "relation_resolution": resolution,
+                      "route_disposition": disposition,
+                      "route_domain": domain,
+                      "bridge_result": bridge_result,
+                      "protocol_keyword_dominance": False,
+                      "generic_protocol_explanation_absent": True,
+                      "session_turns": len(session["turns"]),
+                      "screenshot": screenshot.name,
+                  })
+              finally:
+                  driver.quit()
+
+          report = {
+              "schema": "btc_pr114_exact_founder_route_replay_v0_1",
+              "status": "PASS",
+              "expected_head": expected_head,
+              "runtime_schema": "btc_cosmographer_evidence_navigation_runtime_v0_1",
+              "session_schema": "btc_cosmographer_dialogue_session_v0_3",
+              "clean_sessions": 4,
+              "results": results,
+          }
+          (artifacts / "btc-pr114-exact-founder-route-replay.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, ensure_ascii=False))
+          PY
+
       - name: Prove absent session state fails closed
         working-directory: pr114
         env:
@@ -155,6 +335,11 @@ jobs:
             pr114/artifacts/btc-pr114-session-v0-3-desktop.png
             pr114/artifacts/btc-pr114-session-v0-3-mobile.png
             pr114/artifacts/btc-pr114-session-absent-fail-closed.json
+            pr114/artifacts/btc-pr114-exact-founder-route-replay.json
+            pr114/artifacts/btc-pr114-founder-clarify-subject-desktop.png
+            pr114/artifacts/btc-pr114-founder-clarify-subject-mobile.png
+            pr114/artifacts/btc-pr114-founder-relation-block-window-desktop.png
+            pr114/artifacts/btc-pr114-founder-relation-block-window-mobile.png
             /tmp/pr114-session-verifier.log
           if-no-files-found: error
           retention-days: 30
