@@ -1,0 +1,83 @@
+name: OPS BTC Clarification Repair PR Bootstrap
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/_ops-btc-clarification-repair-v0-1.yml
+      - .github/workflows/_ops-btc-clarification-repair-pr-v0-1.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-candidate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout writable PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+
+      - name: Verify exact repair base
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "ee686e200a6de11bcbbbefc56e80287f6d8ef3f8"
+
+      - name: Execute retained exact patch block
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          source = Path('.github/workflows/_ops-btc-clarification-repair-v0-1.yml').read_text(encoding='utf-8')
+          start = "          python3 - <<'PY'\n"
+          end = "\n          PY\n\n      - name: Install and validate"
+          if source.count(start) != 1 or source.count(end) != 1:
+              raise SystemExit('retained patch block markers are not exact')
+          block = source.split(start, 1)[1].split(end, 1)[0]
+          exec(compile(textwrap.dedent(block), 'btc-clarification-repair', 'exec'))
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify targeted runtime fixture
+        run: node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+      - name: Verify inherited BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Verify exact product scope
+        run: |
+          git diff --name-only ee686e200a6de11bcbbbefc56e80287f6d8ef3f8 -- | sort > /tmp/actual
+          cat > /tmp/expected <<'EOF'
+          .github/workflows/_ops-btc-clarification-repair-pr-v0-1.yml
+          .github/workflows/_ops-btc-clarification-repair-v0-1.yml
+          .github/workflows/btc-evidence-navigation-runtime-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          lib/btc-cosmographer-evidence-navigation-runtime.ts
+          lib/btc-cosmographer-route-graph.ts
+          pages/crypto-astro/btc/live.tsx
+          scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          EOF
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Commit clean repair candidate
+        run: |
+          rm \
+            .github/workflows/_ops-btc-clarification-repair-v0-1.yml \
+            .github/workflows/_ops-btc-clarification-repair-pr-v0-1.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Repair BTC clarification resolution and topic precedence"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
