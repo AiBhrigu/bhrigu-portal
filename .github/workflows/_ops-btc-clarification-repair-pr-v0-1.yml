@@ -71,29 +71,16 @@ jobs:
       - name: Verify production build
         run: npm run build
 
-      - name: Verify exact product scope
+      - name: Commit verified product core
         run: |
-          git diff --name-only ee686e200a6de11bcbbbefc56e80287f6d8ef3f8 -- | sort > /tmp/actual
-          cat > /tmp/expected <<'EOF'
-          .github/workflows/_ops-btc-clarification-repair-pr-v0-1.yml
-          .github/workflows/_ops-btc-clarification-repair-v0-1.yml
-          .github/workflows/btc-evidence-navigation-runtime-pr.yml
-          components/btc/BtcCosmographerDialogue.tsx
-          lib/btc-cosmographer-evidence-navigation-runtime.ts
-          lib/btc-cosmographer-route-graph.ts
-          pages/crypto-astro/btc/live.tsx
-          scripts/run-btc-evidence-navigation-runtime-fixture.mjs
-          EOF
-          sort -o /tmp/expected /tmp/expected
-          diff -u /tmp/expected /tmp/actual
-
-      - name: Commit clean repair candidate
-        run: |
-          rm \
-            .github/workflows/_ops-btc-clarification-repair-v0-1.yml \
-            .github/workflows/_ops-btc-clarification-repair-pr-v0-1.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add \
+            components/btc/BtcCosmographerDialogue.tsx \
+            lib/btc-cosmographer-evidence-navigation-runtime.ts \
+            lib/btc-cosmographer-route-graph.ts \
+            pages/crypto-astro/btc/live.tsx \
+            scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          test "$(git diff --cached --name-only | wc -l)" -eq 5
           git commit -m "Repair BTC clarification resolution and topic precedence"
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
