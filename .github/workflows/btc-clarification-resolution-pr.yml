@@ -12,6 +12,7 @@ on:
       - lib/btc-cosmographer-route-graph.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+      - scripts/verify-btc-cosmographer-route-surface.py
 
 permissions:
   contents: read
@@ -31,7 +32,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and seven-file scope
+      - name: Verify exact base and eight-file scope
         run: |
           git fetch origin master
           test "$(git merge-base HEAD origin/master)" = "ee686e200a6de11bcbbbefc56e80287f6d8ef3f8"
@@ -44,6 +45,7 @@ jobs:
           lib/btc-cosmographer-route-graph.ts
           pages/crypto-astro/btc/live.tsx
           scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+          scripts/verify-btc-cosmographer-route-surface.py
           EOF
           sort -o /tmp/expected /tmp/expected
           diff -u /tmp/expected /tmp/actual
