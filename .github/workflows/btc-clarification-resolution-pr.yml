@@ -80,9 +80,11 @@ jobs:
           from urllib.parse import quote
           from selenium import webdriver
           from selenium.webdriver.common.by import By
+          from selenium.webdriver.support import expected_conditions as EC
           from selenium.webdriver.support.ui import WebDriverWait
 
           base = "http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru"
+          session_key = "bhrigu:btc-cosmographer:session:v0_3"
           options = webdriver.ChromeOptions()
           for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--window-size=1280,1000"):
               options.add_argument(argument)
@@ -105,6 +107,16 @@ jobs:
           def value(node, name):
               return node.get_attribute(name) or ""
 
+          def session():
+              raw = driver.execute_script("return window.sessionStorage.getItem(arguments[0])", session_key)
+              return json.loads(raw) if raw else None
+
+          def wait_for_session_question(question):
+              wait.until(lambda _: any(
+                  turn.get("user_text") == question
+                  for turn in ((session() or {}).get("turns", []))
+              ))
+
           def wait_for_composer():
               wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
 
@@ -117,17 +129,25 @@ jobs:
 
           def open_question(question):
               driver.get(f"{base}&q={quote(question)}")
-              return latest()
+              node = latest()
+              wait_for_session_question(question)
+              return node
 
-          def submit(question):
-              previous = len(turns())
+          def submit(question, expected_disposition=None):
+              old_page = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
               textarea = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
               textarea.clear()
               textarea.send_keys(question)
               form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
               driver.execute_script("arguments[0].requestSubmit()", form)
-              wait.until(lambda _: len(turns()) >= previous + 1)
-              return latest()
+              wait.until(EC.staleness_of(old_page))
+              wait_for_composer()
+              node = latest()
+              wait_for_session_question(question)
+              if expected_disposition:
+                  wait.until(lambda _: value(latest(), "data-route-disposition") == expected_disposition)
+                  node = latest()
+              return node
 
           try:
               reset()
@@ -135,31 +155,31 @@ jobs:
               record("method_seed_clarifies", value(seed, "data-route-disposition") == "CLARIFY")
               origin = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'input[name="pof"]')).get_attribute("value")
               record("pending_origin_present", bool(origin))
-              method = submit("метод")
+              method = submit("метод", "CONTINUE")
               record("method_domain", value(method, "data-route-domain") == "methodology", value(method, "data-route-domain"))
               record("method_continues", value(method, "data-route-disposition") == "CONTINUE", value(method, "data-route-disposition"))
 
               reset()
               seed = open_question("Текущая позиция Биткоина в каком окне?")
               record("protocol_seed_clarifies", value(seed, "data-route-disposition") == "CLARIFY")
-              protocol = submit("протокол Bitcoin")
+              protocol = submit("протокол Bitcoin", "CONTINUE")
               record("protocol_domain", value(protocol, "data-route-domain") == "bitcoin_protocol", value(protocol, "data-route-domain"))
               record("protocol_subject", value(protocol, "data-route-subject") == "overview", value(protocol, "data-route-subject"))
               record("protocol_continues", value(protocol, "data-route-disposition") == "CONTINUE", value(protocol, "data-route-disposition"))
 
               reset()
               open_question("Текущая позиция Биткоина в каком окне?")
-              first_unknown = submit("неизвестный предмет один")
+              first_unknown = submit("неизвестный предмет один", "CLARIFY")
               record("first_unknown_clarifies", value(first_unknown, "data-route-disposition") == "CLARIFY", value(first_unknown, "data-route-disposition"))
-              second_unknown = submit("неизвестный предмет два")
+              second_unknown = submit("неизвестный предмет два", "CLARIFY")
               record("distinct_unknown_clarifies", value(second_unknown, "data-route-disposition") == "CLARIFY", value(second_unknown, "data-route-disposition"))
               record("distinct_unknown_not_loop", value(second_unknown, "data-anti-loop-blocked") == "false", value(second_unknown, "data-anti-loop-blocked"))
 
               reset()
               open_question("Текущая позиция Биткоина в каком окне?")
-              repeated = submit("неизвестный предмет")
+              repeated = submit("неизвестный предмет", "CLARIFY")
               record("first_repeat_clarifies", value(repeated, "data-route-disposition") == "CLARIFY", value(repeated, "data-route-disposition"))
-              repeated = submit("неизвестный предмет")
+              repeated = submit("неизвестный предмет", "STOP")
               record("exact_repeat_stops", value(repeated, "data-route-disposition") == "STOP", value(repeated, "data-route-disposition"))
               record("exact_repeat_loop_flag", value(repeated, "data-anti-loop-blocked") == "true", value(repeated, "data-anti-loop-blocked"))
 
@@ -167,14 +187,14 @@ jobs:
               mars = open_question("Марс и его цикл в 2026 году")
               record("mars_domain", value(mars, "data-route-domain") == "astromodule", value(mars, "data-route-domain"))
               record("mars_subject", value(mars, "data-route-subject") == "mars", value(mars, "data-route-subject"))
-              halving = submit("Халвинг и его влияние на окна в циклах")
+              halving = submit("Халвинг и его влияние на окна в циклах", "CONTINUE")
               record("halving_domain", value(halving, "data-route-domain") == "bitcoin_protocol", value(halving, "data-route-domain"))
               record("halving_subject", value(halving, "data-route-subject") == "halving", value(halving, "data-route-subject"))
               record("halving_new_topic", value(halving, "data-context-relation") == "NEW_TOPIC", value(halving, "data-context-relation"))
 
-              session = driver.execute_script("return JSON.parse(window.sessionStorage.getItem('bhrigu:btc-cosmographer:session:v0_3'))")
-              record("session_v0_3_present", isinstance(session, dict))
-              record("session_has_chain", len(session.get("turns", [])) >= 2, str(len(session.get("turns", []))))
+              current_session = session()
+              record("session_v0_3_present", isinstance(current_session, dict))
+              record("session_has_chain", len(current_session.get("turns", [])) >= 2, str(len(current_session.get("turns", []))))
           finally:
               driver.quit()
 
