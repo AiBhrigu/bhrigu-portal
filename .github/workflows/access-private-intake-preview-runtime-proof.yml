@@ -1,0 +1,560 @@
+name: BHRIGU Private Intake Exact-Head Preview Runtime Proof
+
+on:
+  pull_request:
+    branches:
+      - agent/market-cosmographer-private-intake-idempotency-repair-v0-1
+    paths:
+      - ".github/workflows/access-private-intake-preview-runtime-proof.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-private-intake-preview-runtime-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  protected-preview-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      EXPECTED_BASE_SHA: c86c72d53c9f932ca999e124c22984a2a07ec52f
+      CANDIDATE_DEPLOYMENT_ID: dpl_4F7SKgbt8XHnZUWYGJEAGbPKcFLH
+      PREVIEW_BASE: https://bhrigu-portal-git-agent-market-cosmog-1a5391-aibhrigus-projects.vercel.app
+      VERCEL_PROJECT_ID: prj_CmMNrwffAR0UZKsJA4fbFUWQnMqC
+      VERCEL_TEAM_ID: team_yvjQzRPxIUDJohO4Nbkr7NyJ
+      CANDIDATE_BRANCH: agent/market-cosmographer-private-intake-idempotency-repair-v0-1
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      ACCESS_PRIVATE_INTAKE_PROOF_SECRET: ${{ secrets.ACCESS_PRIVATE_INTAKE_PROOF_SECRET }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - name: Checkout verification head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lock verification-only one-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$BASE_SHA" = "$EXPECTED_BASE_SHA"
+          test "$(git merge-base "$BASE_SHA" "$HEAD_SHA")" = "$BASE_SHA"
+          test "$(git rev-list --count "$BASE_SHA..$HEAD_SHA")" = "1"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' '.github/workflows/access-private-intake-preview-runtime-proof.yml' > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo PREVIEW_RUNTIME_VERIFICATION_ONE_FILE_SCOPE=PASS
+
+      - name: Execute protected exact-head Preview proof
+        env:
+          VERIFICATION_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import http.cookiejar
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          base = os.environ["PREVIEW_BASE"].rstrip("/")
+          bypass = os.environ.get("VERCEL_AUTOMATION_BYPASS_SECRET", "").strip()
+          github_proof_secret = os.environ.get("ACCESS_PRIVATE_INTAKE_PROOF_SECRET", "").strip()
+          vercel_token = os.environ.get("VERCEL_TOKEN", "").strip()
+
+          report = {
+              "schema_version": "bhrigu_private_intake_preview_runtime_proof_v0_2",
+              "candidate_head_sha": os.environ["EXPECTED_BASE_SHA"],
+              "candidate_deployment_id": os.environ["CANDIDATE_DEPLOYMENT_ID"],
+              "preview_origin": base,
+              "verification_head_sha": os.environ.get("VERIFICATION_HEAD_SHA", ""),
+              "checks": {},
+              "measurements": {},
+              "failures": [],
+              "secret_presence": {
+                  "vercel_automation_bypass": bool(bypass),
+                  "github_proof_secret_min_32": len(github_proof_secret) >= 32,
+                  "vercel_read_token": bool(vercel_token),
+              },
+              "effective_preview_env": {},
+              "storage_write": "NOT_RUN",
+              "email_send": "ZERO",
+              "production_mutation": "ZERO",
+          }
+
+          def check(name, condition, detail=None):
+              passed = bool(condition)
+              report["checks"][name] = passed
+              if not passed:
+                  report["failures"].append(name)
+                  if detail is not None:
+                      report.setdefault("failure_detail", {})[name] = detail
+
+          def new_opener():
+              return urllib.request.build_opener(
+                  urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
+              )
+
+          primary_opener = new_opener()
+
+          def call(url_or_path, method="GET", body=None, headers=None, opener=None):
+              target = url_or_path if url_or_path.startswith("http") else f"{base}{url_or_path}"
+              request_headers = {
+                  "User-Agent": "BHRIGU-Private-Intake-Preview-Proof/0.2",
+                  "Cache-Control": "no-cache",
+                  "Pragma": "no-cache",
+              }
+              if bypass:
+                  request_headers["x-vercel-protection-bypass"] = bypass
+                  request_headers["x-vercel-set-bypass-cookie"] = "true"
+              if body is not None:
+                  request_headers["Content-Type"] = "application/json"
+              if headers:
+                  request_headers.update(headers)
+              request = urllib.request.Request(
+                  target, data=body, method=method, headers=request_headers
+              )
+              active_opener = opener or primary_opener
+              try:
+                  with active_opener.open(request, timeout=45) as response:
+                      return (
+                          response.status,
+                          dict(response.headers),
+                          response.read().decode("utf-8", "replace"),
+                          response.geturl(),
+                      )
+              except urllib.error.HTTPError as error:
+                  return (
+                      error.code,
+                      dict(error.headers),
+                      error.read().decode("utf-8", "replace"),
+                      error.geturl(),
+                  )
+
+          def fetch_effective_preview_env():
+              if not vercel_token:
+                  return {}, "MISSING_VERCEL_TOKEN"
+              project = urllib.parse.quote(os.environ["VERCEL_PROJECT_ID"], safe="")
+              team = urllib.parse.quote(os.environ["VERCEL_TEAM_ID"], safe="")
+              branch = urllib.parse.quote(os.environ["CANDIDATE_BRANCH"], safe="")
+              endpoints = [
+                  f"https://api.vercel.com/v10/projects/{project}/env?teamId={team}&decrypt=true",
+                  f"https://api.vercel.com/v10/projects/{project}/env?teamId={team}&decrypt=true&gitBranch={branch}",
+              ]
+              all_items = []
+              try:
+                  for endpoint in endpoints:
+                      req = urllib.request.Request(
+                          endpoint,
+                          headers={
+                              "Authorization": f"Bearer {vercel_token}",
+                              "User-Agent": "BHRIGU-Private-Intake-Env-Audit/0.1",
+                          },
+                      )
+                      with urllib.request.urlopen(req, timeout=45) as response:
+                          payload = json.loads(response.read().decode("utf-8"))
+                      all_items.extend(payload.get("envs", []))
+              except urllib.error.HTTPError as error:
+                  return {}, f"VERCEL_ENV_HTTP_{error.code}"
+              except Exception as error:
+                  return {}, f"VERCEL_ENV_READ_ERROR_{type(error).__name__}"
+
+              branch_name = os.environ["CANDIDATE_BRANCH"]
+              generic = {}
+              branch_specific = {}
+              for item in all_items:
+                  key = str(item.get("key") or "")
+                  value = item.get("value")
+                  targets = item.get("target", [])
+                  if isinstance(targets, str):
+                      targets = [targets]
+                  if "preview" not in targets or not key or not isinstance(value, str):
+                      continue
+                  item_branch = item.get("gitBranch")
+                  if item_branch == branch_name:
+                      branch_specific[key] = value
+                  elif not item_branch:
+                      generic[key] = value
+              generic.update(branch_specific)
+              return generic, "PASS"
+
+          check("vercel_automation_bypass_present", bool(bypass))
+          if bypass:
+              access_status = None
+              access_headers = {}
+              access_body = ""
+              for attempt in range(60):
+                  access_status, access_headers, access_body, _ = call(
+                      f"/access?preview_runtime_probe={attempt}"
+                  )
+                  if access_status == 200:
+                      break
+                  time.sleep(5)
+              check("preview_access_200", access_status == 200, access_status)
+              check(
+                  "public_intake_default_off",
+                  'data-access-intake-status="temporarily-closed"' in access_body
+                  and "Reviewed requests are temporarily closed" in access_body,
+              )
+              check(
+                  "public_form_absent_default_off",
+                  "<form" not in access_body
+                  and 'data-access-submit-disabled="true"' in access_body,
+              )
+              check(
+                  "access_no_store",
+                  "no-store"
+                  in access_headers.get(
+                      "Cache-Control", access_headers.get("cache-control", "")
+                  ).lower(),
+              )
+
+              invalid_body = b'{"this_is":"intentionally_incomplete"'
+              closed_status, closed_headers, closed_body, _ = call(
+                  "/api/access/submit", method="POST", body=invalid_body
+              )
+              try:
+                  closed_json = json.loads(closed_body)
+              except Exception:
+                  closed_json = {}
+              check("real_post_fail_closed_503", closed_status == 503, closed_status)
+              check(
+                  "real_post_rejected_before_body_parse",
+                  closed_json.get("errorCode") == "intake_temporarily_closed",
+                  closed_json.get("errorCode"),
+              )
+              check(
+                  "real_post_no_store",
+                  "no-store"
+                  in closed_headers.get(
+                      "Cache-Control", closed_headers.get("cache-control", "")
+                  ).lower(),
+              )
+
+              get_status, _, _, _ = call("/api/access/submit")
+              check("api_get_405", get_status == 405, get_status)
+
+              list_status, list_headers, list_body, _ = call("/access-review")
+              check("public_review_list_absent_404", list_status == 404, list_status)
+              check(
+                  "review_no_store",
+                  "no-store"
+                  in list_headers.get(
+                      "Cache-Control", list_headers.get("cache-control", "")
+                  ).lower(),
+              )
+              check(
+                  "review_sensitive_markers_absent",
+                  all(
+                      marker not in list_body
+                      for marker in ("operator_packet", "BHRIGU INTAKE PROOF")
+                  ),
+              )
+
+              wrong_token = "wrong-capability-token".ljust(43, "x")
+              wrong_status, _, _, _ = call(
+                  "/access-review?id=BRG-20260804-000000000000&token="
+                  + urllib.parse.quote(wrong_token),
+                  opener=new_opener(),
+              )
+              check("wrong_capability_404", wrong_status == 404, wrong_status)
+              report["measurements"].update(
+                  {
+                      "access_status": access_status,
+                      "real_post_status": closed_status,
+                      "api_get_status": get_status,
+                      "review_list_status": list_status,
+                      "wrong_capability_status": wrong_status,
+                  }
+              )
+
+          effective_env, env_read_status = fetch_effective_preview_env()
+          report["environment_read_status"] = env_read_status
+          report["checks"]["vercel_read_only_env_access"] = env_read_status == "PASS"
+          required_keys = [
+              "ACCESS_PRIVATE_INTAKE_PROOF_SECRET",
+              "BLOB_READ_WRITE_TOKEN",
+              "ACCESS_EMAIL_ENDPOINT",
+              "ACCESS_EMAIL_API_KEY",
+              "ACCESS_EMAIL_FROM",
+              "ACCESS_OPERATOR_EMAIL",
+          ]
+          report["effective_preview_env"] = {
+              key: bool(effective_env.get(key)) for key in required_keys
+          }
+          report["effective_preview_env"]["ACCESS_PRIVATE_INTAKE_PUBLIC_ENABLED_TRUE"] = (
+              effective_env.get("ACCESS_PRIVATE_INTAKE_PUBLIC_ENABLED") == "true"
+          )
+
+          proof_secret = github_proof_secret
+          proof_source = "github_secret_mirror" if len(proof_secret) >= 32 else "none"
+          if len(proof_secret) < 32:
+              candidate = effective_env.get("ACCESS_PRIVATE_INTAKE_PROOF_SECRET", "")
+              if len(candidate) >= 32:
+                  proof_secret = candidate
+                  proof_source = "vercel_preview_env_read_only"
+          report["proof_secret_source"] = proof_source
+          check("private_intake_proof_secret_available", len(proof_secret) >= 32)
+          check(
+              "public_enablement_remains_off",
+              effective_env.get("ACCESS_PRIVATE_INTAKE_PUBLIC_ENABLED") != "true",
+          )
+
+          if len(proof_secret) >= 32 and bypass:
+              anchor = "2026-08-04T09:45:00.000Z"
+              proof_payload = {
+                  "request": {
+                      "name": "BHRIGU INTAKE PROOF",
+                      "email": "bhrigu-intake-proof@invalid.example",
+                      "subjectType": "Mixed / Not sure",
+                      "mainQuestion": "Prove durable private intake, capability retrieval, delivery idempotency, and reconciliation.",
+                      "shortDescription": "Synthetic, non-personal exact-head Preview durability proof for c86c72d.",
+                      "preferredDepth": "Structured Snapshot",
+                  },
+                  "subjectPayload": {
+                      "primarySubject": "BTC intake durability",
+                      "knownDatesRaw": anchor[:10],
+                  },
+                  "normalizedDates": [],
+                  "derived": {
+                      "anchorIntegrity": "partial",
+                      "criticalMissingFields": [],
+                      "entitiesCount": "1",
+                      "timeScope": "One date / one point",
+                      "sourceMaterialLevel": "None",
+                      "likelyLevel": "Level I",
+                      "manualEscalation": False,
+                      "manualEscalationReasons": [],
+                  },
+                  "requestVerification": {
+                      "clientConfirmed": True,
+                      "confirmedAt": anchor,
+                  },
+                  "requestTemporalMeta": {
+                      "accessEntryAt": anchor,
+                      "draftStartedAt": anchor,
+                      "dateConfirmationCompletedAt": anchor,
+                      "requestSubmittedAt": None,
+                      "accessEntrySource": "/access",
+                      "resumeCount": 0,
+                      "draftDurationMs": 1000,
+                      "correctionRequested": False,
+                  },
+              }
+              proof_body = json.dumps(
+                  proof_payload, separators=(",", ":"), sort_keys=True
+              ).encode("utf-8")
+              proof_headers = {
+                  "x-bhrigu-intake-proof": "MARKET-COSMOGRAPHER-PRIVATE-INTAKE-PROOF-V0-2",
+                  "x-bhrigu-intake-proof-secret": proof_secret,
+              }
+
+              first_status, _, first_body, _ = call(
+                  "/api/access/submit",
+                  method="POST",
+                  body=proof_body,
+                  headers=proof_headers,
+              )
+              try:
+                  first_json = json.loads(first_body)
+              except Exception:
+                  first_json = {}
+              check("synthetic_first_accepted", first_status in (200, 201), first_status)
+              check("synthetic_first_ok", first_json.get("ok") is True)
+              check(
+                  "private_blob_storage_proven",
+                  first_json.get("storage") == "vercel_private_blob",
+                  first_json.get("errorCode") or first_json.get("storage"),
+              )
+              check(
+                  "synthetic_email_delivery_skipped",
+                  first_json.get("delivery") == "synthetic_skipped",
+                  first_json.get("delivery"),
+              )
+              check(
+                  "proof_record_sha256_present",
+                  isinstance(first_json.get("proofRecordSha256"), str)
+                  and len(first_json.get("proofRecordSha256", "")) == 64,
+              )
+              check(
+                  "proof_capability_present",
+                  isinstance(first_json.get("proofReviewToken"), str)
+                  and len(first_json.get("proofReviewToken", "")) >= 32,
+              )
+              check(
+                  "proof_review_url_present",
+                  isinstance(first_json.get("proofReviewUrl"), str)
+                  and first_json.get("proofReviewUrl", "").startswith(base),
+              )
+              check(
+                  "delivery_environment_configured",
+                  first_json.get("proofDeliveryConfigured") is True,
+                  first_json.get("proofDeliveryConfigured"),
+              )
+
+              second_status, _, second_body, _ = call(
+                  "/api/access/submit",
+                  method="POST",
+                  body=proof_body,
+                  headers=proof_headers,
+              )
+              try:
+                  second_json = json.loads(second_body)
+              except Exception:
+                  second_json = {}
+              check("synthetic_replay_200", second_status == 200, second_status)
+              check(
+                  "synthetic_replay_idempotent",
+                  second_json.get("idempotentReplay") is True,
+              )
+              check(
+                  "synthetic_replay_same_request",
+                  first_json.get("requestId")
+                  and first_json.get("requestId") == second_json.get("requestId"),
+              )
+              check(
+                  "synthetic_replay_same_record_hash",
+                  first_json.get("proofRecordSha256")
+                  and first_json.get("proofRecordSha256")
+                  == second_json.get("proofRecordSha256"),
+              )
+              check(
+                  "synthetic_replay_same_capability",
+                  first_json.get("proofReviewToken")
+                  and first_json.get("proofReviewToken")
+                  == second_json.get("proofReviewToken"),
+              )
+
+              review_url = first_json.get("proofReviewUrl", "")
+              request_id = first_json.get("requestId", "")
+              review_token = first_json.get("proofReviewToken", "")
+              if review_url and request_id and review_token:
+                  review_opener = new_opener()
+                  review_status, review_headers, review_body, final_url = call(
+                      review_url, opener=review_opener
+                  )
+                  check("capability_review_200", review_status == 200, review_status)
+                  check(
+                      "capability_query_exchanged_for_cookie",
+                      "token=" not in final_url and f"id={request_id}" in final_url,
+                  )
+                  check(
+                      "capability_review_contains_request_id",
+                      request_id in review_body,
+                  )
+                  check(
+                      "capability_review_contains_synthetic_name",
+                      "BHRIGU INTAKE PROOF" in review_body,
+                  )
+                  check(
+                      "capability_review_no_store",
+                      "no-store"
+                      in review_headers.get(
+                          "Cache-Control",
+                          review_headers.get("cache-control", ""),
+                      ).lower(),
+                  )
+                  check(
+                      "capability_review_noindex",
+                      "noindex"
+                      in review_headers.get(
+                          "X-Robots-Tag",
+                          review_headers.get("x-robots-tag", ""),
+                      ).lower(),
+                  )
+                  check(
+                      "capability_review_referrer_blocked",
+                      review_headers.get(
+                          "Referrer-Policy",
+                          review_headers.get("referrer-policy", ""),
+                      ).lower()
+                      == "no-referrer",
+                  )
+                  cookie_status, _, cookie_body, _ = call(
+                      f"/access-review?id={urllib.parse.quote(request_id)}",
+                      opener=review_opener,
+                  )
+                  check(
+                      "capability_cookie_retrieval_200",
+                      cookie_status == 200,
+                      cookie_status,
+                  )
+                  check(
+                      "capability_cookie_same_record",
+                      request_id in cookie_body,
+                  )
+                  wrong_real_status, _, _, _ = call(
+                      f"/access-review?id={urllib.parse.quote(request_id)}"
+                      f"&token={urllib.parse.quote('wrong-capability-token'.ljust(43, 'x'))}",
+                      opener=new_opener(),
+                  )
+                  check(
+                      "same_request_wrong_capability_404",
+                      wrong_real_status == 404,
+                      wrong_real_status,
+                  )
+              else:
+                  check("capability_review_200", False)
+
+              report["measurements"].update(
+                  {
+                      "synthetic_first_status": first_status,
+                      "synthetic_replay_status": second_status,
+                      "request_id": first_json.get("requestId"),
+                      "delivery_configured": first_json.get(
+                          "proofDeliveryConfigured"
+                      ),
+                  }
+              )
+              report["storage_write"] = (
+                  "ONE_IMMUTABLE_SYNTHETIC_RECORD_OR_IDEMPOTENT_REPLAY"
+              )
+              report["email_send"] = "ZERO_BY_SYNTHETIC_SKIPPED_PATH"
+              report["environment_readiness"] = (
+                  "PASS"
+                  if first_json.get("proofDeliveryConfigured") is True
+                  else "FAIL_DELIVERY_CONFIGURATION"
+              )
+          else:
+              report["storage_write"] = "NOT_RUN_MISSING_PROOF_CREDENTIAL"
+              report["environment_readiness"] = (
+                  "BLOCKED_MISSING_PROOF_SECRET_AND_READ_ONLY_ENV_ACCESS"
+                  if not vercel_token
+                  else "BLOCKED_PROOF_SECRET_ABSENT_FROM_EFFECTIVE_PREVIEW_ENV"
+              )
+
+          report["status"] = "PASS" if not report["failures"] else "FAIL"
+          Path("artifacts/private-intake-preview-runtime-report.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if report["failures"]:
+              raise SystemExit(
+                  "PRIVATE_INTAKE_PREVIEW_RUNTIME=FAIL "
+                  + ",".join(report["failures"])
+              )
+          print("PRIVATE_INTAKE_PREVIEW_RUNTIME=PASS")
+          print("PRIVATE_BLOB_WRITE_READ=PASS")
+          print("CAPABILITY_RETRIEVAL=PASS")
+          print("SYNTHETIC_REPLAY_IDEMPOTENCY=PASS")
+          print("EMAIL_SEND=ZERO")
+          print("PRODUCTION_MUTATION=ZERO")
+          PY
+
+      - name: Upload sanitized Preview proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-private-intake-preview-runtime-${{ github.event.pull_request.number || github.run_id }}
+          path: artifacts/private-intake-preview-runtime-report.json
+          if-no-files-found: error
+          retention-days: 90
