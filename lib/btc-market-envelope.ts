@@ -1,3 +1,5 @@
+import { classifyBtcMarketSnapshotFreshness } from "./btc-freshness-contract";
+
 export const PHI_CONSTANT = 1.61803398875 as const;
 export const PHI_PRIMARY_FIELD_PCT = 61.803398875 as const;
 export const PHI_SUPPORT_FIELD_PCT = 38.196601125 as const;
@@ -559,22 +561,28 @@ export function buildBtcMarketEnvelopeFromDocuments(
     );
   }
 
-  const ageHours =
-    (now.getTime() - new Date(generatedAt as string).getTime()) / 3_600_000;
-  if (!Number.isFinite(ageHours) || ageHours < -0.084) {
+  const freshness = classifyBtcMarketSnapshotFreshness(
+    generatedAt as string,
+    now,
+  );
+  if (
+    freshness.reason === "INVALID_TIMESTAMP" ||
+    freshness.reason === "FUTURE_TIMESTAMP"
+  ) {
     return fail(
       "source_incompatible",
       "Accepted timestamp is invalid or in the future.",
       generatedAt as string,
     );
   }
-  if (ageHours > 168) {
+  if (freshness.state === "UNAVAILABLE") {
     return fail(
       "snapshot_too_old",
       "Accepted snapshot is outside the seven-day boundary.",
       generatedAt as string,
     );
   }
+  const ageHours = freshness.ageHours;
 
   if (
     getPath(snapshot, "liquidity_tvl.defi_tvl_methodology_id") !==
@@ -731,7 +739,7 @@ export function buildBtcMarketEnvelopeFromDocuments(
       window_label: windowLabel,
       boundary: continuationBoundary,
     },
-    source_freshness: ageHours <= 72 ? "FRESH" : "STALE_LIMITED",
+    source_freshness: freshness.state,
     source_generated_at_utc: generatedAt as string,
     bounded_temporal_context: temporal,
   };

@@ -14,6 +14,14 @@ import {
   type SnapshotProof,
 } from "../lib/btc-public-static-source";
 
+import {
+  BTC_MARKET_SNAPSHOT_FRESHNESS_CONTRACT_ID,
+  BTC_MARKET_SNAPSHOT_FRESH_HOURS,
+  BTC_MARKET_SNAPSHOT_OPERATIONAL_BREACH_HOURS,
+  BTC_MARKET_SNAPSHOT_LEGACY_72H_PROBE_HOURS,
+  BTC_MARKET_SNAPSHOT_UNAVAILABLE_AFTER_HOURS,
+} from "../lib/btc-freshness-contract";
+
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
@@ -157,6 +165,11 @@ function freshnessAt(ageSeconds: number) {
 }
 
 async function run(): Promise<void> {
+  assert(BTC_MARKET_SNAPSHOT_FRESHNESS_CONTRACT_ID === "btc_market_snapshot_freshness_24h_168h_v0_1", "Freshness contract ID drifted");
+  assert(BTC_MARKET_SNAPSHOT_FRESH_HOURS === 24, "Fresh boundary drifted");
+  assert(BTC_MARKET_SNAPSHOT_OPERATIONAL_BREACH_HOURS === 48, "Operational breach boundary drifted");
+  assert(BTC_MARKET_SNAPSHOT_LEGACY_72H_PROBE_HOURS === 72, "Legacy 72h regression probe drifted");
+  assert(BTC_MARKET_SNAPSHOT_UNAVAILABLE_AFTER_HOURS === 168, "Unavailable boundary drifted");
   assert(freshnessAt(23 * 3600 + 59 * 60 + 59) === "FRESH", "23:59:59 must be FRESH");
   assert(freshnessAt(24 * 3600) === "FRESH", "24h exact must be FRESH");
   assert(freshnessAt(24 * 3600 + 1) === "STALE_LIMITED", "24h plus 1s must be STALE_LIMITED");
