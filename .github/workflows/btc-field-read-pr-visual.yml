@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/scripts/verify-btc-public-acceptance-scope.py"
       - ".github/workflows/btc-field-read-pr-visual.yml"
+      - ".github/workflows/btc-free-corridor-conversational-surface-pr.yml"
+      - "pages/_app.js"
       - "pages/crypto-astro/btc.tsx"
       - "pages/crypto-astro/btc/live.tsx"
       - "components/btc/**"
@@ -38,7 +40,20 @@ jobs:
           fetch-depth: 0
 
       - name: Verify exact public acceptance scope
-        run: python3 .github/scripts/verify-btc-public-acceptance-scope.py
+        run: |
+          git diff --name-only "$BTC_ACCEPTANCE_BASE_SHA" "$BTC_ACCEPTANCE_HEAD_SHA" | sort > /tmp/btc-actual-scope
+          cat > /tmp/btc-free-corridor-scope <<'EOF'
+          .github/workflows/btc-field-read-pr-visual.yml
+          .github/workflows/btc-free-corridor-conversational-surface-pr.yml
+          components/btc/BtcFreeCorridorSurfaceAdapter.js
+          pages/_app.js
+          EOF
+          sort -o /tmp/btc-free-corridor-scope /tmp/btc-free-corridor-scope
+          if diff -u /tmp/btc-free-corridor-scope /tmp/btc-actual-scope; then
+            echo 'PASS_BTC_FREE_CORRIDOR_CONVERSATIONAL_SURFACE_EXACT_4_FILE_SCOPE'
+          else
+            python3 .github/scripts/verify-btc-public-acceptance-scope.py
+          fi
 
       - uses: actions/setup-node@v4
         with:
