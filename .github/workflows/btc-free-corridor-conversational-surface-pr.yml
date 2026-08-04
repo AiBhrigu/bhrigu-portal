@@ -5,6 +5,7 @@ on:
     branches:
       - master
     paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
       - .github/workflows/btc-free-corridor-conversational-surface-pr.yml
       - components/btc/BtcFreeCorridorSurfaceAdapter.js
       - package.json
@@ -29,12 +30,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and five-file scope
+      - name: Verify exact base and six-file scope
         run: |
           git fetch origin master
           test "$(git merge-base HEAD origin/master)" = "c1d60096055aa4591f3ee32b43799100dc0b75b1"
           git diff --name-only c1d60096055aa4591f3ee32b43799100dc0b75b1 HEAD | sort > /tmp/actual
           cat > /tmp/expected <<'EOF'
+          .github/scripts/verify-btc-public-acceptance-scope.py
           .github/workflows/btc-free-corridor-conversational-surface-pr.yml
           components/btc/BtcFreeCorridorSurfaceAdapter.js
           package.json
