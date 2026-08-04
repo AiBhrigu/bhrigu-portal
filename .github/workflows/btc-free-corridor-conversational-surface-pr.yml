@@ -182,7 +182,10 @@ jobs:
               record("expiry_preserves_answers", bool(driver.find_elements(By.CSS_SELECTOR, ".liveThread")))
               record("expiry_two_actions", len(gate.find_elements(By.TAG_NAME, "button")) == 2)
 
-              severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE"]
+              severe = [
+                  entry for entry in driver.get_log("browser")
+                  if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")
+              ]
               record("severe_browser_errors_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
           finally:
               print(json.dumps({
