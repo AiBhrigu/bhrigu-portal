@@ -1,147 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useMemo, useRef } from "react";
 
-import { useAccessStateController } from "../lib/access-state-controller";
-import type {
-  ClientStatus,
-  DraftSubmitAttempt,
-  EntitiesCount,
-  EventSubjectPayload,
-  FormDataModel,
-  MixedSubjectPayload,
-  NormalizedDateEntry,
-  PreferredDepth,
-  ProjectSubjectPayload,
-  RelationshipSubjectPayload,
-  ReviewDateItem,
-  SourceMaterialLevel,
-  SubjectPayload,
-  SubjectType,
-  TimeScope,
-  PersonSubjectPayload,
-  BusinessSubjectPayload,
-  AccessSubmissionModel,
-} from "../lib/access-models";
-
-type AccessBridgeContext = {
-  primary_date: string;
-  secondary_date: string;
-  signal_class: string;
-  structural_state: string;
-  operational_vector: string;
-  delta_mode: string;
-  timeline_mode: string;
-};
-
-type AccessBridgePrefill = {
-  subjectType: SubjectType | "";
-  mainQuestion: string;
-  shortDescription: string;
-  preferredDepth: PreferredDepth | "";
-};
-
-export async function getServerSideProps({ query }: { query: Record<string, string | string[] | undefined> }) {
-  const rawCtx = Array.isArray(query?.ctx) ? query.ctx[0] : query?.ctx;
-  const {
-    decodeFreyAccessBridgeCtx,
-    buildFreyAccessBridgePrefill,
-  } = await import("../lib/frey-access-bridge.js");
-
-  const initialBridgeCtx = decodeFreyAccessBridgeCtx(rawCtx);
-  const initialBridgePrefill = buildFreyAccessBridgePrefill(initialBridgeCtx);
-
-  return {
-    props: {
-      initialBridgeCtx,
-      initialBridgePrefill,
-      initialBridgeEncoded: typeof rawCtx === "string" ? rawCtx : "",
-    },
-  };
-}
-
-
-export default function AccessPage({
-  initialBridgeCtx = null,
-  initialBridgePrefill = null,
-  initialBridgeEncoded = "",
-}: {
-  initialBridgeCtx?: AccessBridgeContext | null;
-  initialBridgePrefill?: AccessBridgePrefill | null;
-  initialBridgeEncoded?: string;
-}) {
-  const controller = useAccessStateController();
-  const bridgeAppliedRef = useRef(false);
-
-  const {
-    submission,
-    currentStep,
-    submitAttempt,
-    notices,
-    restore,
-    updateFormData,
-    setCurrentStep,
-    continueFromRequest,
-    continueFromDates,
-    continueFromScope,
-    continueDraft,
-    discardDraftAndStartOver,
-    resolveDateAmbiguity,
-    confirmReview,
-    revokeReviewConfirmation,
-    submitRequest,
-    clearSubmitError,
-  } = controller;
-
-  const subjectType = submission.formData.request.subjectType;
-  const blockingIssues = submission.reviewData.blockingIssues;
-  const canSubmit = submission.reviewData.canSubmit;
-
-  const primaryCtaLabel = useMemo(() => {
-    if (submitAttempt.status === "submitting") return "Submitting...";
-    return "Submit request";
-  }, [submitAttempt.status]);
-
-  useEffect(() => {
-    if (bridgeAppliedRef.current) return;
-    if (!initialBridgePrefill) return;
-    if (restore.isRestoring || restore.showRestorePrompt) return;
-
-    const request = submission.formData.request;
-    const hasExistingInput = Boolean(
-      request.name ||
-      request.email ||
-      request.subjectType ||
-      request.mainQuestion ||
-      request.shortDescription ||
-      request.preferredDepth
-    );
-
-    if (hasExistingInput) {
-      bridgeAppliedRef.current = true;
-      return;
-    }
-
-    updateFormData((prev) => ({
-      ...prev,
-      request: {
-        ...prev.request,
-        subjectType: initialBridgePrefill.subjectType,
-        mainQuestion: initialBridgePrefill.mainQuestion,
-        shortDescription: initialBridgePrefill.shortDescription,
-        preferredDepth: initialBridgePrefill.preferredDepth,
-      },
-    }));
-
-    bridgeAppliedRef.current = true;
-  }, [
-    initialBridgePrefill,
-    restore.isRestoring,
-    restore.showRestorePrompt,
-    submission.formData.request,
-    updateFormData,
-  ]);
-
+export default function AccessPage() {
   return (
     <>
       <Head>
@@ -153,206 +13,202 @@ export default function AccessPage({
       </Head>
 
       <main className="accessPage">
-        <section className="shell">
-          <HeaderBlock />
-          <IntroBlock />
-          <AccessBridgeContextBlock bridgeCtx={initialBridgeCtx} />
-            <section className="panel stack" aria-labelledby="crypto-astro-research-surface">
-              <p className="sectionTitle" id="crypto-astro-research-surface">
-                Crypto-Astro Research Surface
-              </p>
-              <p className="muted">
-                Crypto-Astro is available as a public-safe, source-bound research surface. It provides a verified static market snapshot, visible source proof, accepted change memory, and the BTC Field Read corridor.
-              </p>
-              <p className="muted">
-                This is not a live trading product, prediction service, automated crypto system, backend/API service, or financial-advice route.
-              </p>
-              <div className="actions">
-                <a
-                  className="btnSecondary"
-                  href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  Open Crypto-Astro proof route
-                </a>
-                <Link className="btnSecondary" href="/crypto-astro/btc">
-                  Run BTC Field Read
-                </Link>
+        <div className="shell">
+          <section className="heroFrame" data-access-section="hero">
+            <div className="heroEyebrow">Structured Access</div>
+
+            <div className="heroSplit">
+              <div className="heroColumn">
+                <h1 className="heroTitle">A guided entry into deep AI analysis</h1>
+                <p className="heroText">
+                  Access is the reviewed entry surface for serious requests that need stronger
+                  context, temporal precision, and deeper analytical work.
+                </p>
               </div>
 
-              <div className="accessBridgeNote" data-crypto-astro-intake="snapshot">
-                <div className="eyebrow">Request a Crypto-Astro Snapshot</div>
-                <div>
-                  Submit a manual or synthetic snapshot context: asset / ticker, UTC snapshot time,
-                  observation window, research focus, output language.
+              <div className="heroRail">
+                <div className="heroCard">
+                  <span className="heroCardLabel">Role model</span>
+                  <span className="heroCardValue">
+                    Operator-held contour. AI-performed core work.
+                  </span>
+                  <p className="heroCardText">
+                    The operator protects entry quality and process integrity. The analytical core
+                    remains inside the AI contour.
+                  </p>
                 </div>
-                <div>
-                  Research context only: no trading signal, no prediction, no financial advice,
-                  no live market feed, no wallet or exchange connection.
-                </div>
-                <div>
-                  Accepted outputs include snapshot context, proof state, boundary note, and evidence / source notes.
+
+                <div className="heroCard">
+                  <span className="heroCardLabel">Best fit</span>
+                  <span className="heroCardValue">
+                    Requests where dates, events, context, and framing matter.
+                  </span>
+                  <p className="heroCardText">
+                    Access is designed for requests that should become structured analytical
+                    objects rather than casual prompts.
+                  </p>
                 </div>
               </div>
+            </div>
+          </section>
 
-              <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
-                <div className="eyebrow">Crypto-Astro Local Proof Base</div>
-                <div>
-                  The public BTC corridor is live verified. Deeper delivery remains operator-gated while intake durability, operator retrieval and delivery policy are separately proven.
-                </div>
-                <div>
-                  This is not a live automated client service, trading signal, price target, or financial advice.
-                </div>
+          <section className="panel stack" data-access-section="entry-model">
+            <p className="sectionTitle">Entry model</p>
+            <div className="introGrid">
+              <div className="introCard">
+                <span className="introCardTitle">Frey</span>
+                <p className="introCardBody">
+                  Public launch surface for orientation, first contact, and early exploration.
+                </p>
               </div>
-            </section>
 
-          <AccessNotices
-            draftSavedVisible={notices.draftSavedVisible}
-            isOffline={notices.isOffline}
-            justRestored={notices.justRestored}
-            submitAttempt={submitAttempt}
-          />
+              <div className="introCard">
+                <span className="introCardTitle">Access</span>
+                <p className="introCardBody">
+                  Guided entry layer for reviewed deep work where the request must be shaped
+                  carefully before analysis begins.
+                </p>
+              </div>
 
-          {restore.isRestoring ? (
-            <LoadingBlock />
-          ) : restore.showRestorePrompt && restore.restoreDraft ? (
-            <RestoreDraftBlock
-              savedAt={restore.restoreDraft.savedAt}
-              onContinue={continueDraft}
-              onStartOver={discardDraftAndStartOver}
+              <div className="introCard">
+                <span className="introCardTitle">Process</span>
+                <p className="introCardBody">
+                  Secure intake, private operator retrieval, and delivery integrity must be proven
+                  before reviewed requests reopen.
+                </p>
+              </div>
+            </div>
+
+            <p className="tiny">
+              The informational architecture remains available while the private intake path is
+              repaired and independently verified.
+            </p>
+          </section>
+
+          <section
+            className="panel stack"
+            data-access-section="crypto-astro-research"
+            aria-labelledby="crypto-astro-research-surface"
+          >
+            <p className="sectionTitle" id="crypto-astro-research-surface">
+              Crypto-Astro Research Surface
+            </p>
+            <p className="muted">
+              Crypto-Astro remains available as a public-safe, source-bound research surface. It
+              provides a verified static market snapshot, visible source proof, accepted change
+              memory, and the BTC Field Read corridor.
+            </p>
+            <p className="muted">
+              This is not a live trading product, prediction service, automated crypto system,
+              backend service, or financial-advice route.
+            </p>
+
+            <div className="actions">
+              <a
+                className="btnSecondary"
+                href="https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Open Crypto-Astro proof route
+              </a>
+              <Link className="btnSecondary" href="/crypto-astro/btc">
+                Run BTC Field Read
+              </Link>
+            </div>
+
+            <div className="accessBridgeNote" data-crypto-astro-proof-base="btc-eth-sol">
+              <div className="eyebrow">Public proof boundary</div>
+              <div>
+                The public BTC corridor remains live and verified. Reviewed private delivery is not
+                available through this page during containment.
+              </div>
+              <div>
+                Do not send personal, confidential, wallet, exchange, or account information through
+                public research surfaces.
+              </div>
+            </div>
+          </section>
+
+          <section className="panel stack" data-access-section="sample">
+            <p className="sectionTitle">Reading sample</p>
+            <p className="muted">
+              The existing one-page sample remains available as a public explanation of the
+              structural reading format.
+            </p>
+            <div className="actions">
+              <a
+                className="btnSecondary"
+                href="/access-private-structural-reading-sample-v0-1.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View sample PDF
+              </a>
+              <Link className="btnGhost" href="/frey">
+                Open Frey first
+              </Link>
+            </div>
+          </section>
+
+          <section
+            className="panel stack containmentPanel"
+            data-access-section="intake-closed"
+            data-access-intake-status="temporarily-closed"
+            aria-labelledby="access-intake-closed-title"
+          >
+            <p className="sectionTitle">Reviewed intake status</p>
+            <h2 className="formTitle" id="access-intake-closed-title">
+              Reviewed requests are temporarily closed
+            </h2>
+            <p className="formLead">
+              Reviewed requests are temporarily closed while secure private intake is being upgraded
+              and verified. This page does not accept, retain, or transmit request details.
+            </p>
+            <p className="muted">
+              The closure is fail-closed: no public submission action, no public operator review,
+              and no temporary filesystem persistence are active.
+            </p>
+
+            <div className="actions">
+              <button
+                type="button"
+                className="btnDisabled"
+                disabled
+                aria-disabled="true"
+                data-access-submit-disabled="true"
+              >
+                Reviewed intake unavailable
+              </button>
+            </div>
+
+            <p className="tiny">
+              The public Access explanation remains visible. The private request path will reopen
+              only after durable storage, private retrieval, delivery, and idempotency are proven on
+              the current production architecture.
+            </p>
+          </section>
+
+          <section
+            className="clarityPanel"
+            data-access-section="clarity-infographic"
+            data-access-clarity-infographic="deeptech_v0_2"
+            aria-label="Private Structural Reading clarity infographic"
+          >
+            <img
+              src="/access-clarity-infographic-deeptech-v0-2.png"
+              alt="Private Structural Reading access clarity infographic: what to send, what happens next, what you receive, and what this is not."
             />
-          ) : (
-            <>
-              <FormProgress currentStep={currentStep} formState={submission.formState} />
-
-              {submission.formState === "input" && (
-                <>
-                  {currentStep === "request" && (
-                    <RequestStep
-                      formData={submission.formData}
-                      updateFormData={updateFormData}
-                      bridgeCtx={initialBridgeCtx}
-                      bridgeEncoded={initialBridgeEncoded}
-                      onContinue={() => {
-                        clearSubmitError();
-                        continueFromRequest();
-                      }}
-                    />
-                  )}
-
-                  {currentStep === "dates" && (
-                    <DatesStep
-                      subjectType={subjectType}
-                      formData={submission.formData}
-                      normalizedDates={submission.normalizedDates}
-                      updateFormData={updateFormData}
-                      onBack={() => setCurrentStep("request")}
-                      onContinue={() => {
-                        clearSubmitError();
-                        const hasAmbiguous = submission.normalizedDates.dates.some(
-                          (d) => d.status === "ambiguous"
-                        );
-                        if (hasAmbiguous) {
-                          controller.setFormState("ambiguity");
-                          return;
-                        }
-                        continueFromDates();
-                      }}
-                    />
-                  )}
-
-                  {currentStep === "scope" && (
-                    <ScopeStep
-                      formData={submission.formData}
-                      updateFormData={updateFormData}
-                      onBack={() => setCurrentStep("dates")}
-                      onContinue={() => {
-                        clearSubmitError();
-                        continueFromScope();
-                      }}
-                    />
-                  )}
-                </>
-              )}
-
-              {submission.formState === "ambiguity" && (
-                <AmbiguityState
-                  dates={submission.normalizedDates.dates}
-                  onResolve={(dateId, selectedIso) => {
-                    resolveDateAmbiguity(dateId, selectedIso);
-                  }}
-                  onBack={() => {
-                    controller.setFormState("input");
-                    setCurrentStep("dates");
-                  }}
-                />
-              )}
-
-              {submission.formState === "review" && (
-                <ReviewStep
-                  submission={submission}
-                  blockingIssues={blockingIssues}
-                  canSubmit={canSubmit}
-                  submitLabel={primaryCtaLabel}
-                  isSubmitting={submitAttempt.status === "submitting"}
-                  onEditRequest={() => {
-                    revokeReviewConfirmation();
-                    controller.setFormState("input");
-                    setCurrentStep("request");
-                  }}
-                  onEditDates={() => {
-                    revokeReviewConfirmation();
-                    controller.setFormState("input");
-                    setCurrentStep("dates");
-                  }}
-                  onEditScope={() => {
-                    revokeReviewConfirmation();
-                    controller.setFormState("input");
-                    setCurrentStep("scope");
-                  }}
-                  onConfirmReview={confirmReview}
-                  onSubmit={submitRequest}
-                />
-              )}
-
-              {submission.formState === "success" && submission.clientView && (
-                <SuccessStep clientView={submission.clientView} />
-              )}
-            </>
-          )}
-        </section>
-      {/* ACCESS_CLARITY_INFOGRAPHIC_DEEPTECH_V0_2 */}
-      <section
-        data-access-clarity-infographic="deeptech_v0_2"
-        aria-label="Private Structural Reading clarity infographic"
-        style={{
-          margin: "32px 0",
-          border: "1px solid rgba(230, 196, 120, 0.22)",
-          borderRadius: "24px",
-          overflow: "hidden",
-          background: "rgba(7, 10, 18, 0.72)",
-          boxShadow: "0 24px 80px rgba(0, 0, 0, 0.28)",
-        }}
-      >
-        <img
-          src="/access-clarity-infographic-deeptech-v0-2.png"
-          alt="Private Structural Reading access clarity infographic: what to send, what happens next, what you receive, and what this is not."
-          style={{
-            display: "block",
-            width: "100%",
-            height: "auto",
-          }}
-        />
-      </section>
-
+          </section>
+        </div>
 
         <style jsx>{`
           .accessPage {
             min-height: 100vh;
+            overflow-x: clip;
             padding: 32px 18px 64px;
             background:
-              radial-gradient(circle at top, rgba(255,255,255,0.06), transparent 32%),
+              radial-gradient(circle at top, rgba(255, 255, 255, 0.06), transparent 32%),
               linear-gradient(180deg, #07111b 0%, #091522 100%);
             color: #eaf1f7;
           }
@@ -360,130 +216,165 @@ export default function AccessPage({
           .shell {
             width: 100%;
             max-width: 980px;
+            min-width: 0;
             margin: 0 auto;
             padding: 14px 0 40px;
+            box-sizing: border-box;
           }
 
-          .panel {
-            position: relative;
-            border: 1px solid rgba(255,255,255,0.14);
-            background:
-              radial-gradient(circle at top left, rgba(255,255,255,0.065), transparent 34%),
-              linear-gradient(180deg, rgba(255,255,255,0.075), rgba(255,255,255,0.03));
-            box-shadow: 0 24px 60px rgba(0,0,0,0.22);
-            border-radius: 22px;
-            padding: 28px;
-            backdrop-filter: blur(14px);
+          .heroFrame,
+          .panel,
+          .clarityPanel {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
           }
 
-          .stack {
+          .heroFrame {
             display: grid;
-            gap: 22px;
+            gap: 24px;
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 24px;
+            background:
+              radial-gradient(circle at top left, rgba(216, 173, 98, 0.1), transparent 34%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
           }
 
-          .muted {
-            color: rgba(234,241,247,0.72);
-            margin: 0;
-            line-height: 1.6;
-          }
-
-          .tiny {
+          .heroEyebrow,
+          .sectionTitle,
+          .heroCardLabel,
+          .eyebrow {
             font-size: 12px;
-            color: rgba(234,241,247,0.6);
-            line-height: 1.5;
-            margin: 0;
-          }
-
-          .sectionTitle {
-            font-size: 12px;
-            letter-spacing: 0.18em;
+            font-weight: 700;
+            letter-spacing: 0.16em;
             text-transform: uppercase;
-            color: rgba(234,241,247,0.62);
-            margin: 0 0 8px;
+          }
+
+          .heroEyebrow,
+          .eyebrow {
+            color: #d8ad62;
+          }
+
+          .sectionTitle,
+          .heroCardLabel {
+            margin: 0;
+            color: rgba(234, 241, 247, 0.58);
+          }
+
+          .heroSplit {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+            gap: 24px;
+            align-items: start;
+          }
+
+          .heroColumn,
+          .heroRail,
+          .stack,
+          .introCard,
+          .accessBridgeNote {
+            display: grid;
+            min-width: 0;
+          }
+
+          .heroColumn {
+            gap: 16px;
+          }
+
+          .heroRail {
+            gap: 14px;
           }
 
           .heroTitle {
-            font-size: clamp(34px, 4.8vw, 52px);
+            max-width: 720px;
+            margin: 0;
+            font-size: clamp(38px, 5vw, 58px);
             line-height: 0.98;
             letter-spacing: -0.058em;
+            overflow-wrap: anywhere;
+          }
+
+          .heroText,
+          .muted,
+          .formLead,
+          .heroCardText,
+          .introCardBody,
+          .tiny {
             margin: 0;
-            max-width: 720px;
+            overflow-wrap: anywhere;
           }
 
           .heroText {
             max-width: 700px;
             font-size: 17px;
             line-height: 1.74;
-            color: rgba(234,241,247,0.76);
-            margin: 0;
+            color: rgba(234, 241, 247, 0.76);
           }
 
-          .grid2 {
+          .heroCard,
+          .introCard {
+            min-width: 0;
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.035);
+          }
+
+          .heroCard {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
-            align-items: start;
+            gap: 9px;
           }
 
-          .grid3 {
+          .heroCardValue,
+          .introCardTitle {
+            color: #f5f8fc;
+            font-weight: 700;
+          }
+
+          .heroCardText,
+          .introCardBody {
+            font-size: 13px;
+            line-height: 1.62;
+            color: rgba(234, 241, 247, 0.7);
+          }
+
+          .panel {
+            margin-top: 18px;
+            padding: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 22px;
+            background:
+              radial-gradient(circle at top left, rgba(255, 255, 255, 0.065), transparent 34%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03));
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+          }
+
+          .stack {
+            gap: 22px;
+          }
+
+          .introGrid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 18px;
-            align-items: start;
-          }
-
-          .field {
-            display: grid;
-            gap: 10px;
-            align-content: start;
             min-width: 0;
           }
 
-          .fieldLabel {
-            min-height: 18px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: rgba(234,241,247,0.58);
-            display: block;
+          .introCard {
+            gap: 10px;
           }
 
-          .fieldControl,
-          .field textarea,
-          .field select,
-          .field input {
-            width: 100%;
-            min-height: 54px;
-            border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: linear-gradient(180deg, rgba(9,19,31,0.9), rgba(7,16,27,0.86));
-            color: #f5f8fc;
-            padding: 14px 16px;
-            outline: none;
-            box-sizing: border-box;
-            box-shadow:
-              inset 0 1px 0 rgba(255,255,255,0.03),
-              0 10px 24px rgba(0,0,0,0.09);
-            transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+          .muted {
+            color: rgba(234, 241, 247, 0.72);
+            line-height: 1.68;
           }
 
-          .field textarea {
-            min-height: 146px;
-            resize: none;
-            line-height: 1.66;
-            padding-top: 15px;
-          }
-
-          .field input:focus,
-          .field textarea:focus,
-          .field select:focus {
-            border-color: rgba(255,255,255,0.32);
-            background: linear-gradient(180deg, rgba(11,23,37,0.97), rgba(9,20,33,0.95));
-            box-shadow:
-              0 0 0 4px rgba(255,255,255,0.03),
-              0 16px 30px rgba(0,0,0,0.15);
-            transform: translateY(-1px);
+          .tiny {
+            font-size: 12px;
+            line-height: 1.58;
+            color: rgba(234, 241, 247, 0.6);
           }
 
           .actions {
@@ -491,377 +382,134 @@ export default function AccessPage({
             flex-wrap: wrap;
             gap: 14px;
             align-items: center;
-            justify-content: flex-start;
           }
 
-          .noticeStack {
-            display: grid;
-            gap: 10px;
-            min-height: 96px;
-            margin-top: 18px;
-            align-content: start;
-          }
-
-          .statusPanel {
-            display: grid;
-            gap: 8px;
-            min-height: 168px;
-            padding: 18px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: linear-gradient(180deg, rgba(255,255,255,0.046), rgba(255,255,255,0.03));
-          }
-
-          .statusPanelEmpty {
-            align-content: center;
-          }
-
-          .statusItem {
-            display: grid;
-            gap: 4px;
-            min-height: 52px;
-            padding: 10px 0;
-            border-top: 1px solid rgba(255,255,255,0.06);
-            align-content: start;
-          }
-
-          .statusItem:first-child {
-            border-top: 0;
-            padding-top: 0;
-          }
-
-          .statusMeta {
-            min-height: 18px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-          }
-
-          .checkboxField {
-            grid-template-columns: 20px minmax(0, 1fr);
-            gap: 14px;
-            align-items: start;
-            padding: 18px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03));
-          }
-
-          .checkboxField input {
-            width: 16px;
-            height: 16px;
-            min-height: 16px;
-            margin: 3px 0 0;
-            accent-color: #eaf1f7;
-          }
-
-          .checkboxText {
-            font-size: 13px;
-            line-height: 1.62;
-            color: rgba(234,241,247,0.8);
-          }
-
-          .btnPrimary,
           .btnSecondary,
-          .btnGhost {
+          .btnGhost,
+          .btnDisabled {
             min-height: 50px;
+            max-width: 100%;
+            box-sizing: border-box;
             border-radius: 999px;
-            padding: 12px 26px;
+            padding: 12px 24px;
             font-size: 14px;
             font-weight: 600;
             letter-spacing: 0.02em;
-            cursor: pointer;
+            text-align: center;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
-          }
-
-          .btnPrimary {
-            border: 1px solid rgba(255,255,255,0.24);
-            background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(232,238,244,0.94));
-            color: #091522;
-            box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+            overflow-wrap: anywhere;
           }
 
           .btnSecondary {
-            border: 1px solid rgba(255,255,255,0.15);
-            background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.045));
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.08),
+              rgba(255, 255, 255, 0.045)
+            );
             color: #eef4f9;
           }
 
           .btnGhost {
-            border: 1px solid rgba(255,255,255,0.12);
-            background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.024));
-            color: rgba(234,241,247,0.82);
-            padding-left: 20px;
-            padding-right: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.03);
+            color: rgba(234, 241, 247, 0.82);
           }
+
+          .btnDisabled {
+            cursor: not-allowed;
+            border: 1px solid rgba(216, 173, 98, 0.24);
+            background: rgba(216, 173, 98, 0.08);
+            color: rgba(234, 241, 247, 0.58);
+            opacity: 1;
+          }
+
           .accessBridgeNote {
-            margin-top: 18px;
+            gap: 10px;
             padding: 18px 20px;
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.028));
-            color: rgba(234,241,247,0.78);
-          }
-
-          .accessBridgeNote .eyebrow {
-            margin: 0 0 10px;
-            color: #d8ad62;
-            font-size: 0.76rem;
-            font-weight: 700;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-          }
-
-          .accessBridgeNote div {
-            margin: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: linear-gradient(
+              180deg,
+              rgba(255, 255, 255, 0.055),
+              rgba(255, 255, 255, 0.028)
+            );
+            color: rgba(234, 241, 247, 0.78);
             font-size: 13px;
             line-height: 1.62;
           }
 
-          .accessBridgeNote div + div {
-            margin-top: 10px;
-          }
-
-
-          .btnPrimary:hover,
-          .btnSecondary:hover,
-          .btnGhost:hover {
-            transform: translateY(-1px);
-          }
-
-          .btnPrimary:hover {
-            box-shadow: 0 18px 34px rgba(0,0,0,0.22);
-          }
-
-          .btnPrimary:focus-visible,
-          .btnSecondary:focus-visible,
-          .btnGhost:focus-visible {
-            outline: none;
-            box-shadow: 0 0 0 4px rgba(255,255,255,0.05);
-          }
-
-          .btnPrimary:active,
-          .btnSecondary:active,
-          .btnGhost:active {
-            transform: translateY(0);
-          }
-
-          .progress {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 22px 0;
-          }
-
-          .progressStep {
-            padding: 8px 12px;
-            border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.1);
-            color: rgba(234,241,247,0.6);
-            font-size: 12px;
-            background: rgba(255,255,255,0.02);
-          }
-
-          .progressStepActive {
-            color: #eaf1f7;
-            border-color: rgba(255,255,255,0.2);
-            background: rgba(255,255,255,0.08);
-          }
-
-          .notice {
-            min-height: 96px;
-            border-radius: 20px;
-            padding: 18px 20px;
-            border: 1px solid rgba(255,255,255,0.12);
+          .containmentPanel {
+            border-color: rgba(216, 173, 98, 0.3);
             background:
-              radial-gradient(circle at top left, rgba(255,255,255,0.05), transparent 38%),
-              linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.034));
-            display: grid;
-            align-content: center;
-            box-sizing: border-box;
-          }
-
-          .noticePlaceholder {
-            visibility: hidden;
-          }
-
-          .noticeError {
-            border-color: rgba(255,140,140,0.22);
-            background: rgba(120,16,16,0.18);
-          }
-
-          .reviewBlock {
-            display: grid;
-            gap: 18px;
-          }
-
-          .reviewItem {
-            display: grid;
-            gap: 5px;
-            padding: 14px 0;
-            border-top: 1px solid rgba(255,255,255,0.08);
-          }
-
-          .reviewItem:first-child {
-            border-top: 0;
-            padding-top: 0;
-          }
-
-          .reviewLabel {
-            font-size: 13px;
-            color: rgba(234,241,247,0.68);
-          }
-
-          .reviewValue {
-            font-size: 15px;
-            color: #eaf1f7;
-          }
-
-          .iso {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 12px;
-            color: rgba(234,241,247,0.6);
-          }
-
-          .list {
-            margin: 0;
-            padding-left: 18px;
-            display: grid;
-            gap: 10px;
-            color: rgba(234,241,247,0.8);
-          }
-
-          .errorList {
-            margin: 0;
-            padding-left: 18px;
-            color: #ffd2d2;
-            display: grid;
-            gap: 8px;
-          }
-
-          .formFrame {
-            display: grid;
-            gap: 24px;
-          }
-
-          .formHero {
-            display: grid;
-            gap: 12px;
-            padding-bottom: 14px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+              radial-gradient(circle at top left, rgba(216, 173, 98, 0.12), transparent 38%),
+              linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.028));
           }
 
           .formTitle {
+            max-width: 760px;
             margin: 0;
-            font-size: 30px;
-            line-height: 1.04;
+            font-size: clamp(28px, 4vw, 42px);
+            line-height: 1.03;
             letter-spacing: -0.045em;
-            color: rgba(247,250,253,0.98);
-            max-width: 720px;
+            overflow-wrap: anywhere;
           }
 
           .formLead {
-            margin: 0;
-            max-width: 720px;
-            font-size: 15px;
-            line-height: 1.76;
-            color: rgba(234,241,247,0.78);
+            max-width: 760px;
+            font-size: 16px;
+            line-height: 1.74;
+            color: rgba(234, 241, 247, 0.8);
           }
 
-          .formSection {
-            display: grid;
-            gap: 18px;
+          .clarityPanel {
+            margin-top: 32px;
+            overflow: hidden;
+            border: 1px solid rgba(230, 196, 120, 0.22);
+            border-radius: 24px;
+            background: rgba(7, 10, 18, 0.72);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
           }
 
-          .formSectionHeader {
-            display: grid;
-            gap: 7px;
-          }
-
-          .formSectionTitle {
-            margin: 0;
-            font-size: 12px;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: rgba(234,241,247,0.58);
-          }
-
-          .formSectionText {
-            margin: 0;
-            font-size: 14px;
-            line-height: 1.66;
-            color: rgba(234,241,247,0.74);
-          }
-
-          .grid2Asymmetric {
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-            gap: 18px;
-            align-items: start;
-          }
-
-          .submitRow {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            justify-content: flex-start;
-            padding-top: 6px;
+          .clarityPanel img {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            height: auto;
           }
 
           @media (max-width: 760px) {
-            .grid2,
-            .grid3,
-            .grid2Asymmetric {
-              grid-template-columns: 1fr;
-            }
-
             .accessPage {
               padding: 22px 14px 42px;
             }
 
+            .heroFrame,
             .panel {
-              padding: 18px;
-              border-radius: 16px;
+              padding: 20px;
+              border-radius: 18px;
             }
 
-            .actions,
-            .submitRow {
+            .heroSplit,
+            .introGrid {
+              grid-template-columns: 1fr;
+            }
+
+            .heroTitle {
+              font-size: clamp(36px, 12vw, 48px);
+            }
+
+            .actions {
               flex-direction: column;
               align-items: stretch;
             }
 
-            .formTitle {
-              font-size: 25px;
-            }
-
-            .btnPrimary,
             .btnSecondary,
-            .btnGhost {
+            .btnGhost,
+            .btnDisabled {
               width: 100%;
-            }
-
-            .btnGhost {
-              padding-left: 18px;
-              padding-right: 18px;
-              border: 1px solid rgba(255,255,255,0.12);
-              border-radius: 999px;
-              background: rgba(255,255,255,0.03);
-            }
-
-            .statusPanel {
-              min-height: 0;
-            }
-
-            .noticeStack {
-              min-height: 86px;
-            }
-
-            .notice {
-              min-height: 74px;
             }
           }
         `}</style>
@@ -869,1205 +517,3 @@ export default function AccessPage({
     </>
   );
 }
-
-function HeaderBlock() {
-  return (
-    <section className="heroFrame">
-      <div className="heroEyebrow">Structured Access</div>
-
-      <div className="heroSplit">
-        <div className="heroColumn">
-          <h1 className="heroTitle">A guided entry into deep AI analysis</h1>
-          <p className="heroText">
-            This is not instant chat and not a standard form. Access is the reviewed entry surface
-            for serious requests that need stronger context, temporal precision, and deeper analytical work.
-          </p>
-        </div>
-
-        <div className="heroRail">
-          <div className="heroCard">
-            <span className="heroCardLabel">Role model</span>
-            <span className="heroCardValue">Operator-held contour. AI-performed core work.</span>
-            <p className="heroCardText">
-              The operator guides entry quality and process integrity. The core analytical work is performed inside the AI contour.
-            </p>
-          </div>
-
-          <div className="heroCard">
-            <span className="heroCardLabel">Best fit</span>
-            <span className="heroCardValue">Requests where dates, events, context, and framing matter.</span>
-            <p className="heroCardText">
-              Use Access when the request should become a serious analytical object, not a casual prompt.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function IntroBlock() {
-  return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
-      <div className="introGrid">
-        <div className="introCard">
-          <span className="introCardTitle">Frey</span>
-          <p className="introCardBody">
-            Launch surface for orientation, first contact, and early exploration.
-          </p>
-        </div>
-
-        <div className="introCard">
-          <span className="introCardTitle">Access</span>
-          <p className="introCardBody">
-            Guided entry layer for <span className="introCardAccent">reviewed deep work</span> where the request must be shaped carefully before analysis begins.
-          </p>
-        </div>
-
-        <div className="introCard">
-          <span className="introCardTitle">Process</span>
-          <p className="introCardBody">
-            Requests are reviewed first. Scope, timing, and pricing are clarified after review, then the deeper AI work proceeds under the Φ-contour.
-          </p>
-        </div>
-      </div>
-
-      <p className="tiny">
-        The main path below is structured intake. A faster reviewed entry path can exist for mature requests, but the page keeps one nature: serious guided entry.
-      </p>
-
-      <div
-        data-access-pdf-sample="ACCESS_USER_EXAMPLE_PDF_V0_6"
-        style={{
-          display: "grid",
-          gap: 14,
-          padding: "18px 20px",
-          border: "1px solid rgba(230, 196, 120, 0.22)",
-          borderRadius: 20,
-          background: "linear-gradient(180deg, rgba(230,196,120,0.08), rgba(255,255,255,0.03))",
-        }}
-      >
-        <p
-          data-access-pdf-sample-copy="ACCESS_USER_EXAMPLE_PDF_V0_6"
-          style={{
-            margin: 0,
-            fontSize: 13,
-            lineHeight: 1.62,
-            color: "rgba(234,241,247,0.72)",
-          }}
-        >
-          Private Structural Reading is manual and reviewed. View a one-page sample before submitting a request.
-        </p>
-
-        <div
-          data-access-pdf-actions="ACCESS_USER_EXAMPLE_PDF_ACTIONS_V0_6"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 12,
-            alignItems: "center",
-          }}
-        >
-          <a
-            href="/access-private-structural-reading-sample-v0-1.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-access-pdf-link="ACCESS_USER_EXAMPLE_PDF_V0_6"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 44,
-              padding: "10px 18px",
-              borderRadius: 999,
-              border: "1px solid rgba(230,196,120,0.42)",
-              background: "rgba(230,196,120,0.08)",
-              color: "#e0aa57",
-              textDecoration: "none",
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-            }}
-          >
-            View sample PDF
-          </a>
-          <Link
-            href="/frey"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 44,
-              padding: "10px 18px",
-              borderRadius: 999,
-              border: "1px solid rgba(255,255,255,0.12)",
-              background: "rgba(255,255,255,0.03)",
-              color: "rgba(234,241,247,0.82)",
-              textDecoration: "none",
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "0.02em",
-            }}
-          >
-            Open Frey first
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LoadingBlock() {
-  return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
-      <p className="sectionTitle">Loading</p>
-      <p className="muted">Preparing your reviewed access workspace.</p>
-    </section>
-  );
-}
-
-function RestoreDraftBlock(props: {
-  savedAt: string;
-  onContinue: () => void;
-  onStartOver: () => void;
-}) {
-  return (
-    <section className="panel stack" style={{ marginTop: 18 }}>
-      <p className="sectionTitle">Unfinished request found</p>
-      <p className="muted">A previous request draft was saved on this device.</p>
-      <p className="tiny">Last saved: {formatDisplayDateTime(props.savedAt)}</p>
-      <div className="actions">
-        <button type="button" className="btnPrimary" onClick={props.onContinue}>
-          Continue draft
-        </button>
-        <button type="button" className="btnSecondary" onClick={props.onStartOver}>
-          Start over
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function FormProgress(props: {
-  currentStep: "request" | "dates" | "scope" | "review";
-  formState: string;
-}) {
-  const items: Array<"request" | "dates" | "scope" | "review" | "submitted"> = [
-    "request",
-    "dates",
-    "scope",
-    "review",
-    "submitted",
-  ];
-
-  const active = props.formState === "success" ? "submitted" : props.currentStep;
-
-  return (
-    <nav
-      className="progress"
-      aria-label="Request progress"
-      data-access-progress="ACCESS_PROGRESS_INLINE_LAYOUT_V0_6"
-      style={{
-        display: "flex",
-        flexWrap: "wrap",
-        gap: 8,
-        margin: "22px 0",
-      }}
-    >
-      {items.map((item) => {
-        const isActive = active === item;
-        return (
-          <span
-            key={item}
-            className={`progressStep ${isActive ? "progressStepActive" : ""}`}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "8px 12px",
-              borderRadius: 999,
-              border: isActive
-                ? "1px solid rgba(255,255,255,0.2)"
-                : "1px solid rgba(255,255,255,0.1)",
-              color: isActive ? "#eaf1f7" : "rgba(234,241,247,0.6)",
-              fontSize: 12,
-              background: isActive ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
-            }}
-          >
-            {labelForStep(item)}
-          </span>
-        );
-      })}
-    </nav>
-  );
-}
-
-function AccessBridgeContextBlock(props: {
-  bridgeCtx: AccessBridgeContext | null | undefined;
-}) {
-  const { bridgeCtx } = props;
-
-  if (!bridgeCtx) return null;
-
-  return (
-    <section
-      className="panel"
-      style={{ marginTop: 18 }}
-      data-access-bridge="__FREY_ACCESS_BRIDGE_V0_1__"
-      data-access-signal={bridgeCtx.signal_class || ""}
-      data-access-vector={bridgeCtx.operational_vector || ""}
-    >
-      <div className="stack">
-        <div>
-          <p className="sectionTitle">Frey context transfer</p>
-          <h2 className="formTitle" style={{ marginTop: 0 }}>Deterministic context received from Frey</h2>
-          <p className="muted">
-            Signal · {bridgeCtx.signal_class || "stabilize"} · Structural state · {bridgeCtx.structural_state || "n/a"} · Operational vector · {bridgeCtx.operational_vector || "orient"}
-          </p>
-        </div>
-
-        <div className="grid3">
-          <div className="field">
-            <p className="formSectionTitle">Primary date</p>
-            <p className="tiny">{bridgeCtx.primary_date || "Not set"}</p>
-          </div>
-          <div className="field">
-            <p className="formSectionTitle">Secondary date</p>
-            <p className="tiny">{bridgeCtx.secondary_date || "Not set"}</p>
-          </div>
-          <div className="field">
-            <p className="formSectionTitle">Transfer mode</p>
-            <p className="tiny">{bridgeCtx.delta_mode || bridgeCtx.timeline_mode || "Direct context"}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function RequestStep(props: {
-  formData: FormDataModel;
-  updateFormData: (updater: (prev: FormDataModel) => FormDataModel) => void;
-  bridgeCtx?: AccessBridgeContext | null;
-  bridgeEncoded?: string;
-  onContinue: () => void;
-}) {
-  const { formData, updateFormData, bridgeCtx, bridgeEncoded, onContinue } = props;
-
-  return (
-    <section className="panel" style={{ marginTop: 18 }}>
-      <form
-        className="formFrame"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onContinue();
-        }}
-      >
-        <div className="formHero">
-          <p className="sectionTitle">Request</p>
-          <h2 className="formTitle">Build the request with clean structure before review</h2>
-          <p className="formLead">
-            This is the main structured path. Dates, events, subject framing, and context quality affect analytical precision,
-            so the entry should be assembled carefully rather than rushed.
-          </p>
-        </div>
-
-        {bridgeCtx && (
-          <div
-            className="formSection"
-            data-access-bridge-request="__FREY_ACCESS_BRIDGE_V0_1__"
-            data-access-bridge-signal={bridgeCtx.signal_class || ""}
-          >
-            <div className="formSectionHeader">
-              <p className="formSectionTitle">Frey bridge packet</p>
-              <p className="formSectionText">
-                The request was opened from a deterministic Frey context transfer. Review and refine before final submission.
-              </p>
-            </div>
-
-            <input type="hidden" name="frey_ctx" value={bridgeEncoded || ""} readOnly />
-
-            <p className="tiny">
-              {bridgeCtx.primary_date ? `Primary date: ${bridgeCtx.primary_date}. ` : ""}
-              {bridgeCtx.secondary_date ? `Secondary date: ${bridgeCtx.secondary_date}. ` : ""}
-              {bridgeCtx.delta_mode ? `Delta mode: ${bridgeCtx.delta_mode}. ` : ""}
-              {bridgeCtx.timeline_mode ? `Timeline mode: ${bridgeCtx.timeline_mode}.` : ""}
-            </p>
-          </div>
-        )}
-
-        <div className="formSection">
-          <div className="formSectionHeader">
-            <p className="formSectionTitle">Identity</p>
-            <p className="formSectionText">Primary contact fields for the request owner.</p>
-          </div>
-
-          <div className="grid2">
-            <Field
-              label="Name"
-              value={formData.request.name}
-              onChange={(value) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  request: { ...prev.request, name: value },
-                }))
-              }
-            />
-            <Field
-              label="Email"
-              value={formData.request.email}
-              onChange={(value) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  request: { ...prev.request, email: value },
-                }))
-              }
-            />
-          </div>
-        </div>
-
-        <div className="formSection">
-          <div className="formSectionHeader">
-            <p className="formSectionTitle">Scope</p>
-            <p className="formSectionText">Define subject type, the main analytical ask, and the short request context.</p>
-          </div>
-
-          <div className="grid2">
-            <SelectField
-              label="Subject type"
-              value={formData.request.subjectType}
-              options={["", "Person", "Relationship", "Project", "Business / Organization", "Event / Period", "Mixed / Not sure"]}
-              onChange={(value) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  request: { ...prev.request, subjectType: value as SubjectType | "" },
-                  subjectPayload: buildEmptySubjectPayload(value as SubjectType | ""),
-                }))
-              }
-            />
-            <Field
-              label="Main question"
-              value={formData.request.mainQuestion}
-              onChange={(value) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  request: { ...prev.request, mainQuestion: value },
-                }))
-              }
-            />
-          </div>
-
-          <TextAreaField
-            label="Short description"
-            value={formData.request.shortDescription}
-            onChange={(value) =>
-              updateFormData((prev) => ({
-                ...prev,
-                request: { ...prev.request, shortDescription: value },
-              }))
-            }
-          />
-        </div>
-
-        <div className="formSection">
-          <div className="formSectionHeader">
-            <p className="formSectionTitle">Review depth</p>
-            <p className="formSectionText">Choose the depth level and confirm manual review before continuing.</p>
-          </div>
-
-          <div className="grid2Asymmetric">
-            <SelectField
-              label="Preferred depth"
-              value={formData.request.preferredDepth}
-              options={["", "Structured Snapshot", "Deep Phase Analysis", "Custom Analytical Work", "Not sure"]}
-              onChange={(value) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  request: { ...prev.request, preferredDepth: value as PreferredDepth | "" },
-                }))
-              }
-            />
-
-            <CheckboxRow
-              label="I understand that all requests are reviewed manually before confirmation, pricing, and processing."
-              checked={formData.consents.manualReviewAccepted}
-              onChange={(checked) =>
-                updateFormData((prev) => ({
-                  ...prev,
-                  consents: { ...prev.consents, manualReviewAccepted: checked },
-                }))
-              }
-            />
-          </div>
-        </div>
-
-        <div className="submitRow">
-          <button type="submit" className="btnPrimary">
-            Continue
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function DatesStep(props: {
-  subjectType: SubjectType | "";
-  formData: FormDataModel;
-  normalizedDates: { dates: NormalizedDateEntry[] };
-  updateFormData: (updater: (prev: FormDataModel) => FormDataModel) => void;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  return (
-    <section className="panel stack">
-      <p className="sectionTitle">Relevant dates</p>
-      <p className="muted">
-        Add the dates that define this request. You will verify them before final submission.
-      </p>
-
-      <DynamicDateFields
-        subjectType={props.subjectType}
-        formData={props.formData}
-        updateFormData={props.updateFormData}
-      />
-
-      <div className="stack">
-        <p className="sectionTitle">Date checks</p>
-        <InlineDateStatusList dates={props.normalizedDates.dates} />
-      </div>
-
-      <div className="actions">
-        <button type="button" className="btnSecondary" onClick={props.onBack}>
-          Back
-        </button>
-        <button type="button" className="btnPrimary" onClick={props.onContinue}>
-          Continue
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function ScopeStep(props: {
-  formData: FormDataModel;
-  updateFormData: (updater: (prev: FormDataModel) => FormDataModel) => void;
-  onBack: () => void;
-  onContinue: () => void;
-}) {
-  const { formData, updateFormData, onBack, onContinue } = props;
-
-  return (
-    <section className="panel stack">
-      <p className="sectionTitle">Scope</p>
-
-      <div className="grid3" data-access-row="three">
-        <SelectField
-          label="Entities involved"
-          value={formData.scope.entitiesCount}
-          options={["", "1", "2", "3+", "Not sure"]}
-          onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              scope: { ...prev.scope, entitiesCount: value as EntitiesCount | "" },
-            }))
-          }
-        />
-        <SelectField
-          label="Time scope"
-          value={formData.scope.timeScope}
-          options={["", "One date / one point", "Short period", "Several phases", "Extended / unclear"]}
-          onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              scope: { ...prev.scope, timeScope: value as TimeScope | "" },
-            }))
-          }
-        />
-        <SelectField
-          label="Source material"
-          value={formData.scope.sourceMaterialLevel}
-          options={["", "None", "Short notes", "Documents / links", "Multiple materials"]}
-          onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              scope: {
-                ...prev.scope,
-                sourceMaterialLevel: value as SourceMaterialLevel | "",
-              },
-            }))
-          }
-        />
-      </div>
-
-      <TextAreaField
-        label="Links or reference material"
-        value={formData.scope.referenceLinks}
-        onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            scope: { ...prev.scope, referenceLinks: value },
-          }))
-        }
-      />
-
-      <div className="actions">
-        <button type="button" className="btnSecondary" onClick={onBack}>
-          Back
-        </button>
-        <button type="button" className="btnPrimary" onClick={onContinue}>
-          Continue
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function AmbiguityState(props: {
-  dates: NormalizedDateEntry[];
-  onResolve: (dateId: string, selectedIso: string) => void;
-  onBack: () => void;
-}) {
-  const ambiguous = props.dates.find((d) => d.status === "ambiguous");
-  if (!ambiguous) return null;
-
-  return (
-    <section className="panel stack">
-      <p className="sectionTitle">Confirm date</p>
-      <p className="muted">
-        This date format is ambiguous. Please confirm the correct date before continuing.
-      </p>
-
-      <div className="reviewItem">
-        <span className="reviewLabel">Entered</span>
-        <span className="reviewValue">{ambiguous.raw}</span>
-      </div>
-
-      <div className="stack">
-        {ambiguous.ambiguousCandidates.map((candidate) => (
-          <button
-            key={candidate.iso}
-            type="button"
-            className="btnSecondary"
-            onClick={() => props.onResolve(ambiguous.id, candidate.iso)}
-          >
-            {candidate.human} — {candidate.iso}
-          </button>
-        ))}
-      </div>
-
-      <div className="actions">
-        <button type="button" className="btnGhost" onClick={props.onBack}>
-          Back
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function ReviewStep(props: {
-  submission: AccessSubmissionModel;
-  blockingIssues: string[];
-  canSubmit: boolean;
-  submitLabel: string;
-  isSubmitting: boolean;
-  onEditRequest: () => void;
-  onEditDates: () => void;
-  onEditScope: () => void;
-  onConfirmReview: () => void;
-  onSubmit: () => Promise<any>;
-}) {
-  const { submission } = props;
-
-  return (
-    <section className="panel reviewBlock">
-      <div className="stack">
-        <p className="sectionTitle">Review your request</p>
-        <p className="muted">
-          Please review all dates and request details carefully. Analytical processing depends on date accuracy.
-        </p>
-      </div>
-
-      {props.blockingIssues.length > 0 && (
-        <div className="notice noticeError">
-          <ul className="errorList">
-            {props.blockingIssues.map((issue) => (
-              <li key={issue}>{issue}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <ReviewGroup
-        title="Request summary"
-        rows={[
-          ["Subject type", submission.reviewData.requestSummary.subjectType || "Not set"],
-          ["Main question", submission.reviewData.requestSummary.mainQuestion || "Not set"],
-          ["Preferred depth", submission.reviewData.requestSummary.preferredDepth || "Not set"],
-        ]}
-      />
-
-      <ReviewDates dates={submission.reviewData.verifiedDates} />
-
-      <ReviewGroup
-        title="Scope summary"
-        rows={[
-          ["Entities involved", submission.reviewData.scopeSummary.entitiesCount || "Not set"],
-          ["Time scope", submission.reviewData.scopeSummary.timeScope || "Not set"],
-          ["Source material", submission.reviewData.scopeSummary.sourceMaterialLevel || "Not set"],
-        ]}
-      />
-
-      {submission.reviewData.completenessNotes.length > 0 && (
-        <div className="stack">
-          <p className="sectionTitle">Completeness notes</p>
-          <ul className="list">
-            {submission.reviewData.completenessNotes.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      <CheckboxRow
-        label="I confirm that the submitted dates and request details are correct."
-        checked={submission.formData.consents.reviewConfirmationAccepted}
-        onChange={(checked) => {
-          if (checked) props.onConfirmReview();
-        }}
-      />
-
-      <div className="actions">
-        <button type="button" className="btnGhost" onClick={props.onEditRequest}>
-          Edit request
-        </button>
-        <button type="button" className="btnGhost" onClick={props.onEditDates}>
-          Edit dates
-        </button>
-        <button type="button" className="btnGhost" onClick={props.onEditScope}>
-          Edit scope
-        </button>
-      </div>
-
-      <div className="actions">
-        <button
-          type="button"
-          className="btnPrimary"
-          disabled={!props.canSubmit || props.isSubmitting}
-          onClick={props.onSubmit}
-        >
-          {props.submitLabel}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-function SuccessStep(props: { clientView: AccessSubmissionModel["clientView"] }) {
-  const clientView = props.clientView;
-  if (!clientView) return null;
-
-  return (
-    <section className="panel stack">
-      <p className="sectionTitle">Request received</p>
-      <p className="muted">Your request has been received and placed into manual review.</p>
-      <p className="muted">
-        Review usually begins within 24–48 hours. Scope, timing, and pricing are confirmed after that review.
-      </p>
-
-      <ReviewGroup
-        title="Status"
-        rows={[
-          ["Request ID", clientView.requestId],
-          ["Status", formatClientStatus(clientView.status)],
-          ["Submitted", formatDisplayDateTime(clientView.submittedAt)],
-          ["Subject type", clientView.subjectType || "Not set"],
-        ]}
-      />
-
-      {clientView.submittedDates.length > 0 && (
-        <div className="stack">
-          <p className="sectionTitle">Submitted dates</p>
-          {clientView.submittedDates.map((item) => (
-            <div key={`${item.label}-${item.iso}`} className="reviewItem">
-              <span className="reviewLabel">{item.label}</span>
-              <span className="reviewValue">{item.human}</span>
-              <span className="iso">{item.iso}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="stack">
-        <p className="sectionTitle">Next steps</p>
-        <ol className="list">
-          {clientView.nextSteps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="notice">
-        <p className="muted">
-          If you notice a date error, reply to the confirmation email before processing begins.
-        </p>
-      </div>
-
-      <div className="actions">
-        <Link href="/access" className="btnSecondary">Return to Access</Link>
-        <Link href="/frey" className="btnGhost">Open Frey</Link>
-      </div>
-    </section>
-  );
-}
-
-function ReviewGroup(props: { title: string; rows: Array<[string, string]> }) {
-  return (
-    <div className="stack">
-      <p className="sectionTitle">{props.title}</p>
-      {props.rows.map(([label, value]) => (
-        <div key={label} className="reviewItem">
-          <span className="reviewLabel">{label}</span>
-          <span className="reviewValue">{value}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ReviewDates(props: { dates: ReviewDateItem[] }) {
-  return (
-    <div className="stack">
-      <p className="sectionTitle">Verified dates</p>
-      {props.dates.map((date) => (
-        <div key={date.label} className="reviewItem">
-          <span className="reviewLabel">{date.label}</span>
-          <span className="reviewValue">{date.human || "Not provided"}</span>
-          {date.iso ? <span className="iso">{date.iso}</span> : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function InlineDateStatusList(props: { dates: NormalizedDateEntry[] }) {
-  if (!props.dates.length) {
-    return (
-      <div className="statusPanel statusPanelEmpty">
-        <p className="tiny">Date checks will appear here as you complete the required fields.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="statusPanel">
-      {props.dates.map((date) => {
-        let meta = "Waiting for input.";
-
-        if (date.status === "parsed" && date.human) {
-          meta = `Parsed: ${date.human}`;
-        } else if (date.status === "ambiguous") {
-          meta = "Date format needs confirmation.";
-        } else if (date.status === "empty" && date.required) {
-          meta = "Required for this request type.";
-        } else if (date.status === "empty" && !date.required) {
-          meta = "Optional field.";
-        }
-
-        return (
-          <div key={date.id} className="statusItem">
-            <span className="reviewLabel">{date.label}</span>
-            <span className="tiny statusMeta" title={meta}>{meta}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function DynamicDateFields(props: {
-  subjectType: SubjectType | "";
-  formData: FormDataModel;
-  updateFormData: (updater: (prev: FormDataModel) => FormDataModel) => void;
-}) {
-  const { subjectType, formData, updateFormData } = props;
-
-  if (subjectType === "Person") {
-    const p = formData.subjectPayload as PersonSubjectPayload;
-    return (
-      <div className="grid2" data-access-row="two">
-        <Field label="Full name or identifier" value={p.fullNameOrIdentifier || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), fullNameOrIdentifier: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Date of birth" value={p.birthDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), birthDateRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Birth time" value={p.birthTimeRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), birthTimeRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Birth place" value={p.birthPlaceRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), birthPlaceRaw: value } as SubjectPayload,
-          }))
-        } />
-      </div>
-    );
-  }
-
-  if (subjectType === "Relationship") {
-    const p = formData.subjectPayload as RelationshipSubjectPayload;
-    return (
-      <div className="stack">
-        <div className="grid2" data-access-row="two">
-          <Field label="Person A name or identifier" value={p.personA?.name || ""} onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              subjectPayload: {
-                ...(prev.subjectPayload as Record<string, unknown>),
-                personA: { ...(p.personA || {}), name: value },
-              } as SubjectPayload,
-            }))
-          } />
-          <Field label="Person A date of birth" value={p.personA?.birthDateRaw || ""} onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              subjectPayload: {
-                ...(prev.subjectPayload as Record<string, unknown>),
-                personA: { ...(p.personA || {}), birthDateRaw: value },
-              } as SubjectPayload,
-            }))
-          } />
-          <Field label="Person B name or identifier" value={p.personB?.name || ""} onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              subjectPayload: {
-                ...(prev.subjectPayload as Record<string, unknown>),
-                personB: { ...(p.personB || {}), name: value },
-              } as SubjectPayload,
-            }))
-          } />
-          <Field label="Person B date of birth" value={p.personB?.birthDateRaw || ""} onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              subjectPayload: {
-                ...(prev.subjectPayload as Record<string, unknown>),
-                personB: { ...(p.personB || {}), birthDateRaw: value },
-              } as SubjectPayload,
-            }))
-          } />
-          <Field label="Relationship start date" value={p.relationshipStartDateRaw || ""} onChange={(value) =>
-            updateFormData((prev) => ({
-              ...prev,
-              subjectPayload: {
-                ...(prev.subjectPayload as Record<string, unknown>),
-                relationshipStartDateRaw: value,
-              } as SubjectPayload,
-            }))
-          } />
-        </div>
-      </div>
-    );
-  }
-
-  if (subjectType === "Project") {
-    const p = formData.subjectPayload as ProjectSubjectPayload;
-    return (
-      <div className="grid2" data-access-row="two">
-        <Field label="Project name" value={p.projectName || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), projectName: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Start date" value={p.startDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), startDateRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Key milestone date" value={p.milestoneDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), milestoneDateRaw: value } as SubjectPayload,
-          }))
-        } />
-      </div>
-    );
-  }
-
-  if (subjectType === "Business / Organization") {
-    const p = formData.subjectPayload as BusinessSubjectPayload;
-    return (
-      <div className="grid2" data-access-row="two">
-        <Field label="Business or organization name" value={p.organizationName || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), organizationName: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Registration or start date" value={p.registrationOrStartDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), registrationOrStartDateRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Key event date" value={p.keyEventDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), keyEventDateRaw: value } as SubjectPayload,
-          }))
-        } />
-      </div>
-    );
-  }
-
-  if (subjectType === "Event / Period") {
-    const p = formData.subjectPayload as EventSubjectPayload;
-    return (
-      <div className="grid2" data-access-row="two">
-        <Field label="Event title or identifier" value={p.eventTitle || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), eventTitle: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Event date" value={p.eventDateRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), eventDateRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Period start" value={p.periodStartRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), periodStartRaw: value } as SubjectPayload,
-          }))
-        } />
-        <Field label="Period end" value={p.periodEndRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), periodEndRaw: value } as SubjectPayload,
-          }))
-        } />
-      </div>
-    );
-  }
-
-  if (subjectType === "Mixed / Not sure") {
-    const p = formData.subjectPayload as MixedSubjectPayload;
-    return (
-      <div className="stack">
-        <Field label="Primary subject" value={p.primarySubject || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), primarySubject: value } as SubjectPayload,
-          }))
-        } />
-        <TextAreaField label="Known dates" value={p.knownDatesRaw || ""} onChange={(value) =>
-          updateFormData((prev) => ({
-            ...prev,
-            subjectPayload: { ...(prev.subjectPayload as Record<string, unknown>), knownDatesRaw: value } as SubjectPayload,
-          }))
-        } />
-      </div>
-    );
-  }
-
-  return <p className="tiny">Select a subject type to continue.</p>;
-}
-
-function Field(props: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <label className="field">
-      <span className="fieldLabel">{props.label}</span>
-      <input className="fieldControl" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
-    </label>
-  );
-}
-
-function TextAreaField(props: { label: string; value: string; onChange: (value: string) => void }) {
-  return (
-    <label className="field">
-      <span className="fieldLabel">{props.label}</span>
-      <textarea className="fieldControl" value={props.value} onChange={(e) => props.onChange(e.target.value)} />
-    </label>
-  );
-}
-
-function SelectField(props: { label: string; value: string; options: string[]; onChange: (value: string) => void }) {
-  return (
-    <label className="field">
-      <span className="fieldLabel">{props.label}</span>
-      <select className="fieldControl" value={props.value} onChange={(e) => props.onChange(e.target.value)}>
-        {props.options.map((option) => (
-          <option key={option} value={option}>
-            {option || "Select"}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function CheckboxRow(props: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
-  return (
-    <label className="field checkboxField">
-      <span aria-hidden="true">
-        <input
-          type="checkbox"
-          checked={props.checked}
-          onChange={(e) => props.onChange(e.target.checked)}
-        />
-      </span>
-      <span className="checkboxText">{props.label}</span>
-    </label>
-  );
-}
-
-function AccessNotices(props: {
-  draftSavedVisible: boolean;
-  isOffline: boolean;
-  justRestored: boolean;
-  submitAttempt: DraftSubmitAttempt;
-}) {
-  const activeNotice = props.submitAttempt.status === "failed" && props.submitAttempt.lastErrorMessage
-    ? (
-        <NoticeBlock
-          tone="error"
-          title="Submission did not complete"
-          message={props.submitAttempt.lastErrorMessage}
-        />
-      )
-    : props.isOffline
-    ? (
-        <NoticeBlock
-          tone="soft"
-          title="Connection held"
-          message="Your draft remains safely stored on this device while the connection recovers."
-        />
-      )
-    : props.justRestored
-    ? (
-        <NoticeBlock
-          tone="soft"
-          title="Connection restored"
-          message="You can continue your request without losing the current draft."
-        />
-      )
-    : null;
-
-  return (
-    <div className="noticeStack" aria-live="polite">
-      {activeNotice ?? <div className="notice noticePlaceholder" aria-hidden="true" />}
-    </div>
-  );
-}
-
-function NoticeBlock(props: { title?: string; message: string; tone: "soft" | "error" }) {
-  return (
-    <div className={`notice ${props.tone === "error" ? "noticeError" : ""}`}>
-      {props.title ? <p className="sectionTitle" style={{ marginBottom: 6 }}>{props.title}</p> : null}
-      <p className="muted">{props.message}</p>
-    </div>
-  );
-}
-
-function labelForStep(step: "request" | "dates" | "scope" | "review" | "submitted") {
-  switch (step) {
-    case "request":
-      return "Request";
-    case "dates":
-      return "Relevant Dates";
-    case "scope":
-      return "Scope";
-    case "review":
-      return "Review";
-    case "submitted":
-      return "Submitted";
-  }
-}
-
-function formatDisplayDateTime(iso: string) {
-  try {
-    return new Intl.DateTimeFormat("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZoneName: "short",
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
-
-function formatClientStatus(status: ClientStatus) {
-  switch (status) {
-    case "pending_manual_review":
-      return "Pending manual review";
-    case "correction_requested":
-      return "Correction requested";
-    case "ready_for_confirmation":
-      return "Ready for confirmation";
-    case "processing":
-      return "Processing";
-    case "closed":
-      return "Closed";
-  }
-}
-
-function buildEmptySubjectPayload(subjectType: SubjectType | ""): SubjectPayload {
-  switch (subjectType) {
-    case "Person":
-      return {
-        fullNameOrIdentifier: "",
-        birthDateRaw: "",
-        birthTimeRaw: "",
-        birthPlaceRaw: "",
-      };
-    case "Relationship":
-      return {
-        personA: { name: "", birthDateRaw: "", birthTimeRaw: "", birthPlaceRaw: "" },
-        personB: { name: "", birthDateRaw: "", birthTimeRaw: "", birthPlaceRaw: "" },
-        relationshipStartDateRaw: "",
-      };
-    case "Project":
-      return {
-        projectName: "",
-        startDateRaw: "",
-        milestoneDateRaw: "",
-      };
-    case "Business / Organization":
-      return {
-        organizationName: "",
-        registrationOrStartDateRaw: "",
-        keyEventDateRaw: "",
-      };
-    case "Event / Period":
-      return {
-        eventTitle: "",
-        eventDateRaw: "",
-        periodStartRaw: "",
-        periodEndRaw: "",
-      };
-    case "Mixed / Not sure":
-      return {
-        primarySubject: "",
-        knownDatesRaw: "",
-      };
-    default:
-      return {};
-  }
-}
-
