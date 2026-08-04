@@ -1,0 +1,415 @@
+name: BHRIGU Access Intake Emergency Containment
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/access-intake-containment-pr.yml"
+      - "pages/access-review.tsx"
+      - "pages/access.tsx"
+      - "pages/api/access/submit.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-access-intake-containment-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  containment-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      ACCEPTANCE_BASE: http://127.0.0.1:3100
+      ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Lock exact four-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' \
+            '.github/workflows/access-intake-containment-pr.yml' \
+            'pages/access-review.tsx' \
+            'pages/access.tsx' \
+            'pages/api/access/submit.ts' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo ACCESS_CONTAINMENT_EXACT_FOUR_FILE_SCOPE=PASS
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install exact dependency graph
+        run: npm ci
+
+      - name: Verify fail-closed source contract
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          api = Path("pages/api/access/submit.ts").read_text(encoding="utf-8")
+          review = Path("pages/access-review.tsx").read_text(encoding="utf-8")
+          access = Path("pages/access.tsx").read_text(encoding="utf-8")
+
+          checks = {}
+          failures = []
+
+          def check(name, condition):
+              checks[name] = bool(condition)
+              if not condition:
+                  failures.append(name)
+
+          check("api_body_parser_disabled", "bodyParser: false" in api)
+          check("api_post_503", "res.status(503)" in api)
+          check("api_closed_error_code", 'errorCode: "intake_temporarily_closed"' in api)
+          check("api_no_store", 'Cache-Control", "no-store' in api)
+          check("api_non_post_405", "res.status(405)" in api)
+          check("api_request_body_unread", "req.body" not in api)
+          for forbidden in (
+              "validateAccessSubmitPayload",
+              "buildStoredAccessSubmissionRecord",
+              "generateAccessRequestId",
+              "persistence",
+              "triage",
+              "fileAccessSubmissionPersistenceAdapter",
+              "console.",
+              "fetch(",
+              "axios",
+              "email",
+          ):
+              check(f"api_forbidden_absent_{forbidden}", forbidden not in api)
+
+          check("review_unconditional_404", "notFound: true" in review)
+          check("review_no_store", 'Cache-Control", "no-store' in review)
+          for forbidden in (
+              "rootDir",
+              "recordsDir",
+              "indexFile",
+              "requestId",
+              "operatorPacket",
+              "listAccessReviewRecords",
+              "getAccessReviewRecordById",
+              "getAccessReviewStorageMeta",
+          ):
+              check(f"review_forbidden_absent_{forbidden}", forbidden not in review)
+
+          check(
+              "access_closed_marker",
+              'data-access-intake-status="temporarily-closed"' in access,
+          )
+          check(
+              "access_disabled_action",
+              'data-access-submit-disabled="true"' in access and "disabled" in access,
+          )
+          check(
+              "access_upgrade_message",
+              "secure private intake is being upgraded" in access,
+          )
+          check("access_no_submit_api", "/api/access/submit" not in access)
+          check("access_no_form", "<form" not in access)
+          check("access_no_input", "<input" not in access)
+          check("access_no_textarea", "<textarea" not in access)
+          check("access_no_select", "<select" not in access)
+          check("access_no_price", "pricing" not in access.lower() and "price" not in access.lower())
+          check("access_no_payment", "payment" not in access.lower())
+          check("access_no_subscription", "subscription" not in access.lower())
+          check("access_information_hero", 'data-access-section="hero"' in access)
+          check("access_information_model", 'data-access-section="entry-model"' in access)
+          check("access_information_crypto", 'data-access-section="crypto-astro-research"' in access)
+          check("access_information_sample", 'data-access-section="sample"' in access)
+          check("access_information_infographic", 'data-access-section="clarity-infographic"' in access)
+
+          report = {
+              "schema_version": "bhrigu_access_intake_containment_source_v0_1",
+              "head_sha": "${{ github.event.pull_request.head.sha }}",
+              "checks": checks,
+              "failures": failures,
+              "storage_write": "ZERO_BY_UNREACHABLE_SOURCE",
+              "email_send": "ZERO_BY_UNREACHABLE_SOURCE",
+              "public_list_mode": "ABSENT",
+          }
+          Path("artifacts/access-containment-source-report.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if failures:
+              raise SystemExit(f"ACCESS_CONTAINMENT_SOURCE=FAIL {failures}")
+          print("ACCESS_CONTAINMENT_SOURCE=PASS")
+          print("STORAGE_WRITE=ZERO")
+          print("EMAIL_SEND=ZERO")
+          print("PUBLIC_LIST_MODE=ABSENT")
+          PY
+
+      - name: Verify existing BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Verify existing Binance observation
+        run: npm run verify:btc-binance-observation
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Start exact-head production server
+        run: |
+          set -euo pipefail
+          npm run start -- -p 3100 > artifacts/access-containment-server.log 2>&1 &
+          echo $! > /tmp/access-containment-server.pid
+          for attempt in {1..60}; do
+            if curl --fail --silent "$ACCEPTANCE_BASE/access" >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat artifacts/access-containment-server.log
+          exit 1
+
+      - name: Verify HTTP containment and unaffected routes
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          base = os.environ["ACCEPTANCE_BASE"].rstrip("/")
+          temp_root = Path("/tmp/access-submissions")
+
+          def file_count():
+              return sum(1 for path in temp_root.rglob("*") if path.is_file()) if temp_root.exists() else 0
+
+          def get(path):
+              request = urllib.request.Request(f"{base}{path}", method="GET")
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return response.status, dict(response.headers), response.read().decode("utf-8", "replace")
+              except urllib.error.HTTPError as error:
+                  return error.code, dict(error.headers), error.read().decode("utf-8", "replace")
+
+          before_files = file_count()
+          payload = json.dumps({
+              "request": {
+                  "name": "SYNTHETIC NON-PERSONAL CONTAINMENT PROOF",
+                  "email": "containment-proof@invalid.example",
+                  "mainQuestion": "Confirm fail-closed intake without persistence or delivery."
+              }
+          }).encode("utf-8")
+          request = urllib.request.Request(
+              f"{base}/api/access/submit",
+              data=payload,
+              method="POST",
+              headers={"Content-Type": "application/json"},
+          )
+          try:
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  post_status = response.status
+                  post_headers = dict(response.headers)
+                  post_body = response.read().decode("utf-8", "replace")
+          except urllib.error.HTTPError as error:
+              post_status = error.code
+              post_headers = dict(error.headers)
+              post_body = error.read().decode("utf-8", "replace")
+
+          after_files = file_count()
+          post_json = json.loads(post_body)
+          review_status, review_headers, review_body = get("/access-review")
+          api_get_status, _, _ = get("/api/access/submit")
+          access_status, _, access_body = get("/access")
+          home_status, _, _ = get("/")
+          btc_status, _, _ = get("/crypto-astro/btc?lang=en")
+          btc_live_status, _, _ = get("/crypto-astro/btc/live?lang=en")
+
+          checks = {
+              "access_review_404": review_status == 404,
+              "access_review_no_sensitive_marker": all(
+                  marker not in review_body
+                  for marker in ("rootDir", "recordsDir", "indexFile", "operator_packet")
+              ),
+              "post_503": post_status == 503,
+              "post_error_code": post_json.get("errorCode") == "intake_temporarily_closed",
+              "post_no_store": "no-store" in post_headers.get("Cache-Control", post_headers.get("cache-control", "")).lower(),
+              "storage_write_zero": before_files == 0 and after_files == 0,
+              "api_get_405": api_get_status == 405,
+              "access_200": access_status == 200,
+              "access_disabled_state_present": "temporarily-closed" in access_body and "secure private intake is being upgraded" in access_body,
+              "home_200": home_status == 200,
+              "btc_entry_200": btc_status == 200,
+              "btc_live_200": btc_live_status == 200,
+          }
+          failures = [name for name, passed in checks.items() if not passed]
+          report = {
+              "schema_version": "bhrigu_access_intake_containment_http_v0_1",
+              "head_sha": os.environ["ACCEPTANCE_HEAD_SHA"],
+              "checks": checks,
+              "failures": failures,
+              "measurements": {
+                  "review_status": review_status,
+                  "post_status": post_status,
+                  "api_get_status": api_get_status,
+                  "storage_files_before": before_files,
+                  "storage_files_after": after_files,
+                  "access_status": access_status,
+                  "home_status": home_status,
+                  "btc_status": btc_status,
+                  "btc_live_status": btc_live_status,
+              },
+              "storage_write": "ZERO" if checks["storage_write_zero"] else "NONZERO",
+              "email_send": "ZERO_BY_SOURCE_AND_RUNTIME_PATH",
+          }
+          Path("artifacts/access-containment-http-report.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if failures:
+              raise SystemExit(f"ACCESS_CONTAINMENT_HTTP=FAIL {failures}")
+          print("ACCESS_REVIEW_404=PASS")
+          print("API_FAIL_CLOSED_503=PASS")
+          print("STORAGE_WRITE=ZERO")
+          print("EMAIL_SEND=ZERO")
+          print("HOME_AND_BTC_SURFACES=UNAFFECTED")
+          PY
+
+      - name: Install visual driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify desktop and mobile Access preservation
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["ACCEPTANCE_BASE"].rstrip("/")
+          artifacts = Path("artifacts")
+          report = {
+              "schema_version": "bhrigu_access_intake_containment_visual_v0_1",
+              "head_sha": os.environ["ACCEPTANCE_HEAD_SHA"],
+              "views": {},
+              "checks": {},
+              "failures": [],
+          }
+
+          options = Options()
+          options.add_argument("--headless=new")
+          options.add_argument("--no-sandbox")
+          options.add_argument("--disable-dev-shm-usage")
+          options.add_argument("--disable-gpu")
+          options.add_argument("--hide-scrollbars")
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+
+          def check(name, condition, detail=None):
+              passed = bool(condition)
+              report["checks"][name] = passed
+              if not passed:
+                  report["failures"].append(name)
+                  if detail is not None:
+                      report.setdefault("failure_detail", {})[name] = detail
+
+          def run_view(name, width, height):
+              driver.set_window_size(width, height)
+              driver.get(f"{base}/access")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(
+                      By.CSS_SELECTOR,
+                      "[data-access-intake-status='temporarily-closed']",
+                  ).is_displayed()
+              )
+              body = driver.find_element(By.TAG_NAME, "body").text
+              disabled = driver.find_element(
+                  By.CSS_SELECTOR,
+                  "[data-access-submit-disabled='true']",
+              )
+              sections = driver.find_elements(By.CSS_SELECTOR, "[data-access-section]")
+              no_overflow = driver.execute_script(
+                  "return document.documentElement.scrollWidth <= window.innerWidth + 1"
+              )
+              viewport = driver.execute_script(
+                  "return {width:window.innerWidth,height:window.innerHeight}"
+              )
+              document_width = driver.execute_script(
+                  "return document.documentElement.scrollWidth"
+              )
+              severe = [
+                  entry
+                  for entry in driver.get_log("browser")
+                  if entry.get("level") == "SEVERE"
+                  and "favicon" not in entry.get("message", "").lower()
+              ]
+              screenshot = artifacts / f"access-containment-{name}.png"
+              driver.save_screenshot(str(screenshot))
+
+              report["views"][name] = {
+                  "viewport": viewport,
+                  "document_width": document_width,
+                  "section_count": len(sections),
+                  "screenshot": str(screenshot),
+                  "severe_errors": severe,
+              }
+              check(f"{name}_closed_copy", "Reviewed requests are temporarily closed" in body)
+              check(f"{name}_upgrade_copy", "secure private intake is being upgraded" in body)
+              check(f"{name}_disabled_action", not disabled.is_enabled())
+              check(f"{name}_no_form_controls", not driver.find_elements(By.CSS_SELECTOR, "form, input, textarea, select"))
+              check(f"{name}_information_sections", len(sections) >= 6, len(sections))
+              check(f"{name}_no_horizontal_overflow", no_overflow, {"viewport": viewport, "document_width": document_width})
+              check(f"{name}_no_severe_browser_errors", not severe, severe)
+
+          try:
+              run_view("desktop", 1440, 1100)
+              run_view("mobile", 390, 844)
+          finally:
+              driver.quit()
+
+          report["status"] = "PASS" if not report["failures"] else "FAIL"
+          Path("artifacts/access-containment-visual-report.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if report["failures"]:
+              raise SystemExit(f"ACCESS_CONTAINMENT_VISUAL=FAIL {report['failures']}")
+          print("DESKTOP_ACCESS_PRESERVATION=PASS")
+          print("MOBILE_ACCESS_PRESERVATION=PASS")
+          print("HORIZONTAL_OVERFLOW=ZERO")
+          PY
+
+      - name: Stop exact-head server
+        if: always()
+        run: |
+          if test -f /tmp/access-containment-server.pid; then
+            kill "$(cat /tmp/access-containment-server.pid)" || true
+          fi
+
+      - name: Upload containment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-access-intake-containment-${{ github.event.pull_request.number }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 90
