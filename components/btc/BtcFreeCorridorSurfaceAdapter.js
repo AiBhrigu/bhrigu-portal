@@ -29,8 +29,8 @@ const COPY = {
       },
       {
         label: "Что дальше",
-        question: "Что должно измениться, чтобы текущий вывод усилился или отменился?",
-        canonical: "При каких условиях текущая структура BTC усилится, ослабнет или отменится?",
+        question: "Что проверить дальше, чтобы подтвердить или пересмотреть вывод?",
+        canonical: "Какие данные нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?",
       },
       {
         label: "Проверить источники",
@@ -46,10 +46,10 @@ const COPY = {
     expiredBody: "История не сохраняется и не переносится. Пока эта вкладка открыта, ответы остаются видимыми. Можно начать новый бесплатный разговор или открыть текущий статус Access.",
     restart: "Начать новый бесплатный разговор",
     accessStatus: "Открыть статус Access",
-    conditionsTitle: "Что изменит вывод",
-    strengthen: "Усилит",
-    weaken: "Ослабит",
-    invalidate: "Отменит",
+    conditionsTitle: "Основание и граница вывода",
+    observed: "Наблюдаем",
+    boundary: "Граница",
+    watchNext: "Дальше",
   },
   en: {
     navigatorEyebrow: "Quick entry",
@@ -73,8 +73,8 @@ const COPY = {
       },
       {
         label: "What comes next",
-        question: "What must change for the current read to strengthen or be invalidated?",
-        canonical: "Under what conditions would the current BTC structure strengthen, weaken, or be invalidated?",
+        question: "What should be checked next to confirm or revise the read?",
+        canonical: "Which data should be watched next to confirm or revise the current BTC read?",
       },
       {
         label: "Check sources",
@@ -90,10 +90,10 @@ const COPY = {
     expiredBody: "History is not saved or transferred. While this tab stays open, the answers remain visible. You can start a new free conversation or open the current Access status.",
     restart: "Start a new free conversation",
     accessStatus: "Open Access status",
-    conditionsTitle: "What would change the read",
-    strengthen: "Strengthens",
-    weaken: "Weakens",
-    invalidate: "Invalidates",
+    conditionsTitle: "Basis and boundary of the read",
+    observed: "Observed",
+    boundary: "Boundary",
+    watchNext: "Watch next",
   },
 };
 
@@ -203,11 +203,11 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
       }
       return "Why do the current BTC signals diverge?";
     }
-    if (/^what next$|^and what next$|^what would change.*read$/.test(normalized)) {
-      if (active === "liquidity") return "Which liquidity changes would strengthen, weaken, or invalidate the current BTC read?";
-      if (active === "market_structure") return "Which market-structure changes would strengthen, weaken, or invalidate the current BTC read?";
-      if (active === "change_memory") return "What must change in the next verified snapshot for the current BTC read to strengthen or be invalidated?";
-      return `What must change for the read about ${label} to strengthen or be invalidated?`;
+    if (/^what next$|^and what next$|^what should.*checked next$|^what would change.*read$/.test(normalized)) {
+      if (active === "liquidity") return "Which liquidity data should be watched next to confirm or revise the current BTC read?";
+      if (active === "market_structure") return "Which market-structure data should be watched next to confirm or revise the current BTC read?";
+      if (active === "change_memory") return "What should be checked in the next verified snapshot to confirm or revise the current BTC read?";
+      return `What should be watched next to confirm or revise the read about ${label}?`;
     }
     if (/which facts create.*diverg|what would resolve it/.test(normalized)) {
       return `Which facts create the divergence in ${label}, and what would resolve it?`;
@@ -242,11 +242,11 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
     }
     return "Почему текущие сигналы BTC расходятся?";
   }
-  if (/^а что дальше$|^что дальше$|^и что дальше$|^что изменит.*вывод$/.test(normalized)) {
-    if (active === "liquidity") return "Какие изменения ликвидности усилят, ослабят или отменят текущий вывод по BTC?";
-    if (active === "market_structure") return "Какие изменения структуры рынка усилят, ослабят или отменят текущий вывод по BTC?";
-    if (active === "change_memory") return "Что должно измениться в следующем проверенном снимке, чтобы текущий вывод по BTC усилился или отменился?";
-    return `Что должно измениться, чтобы вывод по ${label} усилился или отменился?`;
+  if (/^а что дальше$|^что дальше$|^и что дальше$|^что проверить дальше$|^что изменит.*вывод$/.test(normalized)) {
+    if (active === "liquidity") return "Какие данные ликвидности нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
+    if (active === "market_structure") return "Какие данные структуры рынка нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
+    if (active === "change_memory") return "Что проверить в следующем подтверждённом снимке, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
+    return `Что отслеживать дальше, чтобы подтвердить или пересмотреть вывод по ${label}?`;
   }
   if (/какие факты создают расхождение|что его снимет/.test(normalized)) {
     return `Какие факты создают расхождение в ${label} и что его снимет?`;
@@ -297,18 +297,38 @@ function sectionPayload(node) {
   if (!node) return "";
   const clone = node.cloneNode(true);
   clone.querySelectorAll("strong, h3, summary").forEach((label) => label.remove());
+  const listItems = Array.from(clone.querySelectorAll("li"))
+    .map((item) => String(item.textContent || "").trim())
+    .filter(Boolean);
+  if (listItems.length) return listItems.join(" · ");
   return String(clone.textContent || "").trim();
 }
 
-function evidenceBoundConditions(turn, copy) {
-  const evidence = sectionPayload(turn.querySelector("[data-answer-section='evidence'] li"));
+function answerBoundaryRows(turn, copy) {
+  const evidence = sectionPayload(turn.querySelector("[data-answer-section='evidence']"));
   const limit = sectionPayload(turn.querySelector("[data-answer-section='limit']"));
   const change = sectionPayload(turn.querySelector("[data-answer-section='change']"));
   return [
-    [copy.strengthen, evidence, "evidence"],
-    [copy.weaken, limit, "limit"],
-    [copy.invalidate, change, "change"],
+    [copy.observed, evidence, "evidence"],
+    [copy.boundary, limit, "limit"],
+    [copy.watchNext, change, "change"],
   ].filter(([, value]) => Boolean(value));
+}
+
+function freeSessionTimingNow() {
+  if (typeof window === "undefined") {
+    return { start: 0, remainingMs: FREE_SESSION_DURATION_MS, expired: false };
+  }
+  const start = Number(window.sessionStorage.getItem(FREE_SESSION_START_KEY) || 0);
+  if (!Number.isFinite(start) || start <= 0) {
+    return { start: 0, remainingMs: FREE_SESSION_DURATION_MS, expired: false };
+  }
+  const remainingMs = FREE_SESSION_DURATION_MS - (Date.now() - start);
+  return {
+    start,
+    remainingMs: Math.max(0, remainingMs),
+    expired: remainingMs <= 0,
+  };
 }
 
 function QuestionNavigator({ compact, locale, onQuestion }) {
@@ -361,6 +381,17 @@ export default function BtcFreeCorridorSurfaceAdapter() {
 
   const liveHref = useMemo(() => `/crypto-astro/btc/live?lang=${locale}`, [locale]);
 
+  const applyExactBoundary = () => {
+    const timing = freeSessionTimingNow();
+    if (!timing.expired) return false;
+    setRemainingMs(0);
+    setExpired(true);
+    window.requestAnimationFrame(() => {
+      document.querySelector(".btcFreeGate")?.scrollIntoView({ block: "center" });
+    });
+    return true;
+  };
+
   useEffect(() => {
     if (!active || typeof window === "undefined") return undefined;
 
@@ -407,11 +438,12 @@ export default function BtcFreeCorridorSurfaceAdapter() {
 
         const nextStep = latestTurn.querySelector(".answerNextStep");
         if (body && !body.querySelector(".btcPublicConditions")) {
-          const rows = evidenceBoundConditions(latestTurn, COPY[locale]);
+          const rows = answerBoundaryRows(latestTurn, COPY[locale]);
           if (rows.length) {
             const section = document.createElement("section");
             section.className = "btcPublicConditions";
             section.setAttribute("data-public-conditions-bound", "answer-payload");
+            section.setAttribute("data-public-condition-semantics", "neutral-boundary");
             section.setAttribute("data-public-answer-language", locale);
             const heading = document.createElement("h3");
             heading.textContent = COPY[locale].conditionsTitle;
@@ -419,6 +451,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
             rows.forEach(([label, value, source]) => {
               const row = document.createElement("p");
               row.setAttribute("data-condition-source", source);
+              row.setAttribute("data-condition-role", source === "evidence" ? "observed" : source === "limit" ? "boundary" : "watch-next");
               const strong = document.createElement("strong");
               strong.textContent = label;
               const span = document.createElement("span");
@@ -436,7 +469,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
           nextStep.setAttribute("role", "button");
           nextStep.setAttribute("tabindex", "0");
           const execute = () => {
-            if (expired) return;
+            if (applyExactBoundary()) return;
             const composerNode = document.querySelector("form.liveComposer");
             const textarea = composerNode?.querySelector("textarea[name='q']");
             const proposed = nextStep.querySelector("strong")?.textContent || "";
@@ -465,7 +498,9 @@ export default function BtcFreeCorridorSurfaceAdapter() {
   useEffect(() => {
     if (!active || typeof window === "undefined") return undefined;
 
+    let boundaryTimer = 0;
     const tick = () => {
+      window.clearTimeout(boundaryTimer);
       const sessionRaw = window.sessionStorage.getItem(BTC_SESSION_KEY);
       const queryHasQuestion = new URLSearchParams(window.location.search).has("q");
       const conversation = Boolean(sessionRaw) || queryHasQuestion || Boolean(document.querySelector(".liveThread"));
@@ -479,14 +514,20 @@ export default function BtcFreeCorridorSurfaceAdapter() {
         setExpired(false);
         return;
       }
-      const remaining = FREE_SESSION_DURATION_MS - (Date.now() - start);
-      setRemainingMs(Math.max(0, remaining));
-      setExpired(remaining <= 0);
+      const timing = freeSessionTimingNow();
+      setRemainingMs(timing.remainingMs);
+      setExpired(timing.expired);
+      if (!timing.expired) {
+        boundaryTimer = window.setTimeout(tick, Math.max(1, timing.remainingMs + 1));
+      }
     };
 
     tick();
-    const timer = window.setInterval(tick, 15000);
-    return () => window.clearInterval(timer);
+    const displayTimer = window.setInterval(tick, 15000);
+    return () => {
+      window.clearInterval(displayTimer);
+      window.clearTimeout(boundaryTimer);
+    };
   }, [active, pathname]);
 
   useEffect(() => {
@@ -494,10 +535,9 @@ export default function BtcFreeCorridorSurfaceAdapter() {
     const onSubmit = (event) => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement) || !form.matches("form.liveComposer")) return;
-      if (expired) {
+      if (applyExactBoundary()) {
         event.preventDefault();
-        setExpired(true);
-        document.querySelector(".btcFreeGate")?.scrollIntoView({ block: "center" });
+        event.stopPropagation();
         return;
       }
       const textarea = form.querySelector("textarea[name='q']");
@@ -510,12 +550,12 @@ export default function BtcFreeCorridorSurfaceAdapter() {
     };
     document.addEventListener("submit", onSubmit, true);
     return () => document.removeEventListener("submit", onSubmit, true);
-  }, [active, expired, locale, previousSubject, subject]);
+  }, [active, locale, previousSubject, subject]);
 
   if (!active || typeof document === "undefined") return null;
 
   const openQuestion = (question) => {
-    if (expired) return;
+    if (applyExactBoundary()) return;
     window.location.assign(`${liveHref}&q=${encodeURIComponent(question)}`);
   };
 
@@ -555,7 +595,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
       .answerLead.btcPublicConclusion{margin:18px 0 0;padding:18px 20px;border-left:3px solid var(--b);background:rgba(210,164,95,.07);color:var(--t);font-size:clamp(19px,2.2vw,24px);font-weight:650;line-height:1.48}
       .btcPublicConditions{display:grid;gap:8px;margin-top:18px;padding:16px;border:1px solid rgba(106,168,255,.18);border-radius:14px;background:rgba(5,13,23,.58)}
       .btcPublicConditions h3{margin:0 0 4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
-      .btcPublicConditions p{display:grid;grid-template-columns:82px 1fr;gap:10px;margin:0;color:var(--t2);font-size:13px;line-height:1.5}
+      .btcPublicConditions p{display:grid;grid-template-columns:92px 1fr;gap:10px;margin:0;color:var(--t2);font-size:13px;line-height:1.5}
       .btcPublicConditions strong{color:var(--b)}
       .answerNextStep[role='button']{cursor:pointer;transition:border-color .16s ease,background .16s ease}
       .answerNextStep[role='button']:hover,.answerNextStep[role='button']:focus-visible{border-color:rgba(143,124,244,.68);background:rgba(143,124,244,.11)}
@@ -566,7 +606,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
       .btcFreeGateActions button{min-height:46px}
       .btcFreeGateSecondary{border-color:rgba(106,168,255,.42);background:rgba(106,168,255,.08)}
       @media(max-width:1080px){.btcPublicQuestionGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.btcPublicQuestionGrid button:last-child{grid-column:1/-1}}
-      @media(max-width:680px){.btcPublicNavigator{gap:14px;padding:26px 0}.btcPublicNavigator h2{font-size:32px}.btcPublicQuestionGrid{grid-template-columns:1fr;gap:8px}.btcPublicQuestionGrid button,.btcPublicQuestionGrid button:last-child{grid-column:auto;min-height:0;padding:15px}.btcPublicQuestionGrid button{gap:7px}.btcPublicQuestionGrid span{font-size:15px}.btcFreeContract{display:grid}.answerLead.btcPublicConclusion{padding:14px;font-size:18px}.btcPublicConditions p{grid-template-columns:74px 1fr}.btcFreeGateActions{display:grid}.btcFreeGateActions button{width:100%}}
+      @media(max-width:680px){.btcPublicNavigator{gap:14px;padding:26px 0}.btcPublicNavigator h2{font-size:32px}.btcPublicQuestionGrid{grid-template-columns:1fr;gap:8px}.btcPublicQuestionGrid button,.btcPublicQuestionGrid button:last-child{grid-column:auto;min-height:0;padding:15px}.btcPublicQuestionGrid button{gap:7px}.btcPublicQuestionGrid span{font-size:15px}.btcFreeContract{display:grid}.answerLead.btcPublicConclusion{padding:14px;font-size:18px}.btcPublicConditions p{grid-template-columns:84px 1fr}.btcFreeGateActions{display:grid}.btcFreeGateActions button{width:100%}}
     `}</style>
   </>;
 }
