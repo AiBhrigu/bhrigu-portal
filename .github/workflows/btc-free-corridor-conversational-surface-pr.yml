@@ -33,16 +33,16 @@ jobs:
           git fetch origin master
           test "$(git merge-base HEAD origin/master)" = "c1d60096055aa4591f3ee32b43799100dc0b75b1"
           git diff --name-only c1d60096055aa4591f3ee32b43799100dc0b75b1 HEAD | sort > /tmp/actual
-          cat > /tmp/expected <<'EOF'
+          cat > /tmp/expected <<'SCOPE'
           .github/workflows/btc-field-read-pr-visual.yml
           .github/workflows/btc-free-corridor-conversational-surface-pr.yml
           components/btc/BtcFreeCorridorSurfaceAdapter.js
           pages/_app.js
-          EOF
+          SCOPE
           sort -o /tmp/expected /tmp/expected
           diff -u /tmp/expected /tmp/actual
 
-      - name: Verify static conversational contract
+      - name: Verify bilingual truth-bound fail-closed contract
         run: |
           node <<'NODE'
           const fs = require('node:fs');
@@ -51,28 +51,28 @@ jobs:
           const checks = {
             ADAPTER_IMPORTED: app.includes('BtcFreeCorridorSurfaceAdapter'),
             ADAPTER_MOUNTED: app.includes('<BtcFreeCorridorSurfaceAdapter />'),
-            CANONICAL_NAVIGATOR_BINDING: app.includes('BTC_PUBLIC_NAVIGATOR_ROUTES'),
+            CANONICAL_BINDING_LOCAL_TO_ADAPTER: adapter.includes('canonical: "Что происходит с рынком BTC сейчас?"') && adapter.includes('canonical: "What is happening with the BTC market now?"') && adapter.includes('onQuestion(item.canonical)'),
+            NO_GLOBAL_CLICK_INTERCEPTION: !app.includes('BTC_PUBLIC_NAVIGATOR_ROUTES') && !app.includes('openCanonicalBtcQuestion'),
             EXACT_60_MINUTE_CONTRACT: adapter.includes('const FREE_SESSION_DURATION_MS = 60 * 60 * 1000'),
             TAB_LOCAL_SESSION_RETAINED: adapter.includes('bhrigu:btc-cosmographer:session:v0_3'),
-            NEW_FREE_CONVERSATION_AVAILABLE: adapter.includes('Начать новый бесплатный разговор'),
-            PAID_CONTINUITY_ROUTE: adapter.includes('/access?lang=${locale}&intent=btc-continuity'),
-            PUBLIC_QUESTION_1: adapter.includes('Что происходит с BTC сейчас?'),
-            PUBLIC_QUESTION_2: adapter.includes('Что изменилось с прошлого проверенного снимка?'),
-            PUBLIC_QUESTION_3: adapter.includes('Какие сигналы сейчас расходятся и почему это важно?'),
-            PUBLIC_QUESTION_4: adapter.includes('Что должно измениться, чтобы текущий вывод усилился или отменился?'),
-            PUBLIC_QUESTION_5: adapter.includes('Покажи источники и время обновления данных этого чтения.'),
-            WHY_FOLLOW_UP_EXPANDS_SUBJECT: adapter.includes('Почему текущие сигналы ликвидности BTC расходятся?'),
-            WHAT_NEXT_EXPANDS_SUBJECT: adapter.includes('Какие изменения ликвидности усилят, ослабят или отменят текущий вывод по BTC?'),
+            RU_NAVIGATOR: adapter.includes('navigatorEyebrow: "Быстрый вход"') && adapter.includes('label: "Проверить источники"'),
+            EN_NAVIGATOR: adapter.includes('navigatorEyebrow: "Quick entry"') && adapter.includes('label: "Check sources"'),
+            RU_FOLLOW_UP: adapter.includes('Почему текущие сигналы ликвидности BTC расходятся?'),
+            EN_FOLLOW_UP: adapter.includes('Why do the current BTC liquidity signals diverge?'),
+            ANSWER_LEAD_REUSED: adapter.includes('answerLead.classList.add("btcPublicConclusion")') && adapter.includes('data-public-first-conclusion", "answer-payload"') && adapter.includes('data-public-conclusion-source", "answer-direct"'),
+            NO_STATIC_MARKET_CONCLUSIONS: !adapter.includes('PUBLIC_CONCLUSIONS') && !adapter.includes('PUBLIC_CONDITIONS'),
+            CONDITIONS_BOUND_TO_PAYLOAD: adapter.includes('evidenceBoundConditions') && adapter.includes("[data-answer-section='evidence'] li") && adapter.includes("[data-answer-section='limit']") && adapter.includes("[data-answer-section='change']") && adapter.includes('data-public-conditions-bound", "answer-payload"'),
+            BILINGUAL_CONDITION_LABELS: adapter.includes('strengthen: "Усилит"') && adapter.includes('strengthen: "Strengthens"') && adapter.includes('invalidate: "Invalidates"'),
+            FAIL_CLOSED_CONTINUITY: adapter.includes('data-continuity-boundary="tab-local-only"') && adapter.includes('История не сохраняется и не переносится') && adapter.includes('History is not saved or transferred'),
+            ACCESS_STATUS_ONLY: adapter.includes('Открыть статус Access') && adapter.includes('Open Access status') && adapter.includes('intent=btc-continuity-status'),
+            NO_FALSE_CONTINUITY_PROMISE: !adapter.includes('Сохранить и продолжить') && !adapter.includes('Save and continue'),
             NEXT_QUESTION_ACTIONABLE: adapter.includes('nextStep.setAttribute("role", "button")') && adapter.includes('composerNode.requestSubmit()'),
-            FIRST_PUBLIC_CONCLUSION: adapter.includes('data-public-first-conclusion'),
-            CONDITIONS_HIERARCHY: adapter.includes('Что изменит вывод') && adapter.includes('Усилит') && adapter.includes('Ослабит') && adapter.includes('Отменит'),
-            MACHINE_METADATA_HIDDEN: adapter.includes('.answerSource .answerAuthority') && adapter.includes('.answerEvidenceMeta{display:none!important}'),
             SOURCES_COLLAPSED: adapter.includes('details.removeAttribute("open")'),
             MOBILE_SINGLE_COLUMN: adapter.includes('@media(max-width:680px)') && adapter.includes('.btcPublicQuestionGrid{grid-template-columns:1fr'),
             NO_BACKEND_EXPANSION: !adapter.includes('fetch(') && !adapter.includes('axios') && !adapter.includes('WebSocket'),
           };
           const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
-          console.log(JSON.stringify({ schema: 'btc_free_corridor_surface_acceptance_v0_1', checks }, null, 2));
+          console.log(JSON.stringify({ schema: 'btc_free_corridor_bilingual_truth_bound_static_acceptance_v0_1', checks }, null, 2));
           if (failed.length) throw new Error(`FAILED=${failed.join(',')}`);
           NODE
 
@@ -96,16 +96,39 @@ jobs:
       - name: Install browser driver client
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
 
-      - name: Verify desktop mobile conversation and expiry boundary
+      - name: Verify RU EN desktop mobile truth binding and expiry boundary
         run: |
           python3 - <<'PY'
           import json
-          from urllib.parse import quote, unquote_plus
+          from urllib.parse import quote, unquote_plus, urlparse, parse_qs
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
 
           base = "http://127.0.0.1:3000"
+          cases = {
+              "ru": {
+                  "labels": ["Ситуация сейчас", "Что изменилось", "Где расхождение", "Что дальше", "Проверить источники"],
+                  "liquidity": "Что сейчас с ликвидностью BTC?",
+                  "why": "Почему?",
+                  "why_expected": "Почему текущие сигналы ликвидности BTC расходятся?",
+                  "contract": "Бесплатный разговор · 60 минут",
+                  "expired_title": "Ответы остаются в этой вкладке",
+                  "access_label": "Открыть статус Access",
+                  "false_promise": "Сохранить и продолжить",
+              },
+              "en": {
+                  "labels": ["Current situation", "What changed", "Where signals diverge", "What comes next", "Check sources"],
+                  "liquidity": "What is happening with BTC liquidity now?",
+                  "why": "Why?",
+                  "why_expected": "Why do the current BTC liquidity signals diverge?",
+                  "contract": "Free conversation · 60 minutes",
+                  "expired_title": "Answers remain in this tab",
+                  "access_label": "Open Access status",
+                  "false_promise": "Save and continue",
+              },
+          }
+
           options = webdriver.ChromeOptions()
           for argument in (
               "--headless=new",
@@ -129,67 +152,122 @@ jobs:
                   "return document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1"
               )
 
+          def condition_binding():
+              return driver.execute_script("""
+                const turn = Array.from(document.querySelectorAll('article[data-route-subject]')).at(-1);
+                const publicRows = Array.from(turn.querySelectorAll('.btcPublicConditions [data-condition-source]'));
+                const payload = (selector) => {
+                  const node = turn.querySelector(selector);
+                  if (!node) return '';
+                  const clone = node.cloneNode(true);
+                  clone.querySelectorAll('strong,h3,summary').forEach((label) => label.remove());
+                  return (clone.textContent || '').trim();
+                };
+                const expected = {
+                  evidence: payload("[data-answer-section='evidence'] li"),
+                  limit: payload("[data-answer-section='limit']"),
+                  change: payload("[data-answer-section='change']"),
+                };
+                return {
+                  expected,
+                  actual: publicRows.map((row) => ({
+                    source: row.getAttribute('data-condition-source'),
+                    value: (row.querySelector('span')?.textContent || '').trim(),
+                  })),
+                  bound: publicRows.length === 3 && publicRows.every((row) => {
+                    const source = row.getAttribute('data-condition-source');
+                    return Boolean(expected[source]) && (row.querySelector('span')?.textContent || '').trim() === expected[source];
+                  }),
+                };
+              """)
+
           try:
-              driver.get(f"{base}/crypto-astro/btc?lang=ru")
-              buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
-              record("entry_five_question_navigator", len(buttons) == 5, str(len(buttons)))
-              labels = [button.find_element(By.TAG_NAME, "span").text for button in buttons]
-              record("entry_exact_labels", labels == [
-                  "Ситуация сейчас",
-                  "Что изменилось",
-                  "Где расхождение",
-                  "Что дальше",
-                  "Проверить источники",
-              ], repr(labels))
-              record("desktop_no_horizontal_overflow", no_horizontal_overflow())
+              for locale, case in cases.items():
+                  prefix = locale.upper()
+                  driver.set_window_rect(width=1280, height=1000)
+                  driver.get(f"{base}/crypto-astro/btc?lang={locale}")
+                  driver.execute_script("window.sessionStorage.clear()")
+                  driver.refresh()
 
-              driver.set_window_rect(width=390, height=844)
-              driver.refresh()
-              mobile_buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
-              record("mobile_five_question_navigator", len(mobile_buttons) == 5, str(len(mobile_buttons)))
-              positions = [round(button.rect["x"]) for button in mobile_buttons]
-              record("mobile_single_column", len(set(positions)) == 1, repr(positions))
-              record("mobile_no_horizontal_overflow", no_horizontal_overflow())
+                  buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
+                  record(f"{prefix}_entry_five_question_navigator", len(buttons) == 5, str(len(buttons)))
+                  labels = [button.find_element(By.TAG_NAME, "span").text for button in buttons]
+                  record(f"{prefix}_entry_exact_labels", labels == case["labels"], repr(labels))
+                  record(f"{prefix}_desktop_locale_bound", driver.find_element(By.CSS_SELECTOR, ".btcPublicNavigator").get_attribute("data-public-locale") == locale)
+                  record(f"{prefix}_desktop_no_horizontal_overflow", no_horizontal_overflow())
 
-              liquidity = quote("Что сейчас с ликвидностью BTC?")
-              driver.get(f"{base}/crypto-astro/btc/live?lang=ru&q={liquidity}")
-              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "article[data-route-subject='liquidity']"))
-              conclusion = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcPublicConclusion"))
-              record("first_public_conclusion_visible", len(conclusion.text) > 20, conclusion.text)
-              record("sources_collapsed", all(
-                  not node.get_attribute("open")
-                  for node in driver.find_elements(By.CSS_SELECTOR, "details.answerSource, details.answerSourceHistory")
-              ))
-              next_step = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".answerNextStep[role='button']"))
-              record("next_question_actionable", next_step.get_attribute("tabindex") == "0")
-              contract = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "[data-free-session-contract='60-minutes']"))
-              record("free_contract_visible", "60 минут" in contract.text, contract.text)
+                  driver.set_window_rect(width=390, height=844)
+                  driver.refresh()
+                  mobile_buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
+                  positions = [round(button.rect["x"]) for button in mobile_buttons]
+                  record(f"{prefix}_mobile_five_question_navigator", len(mobile_buttons) == 5, str(len(mobile_buttons)))
+                  record(f"{prefix}_mobile_single_column", len(set(positions)) == 1, repr(positions))
+                  record(f"{prefix}_mobile_no_horizontal_overflow", no_horizontal_overflow())
 
-              form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
-              textarea = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
-              textarea.clear()
-              textarea.send_keys("Почему?")
-              driver.execute_script("arguments[0].requestSubmit()", form)
-              wait.until(lambda d: "Почему текущие сигналы ликвидности" in unquote_plus(d.current_url))
-              record("why_follow_up_subject_expanded", "ликвидности" in unquote_plus(driver.current_url), driver.current_url)
-              wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "article[data-route-subject='liquidity']")) >= 1)
+                  driver.set_window_rect(width=1280, height=1000)
+                  question = quote(case["liquidity"])
+                  driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={question}")
+                  wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "article[data-route-subject='liquidity']"))
 
-              driver.execute_script(
-                  "window.sessionStorage.setItem('bhrigu:btc-free-corridor:start:v0_1', String(Date.now() - 3600001))"
-              )
-              driver.refresh()
-              gate = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcFreeGate"))
-              record("expiry_preserves_answers", bool(driver.find_elements(By.CSS_SELECTOR, ".liveThread")))
-              record("expiry_two_actions", len(gate.find_elements(By.TAG_NAME, "button")) == 2)
+                  conclusion = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".answerLead.btcPublicConclusion[data-public-first-conclusion='answer-payload']"))
+                  record(f"{prefix}_first_conclusion_visible", len(conclusion.text) > 20, conclusion.text)
+                  record(f"{prefix}_first_conclusion_is_direct_answer", conclusion.get_attribute("data-answer-direct") == "true")
+                  record(f"{prefix}_first_conclusion_source_bound", conclusion.get_attribute("data-public-conclusion-source") == "answer-direct")
+                  record(f"{prefix}_first_conclusion_locale_bound", conclusion.get_attribute("data-public-answer-language") == locale)
+                  record(f"{prefix}_no_duplicate_public_conclusion", len(driver.find_elements(By.CSS_SELECTOR, ".btcPublicConclusion:not(.answerLead)")) == 0)
 
-              severe = [
-                  entry for entry in driver.get_log("browser")
-                  if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")
-              ]
-              record("severe_browser_errors_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
+                  conditions = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcPublicConditions[data-public-conditions-bound='answer-payload']"))
+                  binding = condition_binding()
+                  record(f"{prefix}_conditions_three_payload_sources", [row["source"] for row in binding["actual"]] == ["evidence", "limit", "change"], json.dumps(binding, ensure_ascii=False))
+                  record(f"{prefix}_conditions_exact_payload_binding", binding["bound"], json.dumps(binding, ensure_ascii=False))
+                  record(f"{prefix}_conditions_locale_bound", conditions.get_attribute("data-public-answer-language") == locale)
+
+                  record(f"{prefix}_sources_collapsed", all(
+                      not node.get_attribute("open")
+                      for node in driver.find_elements(By.CSS_SELECTOR, "details.answerSource, details.answerSourceHistory")
+                  ))
+                  next_step = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".answerNextStep[role='button']"))
+                  record(f"{prefix}_next_question_actionable", next_step.get_attribute("tabindex") == "0")
+                  contract = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "[data-free-session-contract='60-minutes']"))
+                  record(f"{prefix}_free_contract_visible", case["contract"] in contract.text, contract.text)
+                  record(f"{prefix}_contract_locale_bound", contract.get_attribute("data-public-locale") == locale)
+
+                  form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+                  textarea = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
+                  textarea.clear()
+                  textarea.send_keys(case["why"])
+                  driver.execute_script("arguments[0].requestSubmit()", form)
+                  wait.until(lambda d: case["why_expected"] in unquote_plus(d.current_url))
+                  record(f"{prefix}_why_follow_up_subject_expanded", case["why_expected"] in unquote_plus(driver.current_url), driver.current_url)
+                  wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "article[data-route-subject='liquidity']")) >= 1)
+
+                  driver.execute_script(
+                      "window.sessionStorage.setItem('bhrigu:btc-free-corridor:start:v0_1', String(Date.now() - 3600001))"
+                  )
+                  driver.refresh()
+                  gate = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcFreeGate[data-continuity-boundary='tab-local-only']"))
+                  record(f"{prefix}_expiry_preserves_answers_in_tab", bool(driver.find_elements(By.CSS_SELECTOR, ".liveThread")))
+                  record(f"{prefix}_expiry_truthful_title", case["expired_title"] in gate.text, gate.text)
+                  record(f"{prefix}_expiry_no_false_promise", case["false_promise"] not in gate.text, gate.text)
+                  gate_buttons = gate.find_elements(By.TAG_NAME, "button")
+                  record(f"{prefix}_expiry_two_actions", len(gate_buttons) == 2, str(len(gate_buttons)))
+                  record(f"{prefix}_access_status_label", gate_buttons[1].text == case["access_label"], gate_buttons[1].text)
+                  record(f"{prefix}_access_status_semantics", gate_buttons[1].get_attribute("data-access-status-action") == "true")
+
+                  gate_buttons[1].click()
+                  wait.until(lambda d: urlparse(d.current_url).path == "/access")
+                  parsed = urlparse(driver.current_url)
+                  params = parse_qs(parsed.query)
+                  record(f"{prefix}_access_status_route", params.get("intent") == ["btc-continuity-status"] and params.get("lang") == [locale], driver.current_url)
+
+                  severe = [
+                      entry for entry in driver.get_log("browser")
+                      if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")
+                  ]
+                  record(f"{prefix}_severe_browser_errors_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
           finally:
               print(json.dumps({
-                  "schema": "btc_free_corridor_browser_acceptance_v0_1",
+                  "schema": "btc_free_corridor_bilingual_truth_bound_browser_acceptance_v0_1",
                   "total": len(checks),
                   "passed": sum(1 for check in checks if check["passed"]),
                   "checks": checks,
