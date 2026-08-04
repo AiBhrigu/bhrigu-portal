@@ -254,7 +254,7 @@ jobs:
                   record(f"{prefix}_access_status_label", gate_buttons[1].text == case["access_label"], gate_buttons[1].text)
                   record(f"{prefix}_access_status_semantics", gate_buttons[1].get_attribute("data-access-status-action") == "true")
 
-                  gate_buttons[1].click()
+                  driver.execute_script("arguments[0].scrollIntoView({block: 'center'}); arguments[0].click()", gate_buttons[1])
                   wait.until(lambda d: urlparse(d.current_url).path == "/access")
                   parsed = urlparse(driver.current_url)
                   params = parse_qs(parsed.query)
