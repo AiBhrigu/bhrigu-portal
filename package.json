@@ -7,8 +7,7 @@
     "start": "next start",
     "verify:btc-routing": "node scripts/run-btc-routing-fixture.mjs",
     "verify:btc-producer-contract": "node scripts/run-btc-producer-contract-fixture.mjs",
-    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs",
-    "verify:btc-free-corridor": "node scripts/verify-btc-free-corridor-surface-adapter.mjs"
+    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs"
   },
   "dependencies": {
     "next": "14.2.35",
