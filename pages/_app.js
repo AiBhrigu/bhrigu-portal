@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
 
 import BhriguPhiHeader from "../components/BhriguPhiHeader"; // ATOM_BHRIGU_PORTAL_UX_UNIFY_V1
+import BtcFreeCorridorSurfaceAdapter from "../components/btc/BtcFreeCorridorSurfaceAdapter";
 
 // ATOM_BHRIGU_PORTAL_SEO_SURFACE_V4
 const BASE_URL = "https://www.bhrigu.io";
@@ -99,7 +100,6 @@ export default function App({ Component, pageProps }) {
   const meta = getMeta(path);
   const canonical = 'https://www.bhrigu.io' + (path === '/' ? '/' : path);
 
-
   return (
     <>
       <Head>
@@ -119,6 +119,7 @@ export default function App({ Component, pageProps }) {
 
       <BhriguPhiHeader />
       <Component {...pageProps} />
+      <BtcFreeCorridorSurfaceAdapter />
       {path !== "/" ? <PrevNextBlock route={router.asPath} /> : null}
     </>
   );

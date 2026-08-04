@@ -1,0 +1,221 @@
+name: BTC Free Corridor Conversational Surface PR
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - .github/workflows/btc-field-read-pr-visual.yml
+      - .github/workflows/btc-free-corridor-conversational-surface-pr.yml
+      - components/btc/BtcFreeCorridorSurfaceAdapter.js
+      - pages/_app.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-free-corridor-conversational-surface-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-product-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact base and four-file scope
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "c1d60096055aa4591f3ee32b43799100dc0b75b1"
+          git diff --name-only c1d60096055aa4591f3ee32b43799100dc0b75b1 HEAD | sort > /tmp/actual
+          cat > /tmp/expected <<'SCOPE'
+          .github/workflows/btc-field-read-pr-visual.yml
+          .github/workflows/btc-free-corridor-conversational-surface-pr.yml
+          components/btc/BtcFreeCorridorSurfaceAdapter.js
+          pages/_app.js
+          SCOPE
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Verify truthful boundary and exact expiry contract
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const app = fs.readFileSync('pages/_app.js', 'utf8');
+          const adapter = fs.readFileSync('components/btc/BtcFreeCorridorSurfaceAdapter.js', 'utf8');
+          const checks = {
+            ADAPTER_IMPORTED: app.includes('BtcFreeCorridorSurfaceAdapter'),
+            ADAPTER_MOUNTED: app.includes('<BtcFreeCorridorSurfaceAdapter />'),
+            EXACT_DURATION: adapter.includes('const FREE_SESSION_DURATION_MS = 60 * 60 * 1000'),
+            NEUTRAL_RU_LABELS: adapter.includes('conditionsTitle: "Основание и граница вывода"') && adapter.includes('observed: "Наблюдаем"') && adapter.includes('boundary: "Граница"') && adapter.includes('watchNext: "Дальше"'),
+            NEUTRAL_EN_LABELS: adapter.includes('conditionsTitle: "Basis and boundary of the read"') && adapter.includes('observed: "Observed"') && adapter.includes('boundary: "Boundary"') && adapter.includes('watchNext: "Watch next"'),
+            DIRECTIONAL_LABELS_REMOVED: !adapter.includes('strengthen:') && !adapter.includes('weaken:') && !adapter.includes('invalidate:'),
+            ALL_EVIDENCE_BOUND: adapter.includes('answerBoundaryRows') && adapter.includes('turn.querySelector("[data-answer-section=\'evidence\']")') && !adapter.includes('evidenceBoundConditions'),
+            LIST_ITEMS_PRESERVED: adapter.includes('listItems.join(" · ")'),
+            SEMANTIC_MARKER: adapter.includes('data-public-condition-semantics", "neutral-boundary"') && adapter.includes('data-condition-role'),
+            SYNCHRONOUS_EXPIRY_HELPER: adapter.includes('function freeSessionTimingNow()') && adapter.includes('remainingMs <= 0'),
+            SUBMIT_CHECKS_NOW: adapter.includes('if (applyExactBoundary()) {') && adapter.includes('event.preventDefault()') && adapter.includes('event.stopPropagation()'),
+            NAVIGATION_CHECKS_NOW: adapter.includes('const openQuestion = (question) => {\n    if (applyExactBoundary()) return;'),
+            NEXT_STEP_CHECKS_NOW: adapter.includes('const execute = () => {\n            if (applyExactBoundary()) return;'),
+            EXACT_VISIBLE_TIMER: adapter.includes('window.setTimeout(tick, Math.max(1, timing.remainingMs + 1))'),
+            DISPLAY_INTERVAL_ONLY: adapter.includes('const displayTimer = window.setInterval(tick, 15000)'),
+            ACCESS_PAGE_UNCHANGED: !adapter.includes('pages/access') && !adapter.includes('access.tsx'),
+            NO_BACKEND_EXPANSION: !adapter.includes('fetch(') && !adapter.includes('axios') && !adapter.includes('WebSocket'),
+          };
+          const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
+          console.log(JSON.stringify({ schema: 'btc_free_corridor_semantic_boundary_exact_expiry_static_acceptance_v0_1', checks }, null, 2));
+          if (failed.length) throw new Error(`FAILED=${failed.join(',')}`);
+          NODE
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Start exact-head production server
+        run: |
+          npm start > /tmp/btc-free-corridor-next.log 2>&1 &
+          echo $! > /tmp/btc-free-corridor-next.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-free-corridor-next.log
+          exit 1
+
+      - name: Install browser driver client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify semantic boundary across routes and exact 60-minute submit gate
+        run: |
+          python3 - <<'PY'
+          import json
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = "http://127.0.0.1:3000"
+          cases = {
+              "ru": {
+                  "entry_labels": ["Ситуация сейчас", "Что изменилось", "Где расхождение", "Что дальше", "Проверить источники"],
+                  "row_labels": ["Наблюдаем", "Граница", "Дальше"],
+                  "liquidity": "Что сейчас с ликвидностью BTC?",
+                  "structure": "Что сейчас со структурой рынка BTC?",
+                  "expired_title": "Ответы остаются в этой вкладке",
+              },
+              "en": {
+                  "entry_labels": ["Current situation", "What changed", "Where signals diverge", "What comes next", "Check sources"],
+                  "row_labels": ["Observed", "Boundary", "Watch next"],
+                  "liquidity": "What is happening with BTC liquidity now?",
+                  "structure": "What is the current BTC market structure?",
+                  "expired_title": "Answers remain in this tab",
+              },
+          }
+
+          options = webdriver.ChromeOptions()
+          for argument in (
+              "--headless=new",
+              "--no-sandbox",
+              "--disable-dev-shm-usage",
+              "--window-size=1280,1000",
+          ):
+              options.add_argument(argument)
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 30)
+          checks = []
+
+          def record(name, condition, details=""):
+              checks.append({"name": name, "passed": bool(condition), "details": details})
+              if not condition:
+                  raise AssertionError(f"{name}: {details}")
+
+          def payload_value(selector):
+              return driver.execute_script("""
+                const node = document.querySelector(arguments[0]);
+                if (!node) return '';
+                const clone = node.cloneNode(true);
+                clone.querySelectorAll('strong,h3,summary').forEach((label) => label.remove());
+                const items = Array.from(clone.querySelectorAll('li'))
+                  .map((item) => (item.textContent || '').trim())
+                  .filter(Boolean);
+                return items.length ? items.join(' · ') : (clone.textContent || '').trim();
+              """, selector)
+
+          def verify_boundary(locale, route_name, question, subject, expected_labels):
+              prefix = locale.upper()
+              driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(question)}")
+              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']"))
+              section = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcPublicConditions[data-public-condition-semantics='neutral-boundary']"))
+              rows = section.find_elements(By.CSS_SELECTOR, "p[data-condition-source]")
+              labels = [row.find_element(By.TAG_NAME, "strong").text for row in rows]
+              roles = [row.get_attribute("data-condition-role") for row in rows]
+              actual = [row.find_element(By.TAG_NAME, "span").text for row in rows]
+              expected = [
+                  payload_value("article[data-route-subject='%s']:last-of-type [data-answer-section='evidence']" % subject),
+                  payload_value("article[data-route-subject='%s']:last-of-type [data-answer-section='limit']" % subject),
+                  payload_value("article[data-route-subject='%s']:last-of-type [data-answer-section='change']" % subject),
+              ]
+              record(f"{prefix}_{route_name}_neutral_labels", labels == expected_labels, repr(labels))
+              record(f"{prefix}_{route_name}_semantic_roles", roles == ["observed", "boundary", "watch-next"], repr(roles))
+              record(f"{prefix}_{route_name}_payload_binding", actual == expected, json.dumps({"actual": actual, "expected": expected}, ensure_ascii=False))
+              record(f"{prefix}_{route_name}_all_evidence_retained", " · " in expected[0] or len(driver.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}'] [data-answer-section='evidence'] li")) <= 1, expected[0])
+              return section
+
+          try:
+              for locale, case in cases.items():
+                  prefix = locale.upper()
+                  driver.get(f"{base}/crypto-astro/btc?lang={locale}")
+                  driver.execute_script("window.sessionStorage.clear()")
+                  driver.refresh()
+                  buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
+                  labels = [button.find_element(By.TAG_NAME, "span").text for button in buttons]
+                  record(f"{prefix}_entry_labels", labels == case["entry_labels"], repr(labels))
+
+                  verify_boundary(locale, "liquidity", case["liquidity"], "liquidity", case["row_labels"])
+                  verify_boundary(locale, "market_structure", case["structure"], "market_structure", case["row_labels"])
+
+                  form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+                  textarea = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
+                  before_url = driver.current_url
+                  before_turns = len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]"))
+                  driver.execute_script(
+                      "window.sessionStorage.setItem('bhrigu:btc-free-corridor:start:v0_1', String(Date.now() - 3600000))"
+                  )
+                  textarea.clear()
+                  textarea.send_keys("Почему?" if locale == "ru" else "Why?")
+                  driver.execute_script("arguments[0].requestSubmit()", form)
+                  gate = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, ".btcFreeGate[data-continuity-boundary='tab-local-only']"))
+                  after_turns = len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]"))
+                  record(f"{prefix}_exact_boundary_gate_visible_without_refresh", case["expired_title"] in gate.text, gate.text)
+                  record(f"{prefix}_exact_boundary_url_unchanged", driver.current_url == before_url, driver.current_url)
+                  record(f"{prefix}_exact_boundary_no_new_turn", after_turns == before_turns, f"{before_turns}->{after_turns}")
+                  record(f"{prefix}_exact_boundary_remaining_zero", not driver.find_elements(By.CSS_SELECTOR, "[data-free-session-contract='60-minutes']"))
+
+                  severe = [
+                      entry for entry in driver.get_log("browser")
+                      if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")
+                  ]
+                  record(f"{prefix}_severe_browser_errors_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
+          finally:
+              print(json.dumps({
+                  "schema": "btc_free_corridor_semantic_boundary_exact_expiry_browser_acceptance_v0_1",
+                  "total": len(checks),
+                  "passed": sum(1 for check in checks if check["passed"]),
+                  "checks": checks,
+              }, ensure_ascii=False, indent=2))
+              driver.quit()
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/btc-free-corridor-next.pid || kill "$(cat /tmp/btc-free-corridor-next.pid)" || true
+          test ! -f /tmp/btc-free-corridor-next.log || tail -n 120 /tmp/btc-free-corridor-next.log
