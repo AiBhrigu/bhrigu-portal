@@ -100,7 +100,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
-          from urllib.parse import quote, unquote
+          from urllib.parse import quote, unquote_plus
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
@@ -170,8 +170,8 @@ jobs:
               textarea.clear()
               textarea.send_keys("Почему?")
               driver.execute_script("arguments[0].requestSubmit()", form)
-              wait.until(lambda d: "Почему текущие сигналы ликвидности" in unquote(d.current_url))
-              record("why_follow_up_subject_expanded", "ликвидности" in unquote(driver.current_url), driver.current_url)
+              wait.until(lambda d: "Почему текущие сигналы ликвидности" in unquote_plus(d.current_url))
+              record("why_follow_up_subject_expanded", "ликвидности" in unquote_plus(driver.current_url), driver.current_url)
               wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, "article[data-route-subject='liquidity']")) >= 1)
 
               driver.execute_script(
