@@ -1,0 +1,96 @@
+name: BHRIGU Durable Private Intake Repair
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/access-private-intake-pr.yml'
+      - 'components/AccessClosedSurface.tsx'
+      - 'components/AccessIntakeForm.tsx'
+      - 'lib/access-private-intake.ts'
+      - 'lib/access-submit-delivery-runtime.ts'
+      - 'package-lock.json'
+      - 'package.json'
+      - 'pages/access-review.tsx'
+      - 'pages/access.tsx'
+      - 'pages/api/access/submit.ts'
+      - 'scripts/run-access-private-intake-fixture.mjs'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-private-intake-repair-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Lock exact eleven-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git merge-base "$BASE_SHA" "$HEAD_SHA")" = "$BASE_SHA"
+          test "$(git rev-list --count "$BASE_SHA..$HEAD_SHA")" = "1"
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' \
+            '.github/workflows/access-private-intake-pr.yml' \
+            'components/AccessClosedSurface.tsx' \
+            'components/AccessIntakeForm.tsx' \
+            'lib/access-private-intake.ts' \
+            'lib/access-submit-delivery-runtime.ts' \
+            'package-lock.json' \
+            'package.json' \
+            'pages/access-review.tsx' \
+            'pages/access.tsx' \
+            'pages/api/access/submit.ts' \
+            'scripts/run-access-private-intake-fixture.mjs' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo ACCESS_PRIVATE_INTAKE_EXACT_ELEVEN_FILE_SCOPE=PASS
+
+      - name: Install exact dependency graph
+        run: npm ci --ignore-scripts
+
+      - name: Verify fail-closed security and product boundaries
+        run: |
+          set -euo pipefail
+          grep -Fq '"@vercel/blob": "2.6.1"' package.json
+          grep -Fq 'bodyParser: false' pages/api/access/submit.ts
+          grep -Fq 'ACCESS_PRIVATE_INTAKE_PUBLIC_ENABLED !== "true"' pages/api/access/submit.ts
+          grep -Fq 'ACCESS_PRIVATE_INTAKE_PUBLIC_ENABLED === "true"' pages/access.tsx
+          grep -Fq 'access: "private"' lib/access-private-intake.ts
+          grep -Fq 'allowOverwrite: false' lib/access-private-intake.ts
+          grep -Fq 'getAuthorizedPrivateAccessSubmission' pages/access-review.tsx
+          grep -Fq 'delivery_reconciliation_required' lib/access-submit-delivery-runtime.ts
+          grep -Fq 'delivery_reconciliation_required' pages/api/access/submit.ts
+          grep -Fq 'noindex, nofollow, noarchive' pages/access-review.tsx
+          ! grep -Fq 'listAccessReviewRecords' pages/access-review.tsx
+          ! grep -Fq 'fileAccessSubmissionPersistenceAdapter' pages/api/access/submit.ts
+          ! git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" | grep -Ei 'payment|subscription|x402|account|orion|(^pages/crypto-astro/)|(^lib/btc-)'
+          echo ACCESS_PRIVATE_INTAKE_SECURITY_BOUNDARY=PASS
+
+      - name: Run deterministic private-intake acceptance
+        run: npm run verify:access-private-intake
+
+      - name: Preserve BTC routing
+        run: npm run verify:btc-routing
+
+      - name: Preserve Binance observation
+        run: npm run verify:btc-binance-observation
+
+      - name: Build production application
+        run: npm run build
