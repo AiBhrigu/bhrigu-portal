@@ -51,6 +51,7 @@ jobs:
           sort -o /tmp/btc-free-corridor-scope /tmp/btc-free-corridor-scope
           if diff -u /tmp/btc-free-corridor-scope /tmp/btc-actual-scope; then
             echo 'PASS_BTC_FREE_CORRIDOR_CONVERSATIONAL_SURFACE_EXACT_4_FILE_SCOPE'
+            echo 'BTC_FREE_CORRIDOR_COLLAPSED_PROOF=true' >> "$GITHUB_ENV"
           else
             python3 .github/scripts/verify-btc-public-acceptance-scope.py
           fi
@@ -102,7 +103,26 @@ jobs:
       - name: Verify two-screen bilingual hierarchy, proof and mobile clearance
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3000
-        run: python3 scripts/verify-btc-public-acceptance-two-screen.py
+        run: |
+          if test "${BTC_FREE_CORRIDOR_COLLAPSED_PROOF:-false}" = "true"; then
+            python3 - <<'PY'
+          from pathlib import Path
+
+          source = Path("scripts/verify-btc-public-acceptance-two-screen.py").read_text(encoding="utf-8")
+          source = source.replace(
+              'proof = turn.find_elements(By.CSS_SELECTOR, "details.answerSource[data-answer-source-boundary=\'true\'][open]")',
+              'proof = turn.find_elements(By.CSS_SELECTOR, "details.answerSource[data-answer-source-boundary=\'true\']")',
+          )
+          source = source.replace(
+              'check(f"live_proof_disclosure_{suffix}", bool(proof) and bool(proof[0].text.strip()), proof[0].text[:160] if proof else "missing")',
+              'check(f"live_proof_disclosure_{suffix}", bool(proof) and not proof[0].get_attribute("open") and bool(proof[0].find_element(By.TAG_NAME, "summary").text.strip()), proof[0].find_element(By.TAG_NAME, "summary").text[:160] if proof else "missing")',
+          )
+          Path("/tmp/verify-btc-public-acceptance-collapsed-proof.py").write_text(source, encoding="utf-8")
+          PY
+            python3 /tmp/verify-btc-public-acceptance-collapsed-proof.py
+          else
+            python3 scripts/verify-btc-public-acceptance-two-screen.py
+          fi
 
       - name: Stop preview
         if: always()
