@@ -5,12 +5,10 @@ on:
     branches:
       - master
     paths:
-      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-field-read-pr-visual.yml
       - .github/workflows/btc-free-corridor-conversational-surface-pr.yml
       - components/btc/BtcFreeCorridorSurfaceAdapter.js
-      - package.json
       - pages/_app.js
-      - scripts/verify-btc-free-corridor-surface-adapter.mjs
 
 permissions:
   contents: read
@@ -30,27 +28,56 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and six-file scope
+      - name: Verify exact base and four-file scope
         run: |
           git fetch origin master
           test "$(git merge-base HEAD origin/master)" = "c1d60096055aa4591f3ee32b43799100dc0b75b1"
           git diff --name-only c1d60096055aa4591f3ee32b43799100dc0b75b1 HEAD | sort > /tmp/actual
           cat > /tmp/expected <<'EOF'
-          .github/scripts/verify-btc-public-acceptance-scope.py
+          .github/workflows/btc-field-read-pr-visual.yml
           .github/workflows/btc-free-corridor-conversational-surface-pr.yml
           components/btc/BtcFreeCorridorSurfaceAdapter.js
-          package.json
           pages/_app.js
-          scripts/verify-btc-free-corridor-surface-adapter.mjs
           EOF
           sort -o /tmp/expected /tmp/expected
           diff -u /tmp/expected /tmp/actual
 
+      - name: Verify static conversational contract
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const app = fs.readFileSync('pages/_app.js', 'utf8');
+          const adapter = fs.readFileSync('components/btc/BtcFreeCorridorSurfaceAdapter.js', 'utf8');
+          const checks = {
+            ADAPTER_IMPORTED: app.includes('BtcFreeCorridorSurfaceAdapter'),
+            ADAPTER_MOUNTED: app.includes('<BtcFreeCorridorSurfaceAdapter />'),
+            CANONICAL_NAVIGATOR_BINDING: app.includes('BTC_PUBLIC_NAVIGATOR_ROUTES'),
+            EXACT_60_MINUTE_CONTRACT: adapter.includes('const FREE_SESSION_DURATION_MS = 60 * 60 * 1000'),
+            TAB_LOCAL_SESSION_RETAINED: adapter.includes('bhrigu:btc-cosmographer:session:v0_3'),
+            NEW_FREE_CONVERSATION_AVAILABLE: adapter.includes('Начать новый бесплатный разговор'),
+            PAID_CONTINUITY_ROUTE: adapter.includes('/access?lang=${locale}&intent=btc-continuity'),
+            PUBLIC_QUESTION_1: adapter.includes('Что происходит с BTC сейчас?'),
+            PUBLIC_QUESTION_2: adapter.includes('Что изменилось с прошлого проверенного снимка?'),
+            PUBLIC_QUESTION_3: adapter.includes('Какие сигналы сейчас расходятся и почему это важно?'),
+            PUBLIC_QUESTION_4: adapter.includes('Что должно измениться, чтобы текущий вывод усилился или отменился?'),
+            PUBLIC_QUESTION_5: adapter.includes('Покажи источники и время обновления данных этого чтения.'),
+            WHY_FOLLOW_UP_EXPANDS_SUBJECT: adapter.includes('Почему текущие сигналы ликвидности BTC расходятся?'),
+            WHAT_NEXT_EXPANDS_SUBJECT: adapter.includes('Какие изменения ликвидности усилят, ослабят или отменят текущий вывод по BTC?'),
+            NEXT_QUESTION_ACTIONABLE: adapter.includes('nextStep.setAttribute("role", "button")') && adapter.includes('composerNode.requestSubmit()'),
+            FIRST_PUBLIC_CONCLUSION: adapter.includes('data-public-first-conclusion'),
+            CONDITIONS_HIERARCHY: adapter.includes('Что изменит вывод') && adapter.includes('Усилит') && adapter.includes('Ослабит') && adapter.includes('Отменит'),
+            MACHINE_METADATA_HIDDEN: adapter.includes('.answerSource .answerAuthority') && adapter.includes('.answerEvidenceMeta{display:none!important}'),
+            SOURCES_COLLAPSED: adapter.includes('details.removeAttribute("open")'),
+            MOBILE_SINGLE_COLUMN: adapter.includes('@media(max-width:680px)') && adapter.includes('.btcPublicQuestionGrid{grid-template-columns:1fr'),
+            NO_BACKEND_EXPANSION: !adapter.includes('fetch(') && !adapter.includes('axios') && !adapter.includes('WebSocket'),
+          };
+          const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
+          console.log(JSON.stringify({ schema: 'btc_free_corridor_surface_acceptance_v0_1', checks }, null, 2));
+          if (failed.length) throw new Error(`FAILED=${failed.join(',')}`);
+          NODE
+
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
-
-      - name: Verify static conversational contract
-        run: npm run verify:btc-free-corridor
 
       - name: Verify production build
         run: npm run build
