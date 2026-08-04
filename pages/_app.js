@@ -1,6 +1,5 @@
 import "../styles/globals.css";
 import Head from "next/head";
-import { useEffect } from "react";
 import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
 
@@ -73,14 +72,6 @@ const ROUTE_META = {
   }
 };
 
-const BTC_PUBLIC_NAVIGATOR_ROUTES = {
-  "Что происходит с BTC сейчас?": "Что происходит с рынком BTC сейчас?",
-  "Что изменилось с прошлого проверенного снимка?": "Что изменилось с прошлого проверенного снимка?",
-  "Какие сигналы сейчас расходятся и почему это важно?": "Что сейчас происходит с BTC и какие сигналы расходятся?",
-  "Что должно измениться, чтобы текущий вывод усилился или отменился?": "При каких условиях текущая структура BTC усилится, ослабнет или отменится?",
-  "Покажи источники и время обновления данных этого чтения.": "Какие источники использованы и где граница вывода?"
-};
-
 function normalizePath(asPath) {
   if (!asPath) return "/";
   const noHash = asPath.split("#")[0];
@@ -108,23 +99,6 @@ export default function App({ Component, pageProps }) {
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
   const canonical = 'https://www.bhrigu.io' + (path === '/' ? '/' : path);
-
-  useEffect(() => {
-    const openCanonicalBtcQuestion = (event) => {
-      const button = event.target?.closest?.(".btcPublicQuestionGrid button");
-      if (!button) return;
-      const publicQuestion = button.querySelector("small")?.textContent?.trim() || "";
-      const canonicalQuestion = BTC_PUBLIC_NAVIGATOR_ROUTES[publicQuestion];
-      if (!canonicalQuestion) return;
-      event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation?.();
-      const lang = new URLSearchParams(window.location.search).get("lang") === "en" ? "en" : "ru";
-      window.location.assign(`/crypto-astro/btc/live?lang=${lang}&q=${encodeURIComponent(canonicalQuestion)}`);
-    };
-    document.addEventListener("click", openCanonicalBtcQuestion, true);
-    return () => document.removeEventListener("click", openCanonicalBtcQuestion, true);
-  }, []);
 
   return (
     <>
