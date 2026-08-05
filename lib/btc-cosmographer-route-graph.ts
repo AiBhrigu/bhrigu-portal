@@ -300,6 +300,9 @@ function protocolSubject(question: string): string | null {
   if (/difficulty|сложност/i.test(question)) return "difficulty";
   if (/mining|miner|майнинг|майнер/i.test(question)) return "mining";
   if (/utxo|unspent|неизрасходован/i.test(question)) return "utxo";
+  if (/satoshi|накамото|кто\s+(?:такой|такая)\s+сатоши|кто\s+создал\s+(?:bitcoin|биткоин)|why\s+did\s+satoshi|what\s+is\s+known\s+(?:for\s+certain\s+)?about\s+satoshi|what\s+do\s+we\s+know\s+about\s+satoshi|что\s+известно\s+точно/i.test(question)) return "satoshi_history";
+  if (/origin(?:s)?\s+of\s+bitcoin|how\s+did\s+bitcoin\s+(?:begin|start|emerge)|from\s+the\s+white\s+paper|происхождени[ея]\s+(?:bitcoin|биткоин)|как\s+(?:появился|возник)\s+(?:bitcoin|биткоин)|от\s+(?:white\s+paper|белой\s+книг)/i.test(question)) return "bitcoin_origin";
+  if (/genesis[-\s]?block|genesis[-\s]?блок|генезис[-\s]?блок|первые?\s+дн[яей]\s+(?:bitcoin|биткоин)|first\s+days?.*(?:bitcoin|genesis)|times\s+message|the\s+times|сообщени[ея].*times/i.test(question)) return "genesis_history";
   if (/genesis|генезис|перв(?:ый|ого)\s+блок/i.test(question)) return "genesis";
   if (/consensus|proof.of.work|chainwork|консенсус|доказательств[ао]\s+работ/i.test(question)) return "consensus";
   if (/\bblock\b|height|chain tip|блок|высот/i.test(question)) return "blocks";

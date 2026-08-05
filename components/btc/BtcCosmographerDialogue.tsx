@@ -8,7 +8,10 @@ import {
   BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
   type BtcEvidenceNavigationRuntimeDecision,
 } from "../../lib/btc-cosmographer-evidence-navigation-runtime";
-import type { BtcCosmographerAnswerProjection } from "../../lib/btc-protocol-evidence";
+import {
+  BTC_ORIGINS_PREPARED_QUESTIONS,
+  type BtcCosmographerAnswerProjection,
+} from "../../lib/btc-protocol-evidence";
 import {
   BTC_DIALOGUE_SESSION_SCHEMA,
   clearBtcDialogueSession,
@@ -78,6 +81,9 @@ function publicSubjectLabel(locale: BtcPublicLocale, subject: string): string {
     change_memory: ["Память Snapshot", "Snapshot memory"],
     halving: ["Халвинг", "Halving"],
     supply: ["Предложение BTC", "BTC supply"],
+    satoshi_history: ["История Сатоши", "Satoshi history"],
+    bitcoin_origin: ["Происхождение Bitcoin", "Bitcoin origins"],
+    genesis_history: ["История Genesis", "Genesis history"],
   };
   const value = labels[subject];
   if (!value) return subject.replaceAll("_", " ");
@@ -441,6 +447,23 @@ function AnswerSections({ turn }: { turn: BtcDialogueTurn }) {
           </details>
         </section>;
       }
+      if (section.id === "sources" && section.bullets?.length) {
+        return <section className="answerSection answerSection-sources" key={sectionKey} data-answer-section="sources" data-semantic-answer-section="sources">
+          <details className="answerDisclosure answerSourceList" data-origin-source-list="true">
+            <summary>{section.label} · {section.bullets.length}</summary>
+            <ul>{section.bullets.map((line, itemIndex) => {
+              const delimiter = line.lastIndexOf("|");
+              const label = delimiter > 0 ? line.slice(0, delimiter) : line;
+              const url = delimiter > 0 ? line.slice(delimiter + 1) : "";
+              return <li key={`${sectionKey}-${itemIndex}`}>
+                {/^https:\/\//.test(url)
+                  ? <a href={url} target="_blank" rel="noreferrer">{label}</a>
+                  : label}
+              </li>;
+            })}</ul>
+          </details>
+        </section>;
+      }
       return <section
         className={`answerSection answerSection-${section.id}`}
         key={sectionKey}
@@ -529,15 +552,6 @@ function Exchange({
           <summary>{turn.locale === "ru" ? "Источники, период и граница" : "Sources, period, and boundary"}</summary>
           <div>
             <span>{publicDomainLabel(turn.locale, domain)}</span>
-            {turn.primary_authority && <span className="answerAuthority" data-primary-authority-value={turn.primary_authority}>
-              {turn.locale === "ru" ? "Primary authority" : "Primary authority"} · {turn.primary_authority}
-            </span>}
-            {turn.evidence_levels && <span data-evidence-levels={turn.evidence_levels.join(",")}>
-              Evidence · {turn.evidence_levels.join(" → ")}
-            </span>}
-            {turn.bridge_result && <span data-canonical-bridge-result={turn.bridge_result}>
-              Bridge result · {turn.bridge_result}
-            </span>}
             <dl className="answerEvidenceMeta" data-evidence-metadata="distinct-fields">
               <div data-evidence-field="observation-period" data-evidence-value={observationPeriod}>
                 <dt>{turn.locale === "ru" ? "Период наблюдения" : "Observation period"}</dt>
@@ -778,6 +792,30 @@ export function BtcCosmographerDialogue(props: Props) {
         <span><b>{ru ? "Период" : "Period"}</b> · {turnPeriodLabel(locale, contextTurn)}</span>
         <span><b>{ru ? "Контекст" : "Context"}</b> · {contextRelationLabel(locale, contextTurn.context_relation)}</span>
       </div>}
+
+      {!hasConversation && <aside className="exampleRoutes staticExampleRoutes" aria-labelledby="bitcoin-origins-prepared-title" data-bitcoin-origins-prepared="true">
+        <p className="eyebrow">{ru ? "История Bitcoin · проверенные источники" : "Bitcoin history · verified sources"}</p>
+        <h2 id="bitcoin-origins-prepared-title">{ru ? "Пять вопросов о происхождении Bitcoin и Сатоши" : "Five questions about Bitcoin's origins and Satoshi"}</h2>
+        <p>{ru
+          ? "Документированные факты, поддерживаемые выводы, спорные версии и неизвестное показаны раздельно."
+          : "Documented facts, supported inference, disputed claims, and unknowns are shown separately."}</p>
+        <div className="exampleRouteList">
+          {BTC_ORIGINS_PREPARED_QUESTIONS[locale].map((item, index) => {
+            const params = [`lang=${locale}`, `q=${encodeURIComponent(item.question)}`];
+            if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
+            return <a
+              key={item.id}
+              href={`/crypto-astro/btc/live?${params.join("&")}`}
+              data-origin-question={item.id}
+              data-origin-subject={item.subject}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <b>{item.question}</b>
+              <i aria-hidden="true">→</i>
+            </a>;
+          })}
+        </div>
+      </aside>}
 
       <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
         <input type="hidden" name="lang" value={locale}/>
