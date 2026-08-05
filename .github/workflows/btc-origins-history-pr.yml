@@ -1,0 +1,193 @@
+name: BTC Origins and Satoshi History PR
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - lib/btc-cosmographer-route-graph.ts
+      - lib/btc-protocol-evidence.ts
+      - components/btc/BtcCosmographerDialogue.tsx
+      - scripts/verify-btc-origins-history.mjs
+      - .github/workflows/btc-origins-history-pr.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-origins-history-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-history-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact base and five-file scope
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "0a0205959ffb3da86568870d597092374c1dd5e3"
+          git diff --name-only 0a0205959ffb3da86568870d597092374c1dd5e3 HEAD | sort > /tmp/actual
+          cat > /tmp/expected <<'SCOPE'
+          .github/workflows/btc-origins-history-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          lib/btc-cosmographer-route-graph.ts
+          lib/btc-protocol-evidence.ts
+          scripts/verify-btc-origins-history.mjs
+          SCOPE
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Verify canonical capsule and public boundary
+        run: node scripts/verify-btc-origins-history.mjs
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Start exact-head preview
+        run: |
+          npm start > /tmp/btc-origins-next.log 2>&1 &
+          echo $! > /tmp/btc-origins-next.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-origins-next.log
+          exit 1
+
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify RU EN desktop mobile and follow-up continuity
+        run: |
+          mkdir -p /tmp/btc-origins-proof
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = "http://127.0.0.1:3000"
+          cases = {
+              "ru": {
+                  "question": "Что точно известно о Сатоши Накамото?",
+                  "follow_known": "А что известно точно?",
+                  "follow_leave": "Почему Сатоши ушёл?",
+                  "return_market": "Что происходит с BTC сейчас?",
+                  "unknown_marker": "неизвест",
+              },
+              "en": {
+                  "question": "What is known for certain about Satoshi Nakamoto?",
+                  "follow_known": "What is known for certain?",
+                  "follow_leave": "Why did Satoshi leave?",
+                  "return_market": "What is happening with BTC now?",
+                  "unknown_marker": "not known",
+              },
+          }
+          viewports = {"desktop": (1440, 1000), "mobile": (390, 844)}
+          options = webdriver.ChromeOptions()
+          for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage"):
+              options.add_argument(argument)
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 30)
+          checks = []
+
+          def record(name, condition, details=""):
+              checks.append({"name": name, "passed": bool(condition), "details": details})
+              if not condition:
+                  raise AssertionError(f"{name}: {details}")
+
+          def clean(locale):
+              driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+              driver.execute_script("window.sessionStorage.clear()")
+              driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+
+          def latest(subject):
+              return wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']")[-1])
+
+          def submit(text):
+              form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+              box = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
+              box.clear()
+              box.send_keys(text)
+              driver.execute_script("arguments[0].requestSubmit()", form)
+
+          try:
+              for locale, case in cases.items():
+                  for view, (width, height) in viewports.items():
+                      driver.set_window_size(width, height)
+                      clean(locale)
+                      links = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "[data-bitcoin-origins-prepared='true'] a[data-origin-question]"))
+                      record(f"{locale}_{view}_five_prepared_questions", len(links) == 5, str(len(links)))
+                      record(f"{locale}_{view}_clean_session", len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")) == 0)
+                      driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                      turn = latest("satoshi_history")
+                      record(f"{locale}_{view}_direct_answer", bool(turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.strip()))
+                      for section in ("timeline", "significance", "known", "supported_inference", "disputed", "unknown_boundary", "sources"):
+                          record(f"{locale}_{view}_{section}", bool(turn.find_elements(By.CSS_SELECTOR, f"[data-semantic-answer-section='{section}']")))
+                      source_list = turn.find_element(By.CSS_SELECTOR, "details[data-origin-source-list='true']")
+                      record(f"{locale}_{view}_sources_collapsed", source_list.get_attribute("open") is None)
+                      driver.execute_script("arguments[0].open = true", source_list)
+                      source_links = source_list.find_elements(By.CSS_SELECTOR, "a[href^='https://']")
+                      record(f"{locale}_{view}_six_source_links", len(source_links) == 6, str(len(source_links)))
+                      visible = turn.text.lower()
+                      forbidden = ["bitcoin_protocol", "satoshi_history", "genesis_history", "primary authority", "bridge result", "evidence ·", "_schema", " l1 ", " l2 ", " l3 "]
+                      record(f"{locale}_{view}_public_copy_clean", not any(token in visible for token in forbidden), visible[:500])
+                      overflow = driver.execute_script("return document.documentElement.scrollWidth - document.documentElement.clientWidth")
+                      record(f"{locale}_{view}_horizontal_overflow", overflow <= 1, str(overflow))
+                      driver.save_screenshot(f"/tmp/btc-origins-proof/{locale}-{view}.png")
+
+                  driver.set_window_size(1440, 1000)
+                  clean(locale)
+                  driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                  latest("satoshi_history")
+                  submit(case["follow_known"])
+                  follow = latest("satoshi_history")
+                  record(f"{locale}_known_followup_subject", follow.get_attribute("data-context-relation") == "FOLLOW_UP", follow.get_attribute("data-context-relation"))
+                  submit(case["follow_leave"])
+                  departure = latest("satoshi_history")
+                  direct = departure.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.lower()
+                  record(f"{locale}_departure_unknown_boundary", case["unknown_marker"] in direct, direct)
+                  submit(case["return_market"])
+                  market = latest("general_btc_field")
+                  record(f"{locale}_return_to_market", market.get_attribute("data-route-domain") == "btc_market", market.get_attribute("data-route-domain"))
+
+                  severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")]
+                  record(f"{locale}_browser_severe_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
+          finally:
+              output = {
+                  "schema": "btc_origins_history_browser_acceptance_v0_1",
+                  "total": len(checks),
+                  "passed": sum(1 for check in checks if check["passed"]),
+                  "checks": checks,
+              }
+              print(json.dumps(output, ensure_ascii=False, indent=2))
+              Path("/tmp/btc-origins-proof/result.json").write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+              driver.quit()
+          PY
+
+      - name: Upload desktop and mobile proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-origins-history-desktop-mobile-proof
+          path: /tmp/btc-origins-proof
+          if-no-files-found: error
+
+      - name: Stop preview
+        if: always()
+        run: |
+          test ! -f /tmp/btc-origins-next.pid || kill "$(cat /tmp/btc-origins-next.pid)" || true
+          test ! -f /tmp/btc-origins-next.log || tail -n 120 /tmp/btc-origins-next.log

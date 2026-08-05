@@ -33,6 +33,232 @@ export type BtcCosmographerAnswerProjection = {
   proof_label: string;
 };
 
+
+export type BtcOriginsHistorySubject =
+  | "satoshi_history"
+  | "bitcoin_origin"
+  | "genesis_history";
+
+export type BtcOriginsPreparedQuestion = {
+  id: string;
+  subject: BtcOriginsHistorySubject;
+  question: string;
+};
+
+export const BTC_ORIGINS_PREPARED_QUESTIONS: Record<
+  BtcPublicLocale,
+  BtcOriginsPreparedQuestion[]
+> = {
+  ru: [
+    {
+      id: "bitcoin_origin_timeline",
+      subject: "bitcoin_origin",
+      question: "Как появился Bitcoin: от white paper до запуска сети?",
+    },
+    {
+      id: "satoshi_known_facts",
+      subject: "satoshi_history",
+      question: "Что точно известно о Сатоши Накамото?",
+    },
+    {
+      id: "genesis_first_days",
+      subject: "genesis_history",
+      question: "Что произошло в первые дни Bitcoin после Genesis?",
+    },
+    {
+      id: "genesis_times_message",
+      subject: "genesis_history",
+      question: "Что означает сообщение The Times в Genesis-блоке?",
+    },
+    {
+      id: "satoshi_departure_boundary",
+      subject: "satoshi_history",
+      question: "Почему Сатоши ушёл и что здесь остаётся неизвестным?",
+    },
+  ],
+  en: [
+    {
+      id: "bitcoin_origin_timeline",
+      subject: "bitcoin_origin",
+      question: "How did Bitcoin emerge, from the white paper to the network launch?",
+    },
+    {
+      id: "satoshi_known_facts",
+      subject: "satoshi_history",
+      question: "What is known for certain about Satoshi Nakamoto?",
+    },
+    {
+      id: "genesis_first_days",
+      subject: "genesis_history",
+      question: "What happened in Bitcoin's first days after Genesis?",
+    },
+    {
+      id: "genesis_times_message",
+      subject: "genesis_history",
+      question: "What does the Times message in the Genesis block mean?",
+    },
+    {
+      id: "satoshi_departure_boundary",
+      subject: "satoshi_history",
+      question: "Why did Satoshi leave, and what remains unknown?",
+    },
+  ],
+};
+
+type BtcOriginsLocalized = [string, string];
+
+type BtcOriginsSource = {
+  id: string;
+  label: BtcOriginsLocalized;
+  url: string;
+};
+
+type BtcOriginsTimelineEntry = {
+  date: string;
+  text: BtcOriginsLocalized;
+};
+
+export const BTC_ORIGINS_KNOWLEDGE_CAPSULE: {
+  timeline: BtcOriginsTimelineEntry[];
+  sources: BtcOriginsSource[];
+  known: BtcOriginsLocalized[];
+  supported_inference: BtcOriginsLocalized[];
+  disputed: BtcOriginsLocalized[];
+  unknown_boundary: BtcOriginsLocalized[];
+} = {
+  timeline: [
+    {
+      date: "2008-10-31",
+      text: [
+        "Satoshi Nakamoto announced the Bitcoin paper on the Cryptography mailing list.",
+        "Сатоши Накамото представил документ Bitcoin в рассылке Cryptography.",
+      ],
+    },
+    {
+      date: "2009-01-03",
+      text: [
+        "The Genesis block established height 0 and embedded the Times headline dated 3 January 2009.",
+        "Genesis-блок закрепил высоту 0 и включил заголовок The Times от 3 января 2009 года.",
+      ],
+    },
+    {
+      date: "2009-01-10",
+      text: [
+        "The mailing-list archive recorded the first Bitcoin alpha release announcement and its issuance schedule.",
+        "Архив рассылки зафиксировал объявление первого alpha-релиза Bitcoin и график эмиссии.",
+      ],
+    },
+    {
+      date: "2010-12-12",
+      text: [
+        "Satoshi's last documented public forum post concerned Bitcoin 0.3.19 and denial-of-service controls.",
+        "Последний документированный публичный пост Сатоши касался Bitcoin 0.3.19 и защиты от DoS.",
+      ],
+    },
+    {
+      date: "2011-04",
+      text: [
+        "A preserved email says Satoshi had moved on and that Bitcoin was in good hands with Gavin and the wider team.",
+        "Сохранённое письмо сообщает, что Сатоши занялся другими делами и оставил Bitcoin Гэвину и более широкому сообществу.",
+      ],
+    },
+  ],
+  sources: [
+    {
+      id: "mailing_list_announcement",
+      label: [
+        "Satoshi Nakamoto — Cryptography mailing-list announcement, 31 Oct 2008",
+        "Сатоши Накамото — объявление в рассылке Cryptography, 31 октября 2008",
+      ],
+      url: "https://www.metzdowd.com/pipermail/cryptography/2008-October/014810.html",
+    },
+    {
+      id: "white_paper",
+      label: [
+        "Bitcoin: A Peer-to-Peer Electronic Cash System — original paper",
+        "Bitcoin: A Peer-to-Peer Electronic Cash System — оригинальный документ",
+      ],
+      url: "https://bitcoin.org/bitcoin.pdf",
+    },
+    {
+      id: "first_release_archive",
+      label: [
+        "Bitcoin v0.1 release thread — mailing-list archive, 10 Jan 2009",
+        "Тема о выпуске Bitcoin v0.1 — архив рассылки, 10 января 2009",
+      ],
+      url: "https://www.metzdowd.com/pipermail/cryptography/2009-January/015004.html",
+    },
+    {
+      id: "genesis_source_code",
+      label: [
+        "Bitcoin Core chain parameters — Genesis construction and embedded message",
+        "Параметры цепи Bitcoin Core — конструкция Genesis и встроенное сообщение",
+      ],
+      url: "https://github.com/bitcoin/bitcoin/blob/master/src/kernel/chainparams.cpp",
+    },
+    {
+      id: "last_public_post",
+      label: [
+        "Satoshi Nakamoto — last documented public forum post, 12 Dec 2010",
+        "Сатоши Накамото — последний документированный публичный пост, 12 декабря 2010",
+      ],
+      url: "https://bitcointalk.org/index.php?topic=2228.msg29479#msg29479",
+    },
+    {
+      id: "final_handoff_email",
+      label: [
+        "Mike Hearn email archive — Satoshi's April 2011 handoff message",
+        "Архив писем Майка Хирна — сообщение Сатоши о передаче работы, апрель 2011",
+      ],
+      url: "https://plan99.net/~mike/satoshi-emails/thread5.html",
+    },
+  ],
+  known: [
+    [
+      "Satoshi Nakamoto is the pseudonymous identity attached to the paper, early code, and documented communications.",
+      "Сатоши Накамото — псевдоним, связанный с документом, ранним кодом и документированной перепиской.",
+    ],
+    [
+      "The public record documents the paper announcement, Genesis, the first release, later maintenance, and a handoff.",
+      "Публичные материалы документируют объявление документа, Genesis, первый релиз, дальнейшую поддержку и передачу работы.",
+    ],
+    [
+      "No legal identity has been publicly proven by a reproducible cryptographic and documentary standard.",
+      "Ни одна юридическая личность не доказана публично воспроизводимым криптографическим и документальным стандартом.",
+    ],
+  ],
+  supported_inference: [
+    [
+      "The sequence of releases and messages supports a deliberate transfer from a founding author to an open-source contributor network.",
+      "Последовательность релизов и сообщений поддерживает вывод о сознательной передаче работы от основателя сети участников open source.",
+    ],
+    [
+      "The Times text provides a not-before date and plausibly comments on the banking crisis; a more specific intent is not documented.",
+      "Текст The Times задаёт нижнюю временную границу и, вероятно, комментирует банковский кризис; более точный замысел не документирован.",
+    ],
+  ],
+  disputed: [
+    [
+      "Claims naming a particular person or group as Satoshi remain disputed unless supported by independently reproducible proof.",
+      "Версии, называющие конкретного человека или группу Сатоши, остаются спорными без независимо воспроизводимого доказательства.",
+    ],
+    [
+      "Estimates of coins mined or still controlled by Satoshi depend on attribution methods and are not exact identity proof.",
+      "Оценки монет, добытых или контролируемых Сатоши, зависят от метода атрибуции и не являются точным доказательством личности.",
+    ],
+    [
+      "WikiLeaks, the CIA, personal risk, or a single event as the cause of departure are hypotheses, not established facts.",
+      "WikiLeaks, ЦРУ, личный риск или одно событие как причина ухода — гипотезы, а не установленные факты.",
+    ],
+  ],
+  unknown_boundary: [
+    [
+      "The legal identity, whether Satoshi was one person or a team, exact location, motive for leaving, current status, and definitive key ownership remain unknown.",
+      "Юридическая личность, один это был человек или группа, точное местоположение, мотив ухода, текущий статус и окончательное владение ключами остаются неизвестными.",
+    ],
+  ],
+};
+
 type ProtocolEvidence = {
   headline: [string, string];
   direct: [string, string];
@@ -218,10 +444,128 @@ const evidence: Record<string, ProtocolEvidence> = {
 const pick = (locale: BtcPublicLocale, value: [string, string]): string =>
   locale === "ru" ? value[1] : value[0];
 
+
+function originsHistoryAnswer(
+  locale: BtcPublicLocale,
+  route: BtcCosmographerRoute,
+): BtcCosmographerAnswerProjection {
+  const q = route.normalized_question.toLowerCase();
+  const asksDeparture = /why.*satoshi.*leave|почему.*сатоши.*уш|причин.*уход/.test(q);
+  const asksTimes = /the times|times message|сообщени[ея].*times/.test(q);
+  const subject = route.subject as BtcOriginsHistorySubject;
+  const direct: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: [
+      "Bitcoin moved from a published peer-to-peer electronic-cash design in October 2008 to a running proof-of-work network with Genesis and an early public software release in January 2009.",
+      "Bitcoin прошёл путь от опубликованной в октябре 2008 года схемы одноранговых электронных денег до работающей Proof-of-Work сети с Genesis и ранним публичным выпуском программы в январе 2009 года.",
+    ],
+    genesis_history: asksTimes
+      ? [
+          "The Genesis block contains the exact newspaper text “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”. It proves the block was constructed no earlier than that date; its broader political meaning is a supported interpretation, not a documented statement of intent.",
+          "Genesis-блок содержит точный газетный текст «The Times 03/Jan/2009 Chancellor on brink of second bailout for banks». Он доказывает, что блок создан не раньше этой даты; более широкий политический смысл — поддерживаемая интерпретация, а не документированное заявление о намерении.",
+        ]
+      : [
+          "Genesis fixed Bitcoin's first protocol anchor at height 0. The following public release turned that anchor into software other participants could run, inspect, and extend.",
+          "Genesis закрепил первую протокольную точку Bitcoin на высоте 0. Последующий публичный релиз превратил эту точку в программу, которую другие участники могли запускать, проверять и развивать.",
+        ],
+    satoshi_history: asksDeparture
+      ? [
+          "The exact reason Satoshi left is not known. The documents show a gradual withdrawal and transfer of responsibility; they do not prove that WikiLeaks, the CIA, personal danger, or any single event caused it.",
+          "Точная причина ухода Сатоши неизвестна. Документы показывают постепенный отход и передачу ответственности, но не доказывают, что причиной стали WikiLeaks, ЦРУ, личная опасность или одно конкретное событие.",
+        ]
+      : [
+          "What is certain is a documented pseudonymous record: the 2008 paper, early code and releases, public technical discussion, and a later handoff. Satoshi's legal identity has not been publicly proven.",
+          "Точно известен документированный след псевдонима: документ 2008 года, ранний код и релизы, публичное техническое обсуждение и последующая передача работы. Юридическая личность Сатоши публично не доказана.",
+        ],
+  };
+  const headline: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: ["From the Bitcoin paper to a running network", "От документа Bitcoin к работающей сети"],
+    genesis_history: asksTimes
+      ? ["The Genesis message: documented text, bounded meaning", "Сообщение Genesis: документированный текст и граница смысла"]
+      : ["Genesis and Bitcoin's first public days", "Genesis и первые публичные дни Bitcoin"],
+    satoshi_history: asksDeparture
+      ? ["Satoshi's departure: documented handoff, unknown motive", "Уход Сатоши: документированная передача, неизвестный мотив"]
+      : ["Satoshi Nakamoto: the documented record", "Сатоши Накамото: документированный след"],
+  };
+  const significance: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: [
+      "The decisive change was not only an idea: independently verifiable software and a live chain made the monetary rules operational.",
+      "Решающим было не только появление идеи: независимо проверяемая программа и живая цепь сделали денежные правила действующими.",
+    ],
+    genesis_history: [
+      "Genesis gives every validating implementation a common historical anchor; the embedded text also binds the launch to a public date and contemporary context.",
+      "Genesis даёт всем проверяющим реализациям общий исторический якорь; встроенный текст также связывает запуск с публичной датой и контекстом эпохи.",
+    ],
+    satoshi_history: [
+      "Bitcoin's continuity no longer depends on proving who Satoshi was: protocol validity comes from reproducible rules, code, and network verification rather than founder identity.",
+      "Непрерывность Bitcoin не зависит от доказательства личности Сатоши: допустимость протокола определяется воспроизводимыми правилами, кодом и сетевой проверкой, а не личностью основателя.",
+    ],
+  };
+  const timeline = BTC_ORIGINS_KNOWLEDGE_CAPSULE.timeline.map(
+    (entry) => `${entry.date} — ${pick(locale, entry.text)}`,
+  );
+  const sourceLines = BTC_ORIGINS_KNOWLEDGE_CAPSULE.sources.map(
+    (source) => `${pick(locale, source.label)}|${source.url}`,
+  );
+  return {
+    answer_state: subject === "satoshi_history" ? "LIMITED" : "CONFIRMED",
+    answer_mode: "PROTOCOL_EXPLAIN",
+    headline: pick(locale, headline[subject]),
+    direct_answer: pick(locale, direct[subject]),
+    sections: [
+      {
+        id: "timeline",
+        label: locale === "ru" ? "Краткая хронология" : "Concise chronology",
+        bullets: timeline,
+      },
+      {
+        id: "significance",
+        label: locale === "ru" ? "Значение для Bitcoin" : "Why it matters for Bitcoin",
+        paragraph: pick(locale, significance[subject]),
+      },
+      {
+        id: "known",
+        label: locale === "ru" ? "Что подтверждено" : "What is documented",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.known.map((line) => pick(locale, line)),
+      },
+      {
+        id: "supported_inference",
+        label: locale === "ru" ? "Поддерживаемый вывод" : "Supported inference",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.supported_inference.map((line) => pick(locale, line)),
+      },
+      {
+        id: "disputed",
+        label: locale === "ru" ? "Спорные утверждения" : "Disputed claims",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.disputed.map((line) => pick(locale, line)),
+      },
+      {
+        id: "unknown_boundary",
+        label: locale === "ru" ? "Что остаётся неизвестным" : "What remains unknown",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.unknown_boundary.map((line) => pick(locale, line)),
+      },
+      {
+        id: "sources",
+        label: locale === "ru" ? "Первичные источники" : "Primary sources",
+        bullets: sourceLines,
+      },
+    ],
+    source_boundary: locale === "ru"
+      ? "Исторический ответ разделяет документированный факт, поддерживаемый вывод, спорную версию и неизвестное. Он не подтверждает личность Сатоши, точный объём его монет или мотив ухода."
+      : "The historical answer separates documented fact, supported inference, disputed claims, and unknowns. It does not authenticate Satoshi's identity, exact holdings, or motive for leaving.",
+    proof_label: locale === "ru" ? "Исторические источники доступны" : "Historical sources available",
+  };
+}
+
 export function buildBtcProtocolAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
 ): BtcCosmographerAnswerProjection {
+  if (
+    route.subject === "satoshi_history" ||
+    route.subject === "bitcoin_origin" ||
+    route.subject === "genesis_history"
+  ) {
+    return originsHistoryAnswer(locale, route);
+  }
   const item = evidence[route.subject] ?? evidence.overview;
   const mechanism = item.mechanism.map((line) => pick(locale, line));
   return {
