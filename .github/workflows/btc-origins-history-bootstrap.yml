@@ -31,17 +31,18 @@ jobs:
       - name: Verify static acceptance before commit
         run: node scripts/verify-btc-origins-history.mjs
 
-      - name: Remove temporary bootstrap files
+      - name: Remove workflow and temporary transport files
         run: |
+          rm .github/workflows/btc-origins-history-pr.yml
           rm .github/scripts/btc-origins-history-bootstrap.py
           rm .github/workflows/btc-origins-history-bootstrap.yml
 
-      - name: Commit bounded implementation
+      - name: Commit bounded product implementation
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git diff --cached --name-only | sort
-          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "7"
+          test "$(git diff --cached --name-only | wc -l | tr -d ' ')" = "6"
           git commit -m "BTC: add origins and Satoshi history capsule"
           git push origin HEAD:agent/btc-origins-satoshi-history-v0-1
