@@ -29,7 +29,7 @@ jobs:
           test "${#changed[@]}" -eq 1
           test "${changed[0]}" = ".github/workflows/btc-polymarket-expectation-api-capture.yml"
 
-      - name: Capture public Polymarket BTC expectation data
+      - name: Capture exact public API evidence
         shell: bash
         env:
           PYTHONUNBUFFERED: "1"
@@ -46,55 +46,36 @@ jobs:
           import os
           import re
           import time
-          import urllib.error
           import urllib.parse
           import urllib.request
-          from collections import defaultdict
+          from collections import Counter, defaultdict
           from pathlib import Path
           from typing import Any
 
           GAMMA = "https://gamma-api.polymarket.com"
           CLOB = "https://clob.polymarket.com"
           DATA = "https://data-api.polymarket.com"
-          SNAPSHOT_URL = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json"
-          COINGECKO_SPOT_URL = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-          USER_AGENT = "BHRIGU-Polymarket-Evidence-Capture/0.1"
+          COINGECKO = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+          ACCEPTED_SNAPSHOT = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json"
+          USER_AGENT = "BHRIGU-Polymarket-Evidence-Capture/0.2"
           MAX_EVENTS = 2500
+          PAGE_SIZE = 100
           MAX_CAPTURE_MARKETS = 120
           now = dt.datetime.now(dt.timezone.utc)
           observed_at = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
           raw_hashes: list[dict[str, Any]] = []
 
-          def canonical_bytes(value: Any) -> bytes:
-              return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+          def number(value: Any) -> float | None:
+              try:
+                  result = float(value)
+                  return result if math.isfinite(result) else None
+              except (TypeError, ValueError):
+                  return None
 
-          def http_json(url: str, *, timeout: int = 30, required: bool = True) -> Any:
-              last_error: Exception | None = None
-              for attempt in range(4):
-                  try:
-                      request = urllib.request.Request(
-                          url,
-                          headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
-                      )
-                      with urllib.request.urlopen(request, timeout=timeout) as response:
-                          body = response.read()
-                      value = json.loads(body.decode("utf-8"))
-                      parsed = urllib.parse.urlsplit(url)
-                      raw_hashes.append({
-                          "endpoint": f"{parsed.scheme}://{parsed.netloc}{parsed.path}",
-                          "query_keys": sorted(urllib.parse.parse_qs(parsed.query).keys()),
-                          "sha256": hashlib.sha256(body).hexdigest(),
-                          "bytes": len(body),
-                      })
-                      return value
-                  except Exception as exc:
-                      last_error = exc
-                      time.sleep(1.5 * (attempt + 1))
-              if required:
-                  raise RuntimeError(f"GET failed after retries: {url}: {last_error}")
-              return None
+          def text(value: Any) -> str:
+              return value.strip() if isinstance(value, str) else ""
 
-          def parse_jsonish(value: Any) -> list[Any]:
+          def parse_list(value: Any) -> list[Any]:
               if isinstance(value, list):
                   return value
               if isinstance(value, str):
@@ -105,17 +86,15 @@ jobs:
                       return []
               return []
 
-          def number(value: Any) -> float | None:
-              try:
-                  parsed = float(value)
-                  return parsed if math.isfinite(parsed) else None
-              except (TypeError, ValueError):
-                  return None
+          def get_path(value: Any, path: str) -> Any:
+              cursor = value
+              for key in path.split("."):
+                  if not isinstance(cursor, dict):
+                      return None
+                  cursor = cursor.get(key)
+              return cursor
 
-          def text(value: Any) -> str:
-              return value.strip() if isinstance(value, str) else ""
-
-          def iso(value: Any) -> str | None:
+          def parse_iso(value: Any) -> str | None:
               raw = text(value)
               if not raw:
                   return None
@@ -127,17 +106,36 @@ jobs:
               except ValueError:
                   return None
 
-          def get_path(value: Any, path: str) -> Any:
-              cursor = value
-              for key in path.split("."):
-                  if not isinstance(cursor, dict):
-                      return None
-                  cursor = cursor.get(key)
-              return cursor
+          def http_json(url: str, required: bool = True) -> Any:
+              error: Exception | None = None
+              for attempt in range(4):
+                  try:
+                      request = urllib.request.Request(
+                          url,
+                          headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+                      )
+                      with urllib.request.urlopen(request, timeout=30) as response:
+                          body = response.read()
+                      value = json.loads(body.decode("utf-8"))
+                      parsed = urllib.parse.urlsplit(url)
+                      raw_hashes.append({
+                          "endpoint": f"{parsed.scheme}://{parsed.netloc}{parsed.path}",
+                          "query_keys": sorted(urllib.parse.parse_qs(parsed.query).keys()),
+                          "sha256": hashlib.sha256(body).hexdigest(),
+                          "bytes": len(body),
+                      })
+                      return value
+                  except Exception as exc:
+                      error = exc
+                      time.sleep(1 + attempt)
+              if required:
+                  raise RuntimeError(f"Public API request failed: {url}: {error}")
+              return None
 
-          def parse_amounts(value: str) -> list[float]:
-              results: list[float] = []
-              for match in re.finditer(r"(?:\$|USD\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)\s*([kKmM]?)", value):
+          def parse_price_amounts(value: str) -> list[float]:
+              amounts: list[float] = []
+              pattern = r"(?:\$|USD\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)\s*([kKmM]?)"
+              for match in re.finditer(pattern, value):
                   amount = float(match.group(1).replace(",", ""))
                   suffix = match.group(2).lower()
                   if suffix == "k":
@@ -145,98 +143,105 @@ jobs:
                   elif suffix == "m":
                       amount *= 1_000_000
                   if amount >= 10_000:
-                      results.append(amount)
-              return results
+                      amounts.append(amount)
+              return amounts
 
-          def classify_semantics(event: dict[str, Any], market: dict[str, Any], spot: float | None) -> tuple[str, float | None, float | None, float | None]:
-              question = " ".join([
-                  text(event.get("title")),
-                  text(market.get("question")),
-                  text(market.get("groupItemTitle")),
-                  text(market.get("description")),
-              ])
-              lower = question.lower()
-              threshold = number(market.get("groupItemThreshold"))
-              amounts = parse_amounts(question)
+          def classify(event: dict[str, Any], market: dict[str, Any], spot: float) -> dict[str, Any]:
+              question = text(market.get("question"))
+              group_title = text(market.get("groupItemTitle"))
+              compact = " ".join([question, group_title]).strip()
+              lower = compact.lower()
+              amounts = parse_price_amounts(compact)
+
+              raw_threshold = number(market.get("groupItemThreshold"))
+              threshold = raw_threshold if raw_threshold is not None and raw_threshold >= 10_000 else None
               if threshold is None and amounts:
                   threshold = amounts[0]
 
               range_low = number(market.get("lowerBound"))
               range_high = number(market.get("upperBound"))
-              if (range_low is None or range_high is None) and len(amounts) >= 2:
+              explicit_range = bool(
+                  re.search(r"\bbetween\b|\brange\b", lower)
+                  or re.search(r"\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:-|–|—|to)\s*\$?[0-9][0-9,]*(?:\.[0-9]+)?", compact, re.I)
+              )
+              if explicit_range and (range_low is None or range_high is None) and len(amounts) >= 2:
                   range_low, range_high = amounts[0], amounts[1]
+              if explicit_range and range_low is not None and range_high is not None:
+                  return {
+                      "semantic_family": "RANGE_AT_TIME",
+                      "threshold_usd": None,
+                      "range_low_usd": min(range_low, range_high),
+                      "range_high_usd": max(range_low, range_high),
+                  }
 
-              if (
-                  "range" in lower
-                  or "between" in lower
-                  or re.search(r"\$?[0-9][0-9,]*\s*(?:-|–|—|to)\s*\$?[0-9][0-9,]*", question, re.I)
-              ) and range_low is not None and range_high is not None:
-                  return "RANGE_AT_TIME", None, min(range_low, range_high), max(range_low, range_high)
-
-              if re.search(r"\babove\b|\bover\b|higher than", lower) and re.search(r"\bon\b|at .*time|closing|close price", lower):
-                  return "ABOVE_AT_TIME", threshold, None, None
-              if re.search(r"\bbelow\b|\bunder\b|lower than", lower) and re.search(r"\bon\b|at .*time|closing|close price", lower):
-                  return "BELOW_AT_TIME", threshold, None, None
-
-              touch = bool(re.search(r"\bhit\b|\breach\b|\btouch\b|rise to|dip to|before", lower))
-              if touch and threshold is not None and spot is not None:
-                  return ("TOUCH_UPPER" if threshold >= spot else "TOUCH_LOWER"), threshold, None, None
-              return "OTHER", threshold, range_low, range_high
+              terminal_marker = bool(re.search(r"\bon\b|at .*time|closing|close price|end of", lower))
+              if threshold is not None and terminal_marker and re.search(r"\babove\b|\bover\b|higher than", lower):
+                  family = "ABOVE_AT_TIME"
+              elif threshold is not None and terminal_marker and re.search(r"\bbelow\b|\bunder\b|lower than", lower):
+                  family = "BELOW_AT_TIME"
+              elif threshold is not None and re.search(r"\bdip\b|fall to|drop to", lower):
+                  family = "TOUCH_LOWER"
+              elif threshold is not None and re.search(r"\breach\b|rise to|reach", lower):
+                  family = "TOUCH_UPPER"
+              elif threshold is not None and re.search(r"\bhit\b|\btouch\b", lower):
+                  family = "TOUCH_UPPER" if threshold >= spot else "TOUCH_LOWER"
+              else:
+                  family = "OTHER"
+              return {
+                  "semantic_family": family,
+                  "threshold_usd": threshold,
+                  "range_low_usd": None,
+                  "range_high_usd": None,
+              }
 
           def horizon(start_at: str | None, end_at: str | None) -> str:
               if not end_at:
                   return "UNKNOWN"
               end = dt.datetime.fromisoformat(end_at.replace("Z", "+00:00"))
-              if start_at:
-                  start = dt.datetime.fromisoformat(start_at.replace("Z", "+00:00"))
-              else:
-                  start = now
+              start = dt.datetime.fromisoformat(start_at.replace("Z", "+00:00")) if start_at else now
               hours = max(0.0, (end - start).total_seconds() / 3600)
               if hours <= 48:
                   return "DAILY"
-              if hours <= 10 * 24:
+              if hours <= 240:
                   return "WEEKLY"
-              if hours <= 45 * 24:
+              if hours <= 1080:
                   return "MONTHLY"
               return "YEARLY"
 
+          def gate_high(value: float | None, passed: float, limited: float) -> str:
+              if value is None or value < limited:
+                  return "FAIL"
+              return "PASS" if value >= passed else "LIMITED"
+
+          def gate_low(value: float | None, passed: float, limited: float) -> str:
+              if value is None or value > limited:
+                  return "FAIL"
+              return "PASS" if value <= passed else "LIMITED"
+
           def event_volume_gate(value: float | None, bucket: str) -> str:
-              thresholds = {
+              limits = {
                   "DAILY": (25_000, 10_000),
                   "WEEKLY": (100_000, 25_000),
                   "MONTHLY": (250_000, 100_000),
                   "YEARLY": (1_000_000, 250_000),
                   "UNKNOWN": (250_000, 100_000),
               }
-              passed, limited = thresholds[bucket]
-              if value is None or value < limited:
-                  return "FAIL"
-              return "PASS" if value >= passed else "LIMITED"
+              return gate_high(value, *limits[bucket])
 
-          def three_level(value: float | None, passed: float, limited: float, *, reverse: bool = False) -> str:
-              if value is None:
-                  return "FAIL"
-              if reverse:
-                  if value <= passed:
-                      return "PASS"
-                  return "LIMITED" if value <= limited else "FAIL"
-              if value >= passed:
-                  return "PASS"
-              return "LIMITED" if value >= limited else "FAIL"
-
-          def book_capture(token_id: str) -> dict[str, Any]:
-              book = http_json(f"{CLOB}/book?{urllib.parse.urlencode({'token_id': token_id})}", required=False)
-              spread_payload = http_json(f"{CLOB}/spread?{urllib.parse.urlencode({'token_id': token_id})}", required=False)
+          def capture_book(token_id: str) -> dict[str, Any]:
+              query = urllib.parse.urlencode({"token_id": token_id})
+              book = http_json(f"{CLOB}/book?{query}", required=False)
+              spread_payload = http_json(f"{CLOB}/spread?{query}", required=False)
               if not isinstance(book, dict):
                   return {"available": False, "reasons": ["EMPTY_ORDER_BOOK"]}
-              bids = [entry for entry in book.get("bids", []) if isinstance(entry, dict)]
-              asks = [entry for entry in book.get("asks", []) if isinstance(entry, dict)]
-              bid_values = [number(entry.get("price")) for entry in bids]
-              ask_values = [number(entry.get("price")) for entry in asks]
-              bid_values = [item for item in bid_values if item is not None]
-              ask_values = [item for item in ask_values if item is not None]
-              best_bid = max(bid_values) if bid_values else None
-              best_ask = min(ask_values) if ask_values else None
+              bids = [row for row in book.get("bids", []) if isinstance(row, dict)]
+              asks = [row for row in book.get("asks", []) if isinstance(row, dict)]
+              bid_prices = [number(row.get("price")) for row in bids]
+              ask_prices = [number(row.get("price")) for row in asks]
+              bid_prices = [value for value in bid_prices if value is not None]
+              ask_prices = [value for value in ask_prices if value is not None]
+              best_bid = max(bid_prices) if bid_prices else None
+              best_ask = min(ask_prices) if ask_prices else None
               spread = number(spread_payload.get("spread")) if isinstance(spread_payload, dict) else None
               if spread is None and best_bid is not None and best_ask is not None:
                   spread = best_ask - best_bid
@@ -244,14 +249,13 @@ jobs:
               timestamp = number(book.get("timestamp"))
               if timestamp is not None and timestamp > 10_000_000_000:
                   timestamp /= 1000
-              age_seconds = now.timestamp() - timestamp if timestamp is not None else None
+              age = now.timestamp() - timestamp if timestamp is not None else None
               return {
                   "available": bool(bids and asks),
                   "condition_id": text(book.get("market")),
-                  "asset_id": text(book.get("asset_id")),
                   "book_hash": text(book.get("hash")),
                   "timestamp_unix": timestamp,
-                  "age_seconds": age_seconds,
+                  "age_seconds": age,
                   "best_bid": best_bid,
                   "best_ask": best_ask,
                   "midpoint": midpoint,
@@ -259,18 +263,16 @@ jobs:
                   "last_trade_price": number(book.get("last_trade_price")),
                   "bid_levels": len(bids),
                   "ask_levels": len(asks),
-                  "bid_depth_shares": sum(number(entry.get("size")) or 0 for entry in bids),
-                  "ask_depth_shares": sum(number(entry.get("size")) or 0 for entry in asks),
+                  "bid_depth_shares": sum(number(row.get("size")) or 0 for row in bids),
+                  "ask_depth_shares": sum(number(row.get("size")) or 0 for row in asks),
                   "reasons": [] if bids and asks else ["EMPTY_ORDER_BOOK"],
               }
 
-          def history_capture(token_id: str) -> dict[str, Any]:
-              start_ts = int(now.timestamp() - 7 * 86400)
-              end_ts = int(now.timestamp())
+          def capture_history(token_id: str) -> dict[str, Any]:
               query = urllib.parse.urlencode({
                   "market": token_id,
-                  "startTs": start_ts,
-                  "endTs": end_ts,
+                  "startTs": int(now.timestamp() - 7 * 86400),
+                  "endTs": int(now.timestamp()),
                   "interval": "all",
                   "fidelity": 60,
               })
@@ -278,35 +280,28 @@ jobs:
               rows = payload.get("history", []) if isinstance(payload, dict) else []
               points: list[tuple[float, float]] = []
               for row in rows:
-                  if not isinstance(row, dict):
-                      continue
-                  timestamp = number(row.get("t"))
-                  price = number(row.get("p"))
-                  if timestamp is not None and price is not None:
-                      points.append((timestamp, price))
+                  if isinstance(row, dict):
+                      timestamp, price = number(row.get("t")), number(row.get("p"))
+                      if timestamp is not None and price is not None:
+                          points.append((timestamp, price))
               points.sort()
               if not points:
-                  return {"available": False, "points": 0, "change_6h": None, "change_24h": None, "change_7d": None}
-              latest_ts, latest_price = points[-1]
-              def at(hours: int) -> float | None:
+                  return {"points": 0, "latest_probability": None, "change_6h": None, "change_24h": None, "change_7d": None}
+              latest = points[-1][1]
+              def change(hours: int) -> float:
                   target = now.timestamp() - hours * 3600
-                  eligible = [item for item in points if item[0] <= target]
-                  return eligible[-1][1] if eligible else points[0][1]
-              def change(hours: int) -> float | None:
-                  prior = at(hours)
-                  return round(latest_price - prior, 6) if prior is not None else None
+                  earlier = [item for item in points if item[0] <= target]
+                  prior = earlier[-1][1] if earlier else points[0][1]
+                  return round(latest - prior, 6)
               return {
-                  "available": True,
                   "points": len(points),
-                  "first_timestamp_unix": points[0][0],
-                  "last_timestamp_unix": latest_ts,
-                  "latest_probability": latest_price,
+                  "latest_probability": latest,
                   "change_6h": change(6),
                   "change_24h": change(24),
                   "change_7d": change(168),
               }
 
-          def open_interest(condition_id: str) -> float | None:
+          def capture_oi(condition_id: str) -> float | None:
               if not re.fullmatch(r"0x[a-fA-F0-9]{64}", condition_id):
                   return None
               query = urllib.parse.urlencode({"market": condition_id})
@@ -317,71 +312,61 @@ jobs:
                           return number(row.get("value"))
               return None
 
-          # Accepted BTC spot reference, with CoinGecko only as a bounded fallback.
-          spot = None
-          spot_source = None
-          spot_observed_at = None
-          snapshot_age_hours = None
-          accepted_snapshot = http_json(SNAPSHOT_URL, required=False)
-          if isinstance(accepted_snapshot, dict):
-              spot = number(get_path(accepted_snapshot, "public_samples.assets.BTC.price_usd"))
-              spot_observed_at = iso(accepted_snapshot.get("generated_at_utc"))
-              if spot_observed_at:
-                  generated = dt.datetime.fromisoformat(spot_observed_at.replace("Z", "+00:00"))
-                  snapshot_age_hours = (now - generated).total_seconds() / 3600
-              if spot is not None:
-                  spot_source = "ACCEPTED_BTC_MARKET_SNAPSHOT"
+          # Current spot is used only to normalize upper/lower distance.
+          coingecko = http_json(COINGECKO, required=False)
+          current_spot = number(get_path(coingecko, "bitcoin.usd")) if isinstance(coingecko, dict) else None
+          accepted = http_json(ACCEPTED_SNAPSHOT, required=False)
+          accepted_price = number(get_path(accepted, "public_samples.assets.BTC.price_usd")) if isinstance(accepted, dict) else None
+          accepted_at = parse_iso(accepted.get("generated_at_utc")) if isinstance(accepted, dict) else None
+          accepted_age = None
+          if accepted_at:
+              accepted_age = (now - dt.datetime.fromisoformat(accepted_at.replace("Z", "+00:00"))).total_seconds() / 3600
+          spot = current_spot if current_spot is not None else accepted_price
+          spot_provider = "COINGECKO_SIMPLE_PRICE" if current_spot is not None else "ACCEPTED_BTC_MARKET_SNAPSHOT"
           if spot is None:
-              fallback = http_json(COINGECKO_SPOT_URL, required=False)
-              spot = number(get_path(fallback, "bitcoin.usd")) if isinstance(fallback, dict) else None
-              if spot is not None:
-                  spot_source = "COINGECKO_SPOT_FALLBACK"
-                  spot_observed_at = observed_at
-                  snapshot_age_hours = 0.0
-          if spot is None:
-              raise RuntimeError("Unable to resolve BTC spot reference")
+              raise RuntimeError("BTC spot reference unavailable")
 
-          # Gamma inventory with complete offset pagination for active, non-closed events.
+          # Scan the full bounded Gamma inventory. The legacy endpoint currently caps pages at 100.
           events: list[dict[str, Any]] = []
           offset = 0
+          gamma_scan_truncated = False
           while offset < MAX_EVENTS:
               query = urllib.parse.urlencode({
                   "active": "true",
                   "closed": "false",
                   "archived": "false",
-                  "limit": 500,
+                  "limit": PAGE_SIZE,
                   "offset": offset,
                   "order": "volume",
                   "ascending": "false",
               })
               batch = http_json(f"{GAMMA}/events?{query}")
               if not isinstance(batch, list):
-                  raise RuntimeError("Gamma events response is not a list")
-              events.extend(item for item in batch if isinstance(item, dict))
-              if len(batch) < 500:
+                  raise RuntimeError("Gamma events payload is not a list")
+              events.extend(row for row in batch if isinstance(row, dict))
+              if not batch or len(batch) < PAGE_SIZE:
                   break
-              offset += 500
+              offset += len(batch)
+          else:
+              gamma_scan_truncated = True
 
-          btc_events: list[dict[str, Any]] = []
-          candidates: list[dict[str, Any]] = []
+          event_inventory: list[dict[str, Any]] = []
+          all_btc_markets: list[dict[str, Any]] = []
           for event in events:
               markets = event.get("markets", []) if isinstance(event.get("markets"), list) else []
               searchable = " ".join([
                   text(event.get("title")),
                   text(event.get("slug")),
-                  " ".join(text(m.get("question")) for m in markets if isinstance(m, dict)),
+                  *[text(market.get("question")) for market in markets if isinstance(market, dict)],
               ]).lower()
               if not re.search(r"\bbitcoin\b|\bbtc\b", searchable):
                   continue
-              event_start = iso(event.get("startDate") or event.get("eventStartTime"))
-              event_end = iso(event.get("endDate"))
-              event_row = {
+              event_start = parse_iso(event.get("startDate") or event.get("eventStartTime"))
+              event_end = parse_iso(event.get("endDate"))
+              inventory_row = {
                   "event_id": text(event.get("id")),
                   "slug": text(event.get("slug")),
                   "title": text(event.get("title")),
-                  "active": event.get("active") is True,
-                  "closed": event.get("closed") is True,
-                  "archived": event.get("archived") is True,
                   "start_at_utc": event_start,
                   "end_at_utc": event_end,
                   "resolution_source": text(event.get("resolutionSource")),
@@ -389,7 +374,7 @@ jobs:
                   "volume_24h_usd": number(event.get("volume24hr")),
                   "liquidity_total_usd": number(event.get("liquidity")),
                   "open_interest_usd_gamma": number(event.get("openInterest")),
-                  "market_count": 0,
+                  "active_market_count": 0,
                   "recognized_market_count": 0,
               }
               for market in markets:
@@ -397,113 +382,95 @@ jobs:
                       continue
                   if market.get("active") is not True or market.get("closed") is True or market.get("archived") is True:
                       continue
-                  tokens = [str(item) for item in parse_jsonish(market.get("clobTokenIds"))]
-                  outcomes = [str(item) for item in parse_jsonish(market.get("outcomes"))]
-                  prices = [number(item) for item in parse_jsonish(market.get("outcomePrices"))]
-                  yes_index = next((index for index, outcome in enumerate(outcomes) if outcome.lower() == "yes"), 0)
-                  yes_token = tokens[yes_index] if len(tokens) > yes_index else ""
-                  gamma_probability = prices[yes_index] if len(prices) > yes_index else None
-                  semantic, threshold, range_low, range_high = classify_semantics(event, market, spot)
+                  outcomes = [str(value) for value in parse_list(market.get("outcomes"))]
+                  tokens = [str(value) for value in parse_list(market.get("clobTokenIds"))]
+                  prices = [number(value) for value in parse_list(market.get("outcomePrices"))]
+                  yes_index = next((i for i, value in enumerate(outcomes) if value.lower() == "yes"), 0)
+                  semantics = classify(event, market, spot)
                   condition_id = text(market.get("conditionId") or market.get("condition_id"))
                   row = {
-                      "event": event,
-                      "event_summary": event_row,
-                      "market": market,
+                      "event_id": inventory_row["event_id"],
+                      "event_slug": inventory_row["slug"],
+                      "event_title": inventory_row["title"],
+                      "event_volume_total_usd": inventory_row["volume_total_usd"],
                       "market_id": text(market.get("id")),
                       "condition_id": condition_id,
                       "question_id": text(market.get("questionID")),
-                      "question": text(market.get("question")),
                       "market_slug": text(market.get("slug")),
-                      "semantic_family": semantic,
-                      "threshold_usd": threshold,
-                      "range_low_usd": range_low,
-                      "range_high_usd": range_high,
-                      "yes_token_id": yes_token,
+                      "question": text(market.get("question")),
+                      **semantics,
+                      "yes_token_id": tokens[yes_index] if len(tokens) > yes_index else "",
                       "no_token_id": tokens[1 - yes_index] if len(tokens) == 2 else "",
-                      "gamma_probability": gamma_probability,
+                      "gamma_probability": prices[yes_index] if len(prices) > yes_index else None,
                       "volume_total_usd": number(market.get("volumeNum") or market.get("volume")),
                       "volume_24h_usd": number(market.get("volume24hr")),
                       "liquidity_usd": number(market.get("liquidityNum") or market.get("liquidity")),
-                      "enable_order_book": market.get("enableOrderBook") is True,
-                      "start_at_utc": iso(market.get("startDateIso") or market.get("startDate")) or event_start,
-                      "end_at_utc": iso(market.get("endDateIso") or market.get("endDate")) or event_end,
-                      "description": text(market.get("description")),
-                      "resolution_source": text(market.get("resolutionSource")) or event_row["resolution_source"],
+                      "start_at_utc": parse_iso(market.get("startDateIso") or market.get("startDate")) or event_start,
+                      "end_at_utc": parse_iso(market.get("endDateIso") or market.get("endDate")) or event_end,
+                      "resolution_source": text(market.get("resolutionSource")) or inventory_row["resolution_source"],
+                      "resolution_rule_excerpt": text(market.get("description"))[:500],
                   }
-                  candidates.append(row)
-                  event_row["market_count"] += 1
-                  if semantic != "OTHER":
-                      event_row["recognized_market_count"] += 1
-              btc_events.append(event_row)
+                  all_btc_markets.append(row)
+                  inventory_row["active_market_count"] += 1
+                  if semantics["semantic_family"] != "OTHER":
+                      inventory_row["recognized_market_count"] += 1
+              event_inventory.append(inventory_row)
 
-          recognized = [row for row in candidates if row["semantic_family"] != "OTHER"]
+          recognized = [row for row in all_btc_markets if row["semantic_family"] != "OTHER"]
           recognized.sort(key=lambda row: (row["volume_total_usd"] or 0, row["liquidity_usd"] or 0), reverse=True)
-          capture_rows = recognized[:MAX_CAPTURE_MARKETS]
-          inventory_truncated = len(recognized) > len(capture_rows)
+          selected = recognized[:MAX_CAPTURE_MARKETS]
+          market_capture_truncated = len(recognized) > len(selected)
 
-          normalized_markets: list[dict[str, Any]] = []
-          for index, row in enumerate(capture_rows, 1):
+          captured: list[dict[str, Any]] = []
+          for index, row in enumerate(selected, 1):
               token = row["yes_token_id"]
-              condition_id = row["condition_id"]
-              book = book_capture(token) if token else {"available": False, "reasons": ["MISSING_TOKEN_ID"]}
-              history = history_capture(token) if token else {"available": False, "points": 0, "change_6h": None, "change_24h": None, "change_7d": None}
-              oi = open_interest(condition_id)
-              probability = book.get("midpoint") or book.get("last_trade_price") or history.get("latest_probability") or row["gamma_probability"]
-              event_bucket = horizon(row["start_at_utc"], row["end_at_utc"])
-              event_volume = row["event_summary"]["volume_total_usd"]
+              condition = row["condition_id"]
+              book = capture_book(token) if token else {"available": False, "reasons": ["MISSING_TOKEN_ID"]}
+              history = capture_history(token) if token else {"points": 0, "latest_probability": None, "change_6h": None, "change_24h": None, "change_7d": None}
+              oi = capture_oi(condition)
+              probability = book.get("midpoint")
+              if probability is None:
+                  probability = book.get("last_trade_price")
+              if probability is None:
+                  probability = history.get("latest_probability")
+              if probability is None:
+                  probability = row["gamma_probability"]
+
+              bucket = horizon(row["start_at_utc"], row["end_at_utc"])
               gates = {
-                  "event_volume": event_volume_gate(event_volume, event_bucket),
-                  "market_volume": three_level(row["volume_total_usd"], 5_000, 1_000),
-                  "open_interest": three_level(oi, 5_000, 1_000),
-                  "spread": three_level(book.get("spread"), 0.03, 0.07, reverse=True),
-                  "book_age": three_level(book.get("age_seconds"), 900, 3600, reverse=True),
-                  "static_snapshot_age": three_level(snapshot_age_hours, 6, 24, reverse=True),
+                  "event_volume": event_volume_gate(row["event_volume_total_usd"], bucket),
+                  "market_volume": gate_high(row["volume_total_usd"], 5_000, 1_000),
+                  "open_interest": gate_high(oi, 5_000, 1_000),
+                  "spread": gate_low(book.get("spread"), 0.03, 0.07),
+                  "book_age": gate_low(book.get("age_seconds"), 900, 3600),
+                  "spot_reference_age": "PASS" if spot_provider == "COINGECKO_SIMPLE_PRICE" else gate_low(accepted_age, 6, 24),
               }
               fatal: list[str] = []
-              if not row["resolution_source"] and not row["description"]:
+              if not row["resolution_source"] and not row["resolution_rule_excerpt"]:
                   fatal.append("MISSING_RESOLUTION_RULE")
               if not token:
                   fatal.append("MISSING_TOKEN_ID")
-              if not condition_id:
+              if not condition:
                   fatal.append("MISSING_CONDITION_ID")
               if not book.get("available"):
                   fatal.append("EMPTY_ORDER_BOOK")
               if probability is None:
                   fatal.append("MISSING_PROBABILITY")
 
-              fail_count = sum(value == "FAIL" for value in gates.values())
-              limited_count = sum(value == "LIMITED" for value in gates.values())
               if fatal or gates["spread"] == "FAIL" or gates["book_age"] == "FAIL" or (
                   gates["market_volume"] == "FAIL" and gates["open_interest"] == "FAIL"
               ):
                   quality = "FAIL"
-              elif fail_count or limited_count:
+              elif "FAIL" in gates.values() or "LIMITED" in gates.values():
                   quality = "LIMITED"
               else:
                   quality = "PASS"
 
-              normalized_markets.append({
+              captured.append({
                   "capture_rank": index,
-                  "event_id": row["event_summary"]["event_id"],
-                  "event_slug": row["event_summary"]["slug"],
-                  "event_title": row["event_summary"]["title"],
-                  "market_id": row["market_id"],
-                  "condition_id": condition_id,
-                  "question_id": row["question_id"],
-                  "market_slug": row["market_slug"],
-                  "question": row["question"],
-                  "semantic_family": row["semantic_family"],
-                  "threshold_usd": row["threshold_usd"],
-                  "range_low_usd": row["range_low_usd"],
-                  "range_high_usd": row["range_high_usd"],
-                  "start_at_utc": row["start_at_utc"],
-                  "end_at_utc": row["end_at_utc"],
-                  "horizon": event_bucket,
-                  "resolution_source": row["resolution_source"],
-                  "resolution_rule_excerpt": row["description"][:500],
-                  "yes_token_id": token,
-                  "no_token_id": row["no_token_id"],
-                  "gamma_probability": row["gamma_probability"],
+                  **{key: value for key, value in row.items() if key not in {"event_volume_total_usd"}},
+                  "event_volume_total_usd": row["event_volume_total_usd"],
+                  "horizon": bucket,
                   "observed_probability": probability,
                   "best_bid": book.get("best_bid"),
                   "best_ask": book.get("best_ask"),
@@ -515,10 +482,6 @@ jobs:
                   "ask_levels": book.get("ask_levels", 0),
                   "bid_depth_shares": book.get("bid_depth_shares", 0),
                   "ask_depth_shares": book.get("ask_depth_shares", 0),
-                  "event_volume_total_usd": event_volume,
-                  "market_volume_total_usd": row["volume_total_usd"],
-                  "market_volume_24h_usd": row["volume_24h_usd"],
-                  "liquidity_usd": row["liquidity_usd"],
                   "open_interest_usd": oi,
                   "price_history_points": history.get("points", 0),
                   "expectation_change_6h": history.get("change_6h"),
@@ -527,128 +490,121 @@ jobs:
                   "quality": quality,
                   "quality_gates": gates,
                   "quality_reasons": sorted(set(fatal + list(book.get("reasons", [])))),
-                  "monotonicity": "NOT_EVALUATED",
+                  "consistency": "NOT_EVALUATED",
               })
-              print(f"captured {index}/{len(capture_rows)}: {row['semantic_family']} {row['question'][:80]}")
+              print(f"captured {index}/{len(selected)} {row['semantic_family']}: {row['question'][:88]}")
 
-          # Ladder and distribution consistency checks.
+          # Evaluate threshold monotonicity and mutually exclusive range sums.
           grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
-          for market in normalized_markets:
-              grouped[(market["event_id"], market["semantic_family"])].append(market)
-
-          ladder_checks: list[dict[str, Any]] = []
-          for (event_id, semantic), rows in grouped.items():
-              if semantic == "RANGE_AT_TIME":
-                  probabilities = [number(row["observed_probability"]) for row in rows]
-                  probabilities = [value for value in probabilities if value is not None]
-                  total = sum(probabilities)
+          for row in captured:
+              grouped[(row["event_id"], row["semantic_family"])].append(row)
+          checks: list[dict[str, Any]] = []
+          for (event_id, family), rows in grouped.items():
+              if family == "RANGE_AT_TIME":
+                  values = [number(row["observed_probability"]) for row in rows]
+                  values = [value for value in values if value is not None]
+                  total = sum(values)
                   status = "PASS" if 0.97 <= total <= 1.03 else "LIMITED" if 0.93 <= total <= 1.07 else "FAIL"
-                  ladder_checks.append({"event_id": event_id, "semantic_family": semantic, "probability_sum": total, "status": status})
-                  for row in rows:
-                      row["monotonicity"] = status
-                      if status == "FAIL" and row["quality"] != "FAIL":
-                          row["quality"] = "FAIL"
-                          row["quality_reasons"].append("RANGE_PROBABILITY_SUM_INVALID")
-                  continue
-
-              threshold_rows = [row for row in rows if number(row["threshold_usd"]) is not None and number(row["observed_probability"]) is not None]
-              threshold_rows.sort(key=lambda row: float(row["threshold_usd"]))
-              max_inversion = 0.0
-              for left, right in zip(threshold_rows, threshold_rows[1:]):
-                  left_p = float(left["observed_probability"])
-                  right_p = float(right["observed_probability"])
-                  if semantic in {"TOUCH_UPPER", "ABOVE_AT_TIME"}:
-                      inversion = max(0.0, right_p - left_p)
-                  elif semantic in {"TOUCH_LOWER", "BELOW_AT_TIME"}:
-                      inversion = max(0.0, left_p - right_p)
-                  else:
-                      inversion = 0.0
-                  max_inversion = max(max_inversion, inversion)
-              status = "PASS" if max_inversion <= 0.02 else "LIMITED" if max_inversion <= 0.05 else "FAIL"
-              ladder_checks.append({
-                  "event_id": event_id,
-                  "semantic_family": semantic,
-                  "market_count": len(threshold_rows),
-                  "max_inversion_probability_points": max_inversion,
-                  "status": status,
-              })
+                  check = {"event_id": event_id, "semantic_family": family, "probability_sum": total, "status": status}
+              else:
+                  ordered = [row for row in rows if row["threshold_usd"] is not None and row["observed_probability"] is not None]
+                  ordered.sort(key=lambda row: float(row["threshold_usd"]))
+                  max_inversion = 0.0
+                  for left, right in zip(ordered, ordered[1:]):
+                      left_p, right_p = float(left["observed_probability"]), float(right["observed_probability"])
+                      if family in {"TOUCH_UPPER", "ABOVE_AT_TIME"}:
+                          inversion = max(0.0, right_p - left_p)
+                      elif family in {"TOUCH_LOWER", "BELOW_AT_TIME"}:
+                          inversion = max(0.0, left_p - right_p)
+                      else:
+                          inversion = 0.0
+                      max_inversion = max(max_inversion, inversion)
+                  status = "PASS" if max_inversion <= 0.02 else "LIMITED" if max_inversion <= 0.05 else "FAIL"
+                  check = {
+                      "event_id": event_id,
+                      "semantic_family": family,
+                      "market_count": len(ordered),
+                      "max_inversion_probability_points": max_inversion,
+                      "status": status,
+                  }
+              checks.append(check)
               for row in rows:
-                  row["monotonicity"] = status
-                  if status == "FAIL" and row["quality"] != "FAIL":
+                  row["consistency"] = status
+                  if status == "FAIL":
                       row["quality"] = "FAIL"
-                      row["quality_reasons"].append("MONOTONICITY_VIOLATION")
+                      row["quality_reasons"].append("CONSISTENCY_FAIL")
                   elif status == "LIMITED" and row["quality"] == "PASS":
                       row["quality"] = "LIMITED"
-                      row["quality_reasons"].append("MONOTONICITY_LIMITED")
+                      row["quality_reasons"].append("CONSISTENCY_LIMITED")
 
-          # Derive expectation ladders and a bounded matched-distance skew.
+          # Build ladders and compare equally distant touch levels by horizon.
           ladders: list[dict[str, Any]] = []
-          for (event_id, semantic), rows in grouped.items():
-              accepted = [row for row in rows if row["quality"] in {"PASS", "LIMITED"}]
-              if not accepted:
-                  continue
-              ladders.append({
-                  "event_id": event_id,
-                  "event_slug": accepted[0]["event_slug"],
-                  "horizon": accepted[0]["horizon"],
-                  "semantic_family": semantic,
-                  "markets": [
-                      {
-                          "market_id": row["market_id"],
-                          "threshold_usd": row["threshold_usd"],
-                          "range_low_usd": row["range_low_usd"],
-                          "range_high_usd": row["range_high_usd"],
-                          "probability": row["observed_probability"],
-                          "quality": row["quality"],
-                      }
-                      for row in sorted(accepted, key=lambda item: (item["threshold_usd"] or item["range_low_usd"] or 0))
-                  ],
-              })
+          for (event_id, family), rows in grouped.items():
+              accepted_rows = [row for row in rows if row["quality"] in {"PASS", "LIMITED"}]
+              if accepted_rows:
+                  ladders.append({
+                      "event_id": event_id,
+                      "event_slug": accepted_rows[0]["event_slug"],
+                      "horizon": accepted_rows[0]["horizon"],
+                      "semantic_family": family,
+                      "markets": [
+                          {
+                              "market_id": row["market_id"],
+                              "threshold_usd": row["threshold_usd"],
+                              "range_low_usd": row["range_low_usd"],
+                              "range_high_usd": row["range_high_usd"],
+                              "probability": row["observed_probability"],
+                              "quality": row["quality"],
+                          }
+                          for row in sorted(accepted_rows, key=lambda item: item["threshold_usd"] or item["range_low_usd"] or 0)
+                      ],
+                  })
 
-          horizon_states: list[dict[str, Any]] = []
+          skew_by_horizon: list[dict[str, Any]] = []
           for bucket in ["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]:
-              uppers = [row for row in normalized_markets if row["horizon"] == bucket and row["semantic_family"] == "TOUCH_UPPER" and row["quality"] in {"PASS", "LIMITED"}]
-              lowers = [row for row in normalized_markets if row["horizon"] == bucket and row["semantic_family"] == "TOUCH_LOWER" and row["quality"] in {"PASS", "LIMITED"}]
-              best_pair = None
-              best_difference = None
-              for upper in uppers:
-                  for lower in lowers:
-                      upper_d = abs(math.log(float(upper["threshold_usd"]) / spot))
-                      lower_d = abs(math.log(float(lower["threshold_usd"]) / spot))
-                      distance_difference = abs(upper_d - lower_d)
-                      relative = distance_difference / max(upper_d, lower_d, 1e-9)
-                      if distance_difference <= 0.01 or relative <= 0.10:
-                          if best_difference is None or distance_difference < best_difference:
-                              best_difference = distance_difference
-                              best_pair = (upper, lower, upper_d, lower_d)
-              if best_pair:
-                  upper, lower, upper_d, lower_d = best_pair
-                  skew = float(upper["observed_probability"]) - float(lower["observed_probability"])
+              upper = [row for row in captured if row["horizon"] == bucket and row["semantic_family"] == "TOUCH_UPPER" and row["quality"] in {"PASS", "LIMITED"}]
+              lower = [row for row in captured if row["horizon"] == bucket and row["semantic_family"] == "TOUCH_LOWER" and row["quality"] in {"PASS", "LIMITED"}]
+              best = None
+              best_delta = None
+              for up in upper:
+                  for down in lower:
+                      up_distance = abs(math.log(float(up["threshold_usd"]) / spot))
+                      down_distance = abs(math.log(float(down["threshold_usd"]) / spot))
+                      delta = abs(up_distance - down_distance)
+                      relative = delta / max(up_distance, down_distance, 1e-9)
+                      if delta <= 0.01 or relative <= 0.10:
+                          if best_delta is None or delta < best_delta:
+                              best_delta = delta
+                              best = (up, down, up_distance, down_distance)
+              if best:
+                  up, down, up_distance, down_distance = best
+                  skew = float(up["observed_probability"]) - float(down["observed_probability"])
                   state = "UPPER_TILT" if skew >= 0.10 else "LOWER_TILT" if skew <= -0.10 else "BALANCED"
-                  horizon_states.append({
+                  skew_by_horizon.append({
                       "horizon": bucket,
                       "state": state,
                       "skew": skew,
-                      "upper_market_id": upper["market_id"],
-                      "lower_market_id": lower["market_id"],
-                      "upper_log_distance": upper_d,
-                      "lower_log_distance": lower_d,
+                      "upper_market_id": up["market_id"],
+                      "lower_market_id": down["market_id"],
+                      "upper_log_distance": up_distance,
+                      "lower_log_distance": down_distance,
                   })
 
-          quality_counts = {name: sum(row["quality"] == name for row in normalized_markets) for name in ["PASS", "LIMITED", "FAIL"]}
+          quality_counts = Counter(row["quality"] for row in captured)
+          quality_counts = {key: quality_counts.get(key, 0) for key in ["PASS", "LIMITED", "FAIL"]}
           accepted_count = quality_counts["PASS"] + quality_counts["LIMITED"]
           if not accepted_count:
               expectation_state = "INSUFFICIENT_EVIDENCE"
-          elif horizon_states:
-              distinct = {row["state"] for row in horizon_states}
-              expectation_state = horizon_states[0]["state"] if len(distinct) == 1 else "DISPERSED"
+          elif skew_by_horizon:
+              states = {row["state"] for row in skew_by_horizon}
+              expectation_state = skew_by_horizon[0]["state"] if len(states) == 1 else "DISPERSED"
           else:
-              range_rows = [row for row in normalized_markets if row["semantic_family"] == "RANGE_AT_TIME" and row["quality"] in {"PASS", "LIMITED"}]
+              range_rows = [row for row in captured if row["semantic_family"] == "RANGE_AT_TIME" and row["quality"] in {"PASS", "LIMITED"}]
               if len(range_rows) >= 3:
-                  probs = [max(0.0, float(row["observed_probability"])) for row in range_rows]
-                  total = sum(probs)
-                  normalized = [value / total for value in probs] if total else []
-                  entropy = -sum(value * math.log(value) for value in normalized if value > 0) / math.log(len(normalized)) if len(normalized) > 1 else 0
+                  values = [max(0.0, float(row["observed_probability"])) for row in range_rows]
+                  total = sum(values)
+                  distribution = [value / total for value in values] if total else []
+                  entropy = -sum(value * math.log(value) for value in distribution if value > 0) / math.log(len(distribution)) if len(distribution) > 1 else 0
                   expectation_state = "DISPERSED" if entropy >= 0.65 else "BALANCED"
               else:
                   expectation_state = "INSUFFICIENT_EVIDENCE"
@@ -664,40 +620,57 @@ jobs:
                   "discovery": "GAMMA_API",
                   "pricing": "CLOB_API",
                   "activity": "DATA_API",
-                  "coingecko_role": "SPOT_FALLBACK_ONLY",
+                  "coingecko_role": "CURRENT_SPOT_NORMALIZATION_ONLY",
               },
               "spot_reference": {
-                  "provider": spot_source,
+                  "provider": spot_provider,
                   "price_usd": spot,
-                  "observed_at_utc": spot_observed_at,
-                  "age_hours": snapshot_age_hours,
+                  "observed_at_utc": observed_at if current_spot is not None else accepted_at,
+              },
+              "accepted_market_snapshot_reference": {
+                  "price_usd": accepted_price,
+                  "generated_at_utc": accepted_at,
+                  "age_hours": accepted_age,
+                  "used_for_current_normalization": current_spot is None,
               },
               "inventory": {
                   "gamma_events_scanned": len(events),
-                  "bitcoin_events_found": len(btc_events),
-                  "active_bitcoin_markets_found": len(candidates),
+                  "gamma_scan_limit": MAX_EVENTS,
+                  "gamma_scan_truncated": gamma_scan_truncated,
+                  "bitcoin_events_found": len(event_inventory),
+                  "active_bitcoin_markets_found": len(all_btc_markets),
                   "recognized_markets_found": len(recognized),
-                  "markets_captured": len(normalized_markets),
-                  "capture_limit": MAX_CAPTURE_MARKETS,
-                  "inventory_truncated": inventory_truncated,
-                  "events": btc_events,
+                  "markets_captured": len(captured),
+                  "market_capture_limit": MAX_CAPTURE_MARKETS,
+                  "market_capture_truncated": market_capture_truncated,
+                  "events": event_inventory,
+                  "all_market_identifiers": [
+                      {
+                          "event_id": row["event_id"],
+                          "market_id": row["market_id"],
+                          "condition_id": row["condition_id"],
+                          "question_id": row["question_id"],
+                          "yes_token_id": row["yes_token_id"],
+                          "semantic_family": row["semantic_family"],
+                          "question": row["question"],
+                      }
+                      for row in all_btc_markets
+                  ],
               },
-              "markets": normalized_markets,
+              "markets": captured,
               "derived": {
                   "expectation_ladders": ladders,
-                  "expectation_change_fields": ["expectation_change_6h", "expectation_change_24h", "expectation_change_7d"],
-                  "expectation_skew_by_horizon": horizon_states,
-                  "expectation_dispersion": "ENCODED_BY_RANGE_DISTRIBUTION_WHEN_AVAILABLE",
-                  "horizon_divergence": len({row["state"] for row in horizon_states}) > 1,
+                  "expectation_skew_by_horizon": skew_by_horizon,
+                  "horizon_divergence": len({row["state"] for row in skew_by_horizon}) > 1,
                   "expectation_state": expectation_state,
                   "expectation_quality": "PASS" if quality_counts["PASS"] and not quality_counts["FAIL"] else "PARTIAL" if accepted_count else "INSUFFICIENT_EVIDENCE",
                   "quality_counts": quality_counts,
-                  "ladder_checks": ladder_checks,
+                  "consistency_checks": checks,
               },
               "proof": {
                   "raw_response_hashes_file": "btc_polymarket_raw_hashes.json",
                   "normalized_snapshot_sha256": "PENDING_SELF_HASH",
-                  "collector_version": "btc_polymarket_expectation_capture_v0_1",
+                  "collector_version": "btc_polymarket_expectation_capture_v0_2",
               },
               "boundary": {
                   "static_snapshot_only": True,
@@ -708,86 +681,79 @@ jobs:
                   "no_execution": True,
                   "no_wallet_connection": True,
                   "no_financial_advice": True,
+                  "separate_from_probability_continuation": True,
               },
           }
 
-          # Deterministic schema and safety fixture.
           assert snapshot["schema_version"] == "btc_prediction_market_expectation_v0_1"
-          assert snapshot["asset"] == "BTC"
+          assert snapshot["inventory"]["bitcoin_events_found"] > 0
+          assert snapshot["inventory"]["recognized_markets_found"] > 0
+          assert snapshot["inventory"]["markets_captured"] > 0
           assert snapshot["derived"]["expectation_state"] in {
               "UPPER_TILT", "LOWER_TILT", "BALANCED", "DISPERSED", "INSUFFICIENT_EVIDENCE"
           }
           assert snapshot["boundary"]["no_forecast"] is True
           assert snapshot["boundary"]["no_trading_signal"] is True
-          assert snapshot["boundary"]["no_wallet_connection"] is True
-          assert snapshot["inventory"]["bitcoin_events_found"] > 0
-          assert snapshot["inventory"]["recognized_markets_found"] > 0
-          assert snapshot["inventory"]["markets_captured"] > 0
+          assert snapshot["boundary"]["separate_from_probability_continuation"] is True
+          semantic_counts = Counter(row["semantic_family"] for row in captured)
+          assert semantic_counts.get("RANGE_AT_TIME", 0) < len(captured), "Classifier collapsed all contracts into ranges"
 
-          prehash = canonical_bytes(snapshot)
-          snapshot_hash = hashlib.sha256(prehash).hexdigest()
-          snapshot["proof"]["normalized_snapshot_sha256"] = snapshot_hash
-
-          raw_hash_document = {
+          prehash = json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+          snapshot["proof"]["normalized_snapshot_sha256"] = hashlib.sha256(prehash).hexdigest()
+          hashes = {
               "schema_version": "btc_polymarket_raw_response_hashes_v0_1",
               "observed_at_utc": observed_at,
-              "responses": raw_hashes,
               "response_count": len(raw_hashes),
+              "responses": raw_hashes,
           }
 
-          report_lines = [
+          report = [
               "# BTC Polymarket Expectation Signal — Exact Public API Capture",
               "",
               f"- Observed at UTC: `{observed_at}`",
-              f"- BTC spot reference: `{spot_source}` · `${spot:,.2f}`",
-              f"- Gamma events scanned: `{len(events)}`",
-              f"- Active Bitcoin events: `{len(btc_events)}`",
-              f"- Active Bitcoin markets: `{len(candidates)}`",
+              f"- Current spot normalization: `{spot_provider}` · `${spot:,.2f}`",
+              f"- Gamma events scanned: `{len(events)}` · truncated `{gamma_scan_truncated}`",
+              f"- Bitcoin events found: `{len(event_inventory)}`",
+              f"- Active Bitcoin markets found: `{len(all_btc_markets)}`",
               f"- Recognized expectation markets: `{len(recognized)}`",
-              f"- Markets captured: `{len(normalized_markets)}`",
-              f"- Inventory truncated: `{inventory_truncated}`",
-              f"- Quality: PASS `{quality_counts['PASS']}` · LIMITED `{quality_counts['LIMITED']}` · FAIL `{quality_counts['FAIL']}`",
-              f"- Derived expectation state: `{expectation_state}`",
+              f"- Markets with exact CLOB/Data capture: `{len(captured)}` · truncated `{market_capture_truncated}`",
+              f"- Quality PASS `{quality_counts['PASS']}` · LIMITED `{quality_counts['LIMITED']}` · FAIL `{quality_counts['FAIL']}`",
+              f"- Derived state: `{expectation_state}`",
               f"- Collection status: `{snapshot['collection_status']}`",
-              "",
-              "## Boundaries",
-              "",
-              "- Static evidence artifact only.",
-              "- No authenticated API, trading, wallet, execution, price target, or financial advice.",
-              "- Polymarket contract prices are external expectation evidence, not Cosmographer forecasts.",
-              "- `probability_continuation` is not read, modified, averaged, or merged with this signal.",
               "",
               "## Semantic inventory",
               "",
           ]
-          semantic_counts = defaultdict(int)
-          for row in normalized_markets:
-              semantic_counts[row["semantic_family"]] += 1
-          for semantic in sorted(semantic_counts):
-              report_lines.append(f"- `{semantic}`: {semantic_counts[semantic]}")
-          report_lines += ["", "## Captured markets", ""]
-          for row in normalized_markets:
-              report_lines.append(
+          for family, count in sorted(semantic_counts.items()):
+              report.append(f"- `{family}`: {count}")
+          report += [
+              "",
+              "## Boundaries",
+              "",
+              "- Public unauthenticated APIs only.",
+              "- No trading, wallet, execution, price-target, or advice output.",
+              "- Contract probabilities remain external expectation evidence, not a Cosmographer forecast.",
+              "- This artifact is separate from `probability_continuation`.",
+              "",
+              "## Captured markets",
+              "",
+          ]
+          for row in captured:
+              report.append(
                   f"- `{row['quality']}` · `{row['semantic_family']}` · {row['question']} · "
                   f"p={row['observed_probability']} · spread={row['spread']} · OI={row['open_interest_usd']}"
               )
 
           output = Path("sanitized")
           (output / "btc_polymarket_expectation_capture.json").write_text(
-              json.dumps(snapshot, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
+              json.dumps(snapshot, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
           )
           (output / "btc_polymarket_raw_hashes.json").write_text(
-              json.dumps(raw_hash_document, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
-              encoding="utf-8",
+              json.dumps(hashes, indent=2, sort_keys=True, ensure_ascii=False) + "\n", encoding="utf-8"
           )
-          (output / "btc_polymarket_expectation_report.md").write_text(
-              "\n".join(report_lines) + "\n",
-              encoding="utf-8",
-          )
-
+          (output / "btc_polymarket_expectation_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("\n".join(report_lines[:22]) + "\n")
+              summary.write("\n".join(report[:24]) + "\n")
           PY
 
       - name: Verify sanitized artifact
@@ -800,19 +766,23 @@ jobs:
           root = Path("sanitized")
           snapshot = json.loads((root / "btc_polymarket_expectation_capture.json").read_text())
           hashes = json.loads((root / "btc_polymarket_raw_hashes.json").read_text())
-          assert snapshot["schema_version"] == "btc_prediction_market_expectation_v0_1"
           assert snapshot["inventory"]["markets_captured"] == len(snapshot["markets"])
           assert hashes["response_count"] == len(hashes["responses"])
-          assert all(len(item["sha256"]) == 64 for item in hashes["responses"])
+          assert all(len(row["sha256"]) == 64 for row in hashes["responses"])
           forbidden = ["api_key", "private_key", "wallet_secret", "authorization"]
-          rendered = json.dumps(snapshot).lower() + json.dumps(hashes).lower()
-          assert not any(token in rendered for token in forbidden)
+          rendered = (json.dumps(snapshot) + json.dumps(hashes)).lower()
+          assert not any(value in rendered for value in forbidden)
           print(json.dumps({
               "collection_status": snapshot["collection_status"],
               "expectation_state": snapshot["derived"]["expectation_state"],
               "quality_counts": snapshot["derived"]["quality_counts"],
+              "events_scanned": snapshot["inventory"]["gamma_events_scanned"],
+              "bitcoin_events": snapshot["inventory"]["bitcoin_events_found"],
+              "active_bitcoin_markets": snapshot["inventory"]["active_bitcoin_markets_found"],
+              "recognized_markets": snapshot["inventory"]["recognized_markets_found"],
               "markets_captured": snapshot["inventory"]["markets_captured"],
-              "inventory_truncated": snapshot["inventory"]["inventory_truncated"],
+              "gamma_scan_truncated": snapshot["inventory"]["gamma_scan_truncated"],
+              "market_capture_truncated": snapshot["inventory"]["market_capture_truncated"],
           }, indent=2))
           PY
 
