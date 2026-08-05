@@ -29,12 +29,13 @@ jobs:
           test "${#changed[@]}" -eq 1
           test "${changed[0]}" = ".github/workflows/btc-polymarket-expectation-api-capture.yml"
 
-      - name: Capture focused public API evidence
+      - name: Capture event-complete public API evidence
         shell: bash
         env:
           PYTHONUNBUFFERED: "1"
         run: |
           set -euo pipefail
+          rm -rf sanitized
           mkdir -p sanitized
           python - <<'PY'
           from __future__ import annotations
@@ -57,14 +58,15 @@ jobs:
           DATA = "https://data-api.polymarket.com"
           COINGECKO = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
           ACCEPTED_SNAPSHOT = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/data/crypto_astro_snapshot.public.json"
-          USER_AGENT = "BHRIGU-Polymarket-Evidence-Capture/0.3"
+          USER_AGENT = "BHRIGU-Polymarket-Evidence-Capture/0.4"
           SEARCH_TERMS = ("bitcoin", "btc")
           MAX_SEARCH_PAGES = 25
           SEARCH_PAGE_SIZE = 50
-          MAX_CAPTURE_MARKETS = 120
+          MAX_CAPTURE_MARKETS = 360
           now = dt.datetime.now(dt.timezone.utc)
           observed_at = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
           raw_hashes: list[dict[str, Any]] = []
+
 
           def number(value: Any) -> float | None:
               try:
@@ -73,8 +75,10 @@ jobs:
               except (TypeError, ValueError):
                   return None
 
+
           def text(value: Any) -> str:
               return value.strip() if isinstance(value, str) else ""
+
 
           def parse_list(value: Any) -> list[Any]:
               if isinstance(value, list):
@@ -87,6 +91,7 @@ jobs:
                       return []
               return []
 
+
           def get_path(value: Any, path: str) -> Any:
               cursor = value
               for key in path.split("."):
@@ -95,17 +100,25 @@ jobs:
                   cursor = cursor.get(key)
               return cursor
 
-          def parse_iso(value: Any) -> str | None:
+
+          def parse_dt(value: Any) -> dt.datetime | None:
               raw = text(value)
               if not raw:
                   return None
               try:
                   parsed = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
-                  if parsed.tzinfo is None:
-                      parsed = parsed.replace(tzinfo=dt.timezone.utc)
-                  return parsed.astimezone(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
               except ValueError:
                   return None
+              if parsed.tzinfo is None:
+                  parsed = parsed.replace(tzinfo=dt.timezone.utc)
+              return parsed.astimezone(dt.timezone.utc)
+
+
+          def iso(value: dt.datetime | None) -> str | None:
+              if value is None:
+                  return None
+              return value.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
 
           def http_json(url: str, *, required: bool = True) -> Any:
               last_error: Exception | None = None
@@ -133,6 +146,7 @@ jobs:
                   raise RuntimeError(f"Public API request failed: {url}: {last_error}")
               return None
 
+
           def parse_price_amounts(value: str) -> list[float]:
               result: list[float] = []
               pattern = r"(?:\$|USD\s*)?([0-9][0-9,]*(?:\.[0-9]+)?)\s*([kKmM]?)"
@@ -147,7 +161,22 @@ jobs:
                       result.append(amount)
               return result
 
-          def classify(market: dict[str, Any], spot: float) -> dict[str, Any]:
+
+          def event_is_range_distribution(markets: list[dict[str, Any]]) -> bool:
+              questions = " ".join(text(market.get("question")) for market in markets).lower()
+              return (
+                  bool(re.search(r"\bbetween\b|\brange\b", questions))
+                  and bool(re.search(r"\bless than\b|\bbelow\b|\bunder\b", questions))
+                  and bool(re.search(r"\bgreater than\b|\bmore than\b|\babove\b|\bover\b", questions))
+              )
+
+
+          def classify(
+              market: dict[str, Any],
+              spot: float,
+              *,
+              range_distribution: bool,
+          ) -> dict[str, Any]:
               question = text(market.get("question"))
               group_title = text(market.get("groupItemTitle"))
               compact = " ".join([question, group_title]).strip()
@@ -160,28 +189,47 @@ jobs:
 
               range_low = number(market.get("lowerBound"))
               range_high = number(market.get("upperBound"))
-              explicit_range = bool(
+              between = bool(
                   re.search(r"\bbetween\b|\brange\b", lower)
                   or re.search(
-                      r"\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:-|–|—|to)\s*\$?[0-9][0-9,]*(?:\.[0-9]+)?",
+                      r"\$?[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:-|–|—|to|and)\s*\$?[0-9][0-9,]*(?:\.[0-9]+)?",
                       compact,
                       re.I,
                   )
               )
-              if explicit_range and (range_low is None or range_high is None) and len(amounts) >= 2:
+              if between and (range_low is None or range_high is None) and len(amounts) >= 2:
                   range_low, range_high = amounts[0], amounts[1]
-              if explicit_range and range_low is not None and range_high is not None and range_low != range_high:
+              if between and range_low is not None and range_high is not None and range_low != range_high:
                   return {
                       "semantic_family": "RANGE_AT_TIME",
+                      "range_kind": "INTERIOR",
                       "threshold_usd": None,
                       "range_low_usd": min(range_low, range_high),
                       "range_high_usd": max(range_low, range_high),
                   }
 
               terminal = bool(re.search(r"\bon\b|at .*time|closing|close price|end of", lower))
-              if threshold is not None and terminal and re.search(r"\babove\b|\bover\b|higher than", lower):
+              if range_distribution and terminal and threshold is not None:
+                  if re.search(r"\bless than\b|\bbelow\b|\bunder\b", lower):
+                      return {
+                          "semantic_family": "RANGE_AT_TIME",
+                          "range_kind": "LOWER_OPEN_TAIL",
+                          "threshold_usd": None,
+                          "range_low_usd": None,
+                          "range_high_usd": threshold,
+                      }
+                  if re.search(r"\bgreater than\b|\bmore than\b|\babove\b|\bover\b", lower):
+                      return {
+                          "semantic_family": "RANGE_AT_TIME",
+                          "range_kind": "UPPER_OPEN_TAIL",
+                          "threshold_usd": None,
+                          "range_low_usd": threshold,
+                          "range_high_usd": None,
+                      }
+
+              if threshold is not None and terminal and re.search(r"\babove\b|\bover\b|higher than|greater than|more than", lower):
                   family = "ABOVE_AT_TIME"
-              elif threshold is not None and terminal and re.search(r"\bbelow\b|\bunder\b|lower than", lower):
+              elif threshold is not None and terminal and re.search(r"\bbelow\b|\bunder\b|lower than|less than", lower):
                   family = "BELOW_AT_TIME"
               elif threshold is not None and re.search(r"\bdip\b|fall to|drop to", lower):
                   family = "TOUCH_LOWER"
@@ -193,34 +241,39 @@ jobs:
                   family = "OTHER"
               return {
                   "semantic_family": family,
+                  "range_kind": None,
                   "threshold_usd": threshold,
                   "range_low_usd": None,
                   "range_high_usd": None,
               }
 
-          def horizon(start_at: str | None, end_at: str | None) -> str:
-              if not end_at:
-                  return "UNKNOWN"
-              end = dt.datetime.fromisoformat(end_at.replace("Z", "+00:00"))
-              start = dt.datetime.fromisoformat(start_at.replace("Z", "+00:00")) if start_at else now
-              hours = max(0.0, (end - start).total_seconds() / 3600)
+
+          def remaining_horizon(end_at: dt.datetime | None) -> tuple[str, float | None]:
+              if end_at is None:
+                  return "UNKNOWN", None
+              hours = (end_at - now).total_seconds() / 3600
+              if hours <= 0:
+                  return "EXPIRED", hours
               if hours <= 48:
-                  return "DAILY"
+                  return "DAILY", hours
               if hours <= 240:
-                  return "WEEKLY"
+                  return "WEEKLY", hours
               if hours <= 1080:
-                  return "MONTHLY"
-              return "YEARLY"
+                  return "MONTHLY", hours
+              return "YEARLY", hours
+
 
           def gate_high(value: float | None, passed: float, limited: float) -> str:
               if value is None or value < limited:
                   return "FAIL"
               return "PASS" if value >= passed else "LIMITED"
 
+
           def gate_low(value: float | None, passed: float, limited: float) -> str:
               if value is None or value > limited:
                   return "FAIL"
               return "PASS" if value <= passed else "LIMITED"
+
 
           def event_volume_gate(value: float | None, bucket: str) -> str:
               limits = {
@@ -231,6 +284,7 @@ jobs:
                   "UNKNOWN": (250_000, 100_000),
               }
               return gate_high(value, *limits[bucket])
+
 
           def capture_book(token_id: str) -> dict[str, Any]:
               query = urllib.parse.urlencode({"token_id": token_id})
@@ -272,6 +326,7 @@ jobs:
                   "reasons": [] if bids and asks else ["EMPTY_ORDER_BOOK"],
               }
 
+
           def capture_history(token_id: str) -> dict[str, Any]:
               query = urllib.parse.urlencode({
                   "market": token_id,
@@ -292,11 +347,13 @@ jobs:
               if not points:
                   return {"points": 0, "latest_probability": None, "change_6h": None, "change_24h": None, "change_7d": None}
               latest = points[-1][1]
+
               def change(hours: int) -> float:
                   target = now.timestamp() - hours * 3600
                   earlier = [item for item in points if item[0] <= target]
                   prior = earlier[-1][1] if earlier else points[0][1]
                   return round(latest - prior, 6)
+
               return {
                   "points": len(points),
                   "latest_probability": latest,
@@ -304,6 +361,7 @@ jobs:
                   "change_24h": change(24),
                   "change_7d": change(168),
               }
+
 
           def capture_oi(condition_id: str) -> float | None:
               if not re.fullmatch(r"0x[a-fA-F0-9]{64}", condition_id):
@@ -318,21 +376,67 @@ jobs:
                           return number(row.get("value"))
               return None
 
-          # Current spot is a normalization anchor only, never the expectation source.
+
+          def range_completeness(rows: list[dict[str, Any]], event_market_count: int) -> dict[str, Any]:
+              lower_tails = [row for row in rows if row["range_kind"] == "LOWER_OPEN_TAIL"]
+              upper_tails = [row for row in rows if row["range_kind"] == "UPPER_OPEN_TAIL"]
+              interiors = sorted(
+                  [row for row in rows if row["range_kind"] == "INTERIOR"],
+                  key=lambda row: float(row["range_low_usd"]),
+              )
+              contiguous = bool(interiors)
+              for left, right in zip(interiors, interiors[1:]):
+                  contiguous = contiguous and math.isclose(
+                      float(left["range_high_usd"]),
+                      float(right["range_low_usd"]),
+                      rel_tol=0,
+                      abs_tol=1e-9,
+                  )
+              if lower_tails and interiors:
+                  contiguous = contiguous and math.isclose(
+                      float(lower_tails[0]["range_high_usd"]),
+                      float(interiors[0]["range_low_usd"]),
+                      rel_tol=0,
+                      abs_tol=1e-9,
+                  )
+              if upper_tails and interiors:
+                  contiguous = contiguous and math.isclose(
+                      float(interiors[-1]["range_high_usd"]),
+                      float(upper_tails[0]["range_low_usd"]),
+                      rel_tol=0,
+                      abs_tol=1e-9,
+                  )
+              complete = (
+                  len(rows) == event_market_count
+                  and len(lower_tails) == 1
+                  and len(upper_tails) == 1
+                  and bool(interiors)
+                  and contiguous
+              )
+              return {
+                  "complete": complete,
+                  "event_market_count": event_market_count,
+                  "range_market_count": len(rows),
+                  "lower_open_tail_count": len(lower_tails),
+                  "upper_open_tail_count": len(upper_tails),
+                  "interior_count": len(interiors),
+                  "contiguous": contiguous,
+              }
+
+
+          # Spot is a normalization anchor only, never the expectation source.
           coingecko = http_json(COINGECKO, required=False)
           current_spot = number(get_path(coingecko, "bitcoin.usd")) if isinstance(coingecko, dict) else None
           accepted = http_json(ACCEPTED_SNAPSHOT, required=False)
           accepted_price = number(get_path(accepted, "public_samples.assets.BTC.price_usd")) if isinstance(accepted, dict) else None
-          accepted_at = parse_iso(accepted.get("generated_at_utc")) if isinstance(accepted, dict) else None
-          accepted_age = None
-          if accepted_at:
-              accepted_age = (now - dt.datetime.fromisoformat(accepted_at.replace("Z", "+00:00"))).total_seconds() / 3600
+          accepted_at_dt = parse_dt(accepted.get("generated_at_utc")) if isinstance(accepted, dict) else None
+          accepted_age = (now - accepted_at_dt).total_seconds() / 3600 if accepted_at_dt else None
           spot = current_spot if current_spot is not None else accepted_price
           spot_provider = "COINGECKO_SIMPLE_PRICE" if current_spot is not None else "ACCEPTED_BTC_MARKET_SNAPSHOT"
           if spot is None:
               raise RuntimeError("BTC spot normalization anchor unavailable")
 
-          # Focused official Gamma search, followed by exact event retrieval.
+          # Official focused Gamma search followed by exact event retrieval.
           discovered: dict[str, dict[str, Any]] = {}
           search_pages: list[dict[str, Any]] = []
           search_truncated = False
@@ -402,40 +506,58 @@ jobs:
               exact_events.append(event)
 
           event_inventory: list[dict[str, Any]] = []
-          all_markets: list[dict[str, Any]] = []
+          eligible_by_event: dict[str, list[dict[str, Any]]] = defaultdict(list)
+          provider_active_expired: list[dict[str, Any]] = []
+          all_provider_active_markets = 0
+          all_recognized_before_expiry = 0
+
           for event in exact_events:
-              event_start = parse_iso(event.get("startDate") or event.get("eventStartTime"))
-              event_end = parse_iso(event.get("endDate"))
+              event_id = text(event.get("id"))
+              event_start_dt = parse_dt(event.get("startDate") or event.get("eventStartTime"))
+              event_end_dt = parse_dt(event.get("endDate"))
+              markets = [market for market in event.get("markets", []) if isinstance(market, dict)]
+              provider_active_markets = [
+                  market for market in markets
+                  if market.get("active") is True
+                  and market.get("closed") is not True
+                  and market.get("archived") is not True
+              ]
+              range_distribution = event_is_range_distribution(provider_active_markets)
               inventory = {
-                  "event_id": text(event.get("id")),
+                  "event_id": event_id,
                   "slug": text(event.get("slug")),
                   "title": text(event.get("title")),
-                  "start_at_utc": event_start,
-                  "end_at_utc": event_end,
+                  "start_at_utc": iso(event_start_dt),
+                  "end_at_utc": iso(event_end_dt),
                   "resolution_source": text(event.get("resolutionSource")),
                   "volume_total_usd": number(event.get("volume")),
                   "volume_24h_usd": number(event.get("volume24hr")),
                   "liquidity_total_usd": number(event.get("liquidity")),
                   "open_interest_usd_gamma": number(event.get("openInterest")),
-                  "active_market_count": 0,
-                  "recognized_market_count": 0,
+                  "provider_active_market_count": len(provider_active_markets),
+                  "provider_active_expired_market_count": 0,
+                  "eligible_future_market_count": 0,
+                  "recognized_future_market_count": 0,
+                  "range_distribution_detected": range_distribution,
               }
-              markets = event.get("markets", []) if isinstance(event.get("markets"), list) else []
-              for market in markets:
-                  if not isinstance(market, dict):
-                      continue
-                  if market.get("active") is not True or market.get("closed") is True or market.get("archived") is True:
-                      continue
+
+              for market in provider_active_markets:
+                  all_provider_active_markets += 1
                   outcomes = [str(value) for value in parse_list(market.get("outcomes"))]
                   tokens = [str(value) for value in parse_list(market.get("clobTokenIds"))]
                   prices = [number(value) for value in parse_list(market.get("outcomePrices"))]
                   yes_index = next((index for index, value in enumerate(outcomes) if value.lower() == "yes"), 0)
-                  semantics = classify(market, spot)
-                  row = {
-                      "event_id": inventory["event_id"],
+                  market_end_dt = parse_dt(market.get("endDateIso") or market.get("endDate")) or event_end_dt
+                  semantics = classify(market, spot, range_distribution=range_distribution)
+                  if semantics["semantic_family"] != "OTHER":
+                      all_recognized_before_expiry += 1
+                  bucket, remaining_hours = remaining_horizon(market_end_dt)
+                  base_row = {
+                      "event_id": event_id,
                       "event_slug": inventory["slug"],
                       "event_title": inventory["title"],
                       "event_volume_total_usd": inventory["volume_total_usd"],
+                      "event_future_market_count": 0,
                       "market_id": text(market.get("id")),
                       "condition_id": text(market.get("conditionId") or market.get("condition_id")),
                       "question_id": text(market.get("questionID")),
@@ -448,27 +570,65 @@ jobs:
                       "volume_total_usd": number(market.get("volumeNum") or market.get("volume")),
                       "volume_24h_usd": number(market.get("volume24hr")),
                       "liquidity_usd": number(market.get("liquidityNum") or market.get("liquidity")),
-                      "start_at_utc": parse_iso(market.get("startDateIso") or market.get("startDate")) or event_start,
-                      "end_at_utc": parse_iso(market.get("endDateIso") or market.get("endDate")) or event_end,
+                      "start_at_utc": iso(parse_dt(market.get("startDateIso") or market.get("startDate")) or event_start_dt),
+                      "end_at_utc": iso(market_end_dt),
+                      "remaining_hours": remaining_hours,
+                      "horizon": bucket,
                       "resolution_source": text(market.get("resolutionSource")) or inventory["resolution_source"],
                       "resolution_rule_excerpt": text(market.get("description"))[:600],
                   }
-                  all_markets.append(row)
-                  inventory["active_market_count"] += 1
+                  if bucket == "EXPIRED":
+                      inventory["provider_active_expired_market_count"] += 1
+                      provider_active_expired.append({
+                          "event_id": event_id,
+                          "market_id": base_row["market_id"],
+                          "question": base_row["question"],
+                          "end_at_utc": base_row["end_at_utc"],
+                          "provider_active": True,
+                          "exclusion_reason": "END_AT_NOT_AFTER_OBSERVED_AT",
+                      })
+                      continue
+                  inventory["eligible_future_market_count"] += 1
                   if semantics["semantic_family"] != "OTHER":
-                      inventory["recognized_market_count"] += 1
+                      eligible_by_event[event_id].append(base_row)
+                      inventory["recognized_future_market_count"] += 1
+
+              for row in eligible_by_event[event_id]:
+                  row["event_future_market_count"] = inventory["recognized_future_market_count"]
               event_inventory.append(inventory)
 
-          recognized = [row for row in all_markets if row["semantic_family"] != "OTHER"]
-          recognized.sort(
-              key=lambda row: (row["volume_total_usd"] or 0, row["liquidity_usd"] or 0),
+          eligible_event_ids = [event_id for event_id, rows in eligible_by_event.items() if rows]
+          eligible_event_ids.sort(
+              key=lambda event_id: (
+                  max((row["event_volume_total_usd"] or 0) for row in eligible_by_event[event_id]),
+                  sum((row["volume_total_usd"] or 0) for row in eligible_by_event[event_id]),
+              ),
               reverse=True,
           )
-          selected = recognized[:MAX_CAPTURE_MARKETS]
-          capture_truncated = len(recognized) > len(selected)
+
+          selected_event_ids: list[str] = []
+          selected_rows: list[dict[str, Any]] = []
+          skipped_events_due_cap: list[dict[str, Any]] = []
+          for event_id in eligible_event_ids:
+              rows = eligible_by_event[event_id]
+              if len(selected_rows) + len(rows) <= MAX_CAPTURE_MARKETS:
+                  selected_event_ids.append(event_id)
+                  selected_rows.extend(rows)
+              else:
+                  skipped_events_due_cap.append({
+                      "event_id": event_id,
+                      "recognized_future_market_count": len(rows),
+                      "reason": "EVENT_COMPLETE_CAPTURE_CAP",
+                  })
+
+          capture_truncated = bool(skipped_events_due_cap)
+          event_complete_selection = all(
+              len([row for row in selected_rows if row["event_id"] == event_id]) == len(eligible_by_event[event_id])
+              for event_id in selected_event_ids
+          )
 
           captured: list[dict[str, Any]] = []
-          for index, row in enumerate(selected, 1):
+          for index, row in enumerate(selected_rows, 1):
               token = row["yes_token_id"]
               condition = row["condition_id"]
               book = capture_book(token) if token else {"available": False, "reasons": ["MISSING_TOKEN_ID"]}
@@ -488,14 +648,15 @@ jobs:
               if probability is None:
                   probability = row["gamma_probability"]
 
-              bucket = horizon(row["start_at_utc"], row["end_at_utc"])
               gates = {
-                  "event_volume": event_volume_gate(row["event_volume_total_usd"], bucket),
+                  "event_volume": event_volume_gate(row["event_volume_total_usd"], row["horizon"]),
                   "market_volume": gate_high(row["volume_total_usd"], 5_000, 1_000),
                   "open_interest": gate_high(oi, 5_000, 1_000),
                   "spread": gate_low(book.get("spread"), 0.03, 0.07),
                   "book_age": gate_low(book.get("age_seconds"), 900, 3600),
                   "spot_reference_age": "PASS" if spot_provider == "COINGECKO_SIMPLE_PRICE" else gate_low(accepted_age, 6, 24),
+                  "expiry": "PASS",
+                  "event_complete_selection": "PASS",
               }
               fatal: list[str] = []
               if not row["resolution_source"] and not row["resolution_rule_excerpt"]:
@@ -508,6 +669,8 @@ jobs:
                   fatal.append("EMPTY_ORDER_BOOK")
               if probability is None:
                   fatal.append("MISSING_PROBABILITY")
+              if row["horizon"] == "EXPIRED" or row["remaining_hours"] is None or row["remaining_hours"] <= 0:
+                  fatal.append("EXPIRED_CONTRACT_CAPTURED")
 
               if fatal or gates["spread"] == "FAIL" or gates["book_age"] == "FAIL" or (
                   gates["market_volume"] == "FAIL" and gates["open_interest"] == "FAIL"
@@ -521,7 +684,6 @@ jobs:
               captured.append({
                   "capture_rank": index,
                   **row,
-                  "horizon": bucket,
                   "observed_probability": probability,
                   "best_bid": book.get("best_bid"),
                   "best_ask": book.get("best_ask"),
@@ -543,7 +705,7 @@ jobs:
                   "quality_reasons": sorted(set(fatal + list(book.get("reasons", [])))),
                   "consistency": "NOT_EVALUATED",
               })
-              print(f"captured {index}/{len(selected)} {row['semantic_family']}: {row['question'][:90]}")
+              print(f"captured {index}/{len(selected_rows)} {row['semantic_family']}: {row['question'][:90]}")
 
           grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
           for row in captured:
@@ -552,15 +714,26 @@ jobs:
           consistency_checks: list[dict[str, Any]] = []
           for (event_id, family), rows in grouped.items():
               if family == "RANGE_AT_TIME":
+                  completeness = range_completeness(rows, rows[0]["event_future_market_count"])
                   values = [number(row["observed_probability"]) for row in rows]
                   values = [value for value in values if value is not None]
                   total = sum(values)
-                  status = "PASS" if 0.97 <= total <= 1.03 else "LIMITED" if 0.93 <= total <= 1.07 else "FAIL"
+                  if not completeness["complete"]:
+                      status = "NOT_EVALUATED"
+                      reason = "INCOMPLETE_MUTUALLY_EXCLUSIVE_DISTRIBUTION"
+                  elif len(values) != len(rows):
+                      status = "NOT_EVALUATED"
+                      reason = "MISSING_RANGE_PROBABILITY"
+                  else:
+                      status = "PASS" if 0.97 <= total <= 1.03 else "LIMITED" if 0.93 <= total <= 1.07 else "FAIL"
+                      reason = None
                   check = {
                       "event_id": event_id,
                       "semantic_family": family,
                       "probability_sum": total,
                       "status": status,
+                      "reason": reason,
+                      **completeness,
                   }
               else:
                   ordered = [
@@ -586,6 +759,7 @@ jobs:
                       "market_count": len(ordered),
                       "max_inversion_probability_points": max_inversion,
                       "status": status,
+                      "reason": None,
                   }
               consistency_checks.append(check)
               for row in rows:
@@ -596,6 +770,8 @@ jobs:
                   elif status == "LIMITED" and row["quality"] == "PASS":
                       row["quality"] = "LIMITED"
                       row["quality_reasons"].append("CONSISTENCY_LIMITED")
+                  elif status == "NOT_EVALUATED":
+                      row["quality_reasons"].append("CONSISTENCY_NOT_EVALUATED")
 
           ladders: list[dict[str, Any]] = []
           for (event_id, family), rows in grouped.items():
@@ -606,9 +782,11 @@ jobs:
                       "event_slug": accepted_rows[0]["event_slug"],
                       "horizon": accepted_rows[0]["horizon"],
                       "semantic_family": family,
+                      "event_complete": True,
                       "markets": [
                           {
                               "market_id": row["market_id"],
+                              "range_kind": row["range_kind"],
                               "threshold_usd": row["threshold_usd"],
                               "range_low_usd": row["range_low_usd"],
                               "range_high_usd": row["range_high_usd"],
@@ -617,12 +795,18 @@ jobs:
                           }
                           for row in sorted(
                               accepted_rows,
-                              key=lambda item: item["threshold_usd"] or item["range_low_usd"] or 0,
+                              key=lambda item: (
+                                  item["threshold_usd"]
+                                  if item["threshold_usd"] is not None
+                                  else item["range_low_usd"]
+                                  if item["range_low_usd"] is not None
+                                  else -math.inf
+                              ),
                           )
                       ],
                   })
 
-          skew_by_horizon: list[dict[str, Any]] = []
+          matched_tail_skew_by_horizon: list[dict[str, Any]] = []
           for bucket in ("DAILY", "WEEKLY", "MONTHLY", "YEARLY"):
               uppers = [
                   row for row in captured
@@ -652,45 +836,31 @@ jobs:
                   upper, lower, upper_distance, lower_distance = best
                   skew = float(upper["observed_probability"]) - float(lower["observed_probability"])
                   state = "UPPER_TILT" if skew >= 0.10 else "LOWER_TILT" if skew <= -0.10 else "BALANCED"
-                  skew_by_horizon.append({
+                  matched_tail_skew_by_horizon.append({
                       "horizon": bucket,
-                      "state": state,
+                      "bounded_state": state,
                       "skew": skew,
                       "upper_market_id": upper["market_id"],
                       "lower_market_id": lower["market_id"],
                       "upper_log_distance": upper_distance,
                       "lower_log_distance": lower_distance,
+                      "scope": "MATCHED_DISTANCE_TOUCH_TAIL_PAIR_ONLY",
                   })
 
           quality_counter = Counter(row["quality"] for row in captured)
           quality_counts = {key: quality_counter.get(key, 0) for key in ("PASS", "LIMITED", "FAIL")}
-          accepted_count = quality_counts["PASS"] + quality_counts["LIMITED"]
-          if not accepted_count:
-              expectation_state = "INSUFFICIENT_EVIDENCE"
-          elif skew_by_horizon:
-              states = {row["state"] for row in skew_by_horizon}
-              expectation_state = skew_by_horizon[0]["state"] if len(states) == 1 else "DISPERSED"
-          else:
-              range_rows = [
-                  row for row in captured
-                  if row["semantic_family"] == "RANGE_AT_TIME"
-                  and row["quality"] in {"PASS", "LIMITED"}
-              ]
-              if len(range_rows) >= 3:
-                  values = [max(0.0, float(row["observed_probability"])) for row in range_rows]
-                  total = sum(values)
-                  distribution = [value / total for value in values] if total else []
-                  entropy = (
-                      -sum(value * math.log(value) for value in distribution if value > 0)
-                      / math.log(len(distribution))
-                      if len(distribution) > 1
-                      else 0
-                  )
-                  expectation_state = "DISPERSED" if entropy >= 0.65 else "BALANCED"
-              else:
-                  expectation_state = "INSUFFICIENT_EVIDENCE"
-
           semantic_counts = Counter(row["semantic_family"] for row in captured)
+          range_kind_counts = Counter(row["range_kind"] for row in captured if row["range_kind"])
+          range_checks = [check for check in consistency_checks if check["semantic_family"] == "RANGE_AT_TIME"]
+          range_complete_checks = [check for check in range_checks if check.get("complete")]
+          range_not_evaluated_checks = [check for check in range_checks if check["status"] == "NOT_EVALUATED"]
+
+          # No global directional state is emitted in this fixture. Event-level ladders and
+          # bounded matched-tail observations remain explicit evidence only.
+          expectation_state = "INSUFFICIENT_EVIDENCE"
+          global_state_suppressed_reason = "NO_CANONICAL_COMPLETE_CROSS_EVENT_AGGREGATION_RULE"
+
+          accepted_count = quality_counts["PASS"] + quality_counts["LIMITED"]
           snapshot = {
               "schema_version": "btc_prediction_market_expectation_v0_1",
               "generated_at_utc": observed_at,
@@ -707,11 +877,11 @@ jobs:
               "spot_reference": {
                   "provider": spot_provider,
                   "price_usd": spot,
-                  "observed_at_utc": observed_at if current_spot is not None else accepted_at,
+                  "observed_at_utc": observed_at if current_spot is not None else iso(accepted_at_dt),
               },
               "accepted_market_snapshot_reference": {
                   "price_usd": accepted_price,
-                  "generated_at_utc": accepted_at,
+                  "generated_at_utc": iso(accepted_at_dt),
                   "age_hours": accepted_age,
                   "used_for_current_normalization": current_spot is None,
               },
@@ -720,14 +890,21 @@ jobs:
                   "search_pages": search_pages,
                   "search_truncated": search_truncated,
                   "search_event_ids_found": len(discovered),
-                  "active_bitcoin_events_found": len(exact_events),
-                  "active_bitcoin_markets_found": len(all_markets),
-                  "recognized_markets_found": len(recognized),
+                  "provider_active_bitcoin_events_found": len(exact_events),
+                  "provider_active_bitcoin_markets_found": all_provider_active_markets,
+                  "recognized_before_expiry": all_recognized_before_expiry,
+                  "provider_active_expired_markets_excluded": len(provider_active_expired),
+                  "eligible_future_events_found": len(eligible_event_ids),
+                  "eligible_future_recognized_markets_found": sum(len(rows) for rows in eligible_by_event.values()),
+                  "selected_event_count": len(selected_event_ids),
                   "markets_captured": len(captured),
                   "market_capture_limit": MAX_CAPTURE_MARKETS,
+                  "event_complete_selection": event_complete_selection,
                   "market_capture_truncated": capture_truncated,
+                  "skipped_events_due_cap": skipped_events_due_cap,
                   "events": event_inventory,
-                  "all_market_identifiers": [
+                  "expired_provider_active_exclusions": provider_active_expired,
+                  "all_future_market_identifiers": [
                       {
                           "event_id": row["event_id"],
                           "market_id": row["market_id"],
@@ -735,26 +912,33 @@ jobs:
                           "question_id": row["question_id"],
                           "yes_token_id": row["yes_token_id"],
                           "semantic_family": row["semantic_family"],
+                          "range_kind": row["range_kind"],
+                          "end_at_utc": row["end_at_utc"],
+                          "horizon": row["horizon"],
                           "question": row["question"],
                       }
-                      for row in all_markets
+                      for rows in eligible_by_event.values()
+                      for row in rows
                   ],
               },
               "markets": captured,
               "derived": {
                   "semantic_counts": dict(sorted(semantic_counts.items())),
+                  "range_kind_counts": dict(sorted(range_kind_counts.items())),
                   "expectation_ladders": ladders,
-                  "expectation_skew_by_horizon": skew_by_horizon,
-                  "horizon_divergence": len({row["state"] for row in skew_by_horizon}) > 1,
+                  "matched_tail_skew_by_horizon": matched_tail_skew_by_horizon,
                   "expectation_state": expectation_state,
+                  "global_state_suppressed_reason": global_state_suppressed_reason,
                   "expectation_quality": "PASS" if quality_counts["PASS"] and not quality_counts["FAIL"] else "PARTIAL" if accepted_count else "INSUFFICIENT_EVIDENCE",
                   "quality_counts": quality_counts,
                   "consistency_checks": consistency_checks,
+                  "range_complete_check_count": len(range_complete_checks),
+                  "range_not_evaluated_check_count": len(range_not_evaluated_checks),
               },
               "proof": {
                   "raw_response_hashes_file": "btc_polymarket_raw_hashes.json",
                   "normalized_snapshot_sha256": "PENDING_SELF_HASH",
-                  "collector_version": "btc_polymarket_expectation_capture_v0_3",
+                  "collector_version": "btc_polymarket_expectation_capture_v0_4",
               },
               "boundary": {
                   "static_snapshot_only": True,
@@ -769,16 +953,31 @@ jobs:
               },
           }
 
-          assert snapshot["inventory"]["active_bitcoin_events_found"] > 0
-          assert snapshot["inventory"]["recognized_markets_found"] > 0
+          assert snapshot["inventory"]["provider_active_bitcoin_events_found"] > 0
+          assert snapshot["inventory"]["eligible_future_recognized_markets_found"] > 0
           assert snapshot["inventory"]["markets_captured"] > 0
-          assert snapshot["derived"]["expectation_state"] in {
-              "UPPER_TILT", "LOWER_TILT", "BALANCED", "DISPERSED", "INSUFFICIENT_EVIDENCE"
-          }
+          assert snapshot["inventory"]["event_complete_selection"] is True
+          assert all(row["horizon"] != "EXPIRED" for row in captured)
+          assert all((row["remaining_hours"] or 0) > 0 for row in captured)
+          assert all(
+              len([row for row in captured if row["event_id"] == event_id]) == len(eligible_by_event[event_id])
+              for event_id in selected_event_ids
+          )
+          assert expectation_state == "INSUFFICIENT_EVIDENCE"
+          assert global_state_suppressed_reason
+          assert all(
+              check["status"] != "FAIL" or check.get("complete") is True
+              for check in range_checks
+          )
+          assert all(
+              check["status"] == "NOT_EVALUATED"
+              for check in range_checks
+              if not check.get("complete")
+          )
           assert snapshot["boundary"]["no_forecast"] is True
           assert snapshot["boundary"]["no_trading_signal"] is True
           assert snapshot["boundary"]["separate_from_probability_continuation"] is True
-          assert semantic_counts.get("RANGE_AT_TIME", 0) < len(captured), "Semantic collapse into RANGE_AT_TIME"
+          assert semantic_counts.get("RANGE_AT_TIME", 0) < len(captured)
 
           prehash = json.dumps(snapshot, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
           snapshot["proof"]["normalized_snapshot_sha256"] = hashlib.sha256(prehash).hexdigest()
@@ -790,29 +989,40 @@ jobs:
           }
 
           report = [
-              "# BTC Polymarket Expectation Signal — Exact Public API Capture",
+              "# BTC Polymarket Expectation Signal — Event-Complete Quality Fixture",
               "",
               f"- Observed at UTC: `{observed_at}`",
               f"- Spot normalization: `{spot_provider}` · `${spot:,.2f}`",
               f"- Gamma search event IDs: `{len(discovered)}` · truncated `{search_truncated}`",
-              f"- Exact active Bitcoin events: `{len(exact_events)}`",
-              f"- Active Bitcoin markets: `{len(all_markets)}`",
-              f"- Recognized expectation markets: `{len(recognized)}`",
-              f"- Exact CLOB/Data captures: `{len(captured)}` · truncated `{capture_truncated}`",
+              f"- Provider-active Bitcoin events: `{len(exact_events)}`",
+              f"- Provider-active Bitcoin markets: `{all_provider_active_markets}`",
+              f"- Provider-active expired markets excluded: `{len(provider_active_expired)}`",
+              f"- Eligible future recognized markets: `{sum(len(rows) for rows in eligible_by_event.values())}`",
+              f"- Selected complete events: `{len(selected_event_ids)}`",
+              f"- Exact CLOB/Data captures: `{len(captured)}` · event-cap truncated `{capture_truncated}`",
+              f"- Event-complete selection: `{event_complete_selection}`",
               f"- Quality PASS `{quality_counts['PASS']}` · LIMITED `{quality_counts['LIMITED']}` · FAIL `{quality_counts['FAIL']}`",
-              f"- Derived state: `{expectation_state}`",
-              f"- Collection status: `{snapshot['collection_status']}`",
+              f"- Complete range checks: `{len(range_complete_checks)}`",
+              f"- Incomplete range checks not evaluated: `{len(range_not_evaluated_checks)}`",
+              f"- Global expectation state: `{expectation_state}`",
+              f"- Suppression reason: `{global_state_suppressed_reason}`",
               "",
               "## Semantic inventory",
               "",
           ]
           for family, count in sorted(semantic_counts.items()):
               report.append(f"- `{family}`: {count}")
+          for kind, count in sorted(range_kind_counts.items()):
+              report.append(f"- range `{kind}`: {count}")
           report += [
               "",
               "## Boundaries",
               "",
               "- Public unauthenticated APIs only.",
+              "- Expired contracts are excluded even when the provider still marks them active.",
+              "- Horizon is based on remaining time from observation to contract end.",
+              "- Range-sum consistency is evaluated only for complete open-tail distributions.",
+              "- No cross-event directional state is emitted without a canonical aggregation rule.",
               "- No trading, wallet, execution, price target, or advice output.",
               "- Contract prices are external expectation evidence, not a Cosmographer forecast.",
               "- This artifact remains separate from `probability_continuation`.",
@@ -822,7 +1032,7 @@ jobs:
           ]
           for row in captured:
               report.append(
-                  f"- `{row['quality']}` · `{row['semantic_family']}` · {row['question']} · "
+                  f"- `{row['quality']}` · `{row['horizon']}` · `{row['semantic_family']}` · {row['question']} · "
                   f"p={row['observed_probability']} · spread={row['spread']} · OI={row['open_interest_usd']}"
               )
 
@@ -840,38 +1050,79 @@ jobs:
               encoding="utf-8",
           )
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("\n".join(report[:28]) + "\n")
+              summary.write("\n".join(report[:36]) + "\n")
           PY
 
-      - name: Verify sanitized artifact
+      - name: Verify repaired quality fixture
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
+
           root = Path("sanitized")
           snapshot = json.loads((root / "btc_polymarket_expectation_capture.json").read_text())
           hashes = json.loads((root / "btc_polymarket_raw_hashes.json").read_text())
-          assert snapshot["inventory"]["markets_captured"] == len(snapshot["markets"])
+
+          markets = snapshot["markets"]
+          inventory = snapshot["inventory"]
+          derived = snapshot["derived"]
+
+          assert inventory["markets_captured"] == len(markets)
+          assert inventory["event_complete_selection"] is True
+          assert all(row["horizon"] != "EXPIRED" for row in markets)
+          assert all((row["remaining_hours"] or 0) > 0 for row in markets)
+          assert derived["expectation_state"] == "INSUFFICIENT_EVIDENCE"
+          assert derived["global_state_suppressed_reason"] == "NO_CANONICAL_COMPLETE_CROSS_EVENT_AGGREGATION_RULE"
+
+          range_checks = [
+              row for row in derived["consistency_checks"]
+              if row["semantic_family"] == "RANGE_AT_TIME"
+          ]
+          for check in range_checks:
+              if check.get("complete"):
+                  assert check["status"] in {"PASS", "LIMITED", "FAIL"}
+                  assert check["lower_open_tail_count"] == 1
+                  assert check["upper_open_tail_count"] == 1
+                  assert check["contiguous"] is True
+              else:
+                  assert check["status"] == "NOT_EVALUATED"
+                  assert check["reason"] == "INCOMPLETE_MUTUALLY_EXCLUSIVE_DISTRIBUTION"
+
+          selected_ids = {row["event_id"] for row in markets}
+          for event_id in selected_ids:
+              event_rows = [row for row in markets if row["event_id"] == event_id]
+              expected = event_rows[0]["event_future_market_count"]
+              assert len(event_rows) == expected
+
           assert hashes["response_count"] == len(hashes["responses"])
           assert all(len(row["sha256"]) == 64 for row in hashes["responses"])
           forbidden = ["api_key", "private_key", "wallet_secret", "authorization"]
           rendered = (json.dumps(snapshot) + json.dumps(hashes)).lower()
           assert not any(value in rendered for value in forbidden)
+
           print(json.dumps({
               "collection_status": snapshot["collection_status"],
-              "expectation_state": snapshot["derived"]["expectation_state"],
-              "expectation_quality": snapshot["derived"]["expectation_quality"],
-              "semantic_counts": snapshot["derived"]["semantic_counts"],
-              "quality_counts": snapshot["derived"]["quality_counts"],
-              "search_event_ids": snapshot["inventory"]["search_event_ids_found"],
-              "active_bitcoin_events": snapshot["inventory"]["active_bitcoin_events_found"],
-              "active_bitcoin_markets": snapshot["inventory"]["active_bitcoin_markets_found"],
-              "recognized_markets": snapshot["inventory"]["recognized_markets_found"],
-              "markets_captured": snapshot["inventory"]["markets_captured"],
-              "search_truncated": snapshot["inventory"]["search_truncated"],
-              "market_capture_truncated": snapshot["inventory"]["market_capture_truncated"],
+              "expectation_state": derived["expectation_state"],
+              "expectation_quality": derived["expectation_quality"],
+              "global_state_suppressed_reason": derived["global_state_suppressed_reason"],
+              "semantic_counts": derived["semantic_counts"],
+              "range_kind_counts": derived["range_kind_counts"],
+              "quality_counts": derived["quality_counts"],
+              "search_event_ids": inventory["search_event_ids_found"],
+              "provider_active_bitcoin_events": inventory["provider_active_bitcoin_events_found"],
+              "provider_active_bitcoin_markets": inventory["provider_active_bitcoin_markets_found"],
+              "provider_active_expired_markets_excluded": inventory["provider_active_expired_markets_excluded"],
+              "eligible_future_events": inventory["eligible_future_events_found"],
+              "eligible_future_recognized_markets": inventory["eligible_future_recognized_markets_found"],
+              "selected_event_count": inventory["selected_event_count"],
+              "markets_captured": inventory["markets_captured"],
+              "event_complete_selection": inventory["event_complete_selection"],
+              "search_truncated": inventory["search_truncated"],
+              "market_capture_truncated": inventory["market_capture_truncated"],
+              "range_complete_check_count": derived["range_complete_check_count"],
+              "range_not_evaluated_check_count": derived["range_not_evaluated_check_count"],
           }, indent=2))
           PY
 
