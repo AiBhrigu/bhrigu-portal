@@ -12,14 +12,14 @@ if start_marker not in raw or end_marker not in raw:
     raise SystemExit("BOOTSTRAP_PAYLOAD_MARKERS_NOT_FOUND")
 payload = raw.split(start_marker, 1)[1].split(end_marker, 1)[0]
 normalized = []
+in_triple_string = False
 for line in payload.splitlines():
-    normalized.append(line[10:] if line.startswith("          ") else line)
-material = "\n".join(normalized) + "\n"
-material = material.replace(
-    "    count = text.count(old)\n",
-    "    count = text.count(old)\n    print(f'PATCH_ATTEMPT {path} count={count} anchor={old[:80]!r}')\n",
-    1,
-)
+    candidate = line if in_triple_string else (line[10:] if line.startswith("          ") else line)
+    normalized.append(candidate)
+    if candidate.count("'''") % 2 == 1:
+        in_triple_string = not in_triple_string
+if in_triple_string:
+    raise SystemExit("BOOTSTRAP_TRIPLE_STRING_NOT_CLOSED")
 script = Path("/tmp/btc-origins-history-apply.py")
-script.write_text(material, encoding="utf-8")
+script.write_text("\n".join(normalized) + "\n", encoding="utf-8")
 subprocess.run(["python3", str(script)], check=True)
