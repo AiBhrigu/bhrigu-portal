@@ -57,5 +57,5 @@ jobs:
           done
           echo "== /api =="
           api_status="$(curl -sS -o /dev/null -w '%{http_code}' "$base/api")"
-          test "$api_status" = "404"
-          echo "OK: public routes reachable; /api remains intentionally closed"
+          test "$api_status" = "410"
+          echo "OK: public routes reachable; /api remains intentionally closed with HTTP 410 Gone"
