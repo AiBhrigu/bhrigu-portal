@@ -308,7 +308,7 @@ jobs:
                               "followed_visible_source_prefix": expected[:12] in followed_html,
                           })
                       elif path == "/crypto-astro/btc/live":
-                          live_marker = 'name="btc-live-dialogue" content="free-question-v0-2-session-local"'
+                          live_marker = 'name="btc-live-dialogue" content="semantic-route-graph-v0-1"'
                           checks.update({
                               "canonical_head_source_meta": f'name="btc-deployment-source-sha" content="{expected}"' in canonical_html,
                               "canonical_live_dialogue_marker": live_marker in canonical_html,
