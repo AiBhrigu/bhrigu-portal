@@ -1,0 +1,727 @@
+name: BTC Origins History Bootstrap
+
+on:
+  push:
+    branches:
+      - agent/btc-origins-satoshi-history-v0-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply-controlled-preview:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact preview branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Verify exact master base
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "0a0205959ffb3da86568870d597092374c1dd5e3"
+
+      - name: Apply bounded historical knowledge layer
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"PATCH_ANCHOR_MISMATCH {path}: expected 1, found {count}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          route = "lib/btc-cosmographer-route-graph.ts"
+          replace_once(
+              route,
+              '  if (/genesis|генезис|перв(?:ый|ого)\\s+блок/i.test(question)) return "genesis";\n',
+              '''  if (/satoshi|накамото|кто\\s+(?:такой|такая)\\s+сатоши|кто\\s+создал\\s+(?:bitcoin|биткоин)|why\\s+did\\s+satoshi|what\\s+is\\s+known\\s+(?:for\\s+certain\\s+)?about\\s+satoshi|what\\s+do\\s+we\\s+know\\s+about\\s+satoshi|что\\s+известно\\s+точно/i.test(question)) return "satoshi_history";\n  if (/origin(?:s)?\\s+of\\s+bitcoin|how\\s+did\\s+bitcoin\\s+(?:begin|start|emerge)|from\\s+the\\s+white\\s+paper|происхождени[ея]\\s+(?:bitcoin|биткоин)|как\\s+(?:появился|возник)\\s+(?:bitcoin|биткоин)|от\\s+(?:white\\s+paper|белой\\s+книг)/i.test(question)) return "bitcoin_origin";\n  if (/genesis[-\\s]?block|genesis[-\\s]?блок|генезис[-\\s]?блок|первые?\\s+дн[яей]\\s+(?:bitcoin|биткоин)|first\\s+days?.*(?:bitcoin|genesis)|times\\s+message|the\\s+times|сообщени[ея].*times/i.test(question)) return "genesis_history";\n  if (/genesis|генезис|перв(?:ый|ого)\\s+блок/i.test(question)) return "genesis";\n''',
+          )
+
+          protocol = "lib/btc-protocol-evidence.ts"
+          capsule = r'''
+export type BtcOriginsHistorySubject =
+  | "satoshi_history"
+  | "bitcoin_origin"
+  | "genesis_history";
+
+export type BtcOriginsPreparedQuestion = {
+  id: string;
+  subject: BtcOriginsHistorySubject;
+  question: string;
+};
+
+export const BTC_ORIGINS_PREPARED_QUESTIONS: Record<
+  BtcPublicLocale,
+  BtcOriginsPreparedQuestion[]
+> = {
+  ru: [
+    {
+      id: "bitcoin_origin_timeline",
+      subject: "bitcoin_origin",
+      question: "Как появился Bitcoin: от white paper до запуска сети?",
+    },
+    {
+      id: "satoshi_known_facts",
+      subject: "satoshi_history",
+      question: "Что точно известно о Сатоши Накамото?",
+    },
+    {
+      id: "genesis_first_days",
+      subject: "genesis_history",
+      question: "Что произошло в первые дни Bitcoin после Genesis?",
+    },
+    {
+      id: "genesis_times_message",
+      subject: "genesis_history",
+      question: "Что означает сообщение The Times в Genesis-блоке?",
+    },
+    {
+      id: "satoshi_departure_boundary",
+      subject: "satoshi_history",
+      question: "Почему Сатоши ушёл и что здесь остаётся неизвестным?",
+    },
+  ],
+  en: [
+    {
+      id: "bitcoin_origin_timeline",
+      subject: "bitcoin_origin",
+      question: "How did Bitcoin emerge, from the white paper to the network launch?",
+    },
+    {
+      id: "satoshi_known_facts",
+      subject: "satoshi_history",
+      question: "What is known for certain about Satoshi Nakamoto?",
+    },
+    {
+      id: "genesis_first_days",
+      subject: "genesis_history",
+      question: "What happened in Bitcoin's first days after Genesis?",
+    },
+    {
+      id: "genesis_times_message",
+      subject: "genesis_history",
+      question: "What does the Times message in the Genesis block mean?",
+    },
+    {
+      id: "satoshi_departure_boundary",
+      subject: "satoshi_history",
+      question: "Why did Satoshi leave, and what remains unknown?",
+    },
+  ],
+};
+
+type BtcOriginsLocalized = [string, string];
+
+type BtcOriginsSource = {
+  id: string;
+  label: BtcOriginsLocalized;
+  url: string;
+};
+
+type BtcOriginsTimelineEntry = {
+  date: string;
+  text: BtcOriginsLocalized;
+};
+
+export const BTC_ORIGINS_KNOWLEDGE_CAPSULE: {
+  timeline: BtcOriginsTimelineEntry[];
+  sources: BtcOriginsSource[];
+  known: BtcOriginsLocalized[];
+  supported_inference: BtcOriginsLocalized[];
+  disputed: BtcOriginsLocalized[];
+  unknown_boundary: BtcOriginsLocalized[];
+} = {
+  timeline: [
+    {
+      date: "2008-10-31",
+      text: [
+        "Satoshi Nakamoto announced the Bitcoin paper on the Cryptography mailing list.",
+        "Сатоши Накамото представил документ Bitcoin в рассылке Cryptography.",
+      ],
+    },
+    {
+      date: "2009-01-03",
+      text: [
+        "The Genesis block established height 0 and embedded the Times headline dated 3 January 2009.",
+        "Genesis-блок закрепил высоту 0 и включил заголовок The Times от 3 января 2009 года.",
+      ],
+    },
+    {
+      date: "2009-01-10",
+      text: [
+        "The mailing-list archive recorded the first Bitcoin alpha release announcement and its issuance schedule.",
+        "Архив рассылки зафиксировал объявление первого alpha-релиза Bitcoin и график эмиссии.",
+      ],
+    },
+    {
+      date: "2010-12-12",
+      text: [
+        "Satoshi's last documented public forum post concerned Bitcoin 0.3.19 and denial-of-service controls.",
+        "Последний документированный публичный пост Сатоши касался Bitcoin 0.3.19 и защиты от DoS.",
+      ],
+    },
+    {
+      date: "2011-04",
+      text: [
+        "A preserved email says Satoshi had moved on and that Bitcoin was in good hands with Gavin and the wider team.",
+        "Сохранённое письмо сообщает, что Сатоши занялся другими делами и оставил Bitcoin Гэвину и более широкому сообществу.",
+      ],
+    },
+  ],
+  sources: [
+    {
+      id: "mailing_list_announcement",
+      label: [
+        "Satoshi Nakamoto — Cryptography mailing-list announcement, 31 Oct 2008",
+        "Сатоши Накамото — объявление в рассылке Cryptography, 31 октября 2008",
+      ],
+      url: "https://www.metzdowd.com/pipermail/cryptography/2008-October/014810.html",
+    },
+    {
+      id: "white_paper",
+      label: [
+        "Bitcoin: A Peer-to-Peer Electronic Cash System — original paper",
+        "Bitcoin: A Peer-to-Peer Electronic Cash System — оригинальный документ",
+      ],
+      url: "https://bitcoin.org/bitcoin.pdf",
+    },
+    {
+      id: "first_release_archive",
+      label: [
+        "Bitcoin v0.1 release thread — mailing-list archive, 10 Jan 2009",
+        "Тема о выпуске Bitcoin v0.1 — архив рассылки, 10 января 2009",
+      ],
+      url: "https://www.metzdowd.com/pipermail/cryptography/2009-January/015004.html",
+    },
+    {
+      id: "genesis_source_code",
+      label: [
+        "Bitcoin Core chain parameters — Genesis construction and embedded message",
+        "Параметры цепи Bitcoin Core — конструкция Genesis и встроенное сообщение",
+      ],
+      url: "https://github.com/bitcoin/bitcoin/blob/master/src/kernel/chainparams.cpp",
+    },
+    {
+      id: "last_public_post",
+      label: [
+        "Satoshi Nakamoto — last documented public forum post, 12 Dec 2010",
+        "Сатоши Накамото — последний документированный публичный пост, 12 декабря 2010",
+      ],
+      url: "https://bitcointalk.org/index.php?topic=2228.msg29479#msg29479",
+    },
+    {
+      id: "final_handoff_email",
+      label: [
+        "Mike Hearn email archive — Satoshi's April 2011 handoff message",
+        "Архив писем Майка Хирна — сообщение Сатоши о передаче работы, апрель 2011",
+      ],
+      url: "https://plan99.net/~mike/satoshi-emails/thread5.html",
+    },
+  ],
+  known: [
+    [
+      "Satoshi Nakamoto is the pseudonymous identity attached to the paper, early code, and documented communications.",
+      "Сатоши Накамото — псевдоним, связанный с документом, ранним кодом и документированной перепиской.",
+    ],
+    [
+      "The public record documents the paper announcement, Genesis, the first release, later maintenance, and a handoff.",
+      "Публичные материалы документируют объявление документа, Genesis, первый релиз, дальнейшую поддержку и передачу работы.",
+    ],
+    [
+      "No legal identity has been publicly proven by a reproducible cryptographic and documentary standard.",
+      "Ни одна юридическая личность не доказана публично воспроизводимым криптографическим и документальным стандартом.",
+    ],
+  ],
+  supported_inference: [
+    [
+      "The sequence of releases and messages supports a deliberate transfer from a founding author to an open-source contributor network.",
+      "Последовательность релизов и сообщений поддерживает вывод о сознательной передаче работы от основателя сети участников open source.",
+    ],
+    [
+      "The Times text provides a not-before date and plausibly comments on the banking crisis; a more specific intent is not documented.",
+      "Текст The Times задаёт нижнюю временную границу и, вероятно, комментирует банковский кризис; более точный замысел не документирован.",
+    ],
+  ],
+  disputed: [
+    [
+      "Claims naming a particular person or group as Satoshi remain disputed unless supported by independently reproducible proof.",
+      "Версии, называющие конкретного человека или группу Сатоши, остаются спорными без независимо воспроизводимого доказательства.",
+    ],
+    [
+      "Estimates of coins mined or still controlled by Satoshi depend on attribution methods and are not exact identity proof.",
+      "Оценки монет, добытых или контролируемых Сатоши, зависят от метода атрибуции и не являются точным доказательством личности.",
+    ],
+    [
+      "WikiLeaks, the CIA, personal risk, or a single event as the cause of departure are hypotheses, not established facts.",
+      "WikiLeaks, ЦРУ, личный риск или одно событие как причина ухода — гипотезы, а не установленные факты.",
+    ],
+  ],
+  unknown_boundary: [
+    [
+      "The legal identity, whether Satoshi was one person or a team, exact location, motive for leaving, current status, and definitive key ownership remain unknown.",
+      "Юридическая личность, один это был человек или группа, точное местоположение, мотив ухода, текущий статус и окончательное владение ключами остаются неизвестными.",
+    ],
+  ],
+};
+
+'''
+          replace_once(protocol, 'type ProtocolEvidence = {\n', capsule + 'type ProtocolEvidence = {\n')
+
+          helper = r'''
+function originsHistoryAnswer(
+  locale: BtcPublicLocale,
+  route: BtcCosmographerRoute,
+): BtcCosmographerAnswerProjection {
+  const q = route.normalized_question.toLowerCase();
+  const asksDeparture = /why.*satoshi.*leave|почему.*сатоши.*уш|причин.*уход/.test(q);
+  const asksTimes = /the times|times message|сообщени[ея].*times/.test(q);
+  const subject = route.subject as BtcOriginsHistorySubject;
+  const direct: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: [
+      "Bitcoin moved from a published peer-to-peer electronic-cash design in October 2008 to a running proof-of-work network with Genesis and an early public software release in January 2009.",
+      "Bitcoin прошёл путь от опубликованной в октябре 2008 года схемы одноранговых электронных денег до работающей Proof-of-Work сети с Genesis и ранним публичным выпуском программы в январе 2009 года.",
+    ],
+    genesis_history: asksTimes
+      ? [
+          "The Genesis block contains the exact newspaper text “The Times 03/Jan/2009 Chancellor on brink of second bailout for banks”. It proves the block was constructed no earlier than that date; its broader political meaning is a supported interpretation, not a documented statement of intent.",
+          "Genesis-блок содержит точный газетный текст «The Times 03/Jan/2009 Chancellor on brink of second bailout for banks». Он доказывает, что блок создан не раньше этой даты; более широкий политический смысл — поддерживаемая интерпретация, а не документированное заявление о намерении.",
+        ]
+      : [
+          "Genesis fixed Bitcoin's first protocol anchor at height 0. The following public release turned that anchor into software other participants could run, inspect, and extend.",
+          "Genesis закрепил первую протокольную точку Bitcoin на высоте 0. Последующий публичный релиз превратил эту точку в программу, которую другие участники могли запускать, проверять и развивать.",
+        ],
+    satoshi_history: asksDeparture
+      ? [
+          "The exact reason Satoshi left is not known. The documents show a gradual withdrawal and transfer of responsibility; they do not prove that WikiLeaks, the CIA, personal danger, or any single event caused it.",
+          "Точная причина ухода Сатоши неизвестна. Документы показывают постепенный отход и передачу ответственности, но не доказывают, что причиной стали WikiLeaks, ЦРУ, личная опасность или одно конкретное событие.",
+        ]
+      : [
+          "What is certain is a documented pseudonymous record: the 2008 paper, early code and releases, public technical discussion, and a later handoff. Satoshi's legal identity has not been publicly proven.",
+          "Точно известен документированный след псевдонима: документ 2008 года, ранний код и релизы, публичное техническое обсуждение и последующая передача работы. Юридическая личность Сатоши публично не доказана.",
+        ],
+  };
+  const headline: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: ["From the Bitcoin paper to a running network", "От документа Bitcoin к работающей сети"],
+    genesis_history: asksTimes
+      ? ["The Genesis message: documented text, bounded meaning", "Сообщение Genesis: документированный текст и граница смысла"]
+      : ["Genesis and Bitcoin's first public days", "Genesis и первые публичные дни Bitcoin"],
+    satoshi_history: asksDeparture
+      ? ["Satoshi's departure: documented handoff, unknown motive", "Уход Сатоши: документированная передача, неизвестный мотив"]
+      : ["Satoshi Nakamoto: the documented record", "Сатоши Накамото: документированный след"],
+  };
+  const significance: Record<BtcOriginsHistorySubject, BtcOriginsLocalized> = {
+    bitcoin_origin: [
+      "The decisive change was not only an idea: independently verifiable software and a live chain made the monetary rules operational.",
+      "Решающим было не только появление идеи: независимо проверяемая программа и живая цепь сделали денежные правила действующими.",
+    ],
+    genesis_history: [
+      "Genesis gives every validating implementation a common historical anchor; the embedded text also binds the launch to a public date and contemporary context.",
+      "Genesis даёт всем проверяющим реализациям общий исторический якорь; встроенный текст также связывает запуск с публичной датой и контекстом эпохи.",
+    ],
+    satoshi_history: [
+      "Bitcoin's continuity no longer depends on proving who Satoshi was: protocol validity comes from reproducible rules, code, and network verification rather than founder identity.",
+      "Непрерывность Bitcoin не зависит от доказательства личности Сатоши: допустимость протокола определяется воспроизводимыми правилами, кодом и сетевой проверкой, а не личностью основателя.",
+    ],
+  };
+  const timeline = BTC_ORIGINS_KNOWLEDGE_CAPSULE.timeline.map(
+    (entry) => `${entry.date} — ${pick(locale, entry.text)}`,
+  );
+  const sourceLines = BTC_ORIGINS_KNOWLEDGE_CAPSULE.sources.map(
+    (source) => `${pick(locale, source.label)}|${source.url}`,
+  );
+  return {
+    answer_state: subject === "satoshi_history" ? "LIMITED" : "CONFIRMED",
+    answer_mode: "PROTOCOL_EXPLAIN",
+    headline: pick(locale, headline[subject]),
+    direct_answer: pick(locale, direct[subject]),
+    sections: [
+      {
+        id: "timeline",
+        label: locale === "ru" ? "Краткая хронология" : "Concise chronology",
+        bullets: timeline,
+      },
+      {
+        id: "significance",
+        label: locale === "ru" ? "Значение для Bitcoin" : "Why it matters for Bitcoin",
+        paragraph: pick(locale, significance[subject]),
+      },
+      {
+        id: "known",
+        label: locale === "ru" ? "Что подтверждено" : "What is documented",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.known.map((line) => pick(locale, line)),
+      },
+      {
+        id: "supported_inference",
+        label: locale === "ru" ? "Поддерживаемый вывод" : "Supported inference",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.supported_inference.map((line) => pick(locale, line)),
+      },
+      {
+        id: "disputed",
+        label: locale === "ru" ? "Спорные утверждения" : "Disputed claims",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.disputed.map((line) => pick(locale, line)),
+      },
+      {
+        id: "unknown_boundary",
+        label: locale === "ru" ? "Что остаётся неизвестным" : "What remains unknown",
+        bullets: BTC_ORIGINS_KNOWLEDGE_CAPSULE.unknown_boundary.map((line) => pick(locale, line)),
+      },
+      {
+        id: "sources",
+        label: locale === "ru" ? "Первичные источники" : "Primary sources",
+        bullets: sourceLines,
+      },
+    ],
+    source_boundary: locale === "ru"
+      ? "Исторический ответ разделяет документированный факт, поддерживаемый вывод, спорную версию и неизвестное. Он не подтверждает личность Сатоши, точный объём его монет или мотив ухода."
+      : "The historical answer separates documented fact, supported inference, disputed claims, and unknowns. It does not authenticate Satoshi's identity, exact holdings, or motive for leaving.",
+    proof_label: locale === "ru" ? "Исторические источники доступны" : "Historical sources available",
+  };
+}
+
+'''
+          replace_once(
+              protocol,
+              'export function buildBtcProtocolAnswer(\n',
+              helper + 'export function buildBtcProtocolAnswer(\n',
+          )
+          replace_once(
+              protocol,
+              '): BtcCosmographerAnswerProjection {\n  const item = evidence[route.subject] ?? evidence.overview;\n',
+              '''): BtcCosmographerAnswerProjection {
+  if (
+    route.subject === "satoshi_history" ||
+    route.subject === "bitcoin_origin" ||
+    route.subject === "genesis_history"
+  ) {
+    return originsHistoryAnswer(locale, route);
+  }
+  const item = evidence[route.subject] ?? evidence.overview;
+''',
+          )
+
+          dialogue = "components/btc/BtcCosmographerDialogue.tsx"
+          replace_once(
+              dialogue,
+              'import type { BtcCosmographerAnswerProjection } from "../../lib/btc-protocol-evidence";\n',
+              '''import {
+  BTC_ORIGINS_PREPARED_QUESTIONS,
+  type BtcCosmographerAnswerProjection,
+} from "../../lib/btc-protocol-evidence";
+''',
+          )
+          replace_once(
+              dialogue,
+              '    supply: ["Предложение BTC", "BTC supply"],\n',
+              '''    supply: ["Предложение BTC", "BTC supply"],
+    satoshi_history: ["История Сатоши", "Satoshi history"],
+    bitcoin_origin: ["Происхождение Bitcoin", "Bitcoin origins"],
+    genesis_history: ["История Genesis", "Genesis history"],
+''',
+          )
+          generic_anchor = '''      return <section
+        className={`answerSection answerSection-${section.id}`}
+'''
+          source_case = '''      if (section.id === "sources" && section.bullets?.length) {
+        return <section className="answerSection answerSection-sources" key={sectionKey} data-answer-section="sources" data-semantic-answer-section="sources">
+          <details className="answerDisclosure answerSourceList" data-origin-source-list="true">
+            <summary>{section.label} · {section.bullets.length}</summary>
+            <ul>{section.bullets.map((line, itemIndex) => {
+              const delimiter = line.lastIndexOf("|");
+              const label = delimiter > 0 ? line.slice(0, delimiter) : line;
+              const url = delimiter > 0 ? line.slice(delimiter + 1) : "";
+              return <li key={`${sectionKey}-${itemIndex}`}>
+                {/^https:\\/\\//.test(url)
+                  ? <a href={url} target="_blank" rel="noreferrer">{label}</a>
+                  : label}
+              </li>;
+            })}</ul>
+          </details>
+        </section>;
+      }
+'''
+          replace_once(dialogue, generic_anchor, source_case + generic_anchor)
+          replace_once(
+              dialogue,
+              '''            {turn.primary_authority && <span className="answerAuthority" data-primary-authority-value={turn.primary_authority}>
+              {turn.locale === "ru" ? "Primary authority" : "Primary authority"} · {turn.primary_authority}
+            </span>}
+            {turn.evidence_levels && <span data-evidence-levels={turn.evidence_levels.join(",")}>
+              Evidence · {turn.evidence_levels.join(" → ")}
+            </span>}
+            {turn.bridge_result && <span data-canonical-bridge-result={turn.bridge_result}>
+              Bridge result · {turn.bridge_result}
+            </span>}
+''',
+              '',
+          )
+          form_anchor = '''      <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
+'''
+          prepared = '''      {!hasConversation && <aside className="exampleRoutes staticExampleRoutes" aria-labelledby="bitcoin-origins-prepared-title" data-bitcoin-origins-prepared="true">
+        <p className="eyebrow">{ru ? "История Bitcoin · проверенные источники" : "Bitcoin history · verified sources"}</p>
+        <h2 id="bitcoin-origins-prepared-title">{ru ? "Пять вопросов о происхождении Bitcoin и Сатоши" : "Five questions about Bitcoin's origins and Satoshi"}</h2>
+        <p>{ru
+          ? "Документированные факты, поддерживаемые выводы, спорные версии и неизвестное показаны раздельно."
+          : "Documented facts, supported inference, disputed claims, and unknowns are shown separately."}</p>
+        <div className="exampleRouteList">
+          {BTC_ORIGINS_PREPARED_QUESTIONS[locale].map((item, index) => {
+            const params = [`lang=${locale}`, `q=${encodeURIComponent(item.question)}`];
+            if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
+            return <a
+              key={item.id}
+              href={`/crypto-astro/btc/live?${params.join("&")}`}
+              data-origin-question={item.id}
+              data-origin-subject={item.subject}
+            >
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <b>{item.question}</b>
+              <i aria-hidden="true">→</i>
+            </a>;
+          })}
+        </div>
+      </aside>}
+
+'''
+          replace_once(dialogue, form_anchor, prepared + form_anchor)
+
+          verifier = r'''import fs from "node:fs";
+
+const read = (path) => fs.readFileSync(path, "utf8");
+const route = read("lib/btc-cosmographer-route-graph.ts");
+const protocol = read("lib/btc-protocol-evidence.ts");
+const dialogue = read("components/btc/BtcCosmographerDialogue.tsx");
+const checks = {
+  subjects_present: ["satoshi_history", "bitcoin_origin", "genesis_history"].every((value) => route.includes(`return "${value}"`)),
+  existing_domain_reused: route.includes('if (protocol) return "bitcoin_protocol";'),
+  capsule_layers: ["timeline", "sources", "known", "supported_inference", "disputed", "unknown_boundary"].every((value) => protocol.includes(`${value}:`)),
+  ru_questions_five: (protocol.match(/subject: "(?:satoshi_history|bitcoin_origin|genesis_history)",/g) || []).length === 10,
+  prepared_matrix_exported: protocol.includes("BTC_ORIGINS_PREPARED_QUESTIONS") && protocol.includes("Как появился Bitcoin") && protocol.includes("How did Bitcoin emerge"),
+  primary_sources_six: (protocol.match(/id: "(?:mailing_list_announcement|white_paper|first_release_archive|genesis_source_code|last_public_post|final_handoff_email)"/g) || []).length === 6,
+  answer_structure: ["timeline", "significance", "known", "supported_inference", "disputed", "unknown_boundary", "sources"].every((value) => protocol.includes(`id: "${value}"`)),
+  prepared_surface: dialogue.includes('data-bitcoin-origins-prepared="true"') && dialogue.includes("BTC_ORIGINS_PREPARED_QUESTIONS[locale]"),
+  collapsible_sources: dialogue.includes('data-origin-source-list="true"') && dialogue.includes("<details className=\"answerDisclosure answerSourceList\""),
+  public_subject_labels: ["История Сатоши", "Происхождение Bitcoin", "История Genesis"].every((value) => dialogue.includes(value)),
+  visible_authority_ids_removed: !dialogue.includes('className="answerAuthority"') && !dialogue.includes("Evidence ·") && !dialogue.includes("Bridge result ·"),
+  no_new_database: !protocol.includes("database") && !protocol.includes("prisma") && !protocol.includes("postgres"),
+  no_new_product_mode: !route.includes('"bitcoin_history"') && !route.includes('"satoshi_mode"'),
+};
+const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
+console.log(JSON.stringify({ schema: "btc_origins_history_static_acceptance_v0_1", checks, failed }, null, 2));
+if (failed.length) process.exit(1);
+'''
+          Path("scripts/verify-btc-origins-history.mjs").write_text(verifier, encoding="utf-8")
+
+          workflow = r'''name: BTC Origins and Satoshi History PR
+
+on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - lib/btc-cosmographer-route-graph.ts
+      - lib/btc-protocol-evidence.ts
+      - components/btc/BtcCosmographerDialogue.tsx
+      - scripts/verify-btc-origins-history.mjs
+      - .github/workflows/btc-origins-history-pr.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-origins-history-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-history-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact base and five-file scope
+        run: |
+          git fetch origin master
+          test "$(git merge-base HEAD origin/master)" = "0a0205959ffb3da86568870d597092374c1dd5e3"
+          git diff --name-only 0a0205959ffb3da86568870d597092374c1dd5e3 HEAD | sort > /tmp/actual
+          cat > /tmp/expected <<'SCOPE'
+          .github/workflows/btc-origins-history-pr.yml
+          components/btc/BtcCosmographerDialogue.tsx
+          lib/btc-cosmographer-route-graph.ts
+          lib/btc-protocol-evidence.ts
+          scripts/verify-btc-origins-history.mjs
+          SCOPE
+          sort -o /tmp/expected /tmp/expected
+          diff -u /tmp/expected /tmp/actual
+
+      - name: Verify canonical capsule and public boundary
+        run: node scripts/verify-btc-origins-history.mjs
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify production build
+        run: npm run build
+
+      - name: Start exact-head preview
+        run: |
+          npm start > /tmp/btc-origins-next.log 2>&1 &
+          echo $! > /tmp/btc-origins-next.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=ru' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-origins-next.log
+          exit 1
+
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Verify RU EN desktop mobile and follow-up continuity
+        run: |
+          mkdir -p /tmp/btc-origins-proof
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+          from urllib.parse import quote
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = "http://127.0.0.1:3000"
+          cases = {
+              "ru": {
+                  "question": "Что точно известно о Сатоши Накамото?",
+                  "follow_known": "А что известно точно?",
+                  "follow_leave": "Почему Сатоши ушёл?",
+                  "return_market": "Что происходит с BTC сейчас?",
+                  "unknown_marker": "неизвест",
+              },
+              "en": {
+                  "question": "What is known for certain about Satoshi Nakamoto?",
+                  "follow_known": "What is known for certain?",
+                  "follow_leave": "Why did Satoshi leave?",
+                  "return_market": "What is happening with BTC now?",
+                  "unknown_marker": "not known",
+              },
+          }
+          viewports = {"desktop": (1440, 1000), "mobile": (390, 844)}
+          options = webdriver.ChromeOptions()
+          for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage"):
+              options.add_argument(argument)
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 30)
+          checks = []
+
+          def record(name, condition, details=""):
+              checks.append({"name": name, "passed": bool(condition), "details": details})
+              if not condition:
+                  raise AssertionError(f"{name}: {details}")
+
+          def clean(locale):
+              driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+              driver.execute_script("window.sessionStorage.clear()")
+              driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+
+          def latest(subject):
+              return wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']")[-1])
+
+          def submit(text):
+              form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+              box = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
+              box.clear()
+              box.send_keys(text)
+              driver.execute_script("arguments[0].requestSubmit()", form)
+
+          try:
+              for locale, case in cases.items():
+                  for view, (width, height) in viewports.items():
+                      driver.set_window_size(width, height)
+                      clean(locale)
+                      links = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "[data-bitcoin-origins-prepared='true'] a[data-origin-question]"))
+                      record(f"{locale}_{view}_five_prepared_questions", len(links) == 5, str(len(links)))
+                      record(f"{locale}_{view}_clean_session", len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")) == 0)
+                      driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                      turn = latest("satoshi_history")
+                      record(f"{locale}_{view}_direct_answer", bool(turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.strip()))
+                      for section in ("timeline", "significance", "known", "supported_inference", "disputed", "unknown_boundary", "sources"):
+                          record(f"{locale}_{view}_{section}", bool(turn.find_elements(By.CSS_SELECTOR, f"[data-semantic-answer-section='{section}']")))
+                      source_list = turn.find_element(By.CSS_SELECTOR, "details[data-origin-source-list='true']")
+                      record(f"{locale}_{view}_sources_collapsed", source_list.get_attribute("open") is None)
+                      source_list.click()
+                      source_links = source_list.find_elements(By.CSS_SELECTOR, "a[href^='https://']")
+                      record(f"{locale}_{view}_six_source_links", len(source_links) == 6, str(len(source_links)))
+                      visible = turn.text.lower()
+                      forbidden = ["bitcoin_protocol", "satoshi_history", "genesis_history", "primary authority", "bridge result", "evidence ·", "_schema", " l1 ", " l2 ", " l3 "]
+                      record(f"{locale}_{view}_public_copy_clean", not any(token in visible for token in forbidden), visible[:500])
+                      overflow = driver.execute_script("return document.documentElement.scrollWidth - document.documentElement.clientWidth")
+                      record(f"{locale}_{view}_horizontal_overflow", overflow <= 1, str(overflow))
+                      driver.save_screenshot(f"/tmp/btc-origins-proof/{locale}-{view}.png")
+
+                  driver.set_window_size(1440, 1000)
+                  clean(locale)
+                  driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                  latest("satoshi_history")
+                  submit(case["follow_known"])
+                  follow = latest("satoshi_history")
+                  record(f"{locale}_known_followup_subject", follow.get_attribute("data-context-relation") == "FOLLOW_UP", follow.get_attribute("data-context-relation"))
+                  submit(case["follow_leave"])
+                  departure = latest("satoshi_history")
+                  direct = departure.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.lower()
+                  record(f"{locale}_departure_unknown_boundary", case["unknown_marker"] in direct, direct)
+                  submit(case["return_market"])
+                  market = latest("general_btc_field")
+                  record(f"{locale}_return_to_market", market.get_attribute("data-route-domain") == "btc_market", market.get_attribute("data-route-domain"))
+
+                  severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")]
+                  record(f"{locale}_browser_severe_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
+          finally:
+              output = {
+                  "schema": "btc_origins_history_browser_acceptance_v0_1",
+                  "total": len(checks),
+                  "passed": sum(1 for check in checks if check["passed"]),
+                  "checks": checks,
+              }
+              print(json.dumps(output, ensure_ascii=False, indent=2))
+              Path("/tmp/btc-origins-proof/result.json").write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+              driver.quit()
+          PY
+
+      - name: Upload desktop and mobile proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-origins-history-desktop-mobile-proof
+          path: /tmp/btc-origins-proof
+          if-no-files-found: error
+
+      - name: Stop preview
+        if: always()
+        run: |
+          test ! -f /tmp/btc-origins-next.pid || kill "$(cat /tmp/btc-origins-next.pid)" || true
+          test ! -f /tmp/btc-origins-next.log || tail -n 120 /tmp/btc-origins-next.log
+'''
+          Path(".github/workflows/btc-origins-history-pr.yml").write_text(workflow, encoding="utf-8")
+          PY
+
+      - name: Verify static acceptance before commit
+        run: node scripts/verify-btc-origins-history.mjs
+
+      - name: Commit bounded implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/btc-cosmographer-route-graph.ts lib/btc-protocol-evidence.ts components/btc/BtcCosmographerDialogue.tsx scripts/verify-btc-origins-history.mjs .github/workflows/btc-origins-history-pr.yml
+          git commit -m "BTC: add origins and Satoshi history capsule"
+          git push origin HEAD:agent/btc-origins-satoshi-history-v0-1
