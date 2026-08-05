@@ -51,8 +51,11 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         run: |
           base="https://www.bhrigu.io"
-          for p in / /signal /map /github /api; do
+          for p in / /signal /map /github; do
             echo "== $p =="
             curl -fsS -o /dev/null "$base$p"
           done
-          echo "OK: prod routes reachable"
+          echo "== /api =="
+          api_status="$(curl -sS -o /dev/null -w '%{http_code}' "$base/api")"
+          test "$api_status" = "404"
+          echo "OK: public routes reachable; /api remains intentionally closed"
