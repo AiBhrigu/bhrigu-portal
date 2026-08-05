@@ -139,7 +139,7 @@ jobs:
                           record(f"{locale}_{view}_{section}", bool(turn.find_elements(By.CSS_SELECTOR, f"[data-semantic-answer-section='{section}']")))
                       source_list = turn.find_element(By.CSS_SELECTOR, "details[data-origin-source-list='true']")
                       record(f"{locale}_{view}_sources_collapsed", source_list.get_attribute("open") is None)
-                      source_list.click()
+                      driver.execute_script("arguments[0].open = true", source_list)
                       source_links = source_list.find_elements(By.CSS_SELECTOR, "a[href^='https://']")
                       record(f"{locale}_{view}_six_source_links", len(source_links) == 6, str(len(source_links)))
                       visible = turn.text.lower()
