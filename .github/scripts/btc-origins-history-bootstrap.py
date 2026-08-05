@@ -1,8 +1,11 @@
 from pathlib import Path
 import subprocess
 
-workflow = Path(".github/workflows/btc-origins-history-bootstrap.yml")
-raw = workflow.read_text(encoding="utf-8")
+raw = subprocess.check_output([
+    "git",
+    "show",
+    "83b47fa904754221549aed4f3e82c5a022446489:.github/workflows/btc-origins-history-bootstrap.yml",
+], text=True)
 start_marker = "          python3 <<'PY'\n"
 end_marker = "\n          PY\n\n      - name: Verify static acceptance before commit"
 if start_marker not in raw or end_marker not in raw:
