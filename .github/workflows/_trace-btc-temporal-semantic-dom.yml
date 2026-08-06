@@ -1,0 +1,59 @@
+name: Trace BTC Temporal Semantic DOM
+
+on:
+  push:
+    branches:
+      - agent/btc-natural-followup-evidence-discovery-v0-1
+    paths:
+      - scripts/_trace-btc-temporal-semantic-dom.py
+      - .github/workflows/_trace-btc-temporal-semantic-dom.yml
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-natural-followup-evidence-discovery-v0-1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify hygiene static contract
+        run: node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+      - name: Production build
+        run: npm run build
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/btc-temporal-dom.log 2>&1 &
+          echo $! > /tmp/btc-temporal-dom.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=en' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-temporal-dom.log
+          exit 1
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Prove semantic Temporal disclosure
+        run: python3 scripts/_trace-btc-temporal-semantic-dom.py
+      - name: Stop server
+        if: always()
+        run: |
+          if test -f /tmp/btc-temporal-dom.pid; then kill "$(cat /tmp/btc-temporal-dom.pid)" || true; fi
+          if test -f /tmp/btc-temporal-dom.log; then tail -n 100 /tmp/btc-temporal-dom.log; fi
+      - name: Upload proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-temporal-semantic-dom-proof-${{ github.sha }}
+          path: artifacts/btc-temporal-semantic-dom-proof.json
+          if-no-files-found: error
+          retention-days: 14
