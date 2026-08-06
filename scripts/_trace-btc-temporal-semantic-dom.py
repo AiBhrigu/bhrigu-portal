@@ -25,15 +25,12 @@ def session_state(driver):
     return json.loads(raw) if raw else None
 
 
-def wait_session_turn(driver, wait, expected_user_text=None):
-    def hydrated(d):
-        session = session_state(d)
-        if not session or not session.get("turns"):
-            return False
-        if expected_user_text is None:
-            return session
-        return session if session["turns"][-1].get("user_text") == expected_user_text else False
-    return wait.until(hydrated)
+def wait_turn_count(driver, wait, minimum):
+    return wait.until(lambda d: (
+        session_state(d)
+        if session_state(d) and len(session_state(d).get("turns", [])) >= minimum
+        else False
+    ))
 
 
 def newest_exchange(driver, wait):
@@ -41,19 +38,23 @@ def newest_exchange(driver, wait):
     return driver.find_elements(By.CSS_SELECTOR, "article[data-route-domain]")[-1]
 
 
-def capture(driver, wait, name, expected_date, locale, expected_user_text):
-    stage = "live_shell"
-    wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".liveDialogueShell"))
-    stage = "session_hydration"
-    session = wait_session_turn(driver, wait, expected_user_text)
-    stage = "newest_exchange"
-    exchange = newest_exchange(driver, wait)
-    stage = "source_disclosure"
-    details = exchange.find_element(By.CSS_SELECTOR, 'details[data-answer-source-boundary="true"]')
-    driver.execute_script("arguments[0].open = true", details)
-    stage = "observation_period_field"
+def open_disclosure(driver, wait, details):
+    summary = details.find_element(By.TAG_NAME, "summary")
+    if details.get_attribute("open") is None:
+        driver.execute_script("arguments[0].scrollIntoView({block: 'center'})", summary)
+        summary.click()
+    wait.until(lambda _: details.get_attribute("open") is not None)
     field = details.find_element(By.CSS_SELECTOR, '[data-evidence-field="observation-period"]')
-    stage = "read_semantics"
+    wait.until(lambda _: field.is_displayed())
+    return field
+
+
+def capture(driver, wait, name, expected_date, locale, minimum_turns):
+    wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".liveDialogueShell"))
+    session = wait_turn_count(driver, wait, minimum_turns)
+    exchange = newest_exchange(driver, wait)
+    details = exchange.find_element(By.CSS_SELECTOR, 'details[data-answer-source-boundary="true"]')
+    field = open_disclosure(driver, wait, details)
     latest = session["turns"][-1]
     query = parse_qs(urlparse(driver.current_url).query)
     expected_dom = (
@@ -61,6 +62,9 @@ def capture(driver, wait, name, expected_date, locale, expected_user_text):
         if locale == "ru"
         else datetime.strptime(expected_date, "%Y-%m-%d").strftime("%d %b %Y").upper()
     )
+    visible_text = field.text
+    inner_text = driver.execute_script("return arguments[0].innerText", field) or ""
+    text_content = driver.execute_script("return arguments[0].textContent", field) or ""
     result = {
         "name": name,
         "locale": locale,
@@ -69,7 +73,9 @@ def capture(driver, wait, name, expected_date, locale, expected_user_text):
         "url_date": (query.get("d") or [None])[0],
         "url_return_start": (query.get("rct0") or [None])[0],
         "url_return_end": (query.get("rct1") or [None])[0],
-        "visible_text": field.text,
+        "visible_text": visible_text,
+        "inner_text": inner_text,
+        "text_content": text_content,
         "data_evidence_value": field.get_attribute("data-evidence-value") or "",
         "route_time_start": latest.get("time_start"),
         "route_time_end": latest.get("time_end"),
@@ -79,13 +85,13 @@ def capture(driver, wait, name, expected_date, locale, expected_user_text):
         "route_subject": exchange.get_attribute("data-route-subject") or "",
         "context_relation": exchange.get_attribute("data-context-relation") or "",
         "details_open": details.get_attribute("open") is not None,
-        "completed_stage": stage,
+        "field_displayed": field.is_displayed(),
     }
     result["checks"] = {
         "exact_date_in_route": latest.get("time_start") == expected_date and latest.get("time_end") == expected_date,
         "exact_date_in_session": latest.get("observation_date") == expected_date,
         "exact_date_in_dom_attribute": result["data_evidence_value"] == expected_dom,
-        "exact_date_visible_after_disclosure_open": expected_dom in result["visible_text"],
+        "exact_date_visible_after_disclosure_open": result["field_displayed"] and expected_dom in visible_text,
         "details_open": result["details_open"],
     }
     result["status"] = "PASS" if all(result["checks"].values()) else "FAIL"
@@ -96,10 +102,10 @@ def open_direct(driver, wait, name, locale, question, date):
     driver.get(f"{BASE}?lang={locale}")
     driver.execute_script("window.sessionStorage.clear()")
     driver.get(f"{BASE}?{urlencode({'lang': locale, 'q': question, 'd': date})}")
-    return capture(driver, wait, name, date, locale, question)
+    return capture(driver, wait, name, date, locale, 1)
 
 
-def submit(driver, wait, question):
+def submit(driver, wait, question, expected_turn_count):
     previous = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
     form = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
     textarea = form.find_element(By.CSS_SELECTOR, 'textarea[name="q"]')
@@ -107,7 +113,7 @@ def submit(driver, wait, question):
     textarea.send_keys(question)
     driver.execute_script("arguments[0].requestSubmit()", form)
     wait.until(EC.staleness_of(previous))
-    wait_session_turn(driver, wait, question)
+    wait_turn_count(driver, wait, expected_turn_count)
 
 
 def open_ru_named_date_return(driver, wait):
@@ -117,10 +123,10 @@ def open_ru_named_date_return(driver, wait):
     q2 = "Теперь перейди к протоколу Bitcoin."
     q3 = "Вернись к предыдущей теме."
     driver.get(f"{BASE}?lang=ru&q={quote(q1)}")
-    wait_session_turn(driver, wait, q1)
-    submit(driver, wait, q2)
-    submit(driver, wait, q3)
-    result = capture(driver, wait, "ru_named_date_followup_explicit_return", "2026-08-06", "ru", q3)
+    wait_turn_count(driver, wait, 1)
+    submit(driver, wait, q2, 2)
+    submit(driver, wait, q3, 3)
+    result = capture(driver, wait, "ru_named_date_followup_explicit_return", "2026-08-06", "ru", 3)
     result["checks"]["explicit_return_relation"] = result["context_relation"] == "RETURN_TO_PREVIOUS_TOPIC"
     result["checks"]["url_return_packet_exact"] = (
         result["url_return_start"] == "2026-08-06" and result["url_return_end"] == "2026-08-06"
@@ -132,10 +138,8 @@ def open_ru_named_date_return(driver, wait):
 def run_case(results, driver, wait, name, callback):
     try:
         result = callback()
-        results.append(result)
-        print(json.dumps({"case": name, "status": result["status"], "result": result}, ensure_ascii=False))
     except Exception as exc:
-        failure = {
+        result = {
             "name": name,
             "status": "HARNESS_ERROR",
             "error": f"{type(exc).__name__}: {exc}",
@@ -143,8 +147,8 @@ def run_case(results, driver, wait, name, callback):
             "body_excerpt": driver.find_element(By.TAG_NAME, "body").text[:2000] if driver.find_elements(By.TAG_NAME, "body") else "",
             "session": session_state(driver),
         }
-        results.append(failure)
-        print(json.dumps({"case": name, "status": "HARNESS_ERROR", "result": failure}, ensure_ascii=False))
+    results.append(result)
+    print(json.dumps({"case": name, "status": result["status"], "result": result}, ensure_ascii=False))
 
 
 def main():
@@ -168,7 +172,7 @@ def main():
     finally:
         driver.quit()
     report = {
-        "schema": "btc_temporal_semantic_dom_proof_v0_2",
+        "schema": "btc_temporal_semantic_dom_proof_v0_3",
         "status": "PASS" if len(results) == 4 and all(item["status"] == "PASS" for item in results) else "FAIL",
         "product_code_mutation": "NONE",
         "results": results,
