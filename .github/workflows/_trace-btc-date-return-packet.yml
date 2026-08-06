@@ -1,0 +1,54 @@
+name: Trace BTC date return packet
+
+on:
+  push:
+    branches:
+      - agent/btc-natural-followup-evidence-discovery-v0-1
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-natural-followup-evidence-discovery-v0-1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install and build exact head
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/btc-next.log 2>&1 &
+          echo $! > /tmp/btc-next.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=en' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-next.log
+          exit 1
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Trace packet and session
+        run: python3 scripts/trace-btc-date-return-packet.py
+      - name: Stop server
+        if: always()
+        run: |
+          if test -f /tmp/btc-next.pid; then kill "$(cat /tmp/btc-next.pid)" || true; fi
+          if test -f /tmp/btc-next.log; then tail -n 80 /tmp/btc-next.log; fi
+      - name: Upload trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-date-return-packet-trace-${{ github.sha }}
+          path: artifacts/btc-date-return-packet-trace.json
+          if-no-files-found: warn
+          retention-days: 7
