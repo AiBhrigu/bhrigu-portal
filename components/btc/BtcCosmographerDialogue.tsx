@@ -84,9 +84,25 @@ function publicSubjectLabel(locale: BtcPublicLocale, subject: string): string {
     satoshi_history: ["История Сатоши", "Satoshi history"],
     bitcoin_origin: ["Происхождение Bitcoin", "Bitcoin origins"],
     genesis_history: ["История Genesis", "Genesis history"],
+    general_btc_field: ["Текущее состояние BTC", "Current BTC state"],
+    temporal_pressure: ["Временной контекст", "Temporal context"],
+    unsupported_market_request: ["Граница рыночного запроса", "Market request boundary"],
   };
   const value = labels[subject];
-  if (!value) return subject.replaceAll("_", " ");
+  if (!value) return locale === "ru" ? "Предмет ответа" : "Answer subject";
+  return locale === "ru" ? value[0] : value[1];
+}
+
+function publicStopReasonLabel(locale: BtcPublicLocale, stopReason: string | null): string {
+  const labels: Record<string, [string, string]> = {
+    ANSWER_COMPLETE: ["Ответ завершён", "Answer complete"],
+    MISSING_EVIDENCE: ["Недостаточно опубликованных доказательств", "Published evidence is insufficient"],
+    OUT_OF_SCOPE: ["Запрос вне доступной области", "Request outside the supported scope"],
+    REPEATED_ROUTE: ["Повтор не добавляет новой информации", "The repeated request adds no new information"],
+    MODE_TRANSITION_NOT_EXPLICIT: ["Уточните, к какому предмету перейти", "Clarify which subject to continue with"],
+  };
+  const value = stopReason ? labels[stopReason] : null;
+  if (!value) return locale === "ru" ? "Ответ ограничен" : "Response limited";
   return locale === "ru" ? value[0] : value[1];
 }
 
@@ -545,9 +561,10 @@ function Exchange({
           <strong>{turn.next_precise_question_text}</strong>
         </aside>}
         {turn.route_disposition === "STOP" && <aside className="answerRouteStop" data-route-surface="valid-stop">
-          <span>{turn.locale === "ru" ? "Маршрут остановлен" : "Route stopped"}</span>
-          <strong>{turn.stop_reason ?? (turn.locale === "ru" ? "Ответ завершён" : "Answer complete")}</strong>
-        </aside>}
+  <span>{turn.locale === "ru" ? "Ответ ограничен" : "Response limited"}</span>
+  <span className="answerAuthority">{publicSubjectLabel(turn.locale, subject)}</span>
+  <strong>{publicStopReasonLabel(turn.locale, turn.stop_reason)}</strong>
+</aside>}
         <details open={newest} className={newest ? "answerSource" : "answerSourceHistory"} data-answer-source-boundary="true">
           <summary>{turn.locale === "ru" ? "Источники, период и граница" : "Sources, period, and boundary"}</summary>
           <div>

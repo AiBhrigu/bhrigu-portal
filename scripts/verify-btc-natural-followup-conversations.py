@@ -8,6 +8,16 @@ from selenium.webdriver.support import expected_conditions as EC
 
 BASE = "http://127.0.0.1:3000/crypto-astro/btc/live"
 SESSION_KEY = "bhrigu:btc-cosmographer:session:v0_3"
+FORBIDDEN_VISIBLE_TOKENS = (
+    "OUT_OF_SCOPE", "MISSING_EVIDENCE", "REPEATED_ROUTE",
+    "MODE_TRANSITION_NOT_EXPLICIT", "ANSWER_COMPLETE",
+    "general_btc_field", "general btc field", "temporal_pressure",
+    "unsupported_market_request",
+)
+PUBLIC_SUBJECT_LABELS = {
+    "en": {"current": "Current BTC state", "temporal": "Temporal context", "unsupported": "Market request boundary", "stop_title": "Response limited", "stop_reason": "Request outside the supported scope"},
+    "ru": {"current": "Текущее состояние BTC", "temporal": "Временной контекст", "unsupported": "Граница рыночного запроса", "stop_title": "Ответ ограничен", "stop_reason": "Запрос вне доступной области"},
+}
 
 BASE_CASES = [
     ("market", "What is the current BTC market structure?", "Why?", "Now switch to the Bitcoin protocol.", "btc_market", "market_structure", "bitcoin_protocol", "overview"),
@@ -38,6 +48,81 @@ BASE_CASES = [
 
 def attr(node, name):
     return node.get_attribute(name) or ""
+
+def collect_public_projection(driver):
+    root = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
+    visible = root.text
+    accessibility = driver.execute_script(
+        """
+        const root = arguments[0];
+        const values = [document.title || ""];
+        for (const element of [root, ...root.querySelectorAll("*")]) {
+          for (const name of ["aria-label", "aria-description", "title", "alt"]) {
+            const value = element.getAttribute && element.getAttribute(name);
+            if (value) values.push(value);
+          }
+          const labelledBy = element.getAttribute && element.getAttribute("aria-labelledby");
+          if (labelledBy) for (const id of labelledBy.split(/\s+/)) {
+            const target = document.getElementById(id);
+            if (target && target.textContent) values.push(target.textContent);
+          }
+        }
+        return values.join("\n");
+        """,
+        root,
+    )
+    return visible, accessibility
+
+def assert_projection_clean(record, driver, prefix):
+    visible, accessibility = collect_public_projection(driver)
+    combined = f"{visible}\n{accessibility}"
+    leaked = [token for token in FORBIDDEN_VISIBLE_TOKENS if token in combined]
+    record(f"{prefix}_forbidden_visible_tokens", not leaked, ",".join(leaked))
+    return visible
+
+def run_projection_case(locale, width):
+    options = webdriver.ChromeOptions()
+    for argument in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", f"--window-size={width},1000"):
+        options.add_argument(argument)
+    driver = webdriver.Chrome(options=options)
+    wait = WebDriverWait(driver, 30)
+    checks = []
+    def record(name, passed, details=""):
+        checks.append({"name": name, "passed": bool(passed), "details": details})
+        if not passed: raise AssertionError(f"{name}: {details}")
+    def open_probe(question, date=""):
+        driver.get(f"{BASE}?lang={locale}")
+        driver.execute_script("window.sessionStorage.clear()")
+        suffix = f"&d={date}" if date else ""
+        driver.get(f"{BASE}?lang={locale}&q={quote(question)}{suffix}")
+        wait.until(lambda _: len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-domain]")) > 0)
+        return driver.find_elements(By.CSS_SELECTOR, "article[data-route-domain]")[-1]
+    labels = PUBLIC_SUBJECT_LABELS[locale]
+    current_question = "Что происходит с BTC сейчас?" if locale == "ru" else "What is happening with BTC now?"
+    temporal_question = "Как выбранная дата меняет контекст наблюдения BTC и временное давление?" if locale == "ru" else "How does the selected date change temporal pressure?"
+    unsupported_question = "Дай мне гарантированную цель цены BTC на завтра." if locale == "ru" else "Give me a guaranteed BTC price target for tomorrow."
+    try:
+        current = open_probe(current_question)
+        wait.until(lambda _: len(driver.find_elements(By.CSS_SELECTOR, ".activeContextLine")) == 1)
+        visible = assert_projection_clean(record, driver, "current")
+        record("current_subject_label", labels["current"] in visible, visible)
+        record("current_route_preserved", attr(current, "data-route-subject") == "general_btc_field", attr(current, "data-route-subject"))
+        temporal = open_probe(temporal_question, "2026-08-07")
+        wait.until(lambda _: len(driver.find_elements(By.CSS_SELECTOR, ".activeContextLine")) == 1)
+        visible = assert_projection_clean(record, driver, "temporal")
+        record("temporal_subject_label", labels["temporal"] in visible, visible)
+        record("temporal_route_preserved", attr(temporal, "data-route-subject") == "temporal_pressure", attr(temporal, "data-route-subject"))
+        record("temporal_date_preserved", "2026" in driver.find_element(By.CSS_SELECTOR, ".activeContextLine").text)
+        unsupported = open_probe(unsupported_question)
+        visible = assert_projection_clean(record, driver, "unsupported")
+        record("unsupported_subject_label", labels["unsupported"] in visible, visible)
+        record("public_stop_title", labels["stop_title"] in visible, visible)
+        record("public_stop_reason", labels["stop_reason"] in visible, visible)
+        record("bounded_price_refusal", attr(unsupported, "data-answer-state") == "LIMITED" and attr(unsupported, "data-route-disposition") == "STOP", f"{attr(unsupported, 'data-answer-state')}:{attr(unsupported, 'data-route-disposition')}")
+        record("refusal_copy_preserved", ("гарант" if locale == "ru" else "guaranteed") in visible.lower(), visible)
+    finally:
+        driver.quit()
+    return {"locale": locale, "viewport": "mobile" if width == 390 else "desktop", "checks": checks, "status": "PASS" if all(item["passed"] for item in checks) else "FAIL"}
 
 def run_case(index, case):
     tag, q1, q2, q3, d1, s1, d3, s3 = case
@@ -103,6 +188,10 @@ def run_case(index, case):
             record("exact_date_not_month_only", any(token in return_period for token in ("06.08.2026", "06 AUG 2026", "2026-08-06")), return_period)
         visible = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage").text
         record("no_internal_authority_visible", "ACCEPTED_MARKET_RECORD_AND_VERIFIED" not in visible)
+        _, accessibility = collect_public_projection(driver)
+        combined_projection = f"{visible}\n{accessibility}"
+        leaked = [token for token in FORBIDDEN_VISIBLE_TOKENS if token in combined_projection]
+        record("no_forbidden_public_projection_tokens", not leaked, ",".join(leaked))
         record("evidence_disclosure", bool(driver.find_elements(By.CSS_SELECTOR, "details[data-answer-source-boundary]")))
         record("three_turns", len(turns()) >= 3, str(len(turns())))
         driver.execute_script("window.sessionStorage.clear()")
@@ -120,19 +209,26 @@ def run_case(index, case):
     }
 
 results = []
+projection_results = []
 error = None
 try:
     for index, case in enumerate(BASE_CASES):
         results.append(run_case(index, case))
+    for locale in ("en", "ru"):
+        for width in (1280, 390):
+            projection_results.append(run_projection_case(locale, width))
 except Exception as exc:
     error = str(exc)
 
 report = {
     "schema": "btc_natural_followup_conversation_acceptance_v0_1",
-    "status": "PASS" if error is None and len(results) == 24 and all(row["status"] == "PASS" for row in results) else "FAIL",
+    "status": "PASS" if error is None and len(results) == 24 and all(row["status"] == "PASS" for row in results) and len(projection_results) == 4 and all(row["status"] == "PASS" for row in projection_results) else "FAIL",
     "dialogue_count": len(results),
     "required_dialogue_count": 24,
+    "projection_count": len(projection_results),
+    "required_projection_count": 4,
     "results": results,
+    "projection_results": projection_results,
     "error": error,
 }
 os.makedirs("artifacts", exist_ok=True)

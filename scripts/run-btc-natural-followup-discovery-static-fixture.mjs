@@ -52,7 +52,22 @@ check("sitemap", read("public/sitemap.xml").includes("btc?lang=ru"));
 check("llms", read("public/llms.txt").includes("Arbitrary live dialogue queries"));
 check("tracked_python_cache_guard", trackedPythonCaches.length === 0, `count=${trackedPythonCaches.length}`);
 check("working_tree_python_cache_ignored", ignoredPythonCacheProbes);
+check("CLOSED_PUBLIC_STOP_REASON_LABELS", [
+  "ANSWER_COMPLETE", "MISSING_EVIDENCE", "OUT_OF_SCOPE", "REPEATED_ROUTE", "MODE_TRANSITION_NOT_EXPLICIT",
+  "Ответ завершён", "Answer complete",
+  "Недостаточно опубликованных доказательств", "Published evidence is insufficient",
+  "Запрос вне доступной области", "Request outside the supported scope",
+  "Повтор не добавляет новой информации", "The repeated request adds no new information",
+  "Уточните, к какому предмету перейти", "Clarify which subject to continue with",
+].every((value) => component.includes(value)));
+check("RAW_STOP_REASON_INTERPOLATION_ABSENT", !component.includes("turn.stop_reason ??") && !component.includes("<strong>{turn.stop_reason"));
+check("REQUIRED_PUBLIC_SUBJECT_LABELS_PRESENT", [
+  "general_btc_field", "Текущее состояние BTC", "Current BTC state",
+  "temporal_pressure", "Временной контекст", "Temporal context",
+  "unsupported_market_request", "Граница рыночного запроса", "Market request boundary",
+].every((value) => component.includes(value)));
+check("RAW_SUBJECT_SLUG_FALLBACK_ABSENT", !component.includes('subject.replaceAll("_", " ")'));
 
 const failures = checks.filter((item) => !item.pass);
 if (failures.length) process.exit(1);
-console.log(`BTC_NATURAL_FOLLOWUP_DISCOVERY_STATIC=PASS checks=${checks.length}`);
+console.log(`BTC_NATURAL_FOLLOWUP_DISCOVERY_STATIC=${checks.length}/${checks.length}_PASS`);
