@@ -486,23 +486,25 @@ export function routeBtcCosmographerQuestion(
   const entities = explicitEntities(body, protocol, market, multiBody);
   if (genesisChart) entities.push("bitcoin_genesis_chart");
   const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation" || genesisChart;
+  const referential = isReferential(q);
 
   let relation: BtcCosmographerContextRelation;
   if (contextBridge) relation = "CROSS_MODULE_BRIDGE";
   else if (isReturn(q)) relation = "RETURN_TO_PREVIOUS_TOPIC";
   else if (!packet) relation = explicit ? "NEW_TOPIC" : "GENUINELY_AMBIGUOUS";
+  else if (referential) relation = "FOLLOW_UP";
   else if (explicit && (domain !== packet.prior_domain || subject !== packet.prior_subject)) relation = "NEW_TOPIC";
-  else if (explicit || isReferential(q) || (isVolatilityQuestion(q) && Boolean(forcedSubject))) relation = "FOLLOW_UP";
+  else if (explicit || (isVolatilityQuestion(q) && Boolean(forcedSubject))) relation = "FOLLOW_UP";
   else relation = "GENUINELY_AMBIGUOUS";
 
   const inheritsContext =
   relation === "FOLLOW_UP" || relation === "RETURN_TO_PREVIOUS_TOPIC";
   const resolvedDomain =
-  inheritsContext && !explicit && packet
+  inheritsContext && (!explicit || referential) && packet
     ? packet.prior_domain
     : domain;
   const resolvedSubject =
-  inheritsContext && !explicit && packet
+  inheritsContext && (!explicit || referential) && packet
     ? packet.prior_subject
     : subject;
   const inheritedTime =
@@ -521,7 +523,9 @@ export function routeBtcCosmographerQuestion(
     resolvedDomain === "btc_market" ||
     resolvedDomain === "snapshot_memory" ||
     resolvedDomain === "astro_btc_bridge"
-      ? market ?? packet?.prior_market_question_class ?? "general_btc_field"
+      ? referential && packet
+        ? packet.prior_market_question_class ?? "general_btc_field"
+        : market ?? packet?.prior_market_question_class ?? "general_btc_field"
       : null;
   const confidence =
     resolvedDomain === "unsupported" || relation === "GENUINELY_AMBIGUOUS"
