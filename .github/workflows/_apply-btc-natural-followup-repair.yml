@@ -33,6 +33,19 @@ jobs:
           sort -o /tmp/expected /tmp/expected
           diff -u /tmp/expected /tmp/actual
 
+      - name: Align exact-head inheritance anchor
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/apply-btc-natural-followup-repair.py")
+          text = path.read_text(encoding="utf-8")
+          old = '''    ''' + "'''  const resolvedDomain =\n  relation === \"FOLLOW_UP\" && domain === \"unsupported\" && packet\n    ? packet.prior_domain\n    : domain;\n  const resolvedSubject =\n  relation === \"FOLLOW_UP\" && subject === \"unknown\" && packet\n    ? packet.prior_subject\n    : subject;''',"
+          new = '''    ''' + "'''  const resolvedDomain =\n    relation === \"FOLLOW_UP\" && domain === \"unsupported\" && packet\n      ? packet.prior_domain\n      : domain;\n  const resolvedSubject =\n    relation === \"FOLLOW_UP\" && subject === \"unknown\" && packet\n      ? packet.prior_subject\n      : subject;''',"
+          if text.count(old) != 1:
+              raise SystemExit(f"inheritance patcher anchor count={text.count(old)}")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+
       - name: Apply bounded repair
         run: python3 scripts/apply-btc-natural-followup-repair.py
 
