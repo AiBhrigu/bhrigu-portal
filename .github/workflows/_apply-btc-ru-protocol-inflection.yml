@@ -1,0 +1,48 @@
+name: Apply BTC RU protocol inflection
+
+on:
+  push:
+    branches:
+      - agent/btc-natural-followup-evidence-discovery-v0-1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-natural-followup-evidence-discovery-v0-1
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify exact head and scope
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test -f scripts/apply-btc-ru-protocol-inflection.py
+      - name: Apply exact repair
+        run: python3 scripts/apply-btc-ru-protocol-inflection.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Static and build acceptance
+        run: |
+          npm ci --ignore-scripts
+          node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+          npm run build
+      - name: Commit product repair only
+        run: |
+          git checkout HEAD -- .github/workflows/_apply-btc-ru-protocol-inflection.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
+            echo 'Unexpected workflow mutation' >&2
+            exit 1
+          fi
+          git commit -m "fix: recognize RU protocol inflection"
+          git push origin HEAD:agent/btc-natural-followup-evidence-discovery-v0-1
