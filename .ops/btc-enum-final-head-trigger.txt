@@ -1,0 +1,1 @@
+connector-authored exact-head trigger
