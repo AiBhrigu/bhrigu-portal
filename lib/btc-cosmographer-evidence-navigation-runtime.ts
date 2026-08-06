@@ -127,7 +127,7 @@ const GENERIC_PLANET_POSITION = /(?:текущ[а-яё]*|сейчас)[^?!.]{0,4
 const UNRESOLVED_PRONOUN = /^(?:it|this|that|them|what about it|and this|это|этот|эта|они|а это|и это|там)\b/i;
 const RELATION_OBJECT_PRONOUN = /\b(?:it|this|that|them|это|этот|эта|они|там)\b/i;
 const TEMPORAL_LANGUAGE = /when|period|window|date|day|month|year|когда|период|окно|дата|день|месяц|год/i;
-const OUT_OF_SCOPE_TRADING = /buy|sell|long|short|leverage|position size|stop[- ]?loss|take[- ]?profit|allocate|portfolio|купить|продать|лонг|шорт|плечо|стоп[- ]?лосс|тейк[- ]?профит|дол[юя].*портфел/i;
+const OUT_OF_SCOPE_TRADING = /buy|sell|long|short|leverage|position size|stop[- ]?loss|take[- ]?profit|allocate|portfolio|guaranteed\s+(?:(?:btc|bitcoin)\s+)?(?:price|target)|exact\s+(?:(?:btc|bitcoin)\s+)?price|price\s+target|купить|продать|лонг|шорт|плечо|стоп[- ]?лосс|тейк[- ]?профит|дол[юя].*портфел|гарантированн[а-яё]*\s+(?:цен|цел)|точн[а-яё]*\s+ценов[а-яё]*\s+цел/i;
 const UNSUPPORTED_ASSET = /\beth\b|ethereum|эфириум|\bsol\b|solana|солан/i;
 
 function unique<T>(values: T[]): T[] {

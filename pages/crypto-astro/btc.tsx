@@ -29,6 +29,25 @@ import type { BtcFailureCode, BtcPublicSnapshot, FreshnessState } from "../../li
 import { factLine, formatBtcSnapshotTruth, sectionTitle } from "../../lib/btc-public-surface-format";
 import { BTC_PRODUCT_REBALANCE_CSS } from "../../lib/btc-product-rebalance-style";
 
+const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: string; answer: string }>> = {
+  en: [
+    { question: "What is Market Cosmographer?", answer: "Market Cosmographer is BHRIGU's evidence-linked market intelligence product. BTC Field is its first public corridor." },
+    { question: "Who is BTC Field for?", answer: "BTC Field is designed for Bitcoin investors and researchers who need current state, accepted change memory, sources, and explicit conditions." },
+    { question: "What does the current BTC read use?", answer: "It uses the accepted Market Snapshot, verified derivations, and the latest compatible Snapshot Delta." },
+    { question: "Can BTC Field guarantee a future price?", answer: "No. It does not provide guaranteed prices, trading signals, leverage instructions, or position sizing." },
+    { question: "How are protocol and market answers separated?", answer: "Protocol answers use pinned Bitcoin sources; market answers use accepted market records. One evidence lane does not replace another." },
+    { question: "How is astronomy compared with BTC?", answer: "Astronomical evidence and BTC state are checked independently. Temporal concurrence is not presented as causality." },
+  ],
+  ru: [
+    { question: "Что такое Market Cosmographer?", answer: "Market Cosmographer — продукт BHRIGU для доказательно связанной рыночной аналитики. BTC Field — его первый публичный коридор." },
+    { question: "Для кого создан BTC Field?", answer: "BTC Field создан для инвесторов и исследователей Bitcoin, которым нужны текущее состояние, принятая память изменений, источники и явные условия." },
+    { question: "На чём основано текущее чтение BTC?", answer: "Оно использует принятый Market Snapshot, проверенные производные и последнюю совместимую Snapshot Delta." },
+    { question: "Может ли BTC Field гарантировать будущую цену?", answer: "Нет. Он не выдаёт гарантированные цены, торговые сигналы, инструкции по плечу или размеру позиции." },
+    { question: "Как разделены ответы о протоколе и рынке?", answer: "Ответы о протоколе используют закреплённые источники Bitcoin; рыночные ответы используют принятые рыночные записи. Один доказательный слой не подменяет другой." },
+    { question: "Как астрономия сопоставляется с BTC?", answer: "Астрономические данные и состояние BTC проверяются независимо. Временное совпадение не представляется как причинность." },
+  ],
+};
+
 type Failure = { code: BtcFailureCode; message: string; last_verified_at_utc: string | null };
 type EnvelopeFailure = { code: BtcMarketEnvelopeFailure["code"]; message: string; last_verified_at_utc: string | null };
 type SourceContext = { state: FreshnessState; generated_at_utc: string | null; age_hours: number | null; proof_available: boolean };
@@ -189,12 +208,60 @@ export default function Page(p: Props) {
   );
   const pageTitle = ru ? "BTC Field Read · Market Cosmographer" : "BTC Field Read · Market Cosmographer";
   const metaDescription = ru
-    ? "Проверяемое чтение поля Bitcoin: текущие изменения, рыночная структура, память Snapshot, временные окна и условия."
-    : "A verifiable Bitcoin field read covering current changes, market structure, Snapshot memory, temporal windows, and conditions.";
+    ? "Проверяемое чтение Bitcoin для инвесторов и исследователей: текущее состояние, рыночная структура, память Snapshot, источники и явные условия."
+    : "Evidence-linked Bitcoin intelligence for investors and researchers: current state, market structure, Snapshot memory, sources, and explicit conditions.";
+  const canonical = `https://www.bhrigu.io/crypto-astro/btc?lang=${p.locale}`;
+  const acceptedKnowledge = BTC_ACCEPTED_PUBLIC_KNOWLEDGE[p.locale];
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": canonical,
+        url: canonical,
+        name: pageTitle,
+        description: metaDescription,
+        inLanguage: p.locale,
+        isPartOf: { "@type": "WebSite", name: "BHRIGU", url: "https://www.bhrigu.io/" },
+        about: { "@type": "Thing", name: "Bitcoin market intelligence" },
+        audience: { "@type": "Audience", audienceType: "Bitcoin investors and researchers" },
+      },
+      {
+        "@type": "WebApplication",
+        name: "Market Cosmographer · BTC Field",
+        applicationCategory: "FinanceApplication",
+        operatingSystem: "Web",
+        description: metaDescription,
+        url: canonical,
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: acceptedKnowledge.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      },
+    ],
+  };
   return <>
     <Head>
       <title>{pageTitle}</title>
       <meta name="description" content={metaDescription}/>
+      <meta name="robots" content="index,follow"/>
+      <link rel="canonical" href={canonical}/>
+      <link rel="alternate" hrefLang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
+      <link rel="alternate" hrefLang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>
+      <link rel="alternate" hrefLang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
+      <meta property="og:type" content="website"/>
+      <meta property="og:title" content={pageTitle}/>
+      <meta property="og:description" content={metaDescription}/>
+      <meta property="og:url" content={canonical}/>
+      <meta name="twitter:card" content="summary_large_image"/>
+      <meta name="twitter:title" content={pageTitle}/>
+      <meta name="twitter:description" content={metaDescription}/>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}/>
       <meta name="btc-glyph-canon-sha256" content={MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256}/>
       <meta name="btc-deployment-source-sha" content={p.deploymentSourceSha ?? ""}/>
     </Head>
@@ -217,8 +284,8 @@ export default function Page(p: Props) {
           </p>
           <h1>BTC Field Read</h1>
           <p>{ru
-            ? "Что изменилось в Bitcoin, почему это важно и что может произойти дальше."
-            : "What changed in Bitcoin, why it matters, and what may happen next."}</p>
+        ? "Доказательно связанная аналитика Bitcoin для инвесторов и исследователей: что изменилось, почему это важно и какие условия изменят чтение."
+        : "Evidence-linked Bitcoin intelligence for investors and researchers: what changed, why it matters, and which conditions would change the read."}</p>
         </div>
         <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
       </section>
@@ -242,6 +309,22 @@ export default function Page(p: Props) {
         initialDate={p.initialDate}
         result={p.result}
       />
+
+      <section className="readingZone acceptedKnowledge" aria-labelledby="btc-accepted-knowledge-title" data-accepted-public-knowledge="true">
+        <header className="zoneHeading">
+          <div>
+            <p className="eyebrow">{ru ? "Принятые публичные знания" : "Accepted public knowledge"}</p>
+            <h2 id="btc-accepted-knowledge-title">{ru ? "Что поиску и AI следует знать о BTC Field" : "What search and AI should know about BTC Field"}</h2>
+          </div>
+          <p>{ru ? "Канонические ответы индексируются на входной странице; произвольные live-запросы не индексируются." : "Canonical answers are indexable on the entry page; arbitrary live queries are not indexable."}</p>
+        </header>
+        <div className="evidenceStack">
+          {acceptedKnowledge.map((item) => <details key={item.question}>
+            <summary>{item.question}</summary>
+            <p>{item.answer}</p>
+          </details>)}
+        </div>
+      </section>
 
       {p.binanceObservation&&<BtcBinanceFreeObservationPanel locale={p.locale} observation={p.binanceObservation}/>} 
       {p.failure && <section className="failure" role="alert">

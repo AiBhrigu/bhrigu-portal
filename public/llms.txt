@@ -1,0 +1,23 @@
+# BHRIGU
+
+BHRIGU is the public product home.
+
+## Primary product
+- Market Cosmographer: evidence-linked market intelligence.
+- BTC Field: the first public corridor, designed for Bitcoin investors and researchers.
+
+## Canonical public pages
+- https://www.bhrigu.io/
+- https://www.bhrigu.io/crypto-astro/btc?lang=en
+- https://www.bhrigu.io/crypto-astro/btc?lang=ru
+
+## Index policy
+The BTC entry page and its accepted public knowledge are indexable.
+Arbitrary live dialogue queries at /crypto-astro/btc/live are noindex and are not canonical knowledge pages.
+
+## Evidence boundary
+Market answers use the accepted Market Snapshot and Delta.
+Bitcoin protocol answers use pinned protocol sources.
+Astronomical answers use the published ephemeris evidence index.
+Astronomy × BTC comparisons do not claim causality.
+The system does not provide guaranteed prices or trading instructions.

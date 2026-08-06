@@ -69,6 +69,14 @@ const ROUTE_META = {
   "/archive": {
     "title": "Archive · BHRIGU",
     "desc": "Archive: preserved snapshots, milestone references, and stable surface artifacts."
+  },
+  "/crypto-astro/btc": {
+    "title": "BTC Field · Evidence-Linked Bitcoin Intelligence | BHRIGU",
+    "desc": "Market Cosmographer's first public corridor for Bitcoin investors and researchers: current BTC state, accepted change memory, sources, and explicit conditions."
+  },
+  "/crypto-astro/btc/live": {
+    "title": "BTC Field Dialogue · Market Cosmographer | BHRIGU",
+    "desc": "A bounded analytical dialogue about Bitcoin protocol, BTC market state, Snapshot memory, astronomical data, and evidence boundaries."
   }
 };
 
@@ -98,19 +106,27 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
-  const canonical = 'https://www.bhrigu.io' + (path === '/' ? '/' : path);
+  const rawLang = Array.isArray(router?.query?.lang) ? router.query.lang[0] : router?.query?.lang;
+  const lang = rawLang === "ru" ? "ru" : "en";
+  const isBtc = path === "/crypto-astro/btc" || path === "/crypto-astro/btc/live";
+  const canonicalPath = path === "/crypto-astro/btc/live" ? "/crypto-astro/btc" : path;
+  const canonical = 'https://www.bhrigu.io' + (canonicalPath === '/' ? '/' : canonicalPath) + (isBtc ? `?lang=${lang}` : "");
 
   return (
     <>
       <Head>
         <link rel="canonical" href={canonical} key="canonical" />
+      {isBtc && <link rel="alternate" hrefLang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>}
+      {isBtc && <link rel="alternate" hrefLang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>}
+      {isBtc && <link rel="alternate" hrefLang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>}
+      {path === "/crypto-astro/btc/live" && <meta name="robots" content="noindex,follow"/>}
 
-        <title>{meta.title}</title>
+      <title>{meta.title}</title>
         <meta name="description" content={meta.desc} />
 <meta property="og:type" content="website" />
         <meta key="og:title" property="og:title" content={meta.title} />
         <meta key="og:description" property="og:description" content={meta.desc} />
-        <meta key="og:url" property="og:url" content={meta.canonical} />
+        <meta key="og:url" property="og:url" content={canonical} />
 
         <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
         <meta key="twitter:title" name="twitter:title" content={meta.title} />

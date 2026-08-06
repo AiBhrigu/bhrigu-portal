@@ -1,0 +1,1 @@
+User-agent: *\nAllow: /\n\nSitemap: https://www.bhrigu.io/sitemap.xml\n

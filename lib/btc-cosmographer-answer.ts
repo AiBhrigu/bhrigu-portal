@@ -142,6 +142,30 @@ function methodologyAnswer(locale: BtcPublicLocale): BtcCosmographerAnswerProjec
   };
 }
 
+function unsupportedMarketRequestAnswer(locale: BtcPublicLocale): BtcCosmographerAnswerProjection {
+  return {
+    answer_state: "LIMITED",
+    answer_mode: "NAVIGATION",
+    headline: locale === "ru"
+      ? "Гарантированная ценовая цель недоступна"
+      : "A guaranteed price target is not available",
+    direct_answer: locale === "ru"
+      ? "Космограф не выдаёт гарантированную цену BTC, торговый сигнал или инструкцию на завтра. Он может показать принятое состояние рынка, доказательства и условия, которые изменят чтение."
+      : "Cosmographer does not provide a guaranteed BTC price, trading signal, or instruction for tomorrow. It can show the accepted market state, evidence, and conditions that would change the read.",
+    sections: [{
+      id: "supported_alternative",
+      label: locale === "ru" ? "Доступная альтернатива" : "Supported alternative",
+      bullets: locale === "ru"
+        ? ["Текущее состояние BTC", "Изменения с прошлого Snapshot", "Условия усиления или ослабления чтения"]
+        : ["Current BTC state", "Changes since the previous Snapshot", "Conditions that strengthen or weaken the read"],
+    }],
+    source_boundary: locale === "ru"
+      ? "Гарантия будущей цены не может быть доказана принятым evidence packet."
+      : "A future-price guarantee cannot be supported by the accepted evidence packet.",
+    proof_label: locale === "ru" ? "Граница поддержки подтверждена" : "Support boundary confirmed",
+  };
+}
+
 function navigationAnswer(
   locale: BtcPublicLocale,
   unknownQuestion?: string,
@@ -360,6 +384,7 @@ export function buildBtcCosmographerAnswer(
       return navigationAnswer(locale);
     case "unsupported":
       if (route.subject === "bitcoin_genesis_chart") return genesisChartClarification(locale);
+      if (route.subject === "unsupported_market_request") return unsupportedMarketRequestAnswer(locale);
       return navigationAnswer(locale, route.raw_question);
     default:
       return navigationAnswer(locale, route.raw_question);
