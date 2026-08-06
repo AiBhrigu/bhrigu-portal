@@ -613,6 +613,7 @@ export function BtcCosmographerDialogue(props: Props) {
               props.runtimeDecision,
               priorNextFingerprints,
               priorClarificationFingerprints,
+              props.route.context_relation === "RETURN_TO_PREVIOUS_TOPIC",
             ),
           )
         : currentTurn;
@@ -677,6 +678,14 @@ export function BtcCosmographerDialogue(props: Props) {
       }
     : null;
   const contextTurn = contextSafe ? latestContextTurn(turns) : null;
+  const contextTurnIndex = contextTurn
+    ? turns.findIndex((turn) => turn.turn_id === contextTurn.turn_id)
+    : -1;
+  const returnContextTurn = contextTurnIndex > 0
+    ? turns[contextTurnIndex - 1] ?? null
+    : turns.length > 1
+      ? turns[turns.length - 2] ?? null
+      : null;
   const retainedAstroTurn = [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
     (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
@@ -687,6 +696,17 @@ export function BtcCosmographerDialogue(props: Props) {
     ras: "planetary_aspects",
     rat0: retainedAstroTurn.time_start ?? "",
     rat1: retainedAstroTurn.time_end ?? "",
+  } : null;
+  const returnContextFields = returnContextTurn ? {
+    rcc: BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
+    rcd: returnContextTurn.route_domain ?? "unsupported",
+    rcs: returnContextTurn.route_subject ?? returnContextTurn.question_class ?? "unknown",
+    rci: (returnContextTurn.route_intents ?? returnContextTurn.question_facets).join(","),
+    rca: returnContextTurn.answer_state === "BOUNDED" ? "LIMITED" : returnContextTurn.answer_state,
+    rcm: returnContextTurn.market_question_class ?? returnContextTurn.question_class ?? "",
+    rct0: returnContextTurn.time_start ?? returnContextTurn.observation_date ?? "",
+    rct1: returnContextTurn.time_end ?? returnContextTurn.observation_date ?? "",
+    rcb: returnContextTurn.source_snapshot_generated_at_utc ?? "",
   } : null;
   const contextFields = contextTurn ? {
     cc: BTC_COSMOGRAPHER_CONTEXT_SCHEMA,
@@ -817,11 +837,12 @@ export function BtcCosmographerDialogue(props: Props) {
         </div>
       </aside>}
 
-      <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
+      {hydrated && <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live" data-session-hydrated="true">
         <input type="hidden" name="lang" value={locale}/>
         {pendingClarificationFields && Object.entries(pendingClarificationFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
-        {Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
+    {returnContextFields && Object.entries(returnContextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
+    {Object.entries(contextFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         <label>
           <span>{clarificationPrompt ?? (hasConversation
             ? (ru ? "Продолжить или задать новый предмет" : "Continue or introduce a new subject")
@@ -844,7 +865,7 @@ export function BtcCosmographerDialogue(props: Props) {
           </label>
           <button type="submit">{hasConversation ? (ru ? "Продолжить чтение" : "Continue the read") : (ru ? "Получить чтение" : "Get the read")}</button>
         </div>
-      </form>
+      </form>}
       <p className="liveBoundary">{ru
         ? "Без регистрации · Без оплаты · Память только этой вкладки · Не финансовый совет и не торговый сигнал · Прогнозные окна только при валидированном методе и условиях"
         : "No account · No payment · Memory only in this tab · Not financial advice or a trading signal · Forecast windows only with a validated method and conditions"}</p>

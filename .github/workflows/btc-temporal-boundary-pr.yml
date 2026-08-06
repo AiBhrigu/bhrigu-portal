@@ -73,13 +73,36 @@ jobs:
             params={'lang':'en','q':question}
             if date is not None: params['d']=date
             driver.get(base+'?'+urlencode(params))
-            WebDriverWait(driver,40).until(lambda d:d.find_element(By.CSS_SELECTOR,'.liveDialogueShell'))
+            wait=WebDriverWait(driver,40)
+            wait.until(lambda d:d.find_element(By.CSS_SELECTOR,'.liveDialogueShell'))
             time.sleep(.12)
             body=driver.find_element(By.TAG_NAME,'body').text
             answer=driver.find_elements(By.CSS_SELECTOR,'.cosmographerTurn')
             failure=driver.find_elements(By.CSS_SELECTOR,'.dialogueFailure')
-            source=driver.find_elements(By.CSS_SELECTOR,'.answerSource')
-            result={'question':question,'date':date,'body':body,'answer_visible':len(answer)==1,'failure_visible':len(failure)==1,'source':source[0].text if source else ''}
+            exchanges=driver.find_elements(By.CSS_SELECTOR,'article[data-route-domain]')
+            newest=exchanges[-1] if exchanges else None
+            observation_value=''
+            observation_text=''
+            if newest is not None:
+              disclosures=newest.find_elements(By.CSS_SELECTOR,'details[data-answer-source-boundary="true"]')
+              if disclosures:
+                disclosure=disclosures[0]
+                driver.execute_script("if (!arguments[0].open) arguments[0].querySelector('summary').click(); if (!arguments[0].open) arguments[0].open = true;", disclosure)
+                wait.until(lambda _: disclosure.get_attribute('open') is not None)
+                fields=disclosure.find_elements(By.CSS_SELECTOR,'[data-evidence-field="observation-period"]')
+                if fields:
+                  field=fields[0]
+                  observation_value=field.get_attribute('data-evidence-value') or ''
+                  observation_text=driver.execute_script('return arguments[0].innerText',field) or ''
+            result={
+              'question':question,
+              'date':date,
+              'body':body,
+              'answer_visible':len(answer)==1,
+              'failure_visible':len(failure)==1,
+              'observation_value':observation_value,
+              'observation_text':observation_text,
+            }
             report['scenarios'][name]={k:v for k,v in result.items() if k!='body'}
             return result
 
@@ -94,9 +117,9 @@ jobs:
 
             report['checks']['current_answer_visible']=current['answer_visible'] and not current['failure_visible']
             report['checks']['future_date_accepted']=future['answer_visible'] and not future['failure_visible']
-            report['checks']['future_date_is_observation']=datetime.fromisoformat(tomorrow).strftime('%d %b %Y').upper() in future['source']
+            report['checks']['future_date_is_observation']=future['observation_value']==datetime.fromisoformat(tomorrow).strftime('%d %b %Y').upper()
             report['checks']['fixed_2030_accepted']=fixed['answer_visible'] and not fixed['failure_visible']
-            report['checks']['fixed_2030_is_observation']='01 JAN 2030' in fixed['source']
+            report['checks']['fixed_2030_is_observation']=fixed['observation_value']=='01 JAN 2030'
             report['checks']['invalid_calendar_date_rejected']=invalid['failure_visible']
             report['checks']['invalid_calendar_date_message']='real UTC date in YYYY-MM-DD format' in invalid['body']
             report['checks']['memory_answer_visible']=memory['answer_visible'] and not memory['failure_visible']

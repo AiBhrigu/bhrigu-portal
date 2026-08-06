@@ -172,6 +172,43 @@ function needsMarket(route: BtcCosmographerRoute): boolean {
   return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
 }
 
+const MARKET_EVIDENCE_QUESTIONS: Record<BtcEnvelopeQuestionClass, string> = {
+  btc_gravity: "What does BTC dominance mean for wider market gravity?",
+  market_structure: "Do regime, Market Field Score and market cap confirm the current BTC structure?",
+  liquidity: "What do stablecoin share, DeFi TVL and DEX volume show about current BTC liquidity?",
+  market_participation_rotation: "What do altcoin breadth, ETH rotation and participation show around BTC?",
+  change_memory: "What changed in accepted Snapshot Memory since the previous verified snapshot?",
+  temporal_pressure: "How does the selected date change BTC temporal pressure?",
+  general_btc_field: "What is the current BTC field overview and why does it matter?",
+};
+
+function marketEvidenceQuestion(route: BtcCosmographerRoute): string {
+  return route.market_question_class
+    ? MARKET_EVIDENCE_QUESTIONS[route.market_question_class]
+    : canonicalizeBtcQuestionForRouter(route.normalized_question);
+}
+
+function isReturnRequest(question: string): boolean {
+  return /back to|return to|go back|previous topic|prior topic|верн[её]мся|вернись|вернуться|снова к|предыдущ(?:ей|ему|ая|ий) тем/i.test(question);
+}
+
+function parseReturnContext(
+  query: Record<string, string | string[] | undefined>,
+): BtcCosmographerContextPacket | null {
+  const parsed = parseBtcCosmographerContext({
+    cc: query.rcc,
+    cd: query.rcd,
+    cs: query.rcs,
+    ci: query.rci,
+    ca: query.rca,
+    cm: query.rcm,
+    ct0: query.rct0,
+    ct1: query.rct1,
+    cb: query.rcb,
+  });
+  return parsed.malformed ? null : parsed.packet;
+}
+
 type PendingClarificationPacket = {
   origin_fingerprint: string;
   target: "SUBJECT" | "PERIOD" | "RELATION_OBJECT" | "ASSET";
@@ -268,6 +305,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
   res.setHeader("Vercel-CDN-Cache-Control", "no-store");
   res.setHeader("X-BTC-Deployment-Source-Sha", servedDeploymentSha ?? "UNAVAILABLE");
   res.setHeader("X-BTC-Dialogue-Session-Schema", BTC_DIALOGUE_SESSION_SCHEMA);
+  res.setHeader("X-Robots-Tag", "noindex, follow");
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
   const resolvedLocale = resolveBtcPublicLocale(first(query.lang), initialQuestion);
@@ -317,8 +355,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
 
   const parsed = parseBtcCosmographerContext(query);
   const packet = parsed.malformed
-    ? null
-    : parsed.packet ?? parseLegacyContext(query);
+  ? null
+  : parsed.packet ?? parseLegacyContext(query);
+  const returnPacket = parseReturnContext(query);
   const pendingClarification = parsePendingClarification(query);
   const routingQuestion = resolvePendingClarificationQuestion(
     resolvedLocale.locale,
@@ -326,25 +365,61 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     pendingClarification,
   );
   const retainedAstroMemory = parseRetainedAstroMemory(query);
+  const activePacket = isReturnRequest(routingQuestion)
+    ? returnPacket ?? packet
+    : packet;
   const initialRoute = routeBtcCosmographerLocalRc(
     resolvedLocale.locale,
     routingQuestion,
-    packet,
+    activePacket,
     initialDate || undefined,
     retainedAstroMemory,
   );
-  const relationResolution = applyBtcRelationIntentPrecedence(
-    initialRoute,
-    routingQuestion,
-    packet,
-    retainedAstroMemory,
-  );
+  const explicitReturn = Boolean(returnPacket && isReturnRequest(routingQuestion));
+  const returnRoute = explicitReturn && returnPacket
+    ? {
+        ...initialRoute,
+        domain: returnPacket.prior_domain,
+        subject: returnPacket.prior_subject,
+        intents: returnPacket.prior_intents,
+        context_relation: "RETURN_TO_PREVIOUS_TOPIC" as const,
+        time_range: returnPacket.prior_time_start && returnPacket.prior_time_end
+          ? {
+              start: returnPacket.prior_time_start,
+              end: returnPacket.prior_time_end,
+              label: returnPacket.prior_time_start === returnPacket.prior_time_end
+                ? returnPacket.prior_time_start
+                : `${returnPacket.prior_time_start} — ${returnPacket.prior_time_end}`,
+              source: "CONTEXT" as const,
+            }
+          : null,
+        market_question_class: returnPacket.prior_market_question_class,
+        capability_id: `${returnPacket.prior_domain}.${returnPacket.prior_subject}`,
+        confidence: "HIGH" as const,
+        explicit_entities: Array.from(new Set([
+          ...initialRoute.explicit_entities,
+          returnPacket.prior_subject,
+        ])),
+      }
+    : null;
+  const relationResolution = returnRoute
+    ? {
+        route: returnRoute,
+        relation_resolution: "SINGLE_DOMAIN" as const,
+        btc_side_state_type: null,
+      }
+    : applyBtcRelationIntentPrecedence(
+        initialRoute,
+        routingQuestion,
+        activePacket,
+        retainedAstroMemory,
+      );
   const route = relationResolution.route;
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
   if (needsMarket(route) && source.ok !== false) {
-    const marketQuestion = canonicalizeBtcQuestionForRouter(route.normalized_question);
+    const marketQuestion = marketEvidenceQuestion(route);
     const composed = await composeBtcPublicSnapshot(source, {
       question: marketQuestion,
       date: initialDate || undefined,
@@ -421,6 +496,16 @@ export default function BtcLivePage(props: Props) {
     <Head>
       <title>{title}</title>
       <meta name="description" content={description}/>
+      <meta name="robots" content="noindex,follow"/>
+      <link rel="canonical" href={`https://www.bhrigu.io/crypto-astro/btc?lang=${props.locale}`}/>
+      <link rel="alternate" hrefLang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
+      <link rel="alternate" hrefLang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>
+      <link rel="alternate" hrefLang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
+      <meta property="og:title" content={title}/>
+      <meta property="og:description" content={description}/>
+      <meta property="og:url" content={`https://www.bhrigu.io/crypto-astro/btc?lang=${props.locale}`}/>
+      <meta name="twitter:title" content={title}/>
+      <meta name="twitter:description" content={description}/>
       <meta name="btc-live-dialogue" content="semantic-route-graph-v0-1"/>
       <meta name="btc-deployment-source-sha" content={props.deploymentSourceSha ?? ""}/>
       <meta name="btc-runtime-schema" content={BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA}/>
