@@ -132,6 +132,25 @@ jobs:
                   selector,
               )
 
+          def cta_contract(element):
+              return driver.execute_script(
+                  r"""
+                  const cta = arguments[0];
+                  const clone = cta.cloneNode(true);
+                  clone.querySelectorAll('[aria-hidden="true"]').forEach((node) => node.remove());
+                  const decorative = Array.from(cta.querySelectorAll('[aria-hidden="true"]'));
+                  return {
+                    semantic_copy: clone.textContent.replace(/\s+/g, ' ').trim(),
+                    decorative_glyph_count: decorative.length,
+                    decorative_glyphs: decorative.map((node) => node.textContent.trim()),
+                    decorative_all_aria_hidden: decorative.every(
+                      (node) => node.getAttribute('aria-hidden') === 'true'
+                    ),
+                  };
+                  """,
+                  element,
+              )
+
           def run_view(name, width, height):
               driver.set_window_size(width, height)
               driver.get(f"{base}/?lang=en")
@@ -145,6 +164,7 @@ jobs:
               secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
               primary_url = urlparse(primary.get_attribute("href"))
               primary_query = parse_qs(primary_url.query)
+              primary_contract = cta_contract(primary)
               primary_rect = rect("[data-primary-cta='btc-current-change-question']")
               primary_center_clear = driver.execute_script(
                   """
@@ -237,7 +257,31 @@ jobs:
               )
               check(f"{name}_market_cosmographer_primary", "MARKET COSMOGRAPHER" in body)
               check(f"{name}_primary_cta_target", primary_url.path == "/crypto-astro/btc/live" and primary_query.get("lang") == ["en"] and primary_query.get("q") == ["What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?"])
-              check(f"{name}_primary_cta_copy", primary.text.strip() == "Ask what changed in Bitcoin", primary.text)
+              check(
+                  f"{name}_primary_cta_copy",
+                  primary_contract["semantic_copy"] == "Ask what changed in Bitcoin",
+                  primary_contract,
+              )
+              check(
+                  f"{name}_primary_cta_accessible_name",
+                  primary.accessible_name == "Ask what changed in Bitcoin",
+                  primary.accessible_name,
+              )
+              check(
+                  f"{name}_primary_cta_decorative_glyph_count",
+                  primary_contract["decorative_glyph_count"] == 1,
+                  primary_contract,
+              )
+              check(
+                  f"{name}_primary_cta_decorative_glyph",
+                  primary_contract["decorative_glyphs"] == ["↗"],
+                  primary_contract,
+              )
+              check(
+                  f"{name}_primary_cta_decorative_glyph_aria_hidden",
+                  primary_contract["decorative_all_aria_hidden"],
+                  primary_contract,
+              )
               check(f"{name}_primary_audience", "self-directed Bitcoin investors with multi-week to multi-month decision horizons" in body)
               check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
               check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
@@ -283,6 +327,7 @@ jobs:
               ru_primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-current-change-question']")
               ru_primary_url = urlparse(ru_primary.get_attribute("href"))
               ru_primary_query = parse_qs(ru_primary_url.query)
+              ru_primary_contract = cta_contract(ru_primary)
               check(
                   "ru_primary_cta_target",
                   ru_primary_url.path == "/crypto-astro/btc/live"
@@ -291,8 +336,28 @@ jobs:
               )
               check(
                   "ru_primary_cta_copy",
-                  ru_primary.text.strip() == "Спросить, что изменилось в Bitcoin",
-                  ru_primary.text,
+                  ru_primary_contract["semantic_copy"] == "Спросить, что изменилось в Bitcoin",
+                  ru_primary_contract,
+              )
+              check(
+                  "ru_primary_cta_accessible_name",
+                  ru_primary.accessible_name == "Спросить, что изменилось в Bitcoin",
+                  ru_primary.accessible_name,
+              )
+              check(
+                  "ru_primary_cta_decorative_glyph_count",
+                  ru_primary_contract["decorative_glyph_count"] == 1,
+                  ru_primary_contract,
+              )
+              check(
+                  "ru_primary_cta_decorative_glyph",
+                  ru_primary_contract["decorative_glyphs"] == ["↗"],
+                  ru_primary_contract,
+              )
+              check(
+                  "ru_primary_cta_decorative_glyph_aria_hidden",
+                  ru_primary_contract["decorative_all_aria_hidden"],
+                  ru_primary_contract,
               )
               check(
                   "ru_product_identity",
