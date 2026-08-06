@@ -1,0 +1,74 @@
+name: BTC Natural Follow-up and Discovery PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - components/btc/BtcCosmographerDialogue.tsx
+      - lib/btc-cosmographer-answer.ts
+      - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-cosmographer-route-graph.ts
+      - pages/_app.js
+      - pages/_document.js
+      - pages/crypto-astro/btc.tsx
+      - pages/crypto-astro/btc/live.tsx
+      - public/robots.txt
+      - public/sitemap.xml
+      - public/llms.txt
+      - scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+      - scripts/verify-btc-natural-followup-conversations.py
+      - .github/workflows/btc-natural-followup-discovery-pr.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-natural-followup-discovery-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Static contract
+        run: node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+      - name: Production build
+        run: npm run build
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/btc-next.log 2>&1 &
+          echo $! > /tmp/btc-next.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/crypto-astro/btc/live?lang=en' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/btc-next.log
+          exit 1
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Verify 24 three-turn dialogues
+        run: python3 scripts/verify-btc-natural-followup-conversations.py
+      - name: Stop server
+        if: always()
+        run: |
+          if test -f /tmp/btc-next.pid; then kill "$(cat /tmp/btc-next.pid)" || true; fi
+          if test -f /tmp/btc-next.log; then tail -n 100 /tmp/btc-next.log; fi
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-natural-followup-${{ github.event.pull_request.head.sha }}
+          path: artifacts/btc-natural-followup-conversation-report.json
+          if-no-files-found: warn
+          retention-days: 14
