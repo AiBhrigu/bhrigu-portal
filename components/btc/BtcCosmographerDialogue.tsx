@@ -681,8 +681,10 @@ export function BtcCosmographerDialogue(props: Props) {
     ? turns.findIndex((turn) => turn.turn_id === contextTurn.turn_id)
     : -1;
   const returnContextTurn = contextTurnIndex > 0
-    ? latestContextTurn(turns.slice(0, contextTurnIndex))
-    : null;
+    ? turns[contextTurnIndex - 1] ?? null
+    : turns.length > 1
+      ? turns[turns.length - 2] ?? null
+      : null;
   const retainedAstroTurn = [...turns].reverse().find((turn) =>
     turn.route_subject === "planetary_aspects" &&
     (turn.route_domain === "astromodule" || turn.route_domain === "astro_btc_bridge") &&
