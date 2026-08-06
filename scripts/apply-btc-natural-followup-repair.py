@@ -13,9 +13,11 @@ def replace_once(path, old, new):
     target = Path(path)
     text = target.read_text(encoding="utf-8")
     count = text.count(old)
+    label = old.splitlines()[0][:120]
     if count != 1:
-        raise SystemExit(f"{path}: expected one anchor, found {count}")
+        raise SystemExit(f"{path}: expected one anchor, found {count} · {label!r}")
     target.write_text(text.replace(old, new, 1), encoding="utf-8")
+    print(f"APPLY_OK {path} · {label}")
 
 route = "lib/btc-cosmographer-route-graph.ts"
 
