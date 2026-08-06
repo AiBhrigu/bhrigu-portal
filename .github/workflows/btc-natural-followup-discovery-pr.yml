@@ -1,4 +1,4 @@
-# Final exact-head acceptance for PR #129 after hydrated session binding; no production mutation.
+# Final exact-head acceptance for PR #129 after explicit-return anti-loop repair; no production mutation.
 name: BTC Natural Follow-up and Discovery PR
 
 on:
