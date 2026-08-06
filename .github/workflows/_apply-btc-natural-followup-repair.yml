@@ -28,6 +28,7 @@ jobs:
           git diff --name-only 5a45750fc98bd1a902ede300f2e45d6ec3fa7f0e HEAD | sort > /tmp/actual
           cat > /tmp/expected <<'EOF'
           .github/workflows/_apply-btc-natural-followup-repair.yml
+          .github/workflows/btc-natural-followup-discovery-pr.yml
           scripts/apply-btc-natural-followup-repair.py
           scripts/normalize-btc-repair-patcher.py
           EOF
@@ -49,11 +50,19 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Commit bounded repair
+      - name: Commit bounded repair without workflow mutation
         run: |
+          git checkout HEAD -- \
+            .github/workflows/_apply-btc-natural-followup-repair.yml \
+            .github/workflows/btc-natural-followup-discovery-pr.yml
           git status --short
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          if git diff --cached --name-only | grep -q '^.github/workflows/'; then
+            echo 'Workflow mutation must be connector-authored.' >&2
+            git diff --cached --name-only >&2
+            exit 1
+          fi
           git commit -m "fix: bind BTC follow-ups and public discovery"
           git push origin HEAD:agent/btc-natural-followup-evidence-discovery-v0-1
