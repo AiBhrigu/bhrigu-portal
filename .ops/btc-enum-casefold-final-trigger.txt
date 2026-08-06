@@ -1,0 +1,1 @@
+connector-authored final acceptance trigger after verifier casefold
