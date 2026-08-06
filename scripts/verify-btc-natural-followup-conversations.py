@@ -83,8 +83,10 @@ def run_case(index, case):
         record("html_lang", driver.find_element(By.TAG_NAME, "html").get_attribute("lang") == locale)
         second = submit(q2)
         record("turn2_not_clarify", attr(second, "data-route-disposition") != "CLARIFY", attr(second, "data-route-disposition"))
-        if tag not in ("unsupported",):
+        if tag not in ("unsupported", "return", "date_return"):
             record("turn2_continuity", attr(second, "data-context-relation") in ("FOLLOW_UP", "CROSS_MODULE_BRIDGE"), attr(second, "data-context-relation"))
+        elif tag in ("return", "date_return"):
+            record("turn2_topic_switch", attr(second, "data-context-relation") == "NEW_TOPIC", attr(second, "data-context-relation"))
         second_period = ""
         if tag in ("astronomy", "bridge"):
             second_period = driver.find_element(By.CSS_SELECTOR, ".activeContextLine").get_attribute("data-active-period") or ""
