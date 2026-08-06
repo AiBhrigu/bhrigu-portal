@@ -22,6 +22,10 @@ concurrency:
   group: btc-clarification-resolution-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+env:
+  BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+  BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
 jobs:
   exact-head-acceptance:
     runs-on: ubuntu-24.04
@@ -33,24 +37,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and nine-file scope
+      - name: Verify current exact acceptance scope
         run: |
-          git fetch origin master
-          test "$(git merge-base HEAD origin/master)" = "ee686e200a6de11bcbbbefc56e80287f6d8ef3f8"
-          git diff --name-only ee686e200a6de11bcbbbefc56e80287f6d8ef3f8 HEAD | sort > /tmp/actual
-          cat > /tmp/expected <<'EOF'
-          .github/scripts/verify-btc-public-acceptance-scope.py
-          .github/workflows/btc-clarification-resolution-pr.yml
-          .github/workflows/btc-public-live-visual-information-acceptance-pr.yml
-          components/btc/BtcCosmographerDialogue.tsx
-          lib/btc-cosmographer-evidence-navigation-runtime.ts
-          lib/btc-cosmographer-route-graph.ts
-          pages/crypto-astro/btc/live.tsx
-          scripts/run-btc-evidence-navigation-runtime-fixture.mjs
-          scripts/verify-btc-cosmographer-route-surface.py
-          EOF
-          sort -o /tmp/expected /tmp/expected
-          diff -u /tmp/expected /tmp/actual
+          git fetch origin "${GITHUB_BASE_REF}"
+          python3 .github/scripts/verify-btc-public-acceptance-scope.py
 
       - name: Install locked dependencies
         run: npm ci --ignore-scripts
