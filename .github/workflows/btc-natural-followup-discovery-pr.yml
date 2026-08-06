@@ -1,3 +1,4 @@
+# Exact-head acceptance for PR #129; no production mutation.
 name: BTC Natural Follow-up and Discovery PR
 
 on:
