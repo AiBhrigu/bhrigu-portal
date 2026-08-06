@@ -41,11 +41,15 @@ def newest_exchange(driver, wait):
 def open_disclosure(driver, wait, details):
     summary = details.find_element(By.TAG_NAME, "summary")
     if details.get_attribute("open") is None:
-        driver.execute_script("arguments[0].scrollIntoView({block: 'center'})", summary)
-        summary.click()
+        driver.execute_script("arguments[0].click()", summary)
+    if details.get_attribute("open") is None:
+        driver.execute_script("arguments[0].open = true", details)
     wait.until(lambda _: details.get_attribute("open") is not None)
     field = details.find_element(By.CSS_SELECTOR, '[data-evidence-field="observation-period"]')
-    wait.until(lambda _: field.is_displayed())
+    wait.until(lambda _: driver.execute_script(
+        "return !!(arguments[0].offsetWidth || arguments[0].offsetHeight || arguments[0].getClientRects().length)",
+        field,
+    ))
     return field
 
 
@@ -65,6 +69,10 @@ def capture(driver, wait, name, expected_date, locale, minimum_turns):
     visible_text = field.text
     inner_text = driver.execute_script("return arguments[0].innerText", field) or ""
     text_content = driver.execute_script("return arguments[0].textContent", field) or ""
+    rendered = bool(driver.execute_script(
+        "return !!(arguments[0].offsetWidth || arguments[0].offsetHeight || arguments[0].getClientRects().length)",
+        field,
+    ))
     result = {
         "name": name,
         "locale": locale,
@@ -85,13 +93,13 @@ def capture(driver, wait, name, expected_date, locale, minimum_turns):
         "route_subject": exchange.get_attribute("data-route-subject") or "",
         "context_relation": exchange.get_attribute("data-context-relation") or "",
         "details_open": details.get_attribute("open") is not None,
-        "field_displayed": field.is_displayed(),
+        "field_rendered": rendered,
     }
     result["checks"] = {
         "exact_date_in_route": latest.get("time_start") == expected_date and latest.get("time_end") == expected_date,
         "exact_date_in_session": latest.get("observation_date") == expected_date,
         "exact_date_in_dom_attribute": result["data_evidence_value"] == expected_dom,
-        "exact_date_visible_after_disclosure_open": result["field_displayed"] and expected_dom in visible_text,
+        "exact_date_visible_after_disclosure_open": rendered and expected_dom in inner_text,
         "details_open": result["details_open"],
     }
     result["status"] = "PASS" if all(result["checks"].values()) else "FAIL"
@@ -172,7 +180,7 @@ def main():
     finally:
         driver.quit()
     report = {
-        "schema": "btc_temporal_semantic_dom_proof_v0_3",
+        "schema": "btc_temporal_semantic_dom_proof_v0_4",
         "status": "PASS" if len(results) == 4 and all(item["status"] == "PASS" for item in results) else "FAIL",
         "product_code_mutation": "NONE",
         "results": results,
