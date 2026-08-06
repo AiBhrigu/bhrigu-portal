@@ -613,6 +613,7 @@ export function BtcCosmographerDialogue(props: Props) {
               props.runtimeDecision,
               priorNextFingerprints,
               priorClarificationFingerprints,
+              props.route.context_relation === "RETURN_TO_PREVIOUS_TOPIC",
             ),
           )
         : currentTurn;

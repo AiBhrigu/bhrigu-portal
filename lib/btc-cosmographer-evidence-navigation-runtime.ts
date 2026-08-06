@@ -474,6 +474,7 @@ export function applyBtcRuntimeAntiLoop(
   decision: BtcEvidenceNavigationRuntimeDecision,
   priorNextFingerprints: string[],
   priorClarificationFingerprints: string[],
+  allowRepeatedRoute = false,
 ): BtcEvidenceNavigationRuntimeDecision {
   const repeatedNext = Boolean(
     decision.next_question_fingerprint &&
@@ -484,6 +485,24 @@ export function applyBtcRuntimeAntiLoop(
     priorClarificationFingerprints.includes(decision.clarification_fingerprint),
   );
   if (!repeatedNext && !repeatedClarification) return decision;
+
+  if (allowRepeatedRoute && repeatedNext && !repeatedClarification) {
+    return {
+      ...decision,
+      show_next_question: false,
+      next_question_type: null,
+      next_question_text: null,
+      next_question_fingerprint: null,
+      anti_loop_blocked: false,
+      valid_route_stop: true,
+      stop_reason: null,
+      context_safe_composer: decision.context_safe_composer,
+      render_gate: {
+        ...decision.render_gate,
+        semantic_repeat: true,
+      },
+    };
+  }
 
   return {
     ...decision,
