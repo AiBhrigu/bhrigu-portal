@@ -836,7 +836,7 @@ export function BtcCosmographerDialogue(props: Props) {
         </div>
       </aside>}
 
-      <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live">
+      {hydrated && <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live" data-session-hydrated="true">
         <input type="hidden" name="lang" value={locale}/>
         {pendingClarificationFields && Object.entries(pendingClarificationFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
         {retainedAstroFields && Object.entries(retainedAstroFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value}/>) }
@@ -864,7 +864,7 @@ export function BtcCosmographerDialogue(props: Props) {
           </label>
           <button type="submit">{hasConversation ? (ru ? "Продолжить чтение" : "Continue the read") : (ru ? "Получить чтение" : "Get the read")}</button>
         </div>
-      </form>
+      </form>}
       <p className="liveBoundary">{ru
         ? "Без регистрации · Без оплаты · Память только этой вкладки · Не финансовый совет и не торговый сигнал · Прогнозные окна только при валидированном методе и условиях"
         : "No account · No payment · Memory only in this tab · Not financial advice or a trading signal · Forecast windows only with a validated method and conditions"}</p>
