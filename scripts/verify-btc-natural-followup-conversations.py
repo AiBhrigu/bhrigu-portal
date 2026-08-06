@@ -53,7 +53,7 @@ def collect_public_projection(driver):
     root = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
     visible = root.text
     accessibility = driver.execute_script(
-        """
+        r"""
         const root = arguments[0];
         const values = [document.title || ""];
         for (const element of [root, ...root.querySelectorAll("*")]) {
