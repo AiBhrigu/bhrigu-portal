@@ -1,0 +1,41 @@
+name: Repair BTC Enum Verifier JavaScript String
+
+on:
+  push:
+    branches:
+      - agent/btc-public-enum-disclosure-repair-v0-1
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/btc-public-enum-disclosure-repair-v0-1
+          fetch-depth: 0
+      - name: Repair verifier and remove transport
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/verify-btc-natural-followup-conversations.py")
+          text = path.read_text(encoding="utf-8")
+          old = '    accessibility = driver.execute_script(\n        """\n'
+          new = '    accessibility = driver.execute_script(\n        r"""\n'
+          if text.count(old) != 1:
+              raise SystemExit(f"expected one JavaScript block, found {text.count(old)}")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          Path(".github/workflows/_repair-btc-enum-verifier-js-string.yml").unlink()
+          PY
+          python3 -m py_compile scripts/verify-btc-natural-followup-conversations.py
+          git diff --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "test: preserve JavaScript escapes in BTC projection verifier"
+          git push origin HEAD:agent/btc-public-enum-disclosure-repair-v0-1
