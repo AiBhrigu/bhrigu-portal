@@ -4,3 +4,5 @@ node_modules/
 .vercel/
 OPS_STATUS_CRYSTAL_*
 ATOM_*.sh
+__pycache__/
+*.py[cod]
