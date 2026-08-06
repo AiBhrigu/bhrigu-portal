@@ -475,14 +475,14 @@ export function routeBtcCosmographerQuestion(
   const subject =
     forcedSubject ??
     (contextBridge ? packet?.prior_subject ?? null : null) ??
+    (domain === "methodology" ? "source_and_method" : null) ??
+    (domain === "navigation" ? "capabilities" : null) ??
     body ??
     protocol ??
     market ??
-    (domain === "methodology" ? "source_and_method" :
-      domain === "navigation" ? "capabilities" :
-        domain === "bitcoin_protocol" ? "overview" :
-          domain === "btc_market" ? "general_btc_field" :
-            domain === "unsupported" ? "unknown" : "general");
+    (domain === "bitcoin_protocol" ? "overview" :
+      domain === "btc_market" ? "general_btc_field" :
+        domain === "unsupported" ? "unknown" : "general");
   const entities = explicitEntities(body, protocol, market, multiBody);
   if (genesisChart) entities.push("bitcoin_genesis_chart");
   const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation" || genesisChart;
