@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" role="img" aria-labelledby="title desc">
+  <title id="title">Market Cosmographer BTC Field geometry</title>
+  <desc id="desc">A semantic Bitcoin field showing evidence, change, conditions, human access through Frey, and a quiet future AI-agent access path.</desc>
+  <defs>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#e0c47f" stop-opacity="0.34"/>
+      <stop offset="0.28" stop-color="#c8a45a" stop-opacity="0.11"/>
+      <stop offset="1" stop-color="#c8a45a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="evidenceFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#62a8d8" stop-opacity="0"/>
+      <stop offset="0.46" stop-color="#62a8d8" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#8cc8ed" stop-opacity="0.3"/>
+    </linearGradient>
+    <linearGradient id="conditionFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d2b66c" stop-opacity="0.28"/>
+      <stop offset="0.55" stop-color="#c8a45a" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#c8a45a" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="futureFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#62a8d8" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#62a8d8" stop-opacity="0.08"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="tinyGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M34 0H0V34" fill="none" stroke="#62a8d8" stroke-opacity="0.055" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="960" height="680" fill="url(#grid)" opacity="0.72"/>
+
+  <!-- phi / corridor frame -->
+  <g fill="none" stroke="#62a8d8" stroke-opacity="0.14">
+    <circle cx="510" cy="327" r="260"/>
+    <circle cx="510" cy="327" r="210"/>
+    <circle cx="510" cy="327" r="162"/>
+    <circle cx="510" cy="327" r="112"/>
+    <path d="M510 48V614"/>
+    <path d="M224 327H824"/>
+    <ellipse cx="510" cy="327" rx="286" ry="112" transform="rotate(-12 510 327)"/>
+    <ellipse cx="510" cy="327" rx="286" ry="112" transform="rotate(12 510 327)"/>
+  </g>
+
+  <g fill="none" stroke="#c8a45a" stroke-opacity="0.15">
+    <circle cx="510" cy="327" r="131"/>
+    <path d="M510 96V558" stroke-dasharray="3 10"/>
+    <path d="M510 73l9 17-9 17-9-17z"/>
+  </g>
+
+  <!-- evidence stream -->
+  <path d="M54 329C138 294 168 366 246 326C312 292 351 342 429 326C458 320 475 321 493 326" fill="none" stroke="url(#evidenceFlow)" stroke-width="3" filter="url(#softGlow)"/>
+  <path d="M58 305C152 351 201 270 289 319C343 349 394 305 492 326" fill="none" stroke="#62a8d8" stroke-opacity="0.32" stroke-width="1.1"/>
+  <path d="M62 350C139 310 194 390 284 337C352 298 409 349 493 327" fill="none" stroke="#62a8d8" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- condition stream / forward corridor -->
+  <path d="M526 326C600 303 632 363 690 326C733 299 780 305 899 325" fill="none" stroke="url(#conditionFlow)" stroke-width="2.5" filter="url(#softGlow)"/>
+  <path d="M529 304C596 349 650 272 713 318C758 351 812 304 902 320" fill="none" stroke="#c8a45a" stroke-opacity="0.26" stroke-width="1"/>
+  <path d="M530 349C608 306 652 389 721 337C772 298 821 352 902 334" fill="none" stroke="#c8a45a" stroke-opacity="0.2" stroke-width="1"/>
+
+  <!-- core -->
+  <circle cx="510" cy="327" r="118" fill="url(#coreGlow)"/>
+  <circle cx="510" cy="327" r="72" fill="#080b10" stroke="#62a8d8" stroke-opacity="0.28"/>
+  <circle cx="510" cy="327" r="53" fill="#0a0d11" stroke="#c8a45a" stroke-opacity="0.42"/>
+  <circle cx="510" cy="327" r="7" fill="#e0c47f" filter="url(#tinyGlow)"/>
+  <text x="510" y="348" text-anchor="middle" fill="#e0c47f" font-family="Georgia,Times New Roman,serif" font-size="66" font-weight="400">₿</text>
+
+  <!-- semantic nodes -->
+  <g font-family="Inter,Arial,sans-serif" letter-spacing="1.8">
+    <g transform="translate(213 178)">
+      <circle r="22" fill="#08101a" stroke="#62a8d8" stroke-opacity="0.52"/>
+      <path d="M-10 2h5l4-10 6 19 4-9h9" fill="none" stroke="#62a8d8" stroke-width="1.6"/>
+      <text x="34" y="-4" fill="#80bce3" font-size="12">EVIDENCE</text>
+      <text x="34" y="14" fill="#a9b8c4" fill-opacity="0.64" font-size="9" letter-spacing="1">accepted sources</text>
+    </g>
+    <g transform="translate(705 176)">
+      <circle r="22" fill="#08101a" stroke="#62a8d8" stroke-opacity="0.42"/>
+      <path d="M-11 7c8-1 8-14 16-14h7M7-11l5 4-5 4" fill="none" stroke="#62a8d8" stroke-width="1.5"/>
+      <text x="34" y="-4" fill="#80bce3" font-size="12">CHANGE</text>
+      <text x="34" y="14" fill="#a9b8c4" fill-opacity="0.64" font-size="9" letter-spacing="1">accepted delta</text>
+    </g>
+    <g transform="translate(718 473)">
+      <circle r="22" fill="#100e08" stroke="#c8a45a" stroke-opacity="0.48"/>
+      <path d="M0-10l9 5v10l-9 5-9-5V-5zM0-5v10" fill="none" stroke="#d4b86c" stroke-width="1.4"/>
+      <text x="34" y="-4" fill="#cbb06a" font-size="12">CONDITIONS</text>
+      <text x="34" y="14" fill="#b8b1a1" fill-opacity="0.62" font-size="9" letter-spacing="1">strengthen · weaken · invalidate</text>
+    </g>
+  </g>
+
+  <!-- human access / Frey -->
+  <g transform="translate(140 494)" opacity="0.82">
+    <path d="M0 0C82-24 126-48 188-95" fill="none" stroke="#62a8d8" stroke-opacity="0.28" stroke-width="1.2" stroke-dasharray="4 7"/>
+    <circle cx="0" cy="0" r="18" fill="#080d14" stroke="#62a8d8" stroke-opacity="0.38"/>
+    <path d="M-8-5h16v10H0l-5 5V5h-3z" fill="none" stroke="#62a8d8" stroke-width="1.3"/>
+    <text x="28" y="-3" fill="#8fb8d2" font-family="Inter,Arial,sans-serif" font-size="10" letter-spacing="2">HUMAN · FREY</text>
+    <text x="28" y="14" fill="#9ba6ae" fill-opacity="0.46" font-family="Inter,Arial,sans-serif" font-size="8" letter-spacing="1.4">dialogue access</text>
+  </g>
+
+  <!-- future machine / agent path: deliberately quiet -->
+  <g transform="translate(815 526)" opacity="0.42">
+    <path d="M0 0C-64-17-115-72-171-125" fill="none" stroke="url(#futureFlow)" stroke-width="1.2" stroke-dasharray="3 8"/>
+    <circle cx="0" cy="0" r="18" fill="#080d14" stroke="#62a8d8" stroke-opacity="0.34"/>
+    <circle cx="-6" cy="-2" r="2" fill="#62a8d8"/>
+    <circle cx="6" cy="-7" r="2" fill="#62a8d8"/>
+    <circle cx="8" cy="7" r="2" fill="#62a8d8"/>
+    <path d="M-4-2L4-6M-4 0L6 6M7-5V5" stroke="#62a8d8" stroke-width="1"/>
+    <text x="-28" y="34" text-anchor="middle" fill="#7da9c4" font-family="Inter,Arial,sans-serif" font-size="8.5" letter-spacing="1.6">FUTURE · AI AGENT ACCESS</text>
+    <text x="-28" y="48" text-anchor="middle" fill="#8294a0" fill-opacity="0.55" font-family="Inter,Arial,sans-serif" font-size="7.5" letter-spacing="1.2">structured intelligence</text>
+  </g>
+
+  <!-- phi / cosmographic glyphs -->
+  <g font-family="Georgia,Times New Roman,serif" fill="#d2b66c" fill-opacity="0.76">
+    <text x="510" y="82" text-anchor="middle" font-size="31">Φ</text>
+    <text x="510" y="604" text-anchor="middle" font-size="20">Φ</text>
+  </g>
+  <g transform="translate(510 575)" fill="none" stroke="#c8a45a" stroke-opacity="0.42">
+    <path d="M0-24L8-8l18 8-18 8-8 18-8-18-18-8 18-8z"/>
+    <circle r="11"/>
+  </g>
+
+  <!-- small field points -->
+  <g fill="#62a8d8" fill-opacity="0.72">
+    <circle cx="292" cy="270" r="2"/><circle cx="338" cy="355" r="2"/><circle cx="405" cy="293" r="1.8"/><circle cx="388" cy="410" r="1.6"/>
+    <circle cx="605" cy="255" r="1.7"/><circle cx="642" cy="365" r="1.9"/><circle cx="755" cy="302" r="1.5"/>
+  </g>
+  <g fill="#c8a45a" fill-opacity="0.58">
+    <circle cx="575" cy="297" r="1.8"/><circle cx="673" cy="318" r="2"/><circle cx="783" cy="352" r="1.6"/><circle cx="841" cy="287" r="1.5"/>
+  </g>
+
+  <!-- labels / origin -->
+  <g font-family="Inter,Arial,sans-serif" letter-spacing="2">
+    <text x="510" y="121" text-anchor="middle" fill="#d3b86e" font-size="10">BTC FIELD</text>
+    <text x="510" y="640" text-anchor="middle" fill="#8aa6b7" fill-opacity="0.66" font-size="8.5">EVIDENCE  →  CHANGE  →  CONDITIONS</text>
+    <text x="510" y="662" text-anchor="middle" fill="#c8a45a" fill-opacity="0.64" font-size="8">www.bhrigu.io</text>
+  </g>
+</svg>
