@@ -91,6 +91,15 @@ BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     "scripts/verify-btc-origins-history.mjs",
 }
 
+BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-field-read-pr-visual.yml",
+    "components/btc/BtcHeroQuestionLaunch.tsx",
+    "components/btc/BtcQuestionMembrane.tsx",
+    "pages/crypto-astro/btc.tsx",
+    "scripts/verify-btc-positioning-value-entry.mjs",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -131,6 +140,7 @@ accepted_scopes = {
     "PASS_BTC_EVIDENCE_NAVIGATION_RUNTIME_EXACT_9_FILE_SCOPE": BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE,
     "PASS_BTC_CLARIFICATION_RESOLUTION_EXACT_9_FILE_SCOPE": BTC_CLARIFICATION_RESOLUTION_SCOPE,
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
+    "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
