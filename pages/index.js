@@ -229,7 +229,6 @@ function buildJsonLd() {
         url: home,
         description:
           "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.",
-        provider: { "@id": `${home}#organization` },
       },
       {
         "@type": "BreadcrumbList",
@@ -274,7 +273,7 @@ export default function Home({ locale }) {
         <meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
         <meta
           name="twitter:description"
-          content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field by BHRIGU."
+          content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."
         />
         <meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1" />
       </Head>
