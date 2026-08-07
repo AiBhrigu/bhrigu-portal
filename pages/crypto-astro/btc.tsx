@@ -32,17 +32,17 @@ import { BTC_PRODUCT_REBALANCE_CSS } from "../../lib/btc-product-rebalance-style
 const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: string; answer: string }>> = {
   en: [
     { question: "What is Market Cosmographer?", answer: "Market Cosmographer is BHRIGU's evidence-linked market intelligence product. BTC Field is its first public corridor." },
-    { question: "Who is BTC Field for?", answer: "BTC Field is designed first for self-directed Bitcoin investors with multi-week to multi-month decision horizons who need current state, accepted change memory, sources, and explicit conditions." },
+    { question: "Who is BTC Field for?", answer: "BTC Field is designed for self-directed Bitcoin investors who need evidence-linked current state, accepted change memory, verified sources, and explicit conditions without price targets or trading signals." },
     { question: "What does the current BTC read use?", answer: "It uses the accepted Market Snapshot, verified derivations, and the latest compatible Snapshot Delta." },
-    { question: "Can BTC Field guarantee a future price?", answer: "No. It does not provide guaranteed prices, trading signals, leverage instructions, or position sizing." },
+    { question: "Does BTC Field provide price forecasts or trading signals?", answer: "Not in the current public corridor. It provides evidence-linked current state, accepted changes, sources, and explicit conditions; it does not provide price targets, trading signals, leverage instructions, or position sizing." },
     { question: "How are protocol and market answers separated?", answer: "Protocol answers use pinned Bitcoin sources; market answers use accepted market records. One evidence lane does not replace another." },
     { question: "How is astronomy compared with BTC?", answer: "Astronomical evidence and BTC state are checked independently. Temporal concurrence is not presented as causality." },
   ],
   ru: [
     { question: "Что такое Market Cosmographer?", answer: "Market Cosmographer — продукт BHRIGU для доказательно связанной рыночной аналитики. BTC Field — его первый публичный коридор." },
-    { question: "Для кого создан BTC Field?", answer: "BTC Field создан прежде всего для самостоятельных Bitcoin-инвесторов с горизонтом решений от нескольких недель до нескольких месяцев, которым нужны текущее состояние, принятая память изменений, источники и явные условия." },
+    { question: "Для кого создан BTC Field?", answer: "BTC Field создан для самостоятельных Bitcoin-инвесторов, которым нужны доказательно связанное текущее состояние, принятая память изменений, проверенные источники и явные условия без ценовых целей и торговых сигналов." },
     { question: "На чём основано текущее чтение BTC?", answer: "Оно использует принятый Market Snapshot, проверенные производные и последнюю совместимую Snapshot Delta." },
-    { question: "Может ли BTC Field гарантировать будущую цену?", answer: "Нет. Он не выдаёт гарантированные цены, торговые сигналы, инструкции по плечу или размеру позиции." },
+    { question: "Даёт ли BTC Field прогноз цены или торговые сигналы?", answer: "Не в текущем публичном коридоре. Он даёт доказательно связанное текущее состояние, принятые изменения, источники и явные условия; он не выдаёт ценовые цели, торговые сигналы, инструкции по плечу или размеру позиции." },
     { question: "Как разделены ответы о протоколе и рынке?", answer: "Ответы о протоколе используют закреплённые источники Bitcoin; рыночные ответы используют принятые рыночные записи. Один доказательный слой не подменяет другой." },
     { question: "Как астрономия сопоставляется с BTC?", answer: "Астрономические данные и состояние BTC проверяются независимо. Временное совпадение не представляется как причинность." },
   ],
@@ -208,8 +208,8 @@ export default function Page(p: Props) {
   );
   const pageTitle = ru ? "BTC Field Read · Market Cosmographer" : "BTC Field Read · Market Cosmographer";
   const metaDescription = ru
-    ? "Доказательно связанная аналитика Bitcoin для самостоятельных инвесторов с горизонтом от нескольких недель до нескольких месяцев: изменение, значение, Snapshot Memory, источники и явные условия."
-    : "Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons: change, meaning, Snapshot Memory, sources, and explicit conditions.";
+    ? "Доказательно связанная аналитика Bitcoin: что изменилось, почему это важно, Snapshot Memory, проверенные источники и явные условия, которые изменят текущее чтение."
+    : "Evidence-linked Bitcoin intelligence: what changed, why it matters, Snapshot Memory, verified sources, and explicit conditions that would change the current read.";
   const canonical = `https://www.bhrigu.io/crypto-astro/btc?lang=${p.locale}`;
   const acceptedKnowledge = BTC_ACCEPTED_PUBLIC_KNOWLEDGE[p.locale];
   const structuredData = {
@@ -224,7 +224,7 @@ export default function Page(p: Props) {
         inLanguage: p.locale,
         isPartOf: { "@type": "WebSite", name: "BHRIGU", url: "https://www.bhrigu.io/" },
         about: { "@type": "Thing", name: "Bitcoin market intelligence" },
-        audience: { "@type": "Audience", audienceType: "Self-directed Bitcoin investors with multi-week to multi-month decision horizons" },
+        audience: { "@type": "Audience", audienceType: "Self-directed Bitcoin investors seeking evidence-linked current-state analysis" },
       },
       {
         "@type": "WebApplication",
@@ -284,8 +284,8 @@ export default function Page(p: Props) {
           </p>
           <h1>BTC Field Read</h1>
           <p>{ru
-        ? "Доказательно связанная аналитика Bitcoin для самостоятельных инвесторов с горизонтом от нескольких недель до нескольких месяцев: что изменилось, почему это важно и какие условия изменят чтение."
-        : "Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons: what changed, why it matters, and which conditions would change the read."}</p>
+        ? "Доказательно связанная аналитика Bitcoin: что изменилось, почему это важно и какие условия изменят текущее чтение."
+        : "Evidence-linked Bitcoin intelligence: what changed, why it matters, and which conditions would change the current read."}</p>
         </div>
         <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
       </section>
@@ -312,10 +312,10 @@ export default function Page(p: Props) {
       <section className="readingZone acceptedKnowledge" aria-labelledby="btc-accepted-knowledge-title" data-accepted-public-knowledge="true">
         <header className="zoneHeading">
           <div>
-            <p className="eyebrow">{ru ? "Принятые публичные знания" : "Accepted public knowledge"}</p>
-            <h2 id="btc-accepted-knowledge-title">{ru ? "Что поиску и AI следует знать о BTC Field" : "What search and AI should know about BTC Field"}</h2>
+            <p className="eyebrow">{ru ? "Факты о продукте" : "Product facts"}</p>
+            <h2 id="btc-accepted-knowledge-title">{ru ? "Что делает BTC Field — и где его граница" : "What BTC Field does — and where it stops"}</h2>
           </div>
-          <p>{ru ? "Канонические ответы индексируются на входной странице; произвольные live-запросы не индексируются." : "Canonical answers are indexable on the entry page; arbitrary live queries are not indexable."}</p>
+          <p>{ru ? "Канонические факты о продукте, его доказательствах и ограничениях." : "Canonical facts about the product, its evidence, and its limits."}</p>
         </header>
         <div className="evidenceStack">
           {acceptedKnowledge.map((item) => <details key={item.question}>
