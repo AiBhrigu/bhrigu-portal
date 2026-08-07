@@ -111,8 +111,8 @@ jobs:
               return json.loads(raw) if raw else None
 
           def session_turn_count():
-              value = session()
-              return len(value.get("turns", [])) if isinstance(value, dict) else 0
+              current = session()
+              return len(current.get("turns", [])) if isinstance(current, dict) else 0
 
           def current_question():
               return parse_qs(urlparse(driver.current_url).query).get("q", [""])[0]
@@ -154,15 +154,21 @@ jobs:
               textarea = wait_for_composer()
               textarea.clear()
               textarea.send_keys(question)
+              wait.until(lambda _: textarea.get_attribute("value") == question)
               form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
-              driver.execute_script("arguments[0].requestSubmit()", form)
+              button = form.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+              driver.execute_script(
+                  "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
+                  button,
+              )
+              wait.until(lambda _: button.is_displayed() and button.is_enabled())
+              button.click()
 
               wait.until(lambda _: current_question() == question)
               wait.until(lambda _: session_turn_count() > before_session_turns)
               wait.until(lambda _: len(exchanges()) > before_dom_turns)
               wait.until(lambda _: len(turns()) > before_route_turns)
               wait_for_session_question(question)
-              node = latest()
               wait.until(lambda _: value(latest(), "data-route-disposition") == expected_disposition)
               wait.until(lambda _: value(latest(), "data-route-domain") == expected_domain)
               wait.until(lambda _: value(latest(), "data-route-subject") == expected_subject)
@@ -245,7 +251,7 @@ jobs:
               driver.quit()
 
           report = {
-              "schema": "btc_clarification_resolution_real_chain_v0_2",
+              "schema": "btc_clarification_resolution_real_chain_v0_3",
               "status": "PASS" if all(item["passed"] for item in checks) else "FAIL",
               "check_count": len(checks),
               "checks": checks,

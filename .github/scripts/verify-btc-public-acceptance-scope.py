@@ -59,6 +59,7 @@ BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE = {
 BTC_CLARIFICATION_RESOLUTION_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-clarification-resolution-pr.yml",
+    ".github/workflows/btc-free-question-live-dialogue-pr.yml",
     ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
     "components/btc/BtcCosmographerDialogue.tsx",
     "lib/btc-cosmographer-evidence-navigation-runtime.ts",
@@ -70,8 +71,11 @@ BTC_CLARIFICATION_RESOLUTION_SCOPE = {
 
 BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
-    ".github/workflows/btc-clarification-resolution-pr.yml",
     ".github/workflows/bhrigu-home-market-cosmographer-pr.yml",
+    ".github/workflows/btc-clarification-resolution-pr.yml",
+    ".github/workflows/btc-free-question-live-dialogue-pr.yml",
+    ".github/workflows/btc-origins-history-pr.yml",
+    ".github/workflows/btc-public-live-visual-information-acceptance-pr.yml",
     "components/BhriguPhiHeader.jsx",
     "components/btc/BtcCosmographerDialogue.tsx",
     "components/btc/BtcHeroQuestionLaunch.tsx",
@@ -124,7 +128,7 @@ accepted_scopes = {
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
     "PASS_BTC_EVIDENCE_NAVIGATION_RUNTIME_EXACT_9_FILE_SCOPE": BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE,
     "PASS_BTC_CLARIFICATION_RESOLUTION_EXACT_9_FILE_SCOPE": BTC_CLARIFICATION_RESOLUTION_SCOPE,
-    "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_14_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
+    "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_17_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

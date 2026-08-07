@@ -5,11 +5,12 @@ on:
     branches:
       - master
     paths:
+      - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-origins-history-pr.yml
+      - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-route-graph.ts
       - lib/btc-protocol-evidence.ts
-      - components/btc/BtcCosmographerDialogue.tsx
       - scripts/verify-btc-origins-history.mjs
-      - .github/workflows/btc-origins-history-pr.yml
 
 permissions:
   contents: read
@@ -17,6 +18,10 @@ permissions:
 concurrency:
   group: btc-origins-history-${{ github.event.pull_request.number }}
   cancel-in-progress: true
+
+env:
+  BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+  BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
 
 jobs:
   exact-head-history-acceptance:
@@ -29,20 +34,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and five-file scope
+      - name: Verify current exact acceptance scope
         run: |
-          git fetch origin master
-          test "$(git merge-base HEAD origin/master)" = "0a0205959ffb3da86568870d597092374c1dd5e3"
-          git diff --name-only 0a0205959ffb3da86568870d597092374c1dd5e3 HEAD | sort > /tmp/actual
-          cat > /tmp/expected <<'SCOPE'
-          .github/workflows/btc-origins-history-pr.yml
-          components/btc/BtcCosmographerDialogue.tsx
-          lib/btc-cosmographer-route-graph.ts
-          lib/btc-protocol-evidence.ts
-          scripts/verify-btc-origins-history.mjs
-          SCOPE
-          sort -o /tmp/expected /tmp/expected
-          diff -u /tmp/expected /tmp/actual
+          git fetch origin "${GITHUB_BASE_REF}"
+          python3 .github/scripts/verify-btc-public-acceptance-scope.py
 
       - name: Verify canonical capsule and public boundary
         run: node scripts/verify-btc-origins-history.mjs
@@ -73,7 +68,7 @@ jobs:
           python3 <<'PY'
           import json
           from pathlib import Path
-          from urllib.parse import quote
+          from urllib.parse import parse_qs, quote, urlparse
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
@@ -109,72 +104,173 @@ jobs:
               if not condition:
                   raise AssertionError(f"{name}: {details}")
 
+          def current_question():
+              return parse_qs(urlparse(driver.current_url).query).get("q", [""])[0]
+
           def clean(locale):
               driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
               driver.execute_script("window.sessionStorage.clear()")
               driver.get(f"{base}/crypto-astro/btc/live?lang={locale}")
+              wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
 
           def latest(subject):
-              return wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']")[-1])
+              return wait.until(
+                  lambda d: (
+                      d.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']")[-1]
+                      if d.find_elements(By.CSS_SELECTOR, f"article[data-route-subject='{subject}']")
+                      else False
+                  )
+              )
 
           def submit(text):
-              form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
+              form = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
               box = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
               box.clear()
               box.send_keys(text)
-              driver.execute_script("arguments[0].requestSubmit()", form)
+              wait.until(lambda _: box.get_attribute("value") == text)
+              button = form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+              driver.execute_script(
+                  "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
+                  button,
+              )
+              wait.until(lambda _: button.is_displayed() and button.is_enabled())
+              button.click()
+              wait.until(lambda _: current_question() == text)
 
           try:
               for locale, case in cases.items():
                   for view, (width, height) in viewports.items():
                       driver.set_window_size(width, height)
                       clean(locale)
-                      links = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "[data-bitcoin-origins-prepared='true'] a[data-origin-question]"))
+                      links = wait.until(
+                          lambda d: d.find_elements(
+                              By.CSS_SELECTOR,
+                              "[data-bitcoin-origins-prepared='secondary'] a[data-origin-question]",
+                          )
+                      )
                       record(f"{locale}_{view}_five_prepared_questions", len(links) == 5, str(len(links)))
-                      record(f"{locale}_{view}_clean_session", len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")) == 0)
-                      driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                      record(
+                          f"{locale}_{view}_clean_session",
+                          len(driver.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")) == 0,
+                      )
+                      driver.get(
+                          f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}"
+                      )
                       turn = latest("satoshi_history")
-                      record(f"{locale}_{view}_direct_answer", bool(turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.strip()))
-                      for section in ("timeline", "significance", "known", "supported_inference", "disputed", "unknown_boundary", "sources"):
-                          record(f"{locale}_{view}_{section}", bool(turn.find_elements(By.CSS_SELECTOR, f"[data-semantic-answer-section='{section}']")))
-                      source_list = turn.find_element(By.CSS_SELECTOR, "details[data-origin-source-list='true']")
-                      record(f"{locale}_{view}_sources_collapsed", source_list.get_attribute("open") is None)
+                      record(
+                          f"{locale}_{view}_direct_answer",
+                          bool(turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.strip()),
+                      )
+                      for section in (
+                          "timeline",
+                          "significance",
+                          "known",
+                          "supported_inference",
+                          "disputed",
+                          "unknown_boundary",
+                          "sources",
+                      ):
+                          record(
+                              f"{locale}_{view}_{section}",
+                              bool(
+                                  turn.find_elements(
+                                      By.CSS_SELECTOR,
+                                      f"[data-semantic-answer-section='{section}']",
+                                  )
+                              ),
+                          )
+                      source_list = turn.find_element(
+                          By.CSS_SELECTOR, "details[data-origin-source-list='true']"
+                      )
+                      record(
+                          f"{locale}_{view}_sources_collapsed",
+                          source_list.get_attribute("open") is None,
+                      )
                       driver.execute_script("arguments[0].open = true", source_list)
                       source_links = source_list.find_elements(By.CSS_SELECTOR, "a[href^='https://']")
-                      record(f"{locale}_{view}_six_source_links", len(source_links) == 6, str(len(source_links)))
+                      record(
+                          f"{locale}_{view}_six_source_links",
+                          len(source_links) == 6,
+                          str(len(source_links)),
+                      )
                       visible = turn.text.lower()
-                      forbidden = ["bitcoin_protocol", "satoshi_history", "genesis_history", "primary authority", "bridge result", "evidence ·", "_schema", " l1 ", " l2 ", " l3 "]
-                      record(f"{locale}_{view}_public_copy_clean", not any(token in visible for token in forbidden), visible[:500])
-                      overflow = driver.execute_script("return document.documentElement.scrollWidth - document.documentElement.clientWidth")
+                      forbidden = [
+                          "bitcoin_protocol",
+                          "satoshi_history",
+                          "genesis_history",
+                          "primary authority",
+                          "bridge result",
+                          "evidence ·",
+                          "_schema",
+                          " l1 ",
+                          " l2 ",
+                          " l3 ",
+                      ]
+                      record(
+                          f"{locale}_{view}_public_copy_clean",
+                          not any(token in visible for token in forbidden),
+                          visible[:500],
+                      )
+                      overflow = driver.execute_script(
+                          "return document.documentElement.scrollWidth - document.documentElement.clientWidth"
+                      )
                       record(f"{locale}_{view}_horizontal_overflow", overflow <= 1, str(overflow))
                       driver.save_screenshot(f"/tmp/btc-origins-proof/{locale}-{view}.png")
 
                   driver.set_window_size(1440, 1000)
                   clean(locale)
-                  driver.get(f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}")
+                  driver.get(
+                      f"{base}/crypto-astro/btc/live?lang={locale}&q={quote(case['question'])}"
+                  )
                   latest("satoshi_history")
                   submit(case["follow_known"])
                   follow = latest("satoshi_history")
-                  record(f"{locale}_known_followup_subject", follow.get_attribute("data-context-relation") == "FOLLOW_UP", follow.get_attribute("data-context-relation"))
+                  record(
+                      f"{locale}_known_followup_subject",
+                      follow.get_attribute("data-context-relation") == "FOLLOW_UP",
+                      follow.get_attribute("data-context-relation"),
+                  )
                   submit(case["follow_leave"])
                   departure = latest("satoshi_history")
-                  direct = departure.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text.lower()
-                  record(f"{locale}_departure_unknown_boundary", case["unknown_marker"] in direct, direct)
+                  direct = departure.find_element(
+                      By.CSS_SELECTOR, "[data-answer-direct='true']"
+                  ).text.lower()
+                  record(
+                      f"{locale}_departure_unknown_boundary",
+                      case["unknown_marker"] in direct,
+                      direct,
+                  )
                   submit(case["return_market"])
                   market = latest("general_btc_field")
-                  record(f"{locale}_return_to_market", market.get_attribute("data-route-domain") == "btc_market", market.get_attribute("data-route-domain"))
+                  record(
+                      f"{locale}_return_to_market",
+                      market.get_attribute("data-route-domain") == "btc_market",
+                      market.get_attribute("data-route-domain"),
+                  )
 
-                  severe = [entry for entry in driver.get_log("browser") if entry.get("level") == "SEVERE" and "/favicon.ico" not in entry.get("message", "")]
-                  record(f"{locale}_browser_severe_zero", len(severe) == 0, json.dumps(severe, ensure_ascii=False))
+                  severe = [
+                      entry
+                      for entry in driver.get_log("browser")
+                      if entry.get("level") == "SEVERE"
+                      and "/favicon.ico" not in entry.get("message", "")
+                  ]
+                  record(
+                      f"{locale}_browser_severe_zero",
+                      len(severe) == 0,
+                      json.dumps(severe, ensure_ascii=False),
+                  )
           finally:
               output = {
-                  "schema": "btc_origins_history_browser_acceptance_v0_1",
+                  "schema": "btc_origins_history_browser_acceptance_v0_2",
                   "total": len(checks),
                   "passed": sum(1 for check in checks if check["passed"]),
                   "checks": checks,
               }
               print(json.dumps(output, ensure_ascii=False, indent=2))
-              Path("/tmp/btc-origins-proof/result.json").write_text(json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8")
+              Path("/tmp/btc-origins-proof/result.json").write_text(
+                  json.dumps(output, ensure_ascii=False, indent=2), encoding="utf-8"
+              )
               driver.quit()
           PY
 
