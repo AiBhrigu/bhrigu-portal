@@ -78,8 +78,11 @@ BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     "components/btc/BtcQuestionMembrane.tsx",
     "pages/crypto-astro/btc.tsx",
     "pages/index.js",
+    "scripts/run-btc-cosmographer-semantic-route-fixture.mjs",
     "scripts/run-btc-evidence-navigation-runtime-fixture.mjs",
     "scripts/verify-btc-positioning-value-entry.mjs",
+    "scripts/verify-btc-public-acceptance-two-screen.py",
+    "scripts/verify-btc-public-live-visual-information-acceptance.py",
 }
 
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
@@ -121,7 +124,7 @@ accepted_scopes = {
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
     "PASS_BTC_EVIDENCE_NAVIGATION_RUNTIME_EXACT_9_FILE_SCOPE": BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE,
     "PASS_BTC_CLARIFICATION_RESOLUTION_EXACT_9_FILE_SCOPE": BTC_CLARIFICATION_RESOLUTION_SCOPE,
-    "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_11_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
+    "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_14_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
