@@ -66,6 +66,9 @@ jobs:
       - name: Verify deterministic BTC routing contracts
         run: npm run verify:btc-routing
 
+      - name: Verify BTC current capability copy contract
+        run: node scripts/verify-btc-positioning-value-entry.mjs
+
       - name: Build production surface
         run: npm run build
 
