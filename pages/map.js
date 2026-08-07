@@ -40,41 +40,48 @@ export default function Map() {
           </a>
         </section>
 
-      <h1>Portal Navigation Surface</h1>
+      <h1>Public Relationship Map</h1>
 
       <p>
-        A structured navigation layer to explore the public surfaces of BHRIGU × Frey.
-        This map orients — it does not expose internal systems.
+        This map describes public relationships and routes. It does not define ownership or governance.
+        It orients across the public surface without exposing internal systems.
       </p>
 
-      <h2>Core Surfaces</h2>
+      <h2>Market Path</h2>
       <ul>
-        <li><Link href="/cosmographer">Cosmographer</Link></li>
-        <li><Link href="/frey">Frey</Link></li>
-        <li><Link href="/reading">Reading</Link></li>
+        <li><Link href="/">BHRIGU</Link> — public access and ecosystem surface</li>
+        <li><Link href="/">Market Cosmographer</Link> — market intelligence product surface</li>
+        <li><Link href="/crypto-astro/btc">BTC Field</Link> — first proven public market corridor</li>
       </ul>
 
-      <h2>System Layers</h2>
+      <h2>Temporal Path</h2>
       <ul>
-        <li><Link href="/cosmography">Cosmography</Link></li>
-        <li><Link href="/orion">Orion</Link></li>
-        <li><Link href="/dao">DAO</Link></li>
+        <li><Link href="/frey">Frey</Link> — dialogue and temporal interface</li>
+        <li><Link href="/reading">Reading</Link> — critical temporal meaning surface</li>
+        <li><Link href="/access">Access</Link> — reviewed deeper entry</li>
       </ul>
 
-      <h2>Quiet Support</h2>
+      <h2>Intelligence & Foundation</h2>
+      <ul>
+        <li><Link href="/cosmographer">Cosmographer</Link> — independent intelligence and orientation contour</li>
+        <li><Link href="/cosmography">Cosmography</Link> — method-language field</li>
+        <li><Link href="/orion">ORION</Link> — protected analytical depth and research foundation</li>
+      </ul>
+
+      <h2>Future Economic Path</h2>
+      <ul>
+        <li><Link href="/dao">Possible future BHRIGU DAO</Link> — economics and incentives only; no authority over the analytical core</li>
+      </ul>
+
+      <h2>Public Support & Access</h2>
       <ul>
         <li><Link href="/support">Support</Link></li>
-      </ul>
-
-      <h2>Access & Capital</h2>
-      <ul>
         <li><Link href="/investors">Investors</Link></li>
-        <li><Link href="/access">Access</Link></li>
         <li><Link href="/services">Services</Link></li>
       </ul>
 
       <p>
-        The map maintains structural clarity across the portal.
+        Public navigation hierarchy, technology genealogy, authorship, IP ownership and governance are distinct relationships.
       </p>
     </main>
   );
