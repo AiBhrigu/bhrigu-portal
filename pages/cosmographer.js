@@ -32,7 +32,8 @@ export default function Cosmographer() {
       </ul>
 
       <p>
-        Cosmographer is the strategic design layer of Frey.
+        Cosmographer is an independent intelligence and orientation contour.
+        Frey is a distinct dialogue and temporal interface; the two may work together without either defining the other.
       </p>
 
       <p>
