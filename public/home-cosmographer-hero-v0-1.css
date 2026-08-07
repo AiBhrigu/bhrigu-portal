@@ -1,5 +1,5 @@
 /* BHRIGU_HOME_LIVE_COSMOGRAPHER_HERO_VISUAL_v0_1
-   Scope: Home hero only. No product copy, routing, runtime, or BTC logic changes. */
+   Scope: Home hero only. Accepted state is visualized without changing product claims. */
 
 main[data-primary-product="market-cosmographer"] > section:first-of-type {
   position: relative;
@@ -62,7 +62,7 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
 }
 
 main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child::after {
-  content: "CURRENT BTC FIELD  ·  HUMAN ACCESS  ·  FUTURE AI AGENT ACCESS";
+  content: attr(data-btc-footer);
   position: absolute;
   right: 7%;
   bottom: 4.5%;
@@ -80,9 +80,100 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
   pointer-events: none;
 }
 
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-accepted-state] {
+  position: absolute;
+  z-index: 4;
+  top: 7.5%;
+  right: 5%;
+  width: min(238px, 42%);
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px 13px;
+  opacity: 1;
+  border: 1px solid rgba(98, 168, 216, 0.17);
+  background: linear-gradient(135deg, rgba(7, 12, 18, 0.84), rgba(7, 9, 12, 0.58));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(5px);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  pointer-events: none;
+}
+
+[data-btc-accepted-state] [data-btc-state-kicker] {
+  color: rgba(128, 188, 227, 0.78);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+[data-btc-accepted-state] strong {
+  color: rgba(241, 239, 233, 0.91);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+[data-btc-accepted-state] [data-btc-state-meta],
+[data-btc-accepted-state] [data-btc-state-proof] {
+  color: rgba(161, 204, 232, 0.62);
+  font-size: 7px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.45;
+  text-transform: uppercase;
+}
+
+[data-btc-accepted-state] [data-btc-state-proof] {
+  color: rgba(241, 239, 233, 0.46);
+}
+
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-state-pulse] {
+  position: absolute;
+  z-index: 2;
+  left: 53.12%;
+  top: 48.1%;
+  width: 116px;
+  aspect-ratio: 1;
+  opacity: 0.76;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: conic-gradient(from -90deg, rgba(98, 168, 216, 0.6), rgba(98, 168, 216, 0.12));
+  -webkit-mask: radial-gradient(circle, transparent 67%, #000 69% 72%, transparent 74%);
+  mask: radial-gradient(circle, transparent 67%, #000 69% 72%, transparent 74%);
+  animation: bhriguAcceptedStatePulse 6.18s ease-in-out infinite;
+}
+
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child[data-btc-synthesis="DIVERGENCE"] > [data-btc-state-pulse] {
+  background: conic-gradient(
+    from -90deg,
+    rgba(98, 168, 216, 0.66) 0 61.8%,
+    rgba(98, 168, 216, 0.08) 61.8% 68%,
+    rgba(200, 164, 90, 0.48) 68% 100%
+  );
+}
+
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child[data-btc-synthesis="CONFIRMATION"] > [data-btc-state-pulse] {
+  background: conic-gradient(from -90deg, rgba(98, 168, 216, 0.72), rgba(200, 164, 90, 0.24));
+}
+
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child[data-btc-synthesis="INSUFFICIENT_EVIDENCE"] > [data-btc-state-pulse],
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child[data-btc-synthesis="UNAVAILABLE"] > [data-btc-state-pulse] {
+  opacity: 0.28;
+  background: conic-gradient(from -90deg, rgba(98, 168, 216, 0.34), rgba(241, 239, 233, 0.06));
+}
+
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child[data-btc-freshness="STALE_LIMITED"] > [data-btc-accepted-state] {
+  border-color: rgba(200, 164, 90, 0.22);
+}
+
 @keyframes bhriguHeroFieldBreath {
   0%, 100% { opacity: 0.62; transform: scale(0.995); }
   50% { opacity: 0.96; transform: scale(1.012); }
+}
+
+@keyframes bhriguAcceptedStatePulse {
+  0%, 100% { opacity: 0.52; transform: translate(-50%, -50%) scale(0.98) rotate(0deg); }
+  50% { opacity: 0.82; transform: translate(-50%, -50%) scale(1.035) rotate(5deg); }
 }
 
 @media (max-width: 1050px) {
@@ -136,10 +227,33 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
   }
 
   main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child {
-    min-height: 300px;
+    min-height: 318px;
     margin-top: 4px;
     background-size: 112% auto;
     background-position: 52% 50%;
+  }
+
+  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-accepted-state] {
+    top: 1%;
+    right: 1%;
+    width: min(184px, 54%);
+    gap: 3px;
+    padding: 9px 10px 10px;
+    background: rgba(7, 10, 14, 0.72);
+  }
+
+  [data-btc-accepted-state] [data-btc-state-kicker],
+  [data-btc-accepted-state] [data-btc-state-meta],
+  [data-btc-accepted-state] [data-btc-state-proof] {
+    font-size: 5.5px;
+  }
+
+  [data-btc-accepted-state] strong {
+    font-size: 14px;
+  }
+
+  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-state-pulse] {
+    width: 78px;
   }
 
   main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child::after {
@@ -152,7 +266,8 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
 }
 
 @media (prefers-reduced-motion: reduce) {
-  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child::before {
+  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child::before,
+  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-state-pulse] {
     animation: none;
   }
 }
