@@ -7,11 +7,11 @@ const PUBLIC_PROOF_URL =
 
 const COPY = {
   en: {
-    category: "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
+    category: "AI MARKET INTELLIGENCE SYSTEM",
     h1Lead: "See what changed in Bitcoin —",
-    h1Close: "and what confirms the next scenario.",
+    h1Close: "and what would change the current read.",
     subheadline:
-      "For self-directed Bitcoin investors with multi-week to multi-month decision horizons: verified change, why it matters, and explicit scenario conditions in one evidence-linked read.",
+      "For self-directed Bitcoin investors: verified change, why it matters, and explicit conditions in one evidence-linked read.",
     openBtc: "Ask what changed in Bitcoin",
     viewProof: "View public proof",
     proofLine:
@@ -23,7 +23,7 @@ const COPY = {
     productLayers: [
       ["Market evidence", "Accepted source data establishes the observable state."],
       ["Field context", "Related signals are read together without forcing agreement."],
-      ["Forecast conditions", "The read states what would strengthen, weaken or invalidate the forward interpretation."],
+      ["Forward conditions", "The read states what would strengthen, weaken or invalidate the current interpretation."],
     ],
     outcomesEyebrow: "OUTCOMES",
     outcomesTitle: "Read the change before you read the noise.",
@@ -67,7 +67,7 @@ const COPY = {
     roles: [
       ["BHRIGU", "opens public access"],
       ["Frey", "holds the dialogue"],
-      ["Cosmographer", "owns the reading and forecast"],
+      ["Cosmographer", "owns the reading and forward conditions"],
       ["ORION", "protects the research core"],
     ],
     continuityEyebrow: "FIELD CONTINUITY",
@@ -86,11 +86,11 @@ const COPY = {
       "Enter the accepted BTC Field in your language. The evidence boundary remains visible from the first read.",
   },
   ru: {
-    category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ И ПРОГНОЗНЫХ УСЛОВИЙ",
+    category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ",
     h1Lead: "Что изменилось в Bitcoin —",
-    h1Close: "и что подтвердит следующий сценарий.",
+    h1Close: "и что изменит текущее чтение.",
     subheadline:
-      "Для самостоятельных Bitcoin-инвесторов с горизонтом решений от нескольких недель до нескольких месяцев: проверенное изменение, его значение и явные условия сценария в одном чтении со связанными доказательствами.",
+      "Для самостоятельных Bitcoin-инвесторов: проверенное изменение, его значение и явные условия в одном чтении со связанными доказательствами.",
     openBtc: "Спросить, что изменилось в Bitcoin",
     viewProof: "Посмотреть публичные доказательства",
     proofLine:
@@ -102,7 +102,7 @@ const COPY = {
     productLayers: [
       ["Рыночные доказательства", "Принятые данные источников устанавливают наблюдаемое состояние."],
       ["Контекст поля", "Связанные сигналы читаются вместе без принудительного согласования."],
-      ["Прогнозные условия", "Чтение показывает, что усилит, ослабит или отменит будущую интерпретацию."],
+      ["Будущие условия", "Чтение показывает, что усилит, ослабит или отменит текущую интерпретацию."],
     ],
     outcomesEyebrow: "РЕЗУЛЬТАТ",
     outcomesTitle: "Сначала изменение. Потом шум.",
@@ -146,7 +146,7 @@ const COPY = {
     roles: [
       ["BHRIGU", "открывает публичный доступ"],
       ["Frey", "удерживает диалог"],
-      ["Космограф", "владеет чтением и прогнозом"],
+      ["Космограф", "владеет чтением и условиями его изменения"],
       ["ORION", "защищает исследовательское ядро"],
     ],
     continuityEyebrow: "НЕПРЕРЫВНОСТЬ ПОЛЯ",
@@ -228,7 +228,7 @@ function buildJsonLd() {
         operatingSystem: "Web",
         url: home,
         description:
-          "An AI market intelligence and forecasting system combining verified market data, field context and explicit forecast conditions in an evidence-linked read.",
+          "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.",
         provider: { "@id": `${home}#organization` },
       },
       {
@@ -263,18 +263,18 @@ export default function Home({ locale }) {
         <title>Market Cosmographer · AI Market Intelligence | BHRIGU</title>
         <meta
           name="description"
-          content="Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons."
+          content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."
         />
         <meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
         <meta
           property="og:description"
-          content="See what changed in Bitcoin, why it matters, and which conditions confirm or invalidate the scenario."
+          content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."
         />
         <meta property="og:url" content="https://www.bhrigu.io/" />
         <meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
         <meta
           name="twitter:description"
-          content="Know what changed — and what may happen next. Open the evidence-linked BTC Field by BHRIGU."
+          content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field by BHRIGU."
         />
         <meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1" />
       </Head>
