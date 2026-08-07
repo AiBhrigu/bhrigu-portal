@@ -93,7 +93,7 @@ jobs:
           ]
           proof_url = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed"
           report = {
-              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_3",
+              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_4",
               "head_sha": head_sha,
               "views": {},
               "identity_counts": {},
@@ -159,7 +159,7 @@ jobs:
               )
               body = driver.find_element(By.TAG_NAME, "body").text
               h1 = driver.find_element(By.ID, "home-title").text
-              category = driver.find_element(By.XPATH, "//*[normalize-space(text())='AI MARKET INTELLIGENCE AND FORECASTING SYSTEM']").text
+              category = driver.find_element(By.XPATH, "//*[normalize-space(text())='AI MARKET INTELLIGENCE SYSTEM']").text
               primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-current-change-question']")
               secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
               primary_url = urlparse(primary.get_attribute("href"))
@@ -249,10 +249,10 @@ jobs:
                   "screenshot": str(screenshot),
                   "severe_errors": severe,
               }
-              check(f"{name}_h1_exact", " ".join(h1.split()) == "See what changed in Bitcoin — and what confirms the next scenario.", h1)
+              check(f"{name}_h1_exact", " ".join(h1.split()) == "See what changed in Bitcoin — and what would change the current read.", h1)
               check(
                   f"{name}_category_exact",
-                  category == "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
+                  category == "AI MARKET INTELLIGENCE SYSTEM",
                   category,
               )
               check(f"{name}_market_cosmographer_primary", "MARKET COSMOGRAPHER" in body)
@@ -282,7 +282,10 @@ jobs:
                   primary_contract["decorative_all_aria_hidden"],
                   primary_contract,
               )
-              check(f"{name}_primary_audience", "self-directed Bitcoin investors with multi-week to multi-month decision horizons" in body)
+              check(f"{name}_primary_audience", "For self-directed Bitcoin investors: verified change, why it matters, and explicit conditions in one evidence-linked read." in body)
+              check(f"{name}_no_decision_horizon_promise", "multi-week to multi-month decision horizons" not in body)
+              check(f"{name}_no_next_scenario_promise", "what confirms the next scenario" not in body.lower())
+              check(f"{name}_no_forecasting_category", "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM" not in body)
               check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
               check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
               check(f"{name}_primary_cta_not_occluded", primary_center_clear)
@@ -300,14 +303,14 @@ jobs:
                   f"{name}_hero_starts_with_product_identity",
                   identity_counts["hero_first_children"] == [
                       "MARKET COSMOGRAPHER",
-                      "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
+                      "AI MARKET INTELLIGENCE SYSTEM",
                   ],
                   identity_counts["hero_first_children"],
               )
               check(f"{name}_role_contract", role_text == [
                   "BHRIGU opens public access",
                   "Frey holds the dialogue",
-                  "Cosmographer owns the reading and forecast",
+                  "Cosmographer owns the reading and forward conditions",
                   "ORION protects the research core",
               ], role_text)
               check(f"{name}_no_severe_browser_errors", not severe, severe)
@@ -324,6 +327,8 @@ jobs:
               WebDriverWait(driver, 30).until(
                   lambda current: current.find_element(By.ID, "home-title").is_displayed()
               )
+              ru_body = driver.find_element(By.TAG_NAME, "body").text
+              ru_h1 = " ".join(driver.find_element(By.ID, "home-title").text.split())
               ru_primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-current-change-question']")
               ru_primary_url = urlparse(ru_primary.get_attribute("href"))
               ru_primary_query = parse_qs(ru_primary_url.query)
@@ -359,10 +364,11 @@ jobs:
                   ru_primary_contract["decorative_all_aria_hidden"],
                   ru_primary_contract,
               )
-              check(
-                  "ru_product_identity",
-                  "MARKET COSMOGRAPHER" in driver.find_element(By.TAG_NAME, "body").text,
-              )
+              check("ru_product_identity", "MARKET COSMOGRAPHER" in ru_body)
+              check("ru_h1_current_capability", ru_h1 == "Что изменилось в Bitcoin — и что изменит текущее чтение.", ru_h1)
+              check("ru_category_current_capability", "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ" in ru_body)
+              check("ru_no_decision_horizon_promise", "горизонтом решений от нескольких недель до нескольких месяцев" not in ru_body)
+              check("ru_no_forecast_role", "владеет чтением и прогнозом" not in ru_body)
 
               driver.get(f"{base}/?lang=en")
               WebDriverWait(driver, 30).until(
@@ -401,6 +407,8 @@ jobs:
                   {"Organization", "WebSite", "WebPage", "SoftwareApplication", "BreadcrumbList"}.issubset(graph_types),
                   sorted(graph_types),
               )
+              software = next((item for item in graph if item.get("@type") == "SoftwareApplication" and item.get("name") == "Market Cosmographer"), {})
+              check("jsonld_current_capability_description", software.get("description") == "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.", software.get("description"))
 
               driver.get(f"{base}/?lang=en")
               canonical = driver.find_element(By.CSS_SELECTOR, "link[rel='canonical']").get_attribute("href")
