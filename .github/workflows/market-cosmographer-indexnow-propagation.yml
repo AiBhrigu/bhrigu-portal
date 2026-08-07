@@ -1,0 +1,52 @@
+name: Market Cosmographer IndexNow Propagation
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/market-cosmographer-indexnow-propagation.yml"
+      - "scripts/submit-market-cosmographer-indexnow.mjs"
+      - "public/4bacf358739926bf386497526d746754.txt"
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-cosmographer-indexnow-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify bounded canonical contract
+        run: node scripts/submit-market-cosmographer-indexnow.mjs --dry-run
+
+  submit-production-canonicals:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: validate-contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact production head
+        uses: actions/checkout@v4
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Wait for public ownership key and submit canonical URLs
+        run: node scripts/submit-market-cosmographer-indexnow.mjs
