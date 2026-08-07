@@ -24,6 +24,7 @@ import {
 import type { FreshnessState } from "../../lib/btc-public-output-contract";
 import {
   formatBtcUtcTimestamp,
+  getBtcExampleRoutes,
   type BtcPublicLocale,
 } from "../../lib/btc-public-language-contract";
 import { FieldAnchorGlyph } from "./BtcSurfaceGlyphs";
@@ -598,6 +599,7 @@ export function BtcCosmographerDialogue(props: Props) {
   const { locale, initialDate, sourceContext, deploymentSourceSha, inputError } = props;
   const ru = locale === "ru";
   const otherLocale: BtcPublicLocale = ru ? "en" : "ru";
+  const preparedMarketRoutes = getBtcExampleRoutes(locale);
   const currentTurn = useMemo(() => makeTurn(props), [
     props.locale,
     props.initialQuestion,
@@ -830,29 +832,60 @@ export function BtcCosmographerDialogue(props: Props) {
         <span><b>{ru ? "Контекст" : "Context"}</b> · {contextRelationLabel(locale, contextTurn.context_relation)}</span>
       </div>}
 
-      {!hasConversation && <aside className="exampleRoutes staticExampleRoutes" aria-labelledby="bitcoin-origins-prepared-title" data-bitcoin-origins-prepared="true">
-        <p className="eyebrow">{ru ? "История Bitcoin · проверенные источники" : "Bitcoin history · verified sources"}</p>
-        <h2 id="bitcoin-origins-prepared-title">{ru ? "Пять вопросов о происхождении Bitcoin и Сатоши" : "Five questions about Bitcoin's origins and Satoshi"}</h2>
-        <p>{ru
-          ? "Документированные факты, поддерживаемые выводы, спорные версии и неизвестное показаны раздельно."
-          : "Documented facts, supported inference, disputed claims, and unknowns are shown separately."}</p>
-        <div className="exampleRouteList">
-          {BTC_ORIGINS_PREPARED_QUESTIONS[locale].map((item, index) => {
-            const params = [`lang=${locale}`, `q=${encodeURIComponent(item.question)}`];
-            if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
-            return <a
-              key={item.id}
-              href={`/crypto-astro/btc/live?${params.join("&")}`}
-              data-origin-question={item.id}
-              data-origin-subject={item.subject}
-            >
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <b>{item.question}</b>
-              <i aria-hidden="true">→</i>
-            </a>;
-          })}
-        </div>
-      </aside>}
+      {!hasConversation && <>
+        <aside className="exampleRoutes staticExampleRoutes" aria-labelledby="btc-market-prepared-title" data-btc-market-prepared="primary">
+<p className="eyebrow">{ru ? "Текущий BTC · проверенные входы" : "Current BTC · verified entries"}</p>
+<h2 id="btc-market-prepared-title">{ru ? "Начните с одного из пяти вопросов о состоянии и изменении BTC" : "Start with one of five questions about BTC state and change"}</h2>
+<p>{ru
+  ? "Первый маршрут показывает, что изменилось, почему это важно и за чем наблюдать дальше. Остальные уточняют ликвидность, структуру, время и принятую память."
+  : "The first route shows what changed, why it matters, and what to watch next. The others refine liquidity, structure, timing, and accepted memory."}</p>
+<div className="exampleRouteList">
+  {preparedMarketRoutes.map((route, index) => {
+    const params = [`lang=${locale}`, `q=${encodeURIComponent(route.question)}`];
+    if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
+    return <a
+      key={route.id}
+      href={`/crypto-astro/btc/live?${params.join("&")}`}
+      data-market-question={route.id}
+      data-primary-entry={index === 0 ? "true" : "false"}
+    >
+      <span>{String(index + 1).padStart(2, "0")}</span>
+      <b>{route.label}</b>
+      <em>{route.question}</em>
+      <i aria-hidden="true">→</i>
+    </a>;
+  })}
+</div>
+        </aside>
+
+        <details className="olderTurnsDisclosure" data-bitcoin-origins-secondary="true">
+<summary>{ru ? "История Bitcoin и Сатоши · дополнительные вопросы" : "Bitcoin origins and Satoshi · additional questions"}</summary>
+<aside className="exampleRoutes staticExampleRoutes" aria-labelledby="bitcoin-origins-prepared-title" data-bitcoin-origins-prepared="secondary">
+  <p className="eyebrow">{ru ? "История Bitcoin · проверенные источники" : "Bitcoin history · verified sources"}</p>
+  <h2 id="bitcoin-origins-prepared-title">{ru ? "Пять вопросов о происхождении Bitcoin и Сатоши" : "Five questions about Bitcoin's origins and Satoshi"}</h2>
+  <p>{ru
+    ? "Документированные факты, поддерживаемые выводы, спорные версии и неизвестное показаны раздельно."
+    : "Documented facts, supported inference, disputed claims, and unknowns are shown separately."}</p>
+  <div className="exampleRouteList">
+    {BTC_ORIGINS_PREPARED_QUESTIONS[locale].map((item, index) => {
+      const params = [`lang=${locale}`, `q=${encodeURIComponent(item.question)}`];
+      if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
+      return <a
+        key={item.id}
+        href={`/crypto-astro/btc/live?${params.join("&")}`}
+        data-origin-question={item.id}
+        data-origin-subject={item.subject}
+      >
+        <span>{String(index + 1).padStart(2, "0")}</span>
+        <b>{item.question}</b>
+        <i aria-hidden="true">→</i>
+      </a>;
+    })}
+  </div>
+</aside>
+        </details>
+      </>}
+
 
       {hydrated && <form className={hasConversation ? "liveComposer liveComposerAfterAnswer" : "liveComposer liveComposerPrimary"} method="get" action="/crypto-astro/btc/live" data-session-hydrated="true">
         <input type="hidden" name="lang" value={locale}/>
@@ -872,7 +905,7 @@ export function BtcCosmographerDialogue(props: Props) {
             required
             placeholder={clarificationPrompt ?? (hasConversation
               ? (ru ? "Что изменит это чтение? Как это совпадает со структурой BTC? Какие дни наиболее напряжённые?" : "What would change this read? How does it coincide with BTC structure? Which days are most intense?")
-              : (ru ? "Что происходит с BTC сегодня? Какие аспекты планет наиболее напряжённые в 2026?" : "What is happening with BTC today? Which planetary aspects are most intense in 2026?"))}
+              : (ru ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?"))}
           />
         </label>
         <div className="liveComposerControls">

@@ -97,7 +97,7 @@ try {
   assert.match(pageSource, /parsePendingClarification/);
   assert.match(pageSource, /resolvePendingClarificationQuestion/);
   assert.match(componentSource, /name="pof"|pendingClarificationFields/);
-  assert.ok(routeSource.includes("протокол\\s+(?:btc|bitcoin|биткоин)"));
+  assert.ok(routeSource.includes("протокол[ауе]?\\s+(?:btc|bitcoin|биткоин)"));
 
   const astroRoute = {
     ...baseRoute,

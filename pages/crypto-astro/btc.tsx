@@ -32,7 +32,7 @@ import { BTC_PRODUCT_REBALANCE_CSS } from "../../lib/btc-product-rebalance-style
 const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: string; answer: string }>> = {
   en: [
     { question: "What is Market Cosmographer?", answer: "Market Cosmographer is BHRIGU's evidence-linked market intelligence product. BTC Field is its first public corridor." },
-    { question: "Who is BTC Field for?", answer: "BTC Field is designed for Bitcoin investors and researchers who need current state, accepted change memory, sources, and explicit conditions." },
+    { question: "Who is BTC Field for?", answer: "BTC Field is designed first for self-directed Bitcoin investors with multi-week to multi-month decision horizons who need current state, accepted change memory, sources, and explicit conditions." },
     { question: "What does the current BTC read use?", answer: "It uses the accepted Market Snapshot, verified derivations, and the latest compatible Snapshot Delta." },
     { question: "Can BTC Field guarantee a future price?", answer: "No. It does not provide guaranteed prices, trading signals, leverage instructions, or position sizing." },
     { question: "How are protocol and market answers separated?", answer: "Protocol answers use pinned Bitcoin sources; market answers use accepted market records. One evidence lane does not replace another." },
@@ -40,7 +40,7 @@ const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: s
   ],
   ru: [
     { question: "Что такое Market Cosmographer?", answer: "Market Cosmographer — продукт BHRIGU для доказательно связанной рыночной аналитики. BTC Field — его первый публичный коридор." },
-    { question: "Для кого создан BTC Field?", answer: "BTC Field создан для инвесторов и исследователей Bitcoin, которым нужны текущее состояние, принятая память изменений, источники и явные условия." },
+    { question: "Для кого создан BTC Field?", answer: "BTC Field создан прежде всего для самостоятельных Bitcoin-инвесторов с горизонтом решений от нескольких недель до нескольких месяцев, которым нужны текущее состояние, принятая память изменений, источники и явные условия." },
     { question: "На чём основано текущее чтение BTC?", answer: "Оно использует принятый Market Snapshot, проверенные производные и последнюю совместимую Snapshot Delta." },
     { question: "Может ли BTC Field гарантировать будущую цену?", answer: "Нет. Он не выдаёт гарантированные цены, торговые сигналы, инструкции по плечу или размеру позиции." },
     { question: "Как разделены ответы о протоколе и рынке?", answer: "Ответы о протоколе используют закреплённые источники Bitcoin; рыночные ответы используют принятые рыночные записи. Один доказательный слой не подменяет другой." },
@@ -208,8 +208,8 @@ export default function Page(p: Props) {
   );
   const pageTitle = ru ? "BTC Field Read · Market Cosmographer" : "BTC Field Read · Market Cosmographer";
   const metaDescription = ru
-    ? "Проверяемое чтение Bitcoin для инвесторов и исследователей: текущее состояние, рыночная структура, память Snapshot, источники и явные условия."
-    : "Evidence-linked Bitcoin intelligence for investors and researchers: current state, market structure, Snapshot memory, sources, and explicit conditions.";
+    ? "Доказательно связанная аналитика Bitcoin для самостоятельных инвесторов с горизонтом от нескольких недель до нескольких месяцев: изменение, значение, Snapshot Memory, источники и явные условия."
+    : "Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons: change, meaning, Snapshot Memory, sources, and explicit conditions.";
   const canonical = `https://www.bhrigu.io/crypto-astro/btc?lang=${p.locale}`;
   const acceptedKnowledge = BTC_ACCEPTED_PUBLIC_KNOWLEDGE[p.locale];
   const structuredData = {
@@ -224,7 +224,7 @@ export default function Page(p: Props) {
         inLanguage: p.locale,
         isPartOf: { "@type": "WebSite", name: "BHRIGU", url: "https://www.bhrigu.io/" },
         about: { "@type": "Thing", name: "Bitcoin market intelligence" },
-        audience: { "@type": "Audience", audienceType: "Bitcoin investors and researchers" },
+        audience: { "@type": "Audience", audienceType: "Self-directed Bitcoin investors with multi-week to multi-month decision horizons" },
       },
       {
         "@type": "WebApplication",
@@ -284,8 +284,8 @@ export default function Page(p: Props) {
           </p>
           <h1>BTC Field Read</h1>
           <p>{ru
-        ? "Доказательно связанная аналитика Bitcoin для инвесторов и исследователей: что изменилось, почему это важно и какие условия изменят чтение."
-        : "Evidence-linked Bitcoin intelligence for investors and researchers: what changed, why it matters, and which conditions would change the read."}</p>
+        ? "Доказательно связанная аналитика Bitcoin для самостоятельных инвесторов с горизонтом от нескольких недель до нескольких месяцев: что изменилось, почему это важно и какие условия изменят чтение."
+        : "Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons: what changed, why it matters, and which conditions would change the read."}</p>
         </div>
         <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
       </section>
@@ -300,7 +300,6 @@ export default function Page(p: Props) {
         <p>{truth.snapshotLine}</p>
         {truth.ageLine && <p>{truth.ageLine}</p>}
         <p>{truth.proofLine}</p>
-        {p.deploymentSourceSha && <p>{ru ? "Источник публикации" : "Deployment source"} · <code>{p.deploymentSourceSha.slice(0, 12)}</code></p>}
       </section>
 
       <BtcQuestionMembrane

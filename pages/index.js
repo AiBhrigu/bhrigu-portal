@@ -8,14 +8,14 @@ const PUBLIC_PROOF_URL =
 const COPY = {
   en: {
     category: "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM",
-    h1Lead: "Know what changed —",
-    h1Close: "and what may happen next.",
+    h1Lead: "See what changed in Bitcoin —",
+    h1Close: "and what confirms the next scenario.",
     subheadline:
-      "Verified market data, field context and explicit forecast conditions combined into one evidence-linked read — starting with Bitcoin.",
-    openBtc: "Open BTC Field",
+      "For self-directed Bitcoin investors with multi-week to multi-month decision horizons: verified change, why it matters, and explicit scenario conditions in one evidence-linked read.",
+    openBtc: "Ask what changed in Bitcoin",
     viewProof: "View public proof",
     proofLine:
-      "Verified sources · Field context · Forecast conditions · Evidence available",
+      "For self-directed Bitcoin investors · Verified sources · Explicit conditions · Evidence available",
     productEyebrow: "THE PRODUCT",
     productTitle: "One read. Three connected layers.",
     productIntro:
@@ -87,14 +87,14 @@ const COPY = {
   },
   ru: {
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ И ПРОГНОЗНЫХ УСЛОВИЙ",
-    h1Lead: "Знайте, что изменилось —",
-    h1Close: "и что может произойти дальше.",
+    h1Lead: "Что изменилось в Bitcoin —",
+    h1Close: "и что подтвердит следующий сценарий.",
     subheadline:
-      "Проверенные рыночные данные, контекст поля и явные прогнозные условия объединены в одно чтение со связанными доказательствами — начиная с Bitcoin.",
-    openBtc: "Открыть BTC Field",
+      "Для самостоятельных Bitcoin-инвесторов с горизонтом решений от нескольких недель до нескольких месяцев: проверенное изменение, его значение и явные условия сценария в одном чтении со связанными доказательствами.",
+    openBtc: "Спросить, что изменилось в Bitcoin",
     viewProof: "Посмотреть публичные доказательства",
     proofLine:
-      "Проверенные источники · Контекст поля · Прогнозные условия · Доказательства доступны",
+      "Для самостоятельных Bitcoin-инвесторов · Проверенные источники · Явные условия · Доказательства доступны",
     productEyebrow: "ПРОДУКТ",
     productTitle: "Одно чтение. Три связанных слоя.",
     productIntro:
@@ -250,7 +250,11 @@ export function getServerSideProps({ query }) {
 
 export default function Home({ locale }) {
   const copy = COPY[locale] || COPY.en;
-  const btcHref = `/crypto-astro/btc?lang=${locale}`;
+  const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
+  const primaryQuestion = locale === "ru"
+    ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?"
+    : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
+  const btcQuestionHref = `/crypto-astro/btc/live?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
   const jsonLd = buildJsonLd();
 
   return (
@@ -259,12 +263,12 @@ export default function Home({ locale }) {
         <title>Market Cosmographer · AI Market Intelligence | BHRIGU</title>
         <meta
           name="description"
-          content="Verified market data, field context and explicit forecast conditions combined into one evidence-linked read — starting with Bitcoin."
+          content="Evidence-linked Bitcoin intelligence for self-directed investors with multi-week to multi-month decision horizons."
         />
         <meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
         <meta
           property="og:description"
-          content="Know what changed — and what may happen next. Open the evidence-linked BTC Field by BHRIGU."
+          content="See what changed in Bitcoin, why it matters, and which conditions confirm or invalidate the scenario."
         />
         <meta property="og:url" content="https://www.bhrigu.io/" />
         <meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
@@ -296,7 +300,7 @@ export default function Home({ locale }) {
             </h1>
             <p className={styles.subheadline}>{copy.subheadline}</p>
             <div className={styles.heroActions}>
-              <Link className={styles.primaryCta} href={btcHref} data-primary-cta="btc-field">
+              <Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">
                 {copy.openBtc}
                 <span aria-hidden="true">↗</span>
               </Link>
@@ -342,8 +346,8 @@ export default function Home({ locale }) {
               body={copy.btcBody}
             />
             <p className={styles.sectionSupport}>{copy.btcDetail}</p>
-            <Link className={styles.textCta} href={btcHref}>
-              {copy.openBtc} <span aria-hidden="true">→</span>
+            <Link className={styles.textCta} href={btcEntryHref}>
+              {locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span>
             </Link>
           </div>
           <div className={styles.btcVisual} aria-label={copy.btcStatus} role="img">
@@ -420,7 +424,7 @@ export default function Home({ locale }) {
           <p className={styles.eyebrow}>{copy.closeEyebrow}</p>
           <h2>{copy.closeTitle}</h2>
           <p>{copy.closeBody}</p>
-          <Link className={styles.primaryCta} href={btcHref}>
+          <Link className={styles.primaryCta} href={btcQuestionHref}>
             {copy.openBtc}
             <span aria-hidden="true">↗</span>
           </Link>

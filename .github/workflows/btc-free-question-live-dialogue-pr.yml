@@ -86,7 +86,9 @@ jobs:
       - name: Runtime founder-report replay
         env:
           BTC_COSMOGRAPHER_PREVIEW_BASE: http://127.0.0.1:3110
-        run: node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
+        run: |
+          set -o pipefail
+          node --experimental-websocket scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-runtime.log
 
       - name: Setup Python 3.12
         uses: actions/setup-python@v5

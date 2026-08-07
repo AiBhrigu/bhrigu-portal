@@ -1,6 +1,6 @@
 import json
 import os
-from urllib.parse import quote
+from urllib.parse import parse_qs, quote, urlparse
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -147,15 +147,89 @@ def run_case(index, case):
         wait.until(lambda _: len(turns()) > 0)
         return turns()[-1]
 
+    def session_state():
+        return driver.execute_script(
+            """
+            try {
+              const raw = window.sessionStorage.getItem(arguments[0]);
+              if (!raw) return { count: 0, latest: null };
+              const parsed = JSON.parse(raw);
+              const turns = Array.isArray(parsed.turns) ? parsed.turns : [];
+              const latest = turns.length ? turns[turns.length - 1] : null;
+              return {
+                count: turns.length,
+                latest: latest ? {
+                  user_text: latest.user_text || "",
+                  effective_question: latest.effective_question || "",
+                } : null,
+              };
+            } catch (_) {
+              return { count: -1, latest: null };
+            }
+            """,
+            SESSION_KEY,
+        )
+
+    def session_turn_count():
+        return int(session_state()["count"])
+
+    def wait_session_turns(count):
+        wait.until(lambda _: session_turn_count() >= count)
+
     def submit(question):
-        previous = driver.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
-        textarea = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, 'textarea[name="q"]'))
-        textarea.clear()
-        textarea.send_keys(question)
-        driver.execute_script("arguments[0].requestSubmit()", driver.find_element(By.CSS_SELECTOR, "form.liveComposer"))
-        wait.until(EC.staleness_of(previous))
-        wait.until(lambda _: len(turns()) > 0)
+        before_count = len(turns())
+        wait_session_turns(before_count)
+        form = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
+        textarea = form.find_element(By.CSS_SELECTOR, 'textarea[name="q"]')
+        button = form.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+        driver.set_script_timeout(20)
+        driver.execute_async_script(
+            """
+            const field = arguments[0];
+            const value = arguments[1];
+            const done = arguments[arguments.length - 1];
+            const setter = Object.getOwnPropertyDescriptor(
+              HTMLTextAreaElement.prototype, "value"
+            ).set;
+            setter.call(field, value);
+            field.dispatchEvent(new Event("input", { bubbles: true }));
+            field.dispatchEvent(new Event("change", { bubbles: true }));
+            requestAnimationFrame(() => requestAnimationFrame(() => done(field.value)));
+            """,
+            textarea,
+            question,
+        )
+        wait.until(lambda _: textarea.get_attribute("value") == question)
+        wait.until(lambda _: button.is_displayed() and button.is_enabled())
+        driver.execute_async_script(
+            """
+            const form = arguments[0];
+            const button = arguments[1];
+            const done = arguments[arguments.length - 1];
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+              form.requestSubmit(button);
+              done(true);
+            }));
+            """,
+            form,
+            button,
+        )
+        wait.until(lambda _: len(turns()) > before_count)
+        wait_session_turns(before_count + 1)
+        state = session_state()
+        latest_session = state.get("latest") or {}
+        effective_question = latest_session.get("effective_question") or ""
+        user_text = latest_session.get("user_text") or ""
+        url_question = parse_qs(urlparse(driver.current_url).query).get("q", [""])[0]
+        record(
+            "canonical_question_transport",
+            bool(effective_question)
+            and user_text == effective_question
+            and url_question == effective_question,
+            f"url_q={url_question!r}; user_text={user_text!r}; effective_question={effective_question!r}",
+        )
         return latest()
+
 
     try:
         driver.get(f"{BASE}?lang={locale}")
@@ -213,10 +287,28 @@ projection_results = []
 error = None
 try:
     for index, case in enumerate(BASE_CASES):
-        results.append(run_case(index, case))
+        failure = None
+        for attempt in range(2):
+            try:
+                results.append(run_case(index, case))
+                failure = None
+                break
+            except Exception as exc:
+                failure = f"case={index + 1} attempt={attempt + 1} {type(exc).__name__}: {exc}"
+        if failure is not None:
+            raise RuntimeError(failure)
     for locale in ("en", "ru"):
         for width in (1280, 390):
-            projection_results.append(run_projection_case(locale, width))
+            failure = None
+            for attempt in range(2):
+                try:
+                    projection_results.append(run_projection_case(locale, width))
+                    failure = None
+                    break
+                except Exception as exc:
+                    failure = f"projection={locale}:{width} attempt={attempt + 1} {type(exc).__name__}: {exc}"
+            if failure is not None:
+                raise RuntimeError(failure)
 except Exception as exc:
     error = str(exc)
 
