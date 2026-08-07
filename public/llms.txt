@@ -1,10 +1,12 @@
 # BHRIGU
 
-BHRIGU is the public product home.
+BHRIGU is the public access and ecosystem surface.
 
-## Primary product
+## Primary market product surface
 - Market Cosmographer: evidence-linked market intelligence.
 - BTC Field: the first public corridor, designed for Bitcoin investors and researchers.
+
+BHRIGU provides the public access surface. ORION, Frey and Cosmographer remain distinct technology and brand contours.
 
 ## Canonical public pages
 - https://www.bhrigu.io/
