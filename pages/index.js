@@ -1,5 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
+import {
+  EMPTY_BTC_HOME_ACCEPTED_STATE,
+  loadBtcHomeAcceptedState,
+} from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 
 const PUBLIC_PROOF_URL =
@@ -243,12 +247,68 @@ function buildJsonLd() {
   };
 }
 
-export function getServerSideProps({ query }) {
-  return { props: { locale: query.lang === "ru" ? "ru" : "en" } };
+function formatAcceptedSnapshotTime(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return null;
+  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
-export default function Home({ locale }) {
+function acceptedStateView(locale, state) {
+  const ru = locale === "ru";
+  const synthesis = {
+    CONFIRMATION: ru ? "ПОДТВЕРЖДЕНИЕ" : "CONFIRMATION",
+    DIVERGENCE: ru ? "РАСХОЖДЕНИЕ" : "DIVERGENCE",
+    INSUFFICIENT_EVIDENCE: ru ? "ГРАНИЦА ДОКАЗАТЕЛЬСТВ" : "EVIDENCE BOUNDARY",
+    UNAVAILABLE: ru ? "ПРОВЕРКА НЕДОСТУПНА" : "VERIFICATION UNAVAILABLE",
+  }[state.synthesis_state] || (ru ? "ПРОВЕРКА НЕДОСТУПНА" : "VERIFICATION UNAVAILABLE");
+  const freshness = state.freshness === "FRESH"
+    ? (ru ? "СВЕЖИЙ SNAPSHOT" : "FRESH SNAPSHOT")
+    : state.freshness === "STALE_LIMITED"
+      ? (ru ? "ОГРАНИЧЕННАЯ СВЕЖЕСТЬ" : "STALE · LIMITED")
+      : (ru ? "ИСТОЧНИК НЕДОСТУПЕН" : "SOURCE UNAVAILABLE");
+  const delta = {
+    MIXED: ru ? "СМЕШАННАЯ ДЕЛЬТА" : "MIXED DELTA",
+    UP: ru ? "ДЕЛЬТА ВВЕРХ" : "UP DELTA",
+    DOWN: ru ? "ДЕЛЬТА ВНИЗ" : "DOWN DELTA",
+    STABLE: ru ? "СТАБИЛЬНАЯ ДЕЛЬТА" : "STABLE DELTA",
+    BOUNDED: ru ? "ОГРАНИЧЕННАЯ ДЕЛЬТА" : "BOUNDED DELTA",
+    UNAVAILABLE: ru ? "ДЕЛЬТА НЕДОСТУПНА" : "DELTA UNAVAILABLE",
+  }[state.delta_direction] || (ru ? "ДЕЛЬТА НЕДОСТУПНА" : "DELTA UNAVAILABLE");
+  const snapshot = formatAcceptedSnapshotTime(state.snapshot_time_utc);
+  const proof = state.status === "UNAVAILABLE"
+    ? (ru ? "СТАТИЧЕСКОЕ ПОЛЕ · ОЖИДАЕТ ПРОВЕРКИ" : "STATIC FIELD · VERIFICATION PENDING")
+    : `${state.evidence_source_count} ${ru ? "ИСТОЧНИКОВ" : "SOURCES"} · ${state.comparable_metric_count} ${ru ? "СОПОСТАВИМЫХ" : "COMPARABLE"} · ${delta}`;
+  const meta = [freshness, snapshot].filter(Boolean).join(" · ");
+  const kicker = ru ? "ПРИНЯТОЕ СОСТОЯНИЕ BTC" : "ACCEPTED BTC STATE";
+  const footer = ru
+    ? "ПРИНЯТОЕ СОСТОЯНИЕ BTC · ДОСТУП ЧЕЛОВЕКУ · БУДУЩИЙ ДОСТУП AI-АГЕНТА"
+    : "ACCEPTED BTC STATE · HUMAN ACCESS · FUTURE AI AGENT ACCESS";
+  const aria = ru
+    ? `Принятое состояние BTC Field: ${synthesis}. ${meta}. ${proof}. Доступ AI-агента обозначен только как будущее.`
+    : `BTC Field accepted state: ${synthesis}. ${meta}. ${proof}. AI-agent access is marked as future only.`;
+  return { synthesis, freshness, delta, snapshot, proof, meta, kicker, footer, aria };
+}
+
+export async function getServerSideProps({ query, res }) {
+  res?.setHeader?.("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+  let btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE;
+  try {
+    btcAcceptedState = await loadBtcHomeAcceptedState();
+  } catch {
+    btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE;
+  }
+  return {
+    props: {
+      locale: query.lang === "ru" ? "ru" : "en",
+      btcAcceptedState,
+    },
+  };
+}
+
+export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE }) {
   const copy = COPY[locale] || COPY.en;
+  const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
   const primaryQuestion = locale === "ru"
     ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?"
@@ -313,9 +373,26 @@ export default function Home({ locale }) {
             </div>
             <p className={styles.proofLine}>{copy.proofLine}</p>
           </div>
-          <div className={styles.heroGlyph} aria-hidden="true">
+          <div
+            className={styles.heroGlyph}
+            role="img"
+            aria-label={acceptedState.aria}
+            data-btc-status={btcAcceptedState.status}
+            data-btc-freshness={btcAcceptedState.freshness}
+            data-btc-synthesis={btcAcceptedState.synthesis_state}
+            data-btc-delta={btcAcceptedState.delta_direction}
+            data-btc-conditions={btcAcceptedState.conditions_state}
+            data-btc-footer={acceptedState.footer}
+          >
             <span className={styles.phiGlyph}>Φ</span>
             <span className={styles.glyphLabel}>MARKET / TIME / CONDITION</span>
+            <span data-btc-state-pulse aria-hidden="true" />
+            <span data-btc-accepted-state aria-hidden="true">
+              <span data-btc-state-kicker>{acceptedState.kicker}</span>
+              <strong>{acceptedState.synthesis}</strong>
+              <span data-btc-state-meta>{acceptedState.meta}</span>
+              <span data-btc-state-proof>{acceptedState.proof}</span>
+            </span>
           </div>
         </section>
 
