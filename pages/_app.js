@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "../styles/home-closing-minimal-footer-v0-1.css";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
