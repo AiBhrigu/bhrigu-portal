@@ -21,12 +21,12 @@ export function BtcHeroQuestionLaunch({
       <FieldAnchorGlyph className="heroQuestionGlyph" />
       <div>
         <p className="eyebrow">{ru ? "BTC Field · первый доказанный коридор" : "BTC Field · first proven corridor"}</p>
-        <h2 id="hero-dialogue-title">{ru ? "Спросите, что изменилось в Bitcoin" : "Ask what changed in Bitcoin"}</h2>
+        <h2 id="hero-dialogue-title">{ru ? "Начните с того, что изменилось в Bitcoin" : "Start with what changed in Bitcoin"}</h2>
       </div>
     </header>
     <p className="heroQuestionLead">{ru
-      ? "Первый клик открывает готовый вопрос для самостоятельного инвестора с горизонтом от нескольких недель до нескольких месяцев."
-      : "The first click opens a prepared question for a self-directed investor with a multi-week to multi-month horizon."}</p>
+      ? "Готовый вопрос о Bitcoin, привязанный к текущим доказательствам и явным условиям."
+      : "A prepared Bitcoin question grounded in current evidence and explicit conditions."}</p>
     <div className="heroValuePath" aria-label={ru ? "Путь чтения" : "Reading path"}>
       <span>{ru ? "Изменение" : "Change"}</span>
       <span>{ru ? "Почему важно" : "Why it matters"}</span>

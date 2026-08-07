@@ -41,13 +41,13 @@ export function BtcQuestionMembrane({
     ? [
         ["01", "Что изменилось", "Текущее поле и принятые изменения после последнего Snapshot."],
         ["02", "Почему это важно", "Связь рыночной структуры, ликвидности, памяти и временного контекста."],
-        ["03", "Что может произойти дальше", "Только ограниченные окна с условиями усиления, ослабления и отмены."],
+        ["03", "Что отслеживать дальше", "Условия, которые усилят, ослабят или отменят текущее чтение."],
         ["04", "Что проверить", "Источники, актуальность, доказательства и граница вывода."],
       ]
     : [
         ["01", "What changed", "The current field and accepted changes since the latest Snapshot."],
         ["02", "Why it matters", "The relationship between structure, liquidity, memory, and temporal context."],
-        ["03", "What may happen next", "Only bounded windows with strengthening, weakening, and invalidation conditions."],
+        ["03", "What to watch next", "Conditions that would strengthen, weaken, or invalidate the current read."],
         ["04", "What to verify", "Sources, freshness, evidence, and the inference boundary."],
       ];
 
