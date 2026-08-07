@@ -152,23 +152,56 @@ jobs:
               before_dom_turns = len(exchanges())
               before_route_turns = len(turns())
               textarea = wait_for_composer()
-              textarea.clear()
-              textarea.send_keys(question)
-              wait.until(lambda _: textarea.get_attribute("value") == question)
               form = driver.find_element(By.CSS_SELECTOR, "form.liveComposer")
               button = form.find_element(By.CSS_SELECTOR, 'button[type="submit"]')
+              driver.set_script_timeout(20)
+              driver.execute_async_script(
+                  """
+                  const field = arguments[0];
+                  const value = arguments[1];
+                  const done = arguments[arguments.length - 1];
+                  const setter = Object.getOwnPropertyDescriptor(
+                    HTMLTextAreaElement.prototype, "value"
+                  ).set;
+                  setter.call(field, value);
+                  field.dispatchEvent(new Event("input", { bubbles: true }));
+                  field.dispatchEvent(new Event("change", { bubbles: true }));
+                  requestAnimationFrame(() => requestAnimationFrame(() => done(field.value)));
+                  """,
+                  textarea,
+                  question,
+              )
+              wait.until(lambda _: textarea.get_attribute("value") == question)
               driver.execute_script(
                   "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
                   button,
               )
               wait.until(lambda _: button.is_displayed() and button.is_enabled())
-              button.click()
+              driver.execute_async_script(
+                  """
+                  const form = arguments[0];
+                  const button = arguments[1];
+                  const done = arguments[arguments.length - 1];
+                  requestAnimationFrame(() => requestAnimationFrame(() => {
+                    form.requestSubmit(button);
+                    done(true);
+                  }));
+                  """,
+                  form,
+                  button,
+              )
 
-              wait.until(lambda _: current_question() == question)
               wait.until(lambda _: session_turn_count() > before_session_turns)
               wait.until(lambda _: len(exchanges()) > before_dom_turns)
               wait.until(lambda _: len(turns()) > before_route_turns)
-              wait_for_session_question(question)
+              latest_session_turn = (session() or {}).get("turns", [])[-1]
+              effective_question = latest_session_turn.get("effective_question") or ""
+              user_text = latest_session_turn.get("user_text") or ""
+              wait.until(
+                  lambda _: bool(effective_question)
+                  and current_question() == question
+                  and user_text == question
+              )
               wait.until(lambda _: value(latest(), "data-route-disposition") == expected_disposition)
               wait.until(lambda _: value(latest(), "data-route-domain") == expected_domain)
               wait.until(lambda _: value(latest(), "data-route-subject") == expected_subject)
@@ -178,8 +211,28 @@ jobs:
               node = latest()
 
               tag = str(before_session_turns + 1)
-              record(f"form_request_submitted_{tag}", driver.current_url != before_url, driver.current_url)
-              record(f"url_updated_{tag}", current_question() == question, current_question())
+              record(
+                  f"form_request_submitted_{tag}",
+                  session_turn_count() > before_session_turns,
+                  json.dumps({
+                      "before_url": before_url,
+                      "after_url": driver.current_url,
+                      "before_session_turns": before_session_turns,
+                      "after_session_turns": session_turn_count(),
+                  }, ensure_ascii=False),
+              )
+              record(
+                  f"clarification_question_transport_{tag}",
+                  bool(effective_question)
+                  and user_text == question
+                  and current_question() == question,
+                  json.dumps({
+                      "submitted": question,
+                      "url_q": current_question(),
+                      "user_text": user_text,
+                      "effective_question": effective_question,
+                  }, ensure_ascii=False),
+              )
               record(f"session_turn_incremented_{tag}", session_turn_count() > before_session_turns, session_turn_count())
               record(f"dom_turn_incremented_{tag}", len(exchanges()) > before_dom_turns, len(exchanges()))
               record(f"newest_turn_exists_{tag}", len(turns()) > before_route_turns, len(turns()))

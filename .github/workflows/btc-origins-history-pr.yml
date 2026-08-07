@@ -126,16 +126,43 @@ jobs:
           def submit(text):
               form = wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "form.liveComposer"))
               box = form.find_element(By.CSS_SELECTOR, "textarea[name='q']")
-              box.clear()
-              box.send_keys(text)
-              wait.until(lambda _: box.get_attribute("value") == text)
               button = form.find_element(By.CSS_SELECTOR, "button[type='submit']")
+              driver.set_script_timeout(20)
+              driver.execute_async_script(
+                  """
+                  const field = arguments[0];
+                  const value = arguments[1];
+                  const done = arguments[arguments.length - 1];
+                  const setter = Object.getOwnPropertyDescriptor(
+                    HTMLTextAreaElement.prototype, "value"
+                  ).set;
+                  setter.call(field, value);
+                  field.dispatchEvent(new Event("input", { bubbles: true }));
+                  field.dispatchEvent(new Event("change", { bubbles: true }));
+                  requestAnimationFrame(() => requestAnimationFrame(() => done(field.value)));
+                  """,
+                  box,
+                  text,
+              )
+              wait.until(lambda _: box.get_attribute("value") == text)
               driver.execute_script(
                   "arguments[0].scrollIntoView({block:'center',inline:'nearest'});",
                   button,
               )
               wait.until(lambda _: button.is_displayed() and button.is_enabled())
-              button.click()
+              driver.execute_async_script(
+                  """
+                  const form = arguments[0];
+                  const button = arguments[1];
+                  const done = arguments[arguments.length - 1];
+                  requestAnimationFrame(() => requestAnimationFrame(() => {
+                    form.requestSubmit(button);
+                    done(true);
+                  }));
+                  """,
+                  form,
+                  button,
+              )
               wait.until(lambda _: current_question() == text)
 
           try:
