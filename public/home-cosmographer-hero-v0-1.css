@@ -4,7 +4,7 @@
 main[data-primary-product="market-cosmographer"] > section:first-of-type {
   position: relative;
   width: min(1320px, calc(100% - 56px));
-  grid-template-columns: minmax(0, 0.92fr) minmax(500px, 1.08fr);
+  grid-template-columns: minmax(0, 1.618fr) minmax(420px, 1fr);
   gap: clamp(36px, 5vw, 76px);
   min-height: min(820px, calc(100vh - 72px));
   overflow: visible;
@@ -78,6 +78,23 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
 main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > span {
   opacity: 0;
   pointer-events: none;
+}
+
+/* One DOM Φ remains visible for the accepted Home identity contract and is
+   placed over the existing SVG Φ location so the visual still reads as one glyph. */
+main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > span:first-child {
+  position: absolute !important;
+  z-index: 3 !important;
+  left: 53.12% !important;
+  top: 11.2% !important;
+  transform: translate(-50%, -50%) !important;
+  opacity: 0.68 !important;
+  color: rgba(210, 182, 108, 0.78) !important;
+  font-family: Georgia, "Times New Roman", serif !important;
+  font-size: 20px !important;
+  font-weight: 400 !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
 }
 
 main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-accepted-state] {
@@ -179,7 +196,7 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
 @media (max-width: 1050px) {
   main[data-primary-product="market-cosmographer"] > section:first-of-type {
     width: min(1180px, calc(100% - 48px));
-    grid-template-columns: minmax(0, 1fr) minmax(430px, 0.96fr);
+    grid-template-columns: minmax(0, 1.618fr) minmax(390px, 1fr);
     gap: 34px;
   }
 
@@ -231,6 +248,11 @@ main[data-primary-product="market-cosmographer"] > section:first-of-type > div:l
     margin-top: 4px;
     background-size: 112% auto;
     background-position: 52% 50%;
+  }
+
+  main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > span:first-child {
+    top: 9.5% !important;
+    font-size: 15px !important;
   }
 
   main[data-primary-product="market-cosmographer"] > section:first-of-type > div:last-child > [data-btc-accepted-state] {
