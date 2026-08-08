@@ -1,5 +1,4 @@
 import "../styles/globals.css";
-import "../styles/home-closing-minimal-footer-v0-1.css";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
@@ -13,7 +12,7 @@ const BASE_URL = "https://www.bhrigu.io";
 const ROUTE_META = {
   "/": {
     "title": "Market Cosmographer · AI Market Intelligence | BHRIGU",
-    "desc": "Verified market data, field context and explicit forecast conditions combined into one evidence-linked read — starting with Bitcoin."
+    "desc": "Verified market data, field context and explicit forward conditions combined into one evidence-linked read — starting with Bitcoin."
   },
   "/start": {
     "title": "Start · BHRIGU",
@@ -102,8 +101,6 @@ function getMeta(pathname) {
 }
 
 export default function App({ Component, pageProps }) {
-  // ATOM_BHRIGU_PORTAL_SEO_CANONICAL_DAO_V2_FIX
-  // Single router instance (dedupe). Canonical derived from normalized path.
   const router = useRouter();
   const path = normalizePath(router?.asPath || router?.pathname || '/');
   const meta = getMeta(path);
