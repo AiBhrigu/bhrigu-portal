@@ -1,0 +1,130 @@
+name: BHRIGU Home Canonical Visual Geometry Gate
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml"
+      - "pages/_app.js"
+      - "pages/_document.js"
+      - "pages/index.js"
+      - "pages/index.module.css"
+      - "public/market-cosmographer-btc-field-hero-v0-2.svg"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE: http://127.0.0.1:3100
+
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Start exact-head preview
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          npm run start -- -p 3100 > artifacts/home-visual-geometry-preview.log 2>&1 &
+          echo $! > /tmp/home-visual-geometry.pid
+          for attempt in {1..45}; do
+            curl --fail --silent "$BASE/?lang=en" >/dev/null && exit 0
+            sleep 1
+          done
+          cat artifacts/home-visual-geometry-preview.log
+          exit 1
+      - name: Install visual driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Verify canonical geometry and first fold
+        run: |
+          python3 - <<'PY'
+          import json, os, xml.etree.ElementTree as ET
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["BASE"].rstrip("/")
+          artifacts = Path("artifacts")
+          report = {"checks": {}, "views": {}, "failures": []}
+          def check(name, value, detail=None):
+              ok = bool(value); report["checks"][name] = ok
+              if not ok:
+                  report["failures"].append(name)
+                  if detail is not None: report.setdefault("detail", {})[name] = detail
+
+          svg_path = Path("public/market-cosmographer-btc-field-hero-v0-2.svg")
+          root = ET.parse(svg_path).getroot()
+          viewbox = [float(v) for v in root.attrib["viewBox"].split()]
+          expected_x = viewbox[0] + viewbox[2] / 2
+          ns = {"svg": "http://www.w3.org/2000/svg"}
+          btc_text = next(n for n in root.findall(".//svg:text", ns) if "".join(n.itertext()).strip() == "₿")
+          svg_text = svg_path.read_text(encoding="utf-8")
+          check("svg_core_true_50_axis", abs(float(btc_text.attrib["x"]) - expected_x) < 0.001)
+          check("svg_no_embedded_phi", "Φ" not in svg_text)
+          check("svg_future_agent_path_present", "FUTURE · AI AGENT ACCESS" in svg_text)
+          check("svg_current_semantics_present", all(t in svg_text for t in ["EVIDENCE", "CHANGE", "CONDITIONS"]))
+
+          options = Options(); options.add_argument("--headless=new"); options.add_argument("--no-sandbox"); options.add_argument("--disable-dev-shm-usage"); options.add_argument("--disable-gpu"); options.add_argument("--hide-scrollbars")
+          driver = webdriver.Chrome(options=options)
+          def rect(selector):
+              return driver.execute_script("const e=document.querySelector(arguments[0]);if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};", selector)
+          def run_view(name, width, height):
+              driver.set_window_size(width, height); driver.get(f"{base}/?lang=en")
+              WebDriverWait(driver, 30).until(lambda d: d.find_element(By.ID, "home-title").is_displayed())
+              viewport = driver.execute_script("return {width:innerWidth,height:innerHeight}")
+              cta=rect("[data-primary-cta='btc-current-change-question']"); visual=rect("section[aria-labelledby='home-title'] > div:last-child"); canvas=rect("[data-btc-field-canvas]"); band=rect("[data-btc-accepted-state]"); phi=rect("section[aria-labelledby='home-title'] > div:last-child span")
+              page_bg=driver.execute_script("return getComputedStyle(document.querySelector('main[data-primary-product=\"market-cosmographer\"]')).backgroundImage")
+              sizes=driver.execute_script("const b=document.querySelector('[data-btc-accepted-state]');return Array.from(b.querySelectorAll('span,strong')).map(e=>({text:e.textContent.trim(),px:parseFloat(getComputedStyle(e).fontSize)}));")
+              footer=driver.execute_script("const f=document.getElementById('open-btc-field');return f?{tag:f.tagName,visible:!!(f.offsetWidth||f.offsetHeight||f.getClientRects().length),childText:Array.from(f.children).map(e=>e.textContent.trim())}:null;")
+              no_overflow=driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 1")
+              phi_count=driver.find_element(By.TAG_NAME,"body").text.count("Φ")
+              driver.save_screenshot(str(artifacts/f"home-canonical-geometry-{name}.png"))
+              report["views"][name]={"viewport":viewport,"cta":cta,"visual":visual,"canvas":canvas,"band":band,"phi":phi,"state_font_sizes":sizes,"footer":footer}
+              check(f"{name}_no_horizontal_overflow", no_overflow, report["views"][name])
+              check(f"{name}_one_visible_phi", phi_count==1, phi_count)
+              check(f"{name}_state_band_outside_canvas", canvas and band and band["top"] >= canvas["bottom"]-1, {"canvas":canvas,"band":band})
+              check(f"{name}_phi_centered_on_canvas", canvas and phi and abs((phi["left"]+phi["right"])/2-(canvas["left"]+canvas["right"])/2)<=1.5, {"canvas":canvas,"phi":phi})
+              check(f"{name}_deep_grid_present", page_bg.count("linear-gradient")>=4, page_bg)
+              check(f"{name}_semantic_footer_real_dom", footer and footer["tag"]=="FOOTER" and footer["visible"] and footer["childText"]==["BTC FIELD · MARKET COSMOGRAPHER","www.bhrigu.io"], footer)
+              check(f"{name}_state_text_readable", all(x["px"]>=6.5 for x in sizes), sizes)
+              if name=="desktop":
+                  check("desktop_primary_cta_first_fold_900", cta and cta["top"]>=0 and cta["bottom"]<=viewport["height"], {"cta":cta,"viewport":viewport})
+                  check("desktop_visual_not_clipped_by_fold", visual and visual["top"]>=0 and visual["bottom"]<=viewport["height"]+8, {"visual":visual,"viewport":viewport})
+          try:
+              run_view("desktop",1440,900); run_view("mobile",390,844)
+          finally: driver.quit()
+          report["status"]="PASS" if not report["failures"] else "FAIL"
+          (artifacts/"home-canonical-visual-geometry-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          if report["failures"]: raise SystemExit(f"HOME_CANONICAL_VISUAL_GEOMETRY=FAIL {report['failures']}")
+          print("HOME_CANONICAL_VISUAL_GEOMETRY=PASS")
+          PY
+      - name: Stop preview
+        if: always()
+        run: |
+          if test -f /tmp/home-visual-geometry.pid; then kill "$(cat /tmp/home-visual-geometry.pid)" || true; fi
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bhrigu-home-canonical-visual-geometry-${{ github.event.pull_request.number || github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
