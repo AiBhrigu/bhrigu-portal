@@ -84,10 +84,7 @@ const COPY = {
     marketsTitle: "Bitcoin first. Expansion only after proof.",
     marketsBody:
       "The method can be applied to additional market fields, but BTC Field is the first and only proven public live corridor today. New corridors remain outside the public claim until their data, method and acceptance are verified.",
-    closeEyebrow: "START WITH THE LIVE FIELD",
-    closeTitle: "See what changed in Bitcoin — and what conditions matter next.",
-    closeBody:
-      "Enter the accepted BTC Field in your language. The evidence boundary remains visible from the first read.",
+    footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
   },
   ru: {
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ",
@@ -163,10 +160,7 @@ const COPY = {
     marketsTitle: "Сначала Bitcoin. Расширение — только после доказательств.",
     marketsBody:
       "Метод применим к другим рыночным полям, но сегодня BTC Field — первый и единственный доказанный публичный живой коридор. Новые коридоры не входят в публичное обещание до проверки данных, метода и приёмки.",
-    closeEyebrow: "НАЧНИТЕ С ЖИВОГО ПОЛЯ",
-    closeTitle: "Посмотрите, что изменилось в Bitcoin — и какие условия важны дальше.",
-    closeBody:
-      "Откройте принятое BTC Field на своём языке. Граница доказательств видна с первого чтения.",
+    footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
   },
 };
 
@@ -176,10 +170,7 @@ function EditorialList({ items, numbered = false }) {
       {items.map(([title, body], index) => (
         <li key={title}>
           <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
-          <div>
-            <h3>{title}</h3>
-            <p>{body}</p>
-          </div>
+          <div><h3>{title}</h3><p>{body}</p></div>
         </li>
       ))}
     </ol>
@@ -187,325 +178,65 @@ function EditorialList({ items, numbered = false }) {
 }
 
 function SectionHeading({ eyebrow, title, body }) {
-  return (
-    <div className={styles.sectionHeading}>
-      <p className={styles.eyebrow}>{eyebrow}</p>
-      <h2>{title}</h2>
-      {body ? <p className={styles.sectionLead}>{body}</p> : null}
-    </div>
-  );
+  return <div className={styles.sectionHeading}><p className={styles.eyebrow}>{eyebrow}</p><h2>{title}</h2>{body ? <p className={styles.sectionLead}>{body}</p> : null}</div>;
 }
 
 function buildJsonLd() {
   const home = "https://www.bhrigu.io/";
   const product = `${home}#market-cosmographer`;
   const btc = "https://www.bhrigu.io/crypto-astro/btc";
-  return {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": `${home}#organization`,
-        name: "BHRIGU",
-        url: home,
-      },
-      {
-        "@type": "WebSite",
-        "@id": `${home}#website`,
-        name: "BHRIGU",
-        url: home,
-        publisher: { "@id": `${home}#organization` },
-      },
-      {
-        "@type": "WebPage",
-        "@id": `${home}#webpage`,
-        url: home,
-        name: "Market Cosmographer · AI Market Intelligence | BHRIGU",
-        isPartOf: { "@id": `${home}#website` },
-        about: { "@id": product },
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": product,
-        name: "Market Cosmographer",
-        applicationCategory: "BusinessApplication",
-        operatingSystem: "Web",
-        url: home,
-        description:
-          "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.",
-      },
-      {
-        "@type": "BreadcrumbList",
-        "@id": `${home}#breadcrumb`,
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: "BHRIGU", item: home },
-          { "@type": "ListItem", position: 2, name: "Market Cosmographer", item: product },
-          { "@type": "ListItem", position: 3, name: "BTC Field", item: btc },
-        ],
-      },
-    ],
-  };
+  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":`${home}#organization`,name:"BHRIGU",url:home},{"@type":"WebSite","@id":`${home}#website`,name:"BHRIGU",url:home,publisher:{"@id":`${home}#organization`}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:"Market Cosmographer · AI Market Intelligence | BHRIGU",isPartOf:{"@id":`${home}#website`},about:{"@id":product}},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description:"An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read."},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
 }
 
-function formatAcceptedSnapshotTime(value) {
-  if (!value) return null;
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return null;
-  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-}
-
+function formatAcceptedSnapshotTime(value) { if (!value) return null; const date = new Date(value); if (!Number.isFinite(date.getTime())) return null; return `${date.toISOString().slice(0,16).replace("T"," ")} UTC`; }
 function acceptedStateView(locale, state) {
   const ru = locale === "ru";
-  const synthesis = {
-    CONFIRMATION: ru ? "ПОДТВЕРЖДЕНИЕ" : "CONFIRMATION",
-    DIVERGENCE: ru ? "РАСХОЖДЕНИЕ" : "DIVERGENCE",
-    INSUFFICIENT_EVIDENCE: ru ? "ГРАНИЦА ДОКАЗАТЕЛЬСТВ" : "EVIDENCE BOUNDARY",
-    UNAVAILABLE: ru ? "ПРОВЕРКА НЕДОСТУПНА" : "VERIFICATION UNAVAILABLE",
-  }[state.synthesis_state] || (ru ? "ПРОВЕРКА НЕДОСТУПНА" : "VERIFICATION UNAVAILABLE");
-  const freshness = state.freshness === "FRESH"
-    ? (ru ? "СВЕЖИЙ SNAPSHOT" : "FRESH SNAPSHOT")
-    : state.freshness === "STALE_LIMITED"
-      ? (ru ? "ОГРАНИЧЕННАЯ СВЕЖЕСТЬ" : "STALE · LIMITED")
-      : (ru ? "ИСТОЧНИК НЕДОСТУПЕН" : "SOURCE UNAVAILABLE");
-  const delta = {
-    MIXED: ru ? "СМЕШАННАЯ ДЕЛЬТА" : "MIXED DELTA",
-    UP: ru ? "ДЕЛЬТА ВВЕРХ" : "UP DELTA",
-    DOWN: ru ? "ДЕЛЬТА ВНИЗ" : "DOWN DELTA",
-    STABLE: ru ? "СТАБИЛЬНАЯ ДЕЛЬТА" : "STABLE DELTA",
-    BOUNDED: ru ? "ОГРАНИЧЕННАЯ ДЕЛЬТА" : "BOUNDED DELTA",
-    UNAVAILABLE: ru ? "ДЕЛЬТА НЕДОСТУПНА" : "DELTA UNAVAILABLE",
-  }[state.delta_direction] || (ru ? "ДЕЛЬТА НЕДОСТУПНА" : "DELTA UNAVAILABLE");
+  const synthesis = {CONFIRMATION:ru?"ПОДТВЕРЖДЕНИЕ":"CONFIRMATION",DIVERGENCE:ru?"РАСХОЖДЕНИЕ":"DIVERGENCE",INSUFFICIENT_EVIDENCE:ru?"ГРАНИЦА ДОКАЗАТЕЛЬСТВ":"EVIDENCE BOUNDARY",UNAVAILABLE:ru?"ПРОВЕРКА НЕДОСТУПНА":"VERIFICATION UNAVAILABLE"}[state.synthesis_state] || (ru?"ПРОВЕРКА НЕДОСТУПНА":"VERIFICATION UNAVAILABLE");
+  const freshness = state.freshness === "FRESH" ? (ru?"СВЕЖИЙ SNAPSHOT":"FRESH SNAPSHOT") : state.freshness === "STALE_LIMITED" ? (ru?"ОГРАНИЧЕННАЯ СВЕЖЕСТЬ":"STALE · LIMITED") : (ru?"ИСТОЧНИК НЕДОСТУПЕН":"SOURCE UNAVAILABLE");
+  const delta = {MIXED:ru?"СМЕШАННАЯ ДЕЛЬТА":"MIXED DELTA",UP:ru?"ДЕЛЬТА ВВЕРХ":"UP DELTA",DOWN:ru?"ДЕЛЬТА ВНИЗ":"DOWN DELTA",STABLE:ru?"СТАБИЛЬНАЯ ДЕЛЬТА":"STABLE DELTA",BOUNDED:ru?"ОГРАНИЧЕННАЯ ДЕЛЬТА":"BOUNDED DELTA",UNAVAILABLE:ru?"ДЕЛЬТА НЕДОСТУПНА":"DELTA UNAVAILABLE"}[state.delta_direction] || (ru?"ДЕЛЬТА НЕДОСТУПНА":"DELTA UNAVAILABLE");
   const snapshot = formatAcceptedSnapshotTime(state.snapshot_time_utc);
-  const proof = state.status === "UNAVAILABLE"
-    ? (ru ? "СТАТИЧЕСКОЕ ПОЛЕ · ОЖИДАЕТ ПРОВЕРКИ" : "STATIC FIELD · VERIFICATION PENDING")
-    : `${state.evidence_source_count} ${ru ? "ИСТОЧНИКОВ" : "SOURCES"} · ${state.comparable_metric_count} ${ru ? "СОПОСТАВИМЫХ" : "COMPARABLE"} · ${delta}`;
-  const meta = [freshness, snapshot].filter(Boolean).join(" · ");
-  const kicker = ru ? "ПРИНЯТОЕ СОСТОЯНИЕ BTC" : "ACCEPTED BTC STATE";
-  const footer = ru
-    ? "ПРИНЯТОЕ СОСТОЯНИЕ BTC · ДОСТУП ЧЕЛОВЕКУ · БУДУЩИЙ ДОСТУП AI-АГЕНТА"
-    : "ACCEPTED BTC STATE · HUMAN ACCESS · FUTURE AI AGENT ACCESS";
-  const aria = ru
-    ? `Принятое состояние BTC Field: ${synthesis}. ${meta}. ${proof}. Доступ AI-агента обозначен только как будущее.`
-    : `BTC Field accepted state: ${synthesis}. ${meta}. ${proof}. AI-agent access is marked as future only.`;
-  return { synthesis, freshness, delta, snapshot, proof, meta, kicker, footer, aria };
+  const proof = state.status === "UNAVAILABLE" ? (ru?"СТАТИЧЕСКОЕ ПОЛЕ · ОЖИДАЕТ ПРОВЕРКИ":"STATIC FIELD · VERIFICATION PENDING") : `${state.evidence_source_count} ${ru?"ИСТОЧНИКОВ":"SOURCES"} · ${state.comparable_metric_count} ${ru?"СОПОСТАВИМЫХ":"COMPARABLE"} · ${delta}`;
+  const meta = [freshness,snapshot].filter(Boolean).join(" · ");
+  const kicker = ru?"ПРИНЯТОЕ СОСТОЯНИЕ BTC":"ACCEPTED BTC STATE";
+  const aria = ru ? `Принятое состояние BTC Field: ${synthesis}. ${meta}. ${proof}. Доступ AI-агента обозначен только как будущее.` : `BTC Field accepted state: ${synthesis}. ${meta}. ${proof}. AI-agent access is marked as future only.`;
+  return {synthesis,freshness,delta,snapshot,proof,meta,kicker,aria};
 }
 
 export async function getServerSideProps({ query, res }) {
   res?.setHeader?.("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
   let btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE;
-  try {
-    btcAcceptedState = await loadBtcHomeAcceptedState();
-  } catch {
-    btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE;
-  }
-  return {
-    props: {
-      locale: query.lang === "ru" ? "ru" : "en",
-      btcAcceptedState,
-    },
-  };
+  try { btcAcceptedState = await loadBtcHomeAcceptedState(); } catch { btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE; }
+  return { props: { locale: query.lang === "ru" ? "ru" : "en", btcAcceptedState } };
 }
 
 export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE }) {
   const copy = COPY[locale] || COPY.en;
   const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
-  const primaryQuestion = locale === "ru"
-    ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?"
-    : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
+  const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
   const btcQuestionHref = `/crypto-astro/btc/live?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
   const jsonLd = buildJsonLd();
-
-  return (
-    <>
-      <Head>
-        <title>Market Cosmographer · AI Market Intelligence | BHRIGU</title>
-        <meta
-          name="description"
-          content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."
-        />
-        <meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
-        <meta
-          property="og:description"
-          content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."
-        />
-        <meta property="og:url" content="https://www.bhrigu.io/" />
-        <meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU" />
-        <meta
-          name="twitter:description"
-          content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."
-        />
-        <meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1" />
-      </Head>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <main
-        id="market-cosmographer"
-        className={styles.page}
-        lang={locale}
-        data-primary-product="market-cosmographer"
-        data-home-contract="BHRIGU_HOME_MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_IMPLEMENTATION_v0_1"
-      >
-        <section className={styles.hero} aria-labelledby="home-title">
-          <div className={styles.heroCopy}>
-            <p className={styles.product}>MARKET COSMOGRAPHER</p>
-            <p className={styles.category}>{copy.category}</p>
-            <h1 id="home-title">
-              <span>{copy.h1Lead}</span>
-              <span>{copy.h1Close}</span>
-            </h1>
-            <p className={styles.subheadline}>{copy.subheadline}</p>
-            <div className={styles.heroActions}>
-              <Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">
-                {copy.openBtc}
-                <span aria-hidden="true">↗</span>
-              </Link>
-              <a
-                className={styles.secondaryCta}
-                href={PUBLIC_PROOF_URL}
-                data-secondary-cta="public-proof"
-              >
-                {copy.viewProof}
-              </a>
-            </div>
-            <p className={styles.proofLine}>{copy.proofLine}</p>
-          </div>
-          <div
-            className={styles.heroGlyph}
-            role="img"
-            aria-label={acceptedState.aria}
-            data-btc-status={btcAcceptedState.status}
-            data-btc-freshness={btcAcceptedState.freshness}
-            data-btc-synthesis={btcAcceptedState.synthesis_state}
-            data-btc-delta={btcAcceptedState.delta_direction}
-            data-btc-conditions={btcAcceptedState.conditions_state}
-            data-btc-footer={acceptedState.footer}
-          >
-            <span className={styles.phiGlyph}>Φ</span>
-            <span className={styles.glyphLabel}>MARKET / TIME / CONDITION</span>
-            <span data-btc-state-pulse aria-hidden="true" />
-            <span data-btc-accepted-state aria-hidden="true">
-              <span data-btc-state-kicker>{acceptedState.kicker}</span>
-              <strong>{acceptedState.synthesis}</strong>
-              <span data-btc-state-meta>{acceptedState.meta}</span>
-              <span data-btc-state-proof>{acceptedState.proof}</span>
-            </span>
-          </div>
-        </section>
-
-        <section id="product" className={styles.editorialSection}>
-          <SectionHeading
-            eyebrow={copy.productEyebrow}
-            title={copy.productTitle}
-            body={copy.productIntro}
-          />
-          <EditorialList items={copy.productLayers} />
-        </section>
-
-        <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}>
-          <SectionHeading
-            eyebrow={copy.outcomesEyebrow}
-            title={copy.outcomesTitle}
-            body={copy.outcomesIntro}
-          />
-          <EditorialList items={copy.outcomes} />
-        </section>
-
-        <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}>
-          <div>
-            <SectionHeading
-              eyebrow={copy.btcEyebrow}
-              title={copy.btcTitle}
-              body={copy.btcBody}
-            />
-            <p className={styles.sectionSupport}>{copy.btcDetail}</p>
-            <Link className={styles.textCta} href={btcEntryHref}>
-              {locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-          <div className={styles.btcVisual} aria-label={copy.btcStatus} role="img">
-            <span className={styles.btcOrbit} />
-            <span className={styles.btcDisc}>₿</span>
-            <span className={styles.btcStatus}>{copy.btcStatus}</span>
-          </div>
-        </section>
-
-        <section id="question-to-knowledge" className={styles.editorialSection}>
-          <SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle} />
-          <EditorialList items={copy.questionSteps} numbered />
-        </section>
-
-        <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}>
-          <SectionHeading
-            eyebrow={copy.proofEyebrow}
-            title={copy.proofTitle}
-            body={copy.proofBody}
-          />
-          <div className={styles.proofRoute}>
-            <p>{copy.proofBoundary}</p>
-            <a href={PUBLIC_PROOF_URL} className={styles.textCta}>
-              {copy.viewProof} <span aria-hidden="true">↗</span>
-            </a>
-          </div>
-        </section>
-
-        <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}>
-          <SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle} />
-          <EditorialList items={copy.methodItems} />
-        </section>
-
-        <section id="system-roles" className={styles.editorialSection}>
-          <SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle} />
-          <dl className={styles.roleMap}>
-            {copy.roles.map(([name, role]) => (
-              <div key={name}>
-                <dt>{name}</dt>
-                <dd>{role}</dd>
-              </div>
-            ))}
-          </dl>
-          <nav className={styles.quietRoutes} aria-label="BHRIGU system routes">
-            <Link href="/frey">Frey</Link>
-            <Link href="/cosmographer">Cosmographer</Link>
-            <Link href="/orion">ORION</Link>
-          </nav>
-        </section>
-
-        <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}>
-          <SectionHeading
-            eyebrow={copy.continuityEyebrow}
-            title={copy.continuityTitle}
-            body={copy.continuityBody}
-          />
-          <p className={styles.boundaryNote}>{copy.continuityBoundary}</p>
-        </section>
-
-        <section id="markets" className={styles.editorialSection}>
-          <SectionHeading
-            eyebrow={copy.marketsEyebrow}
-            title={copy.marketsTitle}
-            body={copy.marketsBody}
-          />
-          <div className={styles.marketState}>
-            <span>01</span>
-            <strong>BTC FIELD</strong>
-            <small>{copy.btcStatus}</small>
-          </div>
-        </section>
-
-        <section id="open-btc-field" className={styles.closingSection}>
-          <p className={styles.eyebrow}>{copy.closeEyebrow}</p>
-          <h2>{copy.closeTitle}</h2>
-          <p>{copy.closeBody}</p>
-          <Link className={styles.primaryCta} href={btcQuestionHref}>
-            {copy.openBtc}
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </section>
-      </main>
-    </>
-  );
+  return <>
+    <Head><title>Market Cosmographer · AI Market Intelligence | BHRIGU</title><meta name="description" content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."/><meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta property="og:description" content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."/><meta property="og:url" content="https://www.bhrigu.io/"/><meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta name="twitter:description" content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."/><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>
+    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
+    <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
+      <section className={styles.hero} aria-labelledby="home-title">
+        <div className={styles.heroCopy}><p className={styles.product}>MARKET COSMOGRAPHER</p><p className={styles.category}>{copy.category}</p><h1 id="home-title"><span>{copy.h1Lead}</span><span>{copy.h1Close}</span></h1><p className={styles.subheadline}>{copy.subheadline}</p><div className={styles.heroActions}><Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">{copy.openBtc}<span aria-hidden="true">↗</span></Link><a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a></div><p className={styles.proofLine}>{copy.proofLine}</p></div>
+        <div className={styles.heroVisual} role="img" aria-label={acceptedState.aria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
+          <div className={styles.fieldCanvas} data-btc-field-canvas><img className={styles.fieldArtwork} src="/market-cosmographer-btc-field-hero-v0-2.svg" alt="" aria-hidden="true"/><span className={styles.phiGlyph} aria-hidden="true">Φ</span><span className={styles.statePulse} data-btc-state-pulse aria-hidden="true"/></div>
+          <div className={styles.acceptedStateBand} data-btc-accepted-state aria-hidden="true"><span className={styles.stateIdentity}><span className={styles.stateKicker} data-btc-state-kicker>{acceptedState.kicker}</span><strong>{acceptedState.synthesis}</strong></span><span className={styles.stateEvidence}><span data-btc-state-meta>{acceptedState.meta}</span><span data-btc-state-proof>{acceptedState.proof}</span></span></div>
+        </div>
+      </section>
+      <section id="product" className={styles.editorialSection}><SectionHeading eyebrow={copy.productEyebrow} title={copy.productTitle} body={copy.productIntro}/><EditorialList items={copy.productLayers}/></section>
+      <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}><SectionHeading eyebrow={copy.outcomesEyebrow} title={copy.outcomesTitle} body={copy.outcomesIntro}/><EditorialList items={copy.outcomes}/></section>
+      <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
+      <section id="question-to-knowledge" className={styles.editorialSection}><SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle}/><EditorialList items={copy.questionSteps} numbered/></section>
+      <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></section>
+      <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}><SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle}/><EditorialList items={copy.methodItems}/></section>
+      <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label="BHRIGU system routes"><Link href="/frey">Frey</Link><Link href="/cosmographer">Cosmographer</Link><Link href="/orion">ORION</Link></nav></section>
+      <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}><SectionHeading eyebrow={copy.continuityEyebrow} title={copy.continuityTitle} body={copy.continuityBody}/><p className={styles.boundaryNote}>{copy.continuityBoundary}</p></section>
+      <section id="markets" className={styles.editorialSection}><SectionHeading eyebrow={copy.marketsEyebrow} title={copy.marketsTitle} body={copy.marketsBody}/><div className={styles.marketState}><span>01</span><strong>BTC FIELD</strong><small>{copy.btcStatus}</small></div></section>
+      <footer id="open-btc-field" className={styles.siteFooter}><strong>{copy.footerIdentity}</strong><a href="https://www.bhrigu.io/">www.bhrigu.io</a></footer>
+    </main>
+  </>;
 }
