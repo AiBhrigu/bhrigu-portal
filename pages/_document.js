@@ -12,7 +12,9 @@ export default class BhriguDocument extends Document {
     const lang = this.props.lang === "ru" ? "ru" : "en";
     return (
       <Html lang={lang}>
-        <Head />
+        <Head>
+          <link rel="stylesheet" href="/home-deep-grid-perceptual-v0-1.css" />
+        </Head>
         <body>
           <Main />
           <NextScript />
