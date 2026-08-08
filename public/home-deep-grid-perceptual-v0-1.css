@@ -1,0 +1,23 @@
+/* BHRIGU_HOME_DEEP_GRID_PERCEPTUAL_WEIGHT_v0_1
+   Deep structural substrate only. The grid must orient the composition without
+   competing with section dividers, role-table rules, BTC geometry or typography. */
+
+main[data-primary-product="market-cosmographer"] {
+  background-image:
+    linear-gradient(rgba(98, 168, 216, 0.010) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(98, 168, 216, 0.010) 1px, transparent 1px),
+    linear-gradient(rgba(200, 164, 90, 0.003) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(200, 164, 90, 0.003) 1px, transparent 1px),
+    radial-gradient(circle at 78% 8%, rgba(73, 110, 137, 0.12), transparent 27rem);
+}
+
+@media (max-width: 620px) {
+  main[data-primary-product="market-cosmographer"] {
+    background-image:
+      linear-gradient(rgba(98, 168, 216, 0.007) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(98, 168, 216, 0.007) 1px, transparent 1px),
+      linear-gradient(rgba(200, 164, 90, 0.002) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200, 164, 90, 0.002) 1px, transparent 1px),
+      radial-gradient(circle at 78% 8%, rgba(73, 110, 137, 0.12), transparent 27rem);
+  }
+}
