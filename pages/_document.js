@@ -14,6 +14,7 @@ export default class BhriguDocument extends Document {
       <Html lang={lang}>
         <Head>
           <link rel="stylesheet" href="/home-cosmographer-hero-v0-1.css" />
+          <link rel="stylesheet" href="/home-accepted-state-bottom-band-v0-1.css" />
         </Head>
         <body>
           <Main />
