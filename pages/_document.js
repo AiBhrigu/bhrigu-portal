@@ -12,10 +12,7 @@ export default class BhriguDocument extends Document {
     const lang = this.props.lang === "ru" ? "ru" : "en";
     return (
       <Html lang={lang}>
-        <Head>
-          <link rel="stylesheet" href="/home-cosmographer-hero-v0-1.css" />
-          <link rel="stylesheet" href="/home-accepted-state-bottom-band-v0-1.css" />
-        </Head>
+        <Head />
         <body>
           <Main />
           <NextScript />
