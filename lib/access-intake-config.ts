@@ -10,7 +10,11 @@ type AccessRuntimeEnv = Partial<NodeJS.ProcessEnv>;
 export type AccessIntakeRuntimeConfig =
   | {
       enabled: false;
-      reason: "closed" | "provider_contract_incomplete" | "sender_domain_unverified";
+      reason:
+        | "closed"
+        | "provider_contract_incomplete"
+        | "private_retrieval_incomplete"
+        | "sender_domain_unverified";
     }
   | {
       enabled: true;
@@ -36,6 +40,10 @@ export function getAccessIntakeRuntimeConfig(
 
   if (!env.DATABASE_URL?.trim() || !env.RESEND_API_KEY?.trim()) {
     return { enabled: false, reason: "provider_contract_incomplete" };
+  }
+
+  if (!getAccessReviewRuntimeConfig(env).enabled) {
+    return { enabled: false, reason: "private_retrieval_incomplete" };
   }
 
   return {

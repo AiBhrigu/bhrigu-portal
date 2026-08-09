@@ -10,22 +10,14 @@
 
 ## Fail-closed activation
 
-Public `/access` remains the containment surface and is unchanged. `/api/access/submit` returns `503` before reading the body unless every intake gate below is present:
+Public `/access` remains the containment surface and is unchanged. `/api/access/submit` returns `503` before reading the body unless the complete intake and private-review gates below are present together. Intake cannot activate while authenticated private retrieval is unavailable:
 
 ```dotenv
 ACCESS_PRIVATE_INTAKE_MODE=neon_auth0_resend_v1
 ACCESS_RESEND_DOMAIN_VERIFIED=true
 DATABASE_URL=postgresql://...
 RESEND_API_KEY=re_...
-```
-
-`ACCESS_RESEND_DOMAIN_VERIFIED=true` is an explicit proof gate. It must be set only after Resend verifies `bhrigu.io`; the sender contract is fixed to `BHRIGU Access <access@bhrigu.io>`.
-
-Private `/access-review` remains a `404` unless every review gate below is present:
-
-```dotenv
 ACCESS_PRIVATE_REVIEW_MODE=auth0_neon_v1
-DATABASE_URL=postgresql://...
 AUTH0_DOMAIN=tenant.example.auth0.com
 AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
@@ -33,11 +25,13 @@ AUTH0_SECRET=<32-byte hex secret>
 APP_BASE_URL=https://www.bhrigu.io
 ```
 
-The only authorized operator email is `aibhrigu@gmail.com`. Unauthorized and provider-error states return `404` with private no-store/noindex headers.
+`ACCESS_RESEND_DOMAIN_VERIFIED=true` is an explicit proof gate. It must be set only after Resend verifies `bhrigu.io`; the sender contract is fixed to `BHRIGU Access <access@bhrigu.io>`.
+
+Private `/access-review` remains a `404` unless its review gates are complete. The only authorized operator identity is a verified Auth0 email claim (`email_verified=true`) matching `aibhrigu@gmail.com`. Unverified, unauthorized, and provider-error states return `404` with private no-store/noindex headers.
 
 ## Durable request and delivery contract
 
-1. Client supplies an `Idempotency-Key` header (16–128 safe ASCII characters).
+1. Client creates an `Idempotency-Key` (16–128 safe ASCII characters), persists it alongside the recoverable draft before the request, and reuses it after reload until the request succeeds or the draft changes.
 2. The server validates and canonicalizes the request, then hashes the sanitized payload with SHA-256.
 3. Neon reserves one request row under the unique idempotency key and creates two delivery rows in one transaction.
 4. Reuse of a key with the same payload returns the original request; reuse with a different payload returns `409`.
@@ -57,8 +51,11 @@ The only authorized operator email is `aibhrigu@gmail.com`. Unauthorized and pro
 `npm run verify:access-private-intake` proves:
 
 - default and incomplete configurations fail closed;
-- Auth0 email allowlist is exact and case-normalized;
+- intake activation requires the complete private-retrieval gate;
+- Auth0 email allowlist is exact, case-normalized, and requires `email_verified=true`;
 - storage occurs before delivery claims;
+- the client idempotency key survives a reload fixture and is cleared after resolution;
+- busy delivery claims remain `pending_retry` and are never reported as delivered;
 - equal-key/equal-payload replay returns the original request without duplicate email;
 - equal-key/different-payload returns `409`;
 - failed delivery leaves the request durable and retries only the failed leg;

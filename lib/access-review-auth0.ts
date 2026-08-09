@@ -14,12 +14,16 @@ export function getAccessReviewAuth0Client(): Auth0Client {
 }
 
 export function isAuthorizedAccessOperator(
-  session: { user?: { email?: unknown } } | null | undefined,
+  session:
+    | { user?: { email?: unknown; email_verified?: unknown } }
+    | null
+    | undefined,
   operatorEmail: string
 ): boolean {
   const email = session?.user?.email;
   return (
     typeof email === "string" &&
+    session?.user?.email_verified === true &&
     email.trim().toLowerCase() === operatorEmail.trim().toLowerCase()
   );
 }

@@ -26,7 +26,11 @@ export interface AccessIntakeStore {
     requestId: string;
     kind: AccessDeliveryKind;
     claimedAt: string;
-  }): Promise<{ claimed: boolean; idempotencyKey: string | null }>;
+  }): Promise<{
+    claimed: boolean;
+    idempotencyKey: string | null;
+    state: AccessDeliveryState | null;
+  }>;
   completeDelivery(input: {
     requestId: string;
     kind: AccessDeliveryKind;
@@ -161,7 +165,10 @@ export async function processAccessIntake(input: {
       continue;
     }
 
-    if (!claim.claimed || !claim.idempotencyKey) continue;
+    if (!claim.claimed || !claim.idempotencyKey) {
+      if (claim.state !== "delivered") hasPendingDelivery = true;
+      continue;
+    }
 
     try {
       const delivered = await input.delivery.send({

@@ -289,6 +289,39 @@ export function createAccessIdempotencyKey(): string {
   return `access-${globalThis.crypto.randomUUID()}`;
 }
 
+export const ACCESS_IDEMPOTENCY_STORAGE_KEY =
+  "bhrigu_access_idempotency_v1";
+
+export function loadAccessIdempotencyKeyFromLocalStorage(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = window.localStorage
+      .getItem(ACCESS_IDEMPOTENCY_STORAGE_KEY)
+      ?.trim();
+    return value && /^access-[0-9a-f-]{36}$/.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function persistAccessIdempotencyKeyToLocalStorage(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ACCESS_IDEMPOTENCY_STORAGE_KEY, key);
+  } catch {
+    // The in-memory key still protects retries within this page lifecycle.
+  }
+}
+
+export function clearAccessIdempotencyKeyFromLocalStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(ACCESS_IDEMPOTENCY_STORAGE_KEY);
+  } catch {
+    // Fail closed without interrupting form-state cleanup.
+  }
+}
+
 async function safeReadJson(response: Response): Promise<any | null> {
   try {
     return await response.json();
@@ -392,8 +425,18 @@ export function useAccessStateController(): AccessStateController {
     const entrySource = detectAccessEntrySource();
     const restoreResult = loadDraftFromLocalStorage();
 
+    idempotencyKeyRef.current =
+      loadAccessIdempotencyKeyFromLocalStorage();
+
     if (restoreResult.expired || restoreResult.corrupted) {
       discardExpiredOrCorruptedDraft(restoreResult);
+      clearAccessIdempotencyKeyFromLocalStorage();
+      idempotencyKeyRef.current = null;
+    }
+
+    if (!restoreResult.found) {
+      clearAccessIdempotencyKeyFromLocalStorage();
+      idempotencyKeyRef.current = null;
     }
 
     if (shouldShowDraftRestorePrompt(restoreResult) && restoreResult.draft) {
@@ -504,6 +547,7 @@ export function useAccessStateController(): AccessStateController {
   const updateFormData = useCallback(
     (updater: (prev: FormDataModel) => FormDataModel) => {
       idempotencyKeyRef.current = null;
+      clearAccessIdempotencyKeyFromLocalStorage();
       setSubmission((prev) => {
         const next = {
           ...prev,
@@ -613,6 +657,8 @@ export function useAccessStateController(): AccessStateController {
 
   const discardDraftAndStartOver = useCallback(() => {
     clearDraftFromLocalStorage();
+    clearAccessIdempotencyKeyFromLocalStorage();
+    idempotencyKeyRef.current = null;
 
     setSubmission(createInitialAccessSubmissionModel(detectAccessEntrySource()));
     setCurrentStepState("request");
@@ -632,6 +678,7 @@ export function useAccessStateController(): AccessStateController {
   const resolveDateAmbiguityAction = useCallback(
     (dateId: string, selectedIso: string) => {
       idempotencyKeyRef.current = null;
+      clearAccessIdempotencyKeyFromLocalStorage();
       setSubmission((prev) => {
         const nextNormalizedDates = resolveAmbiguousDate(
           prev.normalizedDates,
@@ -682,6 +729,7 @@ export function useAccessStateController(): AccessStateController {
 
   const revokeReviewConfirmation = useCallback(() => {
     idempotencyKeyRef.current = null;
+    clearAccessIdempotencyKeyFromLocalStorage();
     setSubmission((prev) => {
       const nextFormData: FormDataModel = {
         ...prev.formData,
@@ -755,6 +803,7 @@ export function useAccessStateController(): AccessStateController {
     const idempotencyKey =
       idempotencyKeyRef.current ?? createAccessIdempotencyKey();
     idempotencyKeyRef.current = idempotencyKey;
+    persistAccessIdempotencyKeyToLocalStorage(idempotencyKey);
     const result = await submitAccessRequest(payload, idempotencyKey);
 
     if (!result.ok) {
@@ -809,6 +858,7 @@ export function useAccessStateController(): AccessStateController {
 
     clearDraftFromLocalStorage();
     idempotencyKeyRef.current = null;
+    clearAccessIdempotencyKeyFromLocalStorage();
 
     return result;
   }, [submission, recompute, persistDraft]);

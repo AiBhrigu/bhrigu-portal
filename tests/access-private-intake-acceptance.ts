@@ -13,7 +13,12 @@ import {
   getAccessReviewRuntimeConfig,
 } from "../lib/access-intake-config";
 import { isAuthorizedAccessOperator } from "../lib/access-review-auth0";
-import { createAccessIdempotencyKey } from "../lib/access-state-controller";
+import {
+  clearAccessIdempotencyKeyFromLocalStorage,
+  createAccessIdempotencyKey,
+  loadAccessIdempotencyKeyFromLocalStorage,
+  persistAccessIdempotencyKeyToLocalStorage,
+} from "../lib/access-state-controller";
 import {
   hashCanonicalPayload,
   processAccessIntake,
@@ -36,6 +41,7 @@ class MemoryStore implements AccessIntakeStore {
   >();
   deliveries = new Map<string, DeliveryEntry>();
   events: string[] = [];
+  deliveryClaimsBusy = false;
 
   async reserve(input: Parameters<AccessIntakeStore["reserve"]>[0]) {
     this.events.push("store:reserve");
@@ -70,12 +76,23 @@ class MemoryStore implements AccessIntakeStore {
   async claimDelivery(input: Parameters<AccessIntakeStore["claimDelivery"]>[0]) {
     this.events.push(`store:claim:${input.kind}`);
     const entry = this.deliveries.get(`${input.requestId}:${input.kind}`);
-    if (!entry || entry.state === "delivered" || entry.state === "sending") {
-      return { claimed: false, idempotencyKey: null };
+    if (!entry) {
+      return { claimed: false, idempotencyKey: null, state: null };
+    }
+    if (
+      this.deliveryClaimsBusy ||
+      entry.state === "delivered" ||
+      entry.state === "sending"
+    ) {
+      return { claimed: false, idempotencyKey: null, state: entry.state };
     }
     entry.state = "sending";
     entry.attempts += 1;
-    return { claimed: true, idempotencyKey: entry.idempotencyKey };
+    return {
+      claimed: true,
+      idempotencyKey: entry.idempotencyKey,
+      state: "sending" as const,
+    };
   }
 
   async completeDelivery(
@@ -184,12 +201,29 @@ async function run() {
     }),
     { enabled: false, reason: "sender_domain_unverified" }
   );
-  const enabled = getAccessIntakeRuntimeConfig({
+  assert.deepEqual(
+    getAccessIntakeRuntimeConfig({
+      ACCESS_PRIVATE_INTAKE_MODE: ACCESS_INTAKE_MODE,
+      ACCESS_RESEND_DOMAIN_VERIFIED: "true",
+      DATABASE_URL: "postgresql://fixture",
+      RESEND_API_KEY: "re_fixture",
+    }),
+    { enabled: false, reason: "private_retrieval_incomplete" }
+  );
+
+  const providerEnv = {
     ACCESS_PRIVATE_INTAKE_MODE: ACCESS_INTAKE_MODE,
     ACCESS_RESEND_DOMAIN_VERIFIED: "true",
+    ACCESS_PRIVATE_REVIEW_MODE: ACCESS_REVIEW_MODE,
     DATABASE_URL: "postgresql://fixture",
     RESEND_API_KEY: "re_fixture",
-  });
+    AUTH0_DOMAIN: "tenant.example.auth0.com",
+    AUTH0_CLIENT_ID: "fixture-client",
+    AUTH0_CLIENT_SECRET: "fixture-secret",
+    AUTH0_SECRET: "00".repeat(32),
+    APP_BASE_URL: "https://www.bhrigu.io",
+  };
+  const enabled = getAccessIntakeRuntimeConfig(providerEnv);
   assert.equal(enabled.enabled, true);
   if (enabled.enabled) {
     assert.equal(enabled.operatorEmail, ACCESS_OPERATOR_EMAIL);
@@ -198,28 +232,27 @@ async function run() {
 
   assert.equal(getAccessReviewRuntimeConfig({}).enabled, false);
   assert.equal(
-    getAccessReviewRuntimeConfig({
-      ACCESS_PRIVATE_REVIEW_MODE: ACCESS_REVIEW_MODE,
-      DATABASE_URL: "postgresql://fixture",
-      AUTH0_DOMAIN: "tenant.example.auth0.com",
-      AUTH0_CLIENT_ID: "fixture-client",
-      AUTH0_CLIENT_SECRET: "fixture-secret",
-      AUTH0_SECRET: "00".repeat(32),
-      APP_BASE_URL: "https://www.bhrigu.io",
-    }).enabled,
+    getAccessReviewRuntimeConfig(providerEnv).enabled,
     true
   );
 
   assert.equal(
     isAuthorizedAccessOperator(
-      { user: { email: "AIBHRIGU@GMAIL.COM" } },
+      { user: { email: "AIBHRIGU@GMAIL.COM", email_verified: true } },
       ACCESS_OPERATOR_EMAIL
     ),
     true
   );
   assert.equal(
     isAuthorizedAccessOperator(
-      { user: { email: "someone@example.com" } },
+      { user: { email: "AIBHRIGU@GMAIL.COM", email_verified: false } },
+      ACCESS_OPERATOR_EMAIL
+    ),
+    false
+  );
+  assert.equal(
+    isAuthorizedAccessOperator(
+      { user: { email: "someone@example.com", email_verified: true } },
       ACCESS_OPERATOR_EMAIL
     ),
     false
@@ -230,6 +263,24 @@ async function run() {
     hashCanonicalPayload({ a: 1, b: 2 })
   );
   assert.match(createAccessIdempotencyKey(), /^access-[0-9a-f-]{36}$/);
+
+  const previousWindow = (globalThis as any).window;
+  const localStorageFixture = new Map<string, string>();
+  (globalThis as any).window = {
+    localStorage: {
+      getItem: (key: string) => localStorageFixture.get(key) ?? null,
+      setItem: (key: string, value: string) =>
+        localStorageFixture.set(key, value),
+      removeItem: (key: string) => localStorageFixture.delete(key),
+    },
+  };
+  const reloadSafeKey = createAccessIdempotencyKey();
+  persistAccessIdempotencyKeyToLocalStorage(reloadSafeKey);
+  assert.equal(loadAccessIdempotencyKeyFromLocalStorage(), reloadSafeKey);
+  clearAccessIdempotencyKeyFromLocalStorage();
+  assert.equal(loadAccessIdempotencyKeyFromLocalStorage(), null);
+  if (previousWindow === undefined) delete (globalThis as any).window;
+  else (globalThis as any).window = previousWindow;
 
   const store = new MemoryStore();
   const delivery = new MemoryDelivery();
@@ -266,6 +317,24 @@ async function run() {
     assert.equal(replay.requestId, "BRG-20260809-TEST");
   }
   assert.equal(delivery.sends.length, 2, "replay must not duplicate delivered email");
+
+  const busyStore = new MemoryStore();
+  busyStore.deliveryClaimsBusy = true;
+  const busyDelivery = new MemoryDelivery();
+  const busy = await processAccessIntake({
+    payload,
+    idempotencyKey: "acceptance-key-busy",
+    store: busyStore,
+    delivery: busyDelivery,
+    now: deterministicNow,
+    requestId: () => "BRG-20260809-BUSY",
+  });
+  assert.equal(busy.ok, true);
+  if (busy.ok) {
+    assert.equal(busy.statusCode, 202);
+    assert.equal(busy.deliveryStatus, "pending_retry");
+  }
+  assert.equal(busyDelivery.sends.length, 0, "busy claims must not report delivery");
 
   const conflict = await processAccessIntake({
     payload: {
@@ -369,7 +438,9 @@ async function run() {
   assert.match(migration, /PRIMARY KEY \(request_id, kind\)/);
 
   console.log("ACCESS_PRIVATE_INTAKE_LOCAL_ACCEPTANCE=PASS");
-  console.log("assertions=provider_gates,auth_allowlist,storage_first,idempotency,retry,closed_routes,migration");
+  console.log(
+    "assertions=coupled_activation,verified_email,storage_first,reload_idempotency,busy_delivery,replay,retry,closed_routes,migration"
+  );
 }
 
 run().catch((error) => {

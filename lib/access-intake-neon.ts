@@ -117,9 +117,25 @@ export function createNeonAccessIntakeStore(
         RETURNING idempotency_key
       `;
       const row = firstRow(rows);
+      if (!row) {
+        const stateRows = await sql`
+          SELECT state, idempotency_key
+          FROM access_intake_deliveries
+          WHERE request_id = ${input.requestId}
+            AND kind = ${input.kind}
+          LIMIT 1
+        `;
+        const existing = firstRow(stateRows);
+        return {
+          claimed: false,
+          idempotencyKey: null,
+          state: existing ? existing.state : null,
+        };
+      }
       return {
-        claimed: Boolean(row),
-        idempotencyKey: row ? String(row.idempotency_key) : null,
+        claimed: true,
+        idempotencyKey: String(row.idempotency_key),
+        state: "sending",
       };
     },
 
