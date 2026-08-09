@@ -7,16 +7,23 @@
     "start": "next start",
     "verify:btc-routing": "node scripts/run-btc-routing-fixture.mjs",
     "verify:btc-producer-contract": "node scripts/run-btc-producer-contract-fixture.mjs",
-    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs"
+    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs",
+    "verify:btc-paid-x402-sandbox": "node sandbox/btc-paid-x402/run-fixtures.mjs",
+    "verify:btc-paid-x402-live": "node sandbox/btc-paid-x402/run-fixtures.mjs --live"
   },
   "dependencies": {
+    "@x402/core": "2.20.0",
+    "@x402/evm": "2.20.0",
+    "@x402/extensions": "2.20.0",
     "next": "14.2.35",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "viem": "2.55.10"
   },
   "devDependencies": {
     "@types/node": "25.3.5",
     "@types/react": "19.2.14",
     "typescript": "5.9.3"
   }
+
 }
