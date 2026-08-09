@@ -243,13 +243,15 @@ export function buildSubmitRequestPayload(
 }
 
 export async function submitAccessRequest(
-  payload: SubmitRequestPayload
+  payload: SubmitRequestPayload,
+  idempotencyKey: string = createAccessIdempotencyKey()
 ): Promise<SubmitRequestApiResponse> {
   try {
     const response = await fetch("/api/access/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(payload),
     });
@@ -280,6 +282,43 @@ export async function submitAccessRequest(
       errorCode: "network_error",
       errorMessage: "Connection issue. Please try again.",
     };
+  }
+}
+
+export function createAccessIdempotencyKey(): string {
+  return `access-${globalThis.crypto.randomUUID()}`;
+}
+
+export const ACCESS_IDEMPOTENCY_STORAGE_KEY =
+  "bhrigu_access_idempotency_v1";
+
+export function loadAccessIdempotencyKeyFromLocalStorage(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = window.localStorage
+      .getItem(ACCESS_IDEMPOTENCY_STORAGE_KEY)
+      ?.trim();
+    return value && /^access-[0-9a-f-]{36}$/.test(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function persistAccessIdempotencyKeyToLocalStorage(key: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ACCESS_IDEMPOTENCY_STORAGE_KEY, key);
+  } catch {
+    // The in-memory key still protects retries within this page lifecycle.
+  }
+}
+
+export function clearAccessIdempotencyKeyFromLocalStorage(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(ACCESS_IDEMPOTENCY_STORAGE_KEY);
+  } catch {
+    // Fail closed without interrupting form-state cleanup.
   }
 }
 
@@ -320,6 +359,7 @@ export function useAccessStateController(): AccessStateController {
   const draftSavedTimerRef = useRef<number | null>(null);
   const networkRestoredTimerRef = useRef<number | null>(null);
   const didInitRef = useRef(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const showDraftSavedNotice = useCallback(() => {
     setNotices((prev) => ({ ...prev, draftSavedVisible: true }));
@@ -385,8 +425,18 @@ export function useAccessStateController(): AccessStateController {
     const entrySource = detectAccessEntrySource();
     const restoreResult = loadDraftFromLocalStorage();
 
+    idempotencyKeyRef.current =
+      loadAccessIdempotencyKeyFromLocalStorage();
+
     if (restoreResult.expired || restoreResult.corrupted) {
       discardExpiredOrCorruptedDraft(restoreResult);
+      clearAccessIdempotencyKeyFromLocalStorage();
+      idempotencyKeyRef.current = null;
+    }
+
+    if (!restoreResult.found) {
+      clearAccessIdempotencyKeyFromLocalStorage();
+      idempotencyKeyRef.current = null;
     }
 
     if (shouldShowDraftRestorePrompt(restoreResult) && restoreResult.draft) {
@@ -496,6 +546,8 @@ export function useAccessStateController(): AccessStateController {
 
   const updateFormData = useCallback(
     (updater: (prev: FormDataModel) => FormDataModel) => {
+      idempotencyKeyRef.current = null;
+      clearAccessIdempotencyKeyFromLocalStorage();
       setSubmission((prev) => {
         const next = {
           ...prev,
@@ -605,6 +657,8 @@ export function useAccessStateController(): AccessStateController {
 
   const discardDraftAndStartOver = useCallback(() => {
     clearDraftFromLocalStorage();
+    clearAccessIdempotencyKeyFromLocalStorage();
+    idempotencyKeyRef.current = null;
 
     setSubmission(createInitialAccessSubmissionModel(detectAccessEntrySource()));
     setCurrentStepState("request");
@@ -623,6 +677,8 @@ export function useAccessStateController(): AccessStateController {
 
   const resolveDateAmbiguityAction = useCallback(
     (dateId: string, selectedIso: string) => {
+      idempotencyKeyRef.current = null;
+      clearAccessIdempotencyKeyFromLocalStorage();
       setSubmission((prev) => {
         const nextNormalizedDates = resolveAmbiguousDate(
           prev.normalizedDates,
@@ -672,6 +728,8 @@ export function useAccessStateController(): AccessStateController {
   }, []);
 
   const revokeReviewConfirmation = useCallback(() => {
+    idempotencyKeyRef.current = null;
+    clearAccessIdempotencyKeyFromLocalStorage();
     setSubmission((prev) => {
       const nextFormData: FormDataModel = {
         ...prev.formData,
@@ -742,7 +800,11 @@ export function useAccessStateController(): AccessStateController {
     persistDraft(working, "review", submittingAttempt);
 
     const payload = buildSubmitRequestPayload(working);
-    const result = await submitAccessRequest(payload);
+    const idempotencyKey =
+      idempotencyKeyRef.current ?? createAccessIdempotencyKey();
+    idempotencyKeyRef.current = idempotencyKey;
+    persistAccessIdempotencyKeyToLocalStorage(idempotencyKey);
+    const result = await submitAccessRequest(payload, idempotencyKey);
 
     if (!result.ok) {
       const failedAttempt: DraftSubmitAttempt = {
@@ -795,6 +857,8 @@ export function useAccessStateController(): AccessStateController {
     });
 
     clearDraftFromLocalStorage();
+    idempotencyKeyRef.current = null;
+    clearAccessIdempotencyKeyFromLocalStorage();
 
     return result;
   }, [submission, recompute, persistDraft]);
