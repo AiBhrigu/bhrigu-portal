@@ -243,13 +243,15 @@ export function buildSubmitRequestPayload(
 }
 
 export async function submitAccessRequest(
-  payload: SubmitRequestPayload
+  payload: SubmitRequestPayload,
+  idempotencyKey: string = createAccessIdempotencyKey()
 ): Promise<SubmitRequestApiResponse> {
   try {
     const response = await fetch("/api/access/submit", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(payload),
     });
@@ -281,6 +283,10 @@ export async function submitAccessRequest(
       errorMessage: "Connection issue. Please try again.",
     };
   }
+}
+
+export function createAccessIdempotencyKey(): string {
+  return `access-${globalThis.crypto.randomUUID()}`;
 }
 
 async function safeReadJson(response: Response): Promise<any | null> {
@@ -320,6 +326,7 @@ export function useAccessStateController(): AccessStateController {
   const draftSavedTimerRef = useRef<number | null>(null);
   const networkRestoredTimerRef = useRef<number | null>(null);
   const didInitRef = useRef(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const showDraftSavedNotice = useCallback(() => {
     setNotices((prev) => ({ ...prev, draftSavedVisible: true }));
@@ -496,6 +503,7 @@ export function useAccessStateController(): AccessStateController {
 
   const updateFormData = useCallback(
     (updater: (prev: FormDataModel) => FormDataModel) => {
+      idempotencyKeyRef.current = null;
       setSubmission((prev) => {
         const next = {
           ...prev,
@@ -623,6 +631,7 @@ export function useAccessStateController(): AccessStateController {
 
   const resolveDateAmbiguityAction = useCallback(
     (dateId: string, selectedIso: string) => {
+      idempotencyKeyRef.current = null;
       setSubmission((prev) => {
         const nextNormalizedDates = resolveAmbiguousDate(
           prev.normalizedDates,
@@ -672,6 +681,7 @@ export function useAccessStateController(): AccessStateController {
   }, []);
 
   const revokeReviewConfirmation = useCallback(() => {
+    idempotencyKeyRef.current = null;
     setSubmission((prev) => {
       const nextFormData: FormDataModel = {
         ...prev.formData,
@@ -742,7 +752,10 @@ export function useAccessStateController(): AccessStateController {
     persistDraft(working, "review", submittingAttempt);
 
     const payload = buildSubmitRequestPayload(working);
-    const result = await submitAccessRequest(payload);
+    const idempotencyKey =
+      idempotencyKeyRef.current ?? createAccessIdempotencyKey();
+    idempotencyKeyRef.current = idempotencyKey;
+    const result = await submitAccessRequest(payload, idempotencyKey);
 
     if (!result.ok) {
       const failedAttempt: DraftSubmitAttempt = {
@@ -795,6 +808,7 @@ export function useAccessStateController(): AccessStateController {
     });
 
     clearDraftFromLocalStorage();
+    idempotencyKeyRef.current = null;
 
     return result;
   }, [submission, recompute, persistDraft]);

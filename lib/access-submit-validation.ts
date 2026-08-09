@@ -165,7 +165,11 @@ export function generateAccessRequestId(now: Date = new Date()): string {
   const yyyy = now.getUTCFullYear();
   const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(now.getUTCDate()).padStart(2, "0");
-  const suffix = randomBase36(4).toUpperCase();
+  const suffix = globalThis.crypto
+    .randomUUID()
+    .replace(/-/g, "")
+    .slice(0, 10)
+    .toUpperCase();
   return `BRG-${yyyy}${mm}${dd}-${suffix}`;
 }
 
@@ -529,10 +533,4 @@ function isNonNegativeInteger(value: unknown): value is number {
 
 function fail(errorCode: AccessSubmitValidationFailure["errorCode"], errorMessage: string): AccessSubmitValidationFailure {
   return { ok: false, errorCode, errorMessage };
-}
-
-function randomBase36(length: number): string {
-  let out = "";
-  while (out.length < length) out += Math.random().toString(36).slice(2);
-  return out.slice(0, length);
 }
