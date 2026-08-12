@@ -22,8 +22,16 @@ AUTH0_DOMAIN=tenant.example.auth0.com
 AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 AUTH0_SECRET=<32-byte hex secret>
-APP_BASE_URL=https://www.bhrigu.io
+APP_BASE_URL=<environment-specific absolute app URL>
 ```
+
+`APP_BASE_URL` remains a required fail-closed review gate and must be bound to the exact application authority of the environment being exercised. For the accepted Preview corridor it is:
+
+```dotenv
+APP_BASE_URL=https://bhrigu-portal-git-main-aibhrigus-projects.vercel.app
+```
+
+The future Production value remains `https://www.bhrigu.io`; it must not be installed into Preview. Dynamic host inference by omitting `APP_BASE_URL` is intentionally not used for this private-review contract.
 
 `ACCESS_RESEND_DOMAIN_VERIFIED=true` is an explicit proof gate. It must be set only after Resend verifies `bhrigu.io`; the sender contract is fixed to `BHRIGU Access <access@bhrigu.io>`.
 
