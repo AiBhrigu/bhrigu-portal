@@ -221,7 +221,7 @@ async function run() {
     AUTH0_CLIENT_ID: "fixture-client",
     AUTH0_CLIENT_SECRET: "fixture-secret",
     AUTH0_SECRET: "00".repeat(32),
-    APP_BASE_URL: "https://www.bhrigu.io",
+    APP_BASE_URL: "https://bhrigu-portal-git-main-aibhrigus-projects.vercel.app",
   };
   const enabled = getAccessIntakeRuntimeConfig(providerEnv);
   assert.equal(enabled.enabled, true);
@@ -234,6 +234,12 @@ async function run() {
   assert.equal(
     getAccessReviewRuntimeConfig(providerEnv).enabled,
     true
+  );
+  const { APP_BASE_URL: _appBaseUrl, ...providerEnvWithoutAppBaseUrl } = providerEnv;
+  assert.equal(
+    getAccessReviewRuntimeConfig(providerEnvWithoutAppBaseUrl).enabled,
+    false,
+    "private review must remain fail-closed without an explicit environment app base URL"
   );
 
   assert.equal(
