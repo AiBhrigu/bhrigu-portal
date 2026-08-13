@@ -42,7 +42,10 @@ import type { BtcPublicSnapshot } from "../../../lib/btc-public-output-contract"
 import { resolveBtcPublicLocale, type BtcPublicLocale } from "../../../lib/btc-public-language-contract";
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../../lib/btc-bilingual-surface-style";
 import { BTC_LIVE_DIALOGUE_CSS } from "../../../lib/btc-live-dialogue-style";
-import { BTC_DIALOGUE_SESSION_SCHEMA } from "../../../lib/btc-live-dialogue-session";
+import {
+  BTC_DIALOGUE_SESSION_SCHEMA,
+  type BtcEvidenceArtifactTarget,
+} from "../../../lib/btc-live-dialogue-session";
 import { BTC_PRODUCT_REBALANCE_CSS } from "../../../lib/btc-product-rebalance-style";
 
 const first = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -133,6 +136,8 @@ type Props = {
   sourceBindingChanged: boolean;
   inputError: string | null;
   pendingClarificationOriginFingerprint: string | null;
+  evidenceRevisionId: string | null;
+  evidenceTargets: BtcEvidenceArtifactTarget[];
 };
 
 // Connector-authored deployment pulse: PR114 exact Preview identity v0.2.
@@ -142,6 +147,56 @@ function deploymentSourceSha(): string | null {
     process.env.GITHUB_SHA ??
     null;
   return value && /^[0-9a-f]{40}$/i.test(value) ? value : null;
+}
+
+function portalEvidenceUrl(sha: string, path: string): string {
+  return `https://github.com/AiBhrigu/bhrigu-portal/blob/${sha}/${path}`;
+}
+
+function marketEvidenceUrl(sha: string, path: string): string {
+  return `https://github.com/AiBhrigu/phi-cosmography-open/blob/${sha}/site/crypto-astro/data/${path}`;
+}
+
+function buildEvidenceNavigation(
+  route: BtcCosmographerRoute,
+  envelope: BtcMarketEnvelope | null,
+  deploymentSha: string | null,
+  snapshotTimestamp: string | null,
+): { revisionId: string | null; targets: BtcEvidenceArtifactTarget[] } {
+  const targets: BtcEvidenceArtifactTarget[] = [];
+  const addPortal = (id: string, label: string, path: string) => {
+    if (!deploymentSha) return;
+    targets.push({ id, label, url: portalEvidenceUrl(deploymentSha, path), revision: deploymentSha });
+  };
+  const addMarket = (id: string, label: string, sha: string, path: string) => {
+    targets.push({ id, label, url: marketEvidenceUrl(sha, path), revision: sha });
+  };
+
+  const protocolSide = route.domain === "astro_btc_bridge" && route.explicit_entities.includes("btc_side:protocol");
+  const astroSide = route.domain === "astromodule" || route.domain === "astro_btc_bridge";
+  const marketSide = route.domain === "btc_market" || route.domain === "snapshot_memory" || (route.domain === "astro_btc_bridge" && !protocolSide);
+
+  if (route.domain === "bitcoin_protocol" || protocolSide) {
+    addPortal("protocol_evidence", "Bitcoin Protocol evidence object", "lib/btc-protocol-evidence.ts");
+  }
+  if (astroSide) {
+    addPortal("astro_evidence", "Astronomical evidence index", "data/btc_public_astro_evidence_v0_1.json");
+  }
+  if (marketSide && envelope) {
+    const current = envelope.memory.current_commit_sha;
+    addMarket("market_snapshot", "Accepted Market Snapshot", current, "crypto_astro_snapshot.public.json");
+    addMarket("market_proof", "Market source proof", current, "crypto_astro_snapshot_proof.public.json");
+    if (route.domain === "snapshot_memory") {
+      const previous = envelope.memory.previous_commit_sha;
+      addMarket("previous_snapshot", "Previous accepted Market Snapshot", previous, "crypto_astro_snapshot.public.json");
+    }
+  }
+
+  const revisions = Array.from(new Set(targets.map((target) => target.revision)));
+  const revisionId = marketSide && snapshotTimestamp
+    ? `snapshot ${snapshotTimestamp}${revisions.length ? ` · ${revisions.join(" · ")}` : ""}`
+    : revisions.join(" · ") || null;
+  return { revisionId, targets };
 }
 
 function failureAgeHours(value: string | null): number | null {
@@ -169,6 +224,7 @@ function applyFreshnessTruth(envelope: BtcMarketEnvelope, freshness: "FRESH" | "
 }
 
 function needsMarket(route: BtcCosmographerRoute): boolean {
+  if (route.domain === "astro_btc_bridge" && route.explicit_entities.includes("btc_side:protocol")) return false;
   return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
 }
 
@@ -337,6 +393,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     sourceBindingChanged: false,
     inputError: null,
     pendingClarificationOriginFingerprint: null,
+    evidenceRevisionId: null,
+    evidenceTargets: [],
   };
 
   if (initialDate && !validObservationDate(initialDate)) {
@@ -457,6 +515,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
           : null,
       ) as unknown as BtcCosmographerAnswerProjection
     : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
+  const evidenceNavigation = buildEvidenceNavigation(
+    route,
+    envelope,
+    servedDeploymentSha,
+    sourceTimestamp,
+  );
   const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
     resolvedLocale.locale,
     route,
@@ -481,6 +545,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
       runtimeDecision,
       sourceBindingChanged,
       pendingClarificationOriginFingerprint: pendingClarification?.origin_fingerprint ?? null,
+      evidenceRevisionId: evidenceNavigation.revisionId,
+      evidenceTargets: evidenceNavigation.targets,
     },
   };
 };

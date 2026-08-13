@@ -258,6 +258,81 @@ function genesisChartClarification(locale: BtcPublicLocale): BtcCosmographerAnsw
   };
 }
 
+
+const PROTOCOL_BRIDGE_SUBJECTS = new Set([
+  "overview", "supply", "halving", "subsidy", "fees", "difficulty",
+  "mining", "utxo", "genesis", "consensus", "blocks",
+  "satoshi_history", "bitcoin_origin", "genesis_history",
+]);
+
+function buildProtocolAstroBridgeAnswer(
+  locale: BtcPublicLocale,
+  route: BtcCosmographerRoute,
+  astro: BtcCosmographerAnswerProjection,
+): BtcCosmographerAnswerProjection {
+  const protocolSubject = route.explicit_entities.find((value) => PROTOCOL_BRIDGE_SUBJECTS.has(value)) ?? "overview";
+  const protocolRoute: BtcCosmographerRoute = {
+    ...route,
+    domain: "bitcoin_protocol",
+    subject: protocolSubject,
+    market_question_class: null,
+    capability_id: `bitcoin_protocol.${protocolSubject}`,
+    explicit_entities: [protocolSubject],
+  };
+  const protocol = buildBtcProtocolAnswer(locale, protocolRoute);
+  const protocolLines = protocol.sections
+    .flatMap((section) => section.bullets ?? (section.paragraph ? [section.paragraph] : []))
+    .slice(0, 4);
+  const astroLines = astro.sections
+    .flatMap((section) => section.bullets ?? (section.paragraph ? [section.paragraph] : []))
+    .slice(0, 4);
+  return {
+    answer_state: "LIMITED",
+    answer_mode: "ASTRO_BTC_BRIDGE",
+    headline: locale === "ru"
+      ? "Протокол Bitcoin и астрономическое окно разделены как независимые слои"
+      : "Bitcoin Protocol and the astronomical window remain independent evidence lanes",
+    direct_answer: locale === "ru"
+      ? `Сначала протокол Bitcoin: ${protocol.direct_answer} Затем астрономическое окно: ${astro.direct_answer}`
+      : `Bitcoin Protocol first: ${protocol.direct_answer} Then the astronomical window: ${astro.direct_answer}`,
+    sections: [
+      {
+        id: "btc_side_state",
+        label: locale === "ru" ? "1 · Сторона Bitcoin Protocol" : "1 · Bitcoin Protocol side",
+        bullets: protocolLines,
+      },
+      {
+        id: "astro_window",
+        label: locale === "ru" ? "2 · Астрономическое окно" : "2 · Astronomical window",
+        bullets: astroLines,
+      },
+      {
+        id: "relation",
+        label: locale === "ru" ? "3 · Граница сопоставления" : "3 · Comparison boundary",
+        paragraph: locale === "ru"
+          ? "Протокольный факт и астрономическая конфигурация могут быть показаны рядом, но текущий evidence packet не устанавливает между ними причинную или рыночную связь."
+          : "A protocol fact and an astronomical configuration may be shown together, but the current evidence packet establishes no causal or market relation between them.",
+      },
+      {
+        id: "dual_proof",
+        label: locale === "ru" ? "4 · Двойное доказательство" : "4 · Dual proof",
+        bullets: [protocol.proof_label, astro.proof_label],
+      },
+      {
+        id: "non_causal_boundary",
+        label: locale === "ru" ? "5 · Непричинная граница" : "5 · Non-causal boundary",
+        paragraph: locale === "ru"
+          ? "Астрономическая конфигурация не представлена как причина правил, эмиссии или работы протокола Bitcoin."
+          : "The astronomical configuration is not presented as a cause of Bitcoin's rules, issuance, or protocol operation.",
+      },
+    ],
+    source_boundary: `${protocol.source_boundary} ${astro.source_boundary}`,
+    proof_label: locale === "ru"
+      ? "Протокольные и астрономические доказательства проверены отдельно"
+      : "Protocol and astronomical evidence were checked independently",
+  };
+}
+
 export function buildBtcCosmographerAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
@@ -273,6 +348,9 @@ export function buildBtcCosmographerAnswer(
       return buildBtcAstroAnswer(locale, route);
     case "astro_btc_bridge": {
       const astro = buildBtcAstroAnswer(locale, route);
+      if (route.explicit_entities.includes("btc_side:protocol")) {
+        return buildProtocolAstroBridgeAnswer(locale, route, astro);
+      }
       if (inputs.snapshot && inputs.envelope) {
         const market = marketAnswer(locale, route, inputs.snapshot, inputs.envelope);
         const marketLines = market.sections

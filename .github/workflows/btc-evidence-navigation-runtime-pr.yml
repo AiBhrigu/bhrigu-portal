@@ -11,10 +11,14 @@ on:
       - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-answer.ts
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-cosmographer-route-graph.ts
       - lib/btc-live-dialogue-session.ts
+      - lib/btc-public-output-contract.ts
+      - lib/btc-public-snapshot-composer.ts
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+      - tests/btc-public-corridor-proven-defect-repair-acceptance.ts
   workflow_dispatch:
 
 concurrency:
@@ -53,6 +57,9 @@ jobs:
 
       - name: Verify evidence and navigation runtime
         run: node scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+
+      - name: Verify proven-defect repair contract
+        run: node --import tsx tests/btc-public-corridor-proven-defect-repair-acceptance.ts
 
       - name: Verify inherited BTC routing
         run: npm run verify:btc-routing
@@ -269,14 +276,17 @@ jobs:
                   lambda current: current.find_element(By.CSS_SELECTOR, selector)
               )
 
-          def open_question(driver, question, label):
-              query = urlencode({
+          def open_question(driver, question, label, date=None):
+              query_args = {
                   "lang": "ru",
                   "q": question,
                   "preview_head": expected_head,
                   "acceptance": label,
                   "nonce": str(time.time_ns()),
-              })
+              }
+              if date:
+                  query_args["d"] = date
+              query = urlencode(query_args)
               driver.get(f"{preview_base}/crypto-astro/btc/live?{query}")
               assert not driver.current_url.startswith("https://vercel.com/login")
               root = wait_for(driver, "main[data-deployment-head-sha]")
@@ -292,6 +302,44 @@ jobs:
                       "return sessionStorage.getItem(arguments[0]);",
                       session_key,
                   ) is not None
+              )
+              return turn
+
+          def clear_session(driver):
+              driver.execute_script("sessionStorage.clear();")
+
+          def assert_route(turn, domain, subject, mode=None, disposition=None):
+              assert turn.get_attribute("data-route-domain") == domain
+              assert turn.get_attribute("data-route-subject") == subject
+              if mode is not None:
+                  assert turn.get_attribute("data-answer-mode") == mode
+              if disposition is not None:
+                  assert turn.get_attribute("data-route-disposition") == disposition
+
+          def page_props(driver):
+              raw = driver.find_element(By.ID, "__NEXT_DATA__").get_attribute("textContent")
+              return json.loads(raw)["props"]["pageProps"]
+
+          def submit_question(driver, question):
+              form = wait_for(driver, "form.liveComposer")
+              textarea = form.find_element(By.CSS_SELECTOR, 'textarea[name="q"]')
+              textarea.clear()
+              textarea.send_keys(question)
+              driver.execute_script("arguments[0].requestSubmit();", form)
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.execute_script(
+                      "return new URL(location.href).searchParams.get('q') === arguments[0]",
+                      question,
+                  )
+              )
+              root = wait_for(driver, "main[data-deployment-head-sha]")
+              assert root.get_attribute("data-deployment-head-sha") == expected_head
+              turn = wait_for(driver, "article.cosmographerTurn")
+              WebDriverWait(driver, 20).until(
+                  lambda current: question in json.loads(current.execute_script(
+                      "return sessionStorage.getItem(arguments[0]) || '{}';",
+                      session_key,
+                  )).get("turns", [{}])[-1].get("user_text", "")
               )
               return turn
 
@@ -361,6 +409,7 @@ jobs:
                       "SECOND_DOMAIN_UNRESOLVED",
                       "TWO_DOMAINS_RESOLVED",
                   }
+                  relation_resolution = second.get_attribute("data-relation-resolution")
                   disposition = second.get_attribute("data-route-disposition")
                   domain = second.get_attribute("data-route-domain")
                   bridge_result = second.get_attribute("data-bridge-result")
@@ -378,15 +427,156 @@ jobs:
                   if disposition != "CONTINUE":
                       assert second.get_attribute("data-show-next-question") == "false"
 
+                  # Exact promoted-route parity: all five public prepared questions.
+                  promoted = [
+                      ("Что изменилось в поле BTC, почему это важно и за чем наблюдать дальше?", "snapshot_memory", "change_memory"),
+                      ("Подтверждают ли доля стейблкоинов, DeFi TVL и объём DEX текущие условия ликвидности BTC?", "btc_market", "liquidity"),
+                      ("Подтверждают ли режим, Market Field Score и рыночная капитализация текущую структуру BTC?", "btc_market", "market_structure"),
+                      ("Как выбранная дата меняет контекст наблюдения BTC и временное давление?", "btc_market", "temporal_pressure"),
+                      ("Что показывает принятая Snapshot Memory по сравнению с предыдущим проверенным снимком?", "snapshot_memory", "change_memory"),
+                  ]
+                  for index, (question, expected_domain, expected_subject) in enumerate(promoted, start=1):
+                      clear_session(driver)
+                      date = "2026-08-12" if expected_subject == "temporal_pressure" else None
+                      turn = open_question(driver, question, f"promoted-{index}-{suffix}", date=date)
+                      assert_route(turn, expected_domain, expected_subject, "MARKET_DIAGNOSIS", "CONTINUE")
+                      assert turn.get_attribute("data-show-clarification") == "false"
+                      assert turn.get_attribute("data-relation-resolution") == "SINGLE_DOMAIN"
+
+                  # Unsupported synthetic temporal metrics must be absent on the exact Preview.
+                  temporal_props = page_props(driver)
+                  temporal_answer = json.dumps(temporal_props["answer"], ensure_ascii=False)
+                  if temporal_props["route"]["subject"] != "temporal_pressure":
+                      clear_session(driver)
+                      turn = open_question(
+                          driver,
+                          "Как выбранная дата меняет контекст наблюдения BTC и временное давление?",
+                          f"temporal-hard-boundary-{suffix}",
+                          date="2026-08-12",
+                      )
+                      temporal_props = page_props(driver)
+                      temporal_answer = json.dumps(temporal_props["answer"], ensure_ascii=False)
+                  assert "bounded_cosmographic_metric" not in temporal_answer
+                  assert "0.1751" not in temporal_answer
+                  assert "harmonic_tension" not in temporal_answer
+                  assert "Числовое временное напряжение недоступно" in temporal_answer
+
+                  # Same-tab semantic overrides: Jupiter -> Mercury -> market -> protocol.
+                  clear_session(driver)
+                  jupiter = open_question(driver, "Где находится Юпитер в августе 2026?", f"jupiter-seed-{suffix}")
+                  assert_route(jupiter, "astromodule", "jupiter", "ASTRO_INTERVAL", "CONTINUE")
+                  mercury = submit_question(driver, "А Меркурий?")
+                  assert_route(mercury, "astromodule", "mercury", "ASTRO_INTERVAL", "CONTINUE")
+                  assert page_props(driver)["route"]["subject"] == "mercury"
+                  assert "Юпитер: движение" not in mercury.text
+                  market_override = submit_question(driver, "Что происходит с BTC сейчас?")
+                  assert_route(market_override, "btc_market", "general_btc_field", "MARKET_DIAGNOSIS", "CONTINUE")
+                  protocol_override = submit_question(driver, "Что такое халвинг?")
+                  assert_route(protocol_override, "bitcoin_protocol", "halving", "PROTOCOL_EXPLAIN", "CONTINUE")
+
+                  # Explicit multiple objects must never silently collapse.
+                  for index, question in enumerate((
+                      "Юпитер и Меркурий в августе 2026?",
+                      "Юпитер или Меркурий — который важнее для BTC в августе 2026?",
+                  ), start=1):
+                      clear_session(driver)
+                      turn = open_question(driver, question, f"multi-object-{index}-{suffix}")
+                      assert_route(turn, "unsupported", "multiple_planetary_objects", "CLARIFICATION", "CLARIFY")
+                      assert turn.get_attribute("data-show-clarification") == "true"
+                      assert not turn.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+
+                  # BTC-only asset boundary.
+                  clear_session(driver)
+                  eth = open_question(driver, "ETH сейчас?", f"unsupported-asset-{suffix}")
+                  assert eth.get_attribute("data-route-domain") == "unsupported"
+                  assert eth.get_attribute("data-route-disposition") == "CLARIFY"
+                  assert eth.get_attribute("data-clarification-target") == "ASSET"
+                  assert not eth.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+
+                  # Astro + Bitcoin Protocol must use protocol evidence, never market substitution.
+                  clear_session(driver)
+                  astro_protocol = open_question(
+                      driver,
+                      "Как Юпитер связан с протоколом Bitcoin в августе 2026?",
+                      f"astro-protocol-{suffix}",
+                  )
+                  assert_route(astro_protocol, "astro_btc_bridge", "jupiter", "ASTRO_BTC_BRIDGE", "CONTINUE")
+                  assert astro_protocol.get_attribute("data-btc-side-state-type") == "PROTOCOL"
+                  bridge_props = page_props(driver)
+                  bridge_answer = bridge_props["answer"]
+                  bridge_section_ids = [section["id"] for section in bridge_answer["sections"]]
+                  bridge_blob = json.dumps(bridge_answer, ensure_ascii=False)
+                  assert "btc_side_state" in bridge_section_ids
+                  assert "протокол Bitcoin" in bridge_blob
+                  assert "Market Field Score" not in bridge_blob
+                  assert "Доля стейблкоинов" not in bridge_blob
+                  bridge_links = [item.get_attribute("href") for item in astro_protocol.find_elements(By.CSS_SELECTOR, '[data-evidence-artifact-targets="exact"] a')]
+                  assert any(expected_head in href and "btc-protocol-evidence.ts" in href for href in bridge_links)
+                  assert any(expected_head in href and "btc_public_astro_evidence_v0_1.json" in href for href in bridge_links)
+                  assert not any("phi-cosmography-open" in href for href in bridge_links)
+
+                  # Pure protocol + exact revision/proof traversal.
+                  clear_session(driver)
+                  protocol = open_question(driver, "Что такое халвинг?", f"pure-protocol-{suffix}")
+                  assert_route(protocol, "bitcoin_protocol", "halving", "PROTOCOL_EXPLAIN", "CONTINUE")
+                  protocol_links = [item.get_attribute("href") for item in protocol.find_elements(By.CSS_SELECTOR, '[data-evidence-artifact-targets="exact"] a')]
+                  assert any(expected_head in href and "btc-protocol-evidence.ts" in href for href in protocol_links)
+                  revision = protocol.find_element(By.CSS_SELECTOR, '[data-evidence-field="evidence-revision-or-generated-time"]').get_attribute("data-evidence-value")
+                  assert expected_head in revision
+                  assert "2026-08-" not in revision
+
+                  # Pure market + claim -> exact Snapshot/proof revision traversal.
+                  clear_session(driver)
+                  market = open_question(driver, "Что происходит с BTC сейчас?", f"pure-market-{suffix}")
+                  assert_route(market, "btc_market", "general_btc_field", "MARKET_DIAGNOSIS", "CONTINUE")
+                  market_links = [item.get_attribute("href") for item in market.find_elements(By.CSS_SELECTOR, '[data-evidence-artifact-targets="exact"] a')]
+                  assert any("crypto_astro_snapshot.public.json" in href for href in market_links)
+                  assert any("crypto_astro_snapshot_proof.public.json" in href for href in market_links)
+                  assert all("phi-cosmography-open/blob/" in href for href in market_links)
+
+                  # Annual multi-body Astro remains intact and has exact Astro evidence traversal.
+                  clear_session(driver)
+                  annual = open_question(
+                      driver,
+                      "Какие самые напряжённые дни в 2026 году у планет и их аспектов?",
+                      f"annual-multi-body-{suffix}",
+                  )
+                  assert_route(annual, "astromodule", "planetary_aspects", "ASTRO_YEAR_OVERVIEW", "CONTINUE")
+                  astro_links = [item.get_attribute("href") for item in annual.find_elements(By.CSS_SELECTOR, '[data-evidence-artifact-targets="exact"] a')]
+                  assert any(expected_head in href and "btc_public_astro_evidence_v0_1.json" in href for href in astro_links)
+
+                  # Causal attempt must remain non-causal and non-trading.
+                  clear_session(driver)
+                  causal = open_question(driver, "Юпитер вызовет рост BTC в августе 2026?", f"causal-boundary-{suffix}")
+                  assert_route(causal, "astro_btc_bridge", "jupiter", "ASTRO_BTC_BRIDGE", "CONTINUE")
+                  causal_text = causal.text.casefold()
+                  assert "не доказывает" in causal_text
+                  assert "не является рекомендацией" in causal_text
+
+                  # Exact price-target request must fail closed with no target.
+                  clear_session(driver)
+                  price = open_question(driver, "Дай точную цену BTC на завтра", f"price-target-{suffix}")
+                  assert_route(price, "unsupported", "unsupported_market_request", "CLARIFICATION", "CLARIFY")
+                  assert not price.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+
                   results.append({
                       "viewport": suffix,
                       "served_head": expected_head,
                       "planet_route": "CLARIFY_SUBJECT",
                       "planet_self_loop": False,
                       "relation_intent": True,
-                      "relation_resolution": second.get_attribute("data-relation-resolution"),
+                      "relation_resolution": relation_resolution,
                       "relation_disposition": disposition,
                       "relation_domain": domain,
+                      "promoted_routes": "5/5_PASS",
+                      "explicit_subject_override": "PASS",
+                      "multi_object_fail_closed": "PASS",
+                      "btc_only_asset_boundary": "PASS",
+                      "astro_protocol_side": "PROTOCOL",
+                      "unsupported_temporal_metric": "ZERO",
+                      "claim_to_proof_traversal": "PASS",
+                      "causal_claim": "ZERO",
+                      "price_target": "ZERO",
                   })
               finally:
                   driver.quit()

@@ -48,6 +48,8 @@ type Props = {
   sourceBindingChanged: boolean;
   inputError: string | null;
   pendingClarificationOriginFingerprint: string | null;
+  evidenceRevisionId: string | null;
+  evidenceTargets: import("../../lib/btc-live-dialogue-session").BtcEvidenceArtifactTarget[];
 };
 
 const EN_MONTHS = [
@@ -88,6 +90,7 @@ function publicSubjectLabel(locale: BtcPublicLocale, subject: string): string {
     general_btc_field: ["Текущее состояние BTC", "Current BTC state"],
     temporal_pressure: ["Временной контекст", "Temporal context"],
     unsupported_market_request: ["Граница рыночного запроса", "Market request boundary"],
+    multiple_planetary_objects: ["Несколько планет", "Multiple planets"],
   };
   const value = labels[subject];
   if (!value) return locale === "ru" ? "Предмет ответа" : "Answer subject";
@@ -144,19 +147,21 @@ function evidenceCoverageLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn, d
 }
 
 function evidenceRevisionLabel(locale: BtcPublicLocale, turn: BtcDialogueTurn, domain: string): string {
-  if (domain === "astromodule" || domain === "astro_btc_bridge") {
-    const unavailable = locale === "ru"
-      ? "Не опубликовано в принятом астрономическом evidence index"
-      : "Not published in the accepted astronomical evidence index";
-    if (domain === "astro_btc_bridge" && turn.source_snapshot_generated_at_utc) {
-      return locale === "ru"
-        ? `${unavailable}; Market Snapshot создан ${formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc)}`
-        : `${unavailable}; Market Snapshot generated ${formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc)}`;
+  if (turn.evidence_revision_id) return turn.evidence_revision_id;
+  if (domain === "btc_market" || domain === "snapshot_memory") {
+    if (turn.source_snapshot_generated_at_utc) {
+      return formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc);
     }
-    return unavailable;
   }
-  if (turn.source_snapshot_generated_at_utc) {
-    return formatBtcUtcTimestamp(locale, turn.source_snapshot_generated_at_utc);
+  if (domain === "astromodule" || domain === "astro_btc_bridge") {
+    return locale === "ru"
+      ? "Ревизия астрономического evidence не опубликована"
+      : "Astronomical evidence revision not published";
+  }
+  if (domain === "bitcoin_protocol") {
+    return locale === "ru"
+      ? "Ревизия протокольного evidence не опубликована"
+      : "Protocol evidence revision not published";
   }
   return locale === "ru" ? "Не опубликовано" : "Not published";
 }
@@ -381,6 +386,8 @@ function makeTurn(props: Props): BtcDialogueTurn | null {
     what_would_change_the_read: null,
     source_boundary: canonicalPublicCopy(props.locale, props.answer.source_boundary),
     source_snapshot_generated_at_utc: timestamp,
+    evidence_revision_id: props.evidenceRevisionId,
+    evidence_targets: props.evidenceTargets,
     proof_available: props.sourceContext.proof_available || props.route.domain !== "btc_market",
     context_relation: props.route.context_relation,
     source_binding_changed: props.sourceBindingChanged,
@@ -587,6 +594,12 @@ function Exchange({
             <span>{turn.proof_label ?? (turn.proof_available
               ? (turn.locale === "ru" ? "Доказательства доступны" : "Evidence available")
               : (turn.locale === "ru" ? "Доказательства недоступны" : "Evidence unavailable"))}</span>
+            {(turn.evidence_targets ?? []).length > 0 && <ul className="answerEvidenceTargets" data-evidence-artifact-targets="exact">
+              {(turn.evidence_targets ?? []).map((target) => <li key={`${turn.turn_id}-${target.id}`}>
+                <a href={target.url} target="_blank" rel="noreferrer">{target.label}</a>
+                <code>{target.revision}</code>
+              </li>)}
+            </ul>}
             {turn.source_boundary && <span>{turn.source_boundary}</span>}
           </div>
         </details>
@@ -610,6 +623,8 @@ export function BtcCosmographerDialogue(props: Props) {
     props.sourceContext,
     props.sourceBindingChanged,
     props.inputError,
+    props.evidenceRevisionId,
+    props.evidenceTargets,
   ]);
   const [turns, setTurns] = useState<BtcDialogueTurn[]>(currentTurn ? [currentTurn] : []);
   const [compacted, setCompacted] = useState(false);

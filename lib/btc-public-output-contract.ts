@@ -128,7 +128,7 @@ export type BtcPublicSnapshot = {
   };
   temporal_context: {
     state: TemporalState;
-    label: "bounded_cosmographic_metric";
+    label: "bounded_cosmographic_metric" | "bounded_static_context";
     observation_date: string;
     metrics: TemporalMetrics | null;
     analysis: TemporalAnalysis | null;
@@ -388,7 +388,8 @@ export function guardBtcPublicSnapshot(value: unknown): value is BtcPublicSnapsh
 
   if (!isRecord(value.temporal_context) || !hasExactKeys(value.temporal_context, ["state", "label", "observation_date", "metrics", "analysis", "limitation"])) return false;
   if (!TEMPORAL_STATES.includes(value.temporal_context.state as TemporalState)) return false;
-  if (value.temporal_context.label !== "bounded_cosmographic_metric" || !isUtcDate(value.temporal_context.observation_date)) return false;
+  if (!["bounded_cosmographic_metric", "bounded_static_context"].includes(value.temporal_context.label as string) || !isUtcDate(value.temporal_context.observation_date)) return false;
+  if (value.temporal_context.state === "available_bounded" && value.temporal_context.label !== "bounded_cosmographic_metric") return false;
   if (!isNonEmptyString(value.temporal_context.limitation, 1200)) return false;
   let validatedTemporalMetrics: TemporalMetrics | null = null;
   if (value.temporal_context.state === "available_bounded") {
