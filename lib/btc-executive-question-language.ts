@@ -121,6 +121,11 @@ function fmtNumber(value: number, digits = 2): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 }
 
+function fmtSignedPct(value: number, digits = 1): string {
+  const formatted = fmtNumber(Math.abs(value), digits);
+  return `${value > 0 ? "+" : value < 0 ? "−" : ""}${formatted}%`;
+}
+
 function moduleState(envelope: BtcMarketEnvelope, moduleId: string): BtcSignalDirection {
   return envelope.phi_geometry.nodes.find((node) => node.id === moduleId)?.state ?? "UNAVAILABLE";
 }
@@ -201,6 +206,7 @@ function classEvidence(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, obs
       ];
     case "general_btc_field":
       return [
+        `${ru ? "Принятая цена BTC" : "Accepted BTC price"}: $${fmtNumber(c.price_usd)} · 24h ${fmtSignedPct(c.change_24h_pct)} · 7d ${fmtSignedPct(c.change_7d_pct)} · 30d ${fmtSignedPct(c.change_30d_pct)}.`,
         `${ru ? "Гравитация BTC" : "BTC gravity"}: ${fmtNumber(c.btc_dominance_pct)}% dominance.`,
         `${ru ? "Структура" : "Structure"}: ${c.regime} · Field Score ${fmtNumber(c.market_field_score, 1)}.`,
         `${ru ? "Ликвидность и участие" : "Liquidity and participation"}: ${c.liquidity_context_state} · breadth ${fmtNumber(c.alt_breadth_24h_pct, 1)}% / ${fmtNumber(c.alt_breadth_7d_pct, 1)}%.`,
@@ -218,7 +224,12 @@ function directAnswer(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, stat
     : state === "CONFIRMED" ? (ru ? "Релевантные сигналы согласованы." : "The relevant signals are aligned.")
       : state === "SPLIT" ? (ru ? "Релевантные сигналы дают раздельное чтение." : "The relevant signals produce a split reading.")
       : (ru ? "Сильный вывод сейчас не поддерживается." : "A strong conclusion is not supported now.");
-  return `${prefix} ${EXECUTIVE_FOCUS[locale][envelope.question_class]}`;
+  const marketFactLead = envelope.question_class === "general_btc_field"
+    ? (ru
+        ? `Последняя принятая цена BTC: $${fmtNumber(envelope.current.price_usd)} · 24ч ${fmtSignedPct(envelope.current.change_24h_pct)} · Snapshot ${envelope.current.source_generated_at_utc}.`
+        : `Latest accepted BTC price: $${fmtNumber(envelope.current.price_usd)} · 24h ${fmtSignedPct(envelope.current.change_24h_pct)} · Snapshot ${envelope.current.source_generated_at_utc}.`)
+    : "";
+  return `${marketFactLead}${marketFactLead ? " " : ""}${prefix} ${EXECUTIVE_FOCUS[locale][envelope.question_class]}`;
 }
 
 export function buildBtcQuestionSpecificAnswer(
