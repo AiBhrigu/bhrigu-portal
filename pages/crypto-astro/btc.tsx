@@ -15,6 +15,7 @@ import {
   formatBtcFailureMessage,
   formatBtcNarrativeReadLocalized,
   formatBtcUtcTimestamp,
+  getBtcExampleRoutes,
   getBtcPublicCopy,
   normalizeBtcDisplayQuestion,
   resolveBtcPublicLocale,
@@ -212,6 +213,12 @@ export default function Page(p: Props) {
     : "Evidence-linked Bitcoin intelligence: what changed, why it matters, Snapshot Memory, verified sources, and explicit conditions that would change the current read.";
   const canonical = `https://www.bhrigu.io/crypto-astro/btc?lang=${p.locale}`;
   const acceptedKnowledge = BTC_ACCEPTED_PUBLIC_KNOWLEDGE[p.locale];
+  const exampleRoutes = getBtcExampleRoutes(p.locale);
+  const generalRoute = exampleRoutes.find((route) => route.id === "general_change") ?? exampleRoutes[0];
+  const memoryRoute = exampleRoutes.find((route) => route.id === "accepted_memory") ?? exampleRoutes[0];
+  const routedHref = (question: string, anchor: string) => `/crypto-astro/btc?lang=${p.locale}&q=${encodeURIComponent(question)}#${anchor}`;
+  const liveHref = `/crypto-astro/btc/live?lang=${p.locale}`;
+  const originsHref = `${liveHref}#bitcoin-origins-dossier`;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -291,6 +298,7 @@ export default function Page(p: Props) {
       </section>
 
       <section
+        id="snapshot-authority"
         className="snapshotTruthStrip"
         data-freshness-state={p.sourceContext.state}
         data-source-generated-at={p.sourceContext.generated_at_utc ?? ""}
@@ -309,7 +317,7 @@ export default function Page(p: Props) {
         result={p.result}
       />
 
-      <section className="readingZone acceptedKnowledge" aria-labelledby="btc-accepted-knowledge-title" data-accepted-public-knowledge="true">
+      <section id="btc-accepted-knowledge" className="readingZone acceptedKnowledge" aria-labelledby="btc-accepted-knowledge-title" data-accepted-public-knowledge="true">
         <header className="zoneHeading">
           <div>
             <p className="eyebrow">{ru ? "Факты о продукте" : "Product facts"}</p>
@@ -342,7 +350,55 @@ export default function Page(p: Props) {
             </>
           : <BoundedFallback locale={p.locale} result={p.result} envelopeFailure={p.envelopeFailure}/>} 
       </section>}
-      <div className="closingField" aria-hidden="true"><span/></div>
+      <footer className="btcAuthorityFooter" aria-label={ru ? "Закрытие BTC Cosmographer" : "BTC Cosmographer closure"}>
+        <div className="btcAuthorityFooterIntro">
+          <div className="btcAuthorityFooterIdentity">
+            <strong>BTC COSMOGRAPHER</strong>
+            <p>{ru ? "Доказательный контекст Bitcoin с явными границами вывода." : "Evidence-grounded Bitcoin context with explicit boundaries."}</p>
+          </div>
+          <p className="btcAuthorityFooterStatement">{ru
+            ? "Этот продукт не требует веры. Он показывает, что наблюдается, что является выводом и где заканчивается метод."
+            : "This product does not ask for belief. It shows what is observed, what is inferred, and where the method stops."}</p>
+        </div>
+
+        <nav className="btcAuthorityFooterNav" aria-label={ru ? "Навигация закрытия BTC" : "BTC closure navigation"}>
+          <section>
+            <h3>{ru ? "ПРОДУКТ" : "PRODUCT"}</h3>
+            <a href={`/crypto-astro/btc?lang=${p.locale}`}>BTC Field</a>
+            <a href={liveHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
+            <a href={routedHref(memoryRoute.question, "snapshot-memory")}>Snapshot Memory</a>
+            <a href={originsHref}>{ru ? "Происхождение Bitcoin / Сатоши" : "Bitcoin Origins / Satoshi"}</a>
+          </section>
+          <section>
+            <h3>{ru ? "ДОКАЗАТЕЛЬСТВА" : "EVIDENCE"}</h3>
+            <a href="#snapshot-authority">{ru ? "Текущий Snapshot" : "Current Snapshot"}</a>
+            <a href={routedHref(generalRoute.question, "evidence")}>{ru ? "Источники / доказательство" : "Sources / Proof"}</a>
+            <a href="#btc-accepted-knowledge">{ru ? "Граница метода" : "Method boundary"}</a>
+          </section>
+          <section>
+            <h3>{ru ? "ГРАНИЦЫ" : "BOUNDARIES"}</h3>
+            <a href="#btc-accepted-knowledge">{ru ? "Без ценовых целей" : "No price targets"}</a>
+            <a href="#btc-accepted-knowledge">{ru ? "Без торговых сигналов" : "No trading signals"}</a>
+            <a href="#btc-accepted-knowledge">{ru ? "Без причинного Astro → BTC утверждения" : "No causal Astro → BTC claim"}</a>
+          </section>
+          <section>
+            <h3>{ru ? "ДОСТУП" : "ACCESS"}</h3>
+            <a href={liveHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
+            <a href={`/access?lang=${p.locale}&intent=btc-continuity-status`}>{ru ? "Private BTC Field Review" : "Private BTC Field Review"}</a>
+            <a href="/">BHRIGU</a>
+          </section>
+        </nav>
+
+        <div className="btcFooterTrustStrip" data-freshness-state={p.sourceContext.state}>
+          <strong>{truth.stateLabel}</strong>
+          {p.sourceContext.generated_at_utc && <time dateTime={p.sourceContext.generated_at_utc}>{formatBtcUtcTimestamp(p.locale, p.sourceContext.generated_at_utc)}</time>}
+          <span>{truth.proofLine}</span>
+        </div>
+        <div className="btcFooterBottom">
+          <strong>BHRIGU × COSMOGRAPHER</strong>
+          <span>{ru ? "Источник → наблюдение → вывод → граница" : "Source → observation → interpretation → boundary"}</span>
+        </div>
+      </footer>
     </main>
   </>;
 }

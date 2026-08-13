@@ -9,6 +9,7 @@ import {
   type BtcEvidenceNavigationRuntimeDecision,
 } from "../../lib/btc-cosmographer-evidence-navigation-runtime";
 import {
+  BTC_ORIGINS_KNOWLEDGE_CAPSULE,
   BTC_ORIGINS_PREPARED_QUESTIONS,
   type BtcCosmographerAnswerProjection,
 } from "../../lib/btc-protocol-evidence";
@@ -873,8 +874,21 @@ export function BtcCosmographerDialogue(props: Props) {
 </div>
         </aside>
 
-        <details className="olderTurnsDisclosure" data-bitcoin-origins-secondary="true">
-<summary>{ru ? "История Bitcoin и Сатоши · дополнительные вопросы" : "Bitcoin origins and Satoshi · additional questions"}</summary>
+        <details id="bitcoin-origins-dossier" className="olderTurnsDisclosure originsDossier" data-bitcoin-origins-secondary="true">
+<summary>
+  <span className="originsDossierKicker">{ru ? "ПРОИСХОЖДЕНИЕ BITCOIN" : "BITCOIN ORIGINS"}</span>
+  <strong>{ru ? "Сатоши Накамото" : "Satoshi Nakamoto"}</strong>
+  <span className="originsDossierRecord">{ru ? "Документированный след" : "The documented record"}</span>
+  <span className="originsDossierLead">{ru
+    ? "От документа 2008 года и Genesis до документированной передачи работы."
+    : "From the 2008 paper and Genesis to Satoshi's documented handoff."}</span>
+  <span className="originsDossierStats">
+    <b>{BTC_ORIGINS_PREPARED_QUESTIONS[locale].length} {ru ? "доказательных вопросов" : "evidence-grounded questions"}</b>
+    <b>{BTC_ORIGINS_KNOWLEDGE_CAPSULE.sources.length} {ru ? "первичных источников" : "primary sources"}</b>
+  </span>
+  <span className="originsDossierSemantics">{ru ? "Факт · Вывод · Спорное · Неизвестное" : "Fact · Inference · Disputed · Unknown"}</span>
+  <span className="originsDossierCta">{ru ? "Исследовать происхождение →" : "Explore the origins →"}</span>
+</summary>
 <aside className="exampleRoutes staticExampleRoutes" aria-labelledby="bitcoin-origins-prepared-title" data-bitcoin-origins-prepared="secondary">
   <p className="eyebrow">{ru ? "История Bitcoin · проверенные источники" : "Bitcoin history · verified sources"}</p>
   <h2 id="bitcoin-origins-prepared-title">{ru ? "Пять вопросов о происхождении Bitcoin и Сатоши" : "Five questions about Bitcoin's origins and Satoshi"}</h2>
