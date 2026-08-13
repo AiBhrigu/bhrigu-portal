@@ -375,11 +375,11 @@ export default function Page(p: Props) {
             <a href={routedHref(generalRoute.question, "evidence")}>{ru ? "Источники / доказательство" : "Sources / Proof"}</a>
             <a href="#btc-accepted-knowledge">{ru ? "Граница метода" : "Method boundary"}</a>
           </section>
-          <section>
+          <section data-footer-boundaries="declarative">
             <h3>{ru ? "ГРАНИЦЫ" : "BOUNDARIES"}</h3>
-            <a href="#btc-accepted-knowledge">{ru ? "Без ценовых целей" : "No price targets"}</a>
-            <a href="#btc-accepted-knowledge">{ru ? "Без торговых сигналов" : "No trading signals"}</a>
-            <a href="#btc-accepted-knowledge">{ru ? "Без причинного Astro → BTC утверждения" : "No causal Astro → BTC claim"}</a>
+            <span className="btcBoundaryStatement">{ru ? "Без ценовых целей" : "No price targets"}</span>
+            <span className="btcBoundaryStatement">{ru ? "Без торговых сигналов" : "No trading signals"}</span>
+            <span className="btcBoundaryStatement">{ru ? "Без причинного Astro → BTC утверждения" : "No causal Astro → BTC claim"}</span>
           </section>
           <section>
             <h3>{ru ? "ДОСТУП" : "ACCESS"}</h3>
