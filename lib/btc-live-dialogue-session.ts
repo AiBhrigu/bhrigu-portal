@@ -37,6 +37,13 @@ export const BTC_DIALOGUE_SESSION_MAX_BYTES = 64 * 1024;
 
 export type BtcDialogueAnswerState = BtcCosmographerAnswerState | "BOUNDED";
 
+export type BtcEvidenceArtifactTarget = {
+  id: string;
+  label: string;
+  url: string;
+  revision: string;
+};
+
 /**
  * Compatibility shell during the route-graph rebuild.
  * Legacy deterministic fields remain required so dormant source files compile;
@@ -59,6 +66,8 @@ export type BtcDialogueTurn = {
   what_would_change_the_read: string | null;
   source_boundary: string | null;
   source_snapshot_generated_at_utc: string | null;
+  evidence_revision_id?: string | null;
+  evidence_targets?: BtcEvidenceArtifactTarget[];
   proof_available: boolean;
   context_relation: BtcCosmographerContextRelation | string | null;
   source_binding_changed: boolean;
@@ -135,6 +144,18 @@ function stringList(value: unknown, maxItems: number, maxLength: number): value 
     value.every((item) => isText(item, maxLength));
 }
 
+function validEvidenceTargets(value: unknown): value is BtcEvidenceArtifactTarget[] {
+  if (!Array.isArray(value) || value.length > 6) return false;
+  return value.every((item) =>
+    isRecord(item) &&
+    isText(item.id, 80) &&
+    isText(item.label, 200) &&
+    isText(item.url, 1000) &&
+    /^https:\/\//.test(item.url) &&
+    isText(item.revision, 160)
+  );
+}
+
 function validSections(value: unknown): value is BtcCosmographerSection[] {
   if (!Array.isArray(value) || value.length > 8) return false;
   return value.every((item) => {
@@ -159,6 +180,8 @@ function validTurn(value: unknown): value is BtcDialogueTurn {
   if (!nullableText(value.what_would_change_the_read, 2400)) return false;
   if (!nullableText(value.source_boundary, 2600)) return false;
   if (!nullableText(value.source_snapshot_generated_at_utc, 40)) return false;
+  if (value.evidence_revision_id !== undefined && !nullableText(value.evidence_revision_id, 160)) return false;
+  if (value.evidence_targets !== undefined && !validEvidenceTargets(value.evidence_targets)) return false;
   if (typeof value.proof_available !== "boolean") return false;
   if (!nullableText(value.context_relation, 48)) return false;
   if (typeof value.source_binding_changed !== "boolean") return false;

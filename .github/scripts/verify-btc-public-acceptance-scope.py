@@ -69,6 +69,20 @@ BTC_CLARIFICATION_RESOLUTION_SCOPE = {
     "scripts/verify-btc-cosmographer-route-surface.py",
 }
 
+BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-evidence-navigation-runtime-pr.yml",
+    "components/btc/BtcCosmographerDialogue.tsx",
+    "lib/btc-cosmographer-answer.ts",
+    "lib/btc-cosmographer-evidence-navigation-runtime.ts",
+    "lib/btc-cosmographer-route-graph.ts",
+    "lib/btc-live-dialogue-session.ts",
+    "lib/btc-public-output-contract.ts",
+    "lib/btc-public-snapshot-composer.ts",
+    "pages/crypto-astro/btc/live.tsx",
+    "tests/btc-public-corridor-proven-defect-repair-acceptance.ts",
+}
+
 BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/bhrigu-home-market-cosmographer-pr.yml",
@@ -139,6 +153,7 @@ accepted_scopes = {
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,
     "PASS_BTC_EVIDENCE_NAVIGATION_RUNTIME_EXACT_9_FILE_SCOPE": BTC_EVIDENCE_NAVIGATION_RUNTIME_SCOPE,
     "PASS_BTC_CLARIFICATION_RESOLUTION_EXACT_9_FILE_SCOPE": BTC_CLARIFICATION_RESOLUTION_SCOPE,
+    "PASS_BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_EXACT_11_FILE_SCOPE": BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_SCOPE,
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
 }

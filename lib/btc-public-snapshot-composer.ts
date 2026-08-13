@@ -1,4 +1,3 @@
-import freyTemporalHandler from "../pages/api/frey-temporal.js";
 import { buildFreyAccessCtxPacket, buildFreyAccessHref } from "./frey-access-bridge.js";
 import {
   BTC_ASSET,
@@ -104,33 +103,6 @@ function pressureBand(value: number | null): "elevated" | "moderate" | "low" | n
   return "low";
 }
 
-async function runExistingTemporalHandler(date: string): Promise<unknown> {
-  return await new Promise((resolve, reject) => {
-    let statusCode = 200;
-    const req = { query: { date } } as any;
-    const res = {
-      status(code: number) {
-        statusCode = code;
-        return this;
-      },
-      json(payload: unknown) {
-        if (statusCode >= 400) {
-          const message = isRecord(payload) && typeof payload.error === "string" ? payload.error : `TEMPORAL_${statusCode}`;
-          reject(new Error(message));
-        } else {
-          resolve(payload);
-        }
-        return this;
-      },
-    } as any;
-    try {
-      freyTemporalHandler(req, res);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
 function temporalFromStatic(bundle: BtcSourceBundle): TemporalContextResult {
   const state = bundle.marketField.vectors.CT_temporal.state;
   return {
@@ -200,13 +172,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
   const lens = classifyQuestionLens(compact);
   const geometry = deriveBtcQuestionGeometry(lens, safeReframed);
 
-  let temporal = temporalFromStatic(bundle);
-  try {
-    const rawTemporal = await (input.temporalRunner ?? runExistingTemporalHandler)(observationDate);
-    temporal = sanitizeTemporalResult(rawTemporal) ?? temporalFromStatic(bundle);
-  } catch {
-    temporal = temporalFromStatic(bundle);
-  }
+  const temporal = temporalFromStatic(bundle);
 
   const snapshot = bundle.snapshot;
   const proof = bundle.proof;
@@ -265,7 +231,7 @@ export async function composeBtcPublicSnapshot(bundle: BtcSourceBundle, input: C
 
   const temporalContext: BtcPublicSnapshot["temporal_context"] = {
     state: temporal.state,
-    label: "bounded_cosmographic_metric",
+    label: "bounded_static_context",
     observation_date: observationDate,
     metrics: temporal.metrics,
     analysis: temporal.analysis,

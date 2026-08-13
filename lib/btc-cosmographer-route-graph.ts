@@ -314,11 +314,15 @@ export function extractBtcCosmographerTimeRange(
   return null;
 }
 
-function bodySubject(question: string): string | null {
-  for (const [body, pattern] of BODY_PATTERNS) {
-    if (pattern.test(question)) return body;
-  }
-  return null;
+function bodySubjects(question: string): string[] {
+  return BODY_PATTERNS
+    .filter(([, pattern]) => pattern.test(question))
+    .map(([body]) => body);
+}
+
+
+function isUnsupportedAssetOnly(question: string): boolean {
+  return !hasBtcReference(question) && /\beth\b|ethereum|эфириум|\bsol\b|solana|солан/i.test(question);
 }
 
 function protocolSubject(question: string): string | null {
@@ -379,6 +383,7 @@ function inferDomain(
   const hasBtc = hasBtcReference(question);
   if (isBitcoinGenesisChartQuestion(question)) return "unsupported";
   if (isUnsupportedMarketRequest(question)) return "unsupported";
+  if (isUnsupportedAssetOnly(question)) return "unsupported";
   if (body && hasBtc) return "astro_btc_bridge";
   if (body && market) return "astro_btc_bridge";
   if (isMultiBodyLanguage(question) && hasBtc) return "astro_btc_bridge";
@@ -436,19 +441,25 @@ export function routeBtcCosmographerQuestion(
   const normalized = rawQuestion.trim().replace(/\s+/g, " ");
   const q = normalized.toLowerCase();
   const protocol = protocolSubject(q);
-  const body = bodySubject(q);
+  const bodies = bodySubjects(q);
+  const body = bodies[0] ?? null;
+  const multipleExplicitBodies = bodies.length > 1;
   const multiBody = isMultiBodyLanguage(q);
   const market = marketClass(q);
   const genesisChart = isBitcoinGenesisChartQuestion(q);
   const unsupportedMarketRequest = isUnsupportedMarketRequest(q);
-  let inferredDomain = inferDomain(q, protocol, body, market);
-  let forcedSubject: string | null = genesisChart
-    ? "bitcoin_genesis_chart"
-    : unsupportedMarketRequest
-      ? "unsupported_market_request"
-      : multiBody
-        ? "planetary_aspects"
-        : null;
+  let inferredDomain = multipleExplicitBodies
+    ? "unsupported"
+    : inferDomain(q, protocol, body, market);
+  let forcedSubject: string | null = multipleExplicitBodies
+    ? "multiple_planetary_objects"
+    : genesisChart
+      ? "bitcoin_genesis_chart"
+      : unsupportedMarketRequest
+        ? "unsupported_market_request"
+        : multiBody
+          ? "planetary_aspects"
+          : null;
 
   if (isVolatilityQuestion(q) && !body && !multiBody && (market === null || market === "temporal_pressure") && packet) {
     if (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") {
@@ -484,7 +495,9 @@ export function routeBtcCosmographerQuestion(
       domain === "btc_market" ? "general_btc_field" :
         domain === "unsupported" ? "unknown" : "general");
   const entities = explicitEntities(body, protocol, market, multiBody);
+  for (const explicitBody of bodies) entities.push(explicitBody);
   if (genesisChart) entities.push("bitcoin_genesis_chart");
+  if (multipleExplicitBodies) entities.push("multiple_planetary_objects");
   const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation" || genesisChart;
   const referential = isReferential(q);
 
@@ -500,11 +513,11 @@ export function routeBtcCosmographerQuestion(
   const inheritsContext =
   relation === "FOLLOW_UP" || relation === "RETURN_TO_PREVIOUS_TOPIC";
   const resolvedDomain =
-  inheritsContext && (!explicit || referential) && packet
+  inheritsContext && !explicit && packet
     ? packet.prior_domain
     : domain;
   const resolvedSubject =
-  inheritsContext && (!explicit || referential) && packet
+  inheritsContext && !explicit && packet
     ? packet.prior_subject
     : subject;
   const inheritedTime =

@@ -189,6 +189,13 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   retainedAstroMemory: BtcRetainedAstroRelationMemory | null = null,
 ): BtcRelationIntentResolution<T> {
   const question = rawQuestion.trim();
+  if (route.subject === "multiple_planetary_objects") {
+    return {
+      route,
+      relation_resolution: "SINGLE_DOMAIN",
+      btc_side_state_type: null,
+    };
+  }
   if (!detectBtcRelationIntent(question)) {
     return {
       route,
@@ -214,6 +221,14 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   }
 
   const astroResolved = hasAstroObject(route, question, packet, retainedAstroMemory);
+  const unresolvedAstroRelationHint = /astro|астро|planet|планет|aspect|аспект|(?:strong|intense)[^?!.]{0,24}window|сильн[а-яё]*[^?!.]{0,24}окн/i.test(question);
+  if (!astroResolved && !unresolvedAstroRelationHint && ["btc_market", "snapshot_memory", "bitcoin_protocol"].includes(route.domain)) {
+    return {
+      route,
+      relation_resolution: "SINGLE_DOMAIN",
+      btc_side_state_type: null,
+    };
+  }
   const explicitBtcSide = explicitBtcSideType(route, question);
   const inheritedBtcSide = route.context_relation === "FOLLOW_UP" || route.context_relation === "CROSS_MODULE_BRIDGE"
     ? priorBtcSideType(packet)
@@ -294,7 +309,8 @@ function evidenceAvailable(route: BtcCosmographerRoute, answer: BtcCosmographerA
   if (route.domain === "btc_market" || route.domain === "snapshot_memory") return source.proof_available;
   if (route.domain === "astro_btc_bridge") {
     const astroAvailable = !/unavailable|not yet accepted|недоступ|не принят/i.test(`${answer.proof_label} ${answer.source_boundary}`);
-    return source.proof_available && astroAvailable;
+    const protocolSide = route.explicit_entities.includes("btc_side:protocol");
+    return protocolSide ? astroAvailable : source.proof_available && astroAvailable;
   }
   if (route.domain === "unsupported") return false;
   return !/unavailable|not yet accepted|недоступ|не принят/i.test(`${answer.proof_label} ${answer.source_boundary}`);
