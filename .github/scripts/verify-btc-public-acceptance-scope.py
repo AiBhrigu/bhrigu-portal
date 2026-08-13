@@ -143,6 +143,11 @@ BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE = {
     "pages/crypto-astro/btc.tsx",
 }
 
+BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "lib/btc-product-rebalance-style.ts",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -189,6 +194,7 @@ accepted_scopes = {
     "PASS_BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_EXACT_3_FILE_SCOPE": BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE,
     "PASS_BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_EXACT_7_FILE_SCOPE": BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_SCOPE,
     "PASS_BTC_RETURNED_READING_MOBILE_PHI_REFLOW_EXACT_4_FILE_SCOPE": BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE,
+    "PASS_BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_EXACT_2_FILE_SCOPE": BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

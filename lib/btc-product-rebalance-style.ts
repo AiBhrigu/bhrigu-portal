@@ -30,7 +30,7 @@ main[data-btc-static-proof="true"],.heroProductEntry,.questionPanel{font-family:
 .productOutcomeGrid span{color:var(--blue);font-family:"SFMono-Regular",Consolas,"Liberation Mono",monospace;font-size:11px}.productOutcomeGrid h3{margin:24px 0 10px;color:var(--t);font-size:19px;line-height:1.2}.productOutcomeGrid p{margin:0;color:var(--t2);font-size:14px;line-height:1.55}
 .fieldNav{background:rgba(5,7,12,.92);border-color:var(--bl)}
 .questionPanel{border-color:var(--bl)}
-.staticProofHeader{display:grid;align-content:start;gap:18px;padding:clamp(30px,4vw,54px)}.staticProofHeader>p{margin:0;color:var(--t2);line-height:1.65}.staticExampleRoutes{border-left:1px solid var(--bl)}
+.staticProofHeader{display:grid;align-content:start;gap:18px;padding:clamp(30px,4vw,54px)}.staticProofHeader>p{margin:0;color:var(--t2);line-height:1.65}.staticExampleRoutes{border-left:1px solid var(--bl);padding-top:clamp(28px,3vw,40px)}
 .questionPanel,.readingZone{border-color:var(--bl)}
 .questionMembrane,.readingHeader,.executiveField,.phiPlane{grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr)}
 .questionMembrane.proofRouteMembrane{grid-template-columns:minmax(0,38.196601125fr) minmax(0,61.803398875fr);border-top:1px solid var(--bl)}
