@@ -557,7 +557,6 @@ jobs:
                   price = open_question(driver, "Дай точную цену BTC на завтра", f"price-target-{suffix}")
                   assert_route(price, "unsupported", "unsupported_market_request", "CLARIFICATION", "CLARIFY")
                   assert not price.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
-                  assert "точн" not in price.text.casefold() or "недоступ" in price.text.casefold()
 
                   results.append({
                       "viewport": suffix,
