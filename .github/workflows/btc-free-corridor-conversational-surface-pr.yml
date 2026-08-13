@@ -21,6 +21,9 @@ jobs:
   exact-head-product-acceptance:
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    env:
+      BTC_ACCEPTANCE_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      BTC_ACCEPTANCE_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout exact PR head
         uses: actions/checkout@v4
@@ -28,19 +31,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact base and four-file scope
+      - name: Verify exact authorized BTC acceptance scope
         run: |
           git fetch origin master
-          test "$(git merge-base HEAD origin/master)" = "c1d60096055aa4591f3ee32b43799100dc0b75b1"
-          git diff --name-only c1d60096055aa4591f3ee32b43799100dc0b75b1 HEAD | sort > /tmp/actual
-          cat > /tmp/expected <<'SCOPE'
-          .github/workflows/btc-field-read-pr-visual.yml
-          .github/workflows/btc-free-corridor-conversational-surface-pr.yml
-          components/btc/BtcFreeCorridorSurfaceAdapter.js
-          pages/_app.js
-          SCOPE
-          sort -o /tmp/expected /tmp/expected
-          diff -u /tmp/expected /tmp/actual
+          python3 .github/scripts/verify-btc-public-acceptance-scope.py
 
       - name: Verify truthful boundary and exact expiry contract
         run: |
@@ -66,6 +60,10 @@ jobs:
             DISPLAY_INTERVAL_ONLY: adapter.includes('const displayTimer = window.setInterval(tick, 15000)'),
             ACCESS_PAGE_UNCHANGED: !adapter.includes('pages/access') && !adapter.includes('access.tsx'),
             NO_BACKEND_EXPANSION: !adapter.includes('fetch(') && !adapter.includes('axios') && !adapter.includes('WebSocket'),
+            PROMOTED_RU_CURRENT_EXPLICIT: adapter.includes('canonical: "Что происходит с BTC сейчас?"'),
+            PROMOTED_RU_NEXT_EXPLICIT: adapter.includes('canonical: "Поле BTC: какие данные нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод?"'),
+            PROMOTED_EN_CURRENT_EXPLICIT: adapter.includes('canonical: "What is happening with BTC now?"'),
+            PROMOTED_EN_NEXT_EXPLICIT: adapter.includes('canonical: "BTC field: which data should be watched next to confirm or revise the current read?"'),
           };
           const failed = Object.entries(checks).filter(([, value]) => !value).map(([name]) => name);
           console.log(JSON.stringify({ schema: 'btc_free_corridor_semantic_boundary_exact_expiry_static_acceptance_v0_1', checks }, null, 2));
@@ -109,6 +107,13 @@ jobs:
                   "liquidity": "Что сейчас с ликвидностью BTC?",
                   "structure": "Что сейчас со структурой рынка BTC?",
                   "expired_title": "Ответы остаются в этой вкладке",
+                  "promoted": [
+                      ("Ситуация сейчас", "btc_market", "general_btc_field"),
+                      ("Что изменилось", "snapshot_memory", "change_memory"),
+                      ("Где расхождение", "btc_market", "general_btc_field"),
+                      ("Что дальше", "btc_market", "general_btc_field"),
+                      ("Проверить источники", "methodology", "source_and_method"),
+                  ],
               },
               "en": {
                   "entry_labels": ["Current situation", "What changed", "Where signals diverge", "What comes next", "Check sources"],
@@ -116,6 +121,13 @@ jobs:
                   "liquidity": "What is happening with BTC liquidity now?",
                   "structure": "What is the current BTC market structure?",
                   "expired_title": "Answers remain in this tab",
+                  "promoted": [
+                      ("Current situation", "btc_market", "general_btc_field"),
+                      ("What changed", "snapshot_memory", "change_memory"),
+                      ("Where signals diverge", "btc_market", "general_btc_field"),
+                      ("What comes next", "btc_market", "general_btc_field"),
+                      ("Check sources", "methodology", "source_and_method"),
+                  ],
               },
           }
 
@@ -178,6 +190,27 @@ jobs:
                   buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
                   labels = [button.find_element(By.TAG_NAME, "span").text for button in buttons]
                   record(f"{prefix}_entry_labels", labels == case["entry_labels"], repr(labels))
+
+                  for promoted_index, (promoted_label, expected_domain, expected_subject) in enumerate(case["promoted"]):
+                      driver.get(f"{base}/crypto-astro/btc?lang={locale}")
+                      driver.execute_script("window.sessionStorage.clear()")
+                      driver.refresh()
+                      promoted_buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
+                      target_button = next(button for button in promoted_buttons if button.find_element(By.TAG_NAME, "span").text == promoted_label)
+                      driver.execute_script("arguments[0].click()", target_button)
+                      turn = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")[-1])
+                      disposition = turn.get_attribute("data-route-disposition")
+                      domain = turn.get_attribute("data-route-domain")
+                      subject = turn.get_attribute("data-route-subject")
+                      clarification = turn.get_attribute("data-show-clarification")
+                      record(f"{prefix}_promoted_{promoted_index + 1}_continue", disposition == "CONTINUE", f"{promoted_label}: {disposition}")
+                      record(f"{prefix}_promoted_{promoted_index + 1}_domain", domain == expected_domain, f"{promoted_label}: {domain}")
+                      record(f"{prefix}_promoted_{promoted_index + 1}_subject", subject == expected_subject, f"{promoted_label}: {subject}")
+                      record(f"{prefix}_promoted_{promoted_index + 1}_no_clarification", clarification != "true", f"{promoted_label}: {clarification}")
+                      if promoted_index == 0:
+                          lead = turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text
+                          expected_price_label = "Последняя принятая цена BTC" if locale == "ru" else "Latest accepted BTC price"
+                          record(f"{prefix}_promoted_current_native_price", expected_price_label in lead, lead[:240])
 
                   verify_boundary(locale, "liquidity", case["liquidity"], "liquidity", case["row_labels"])
                   verify_boundary(locale, "market_structure", case["structure"], "market_structure", case["row_labels"])

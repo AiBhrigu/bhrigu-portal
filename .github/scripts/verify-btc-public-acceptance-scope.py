@@ -120,6 +120,12 @@ BTC_PRIMARY_QUESTION_NATIVE_PRICE_SCOPE = {
     "lib/btc-live-dialogue-style.ts",
 }
 
+BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-free-corridor-conversational-surface-pr.yml",
+    "components/btc/BtcFreeCorridorSurfaceAdapter.js",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -163,6 +169,7 @@ accepted_scopes = {
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
     "PASS_BTC_PRIMARY_QUESTION_NATIVE_PRICE_EXACT_3_FILE_SCOPE": BTC_PRIMARY_QUESTION_NATIVE_PRICE_SCOPE,
+    "PASS_BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_EXACT_3_FILE_SCOPE": BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

@@ -15,7 +15,7 @@ const COPY = {
       {
         label: "Ситуация сейчас",
         question: "Что происходит с BTC сейчас?",
-        canonical: "Что происходит с рынком BTC сейчас?",
+        canonical: "Что происходит с BTC сейчас?",
       },
       {
         label: "Что изменилось",
@@ -30,7 +30,7 @@ const COPY = {
       {
         label: "Что дальше",
         question: "Что проверить дальше, чтобы подтвердить или пересмотреть вывод?",
-        canonical: "Какие данные нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?",
+        canonical: "Поле BTC: какие данные нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод?",
       },
       {
         label: "Проверить источники",
@@ -59,7 +59,7 @@ const COPY = {
       {
         label: "Current situation",
         question: "What is happening with BTC now?",
-        canonical: "What is happening with the BTC market now?",
+        canonical: "What is happening with BTC now?",
       },
       {
         label: "What changed",
@@ -74,7 +74,7 @@ const COPY = {
       {
         label: "What comes next",
         question: "What should be checked next to confirm or revise the read?",
-        canonical: "Which data should be watched next to confirm or revise the current BTC read?",
+        canonical: "BTC field: which data should be watched next to confirm or revise the current read?",
       },
       {
         label: "Check sources",
@@ -186,7 +186,7 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
       return "Which sources were used, and where is the inference boundary?";
     }
     if (/current.*price|price.*now|how much.*btc/.test(normalized)) {
-      return "What is happening with the BTC market now?";
+      return "What is happening with BTC now?";
     }
     if (/which signals.*diverg|where.*diverg/.test(normalized) && /btc|bitcoin/.test(normalized)) {
       return "What is happening with BTC now, and which signals diverge?";
@@ -207,7 +207,9 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
       if (active === "liquidity") return "Which liquidity data should be watched next to confirm or revise the current BTC read?";
       if (active === "market_structure") return "Which market-structure data should be watched next to confirm or revise the current BTC read?";
       if (active === "change_memory") return "What should be checked in the next verified snapshot to confirm or revise the current BTC read?";
-      return `What should be watched next to confirm or revise the read about ${label}?`;
+      return active === "general_btc_field"
+        ? "BTC field: what should be watched next to confirm or revise the current read?"
+        : `What should be watched next to confirm or revise the read about ${label}?`;
     }
     if (/which facts create.*diverg|what would resolve it/.test(normalized)) {
       return `Which facts create the divergence in ${label}, and what would resolve it?`;
@@ -225,7 +227,7 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
     return "Какие источники использованы и где граница вывода?";
   }
   if (/текущ.*цен|цена.*сейчас|сколько.*стоит/.test(normalized)) {
-    return "Что происходит с рынком BTC сейчас?";
+    return "Что происходит с BTC сейчас?";
   }
   if (/какие сигналы.*расход|где.*расхожд/.test(normalized) && /btc|биткоин|биткойн/.test(normalized)) {
     return "Что сейчас происходит с BTC и какие сигналы расходятся?";
@@ -246,7 +248,9 @@ function contextualQuestion(rawQuestion, subject, previousSubject, locale) {
     if (active === "liquidity") return "Какие данные ликвидности нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
     if (active === "market_structure") return "Какие данные структуры рынка нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
     if (active === "change_memory") return "Что проверить в следующем подтверждённом снимке, чтобы подтвердить или пересмотреть текущий вывод по BTC?";
-    return `Что отслеживать дальше, чтобы подтвердить или пересмотреть вывод по ${label}?`;
+    return active === "general_btc_field"
+      ? "Поле BTC: что отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод?"
+      : `Что отслеживать дальше, чтобы подтвердить или пересмотреть вывод по ${label}?`;
   }
   if (/какие факты создают расхождение|что его снимет/.test(normalized)) {
     return `Какие факты создают расхождение в ${label} и что его снимет?`;
