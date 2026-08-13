@@ -83,7 +83,13 @@ jobs:
             newest=exchanges[-1] if exchanges else None
             observation_value=''
             observation_text=''
+            route_disposition=''
+            route_stop_text=''
             if newest is not None:
+              route_disposition=newest.get_attribute('data-route-disposition') or ''
+              stop_surfaces=newest.find_elements(By.CSS_SELECTOR,'[data-route-surface="valid-stop"]')
+              if stop_surfaces:
+                route_stop_text=driver.execute_script('return arguments[0].innerText',stop_surfaces[0]) or ''
               disclosures=newest.find_elements(By.CSS_SELECTOR,'details[data-answer-source-boundary="true"]')
               if disclosures:
                 disclosure=disclosures[0]
@@ -102,6 +108,8 @@ jobs:
               'failure_visible':len(failure)==1,
               'observation_value':observation_value,
               'observation_text':observation_text,
+              'route_disposition':route_disposition,
+              'route_stop_text':route_stop_text,
             }
             report['scenarios'][name]={k:v for k,v in result.items() if k!='body'}
             return result
@@ -123,7 +131,13 @@ jobs:
             report['checks']['invalid_calendar_date_rejected']=invalid['failure_visible']
             report['checks']['invalid_calendar_date_message']='real UTC date in YYYY-MM-DD format' in invalid['body']
             report['checks']['memory_answer_visible']=memory['answer_visible'] and not memory['failure_visible']
-            report['checks']['trading_reframe_preserved']=trading['answer_visible'] and 'Not financial advice or a trading signal' in trading['body']
+            report['checks']['trading_reframe_preserved']=(
+              trading['answer_visible']
+              and not trading['failure_visible']
+              and trading['route_disposition']=='STOP'
+              and bool(trading['route_stop_text'])
+              and 'Request outside the supported scope' in trading['route_stop_text']
+            )
             report['checks']['one_composer_only']=len(driver.find_elements(By.CSS_SELECTOR,'textarea[name="q"]'))==1
             report['checks']['analytics_dashboard_absent']=sum(len(driver.find_elements(By.CSS_SELECTOR,s)) for s in ('.phiPlane','.metricRibbon','.readingZone','.memoryAxis'))==0
             report['checks']['freshness_language_24h']='72-hour' not in '\n'.join(Path(p).read_text() for p in ('lib/btc-public-snapshot-composer.ts','lib/btc-market-envelope.ts','lib/btc-public-language-contract.ts'))
