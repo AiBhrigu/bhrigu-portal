@@ -409,6 +409,7 @@ jobs:
                       "SECOND_DOMAIN_UNRESOLVED",
                       "TWO_DOMAINS_RESOLVED",
                   }
+                  relation_resolution = second.get_attribute("data-relation-resolution")
                   disposition = second.get_attribute("data-route-disposition")
                   domain = second.get_attribute("data-route-domain")
                   bridge_result = second.get_attribute("data-bridge-result")
@@ -564,7 +565,7 @@ jobs:
                       "planet_route": "CLARIFY_SUBJECT",
                       "planet_self_loop": False,
                       "relation_intent": True,
-                      "relation_resolution": second.get_attribute("data-relation-resolution"),
+                      "relation_resolution": relation_resolution,
                       "relation_disposition": disposition,
                       "relation_domain": domain,
                       "promoted_routes": "5/5_PASS",
