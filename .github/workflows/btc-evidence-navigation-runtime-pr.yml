@@ -501,9 +501,14 @@ jobs:
                   )
                   assert_route(astro_protocol, "astro_btc_bridge", "jupiter", "ASTRO_BTC_BRIDGE", "CONTINUE")
                   assert astro_protocol.get_attribute("data-btc-side-state-type") == "PROTOCOL"
-                  assert "Сторона Bitcoin Protocol" in astro_protocol.text
-                  assert "Market Field Score" not in astro_protocol.text
-                  assert "Доля стейблкоинов" not in astro_protocol.text
+                  bridge_props = page_props(driver)
+                  bridge_answer = bridge_props["answer"]
+                  bridge_section_ids = [section["id"] for section in bridge_answer["sections"]]
+                  bridge_blob = json.dumps(bridge_answer, ensure_ascii=False)
+                  assert "btc_side_state" in bridge_section_ids
+                  assert "протокол Bitcoin" in bridge_blob
+                  assert "Market Field Score" not in bridge_blob
+                  assert "Доля стейблкоинов" not in bridge_blob
                   bridge_links = [item.get_attribute("href") for item in astro_protocol.find_elements(By.CSS_SELECTOR, '[data-evidence-artifact-targets="exact"] a')]
                   assert any(expected_head in href and "btc-protocol-evidence.ts" in href for href in bridge_links)
                   assert any(expected_head in href and "btc_public_astro_evidence_v0_1.json" in href for href in bridge_links)
