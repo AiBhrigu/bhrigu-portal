@@ -174,17 +174,30 @@ async function run() {
     assert.equal(reorg.payment.paymentState, "reorg_review");
     assert.equal(reorg.activation?.activationId, recovered.activation?.activationId);
 
-    console.log("BTC_DIRECT_PAYMENT_PREVIEW_E2E=PASS");
-    console.log("ledger=quote,replay,conflict,address_retirement,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg");
-    console.log("real_btc_moved=ZERO");
-    console.log("customer_qr_sent=NO");
   } finally {
-    await sql`DELETE FROM btc_direct_payment_activations WHERE application_id = ANY(${apps})`.catch(() => undefined);
-    await sql`DELETE FROM btc_direct_payment_receipts WHERE quote_id IN (SELECT quote_id FROM btc_direct_payment_quotes WHERE application_id = ANY(${apps}))`.catch(() => undefined);
-    await sql`DELETE FROM btc_direct_payment_quotes WHERE application_id = ANY(${apps})`.catch(() => undefined);
-    await sql`DELETE FROM btc_direct_receiver_addresses WHERE receiver_address_id = ANY(${addressIds})`.catch(() => undefined);
-    await sql`DELETE FROM access_intake_requests WHERE request_id = ANY(${apps})`.catch(() => undefined);
+    const appPrefix = `BRG-BTC-PREVIEW-${runId}-%`;
+    const addressPrefix = `preview_addr_${runId}_%`;
+    await sql`UPDATE btc_direct_receiver_addresses SET reserved_quote_id = NULL WHERE receiver_address_id LIKE ${addressPrefix}`;
+    await sql`DELETE FROM btc_direct_payment_activations WHERE application_id LIKE ${appPrefix}`;
+    await sql`DELETE FROM btc_direct_payment_receipts WHERE quote_id IN (SELECT quote_id FROM btc_direct_payment_quotes WHERE application_id LIKE ${appPrefix})`;
+    await sql`DELETE FROM btc_direct_payment_quotes WHERE application_id LIKE ${appPrefix}`;
+    await sql`DELETE FROM btc_direct_receiver_addresses WHERE receiver_address_id LIKE ${addressPrefix}`;
+    await sql`DELETE FROM access_intake_requests WHERE request_id LIKE ${appPrefix}`;
+
+    const residue = await sql`
+      SELECT
+        (SELECT count(*)::int FROM btc_direct_payment_activations WHERE application_id LIKE ${appPrefix}) AS activations,
+        (SELECT count(*)::int FROM btc_direct_payment_quotes WHERE application_id LIKE ${appPrefix}) AS quotes,
+        (SELECT count(*)::int FROM btc_direct_receiver_addresses WHERE receiver_address_id LIKE ${addressPrefix}) AS addresses,
+        (SELECT count(*)::int FROM access_intake_requests WHERE request_id LIKE ${appPrefix}) AS applications
+    `;
+    assert.deepEqual(residue[0], { activations: 0, quotes: 0, addresses: 0, applications: 0 });
   }
+
+  console.log("BTC_DIRECT_PAYMENT_PREVIEW_E2E=PASS");
+  console.log("ledger=quote,replay,conflict,address_retirement,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg,cleanup_zero");
+  console.log("real_btc_moved=ZERO");
+  console.log("customer_qr_sent=NO");
 }
 
 run().catch((error) => {
