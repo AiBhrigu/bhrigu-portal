@@ -76,7 +76,7 @@ export interface BtcDirectPaymentStore {
   findQuoteByIdempotencyKey(key: string): Promise<BtcDirectQuoteRecord | null>;
   isAcceptedApplication(applicationId: string): Promise<boolean>;
   reserveQuote(input: BtcDirectQuoteRecord): Promise<{
-    disposition: "created" | "replay" | "conflict" | "address_unavailable";
+    disposition: "created" | "replay" | "conflict" | "application_quote_exists" | "address_unavailable";
     quote: BtcDirectQuoteRecord | null;
   }>;
   markQuotePending(quoteId: string, at: string): Promise<BtcDirectQuoteRecord>;
@@ -108,6 +108,7 @@ export class BtcDirectPaymentError extends Error {
       | "invalid_idempotency_key"
       | "idempotency_conflict"
       | "application_not_accepted"
+      | "application_quote_exists"
       | "fx_unavailable"
       | "fx_stale"
       | "address_unavailable"
@@ -197,6 +198,9 @@ export async function createBtcDirectQuote(input: {
   if (reserved.disposition === "conflict") {
     throw new BtcDirectPaymentError("idempotency_conflict", "Conflicting quote replay.");
   }
+  if (reserved.disposition === "application_quote_exists") {
+    throw new BtcDirectPaymentError("application_quote_exists", "This application already has a live quote.");
+  }
   if (reserved.disposition === "address_unavailable" || !reserved.quote) {
     throw new BtcDirectPaymentError("address_unavailable", "No unused receive address is available.");
   }
@@ -246,6 +250,8 @@ export async function observeBtcDirectPayment(input: {
   let proposedState: BtcDirectPaymentState;
   if (existingOutput?.paymentState === "paid_confirmed" && (observation.confirmations < 1 || !observation.spvVerified)) {
     proposedState = "reorg_review";
+  } else if (quote.quoteState === "manual_review") {
+    proposedState = "manual_review";
   } else if (existingActivation && existingOutput?.paymentId !== existingActivation.paymentId) {
     proposedState = "manual_review";
   } else if (!exactAmount || quoteExpired) {

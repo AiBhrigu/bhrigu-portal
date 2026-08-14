@@ -51,6 +51,13 @@ async function run() {
     );
     assert.equal(parsedRaw.rateDecimal, adversarialRate);
     assert.equal(ceilUsdCentsToSats(4900, parsedRaw.rateDecimal).toString(), "396901");
+    for (const badRaw of [
+      `{"wrapper":{"bitcoin":{"usd":${adversarialRate},"last_updated_at":1786701600}}}`,
+      `{"bitcoin":{"usd":${adversarialRate},"last_updated_at":1786701600}} trailing`,
+      `{"bitcoin":{"usd":1,"usd":2,"last_updated_at":1786701600}}`,
+    ]) {
+      assert.throws(() => parseCoinGeckoSimplePriceRaw(badRaw));
+    }
 
     for (let index = 0; index < apps.length; index += 1) {
       const applicationId = apps[index];
@@ -93,6 +100,17 @@ async function run() {
       }),
       (error: any) => error?.code === "idempotency_conflict"
     );
+
+    const quoteRace = await Promise.allSettled([
+      createBtcDirectQuote({ applicationId: apps[1], idempotencyKey: `preview-race-${runId}-a`, store, source, now }),
+      createBtcDirectQuote({ applicationId: apps[1], idempotencyKey: `preview-race-${runId}-b`, store, source, now }),
+    ]);
+    assert.equal(quoteRace.filter((x) => x.status === "fulfilled").length, 1);
+    assert.equal(quoteRace.filter((x) => x.status === "rejected" && (x as PromiseRejectedResult).reason?.code === "application_quote_exists").length, 1);
+    const raceRows = await sql`SELECT count(*)::int AS count FROM btc_direct_payment_quotes WHERE application_id = ${apps[1]} AND quote_state <> 'expired'`;
+    assert.equal(raceRows[0].count, 1);
+    const raceAddressRows = await sql`SELECT count(*)::int AS count FROM btc_direct_receiver_addresses WHERE reserved_quote_id IN (SELECT quote_id FROM btc_direct_payment_quotes WHERE application_id = ${apps[1]})`;
+    assert.equal(raceAddressRows[0].count, 1);
 
     const expired = await expireBtcDirectQuote({
       quote: q1,
@@ -223,6 +241,19 @@ async function run() {
       }, store, now,
     }), (error: any) => error?.code === "output_integrity_conflict");
 
+    const reviewLatched = await observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: q4.receiverAddressId, txid: tx("under-exact-new-output"), txVout: 1,
+        observedSats: q4.satAmountInteger, confirmations: 1,
+        blockHeight: "962411", blockHash: tx("block-under-exact-new"),
+        observedAt: now().toISOString(), spvVerified: true,
+      }, store, now,
+    });
+    assert.equal(reviewLatched.payment.paymentState, "manual_review");
+    assert.equal(reviewLatched.activation, null);
+    const reviewQuoteRows = await sql`SELECT quote_state FROM btc_direct_payment_quotes WHERE quote_id = ${q4.quoteId}`;
+    assert.equal(reviewQuoteRows[0].quote_state, "manual_review");
+
     const q5 = await createBtcDirectQuote({
       applicationId: apps[4], idempotencyKey: `preview-quote-${runId}-5`, store, source, now,
     });
@@ -296,7 +327,7 @@ async function run() {
   }
 
   console.log("BTC_DIRECT_PAYMENT_PREVIEW_E2E=PASS");
-  console.log("ledger=lossless_decimal,quote,replay,conflict,address_retirement,output_immutability,manual_review_sticky,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg_sticky,concurrent_activation_single_winner,stale_claim_recovery,cleanup_zero");
+  console.log("ledger=root_json_authority,lossless_decimal,quote,replay,conflict,one_live_quote,concurrent_quote_reservation,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg_sticky,concurrent_activation_single_winner,stale_claim_recovery,cleanup_zero");
   console.log("real_btc_moved=ZERO");
   console.log("customer_qr_sent=NO");
 }

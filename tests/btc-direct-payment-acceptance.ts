@@ -53,6 +53,10 @@ class MemoryStore implements BtcDirectPaymentStore {
         quote: structuredClone(existing),
       };
     }
+    const live = Array.from(this.quotesById.values()).find(
+      (item) => item.applicationId === input.applicationId && item.quoteState !== "expired"
+    );
+    if (live) return { disposition: "application_quote_exists" as const, quote: structuredClone(live) };
     const address = this.addresses.find((item) => item.state === "available");
     if (!address) return { disposition: "address_unavailable" as const, quote: null };
     address.state = "reserved";
@@ -84,7 +88,7 @@ class MemoryStore implements BtcDirectPaymentStore {
   }
   async markQuoteState(quoteId: string, state: BtcDirectQuoteState, at: string) {
     const quote = this.quotesById.get(quoteId)!;
-    quote.quoteState = state;
+    if (quote.quoteState !== "manual_review") quote.quoteState = state;
     quote.updatedAt = at;
   }
   async findPaymentByOutput(txid: string, txVout: number) {
@@ -97,7 +101,11 @@ class MemoryStore implements BtcDirectPaymentStore {
     if (existing && (existing.quoteId !== input.quoteId || existing.observedSats !== input.observedSats)) {
       throw new Error("payment_output_integrity_conflict");
     }
-    const paymentState = existing ? memoryPaymentTransition(existing.paymentState, input.paymentState) : input.paymentState;
+    const quote = this.quotesById.get(input.quoteId)!;
+    const canonicalReorg = existing?.paymentState === "paid_confirmed" && input.paymentState === "reorg_review";
+    const proposed = quote.quoteState === "manual_review" && !canonicalReorg ? "manual_review" : input.paymentState;
+    if (proposed === "manual_review") quote.quoteState = "manual_review";
+    const paymentState = existing ? memoryPaymentTransition(existing.paymentState, proposed) : proposed;
     const stored = {
       ...input,
       paymentId: existing?.paymentId ?? input.paymentId,
@@ -197,6 +205,12 @@ async function run() {
   assert.equal(parseCoinGeckoSimplePriceRaw('{"bitcoin":{"usd":999999999999999999999999.123456789012345678,"last_updated_at":1786701600}}').rateDecimal, "999999999999999999999999.123456789012345678");
   assert.equal(ceilUsdCentsToSats(4900, "999999999999999999999999.123456789012345678").toString(), "1");
   for (const bad of [
+    '{"wrapper":{"bitcoin":{"usd":62965,"last_updated_at":1786701600}}}',
+    '{"bitcoin":{"usd":62965,"last_updated_at":1786701600}} trailing',
+    '{"bitcoin":{"usd":62965,"last_updated_at":1786701600}',
+    '{"bitcoin":{"usd":62965,"last_updated_at":1786701600},"bitcoin":{"usd":62966,"last_updated_at":1786701600}}',
+    '{"bitcoin":{"usd":62965,"usd":62966,"last_updated_at":1786701600}}',
+    '{"bitcoin":62965}',
     '{"bitcoin":{"usd":1e5,"last_updated_at":1786701600}}',
     '{"bitcoin":{"usd":0,"last_updated_at":1786701600}}',
     '{"bitcoin":{"usd":-1,"last_updated_at":1786701600}}',
@@ -204,7 +218,7 @@ async function run() {
   ]) assert.throws(() => parseCoinGeckoSimplePriceRaw(bad));
 
   const store = new MemoryStore();
-  ["APP-ACCEPTED-0001", "APP-ACCEPTED-0002", "APP-ACCEPTED-0003", "APP-ACCEPTED-0004", "APP-ACCEPTED-0005", "APP-ACCEPTED-0006", "APP-ACCEPTED-0007"].forEach((id) => store.accepted.add(id));
+  ["APP-ACCEPTED-0001", "APP-ACCEPTED-0002", "APP-ACCEPTED-0003", "APP-ACCEPTED-0004", "APP-ACCEPTED-0005", "APP-ACCEPTED-0006", "APP-ACCEPTED-0007", "APP-ACCEPTED-0008"].forEach((id) => store.accepted.add(id));
   for (let i = 1; i <= 16; i += 1) store.addAddress(`addr_${i.toString().padStart(4, "0")}`, ADDRESS(i));
 
   let clock = new Date("2026-08-14T10:00:00.000Z");
@@ -235,6 +249,17 @@ async function run() {
     store, source, now,
   }), "idempotency_conflict");
 
+
+  const quoteRace = await Promise.allSettled([
+    createBtcDirectQuote({ applicationId: "APP-ACCEPTED-0008", idempotencyKey: "quote-race-key-0001", store, source, now, quoteId: () => "quote_race_a" }),
+    createBtcDirectQuote({ applicationId: "APP-ACCEPTED-0008", idempotencyKey: "quote-race-key-0002", store, source, now, quoteId: () => "quote_race_b" }),
+  ]);
+  assert.equal(quoteRace.filter((x) => x.status === "fulfilled").length, 1);
+  assert.equal(quoteRace.filter((x) => x.status === "rejected" && x.reason instanceof BtcDirectPaymentError && x.reason.code === "application_quote_exists").length, 1);
+  const app8Live = Array.from(store.quotesById.values()).filter((q) => q.applicationId === "APP-ACCEPTED-0008" && q.quoteState !== "expired");
+  assert.equal(app8Live.length, 1);
+  assert.equal(store.addresses.filter((a) => a.quoteId === app8Live[0].quoteId && a.state === "reserved").length, 1);
+
   await expectCode(createBtcDirectQuote({
     applicationId: "APP-NOT-ACCEPTED",
     idempotencyKey: "quote-key-not-accepted-0001",
@@ -259,7 +284,7 @@ async function run() {
     store, source, now, quoteId: () => "quote_0002",
   });
   assert.notEqual(q2.receiveAddress, q1.receiveAddress);
-  assert.equal(q2.receiverAddressId, "addr_0002");
+  assert.notEqual(q2.receiverAddressId, q1.receiverAddressId);
 
   const mempool = await observeBtcDirectPayment({
     observation: {
@@ -382,6 +407,18 @@ async function run() {
   assert.equal(preservedUnderpay?.paymentState, "manual_review");
   assert.equal(preservedUnderpay?.observedSats, String(BigInt(q4.satAmountInteger) - BigInt(1)));
   assert.equal(await store.findActivationByApplicationId(q4.applicationId), null);
+  const exactAfterReview = await observeBtcDirectPayment({
+    observation: { receiverAddressId: q4.receiverAddressId, txid: TX(14), txVout: 0, observedSats: q4.satAmountInteger, confirmations: 1, blockHeight: "962410", blockHash: BLOCK(14), observedAt: now().toISOString(), spvVerified: true },
+    store, now,
+  });
+  assert.equal(exactAfterReview.payment.paymentState, "manual_review");
+  assert.equal(exactAfterReview.activation, null);
+  assert.equal((await store.findQuoteByReceiverAddressId(q4.receiverAddressId))?.quoteState, "manual_review");
+  const concurrentReview = await Promise.all([15, 16].map((n) => observeBtcDirectPayment({
+    observation: { receiverAddressId: q4.receiverAddressId, txid: TX(n), txVout: 0, observedSats: q4.satAmountInteger, confirmations: 2, blockHeight: "962411", blockHash: BLOCK(n), observedAt: now().toISOString(), spvVerified: true },
+    store, now,
+  })));
+  assert(concurrentReview.every((x) => x.payment.paymentState === "manual_review" && x.activation === null));
 
   const q5 = await createBtcDirectQuote({
     applicationId: "APP-ACCEPTED-0005", idempotencyKey: "quote-key-late-0001",
@@ -495,18 +532,18 @@ async function run() {
   assert.match(migration, /receive_address TEXT NOT NULL UNIQUE/);
   assert(!/seed|private_key|wallet_password|master_public_key/i.test(migration));
 
-  const repairMigration = await readFile("migrations/20260814_btc_direct_payment_targeted_repair_v1.sql", "utf8");
-  assert.match(repairMigration, /fx_rate_decimal TYPE TEXT/);
-  assert.match(repairMigration, /claim_token TEXT/);
-  assert.match(repairMigration, /claimed_at TIMESTAMPTZ/);
-  assert.match(repairMigration, /btc_direct_payment_activations_claim_state_check/);
+  assert.match(migration, /fx_rate_decimal TEXT NOT NULL/);
+  assert.match(migration, /claim_token TEXT/);
+  assert.match(migration, /claimed_at TIMESTAMPTZ/);
+  assert.match(migration, /btc_direct_quotes_one_live_application_idx/);
+  assert.match(migration, /WHERE quote_state <> 'expired'/);
 
   const api = await readFile("pages/api/btc-payment/observe.ts", "utf8");
   assert(!/electrum/i.test(api));
   assert(!/wallet balance|full wallet history/i.test(api));
 
   console.log("BTC_DIRECT_PAYMENT_LOCAL_ACCEPTANCE=PASS");
-  console.log("assertions=lossless_decimal,replay,conflict,stale_fx,address_retirement,output_immutability,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,duplicate_payment,secret_boundary");
+  console.log("assertions=root_json_authority,lossless_decimal,replay,conflict,one_live_quote,concurrent_quote_reservation,stale_fx,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,duplicate_payment,secret_boundary");
 }
 
 run().catch((error) => {

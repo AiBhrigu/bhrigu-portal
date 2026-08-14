@@ -16,7 +16,10 @@ CREATE TABLE IF NOT EXISTS btc_direct_payment_quotes (
   idempotency_payload_hash TEXT NOT NULL,
   usd_price_cents INTEGER NOT NULL CHECK (usd_price_cents > 0),
   fx_source TEXT NOT NULL,
-  fx_rate_decimal NUMERIC(30, 12) NOT NULL CHECK (fx_rate_decimal > 0),
+  fx_rate_decimal TEXT NOT NULL CHECK (
+    fx_rate_decimal ~ '^(?:0|[1-9][0-9]{0,29})(?:\.[0-9]{1,40})?$'
+    AND fx_rate_decimal !~ '^0(?:\.0+)?$'
+  ),
   fx_timestamp TIMESTAMPTZ NOT NULL,
   quote_expires_at TIMESTAMPTZ NOT NULL,
   sat_amount_integer BIGINT NOT NULL CHECK (sat_amount_integer > 0),
@@ -63,20 +66,32 @@ CREATE TABLE IF NOT EXISTS btc_direct_payment_activations (
   service_end TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
+  claim_token TEXT,
+  claimed_at TIMESTAMPTZ,
   CHECK (
     (state = 'active' AND service_start IS NOT NULL AND service_end IS NOT NULL)
     OR
     (state <> 'active' AND service_start IS NULL AND service_end IS NULL)
+  ),
+  CHECK (
+    (state = 'activating' AND claim_token IS NOT NULL AND claimed_at IS NOT NULL)
+    OR
+    (state <> 'activating' AND claim_token IS NULL AND claimed_at IS NULL)
   )
 );
 
 CREATE INDEX IF NOT EXISTS btc_direct_quotes_application_idx
   ON btc_direct_payment_quotes (application_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS btc_direct_quotes_one_live_application_idx
+  ON btc_direct_payment_quotes (application_id)
+  WHERE quote_state <> 'expired';
 CREATE INDEX IF NOT EXISTS btc_direct_quotes_state_expiry_idx
   ON btc_direct_payment_quotes (quote_state, quote_expires_at);
 CREATE INDEX IF NOT EXISTS btc_direct_payments_quote_idx
   ON btc_direct_payment_receipts (quote_id, first_seen_at);
 CREATE INDEX IF NOT EXISTS btc_direct_activations_state_idx
   ON btc_direct_payment_activations (state, updated_at);
+CREATE INDEX IF NOT EXISTS btc_direct_activations_claim_idx
+  ON btc_direct_payment_activations (state, claimed_at);
 
 COMMIT;

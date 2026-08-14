@@ -55,7 +55,7 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
             ${input.satAmountInteger}, candidate.receiver_address_id,
             candidate.receive_address, 'quote_created', ${input.createdAt}, ${input.updatedAt}
           FROM candidate
-          ON CONFLICT (idempotency_key) DO NOTHING
+          ON CONFLICT DO NOTHING
           RETURNING *
         ), reserved AS (
           UPDATE btc_direct_receiver_addresses AS address
@@ -87,6 +87,16 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
               : ("conflict" as const),
           quote: existing,
         };
+      }
+      const liveRows = await sql`
+        SELECT * FROM btc_direct_payment_quotes
+        WHERE application_id = ${input.applicationId}
+          AND quote_state <> 'expired'
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+      if (liveRows[0]) {
+        return { disposition: "application_quote_exists" as const, quote: mapQuote(liveRows[0]) };
       }
       return { disposition: "address_unavailable" as const, quote: null };
     },
@@ -144,7 +154,11 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
     async markQuoteState(quoteId, state: BtcDirectQuoteState, at) {
       await sql`
         UPDATE btc_direct_payment_quotes
-        SET quote_state = ${state}, updated_at = ${at}
+        SET quote_state = CASE
+              WHEN quote_state = 'manual_review' THEN 'manual_review'
+              ELSE ${state}
+            END,
+            updated_at = ${at}
         WHERE quote_id = ${quoteId}
       `;
     },
@@ -160,16 +174,37 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
 
     async upsertPayment(input) {
       const rows = await sql`
+        WITH quote_guard AS (
+          SELECT quote_id, quote_state
+          FROM btc_direct_payment_quotes
+          WHERE quote_id = ${input.quoteId}
+          FOR UPDATE
+        ), quote_latch AS (
+          UPDATE btc_direct_payment_quotes AS quote
+          SET quote_state = CASE
+                WHEN ${input.paymentState} = 'manual_review' THEN 'manual_review'
+                ELSE quote.quote_state
+              END,
+              updated_at = CASE
+                WHEN ${input.paymentState} = 'manual_review' THEN ${input.updatedAt}
+                ELSE quote.updated_at
+              END
+          FROM quote_guard
+          WHERE quote.quote_id = quote_guard.quote_id
+          RETURNING quote.quote_state
+        )
         INSERT INTO btc_direct_payment_receipts (
           payment_id, quote_id, txid, tx_vout, observed_sats, block_height,
           block_hash, confirmations, payment_state, first_seen_at,
           confirmed_at, updated_at
-        ) VALUES (
+        )
+        SELECT
           ${input.paymentId}, ${input.quoteId}, ${input.txid}, ${input.txVout},
           ${input.observedSats}, ${input.blockHeight}, ${input.blockHash},
-          ${input.confirmations}, ${input.paymentState}, ${input.firstSeenAt},
-          ${input.confirmedAt}, ${input.updatedAt}
-        )
+          ${input.confirmations},
+          CASE WHEN quote_latch.quote_state = 'manual_review' THEN 'manual_review' ELSE ${input.paymentState} END,
+          ${input.firstSeenAt}, ${input.confirmedAt}, ${input.updatedAt}
+        FROM quote_latch
         ON CONFLICT (txid, tx_vout) DO UPDATE SET
           block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
@@ -177,8 +212,11 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
           payment_state = CASE
             WHEN btc_direct_payment_receipts.payment_state = 'manual_review' THEN 'manual_review'
             WHEN btc_direct_payment_receipts.payment_state = 'reorg_review' THEN 'reorg_review'
-            WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed'
-              THEN CASE WHEN EXCLUDED.payment_state = 'reorg_review' THEN 'reorg_review' ELSE 'paid_confirmed' END
+            WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed' AND ${input.paymentState} = 'reorg_review'
+              THEN 'reorg_review'
+            WHEN (SELECT quote_state FROM btc_direct_payment_quotes WHERE quote_id = EXCLUDED.quote_id) = 'manual_review'
+              THEN 'manual_review'
+            WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed' THEN 'paid_confirmed'
             ELSE EXCLUDED.payment_state
           END,
           confirmed_at = COALESCE(btc_direct_payment_receipts.confirmed_at, EXCLUDED.confirmed_at),

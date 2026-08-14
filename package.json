@@ -9,9 +9,10 @@
     "verify:btc-routing": "node scripts/run-btc-routing-fixture.mjs",
     "verify:btc-producer-contract": "node scripts/run-btc-producer-contract-fixture.mjs",
     "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs",
-    "verify:btc-direct-payment": "node --import tsx tests/btc-direct-payment-acceptance.ts",
+    "verify:btc-direct-payment": "node --import tsx tests/btc-direct-payment-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-direct-payment-preview-e2e": "node --import tsx scripts/btc-direct-payment-preview-e2e.ts",
-    "postbuild": "node --import tsx scripts/btc-direct-payment-preview-e2e.ts"
+    "postbuild": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts && node --import tsx scripts/btc-direct-payment-preview-e2e.ts",
+    "verify:btc-direct-payment-migrations": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
@@ -22,6 +23,7 @@
     "resend": "6.18.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.5",
     "@types/node": "25.3.5",
     "@types/react": "19.2.14",
     "tsx": "4.23.11",
