@@ -214,6 +214,12 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
             WHEN btc_direct_payment_receipts.payment_state = 'reorg_review' THEN 'reorg_review'
             WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed' AND ${input.paymentState} = 'reorg_review'
               THEN 'reorg_review'
+            WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed'
+              AND EXISTS (
+                SELECT 1 FROM btc_direct_payment_activations AS activation
+                WHERE activation.payment_id = btc_direct_payment_receipts.payment_id
+              )
+              THEN 'paid_confirmed'
             WHEN (SELECT quote_state FROM btc_direct_payment_quotes WHERE quote_id = EXCLUDED.quote_id) = 'manual_review'
               THEN 'manual_review'
             WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed' THEN 'paid_confirmed'
@@ -238,25 +244,71 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
       return rows[0] ? mapActivation(rows[0]) : null;
     },
 
-    async reserveActivation(input) {
-      await sql`
-        INSERT INTO btc_direct_payment_activations (
-          activation_id, application_id, payment_id, activation_key, state,
-          service_start, service_end, created_at, updated_at
-        ) VALUES (
-          ${input.activationId}, ${input.applicationId}, ${input.paymentId},
-          ${input.activationKey}, 'pending', NULL, NULL,
-          ${input.createdAt}, ${input.updatedAt}
-        )
-        ON CONFLICT DO NOTHING
-      `;
+    async authorizeActivation(input) {
       const rows = await sql`
-        SELECT * FROM btc_direct_payment_activations
-        WHERE application_id = ${input.applicationId}
+        WITH quote_guard AS MATERIALIZED (
+          SELECT quote_id, application_id, quote_state
+          FROM btc_direct_payment_quotes
+          WHERE quote_id = ${input.quoteId}
+          FOR UPDATE
+        ), payment_guard AS MATERIALIZED (
+          SELECT payment.payment_id, payment.quote_id, payment.payment_state
+          FROM btc_direct_payment_receipts AS payment
+          JOIN quote_guard ON quote_guard.quote_id = payment.quote_id
+          WHERE payment.payment_id = ${input.paymentId}
+            AND payment.payment_state = 'paid_confirmed'
+          FOR UPDATE OF payment
+        ), existing_same AS MATERIALIZED (
+          SELECT activation.*
+          FROM btc_direct_payment_activations AS activation
+          JOIN quote_guard ON quote_guard.application_id = activation.application_id
+          JOIN payment_guard ON payment_guard.payment_id = activation.payment_id
+          WHERE activation.application_id = ${input.applicationId}
+        ), new_eligible AS MATERIALIZED (
+          SELECT quote_guard.quote_id
+          FROM quote_guard
+          JOIN payment_guard ON true
+          WHERE quote_guard.application_id = ${input.applicationId}
+            AND quote_guard.quote_state IN ('quote_created', 'payment_pending', 'paid_confirmed')
+            AND NOT EXISTS (
+              SELECT 1 FROM btc_direct_payment_activations
+              WHERE application_id = ${input.applicationId}
+            )
+        ), inserted AS (
+          INSERT INTO btc_direct_payment_activations (
+            activation_id, application_id, payment_id, activation_key, state,
+            service_start, service_end, created_at, updated_at
+          )
+          SELECT
+            ${input.activation.activationId}, ${input.applicationId}, ${input.paymentId},
+            ${input.activation.activationKey}, 'pending', NULL, NULL,
+            ${input.activation.createdAt}, ${input.activation.updatedAt}
+          FROM new_eligible
+          ON CONFLICT DO NOTHING
+          RETURNING *
+        ), authorized AS (
+          SELECT * FROM inserted
+          UNION ALL
+          SELECT * FROM existing_same
+        ), promoted AS (
+          UPDATE btc_direct_payment_quotes AS quote
+          SET quote_state = CASE
+                WHEN quote.quote_state IN ('manual_review', 'activated') THEN quote.quote_state
+                ELSE 'paid_confirmed'
+              END,
+              updated_at = ${input.at}
+          WHERE quote.quote_id = ${input.quoteId}
+            AND quote.quote_state <> 'expired'
+            AND EXISTS (SELECT 1 FROM authorized)
+          RETURNING quote.quote_id
+        )
+        SELECT authorized.*
+        FROM authorized
+        JOIN promoted ON true
         LIMIT 1
       `;
-      if (!rows[0]) throw new Error("activation_reservation_missing");
-      return mapActivation(rows[0]);
+      if (!rows[0]) return { authorized: false, activation: null };
+      return { authorized: true, activation: mapActivation(rows[0]) };
     },
 
     async claimActivation(activationId, claimToken, at, staleBefore) {

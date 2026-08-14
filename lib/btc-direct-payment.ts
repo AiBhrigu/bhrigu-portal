@@ -86,7 +86,13 @@ export interface BtcDirectPaymentStore {
   findPaymentByOutput(txid: string, txVout: number): Promise<BtcDirectPaymentRecord | null>;
   upsertPayment(input: BtcDirectPaymentRecord): Promise<BtcDirectPaymentRecord>;
   findActivationByApplicationId(applicationId: string): Promise<BtcDirectActivationRecord | null>;
-  reserveActivation(input: BtcDirectActivationRecord): Promise<BtcDirectActivationRecord>;
+  authorizeActivation(input: {
+    quoteId: string;
+    applicationId: string;
+    paymentId: string;
+    activation: BtcDirectActivationRecord;
+    at: string;
+  }): Promise<{ authorized: boolean; activation: BtcDirectActivationRecord | null }>;
   claimActivation(activationId: string, claimToken: string, at: string, staleBefore: string): Promise<{ claimed: boolean; activation: BtcDirectActivationRecord }>;
   completeActivation(
     activationId: string,
@@ -298,8 +304,8 @@ export async function observeBtcDirectPayment(input: {
     return { quote, payment: storedPayment, activation: existingActivation };
   }
 
-  await input.store.markQuoteState(quote.quoteId, "paid_confirmed", observedAt.toISOString());
   const activation = await activateBtcDirectPayment({
+    quoteId: quote.quoteId,
     applicationId: quote.applicationId,
     payment: storedPayment,
     store: input.store,
@@ -307,6 +313,7 @@ export async function observeBtcDirectPayment(input: {
     activationId: input.activationId,
     activationEffect: input.activationEffect,
   });
+  if (!activation) return { quote, payment: storedPayment, activation: null };
   if (activation.state === "active") {
     await input.store.markQuoteState(quote.quoteId, "activated", activation.updatedAt);
   }
@@ -321,33 +328,38 @@ function resolvePaymentState(existing: BtcDirectPaymentState | null, proposed: B
 }
 
 export async function activateBtcDirectPayment(input: {
+  quoteId: string;
   applicationId: string;
   payment: BtcDirectPaymentRecord;
   store: BtcDirectPaymentStore;
   now?: () => Date;
   activationId?: () => string;
   activationEffect?: () => Promise<void>;
-}): Promise<BtcDirectActivationRecord> {
+}): Promise<BtcDirectActivationRecord | null> {
   const now = input.now ?? (() => new Date());
-  const existingForApplication = await input.store.findActivationByApplicationId(input.applicationId);
-  if (existingForApplication?.state === "active") return existingForApplication;
-
   const createdAt = now().toISOString();
-  const reserved = await input.store.reserveActivation(
-    existingForApplication ?? {
-      activationId: input.activationId?.() ?? `btca_${randomUUID()}`,
-      applicationId: input.applicationId,
-      paymentId: input.payment.paymentId,
-      activationKey: `${input.applicationId}:${input.payment.txid}`,
-      state: "pending",
-      serviceStart: null,
-      serviceEnd: null,
-      createdAt,
-      updatedAt: createdAt,
-      claimToken: null,
-      claimedAt: null,
-    }
-  );
+  const proposed: BtcDirectActivationRecord = {
+    activationId: input.activationId?.() ?? `btca_${randomUUID()}`,
+    applicationId: input.applicationId,
+    paymentId: input.payment.paymentId,
+    activationKey: `${input.applicationId}:${input.payment.txid}`,
+    state: "pending",
+    serviceStart: null,
+    serviceEnd: null,
+    createdAt,
+    updatedAt: createdAt,
+    claimToken: null,
+    claimedAt: null,
+  };
+  const authorization = await input.store.authorizeActivation({
+    quoteId: input.quoteId,
+    applicationId: input.applicationId,
+    paymentId: input.payment.paymentId,
+    activation: proposed,
+    at: createdAt,
+  });
+  if (!authorization.authorized || !authorization.activation) return null;
+  const reserved = authorization.activation;
   if (reserved.state === "active") return reserved;
 
   const claimToken = randomUUID();

@@ -103,7 +103,11 @@ class MemoryStore implements BtcDirectPaymentStore {
     }
     const quote = this.quotesById.get(input.quoteId)!;
     const canonicalReorg = existing?.paymentState === "paid_confirmed" && input.paymentState === "reorg_review";
-    const proposed = quote.quoteState === "manual_review" && !canonicalReorg ? "manual_review" : input.paymentState;
+    const fencedAuthoritativePayment = existing?.paymentState === "paid_confirmed"
+      && Array.from(this.activations.values()).some((activation) => activation.paymentId === existing.paymentId);
+    const proposed = quote.quoteState === "manual_review" && !canonicalReorg && !fencedAuthoritativePayment
+      ? "manual_review"
+      : input.paymentState;
     if (proposed === "manual_review") quote.quoteState = "manual_review";
     const paymentState = existing ? memoryPaymentTransition(existing.paymentState, proposed) : proposed;
     const stored = {
@@ -121,11 +125,26 @@ class MemoryStore implements BtcDirectPaymentStore {
     const activation = this.activations.get(applicationId);
     return activation ? structuredClone(activation) : null;
   }
-  async reserveActivation(input: BtcDirectActivationRecord) {
+  async authorizeActivation(input: { quoteId: string; applicationId: string; paymentId: string; activation: BtcDirectActivationRecord; at: string }) {
+    const quote = this.quotesById.get(input.quoteId);
+    const payment = Array.from(this.payments.values()).find(
+      (item) => item.paymentId === input.paymentId && item.quoteId === input.quoteId && item.paymentState === "paid_confirmed"
+    );
+    if (!quote || !payment || quote.applicationId !== input.applicationId || quote.quoteState === "expired") {
+      return { authorized: false, activation: null };
+    }
     const existing = this.activations.get(input.applicationId);
-    if (existing) return structuredClone(existing);
-    this.activations.set(input.applicationId, structuredClone(input));
-    return structuredClone(input);
+    if (existing) {
+      if (existing.paymentId !== input.paymentId) return { authorized: false, activation: null };
+      return { authorized: true, activation: structuredClone(existing) };
+    }
+    if (!["quote_created", "payment_pending", "paid_confirmed"].includes(quote.quoteState)) {
+      return { authorized: false, activation: null };
+    }
+    this.activations.set(input.applicationId, structuredClone(input.activation));
+    quote.quoteState = "paid_confirmed";
+    quote.updatedAt = input.at;
+    return { authorized: true, activation: structuredClone(input.activation) };
   }
   async claimActivation(activationId: string, claimToken: string, at: string, staleBefore: string) {
     const activation = Array.from(this.activations.values()).find((item) => item.activationId === activationId)!;
@@ -177,6 +196,25 @@ const ADDRESS = (n: number) => `bc1qpreview${String(n).padStart(32, "0")}`;
 const TX = (n: number) => n.toString(16).padStart(64, "0");
 const BLOCK = (n: number) => (1000 + n).toString(16).padStart(64, "0");
 
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+function withAuthorizationHook(
+  store: BtcDirectPaymentStore,
+  hook: BtcDirectPaymentStore["authorizeActivation"]
+): BtcDirectPaymentStore {
+  return new Proxy(store, {
+    get(target, property) {
+      if (property === "authorizeActivation") return hook;
+      const value = Reflect.get(target as object, property);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
+
 async function expectCode(promise: Promise<unknown>, code: string) {
   await assert.rejects(promise, (error: unknown) => error instanceof BtcDirectPaymentError && error.code === code);
 }
@@ -218,8 +256,8 @@ async function run() {
   ]) assert.throws(() => parseCoinGeckoSimplePriceRaw(bad));
 
   const store = new MemoryStore();
-  ["APP-ACCEPTED-0001", "APP-ACCEPTED-0002", "APP-ACCEPTED-0003", "APP-ACCEPTED-0004", "APP-ACCEPTED-0005", "APP-ACCEPTED-0006", "APP-ACCEPTED-0007", "APP-ACCEPTED-0008"].forEach((id) => store.accepted.add(id));
-  for (let i = 1; i <= 16; i += 1) store.addAddress(`addr_${i.toString().padStart(4, "0")}`, ADDRESS(i));
+  ["APP-ACCEPTED-0001", "APP-ACCEPTED-0002", "APP-ACCEPTED-0003", "APP-ACCEPTED-0004", "APP-ACCEPTED-0005", "APP-ACCEPTED-0006", "APP-ACCEPTED-0007", "APP-ACCEPTED-0008", "APP-ACCEPTED-0009", "APP-ACCEPTED-0010"].forEach((id) => store.accepted.add(id));
+  for (let i = 1; i <= 24; i += 1) store.addAddress(`addr_${i.toString().padStart(4, "0")}`, ADDRESS(i));
 
   let clock = new Date("2026-08-14T10:00:00.000Z");
   const now = () => new Date(clock);
@@ -487,6 +525,100 @@ async function run() {
   assert.equal(activationEffectCalls, 1);
   assert.equal(concurrentReplay.activation?.state, "active");
 
+  const qReviewFence = await createBtcDirectQuote({
+    applicationId: "APP-ACCEPTED-0009", idempotencyKey: "quote-key-review-fence-0001",
+    store, source, now, quoteId: () => "quote_review_fence",
+  });
+  const reviewFenceReached = deferred();
+  const reviewFenceResume = deferred();
+  let reviewFenceEffectCalls = 0;
+  const reviewFenceStore = withAuthorizationHook(store, async (input) => {
+    reviewFenceReached.resolve();
+    await reviewFenceResume.promise;
+    return store.authorizeActivation(input);
+  });
+  const exactReviewFence = observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qReviewFence.receiverAddressId, txid: TX(90), txVout: 0,
+      observedSats: qReviewFence.satAmountInteger, confirmations: 1, blockHeight: "962420",
+      blockHash: BLOCK(20), observedAt: now().toISOString(), spvVerified: true,
+    }, store: reviewFenceStore, now, activationEffect: async () => { reviewFenceEffectCalls += 1; },
+  });
+  await reviewFenceReached.promise;
+  const reviewFenceUnder = await observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qReviewFence.receiverAddressId, txid: TX(91), txVout: 1,
+      observedSats: String(BigInt(qReviewFence.satAmountInteger) - BigInt(1)), confirmations: 1,
+      blockHeight: "962420", blockHash: BLOCK(21), observedAt: now().toISOString(), spvVerified: true,
+    }, store, now,
+  });
+  assert.equal(reviewFenceUnder.payment.paymentState, "manual_review");
+  reviewFenceResume.resolve();
+  const reviewFenceDenied = await exactReviewFence;
+  assert.equal(reviewFenceDenied.activation, null);
+  assert.equal(reviewFenceEffectCalls, 0);
+  assert.equal(store.quotesById.get(qReviewFence.quoteId)?.quoteState, "manual_review");
+  assert.equal(await store.findActivationByApplicationId(qReviewFence.applicationId), null);
+  const reviewMany = await Promise.all(Array.from({ length: 4 }, (_, index) => observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qReviewFence.receiverAddressId, txid: TX(92 + index), txVout: index + 2,
+      observedSats: qReviewFence.satAmountInteger, confirmations: 1, blockHeight: "962421",
+      blockHash: BLOCK(22 + index), observedAt: now().toISOString(), spvVerified: true,
+    }, store, now, activationEffect: async () => { reviewFenceEffectCalls += 1; },
+  })));
+  assert(reviewMany.every((item) => item.payment.paymentState === "manual_review" && item.activation === null));
+  assert.equal(reviewFenceEffectCalls, 0);
+
+  const qFenceWinner = await createBtcDirectQuote({
+    applicationId: "APP-ACCEPTED-0010", idempotencyKey: "quote-key-fence-winner-0001",
+    store, source, now, quoteId: () => "quote_fence_winner",
+  });
+  const fenceWinnerAcquired = deferred();
+  const fenceWinnerResume = deferred();
+  let fenceWinnerEffects = 0;
+  const fenceWinnerStore = withAuthorizationHook(store, async (input) => {
+    const result = await store.authorizeActivation(input);
+    if (result.authorized) {
+      fenceWinnerAcquired.resolve();
+      await fenceWinnerResume.promise;
+    }
+    return result;
+  });
+  const fenceWinnerExact = observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qFenceWinner.receiverAddressId, txid: TX(100), txVout: 0,
+      observedSats: qFenceWinner.satAmountInteger, confirmations: 1, blockHeight: "962422",
+      blockHash: BLOCK(30), observedAt: now().toISOString(), spvVerified: true,
+    }, store: fenceWinnerStore, now, activationId: () => "activation_fence_winner",
+    activationEffect: async () => { fenceWinnerEffects += 1; },
+  });
+  await fenceWinnerAcquired.promise;
+  const fenceWinnerUnder = await observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qFenceWinner.receiverAddressId, txid: TX(101), txVout: 1,
+      observedSats: String(BigInt(qFenceWinner.satAmountInteger) - BigInt(1)), confirmations: 1,
+      blockHeight: "962422", blockHash: BLOCK(31), observedAt: now().toISOString(), spvVerified: true,
+    }, store, now,
+  });
+  assert.equal(fenceWinnerUnder.payment.paymentState, "manual_review");
+  assert.equal((await store.findActivationByApplicationId(qFenceWinner.applicationId))?.state, "pending");
+  fenceWinnerResume.resolve();
+  const fenceWinnerActive = await fenceWinnerExact;
+  assert.equal(fenceWinnerActive.activation?.state, "active");
+  assert.equal(fenceWinnerEffects, 1);
+  const fenceWinnerEnd = fenceWinnerActive.activation?.serviceEnd;
+  const fenceWinnerReplay = await observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qFenceWinner.receiverAddressId, txid: TX(100), txVout: 0,
+      observedSats: qFenceWinner.satAmountInteger, confirmations: 2, blockHeight: "962423",
+      blockHash: BLOCK(32), observedAt: now().toISOString(), spvVerified: true,
+    }, store, now, activationEffect: async () => { fenceWinnerEffects += 1; },
+  });
+  assert.equal(fenceWinnerReplay.activation?.state, "active");
+  assert.equal(fenceWinnerReplay.activation?.serviceEnd, fenceWinnerEnd);
+  assert.equal(fenceWinnerEffects, 1);
+  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "manual_review");
+
   const staleBase = new Date("2026-08-14T12:00:00.000Z");
   store.activations.set("APP-STALE-CLAIM-0001", {
     activationId: "activation_stale_0001", applicationId: "APP-STALE-CLAIM-0001",
@@ -543,7 +675,7 @@ async function run() {
   assert(!/wallet balance|full wallet history/i.test(api));
 
   console.log("BTC_DIRECT_PAYMENT_LOCAL_ACCEPTANCE=PASS");
-  console.log("assertions=root_json_authority,lossless_decimal,replay,conflict,one_live_quote,concurrent_quote_reservation,stale_fx,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,duplicate_payment,secret_boundary");
+  console.log("assertions=root_json_authority,lossless_decimal,replay,conflict,one_live_quote,concurrent_quote_reservation,stale_fx,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,review_wins_activation_fence,activation_fence_wins_linearization,review_many_exact_no_activation,duplicate_payment,secret_boundary");
 }
 
 run().catch((error) => {

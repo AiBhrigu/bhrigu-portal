@@ -8,6 +8,7 @@ import {
   createBtcDirectQuote,
   expireBtcDirectQuote,
   observeBtcDirectPayment,
+  type BtcDirectPaymentStore,
 } from "../lib/btc-direct-payment";
 import { createNeonBtcDirectPaymentStore } from "../lib/btc-direct-payment-neon";
 import {
@@ -16,6 +17,25 @@ import {
 } from "../lib/btc-direct-payment-source";
 
 const TARGET_BRANCH = "agent/bhrigu-direct-bitcoin-payment-preview-e2e-v0-1";
+
+function deferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => { resolve = done; });
+  return { promise, resolve };
+}
+
+function withAuthorizationHook(
+  store: BtcDirectPaymentStore,
+  hook: BtcDirectPaymentStore["authorizeActivation"]
+): BtcDirectPaymentStore {
+  return new Proxy(store, {
+    get(target, property) {
+      if (property === "authorizeActivation") return hook;
+      const value = Reflect.get(target as object, property);
+      return typeof value === "function" ? value.bind(target) : value;
+    },
+  });
+}
 
 async function run() {
   if (process.env.VERCEL_ENV !== "preview" || process.env.VERCEL_GIT_COMMIT_REF !== TARGET_BRANCH) {
@@ -37,8 +57,8 @@ async function run() {
     })) as any,
   });
   const runId = randomUUID().replace(/-/g, "").slice(0, 16);
-  const apps = Array.from({ length: 7 }, (_, i) => `BRG-BTC-PREVIEW-${runId}-${i + 1}`);
-  const addressIds = Array.from({ length: 20 }, (_, i) => `preview_addr_${runId}_${i + 1}`);
+  const apps = Array.from({ length: 9 }, (_, i) => `BRG-BTC-PREVIEW-${runId}-${i + 1}`);
+  const addressIds = Array.from({ length: 30 }, (_, i) => `preview_addr_${runId}_${i + 1}`);
   const addresses = addressIds.map((_, i) => `bc1qpreview${runId}${String(i + 1).padStart(24, "0")}`);
   const tx = (label: string) => createHash("sha256").update(`${runId}:${label}`).digest("hex");
   const now = () => new Date();
@@ -277,6 +297,125 @@ async function run() {
     const activeRows = concurrent.filter((x) => x.activation?.state === "active");
     assert(activeRows.length >= 1);
 
+    // Controlled interleaving: review wins before activation authorization.
+    const qReviewWins = await createBtcDirectQuote({
+      applicationId: apps[6], idempotencyKey: `preview-quote-${runId}-review-wins`, store, source, now,
+    });
+    const exactReachedFence = deferred();
+    const resumeExactFence = deferred();
+    let reviewWinsEffectCalls = 0;
+    const reviewWinsStore = withAuthorizationHook(store, async (input) => {
+      exactReachedFence.resolve();
+      await resumeExactFence.promise;
+      return store.authorizeActivation(input);
+    });
+    const exactAfterReview = observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qReviewWins.receiverAddressId, txid: tx("review-wins-exact"), txVout: 0,
+        observedSats: qReviewWins.satAmountInteger, confirmations: 1,
+        blockHeight: "962413", blockHash: tx("block-review-wins-exact"),
+        observedAt: now().toISOString(), spvVerified: true,
+      },
+      store: reviewWinsStore, now, activationEffect: async () => { reviewWinsEffectCalls += 1; },
+    });
+    await exactReachedFence.promise;
+    const reviewWinner = await observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qReviewWins.receiverAddressId, txid: tx("review-wins-under"), txVout: 1,
+        observedSats: String(BigInt(qReviewWins.satAmountInteger) - BigInt(1)), confirmations: 1,
+        blockHeight: "962413", blockHash: tx("block-review-wins-under"),
+        observedAt: now().toISOString(), spvVerified: true,
+      }, store, now,
+    });
+    assert.equal(reviewWinner.payment.paymentState, "manual_review");
+    resumeExactFence.resolve();
+    const deniedExact = await exactAfterReview;
+    assert.equal(deniedExact.activation, null);
+    assert.equal(reviewWinsEffectCalls, 0);
+    const reviewWinsRows = await sql`
+      SELECT
+        (SELECT quote_state FROM btc_direct_payment_quotes WHERE quote_id = ${qReviewWins.quoteId}) AS quote_state,
+        (SELECT count(*)::int FROM btc_direct_payment_activations WHERE application_id = ${apps[6]}) AS activation_count
+    `;
+    assert.equal(reviewWinsRows[0].quote_state, "manual_review");
+    assert.equal(reviewWinsRows[0].activation_count, 0);
+
+    const reviewManyEffects = { count: 0 };
+    const reviewMany = await Promise.all(Array.from({ length: 4 }, (_, index) => observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qReviewWins.receiverAddressId, txid: tx(`review-many-${index}`), txVout: index + 2,
+        observedSats: qReviewWins.satAmountInteger, confirmations: 1,
+        blockHeight: "962414", blockHash: tx(`block-review-many-${index}`),
+        observedAt: now().toISOString(), spvVerified: true,
+      }, store, now, activationEffect: async () => { reviewManyEffects.count += 1; },
+    })));
+    assert(reviewMany.every((item) => item.payment.paymentState === "manual_review" && item.activation === null));
+    assert.equal(reviewManyEffects.count, 0);
+
+    // Controlled interleaving: durable activation fence wins before later review evidence.
+    const qFenceWins = await createBtcDirectQuote({
+      applicationId: apps[7], idempotencyKey: `preview-quote-${runId}-fence-wins`, store, source, now,
+    });
+    const fenceAcquired = deferred();
+    const resumeFenceWinner = deferred();
+    let fenceWinsEffectCalls = 0;
+    const fenceWinsStore = withAuthorizationHook(store, async (input) => {
+      const result = await store.authorizeActivation(input);
+      if (result.authorized) {
+        fenceAcquired.resolve();
+        await resumeFenceWinner.promise;
+      }
+      return result;
+    });
+    const exactFenceWinner = observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qFenceWins.receiverAddressId, txid: tx("fence-wins-exact"), txVout: 0,
+        observedSats: qFenceWins.satAmountInteger, confirmations: 1,
+        blockHeight: "962415", blockHash: tx("block-fence-wins-exact"),
+        observedAt: now().toISOString(), spvVerified: true,
+      },
+      store: fenceWinsStore, now, activationEffect: async () => { fenceWinsEffectCalls += 1; },
+    });
+    await fenceAcquired.promise;
+    const fenceUnderpayment = await observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qFenceWins.receiverAddressId, txid: tx("fence-wins-under"), txVout: 1,
+        observedSats: String(BigInt(qFenceWins.satAmountInteger) - BigInt(1)), confirmations: 1,
+        blockHeight: "962415", blockHash: tx("block-fence-wins-under"),
+        observedAt: now().toISOString(), spvVerified: true,
+      }, store, now,
+    });
+    assert.equal(fenceUnderpayment.payment.paymentState, "manual_review");
+    const fencedBeforeResume = await sql`
+      SELECT count(*)::int AS count FROM btc_direct_payment_activations WHERE application_id = ${apps[7]}
+    `;
+    assert.equal(fencedBeforeResume[0].count, 1);
+    resumeFenceWinner.resolve();
+    const fenceWinnerResult = await exactFenceWinner;
+    assert.equal(fenceWinnerResult.activation?.state, "active");
+    assert.equal(fenceWinsEffectCalls, 1);
+    const firstServiceEnd = fenceWinnerResult.activation?.serviceEnd;
+    const fencedReplay = await observeBtcDirectPayment({
+      observation: {
+        receiverAddressId: qFenceWins.receiverAddressId, txid: tx("fence-wins-exact"), txVout: 0,
+        observedSats: qFenceWins.satAmountInteger, confirmations: 2,
+        blockHeight: "962416", blockHash: tx("block-fence-wins-replay"),
+        observedAt: now().toISOString(), spvVerified: true,
+      }, store, now, activationEffect: async () => { fenceWinsEffectCalls += 1; },
+    });
+    assert.equal(fencedReplay.activation?.state, "active");
+    assert.equal(fencedReplay.activation?.serviceEnd, firstServiceEnd);
+    assert.equal(fenceWinsEffectCalls, 1);
+    const fenceWinsRows = await sql`
+      SELECT
+        (SELECT quote_state FROM btc_direct_payment_quotes WHERE quote_id = ${qFenceWins.quoteId}) AS quote_state,
+        (SELECT count(*)::int FROM btc_direct_payment_activations WHERE application_id = ${apps[7]}) AS activation_count,
+        (SELECT payment_state FROM btc_direct_payment_receipts WHERE txid = ${tx("fence-wins-under")} AND tx_vout = 1) AS under_state
+    `;
+    assert.equal(fenceWinsRows[0].quote_state, "manual_review");
+    assert.equal(fenceWinsRows[0].activation_count, 1);
+    assert.equal(fenceWinsRows[0].under_state, "manual_review");
+
     const q6 = await createBtcDirectQuote({
       applicationId: apps[5], idempotencyKey: `preview-quote-${runId}-6`, store, source, now,
     });
@@ -287,23 +426,27 @@ async function run() {
         blockHeight: null, blockHash: null, observedAt: now().toISOString(), spvVerified: true,
       }, store, now,
     });
-    const leaseActivation = await store.reserveActivation({
-      activationId: `btca_lease_${runId}`, applicationId: apps[5],
-      paymentId: leasePayment.payment.paymentId, activationKey: `${apps[5]}:${tx("lease")}`,
-      state: "pending", serviceStart: null, serviceEnd: null,
-      createdAt: now().toISOString(), updatedAt: now().toISOString(), claimToken: null, claimedAt: null,
-    });
+    const leaseActivationId = `btca_lease_${runId}`;
+    await sql`
+      INSERT INTO btc_direct_payment_activations (
+        activation_id, application_id, payment_id, activation_key, state,
+        service_start, service_end, created_at, updated_at
+      ) VALUES (
+        ${leaseActivationId}, ${apps[5]}, ${leasePayment.payment.paymentId}, ${`${apps[5]}:${tx("lease")}`},
+        'pending', NULL, NULL, ${now().toISOString()}, ${now().toISOString()}
+      )
+    `;
     const t0 = new Date(now().getTime() - 10 * 60 * 1000);
-    const firstClaim = await store.claimActivation(leaseActivation.activationId, "lease-token-a", t0.toISOString(), new Date(t0.getTime() - 5 * 60 * 1000).toISOString());
+    const firstClaim = await store.claimActivation(leaseActivationId, "lease-token-a", t0.toISOString(), new Date(t0.getTime() - 5 * 60 * 1000).toISOString());
     assert.equal(firstClaim.claimed, true);
-    const blockedClaim = await store.claimActivation(leaseActivation.activationId, "lease-token-b", new Date(t0.getTime() + 60_000).toISOString(), new Date(t0.getTime() - 4 * 60_000).toISOString());
+    const blockedClaim = await store.claimActivation(leaseActivationId, "lease-token-b", new Date(t0.getTime() + 60_000).toISOString(), new Date(t0.getTime() - 4 * 60_000).toISOString());
     assert.equal(blockedClaim.claimed, false);
-    const staleClaim = await store.claimActivation(leaseActivation.activationId, "lease-token-c", new Date(t0.getTime() + 6 * 60_000).toISOString(), new Date(t0.getTime() + 60_000).toISOString());
+    const staleClaim = await store.claimActivation(leaseActivationId, "lease-token-c", new Date(t0.getTime() + 6 * 60_000).toISOString(), new Date(t0.getTime() + 60_000).toISOString());
     assert.equal(staleClaim.claimed, true);
-    const staleOwnerComplete = await store.completeActivation(leaseActivation.activationId, new Date().toISOString(), new Date(Date.now() + BTC_DIRECT_SERVICE_MS).toISOString(), new Date().toISOString(), "lease-token-a");
+    const staleOwnerComplete = await store.completeActivation(leaseActivationId, new Date().toISOString(), new Date(Date.now() + BTC_DIRECT_SERVICE_MS).toISOString(), new Date().toISOString(), "lease-token-a");
     assert.equal(staleOwnerComplete.state, "activating");
     assert.equal(staleOwnerComplete.claimToken, "lease-token-c");
-    const release = await store.failActivation(leaseActivation.activationId, new Date().toISOString(), "lease-token-c");
+    const release = await store.failActivation(leaseActivationId, new Date().toISOString(), "lease-token-c");
     assert.equal(release.state, "retryable");
 
   } finally {
@@ -327,7 +470,7 @@ async function run() {
   }
 
   console.log("BTC_DIRECT_PAYMENT_PREVIEW_E2E=PASS");
-  console.log("ledger=root_json_authority,lossless_decimal,quote,replay,conflict,one_live_quote,concurrent_quote_reservation,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg_sticky,concurrent_activation_single_winner,stale_claim_recovery,cleanup_zero");
+  console.log("ledger=root_json_authority,lossless_decimal,quote,replay,conflict,one_live_quote,concurrent_quote_reservation,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,mempool,spv_confirm,activation,replay,failure_retry,duplicate,reorg_sticky,concurrent_activation_single_winner,stale_claim_recovery,review_wins_activation_fence,activation_fence_wins_linearization,review_many_exact_no_activation,cleanup_zero");
   console.log("real_btc_moved=ZERO");
   console.log("customer_qr_sent=NO");
 }
