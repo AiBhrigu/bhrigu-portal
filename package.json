@@ -8,7 +8,10 @@
     "verify:access-private-intake": "node --import tsx tests/access-private-intake-acceptance.ts && git diff --exit-code origin/master -- pages/access.tsx",
     "verify:btc-routing": "node scripts/run-btc-routing-fixture.mjs",
     "verify:btc-producer-contract": "node scripts/run-btc-producer-contract-fixture.mjs",
-    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs"
+    "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs",
+    "verify:btc-direct-payment": "node --import tsx tests/btc-direct-payment-acceptance.ts",
+    "verify:btc-direct-payment-preview-e2e": "node --import tsx scripts/btc-direct-payment-preview-e2e.ts",
+    "postbuild": "node --import tsx scripts/btc-direct-payment-preview-e2e.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
