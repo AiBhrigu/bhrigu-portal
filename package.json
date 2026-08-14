@@ -11,8 +11,10 @@
     "verify:btc-binance-observation": "node scripts/run-btc-binance-observation-fixture.mjs",
     "verify:btc-direct-payment": "node --import tsx tests/btc-direct-payment-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-direct-payment-preview-e2e": "node --import tsx scripts/btc-direct-payment-preview-e2e.ts",
-    "postbuild": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts && node --import tsx scripts/btc-direct-payment-preview-e2e.ts",
-    "verify:btc-direct-payment-migrations": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts"
+    "postbuild": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts && node --import tsx scripts/btc-direct-payment-preview-e2e.ts && node --import tsx scripts/btc-donation-bridge-preview-e2e.ts",
+    "verify:btc-direct-payment-migrations": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
+    "verify:btc-donation-bridge": "node --import tsx tests/btc-donation-bridge-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
+    "verify:btc-donation-bridge-preview-e2e": "node --import tsx scripts/btc-donation-bridge-preview-e2e.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
