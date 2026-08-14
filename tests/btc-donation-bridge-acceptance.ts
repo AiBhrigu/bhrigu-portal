@@ -116,6 +116,47 @@ print(m.sign_envelope({'DONATION_BRIDGE_PRIVATE_KEY_FILE':sys.argv[2]},envelope)
     const dbCheck = spawnSync("python3", ["-c", "import sqlite3,sys; d=sqlite3.connect(sys.argv[1]); print(*d.execute('select count(*),count(distinct receive_address) from addresses').fetchone())", stateDb], { encoding: "utf8" });
     assert.equal(dbCheck.status, 0, dbCheck.stderr);
     assert.equal(dbCheck.stdout.trim(), "2 2");
+
+    const eligibilityPy = String.raw`
+import importlib.util,sys
+spec=importlib.util.spec_from_file_location("agent",sys.argv[1])
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+db=m.init_db(sys.argv[2])
+base="2026-08-15T00:00:00Z"
+rows=[
+ ("retired","bc1qretired000000000000000000000000000000000","TEST_RETIRED_NEVER_DELIVER",base,"msg-retired","queued"),
+ ("test","bc1qtest00000000000000000000000000000000000","TEST_PROVISIONED",base,"msg-test","queued"),
+ ("integration","bc1qintegration000000000000000000000000000000","INTEGRATION_PROVISIONED",base,"msg-integration","queued"),
+]
+db.executemany("INSERT INTO addresses VALUES(?,?,?,?,?,?)",rows); db.commit()
+sent=[]
+m.sign_envelope=lambda cfg,envelope:"fixture-signature"
+m.deliver=lambda cfg,path,envelope,signature:(sent.append(envelope["payload"]["receiverAddressId"]) or {"ok":True})
+m.flush_queued({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db)
+states=dict(db.execute("select receiver_address_id,delivery_status from addresses"))
+seen=[]
+def fake_electrum(cfg,*args):
+    if args[0]=="getaddresshistory": seen.append(args[1]); return []
+    raise RuntimeError("unexpected")
+m.run_electrum=fake_electrum
+m.scan({},db,False)
+print("SENT="+",".join(sent))
+print("RETIRED="+states["retired"])
+print("TEST="+states["test"])
+print("INTEGRATION="+states["integration"])
+print("SCAN_COUNT="+str(len(seen)))
+print("SCAN_INTEGRATION="+("YES" if rows[2][1] in seen else "NO"))
+print("SCAN_RETIRED="+("YES" if rows[0][1] in seen else "NO"))
+`;
+    const eligibility = spawnSync("python3", ["-c", eligibilityPy, "scripts/btc-donation-receiver-agent.py", join(temp, "eligibility.sqlite3")], { encoding: "utf8" });
+    assert.equal(eligibility.status, 0, eligibility.stderr);
+    assert.match(eligibility.stdout, /SENT=integration/);
+    assert.match(eligibility.stdout, /RETIRED=queued/);
+    assert.match(eligibility.stdout, /TEST=queued/);
+    assert.match(eligibility.stdout, /INTEGRATION=delivered/);
+    assert.match(eligibility.stdout, /SCAN_COUNT=1/);
+    assert.match(eligibility.stdout, /SCAN_INTEGRATION=YES/);
+    assert.match(eligibility.stdout, /SCAN_RETIRED=NO/);
   } finally {
     await rm(temp, { recursive: true, force: true });
   }

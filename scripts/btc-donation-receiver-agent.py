@@ -8,6 +8,7 @@ PROVISION_PATH="/api/donation/bridge/provision"
 OBSERVE_PATH="/api/donation/bridge/observe"
 ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$",re.I)
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
+OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED')
 
 def now_iso(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def canonical(v):
@@ -101,7 +102,8 @@ def deliver(cfg,path,envelope,signature):
 
 def flush_queued(cfg,db):
     for receiver_id,address,classification,provisioned_at,message_id in db.execute(
-        "SELECT receiver_address_id,receive_address,classification,provisioned_at,bridge_message_id FROM addresses WHERE delivery_status='queued' ORDER BY provisioned_at,receiver_address_id"
+        "SELECT receiver_address_id,receive_address,classification,provisioned_at,bridge_message_id FROM addresses WHERE delivery_status='queued' AND classification IN (?,?) ORDER BY provisioned_at,receiver_address_id",
+        OUTBOUND_PROVISION_CLASSIFICATIONS
     ).fetchall():
         payload={'receiverAddressId':receiver_id,'receiveAddress':address,'createdAt':provisioned_at}
         envelope=make_envelope(cfg,'address_provision',PROVISION_PATH,payload,message_id,provisioned_at)
@@ -135,7 +137,7 @@ def decode_tx_outputs(cfg,txid):
 
 def scan(cfg,db,send):
     if send: flush_queued(cfg,db)
-    rows=db.execute("SELECT receiver_address_id,receive_address FROM addresses WHERE delivery_status='delivered' AND classification='PROVISIONED'").fetchall(); queued=0
+    rows=db.execute("SELECT receiver_address_id,receive_address FROM addresses WHERE delivery_status='delivered' AND classification IN (?,?)",OUTBOUND_PROVISION_CLASSIFICATIONS).fetchall(); queued=0
     for receiver_id,address in rows:
         history=run_electrum(cfg,'getaddresshistory',address)
         if not isinstance(history,list): raise RuntimeError('address_history_invalid')
@@ -165,7 +167,7 @@ def scan(cfg,db,send):
 
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest='cmd',required=True)
-    p=sub.add_parser('provision'); p.add_argument('--classification',choices=['PROVISIONED','TEST_PROVISIONED'],default='PROVISIONED'); p.add_argument('--deliver',action='store_true')
+    p=sub.add_parser('provision'); p.add_argument('--classification',choices=['PROVISIONED','INTEGRATION_PROVISIONED','TEST_PROVISIONED'],default='PROVISIONED'); p.add_argument('--deliver',action='store_true')
     s=sub.add_parser('scan'); s.add_argument('--deliver',action='store_true')
     sub.add_parser('flush')
     args=ap.parse_args(); cfg=config(); db=init_db(cfg['DONATION_BRIDGE_STATE_DB'])
