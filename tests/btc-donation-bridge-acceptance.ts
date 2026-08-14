@@ -104,7 +104,7 @@ print(m.sign_envelope({'DONATION_BRIDGE_PRIVATE_KEY_FILE':sys.argv[2]},envelope)
     const fakeOne = `bc1q${"q".repeat(37)}p`;
     const fakeTwo = `bc1q${"q".repeat(37)}z`;
     const fakeElectrum = join(temp, "fake-electrum.py");
-    await writeFile(fakeElectrum, `#!/usr/bin/env python3\nimport json,sys\ncmd=sys.argv[3] if len(sys.argv)>3 else ''\nif cmd=='listaddresses': print(json.dumps([${JSON.stringify(fakeOne)},${JSON.stringify(fakeTwo)}]))\nelif cmd=='ismine': print('true')\nelse: sys.exit(2)\n`, { mode: 0o700 });
+    await writeFile(fakeElectrum, `#!/usr/bin/env python3\nimport json,sys,pathlib\ncmd=sys.argv[3] if len(sys.argv)>3 else ''\nstate=pathlib.Path(sys.argv[0]+'.counter')\nif cmd=='createnewaddress':\n n=int(state.read_text()) if state.exists() else 0\n vals=[${JSON.stringify(fakeOne)},${JSON.stringify(fakeTwo)}]\n if n>=len(vals): sys.exit(2)\n print(json.dumps(vals[n])); state.write_text(str(n+1))\nelif cmd=='ismine': print('true')\nelse: sys.exit(2)\n`, { mode: 0o700 });
     await chmod(fakeElectrum, 0o700);
     const fakeWallet = join(temp, "watch-only-wallet"); await writeFile(fakeWallet, "fixture");
     const stateDb = join(temp, "agent.sqlite3");
@@ -116,6 +116,7 @@ print(m.sign_envelope({'DONATION_BRIDGE_PRIVATE_KEY_FILE':sys.argv[2]},envelope)
     const dbCheck = spawnSync("python3", ["-c", "import sqlite3,sys; d=sqlite3.connect(sys.argv[1]); print(*d.execute('select count(*),count(distinct receive_address) from addresses').fetchone())", stateDb], { encoding: "utf8" });
     assert.equal(dbCheck.status, 0, dbCheck.stderr);
     assert.equal(dbCheck.stdout.trim(), "2 2");
+    assert.equal((await readFile(fakeElectrum + ".counter", "utf8")).trim(), "2");
 
     const eligibilityPy = String.raw`
 import importlib.util,sys

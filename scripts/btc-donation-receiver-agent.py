@@ -59,11 +59,9 @@ def run_electrum(cfg,*args):
 
 def next_fresh_address(cfg,db):
     used={r[0] for r in db.execute('SELECT receive_address FROM addresses')}
-    values=run_electrum(cfg,'listaddresses','--receiving','--unused')
-    if not isinstance(values,list): raise RuntimeError('electrum_unused_address_list_invalid')
-    address=next((x for x in values if isinstance(x,str) and x not in used),None)
-    if address is None: address=run_electrum(cfg,'createnewaddress')
+    address=run_electrum(cfg,'createnewaddress')
     if not isinstance(address,str) or not ADDRESS_RE.fullmatch(address): raise RuntimeError('electrum_mainnet_address_invalid')
+    if address in used: raise RuntimeError('electrum_address_already_bound')
     if run_electrum(cfg,'ismine',address) is not True: raise RuntimeError('electrum_address_not_mine')
     return address
 
