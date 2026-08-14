@@ -73,11 +73,15 @@ async function run() {
     assert.deepEqual(tables.rows.map((row) => row.table_name), ["btc_donation_bridge_messages", "btc_donation_receipts", "btc_donation_receiver_addresses"]);
   } finally { await splitDb.close(); }
   const agent = await readFile("scripts/btc-donation-receiver-agent.py", "utf8");
+  const agentEnvTemplate = await readFile("config/btc-donation-receiver-agent.env.example", "utf8");
   assert.match(agent, /getaddresshistory/);
   assert.match(agent, /get_tx_status/);
   assert.match(agent, /--socks5-hostname/);
   assert(!/getseed|getmpk|getmasterprivate|getprivatekeys|dumpprivkeys/.test(agent));
   assert(!/BTC_DIRECT_PAYMENT_MODE/.test(agent));
+  assert.equal((agent.match(/require_outbound_provision_classification\(/g) ?? []).length, 5);
+  assert(!agentEnvTemplate.includes("bhrigu_mainnet_watch_only_receiver"));
+  assert.equal((agentEnvTemplate.match(/bhrigu_mainnet_watch_only_automation/g) ?? []).length, 1);
   const serialized = canonicalJson(e);
   assert(!/seed|privateKey|walletPassword|masterPublicKey|xpub|zpub/i.test(serialized));
 
@@ -128,6 +132,7 @@ rows=[
  ("retired","bc1qretired000000000000000000000000000000000","TEST_RETIRED_NEVER_DELIVER",base,"msg-retired","queued"),
  ("test","bc1qtest00000000000000000000000000000000000","TEST_PROVISIONED",base,"msg-test","queued"),
  ("integration","bc1qintegration000000000000000000000000000000","INTEGRATION_PROVISIONED",base,"msg-integration","queued"),
+ ("integration-retired","bc1qintegrationretired0000000000000000000000000000","INTEGRATION_TEST_RETIRED",base,"msg-integration-retired","queued"),
 ]
 db.executemany("INSERT INTO addresses VALUES(?,?,?,?,?,?)",rows); db.commit()
 sent=[]
@@ -145,6 +150,7 @@ print("SENT="+",".join(sent))
 print("RETIRED="+states["retired"])
 print("TEST="+states["test"])
 print("INTEGRATION="+states["integration"])
+print("INTEGRATION_RETIRED="+states["integration-retired"])
 print("SCAN_COUNT="+str(len(seen)))
 print("SCAN_INTEGRATION="+("YES" if rows[2][1] in seen else "NO"))
 print("SCAN_RETIRED="+("YES" if rows[0][1] in seen else "NO"))
@@ -155,9 +161,69 @@ print("SCAN_RETIRED="+("YES" if rows[0][1] in seen else "NO"))
     assert.match(eligibility.stdout, /RETIRED=queued/);
     assert.match(eligibility.stdout, /TEST=queued/);
     assert.match(eligibility.stdout, /INTEGRATION=delivered/);
+    assert.match(eligibility.stdout, /INTEGRATION_RETIRED=queued/);
     assert.match(eligibility.stdout, /SCAN_COUNT=1/);
     assert.match(eligibility.stdout, /SCAN_INTEGRATION=YES/);
     assert.match(eligibility.stdout, /SCAN_RETIRED=NO/);
+
+    const directGuardPy = String.raw`
+import importlib.util,sys
+spec=importlib.util.spec_from_file_location("agent",sys.argv[1])
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+
+def run_case(db_path,classification):
+    db=m.init_db(db_path)
+    calls={"flush":0,"derive":0,"deliver":0,"guard":0}
+    original_guard=m.require_outbound_provision_classification
+    def guard(value):
+        calls["guard"]+=1
+        return original_guard(value)
+    m.require_outbound_provision_classification=guard
+    m.flush_queued=lambda cfg,db: calls.__setitem__("flush",calls["flush"]+1)
+    def derive(cfg,db):
+        calls["derive"]+=1
+        return "bc1q" + ("q"*37) + ("p" if classification=="PROVISIONED" else "z")
+    m.next_fresh_address=derive
+    m.sign_envelope=lambda cfg,envelope:"fixture-signature"
+    m.deliver=lambda cfg,path,envelope,signature:(calls.__setitem__("deliver",calls["deliver"]+1) or {"ok":True})
+    rejected=False
+    try:
+        m.provision({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db,classification,True)
+    except RuntimeError as e:
+        rejected=str(e)=="outbound_provision_classification_forbidden"
+    rows=db.execute("select count(*) from addresses").fetchone()[0]
+    delivered=db.execute("select count(*) from addresses where delivery_status='delivered'").fetchone()[0]
+    db.close()
+    m.require_outbound_provision_classification=original_guard
+    print(classification+"_REJECTED="+("YES" if rejected else "NO"))
+    print(classification+"_FLUSH="+str(calls["flush"]))
+    print(classification+"_DERIVE="+str(calls["derive"]))
+    print(classification+"_DELIVER="+str(calls["deliver"]))
+    print(classification+"_GUARD="+str(calls["guard"]))
+    print(classification+"_ROWS="+str(rows))
+    print(classification+"_DELIVERED_ROWS="+str(delivered))
+
+run_case(sys.argv[2]+"-test.sqlite3","TEST_PROVISIONED")
+run_case(sys.argv[2]+"-provisioned.sqlite3","PROVISIONED")
+run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION_PROVISIONED")
+`;
+    const directGuard = spawnSync("python3", ["-c", directGuardPy, "scripts/btc-donation-receiver-agent.py", join(temp, "direct-guard")], { encoding: "utf8" });
+    assert.equal(directGuard.status, 0, directGuard.stderr);
+    assert.match(directGuard.stdout, /TEST_PROVISIONED_REJECTED=YES/);
+    assert.match(directGuard.stdout, /TEST_PROVISIONED_FLUSH=0/);
+    assert.match(directGuard.stdout, /TEST_PROVISIONED_DERIVE=0/);
+    assert.match(directGuard.stdout, /TEST_PROVISIONED_DELIVER=0/);
+    assert.match(directGuard.stdout, /TEST_PROVISIONED_ROWS=0/);
+    assert.match(directGuard.stdout, /PROVISIONED_DERIVE=1/);
+    assert.match(directGuard.stdout, /PROVISIONED_DELIVER=1/);
+    assert.match(directGuard.stdout, /PROVISIONED_GUARD=2/);
+    assert.match(directGuard.stdout, /PROVISIONED_ROWS=1/);
+    assert.match(directGuard.stdout, /PROVISIONED_DELIVERED_ROWS=1/);
+    assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_DERIVE=1/);
+    assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_DELIVER=1/);
+    assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_GUARD=2/);
+    assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_ROWS=1/);
+    assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_DELIVERED_ROWS=1/);
   } finally {
     await rm(temp, { recursive: true, force: true });
   }

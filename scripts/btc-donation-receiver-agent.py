@@ -10,6 +10,10 @@ ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
 OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED')
 
+def require_outbound_provision_classification(classification):
+    if classification not in OUTBOUND_PROVISION_CLASSIFICATIONS:
+        raise RuntimeError('outbound_provision_classification_forbidden')
+
 def now_iso(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def canonical(v):
     if isinstance(v,dict): return {k:canonical(v[k]) for k in sorted(v)}
@@ -103,6 +107,7 @@ def flush_queued(cfg,db):
         "SELECT receiver_address_id,receive_address,classification,provisioned_at,bridge_message_id FROM addresses WHERE delivery_status='queued' AND classification IN (?,?) ORDER BY provisioned_at,receiver_address_id",
         OUTBOUND_PROVISION_CLASSIFICATIONS
     ).fetchall():
+        require_outbound_provision_classification(classification)
         payload={'receiverAddressId':receiver_id,'receiveAddress':address,'createdAt':provisioned_at}
         envelope=make_envelope(cfg,'address_provision',PROVISION_PATH,payload,message_id,provisioned_at)
         deliver(cfg,PROVISION_PATH,envelope,sign_envelope(cfg,envelope))
@@ -116,12 +121,15 @@ def flush_queued(cfg,db):
         db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
 
 def provision(cfg,db,classification,send):
-    if send: flush_queued(cfg,db)
+    if send:
+        require_outbound_provision_classification(classification)
+        flush_queued(cfg,db)
     address=next_fresh_address(cfg,db); receiver_id=f'don_addr_{uuid.uuid4().hex}'; created=now_iso(); message_id=f'don-provision-{uuid.uuid4()}'
     db.execute('INSERT INTO addresses VALUES(?,?,?,?,?,?)',(receiver_id,address,classification,created,message_id,'queued')); db.commit()
     payload={'receiverAddressId':receiver_id,'receiveAddress':address,'createdAt':created}
     envelope=make_envelope(cfg,'address_provision',PROVISION_PATH,payload,message_id,created)
     if send:
+        require_outbound_provision_classification(classification)
         deliver(cfg,PROVISION_PATH,envelope,sign_envelope(cfg,envelope))
         db.execute("UPDATE addresses SET delivery_status='delivered' WHERE receiver_address_id=?",(receiver_id,)); db.commit()
     print('PROVISION_RESULT=RECORDED'); print('CLASSIFICATION='+classification); print('ADDRESS_PUBLICATION=NO')
@@ -135,8 +143,9 @@ def decode_tx_outputs(cfg,txid):
 
 def scan(cfg,db,send):
     if send: flush_queued(cfg,db)
-    rows=db.execute("SELECT receiver_address_id,receive_address FROM addresses WHERE delivery_status='delivered' AND classification IN (?,?)",OUTBOUND_PROVISION_CLASSIFICATIONS).fetchall(); queued=0
-    for receiver_id,address in rows:
+    rows=db.execute("SELECT receiver_address_id,receive_address,classification FROM addresses WHERE delivery_status='delivered' AND classification IN (?,?)",OUTBOUND_PROVISION_CLASSIFICATIONS).fetchall(); queued=0
+    for receiver_id,address,classification in rows:
+        require_outbound_provision_classification(classification)
         history=run_electrum(cfg,'getaddresshistory',address)
         if not isinstance(history,list): raise RuntimeError('address_history_invalid')
         for item in history:
