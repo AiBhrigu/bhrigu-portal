@@ -14,6 +14,12 @@ def require_outbound_provision_classification(classification):
     if classification not in OUTBOUND_PROVISION_CLASSIFICATIONS:
         raise RuntimeError('outbound_provision_classification_forbidden')
 
+def require_current_outbound_address(db,receiver_address_id):
+    row=db.execute('SELECT classification FROM addresses WHERE receiver_address_id=? LIMIT 1',(receiver_address_id,)).fetchone()
+    if not row: raise RuntimeError('outbound_address_missing')
+    require_outbound_provision_classification(row[0])
+    return row[0]
+
 def now_iso(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def canonical(v):
     if isinstance(v,dict): return {k:canonical(v[k]) for k in sorted(v)}
@@ -116,6 +122,8 @@ def flush_queued(cfg,db):
         "SELECT event_key,message_id,payload_json,created_at FROM observations WHERE delivery_status='queued' ORDER BY created_at,event_key"
     ).fetchall():
         payload=json.loads(payload_json)
+        receiver_id=payload.get('receiverAddressId') if isinstance(payload,dict) else None
+        require_current_outbound_address(db,receiver_id)
         envelope=make_envelope(cfg,'receipt_observation',OBSERVE_PATH,payload,message_id,created_at)
         deliver(cfg,OBSERVE_PATH,envelope,sign_envelope(cfg,envelope))
         db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
@@ -169,6 +177,7 @@ def scan(cfg,db,send):
                 db.execute('INSERT INTO observations VALUES(?,?,?,?,?)',(event_key,message_id,canonical_json(payload),'queued',message_created)); db.commit(); queued+=1
                 envelope=make_envelope(cfg,'receipt_observation',OBSERVE_PATH,payload,message_id,message_created)
                 if send:
+                    require_current_outbound_address(db,receiver_id)
                     deliver(cfg,OBSERVE_PATH,envelope,sign_envelope(cfg,envelope)); db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
     print('OBSERVATION_EVENTS_QUEUED='+str(queued)); print('SPV_AUTHORITY=ELECTRUM_WALLET_GET_TX_STATUS')
 

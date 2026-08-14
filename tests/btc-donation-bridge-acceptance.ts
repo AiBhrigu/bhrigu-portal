@@ -79,7 +79,8 @@ async function run() {
   assert.match(agent, /--socks5-hostname/);
   assert(!/getseed|getmpk|getmasterprivate|getprivatekeys|dumpprivkeys/.test(agent));
   assert(!/BTC_DIRECT_PAYMENT_MODE/.test(agent));
-  assert.equal((agent.match(/require_outbound_provision_classification\(/g) ?? []).length, 5);
+  assert.equal((agent.match(/require_outbound_provision_classification\(/g) ?? []).length, 6);
+  assert.equal((agent.match(/require_current_outbound_address\(/g) ?? []).length, 3);
   assert(!agentEnvTemplate.includes("bhrigu_mainnet_watch_only_receiver"));
   assert.equal((agentEnvTemplate.match(/bhrigu_mainnet_watch_only_automation/g) ?? []).length, 1);
   const serialized = canonicalJson(e);
@@ -224,6 +225,101 @@ run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION_PROVISIONED")
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_GUARD=2/);
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_ROWS=1/);
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_DELIVERED_ROWS=1/);
+
+    const observationAuthorityPy = String.raw`
+import importlib.util,json,sys
+spec=importlib.util.spec_from_file_location("agent",sys.argv[1])
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+base="2026-08-15T00:00:00Z"
+
+def run_case(db_path,label,classification=None):
+    db=m.init_db(db_path)
+    receiver_id="addr-"+label
+    if classification is not None:
+        db.execute("INSERT INTO addresses VALUES(?,?,?,?,?,?)",(receiver_id,"bc1q"+("q"*35)+label[-3:].replace('_','q'),classification,base,"msg-"+label,"delivered"))
+    payload={"receiverAddressId":receiver_id,"txid":"a"*64,"txVout":0,"observedSats":"1000","confirmations":0,"blockHeight":None,"blockHash":None,"observedAt":base,"spvVerified":False}
+    db.execute("INSERT INTO observations VALUES(?,?,?,?,?)",("evt-"+label,"obs-"+label,json.dumps(payload,separators=(',',':')),"queued",base)); db.commit()
+    calls={"sign":0,"deliver":0}
+    m.sign_envelope=lambda cfg,envelope:(calls.__setitem__("sign",calls["sign"]+1) or "fixture-signature")
+    m.deliver=lambda cfg,path,envelope,signature:(calls.__setitem__("deliver",calls["deliver"]+1) or {"ok":True})
+    rejected=False
+    try: m.flush_queued({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db)
+    except RuntimeError: rejected=True
+    status=db.execute("SELECT delivery_status FROM observations WHERE event_key=?",("evt-"+label,)).fetchone()[0]
+    rows=db.execute("SELECT count(*) FROM observations WHERE event_key=?",("evt-"+label,)).fetchone()[0]
+    db.close()
+    print(label+"_REJECTED="+("YES" if rejected else "NO"))
+    print(label+"_SIGN="+str(calls["sign"]))
+    print(label+"_DELIVER="+str(calls["deliver"]))
+    print(label+"_STATUS="+status)
+    print(label+"_ROWS="+str(rows))
+
+run_case(sys.argv[2]+"-test.sqlite3","TEST","TEST_PROVISIONED")
+run_case(sys.argv[2]+"-retired.sqlite3","RETIRED","TEST_RETIRED_NEVER_DELIVER")
+run_case(sys.argv[2]+"-integration-retired.sqlite3","INTEGRATION_RETIRED","INTEGRATION_TEST_RETIRED")
+run_case(sys.argv[2]+"-orphan.sqlite3","ORPHAN",None)
+run_case(sys.argv[2]+"-provisioned.sqlite3","PROVISIONED","PROVISIONED")
+run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION","INTEGRATION_PROVISIONED")
+`;
+    const observationAuthority = spawnSync("python3", ["-c", observationAuthorityPy, "scripts/btc-donation-receiver-agent.py", join(temp, "observation-authority")], { encoding: "utf8" });
+    assert.equal(observationAuthority.status, 0, observationAuthority.stderr);
+    for (const label of ["TEST","RETIRED","INTEGRATION_RETIRED","ORPHAN"]) {
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_REJECTED=YES`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_SIGN=0`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_DELIVER=0`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_STATUS=queued`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_ROWS=1`));
+    }
+    for (const label of ["PROVISIONED","INTEGRATION"]) {
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_REJECTED=NO`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_SIGN=1`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_DELIVER=1`));
+      assert.match(observationAuthority.stdout, new RegExp(`${label}_STATUS=delivered`));
+    }
+
+    const scanRacePy = String.raw`
+import importlib.util,sys
+spec=importlib.util.spec_from_file_location("agent",sys.argv[1])
+m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+db=m.init_db(sys.argv[2]); base="2026-08-15T00:00:00Z"; receiver_id="scan-race"; address="bc1q"+("q"*38)
+db.execute("INSERT INTO addresses VALUES(?,?,?,?,?,?)",(receiver_id,address,"INTEGRATION_PROVISIONED",base,"msg-scan-race","delivered")); db.commit()
+
+def fake_electrum(cfg,*args):
+    if args[0]=="getaddresshistory": return [{"tx_hash":"b"*64,"height":0}]
+    if args[0]=="get_tx_status": return {"confirmations":0}
+    raise RuntimeError("unexpected_electrum_call")
+m.run_electrum=fake_electrum
+m.decode_tx_outputs=lambda cfg,txid:[{"address":address,"value_sats":1234}]
+original_make=m.make_envelope
+def retire_before_delivery(cfg,kind,path,payload,message_id=None,created_at=None):
+    if kind=="receipt_observation":
+        db.execute("UPDATE addresses SET classification='INTEGRATION_TEST_RETIRED' WHERE receiver_address_id=?",(receiver_id,)); db.commit()
+    return original_make(cfg,kind,path,payload,message_id,created_at)
+m.make_envelope=retire_before_delivery
+calls={"sign":0,"deliver":0}
+m.sign_envelope=lambda cfg,envelope:(calls.__setitem__("sign",calls["sign"]+1) or "fixture-signature")
+m.deliver=lambda cfg,path,envelope,signature:(calls.__setitem__("deliver",calls["deliver"]+1) or {"ok":True})
+rejected=False
+try: m.scan({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db,True)
+except RuntimeError as e: rejected=str(e)=="outbound_provision_classification_forbidden"
+obs=db.execute("SELECT count(*),sum(CASE WHEN delivery_status='queued' THEN 1 ELSE 0 END) FROM observations").fetchone()
+classification=db.execute("SELECT classification FROM addresses WHERE receiver_address_id=?",(receiver_id,)).fetchone()[0]
+print("SCAN_RACE_REJECTED="+("YES" if rejected else "NO"))
+print("SCAN_RACE_SIGN="+str(calls["sign"]))
+print("SCAN_RACE_DELIVER="+str(calls["deliver"]))
+print("SCAN_RACE_OBSERVATIONS="+str(obs[0]))
+print("SCAN_RACE_QUEUED="+str(obs[1]))
+print("SCAN_RACE_CLASSIFICATION="+classification)
+db.close()
+`;
+    const scanRace = spawnSync("python3", ["-c", scanRacePy, "scripts/btc-donation-receiver-agent.py", join(temp, "scan-race.sqlite3")], { encoding: "utf8" });
+    assert.equal(scanRace.status, 0, scanRace.stderr);
+    assert.match(scanRace.stdout, /SCAN_RACE_REJECTED=YES/);
+    assert.match(scanRace.stdout, /SCAN_RACE_SIGN=0/);
+    assert.match(scanRace.stdout, /SCAN_RACE_DELIVER=0/);
+    assert.match(scanRace.stdout, /SCAN_RACE_OBSERVATIONS=1/);
+    assert.match(scanRace.stdout, /SCAN_RACE_QUEUED=1/);
+    assert.match(scanRace.stdout, /SCAN_RACE_CLASSIFICATION=INTEGRATION_TEST_RETIRED/);
   } finally {
     await rm(temp, { recursive: true, force: true });
   }
