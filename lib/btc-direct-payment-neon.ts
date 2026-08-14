@@ -153,13 +153,30 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
 
     async markQuoteState(quoteId, state: BtcDirectQuoteState, at) {
       await sql`
-        UPDATE btc_direct_payment_quotes
+        WITH quote_guard AS MATERIALIZED (
+          SELECT quote_id, application_id, quote_state
+          FROM btc_direct_payment_quotes
+          WHERE quote_id = ${quoteId}
+          FOR UPDATE
+        ), activation_fence AS MATERIALIZED (
+          SELECT EXISTS (
+            SELECT 1
+            FROM btc_direct_payment_activations AS activation
+            JOIN quote_guard ON quote_guard.application_id = activation.application_id
+          ) AS present
+        )
+        UPDATE btc_direct_payment_quotes AS quote
         SET quote_state = CASE
-              WHEN quote_state = 'manual_review' THEN 'manual_review'
+              WHEN quote_guard.quote_state = 'manual_review' THEN 'manual_review'
+              WHEN quote_guard.quote_state = 'activated' THEN 'activated'
+              WHEN ${state} = 'manual_review'
+                AND (quote_guard.quote_state = 'paid_confirmed' OR activation_fence.present)
+                THEN quote_guard.quote_state
               ELSE ${state}
             END,
             updated_at = ${at}
-        WHERE quote_id = ${quoteId}
+        FROM quote_guard, activation_fence
+        WHERE quote.quote_id = quote_guard.quote_id
       `;
     },
 
@@ -174,22 +191,34 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
 
     async upsertPayment(input) {
       const rows = await sql`
-        WITH quote_guard AS (
-          SELECT quote_id, quote_state
+        WITH quote_guard AS MATERIALIZED (
+          SELECT quote_id, application_id, quote_state
           FROM btc_direct_payment_quotes
           WHERE quote_id = ${input.quoteId}
           FOR UPDATE
+        ), activation_fence AS MATERIALIZED (
+          SELECT EXISTS (
+            SELECT 1
+            FROM btc_direct_payment_activations AS activation
+            JOIN quote_guard ON quote_guard.application_id = activation.application_id
+          ) AS present
         ), quote_latch AS (
           UPDATE btc_direct_payment_quotes AS quote
           SET quote_state = CASE
-                WHEN ${input.paymentState} = 'manual_review' THEN 'manual_review'
-                ELSE quote.quote_state
+                WHEN quote_guard.quote_state IN ('paid_confirmed', 'activated')
+                  THEN quote_guard.quote_state
+                WHEN ${input.paymentState} = 'manual_review' AND NOT activation_fence.present
+                  THEN 'manual_review'
+                ELSE quote_guard.quote_state
               END,
               updated_at = CASE
-                WHEN ${input.paymentState} = 'manual_review' THEN ${input.updatedAt}
+                WHEN ${input.paymentState} = 'manual_review'
+                  AND quote_guard.quote_state NOT IN ('paid_confirmed', 'activated')
+                  AND NOT activation_fence.present
+                  THEN ${input.updatedAt}
                 ELSE quote.updated_at
               END
-          FROM quote_guard
+          FROM quote_guard, activation_fence
           WHERE quote.quote_id = quote_guard.quote_id
           RETURNING quote.quote_state
         )

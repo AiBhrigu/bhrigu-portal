@@ -88,7 +88,20 @@ class MemoryStore implements BtcDirectPaymentStore {
   }
   async markQuoteState(quoteId: string, state: BtcDirectQuoteState, at: string) {
     const quote = this.quotesById.get(quoteId)!;
-    if (quote.quoteState !== "manual_review") quote.quoteState = state;
+    const fenced = this.activations.has(quote.applicationId);
+    if (quote.quoteState === "manual_review") {
+      quote.updatedAt = at;
+      return;
+    }
+    if (quote.quoteState === "activated") {
+      quote.updatedAt = at;
+      return;
+    }
+    if (state === "manual_review" && (quote.quoteState === "paid_confirmed" || fenced)) {
+      quote.updatedAt = at;
+      return;
+    }
+    quote.quoteState = state;
     quote.updatedAt = at;
   }
   async findPaymentByOutput(txid: string, txVout: number) {
@@ -105,10 +118,17 @@ class MemoryStore implements BtcDirectPaymentStore {
     const canonicalReorg = existing?.paymentState === "paid_confirmed" && input.paymentState === "reorg_review";
     const fencedAuthoritativePayment = existing?.paymentState === "paid_confirmed"
       && Array.from(this.activations.values()).some((activation) => activation.paymentId === existing.paymentId);
+    const fencedApplication = this.activations.has(quote.applicationId);
     const proposed = quote.quoteState === "manual_review" && !canonicalReorg && !fencedAuthoritativePayment
       ? "manual_review"
       : input.paymentState;
-    if (proposed === "manual_review") quote.quoteState = "manual_review";
+    if (
+      proposed === "manual_review"
+      && !fencedApplication
+      && !["paid_confirmed", "activated"].includes(quote.quoteState)
+    ) {
+      quote.quoteState = "manual_review";
+    }
     const paymentState = existing ? memoryPaymentTransition(existing.paymentState, proposed) : proposed;
     const stored = {
       ...input,
@@ -602,10 +622,13 @@ async function run() {
   });
   assert.equal(fenceWinnerUnder.payment.paymentState, "manual_review");
   assert.equal((await store.findActivationByApplicationId(qFenceWinner.applicationId))?.state, "pending");
+  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "paid_confirmed");
   fenceWinnerResume.resolve();
   const fenceWinnerActive = await fenceWinnerExact;
   assert.equal(fenceWinnerActive.activation?.state, "active");
   assert.equal(fenceWinnerEffects, 1);
+  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "activated");
+  const fenceWinnerStart = fenceWinnerActive.activation?.serviceStart;
   const fenceWinnerEnd = fenceWinnerActive.activation?.serviceEnd;
   const fenceWinnerReplay = await observeBtcDirectPayment({
     observation: {
@@ -615,9 +638,40 @@ async function run() {
     }, store, now, activationEffect: async () => { fenceWinnerEffects += 1; },
   });
   assert.equal(fenceWinnerReplay.activation?.state, "active");
+  assert.equal(fenceWinnerReplay.activation?.serviceStart, fenceWinnerStart);
   assert.equal(fenceWinnerReplay.activation?.serviceEnd, fenceWinnerEnd);
   assert.equal(fenceWinnerEffects, 1);
-  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "manual_review");
+  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "activated");
+
+  const postFenceAmounts = [
+    String(BigInt(qFenceWinner.satAmountInteger) - BigInt(1)),
+    String(BigInt(qFenceWinner.satAmountInteger) + BigInt(1)),
+    qFenceWinner.satAmountInteger,
+    qFenceWinner.satAmountInteger,
+  ];
+  const postFenceExceptions = await Promise.all(postFenceAmounts.map((observedSats, index) => observeBtcDirectPayment({
+    observation: {
+      receiverAddressId: qFenceWinner.receiverAddressId, txid: TX(110 + index), txVout: index + 2,
+      observedSats, confirmations: 1, blockHeight: "962424",
+      blockHash: BLOCK(40 + index), observedAt: now().toISOString(), spvVerified: true,
+    }, store, now, activationEffect: async () => { fenceWinnerEffects += 1; },
+  })));
+  assert(postFenceExceptions.every((item) => item.payment.paymentState === "manual_review"));
+  assert(postFenceExceptions.every((item) => item.activation?.activationId === fenceWinnerActive.activation?.activationId));
+  assert.equal(fenceWinnerEffects, 1);
+  assert.equal(store.quotesById.get(qFenceWinner.quoteId)?.quoteState, "activated");
+  const postFenceActivation = await store.findActivationByApplicationId(qFenceWinner.applicationId);
+  assert.equal(postFenceActivation?.state, "active");
+  assert.equal(postFenceActivation?.serviceStart, fenceWinnerStart);
+  assert.equal(postFenceActivation?.serviceEnd, fenceWinnerEnd);
+  const forbiddenWorlds = Number(
+    store.quotesById.get(qReviewFence.quoteId)?.quoteState === "manual_review"
+      && (await store.findActivationByApplicationId(qReviewFence.applicationId)) !== null
+  ) + Number(
+    store.quotesById.get(qFenceWinner.quoteId)?.quoteState === "manual_review"
+      && (await store.findActivationByApplicationId(qFenceWinner.applicationId))?.state === "active"
+  );
+  assert.equal(forbiddenWorlds, 0);
 
   const staleBase = new Date("2026-08-14T12:00:00.000Z");
   store.activations.set("APP-STALE-CLAIM-0001", {
@@ -675,7 +729,7 @@ async function run() {
   assert(!/wallet balance|full wallet history/i.test(api));
 
   console.log("BTC_DIRECT_PAYMENT_LOCAL_ACCEPTANCE=PASS");
-  console.log("assertions=root_json_authority,lossless_decimal,replay,conflict,one_live_quote,concurrent_quote_reservation,stale_fx,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,review_wins_activation_fence,activation_fence_wins_linearization,review_many_exact_no_activation,duplicate_payment,secret_boundary");
+  console.log("assertions=root_json_authority,lossless_decimal,replay,conflict,one_live_quote,concurrent_quote_reservation,stale_fx,address_retirement,output_immutability,quote_review_latch,manual_review_sticky,reorg_review_sticky,mempool,spv_confirmation,exclusive_activation_claim,activation_retry,stale_claim_recovery,review_wins_activation_fence,activation_fence_wins_linearization,review_many_exact_no_activation,post_fence_exception_evidence_only,post_fence_quote_not_demoted,active_then_exception_no_demote,forbidden_manual_review_plus_active_zero,duplicate_payment,secret_boundary");
 }
 
 run().catch((error) => {
