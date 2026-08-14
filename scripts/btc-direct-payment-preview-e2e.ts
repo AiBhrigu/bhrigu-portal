@@ -27,8 +27,14 @@ async function run() {
 
   const sql = neon(databaseUrl);
   const store = createNeonBtcDirectPaymentStore(databaseUrl);
+  const previewQuoteRate = "62965.1234567890123456789012345";
   const source = createCoinGeckoBtcUsdSource({
-    demoApiKey: process.env.COINGECKO_DEMO_API_KEY?.trim() || null,
+    fetchImpl: (async () => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        `{"bitcoin":{"usd":${previewQuoteRate},"last_updated_at":${Math.floor(Date.now() / 1000)}}}`,
+    })) as any,
   });
   const runId = randomUUID().replace(/-/g, "").slice(0, 16);
   const apps = Array.from({ length: 7 }, (_, i) => `BRG-BTC-PREVIEW-${runId}-${i + 1}`);
