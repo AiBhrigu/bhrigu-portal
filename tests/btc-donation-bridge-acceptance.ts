@@ -4,6 +4,8 @@ import { chmod, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { PGlite } from "@electric-sql/pglite";
+import { postgresMigrationTransactionStatements, splitPostgresStatements } from "../lib/postgres-migration-statements";
 import {
   BTC_DONATION_BRIDGE_MODE,
   DONATION_BRIDGE_PROTOCOL_VERSION,
@@ -54,6 +56,22 @@ async function run() {
   assert.match(migration, /btc_donation_receipts/);
   assert.match(migration, /donation_address_state_regression/);
   assert.match(migration, /UNIQUE\(txid,tx_vout\)/);
+  const split = splitPostgresStatements(migration);
+  assert.equal(split[0]?.trim().toUpperCase(), "BEGIN");
+  assert.equal(split.at(-1)?.trim().toUpperCase(), "COMMIT");
+  const transactional = postgresMigrationTransactionStatements(migration);
+  const functionStatements = transactional.filter((statement) => statement.includes("CREATE OR REPLACE FUNCTION btc_donation_address_transition_guard"));
+  assert.equal(functionStatements.length, 1);
+  assert.match(functionStatements[0], /RAISE EXCEPTION 'donation_address_state_regression';/);
+  const splitDb = new PGlite();
+  await splitDb.waitReady;
+  try {
+    await splitDb.exec("BEGIN");
+    for (const statement of transactional) await splitDb.exec(`${statement};`);
+    await splitDb.exec("COMMIT");
+    const tables = await splitDb.query<{ table_name: string }>("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'btc_donation_%' ORDER BY table_name");
+    assert.deepEqual(tables.rows.map((row) => row.table_name), ["btc_donation_bridge_messages", "btc_donation_receipts", "btc_donation_receiver_addresses"]);
+  } finally { await splitDb.close(); }
   const agent = await readFile("scripts/btc-donation-receiver-agent.py", "utf8");
   assert.match(agent, /getaddresshistory/);
   assert.match(agent, /get_tx_status/);

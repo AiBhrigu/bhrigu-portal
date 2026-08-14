@@ -8,6 +8,7 @@ import {
   type DonationBridgeEnvelope,
 } from "../lib/btc-donation-bridge";
 import { createNeonBtcDonationBridgeStore } from "../lib/btc-donation-bridge-neon";
+import { postgresMigrationTransactionStatements } from "../lib/postgres-migration-statements";
 
 const TARGET_BRANCH = "agent/bhrigu-donation-watch-only-bridge-v0-1";
 const PROVISION_PATH = "/api/donation/bridge/provision";
@@ -19,7 +20,10 @@ async function run() {
   }
   const databaseUrl = process.env.DATABASE_URL?.trim(); assert(databaseUrl, "DATABASE_URL required");
   const sql = neon(databaseUrl);
-  await sql.query(await readFile("migrations/20260815_btc_donation_bridge_v1.sql", "utf8"));
+  const migrationSql = await readFile("migrations/20260815_btc_donation_bridge_v1.sql", "utf8");
+  const migrationStatements = postgresMigrationTransactionStatements(migrationSql);
+  assert(migrationStatements.length > 1);
+  await sql.transaction(migrationStatements.map((statement) => sql.query(statement)));
   const store = createNeonBtcDonationBridgeStore(databaseUrl);
   const runId = randomUUID().replace(/-/g, "").slice(0, 16);
   const prefix = `preview_don_${runId}`;
