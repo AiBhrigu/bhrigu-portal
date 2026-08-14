@@ -171,17 +171,23 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
           ${input.confirmedAt}, ${input.updatedAt}
         )
         ON CONFLICT (txid, tx_vout) DO UPDATE SET
-          observed_sats = EXCLUDED.observed_sats,
           block_height = EXCLUDED.block_height,
           block_hash = EXCLUDED.block_hash,
           confirmations = EXCLUDED.confirmations,
-          payment_state = EXCLUDED.payment_state,
+          payment_state = CASE
+            WHEN btc_direct_payment_receipts.payment_state = 'manual_review' THEN 'manual_review'
+            WHEN btc_direct_payment_receipts.payment_state = 'reorg_review' THEN 'reorg_review'
+            WHEN btc_direct_payment_receipts.payment_state = 'paid_confirmed'
+              THEN CASE WHEN EXCLUDED.payment_state = 'reorg_review' THEN 'reorg_review' ELSE 'paid_confirmed' END
+            ELSE EXCLUDED.payment_state
+          END,
           confirmed_at = COALESCE(btc_direct_payment_receipts.confirmed_at, EXCLUDED.confirmed_at),
           updated_at = EXCLUDED.updated_at
         WHERE btc_direct_payment_receipts.quote_id = EXCLUDED.quote_id
+          AND btc_direct_payment_receipts.observed_sats = EXCLUDED.observed_sats
         RETURNING *
       `;
-      if (!rows[0]) throw new Error("payment_output_conflict");
+      if (!rows[0]) throw new Error("payment_output_integrity_conflict");
       return mapPayment(rows[0]);
     },
 
@@ -215,31 +221,35 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
       return mapActivation(rows[0]);
     },
 
-    async claimActivation(activationId, at) {
+    async claimActivation(activationId, claimToken, at, staleBefore) {
       const rows = await sql`
         UPDATE btc_direct_payment_activations
-        SET state = 'activating', updated_at = ${at}
+        SET state = 'activating', claim_token = ${claimToken}, claimed_at = ${at}, updated_at = ${at}
         WHERE activation_id = ${activationId}
-          AND state IN ('pending', 'retryable')
+          AND (
+            state IN ('pending', 'retryable')
+            OR (state = 'activating' AND claimed_at < ${staleBefore})
+          )
         RETURNING *
       `;
-      if (rows[0]) return mapActivation(rows[0]);
+      if (rows[0]) return { claimed: true, activation: mapActivation(rows[0]) };
       const current = await sql`
         SELECT * FROM btc_direct_payment_activations
         WHERE activation_id = ${activationId}
         LIMIT 1
       `;
       if (!current[0]) throw new Error("activation_missing");
-      return mapActivation(current[0]);
+      return { claimed: false, activation: mapActivation(current[0]) };
     },
 
-    async completeActivation(activationId, serviceStart, serviceEnd, at) {
+    async completeActivation(activationId, serviceStart, serviceEnd, at, claimToken) {
       const rows = await sql`
         UPDATE btc_direct_payment_activations
         SET state = 'active', service_start = ${serviceStart},
-            service_end = ${serviceEnd}, updated_at = ${at}
+            service_end = ${serviceEnd}, claim_token = NULL, claimed_at = NULL, updated_at = ${at}
         WHERE activation_id = ${activationId}
           AND state = 'activating'
+          AND claim_token = ${claimToken}
         RETURNING *
       `;
       if (rows[0]) return mapActivation(rows[0]);
@@ -252,13 +262,14 @@ export function createNeonBtcDirectPaymentStore(databaseUrl: string): BtcDirectP
       return mapActivation(current[0]);
     },
 
-    async failActivation(activationId, at) {
+    async failActivation(activationId, at, claimToken) {
       const rows = await sql`
         UPDATE btc_direct_payment_activations
         SET state = 'retryable', service_start = NULL, service_end = NULL,
-            updated_at = ${at}
+            claim_token = NULL, claimed_at = NULL, updated_at = ${at}
         WHERE activation_id = ${activationId}
           AND state = 'activating'
+          AND claim_token = ${claimToken}
         RETURNING *
       `;
       if (rows[0]) return mapActivation(rows[0]);
@@ -321,6 +332,8 @@ function mapActivation(row: any): BtcDirectActivationRecord {
     serviceEnd: row.service_end == null ? null : iso(row.service_end),
     createdAt: iso(row.created_at),
     updatedAt: iso(row.updated_at),
+    claimToken: row.claim_token == null ? null : String(row.claim_token),
+    claimedAt: row.claimed_at == null ? null : iso(row.claimed_at),
   };
 }
 

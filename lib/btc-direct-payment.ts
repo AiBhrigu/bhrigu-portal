@@ -5,6 +5,7 @@ export const BTC_DIRECT_USD_PRICE_CENTS = 4900;
 export const BTC_DIRECT_QUOTE_TTL_MS = 15 * 60 * 1000;
 export const BTC_DIRECT_SOURCE_STALE_MS = 120 * 1000;
 export const BTC_DIRECT_SERVICE_MS = 30 * 24 * 60 * 60 * 1000;
+export const BTC_DIRECT_ACTIVATION_CLAIM_TTL_MS = 5 * 60 * 1000;
 
 export type BtcDirectQuoteState =
   | "quote_created"
@@ -67,6 +68,8 @@ export interface BtcDirectActivationRecord {
   serviceEnd: string | null;
   createdAt: string;
   updatedAt: string;
+  claimToken: string | null;
+  claimedAt: string | null;
 }
 
 export interface BtcDirectPaymentStore {
@@ -84,14 +87,15 @@ export interface BtcDirectPaymentStore {
   upsertPayment(input: BtcDirectPaymentRecord): Promise<BtcDirectPaymentRecord>;
   findActivationByApplicationId(applicationId: string): Promise<BtcDirectActivationRecord | null>;
   reserveActivation(input: BtcDirectActivationRecord): Promise<BtcDirectActivationRecord>;
-  claimActivation(activationId: string, at: string): Promise<BtcDirectActivationRecord>;
+  claimActivation(activationId: string, claimToken: string, at: string, staleBefore: string): Promise<{ claimed: boolean; activation: BtcDirectActivationRecord }>;
   completeActivation(
     activationId: string,
     serviceStart: string,
     serviceEnd: string,
-    at: string
+    at: string,
+    claimToken: string
   ): Promise<BtcDirectActivationRecord>;
-  failActivation(activationId: string, at: string): Promise<BtcDirectActivationRecord>;
+  failActivation(activationId: string, at: string, claimToken: string): Promise<BtcDirectActivationRecord>;
 }
 
 export interface BtcUsdQuoteSource {
@@ -108,7 +112,8 @@ export class BtcDirectPaymentError extends Error {
       | "fx_stale"
       | "address_unavailable"
       | "invalid_observation"
-      | "receiver_address_unknown",
+      | "receiver_address_unknown"
+      | "output_integrity_conflict",
     message: string
   ) {
     super(message);
@@ -230,31 +235,28 @@ export async function observeBtcDirectPayment(input: {
   const now = input.now ?? (() => new Date());
   const observedAt = new Date(observation.observedAt);
   const existingOutput = await input.store.findPaymentByOutput(observation.txid, observation.txVout);
+  if (existingOutput && (existingOutput.quoteId !== quote.quoteId || existingOutput.observedSats !== observation.observedSats)) {
+    throw new BtcDirectPaymentError("output_integrity_conflict", "Blockchain output identity conflict.");
+  }
   const existingActivation = await input.store.findActivationByApplicationId(quote.applicationId);
-  const quoteExpired = observedAt.getTime() > new Date(quote.quoteExpiresAt).getTime();
+  const firstSeenAt = existingOutput?.firstSeenAt ?? observedAt.toISOString();
+  const quoteExpired = new Date(firstSeenAt).getTime() > new Date(quote.quoteExpiresAt).getTime();
   const exactAmount = observation.observedSats === quote.satAmountInteger;
 
-  let paymentState: BtcDirectPaymentState;
-  if (
-    existingOutput?.paymentState === "paid_confirmed" &&
-    (observation.confirmations < 1 || !observation.spvVerified)
-  ) {
-    paymentState = "reorg_review";
+  let proposedState: BtcDirectPaymentState;
+  if (existingOutput?.paymentState === "paid_confirmed" && (observation.confirmations < 1 || !observation.spvVerified)) {
+    proposedState = "reorg_review";
   } else if (existingActivation && existingOutput?.paymentId !== existingActivation.paymentId) {
-    paymentState = "manual_review";
+    proposedState = "manual_review";
   } else if (!exactAmount || quoteExpired) {
-    paymentState = "manual_review";
-  } else if (
-    observation.confirmations >= 1 &&
-    observation.spvVerified &&
-    observation.blockHeight !== null
-  ) {
-    paymentState = "paid_confirmed";
+    proposedState = "manual_review";
+  } else if (observation.confirmations >= 1 && observation.spvVerified && observation.blockHeight !== null) {
+    proposedState = "paid_confirmed";
   } else {
-    paymentState = "mempool_seen";
+    proposedState = "mempool_seen";
   }
+  const paymentState = resolvePaymentState(existingOutput?.paymentState ?? null, proposedState);
 
-  const firstSeenAt = existingOutput?.firstSeenAt ?? observedAt.toISOString();
   const payment: BtcDirectPaymentRecord = {
     paymentId: existingOutput?.paymentId ?? input.paymentId?.() ?? `btcp_${randomUUID()}`,
     quoteId: quote.quoteId,
@@ -272,12 +274,20 @@ export async function observeBtcDirectPayment(input: {
         : existingOutput?.confirmedAt ?? null,
     updatedAt: observedAt.toISOString(),
   };
-  const storedPayment = await input.store.upsertPayment(payment);
+  let storedPayment: BtcDirectPaymentRecord;
+  try {
+    storedPayment = await input.store.upsertPayment(payment);
+  } catch (error) {
+    if (error instanceof Error && error.message === "payment_output_integrity_conflict") {
+      throw new BtcDirectPaymentError("output_integrity_conflict", "Blockchain output identity conflict.");
+    }
+    throw error;
+  }
 
-  if (paymentState === "mempool_seen") {
+  if (storedPayment.paymentState === "mempool_seen") {
     return { quote, payment: storedPayment, activation: null };
   }
-  if (paymentState === "manual_review" || paymentState === "reorg_review") {
+  if (storedPayment.paymentState === "manual_review" || storedPayment.paymentState === "reorg_review") {
     await input.store.markQuoteState(quote.quoteId, "manual_review", observedAt.toISOString());
     return { quote, payment: storedPayment, activation: existingActivation };
   }
@@ -295,6 +305,13 @@ export async function observeBtcDirectPayment(input: {
     await input.store.markQuoteState(quote.quoteId, "activated", activation.updatedAt);
   }
   return { quote, payment: storedPayment, activation };
+}
+
+function resolvePaymentState(existing: BtcDirectPaymentState | null, proposed: BtcDirectPaymentState): BtcDirectPaymentState {
+  if (existing === "manual_review") return "manual_review";
+  if (existing === "reorg_review") return "reorg_review";
+  if (existing === "paid_confirmed") return proposed === "reorg_review" ? "reorg_review" : "paid_confirmed";
+  return proposed;
 }
 
 export async function activateBtcDirectPayment(input: {
@@ -321,27 +338,36 @@ export async function activateBtcDirectPayment(input: {
       serviceEnd: null,
       createdAt,
       updatedAt: createdAt,
+      claimToken: null,
+      claimedAt: null,
     }
   );
   if (reserved.state === "active") return reserved;
 
-  const claimed = await input.store.claimActivation(reserved.activationId, now().toISOString());
-  if (claimed.state === "active") return claimed;
-  if (claimed.state !== "activating") return claimed;
+  const claimToken = randomUUID();
+  const claimAt = now();
+  const claim = await input.store.claimActivation(
+    reserved.activationId,
+    claimToken,
+    claimAt.toISOString(),
+    new Date(claimAt.getTime() - BTC_DIRECT_ACTIVATION_CLAIM_TTL_MS).toISOString()
+  );
+  if (!claim.claimed) return claim.activation;
 
   try {
     await input.activationEffect?.();
   } catch {
-    return input.store.failActivation(claimed.activationId, now().toISOString());
+    return input.store.failActivation(claim.activation.activationId, now().toISOString(), claimToken);
   }
 
   const serviceStart = now();
   const serviceEnd = new Date(serviceStart.getTime() + BTC_DIRECT_SERVICE_MS);
   return input.store.completeActivation(
-    claimed.activationId,
+    claim.activation.activationId,
     serviceStart.toISOString(),
     serviceEnd.toISOString(),
-    serviceStart.toISOString()
+    serviceStart.toISOString(),
+    claimToken
   );
 }
 
@@ -387,7 +413,7 @@ export function hashCanonical(value: unknown): string {
 
 function parsePositiveDecimal(value: string): { integer: bigint; scale: bigint } | null {
   const normalized = String(value).trim();
-  if (!/^\d+(?:\.\d{1,18})?$/.test(normalized)) return null;
+  if (!/^\d+(?:\.\d{1,40})?$/.test(normalized)) return null;
   const [whole, fraction = ""] = normalized.split(".");
   const scale = BigInt(`1${"0".repeat(fraction.length)}`);
   const integer = BigInt(whole) * scale + BigInt(fraction || "0");
