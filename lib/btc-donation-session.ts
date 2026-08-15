@@ -2,6 +2,7 @@ import { BTC_DONATION_MODE, getDonationBridgeRuntimeConfig } from "./btc-donatio
 
 export const BTC_DONATION_SESSION_PREVIEW_BRANCH = "agent/bhrigu-donation-session-support-qr-v0-1";
 export const BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH = "agent/bhrigu-donation-production-opening-canary-v0-1";
+export const BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH = "agent/bhrigu-bitcoin-support-post-receipt-terminalization-v0-1";
 export const BTC_DONATION_SESSION_PRODUCTION_BRANCH = "master";
 export const BTC_DONATION_SESSION_TTL_MS = 30 * 60 * 1000;
 
@@ -38,7 +39,8 @@ export function getDonationSessionRuntimeConfig(env: RuntimeEnv = process.env): 
   const preview =
     env.VERCEL_ENV === "preview" &&
     (env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PREVIEW_BRANCH ||
-      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH);
+      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH ||
+      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH);
   const production =
     env.VERCEL_ENV === "production" &&
     env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PRODUCTION_BRANCH &&
