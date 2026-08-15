@@ -1,0 +1,61 @@
+name: BTC Binance Public Market REST Shadow
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - ".github/workflows/btc-binance-public-market-shadow-pr.yml"
+      - "lib/btc-binance-public-market-evidence.ts"
+      - "lib/btc-binance-public-market-source.ts"
+      - "tests/btc-binance-public-market-shadow-acceptance.ts"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-market-shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Prove bounded implementation scope
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" > /tmp/binance-shadow-scope.txt
+          cat /tmp/binance-shadow-scope.txt
+          while IFS= read -r path; do
+            case "$path" in
+              .github/workflows/btc-binance-public-market-shadow-pr.yml|lib/btc-binance-public-market-evidence.ts|lib/btc-binance-public-market-source.ts|tests/btc-binance-public-market-shadow-acceptance.ts|package.json) ;;
+              *) echo "UNEXPECTED_SCOPE=$path"; exit 1 ;;
+            esac
+          done < /tmp/binance-shadow-scope.txt
+          echo "BINANCE_PUBLIC_MARKET_SHADOW_SCOPE=PASS"
+
+      - name: Verify public no-key evidence adapter
+        run: npm run verify:btc-binance-public-market-shadow
+
+      - name: Verify prior Binance historical bridge unchanged
+        run: npm run verify:btc-binance-observation
+
+      - name: Verify existing BTC routing unchanged
+        run: npm run verify:btc-routing
+
+      - name: Build default public surface
+        run: npm run build
