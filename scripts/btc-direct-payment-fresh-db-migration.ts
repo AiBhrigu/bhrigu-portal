@@ -6,6 +6,7 @@ import { PGlite } from "@electric-sql/pglite";
 const EXPECTED_MIGRATIONS = [
   "20260809_access_private_intake_v1.sql",
   "20260814_btc_direct_payment_v1.sql",
+  "20260815_btc_donation_bridge_v1.sql",
 ];
 
 async function run() {
@@ -31,6 +32,17 @@ async function run() {
       "btc_direct_payment_quotes",
       "btc_direct_payment_receipts",
       "btc_direct_receiver_addresses",
+    ]);
+
+    const donationTables = await db.query<{ table_name: string }>(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema='public' AND table_name LIKE 'btc_donation_%'
+      ORDER BY table_name
+    `);
+    assert.deepEqual(donationTables.rows.map((row) => row.table_name), [
+      "btc_donation_bridge_messages",
+      "btc_donation_receipts",
+      "btc_donation_receiver_addresses",
     ]);
 
     const fx = await db.query<{ data_type: string }>(`
@@ -102,6 +114,23 @@ async function run() {
       WHERE application_id='APP-FRESH-0001' AND quote_state <> 'expired'
     `);
     assert.equal(liveCount.rows[0]?.n, 1);
+    await db.exec(`
+      INSERT INTO btc_donation_receiver_addresses(receiver_address_id,receive_address,state,created_at)
+      VALUES ('don_fresh_1','bc1q${"q".repeat(38)}','available',NOW()),
+             ('don_fresh_2','bc1q${"p".repeat(38)}','available',NOW());
+      UPDATE btc_donation_receiver_addresses
+      SET state='issued',issued_session_id='fresh_session_1',issued_at=NOW()
+      WHERE receiver_address_id='don_fresh_1';
+    `);
+    let donationRegressionBlocked = false;
+    try {
+      await db.exec(`UPDATE btc_donation_receiver_addresses SET state='available',issued_session_id=NULL,issued_at=NULL WHERE receiver_address_id='don_fresh_1'`);
+    } catch { donationRegressionBlocked = true; }
+    assert.equal(donationRegressionBlocked, true);
+    const donationIndex = await db.query<{ indexdef: string }>(`
+      SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='btc_donation_addresses_state_idx'
+    `);
+    assert.match(donationIndex.rows[0]?.indexdef ?? "", /btc_donation_receiver_addresses/);
   } finally {
     await db.close();
   }
@@ -110,6 +139,7 @@ async function run() {
   console.log(`migration_order=${EXPECTED_MIGRATIONS.join("->")}`);
   console.log("fresh_database=YES");
   console.log("machine_applied_migrations=YES");
+  console.log("BTC_DONATION_BRIDGE_FRESH_DB_MIGRATION=PASS");
 }
 
 run().catch((error) => {
