@@ -8,10 +8,10 @@ PROVISION_PATH="/api/donation/bridge/provision"
 OBSERVE_PATH="/api/donation/bridge/observe"
 ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$",re.I)
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
-OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED')
-POST_RECEIPT_OBSERVE_ONLY_CLASSIFICATIONS=('PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY')
+OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED','PUBLIC_SUPPORT_ELIGIBLE')
+POST_RECEIPT_OBSERVE_ONLY_CLASSIFICATIONS=('PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY')
 OBSERVATION_CLASSIFICATIONS=OUTBOUND_PROVISION_CLASSIFICATIONS+POST_RECEIPT_OBSERVE_ONLY_CLASSIFICATIONS
-POST_RECEIPT_CLASSIFICATION={'PROVISIONED':'PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED':'INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY'}
+POST_RECEIPT_CLASSIFICATION={'PROVISIONED':'PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED':'INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','PUBLIC_SUPPORT_ELIGIBLE':'PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY'}
 
 def require_outbound_provision_classification(classification):
     if classification not in OUTBOUND_PROVISION_CLASSIFICATIONS:
@@ -148,8 +148,9 @@ def deliver(cfg,path,envelope,signature):
     finally: Path(body).unlink(missing_ok=True)
 
 def flush_queued(cfg,db):
+    placeholders=','.join('?' for _ in OUTBOUND_PROVISION_CLASSIFICATIONS)
     for receiver_id,address,classification,provisioned_at,message_id in db.execute(
-        "SELECT receiver_address_id,receive_address,classification,provisioned_at,bridge_message_id FROM addresses WHERE delivery_status='queued' AND classification IN (?,?) ORDER BY provisioned_at,receiver_address_id",
+        f"SELECT receiver_address_id,receive_address,classification,provisioned_at,bridge_message_id FROM addresses WHERE delivery_status='queued' AND classification IN ({placeholders}) ORDER BY provisioned_at,receiver_address_id",
         OUTBOUND_PROVISION_CLASSIFICATIONS
     ).fetchall():
         require_outbound_provision_classification(classification)
@@ -228,7 +229,7 @@ def scan(cfg,db,send):
 
 def main():
     ap=argparse.ArgumentParser(); sub=ap.add_subparsers(dest='cmd',required=True)
-    p=sub.add_parser('provision'); p.add_argument('--classification',choices=['PROVISIONED','INTEGRATION_PROVISIONED','TEST_PROVISIONED'],default='PROVISIONED'); p.add_argument('--deliver',action='store_true')
+    p=sub.add_parser('provision'); p.add_argument('--classification',choices=['PROVISIONED','INTEGRATION_PROVISIONED','PUBLIC_SUPPORT_ELIGIBLE','TEST_PROVISIONED'],default='PROVISIONED'); p.add_argument('--deliver',action='store_true')
     s=sub.add_parser('scan'); s.add_argument('--deliver',action='store_true')
     sub.add_parser('flush')
     args=ap.parse_args(); cfg=config(); db=init_db(cfg['DONATION_BRIDGE_STATE_DB'])

@@ -82,6 +82,9 @@ async function run() {
   assert.match(agent, /blockchain_headers/);
   assert.match(agent, /electrum_local_header_hash_mismatch/);
   assert.match(agent, /PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY/);
+  assert.match(agent, /PUBLIC_SUPPORT_ELIGIBLE/);
+  assert.match(agent, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY/);
+  assert.match(agent, /choices=\['PROVISIONED','INTEGRATION_PROVISIONED','PUBLIC_SUPPORT_ELIGIBLE','TEST_PROVISIONED'\]/);
   assert.match(agent, /--socks5-hostname/);
   assert(!/getseed|getmpk|getmasterprivate|getprivatekeys|dumpprivkeys/.test(agent));
   assert(!/BTC_DIRECT_PAYMENT_MODE/.test(agent));
@@ -139,6 +142,8 @@ rows=[
  ("retired","bc1qretired000000000000000000000000000000000","TEST_RETIRED_NEVER_DELIVER",base,"msg-retired","queued"),
  ("test","bc1qtest00000000000000000000000000000000000","TEST_PROVISIONED",base,"msg-test","queued"),
  ("integration","bc1qintegration000000000000000000000000000000","INTEGRATION_PROVISIONED",base,"msg-integration","queued"),
+ ("public","bc1qpublic00000000000000000000000000000000000","PUBLIC_SUPPORT_ELIGIBLE",base,"msg-public","queued"),
+ ("public-retired","bc1qpublicretired0000000000000000000000000000","PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY",base,"msg-public-retired","queued"),
  ("integration-retired","bc1qintegrationretired0000000000000000000000000000","INTEGRATION_TEST_RETIRED",base,"msg-integration-retired","queued"),
 ]
 db.executemany("INSERT INTO addresses VALUES(?,?,?,?,?,?)",rows); db.commit()
@@ -157,20 +162,28 @@ print("SENT="+",".join(sent))
 print("RETIRED="+states["retired"])
 print("TEST="+states["test"])
 print("INTEGRATION="+states["integration"])
+print("PUBLIC="+states["public"])
+print("PUBLIC_RETIRED="+states["public-retired"])
 print("INTEGRATION_RETIRED="+states["integration-retired"])
 print("SCAN_COUNT="+str(len(seen)))
 print("SCAN_INTEGRATION="+("YES" if rows[2][1] in seen else "NO"))
+print("SCAN_PUBLIC="+("YES" if rows[3][1] in seen else "NO"))
+print("SCAN_PUBLIC_RETIRED="+("YES" if rows[4][1] in seen else "NO"))
 print("SCAN_RETIRED="+("YES" if rows[0][1] in seen else "NO"))
 `;
     const eligibility = spawnSync("python3", ["-c", eligibilityPy, "scripts/btc-donation-receiver-agent.py", join(temp, "eligibility.sqlite3")], { encoding: "utf8" });
     assert.equal(eligibility.status, 0, eligibility.stderr);
-    assert.match(eligibility.stdout, /SENT=integration/);
+    assert.match(eligibility.stdout, /SENT=integration,public/);
     assert.match(eligibility.stdout, /RETIRED=queued/);
     assert.match(eligibility.stdout, /TEST=queued/);
     assert.match(eligibility.stdout, /INTEGRATION=delivered/);
+    assert.match(eligibility.stdout, /PUBLIC=delivered/);
+    assert.match(eligibility.stdout, /PUBLIC_RETIRED=queued/);
     assert.match(eligibility.stdout, /INTEGRATION_RETIRED=queued/);
-    assert.match(eligibility.stdout, /SCAN_COUNT=1/);
+    assert.match(eligibility.stdout, /SCAN_COUNT=2/);
     assert.match(eligibility.stdout, /SCAN_INTEGRATION=YES/);
+    assert.match(eligibility.stdout, /SCAN_PUBLIC=YES/);
+    assert.match(eligibility.stdout, /SCAN_PUBLIC_RETIRED=NO/);
     assert.match(eligibility.stdout, /SCAN_RETIRED=NO/);
 
     const directGuardPy = String.raw`
@@ -181,6 +194,7 @@ m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 def run_case(db_path,classification):
     db=m.init_db(db_path)
     calls={"flush":0,"derive":0,"deliver":0,"guard":0}
+    payload_keys=[]
     original_guard=m.require_outbound_provision_classification
     def guard(value):
         calls["guard"]+=1
@@ -192,7 +206,11 @@ def run_case(db_path,classification):
         return "bc1q" + ("q"*37) + ("p" if classification=="PROVISIONED" else "z")
     m.next_fresh_address=derive
     m.sign_envelope=lambda cfg,envelope:"fixture-signature"
-    m.deliver=lambda cfg,path,envelope,signature:(calls.__setitem__("deliver",calls["deliver"]+1) or {"ok":True})
+    def deliver(cfg,path,envelope,signature):
+        calls["deliver"]+=1
+        payload_keys.append(",".join(sorted(envelope["payload"].keys())))
+        return {"ok":True}
+    m.deliver=deliver
     rejected=False
     try:
         m.provision({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db,classification,True)
@@ -209,10 +227,13 @@ def run_case(db_path,classification):
     print(classification+"_GUARD="+str(calls["guard"]))
     print(classification+"_ROWS="+str(rows))
     print(classification+"_DELIVERED_ROWS="+str(delivered))
+    print(classification+"_PAYLOAD_KEYS="+";".join(payload_keys))
 
 run_case(sys.argv[2]+"-test.sqlite3","TEST_PROVISIONED")
 run_case(sys.argv[2]+"-provisioned.sqlite3","PROVISIONED")
 run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION_PROVISIONED")
+run_case(sys.argv[2]+"-public.sqlite3","PUBLIC_SUPPORT_ELIGIBLE")
+run_case(sys.argv[2]+"-public-retired.sqlite3","PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY")
 `;
     const directGuard = spawnSync("python3", ["-c", directGuardPy, "scripts/btc-donation-receiver-agent.py", join(temp, "direct-guard")], { encoding: "utf8" });
     assert.equal(directGuard.status, 0, directGuard.stderr);
@@ -231,6 +252,18 @@ run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION_PROVISIONED")
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_GUARD=2/);
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_ROWS=1/);
     assert.match(directGuard.stdout, /INTEGRATION_PROVISIONED_DELIVERED_ROWS=1/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_REJECTED=NO/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_DERIVE=1/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_DELIVER=1/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_GUARD=2/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_ROWS=1/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_DELIVERED_ROWS=1/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_ELIGIBLE_PAYLOAD_KEYS=createdAt,receiveAddress,receiverAddressId/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY_REJECTED=YES/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY_FLUSH=0/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY_DERIVE=0/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY_DELIVER=0/);
+    assert.match(directGuard.stdout, /PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY_ROWS=0/);
 
     const observationAuthorityPy = String.raw`
 import importlib.util,json,sys
@@ -253,12 +286,15 @@ def run_case(db_path,label,classification=None):
     except RuntimeError: rejected=True
     status=db.execute("SELECT delivery_status FROM observations WHERE event_key=?",("evt-"+label,)).fetchone()[0]
     rows=db.execute("SELECT count(*) FROM observations WHERE event_key=?",("evt-"+label,)).fetchone()[0]
+    classification_after=db.execute("SELECT classification FROM addresses WHERE receiver_address_id=?",(receiver_id,)).fetchone()
+    classification_after=classification_after[0] if classification_after else "MISSING"
     db.close()
     print(label+"_REJECTED="+("YES" if rejected else "NO"))
     print(label+"_SIGN="+str(calls["sign"]))
     print(label+"_DELIVER="+str(calls["deliver"]))
     print(label+"_STATUS="+status)
     print(label+"_ROWS="+str(rows))
+    print(label+"_CLASSIFICATION="+classification_after)
 
 run_case(sys.argv[2]+"-test.sqlite3","TEST","TEST_PROVISIONED")
 run_case(sys.argv[2]+"-retired.sqlite3","RETIRED","TEST_RETIRED_NEVER_DELIVER")
@@ -266,6 +302,8 @@ run_case(sys.argv[2]+"-integration-retired.sqlite3","INTEGRATION_RETIRED","INTEG
 run_case(sys.argv[2]+"-orphan.sqlite3","ORPHAN",None)
 run_case(sys.argv[2]+"-provisioned.sqlite3","PROVISIONED","PROVISIONED")
 run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION","INTEGRATION_PROVISIONED")
+run_case(sys.argv[2]+"-public.sqlite3","PUBLIC","PUBLIC_SUPPORT_ELIGIBLE")
+run_case(sys.argv[2]+"-public-retired.sqlite3","PUBLIC_RETIRED","PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY")
 `;
     const observationAuthority = spawnSync("python3", ["-c", observationAuthorityPy, "scripts/btc-donation-receiver-agent.py", join(temp, "observation-authority")], { encoding: "utf8" });
     assert.equal(observationAuthority.status, 0, observationAuthority.stderr);
@@ -276,12 +314,16 @@ run_case(sys.argv[2]+"-integration.sqlite3","INTEGRATION","INTEGRATION_PROVISION
       assert.match(observationAuthority.stdout, new RegExp(`${label}_STATUS=queued`));
       assert.match(observationAuthority.stdout, new RegExp(`${label}_ROWS=1`));
     }
-    for (const label of ["PROVISIONED","INTEGRATION"]) {
+    for (const label of ["PROVISIONED","INTEGRATION","PUBLIC","PUBLIC_RETIRED"]) {
       assert.match(observationAuthority.stdout, new RegExp(`${label}_REJECTED=NO`));
       assert.match(observationAuthority.stdout, new RegExp(`${label}_SIGN=1`));
       assert.match(observationAuthority.stdout, new RegExp(`${label}_DELIVER=1`));
       assert.match(observationAuthority.stdout, new RegExp(`${label}_STATUS=delivered`));
     }
+    assert.match(observationAuthority.stdout, /PROVISIONED_CLASSIFICATION=PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY/);
+    assert.match(observationAuthority.stdout, /INTEGRATION_CLASSIFICATION=INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY/);
+    assert.match(observationAuthority.stdout, /PUBLIC_CLASSIFICATION=PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY/);
+    assert.match(observationAuthority.stdout, /PUBLIC_RETIRED_CLASSIFICATION=PUBLIC_SUPPORT_RECEIPT_RETIRED_OBSERVE_ONLY/);
 
     const scanRacePy = String.raw`
 import importlib.util,sys
@@ -332,5 +374,9 @@ db.close()
   console.log("BTC_DONATION_BRIDGE_ACCEPTANCE=PASS");
   console.log("ledger=signature,tamper,path,kind,key,address_state,spv_contract,block_hash,secret_boundary,tor_agent");
   console.log("BLOCK_HASH_NULL_CONFIRMED_REJECTED=PASS");
+  console.log("PUBLIC_SUPPORT_ELIGIBLE_OUTBOUND=PASS");
+  console.log("PUBLIC_SUPPORT_POST_RECEIPT_TERMINAL=PASS");
+  console.log("PUBLIC_SUPPORT_TERMINAL_NEVER_OUTBOUND=PASS");
+  console.log("PUBLIC_SUPPORT_PROVISION_WIRE_PAYLOAD_UNCHANGED=PASS");
 }
 run().catch((error) => { console.error("BTC_DONATION_BRIDGE_ACCEPTANCE=FAIL"); console.error(error instanceof Error ? error.message : "unknown_error"); process.exitCode = 1; });
