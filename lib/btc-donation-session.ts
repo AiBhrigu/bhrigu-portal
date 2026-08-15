@@ -1,6 +1,8 @@
-import { getDonationBridgeRuntimeConfig } from "./btc-donation-bridge";
+import { BTC_DONATION_MODE, getDonationBridgeRuntimeConfig } from "./btc-donation-bridge";
 
 export const BTC_DONATION_SESSION_PREVIEW_BRANCH = "agent/bhrigu-donation-session-support-qr-v0-1";
+export const BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH = "agent/bhrigu-donation-production-opening-canary-v0-1";
+export const BTC_DONATION_SESSION_PRODUCTION_BRANCH = "master";
 export const BTC_DONATION_SESSION_TTL_MS = 30 * 60 * 1000;
 
 export type DonationSessionPresentationState =
@@ -12,7 +14,7 @@ export type DonationSessionPresentationState =
 
 export type DonationSessionRuntimeConfig =
   | { enabled: false }
-  | { enabled: true; databaseUrl: string };
+  | { enabled: true; databaseUrl: string; surface: "preview" | "production" };
 
 export type DonationSessionView = {
   sessionId: string;
@@ -32,14 +34,18 @@ const SESSION_ID = /^don_session_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9
 
 export function getDonationSessionRuntimeConfig(env: RuntimeEnv = process.env): DonationSessionRuntimeConfig {
   const bridge = getDonationBridgeRuntimeConfig(env);
-  if (
-    env.VERCEL_ENV !== "preview" ||
-    env.VERCEL_GIT_COMMIT_REF !== BTC_DONATION_SESSION_PREVIEW_BRANCH ||
-    !bridge.enabled
-  ) {
-    return { enabled: false };
-  }
-  return { enabled: true, databaseUrl: bridge.databaseUrl };
+  if (!bridge.enabled) return { enabled: false };
+  const preview =
+    env.VERCEL_ENV === "preview" &&
+    (env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PREVIEW_BRANCH ||
+      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH);
+  const production =
+    env.VERCEL_ENV === "production" &&
+    env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PRODUCTION_BRANCH &&
+    env.BTC_DONATION_MODE === BTC_DONATION_MODE;
+  if (preview) return { enabled: true, databaseUrl: bridge.databaseUrl, surface: "preview" };
+  if (production) return { enabled: true, databaseUrl: bridge.databaseUrl, surface: "production" };
+  return { enabled: false };
 }
 
 export function normalizeDonationSessionId(value: unknown): string | null {

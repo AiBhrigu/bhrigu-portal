@@ -5,13 +5,14 @@ import { PGlite } from "@electric-sql/pglite";
 import QRCode from "qrcode";
 import {
   BTC_DONATION_SESSION_PREVIEW_BRANCH,
+  BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH,
   buildDonationBip321Uri,
   donationSessionExpiresAt,
   donationSessionStateCopy,
   getDonationSessionRuntimeConfig,
   normalizeDonationSessionId,
 } from "../lib/btc-donation-session";
-import { BTC_DONATION_BRIDGE_MODE } from "../lib/btc-donation-bridge";
+import { BTC_DONATION_BRIDGE_MODE, BTC_DONATION_MODE } from "../lib/btc-donation-bridge";
 
 const SESSION_ONE = "don_session_123e4567-e89b-42d3-a456-426614174000";
 const SESSION_TWO = "don_session_123e4567-e89b-42d3-b456-426614174001";
@@ -32,10 +33,24 @@ async function run() {
     DONATION_BRIDGE_KEY_ID: "fixture-donation-key",
     DONATION_BRIDGE_VERIFY_PUBLIC_KEY: publicPem,
   };
-  assert.equal(getDonationSessionRuntimeConfig(enabledEnv).enabled, true);
+  const previewConfig = getDonationSessionRuntimeConfig(enabledEnv);
+  assert.equal(previewConfig.enabled, true);
+  assert.equal(previewConfig.enabled && previewConfig.surface, "preview");
+  const activationPreview = getDonationSessionRuntimeConfig({ ...enabledEnv, VERCEL_GIT_COMMIT_REF: BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH });
+  assert.equal(activationPreview.enabled, true);
+  assert.equal(activationPreview.enabled && activationPreview.surface, "preview");
   assert.equal(getDonationSessionRuntimeConfig({ ...enabledEnv, VERCEL_ENV: "production" }).enabled, false);
   assert.equal(getDonationSessionRuntimeConfig({ ...enabledEnv, VERCEL_GIT_COMMIT_REF: "master" }).enabled, false);
   assert.equal(getDonationSessionRuntimeConfig({ ...enabledEnv, BTC_DONATION_BRIDGE_MODE: "off" }).enabled, false);
+  const productionEnv = { ...enabledEnv, VERCEL_ENV: "production", VERCEL_GIT_COMMIT_REF: "master", BTC_DONATION_MODE };
+  const productionConfig = getDonationSessionRuntimeConfig(productionEnv);
+  assert.equal(productionConfig.enabled, true);
+  assert.equal(productionConfig.enabled && productionConfig.surface, "production");
+  for (const key of ["DATABASE_URL", "DONATION_BRIDGE_KEY_ID", "DONATION_BRIDGE_VERIFY_PUBLIC_KEY", "BTC_DONATION_MODE"] as const) {
+    assert.equal(getDonationSessionRuntimeConfig({ ...productionEnv, [key]: undefined }).enabled, false, `production must fail closed without ${key}`);
+  }
+  assert.equal(getDonationSessionRuntimeConfig({ ...productionEnv, BTC_DONATION_BRIDGE_MODE: "off" }).enabled, false);
+  assert.equal(getDonationSessionRuntimeConfig({ ...productionEnv, VERCEL_GIT_COMMIT_REF: "not-master" }).enabled, false);
 
   assert.equal(normalizeDonationSessionId(SESSION_ONE), SESSION_ONE);
   assert.equal(normalizeDonationSessionId("don_session_not-a-uuid"), null);
@@ -144,12 +159,18 @@ async function run() {
   assert.match(component, /Choose the amount in your wallet/);
   assert.match(component, /no amount, label, or message/);
   assert.match(component, /Synthetic receipt evidence · UI only/);
+  assert.match(component, /Support BHRIGU with Bitcoin/);
+  assert.match(component, /This is voluntary support for BHRIGU research, architecture, infrastructure, and public continuity\./);
+  assert.match(component, /BHRIGU does not present this support as a charitable or tax-deductible contribution\./);
+  assert.match(component, /Поддержать BHRIGU в Bitcoin/);
+  assert.match(component, /Это добровольная поддержка исследований, архитектуры, инфраструктуры и публичного контура BHRIGU\./);
+  assert.match(component, /Автоматический механизм возврата не предоставляется\./);
   assert.match(component, /sessionStorage\.getItem\(SESSION_STORAGE_KEY\)/);
   assert.match(component, /sessionStorage\.setItem\(SESSION_STORAGE_KEY, body\.session\.sessionId\)/);
   assert.match(component, /fetch\(`\/api\/donation\/session\/\$\{encodeURIComponent\(storedSessionId\)\}`/);
   assert(!/api\.qrserver|quickchart|chart\.google|qr-code-generator/i.test(component));
   assert(!/bc1[ac-hj-np-z02-9]{20,90}/i.test(component));
-  assert.match(support, /donationPreviewEnabled \? \(/);
+  assert.match(support, /donationEnabled \? \(/);
   assert.match(support, /Support the public surface/);
   assert.match(store, /FOR UPDATE SKIP LOCKED/);
   assert.match(store, /state='retired'/);
@@ -157,6 +178,7 @@ async function run() {
 
   console.log("BTC_DONATION_SESSION_ACCEPTANCE=PASS");
   console.log("PREVIEW_EXACT_BRANCH_GATE=PASS");
+  console.log("PRODUCTION_COMPLETE_GATE=PASS");
   console.log("BIP321_ADDRESS_ONLY=PASS");
   console.log("LOCAL_QR_DATA_URL=PASS");
   console.log("ONE_SESSION_ONE_ADDRESS=PASS");

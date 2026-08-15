@@ -9,6 +9,9 @@ OBSERVE_PATH="/api/donation/bridge/observe"
 ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$",re.I)
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
 OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED')
+POST_RECEIPT_OBSERVE_ONLY_CLASSIFICATIONS=('PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY')
+OBSERVATION_CLASSIFICATIONS=OUTBOUND_PROVISION_CLASSIFICATIONS+POST_RECEIPT_OBSERVE_ONLY_CLASSIFICATIONS
+POST_RECEIPT_CLASSIFICATION={'PROVISIONED':'PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY','INTEGRATION_PROVISIONED':'INTEGRATION_PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY'}
 
 def require_outbound_provision_classification(classification):
     if classification not in OUTBOUND_PROVISION_CLASSIFICATIONS:
@@ -19,6 +22,42 @@ def require_current_outbound_address(db,receiver_address_id):
     if not row: raise RuntimeError('outbound_address_missing')
     require_outbound_provision_classification(row[0])
     return row[0]
+
+def require_observation_address(db,receiver_address_id):
+    row=db.execute('SELECT classification FROM addresses WHERE receiver_address_id=? LIMIT 1',(receiver_address_id,)).fetchone()
+    if not row: raise RuntimeError('observation_address_missing')
+    if row[0] not in OBSERVATION_CLASSIFICATIONS: raise RuntimeError('observation_address_classification_forbidden')
+    return row[0]
+
+def terminalize_public_provision(db,receiver_address_id):
+    classification=require_observation_address(db,receiver_address_id)
+    terminal=POST_RECEIPT_CLASSIFICATION.get(classification)
+    if terminal:
+        db.execute('UPDATE addresses SET classification=? WHERE receiver_address_id=?',(terminal,receiver_address_id)); db.commit()
+        return terminal
+    return classification
+
+def local_verified_block_hash(cfg,txid):
+    try:
+        wallet=json.loads(Path(cfg['ELECTRUM_WALLET']).read_text(encoding='utf-8'))
+    except Exception as exc:
+        raise RuntimeError('electrum_wallet_verified_state_unavailable') from exc
+    verified=(wallet.get('verified_tx3') or {}).get(txid) if isinstance(wallet,dict) else None
+    if not isinstance(verified,(list,tuple)) or len(verified)<4:
+        raise RuntimeError('electrum_wallet_verified_tx_missing')
+    height,wallet_header_hash=verified[0],verified[3]
+    if not isinstance(height,int) or height<=0 or not isinstance(wallet_header_hash,str) or not TXID_RE.fullmatch(wallet_header_hash):
+        raise RuntimeError('electrum_wallet_verified_tx_invalid')
+    header_file=Path(cfg['ELECTRUM_WALLET']).parent.parent/'blockchain_headers'
+    try:
+        with header_file.open('rb') as f:
+            f.seek(height*80); raw=f.read(80)
+    except Exception as exc:
+        raise RuntimeError('electrum_local_header_unavailable') from exc
+    if len(raw)!=80 or not any(raw): raise RuntimeError('electrum_local_header_unavailable')
+    local_hash=hashlib.sha256(hashlib.sha256(raw).digest()).digest()[::-1].hex()
+    if local_hash!=wallet_header_hash: raise RuntimeError('electrum_local_header_hash_mismatch')
+    return height,local_hash
 
 def now_iso(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def canonical(v):
@@ -123,9 +162,10 @@ def flush_queued(cfg,db):
     ).fetchall():
         payload=json.loads(payload_json)
         receiver_id=payload.get('receiverAddressId') if isinstance(payload,dict) else None
-        require_current_outbound_address(db,receiver_id)
+        require_observation_address(db,receiver_id)
         envelope=make_envelope(cfg,'receipt_observation',OBSERVE_PATH,payload,message_id,created_at)
         deliver(cfg,OBSERVE_PATH,envelope,sign_envelope(cfg,envelope))
+        terminalize_public_provision(db,receiver_id)
         db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
 
 def provision(cfg,db,classification,send):
@@ -151,9 +191,10 @@ def decode_tx_outputs(cfg,txid):
 
 def scan(cfg,db,send):
     if send: flush_queued(cfg,db)
-    rows=db.execute("SELECT receiver_address_id,receive_address,classification FROM addresses WHERE delivery_status='delivered' AND classification IN (?,?)",OUTBOUND_PROVISION_CLASSIFICATIONS).fetchall(); queued=0
+    placeholders=','.join('?' for _ in OBSERVATION_CLASSIFICATIONS)
+    rows=db.execute(f"SELECT receiver_address_id,receive_address,classification FROM addresses WHERE delivery_status='delivered' AND classification IN ({placeholders})",OBSERVATION_CLASSIFICATIONS).fetchall(); queued=0
     for receiver_id,address,classification in rows:
-        require_outbound_provision_classification(classification)
+        require_observation_address(db,receiver_id)
         history=run_electrum(cfg,'getaddresshistory',address)
         if not isinstance(history,list): raise RuntimeError('address_history_invalid')
         for item in history:
@@ -161,24 +202,28 @@ def scan(cfg,db,send):
             if not isinstance(txid,str) or not TXID_RE.fullmatch(txid): continue
             outputs=decode_tx_outputs(cfg,txid); status=run_electrum(cfg,'get_tx_status',txid); conf=int(status.get('confirmations',0)) if isinstance(status,dict) else 0
             if conf == 0 and isinstance(height,int) and height > 0:
-                # Electrum server has reported a mined candidate but wallet SPV has not verified it yet.
-                # Do not mislabel this as mempool_seen; wait for wallet verification.
+                # Server history alone is not confirmation authority; wait for wallet SPV verification.
                 continue
+            if conf>0:
+                verified_height,block_hash=local_verified_block_hash(cfg,txid)
+                block_height=str(verified_height); spv=True
+            else:
+                block_height=None; block_hash=None; spv=False
             for vout,out in enumerate(outputs):
                 if not isinstance(out,dict) or out.get('address')!=address: continue
                 sats=out.get('value_sats')
                 if not isinstance(sats,int) or sats<=0: continue
-                spv=conf>0; block_height=str(height) if spv and isinstance(height,int) and height>0 else None
                 payload={'receiverAddressId':receiver_id,'txid':txid,'txVout':vout,'observedSats':str(sats),'confirmations':conf if spv else 0,
-                  'blockHeight':block_height,'blockHash':None,'observedAt':now_iso(),'spvVerified':spv}
-                event_key=sha256_text(canonical_json({k:payload[k] for k in ('receiverAddressId','txid','txVout','observedSats','confirmations','blockHeight','spvVerified')})); message_id='don-observe-'+event_key[:40]
+                  'blockHeight':block_height,'blockHash':block_hash,'observedAt':now_iso(),'spvVerified':spv}
+                event_key=sha256_text(canonical_json({k:payload[k] for k in ('receiverAddressId','txid','txVout','observedSats','confirmations','blockHeight','blockHash','spvVerified')})); message_id='don-observe-'+event_key[:40]
                 if db.execute('SELECT 1 FROM observations WHERE event_key=?',(event_key,)).fetchone(): continue
                 message_created=now_iso()
                 db.execute('INSERT INTO observations VALUES(?,?,?,?,?)',(event_key,message_id,canonical_json(payload),'queued',message_created)); db.commit(); queued+=1
                 envelope=make_envelope(cfg,'receipt_observation',OBSERVE_PATH,payload,message_id,message_created)
                 if send:
-                    require_current_outbound_address(db,receiver_id)
-                    deliver(cfg,OBSERVE_PATH,envelope,sign_envelope(cfg,envelope)); db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
+                    require_observation_address(db,receiver_id)
+                    deliver(cfg,OBSERVE_PATH,envelope,sign_envelope(cfg,envelope)); terminalize_public_provision(db,receiver_id)
+                    db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
     print('OBSERVATION_EVENTS_QUEUED='+str(queued)); print('SPV_AUTHORITY=ELECTRUM_WALLET_GET_TX_STATUS')
 
 def main():

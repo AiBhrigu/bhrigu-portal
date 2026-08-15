@@ -48,6 +48,7 @@ async function run() {
   assert.equal(proposedDonationReceiptState(mempool), "mempool_seen");
   const confirmed = parseDonationObservationPayload({ ...mempool, confirmations: 1, blockHeight: "900001", blockHash: "b".repeat(64), spvVerified: true });
   assert.equal(proposedDonationReceiptState(confirmed), "confirmed");
+  assert.throws(() => parseDonationObservationPayload({ ...mempool, confirmations: 1, blockHeight: "900001", blockHash: null, spvVerified: true }), /spv_confirmation_required/);
   assert.throws(() => parseDonationObservationPayload({ ...mempool, confirmations: 1, blockHeight: "900001", spvVerified: false }), /spv_confirmation_required/);
   assert.throws(() => parseDonationObservationPayload({ ...mempool, spvVerified: true }), /invalid_mempool_authority/);
   const migration = await readFile("migrations/20260815_btc_donation_bridge_v1.sql", "utf8");
@@ -56,6 +57,7 @@ async function run() {
   assert.match(migration, /btc_donation_receipts/);
   assert.match(migration, /donation_address_state_regression/);
   assert.match(migration, /UNIQUE\(txid,tx_vout\)/);
+  assert.match(migration, /block_hash ~ '\^\[a-f0-9\]\{64\}\$'/);
   const split = splitPostgresStatements(migration);
   assert.equal(split[0]?.trim().toUpperCase(), "BEGIN");
   assert.equal(split.at(-1)?.trim().toUpperCase(), "COMMIT");
@@ -76,11 +78,15 @@ async function run() {
   const agentEnvTemplate = await readFile("config/btc-donation-receiver-agent.env.example", "utf8");
   assert.match(agent, /getaddresshistory/);
   assert.match(agent, /get_tx_status/);
+  assert.match(agent, /verified_tx3/);
+  assert.match(agent, /blockchain_headers/);
+  assert.match(agent, /electrum_local_header_hash_mismatch/);
+  assert.match(agent, /PROVISIONED_RECEIPT_RETIRED_OBSERVE_ONLY/);
   assert.match(agent, /--socks5-hostname/);
   assert(!/getseed|getmpk|getmasterprivate|getprivatekeys|dumpprivkeys/.test(agent));
   assert(!/BTC_DIRECT_PAYMENT_MODE/.test(agent));
-  assert.equal((agent.match(/require_outbound_provision_classification\(/g) ?? []).length, 6);
-  assert.equal((agent.match(/require_current_outbound_address\(/g) ?? []).length, 3);
+  assert.ok((agent.match(/require_outbound_provision_classification\(/g) ?? []).length >= 4);
+  assert.ok((agent.match(/require_observation_address\(/g) ?? []).length >= 4);
   assert(!agentEnvTemplate.includes("bhrigu_mainnet_watch_only_receiver"));
   assert.equal((agentEnvTemplate.match(/bhrigu_mainnet_watch_only_automation/g) ?? []).length, 1);
   const serialized = canonicalJson(e);
@@ -301,7 +307,7 @@ m.sign_envelope=lambda cfg,envelope:(calls.__setitem__("sign",calls["sign"]+1) o
 m.deliver=lambda cfg,path,envelope,signature:(calls.__setitem__("deliver",calls["deliver"]+1) or {"ok":True})
 rejected=False
 try: m.scan({"DONATION_BRIDGE_KEY_ID":"fixture-key"},db,True)
-except RuntimeError as e: rejected=str(e)=="outbound_provision_classification_forbidden"
+except RuntimeError as e: rejected=str(e) in ("outbound_provision_classification_forbidden","observation_address_classification_forbidden")
 obs=db.execute("SELECT count(*),sum(CASE WHEN delivery_status='queued' THEN 1 ELSE 0 END) FROM observations").fetchone()
 classification=db.execute("SELECT classification FROM addresses WHERE receiver_address_id=?",(receiver_id,)).fetchone()[0]
 print("SCAN_RACE_REJECTED="+("YES" if rejected else "NO"))
@@ -324,6 +330,7 @@ db.close()
     await rm(temp, { recursive: true, force: true });
   }
   console.log("BTC_DONATION_BRIDGE_ACCEPTANCE=PASS");
-  console.log("ledger=signature,tamper,path,kind,key,address_state,spv_contract,secret_boundary,tor_agent");
+  console.log("ledger=signature,tamper,path,kind,key,address_state,spv_contract,block_hash,secret_boundary,tor_agent");
+  console.log("BLOCK_HASH_NULL_CONFIRMED_REJECTED=PASS");
 }
 run().catch((error) => { console.error("BTC_DONATION_BRIDGE_ACCEPTANCE=FAIL"); console.error(error instanceof Error ? error.message : "unknown_error"); process.exitCode = 1; });

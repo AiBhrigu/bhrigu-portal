@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS btc_donation_receipts (
   updated_at TIMESTAMPTZ NOT NULL,
   UNIQUE(txid,tx_vout),
   CHECK (
-    (receipt_state='confirmed' AND confirmations >= 1 AND spv_verified AND block_height IS NOT NULL)
-    OR (receipt_state IN ('mempool_seen','confirmation_lost') AND confirmations = 0 AND NOT spv_verified)
+    (receipt_state='confirmed' AND confirmations >= 1 AND spv_verified AND block_height IS NOT NULL AND block_hash ~ '^[a-f0-9]{64}$')
+    OR (receipt_state IN ('mempool_seen','confirmation_lost') AND confirmations = 0 AND NOT spv_verified AND block_height IS NULL AND block_hash IS NULL)
   )
 );
 
