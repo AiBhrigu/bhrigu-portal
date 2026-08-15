@@ -1,7 +1,9 @@
 import Head from "next/head";
 import Link from "next/link";
+import BtcDonationSessionPreview from "../components/btc/BtcDonationSessionPreview";
+import { getDonationSessionRuntimeConfig } from "../lib/btc-donation-session";
 
-export default function Support() {
+export default function Support({ donationPreviewEnabled = false }) {
   return (
     <>
       <Head>
@@ -21,9 +23,10 @@ export default function Support() {
           name="twitter:description"
           content="Quiet public support for the research, architecture, infrastructure, and public surface of BHRIGU."
         />
+        {donationPreviewEnabled && <meta name="robots" content="noindex,nofollow,noarchive" />}
       </Head>
 
-      <main className="wrap" data-support-surface="SUPPORT_SURFACE_V0_1">
+      <main className="wrap" data-support-surface="SUPPORT_SURFACE_V0_1" data-donation-preview-enabled={donationPreviewEnabled ? "yes" : "no"}>
         <section className="panel">
           <div className="kicker">Support</div>
           <h1 className="title">Support BHRIGU</h1>
@@ -52,7 +55,11 @@ export default function Support() {
             </p>
           </div>
 
-          <div className="action" aria-hidden="true">Support the public surface</div>
+          {donationPreviewEnabled ? (
+            <BtcDonationSessionPreview />
+          ) : (
+            <div className="action" aria-hidden="true">Support the public surface</div>
+          )}
 
           <p className="footer">Public support does not alter the system boundary.</p>
         </section>
@@ -123,4 +130,12 @@ export default function Support() {
       `}</style>
     </>
   );
+}
+
+export async function getStaticProps() {
+  return {
+    props: {
+      donationPreviewEnabled: getDonationSessionRuntimeConfig().enabled,
+    },
+  };
 }

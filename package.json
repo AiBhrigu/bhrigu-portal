@@ -14,12 +14,14 @@
     "postbuild": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts && node --import tsx scripts/btc-direct-payment-preview-e2e.ts && node --import tsx scripts/btc-donation-bridge-preview-e2e.ts",
     "verify:btc-direct-payment-migrations": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-donation-bridge": "node --import tsx tests/btc-donation-bridge-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
-    "verify:btc-donation-bridge-preview-e2e": "node --import tsx scripts/btc-donation-bridge-preview-e2e.ts"
+    "verify:btc-donation-bridge-preview-e2e": "node --import tsx scripts/btc-donation-bridge-preview-e2e.ts",
+    "verify:btc-donation-session": "node --import tsx tests/btc-donation-session-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
     "@neondatabase/serverless": "1.1.0",
     "next": "14.2.35",
+    "qrcode": "1.5.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "resend": "6.18.1"

@@ -7,6 +7,7 @@ const EXPECTED_MIGRATIONS = [
   "20260809_access_private_intake_v1.sql",
   "20260814_btc_direct_payment_v1.sql",
   "20260815_btc_donation_bridge_v1.sql",
+  "20260815_btc_donation_session_v1.sql",
 ];
 
 async function run() {
@@ -43,6 +44,7 @@ async function run() {
       "btc_donation_bridge_messages",
       "btc_donation_receipts",
       "btc_donation_receiver_addresses",
+      "btc_donation_sessions",
     ]);
 
     const fx = await db.query<{ data_type: string }>(`
@@ -131,6 +133,10 @@ async function run() {
       SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='btc_donation_addresses_state_idx'
     `);
     assert.match(donationIndex.rows[0]?.indexdef ?? "", /btc_donation_receiver_addresses/);
+    const sessionIndex = await db.query<{ indexdef: string }>(`
+      SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='btc_donation_sessions_state_expiry_idx'
+    `);
+    assert.match(sessionIndex.rows[0]?.indexdef ?? "", /btc_donation_sessions/);
   } finally {
     await db.close();
   }
