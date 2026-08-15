@@ -165,6 +165,15 @@ async function run() {
   assert.match(component, /Поддержать BHRIGU в Bitcoin/);
   assert.match(component, /Это добровольная поддержка исследований, архитектуры, инфраструктуры и публичного контура BHRIGU\./);
   assert.match(component, /Автоматический механизм возврата не предоставляется\./);
+  assert.match(component, /Copy raw BTC address/);
+  assert.match(component, /Копировать обычный BTC-адрес/);
+  assert.match(component, /Do not paste the bitcoin: prefix and do not use this BIP321 QR for an exchange withdrawal form/);
+  assert.match(component, /Не вставляйте префикс bitcoin: и не используйте этот BIP321 QR для формы вывода биржи/);
+  assert.match(component, /navigator\.clipboard\.writeText\(viewSession\.receiveAddress\)/);
+  assert.match(component, /QRCode\.toDataURL\(viewSession\.bip321Uri/);
+  assert.match(component, /href=\{viewSession\.bip321Uri\}/);
+  assert.match(component, /No fresh one-time Bitcoin address is available right now\. No support session was created\./);
+  assert.match(component, /Сейчас нет свободного нового одноразового Bitcoin-адреса\. Сессия поддержки не создана\./);
   assert.match(component, /sessionStorage\.getItem\(SESSION_STORAGE_KEY\)/);
   assert.match(component, /sessionStorage\.setItem\(SESSION_STORAGE_KEY, body\.session\.sessionId\)/);
   assert.match(component, /fetch\(`\/api\/donation\/session\/\$\{encodeURIComponent\(storedSessionId\)\}`/);
@@ -181,6 +190,9 @@ async function run() {
   console.log("PRODUCTION_COMPLETE_GATE=PASS");
   console.log("BIP321_ADDRESS_ONLY=PASS");
   console.log("LOCAL_QR_DATA_URL=PASS");
+  console.log("CEX_RAW_ADDRESS_HANDOFF=PASS");
+  console.log("BIP321_WALLET_HANDOFF=PASS");
+  console.log("ADDRESS_UNAVAILABLE_FAIL_CLOSED_COPY=PASS");
   console.log("ONE_SESSION_ONE_ADDRESS=PASS");
   console.log("IDENTICAL_SESSION_REPLAY_NO_SECOND_ISSUE=PASS");
   console.log("ABANDONED_SESSION_RETIREMENT=PASS");
