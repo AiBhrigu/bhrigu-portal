@@ -22,8 +22,8 @@ const SUPPORT_COPY = {
     freshAddress: "Fresh address · one session only",
     fingerprint: "Destination fingerprint",
     fingerprintHint: "Visual check only — do not type this fingerprint.",
-    copy: "Copy address",
-    copied: "Copied",
+    copy: "Copy raw BTC address",
+    copied: "Raw BTC address copied",
     openWallet: "Open Bitcoin wallet",
     chooseAmount: "Choose the amount in your wallet. The BIP321 URI and QR contain only",
     noUriExtras: "no amount, label, or message.",
@@ -43,15 +43,16 @@ const SUPPORT_COPY = {
     noviceSteps: [
       "You need a Bitcoin wallet capable of sending BTC on Bitcoin mainnet.",
       "BHRIGU creates one fresh address for this support session.",
-      "Use Scan QR, Copy address, or Open Bitcoin wallet.",
-      "Open Bitcoin wallet uses a bitcoin:<address> deep link. Some apps or exchange withdrawal forms may not support it. If it does not work, scan the QR or copy the raw address.",
+      "For a Bitcoin wallet, use the QR or Open Bitcoin wallet. For an exchange withdrawal form, use Copy raw BTC address.",
+      "The QR and Open Bitcoin wallet use the BIP321 bitcoin:<address> format for compatible Bitcoin wallets. Exchange withdrawal forms may reject that format.",
       "Choose the amount in your wallet.",
       "Review destination, amount, network fee, and network = Bitcoin mainnet.",
       "Send exactly once.",
       "BHRIGU detects the transaction, retires the address from further use, and waits for confirmation.",
     ],
     exchangeTitle: "Sending from a centralized exchange?",
-    exchangeBody: "Withdraw asset = BTC, network = Bitcoin mainnet, destination = the current BHRIGU address shown in this support session. Some withdrawal forms accept only a raw Bitcoin address and may not understand a bitcoin: wallet link. Use Copy address or the current QR when needed. Do not use Lightning or another withdrawal network.",
+    exchangeBody: "Withdraw asset = BTC and network = Bitcoin mainnet. Use Copy raw BTC address and paste only the raw address into the exchange withdrawal field. Do not paste the bitcoin: prefix and do not use this BIP321 QR for an exchange withdrawal form. Do not use Lightning or another withdrawal network.",
+    unavailable: "No fresh one-time Bitcoin address is available right now. No support session was created. Please try again after fresh-address capacity is restored.",
     endUnused: "End unused session",
     previewBoundary: "Preview boundary: do not send real BTC to this address.",
     synthetic: "Synthetic receipt evidence · UI only",
@@ -71,8 +72,8 @@ const SUPPORT_COPY = {
     freshAddress: "Новый адрес · только для одной сессии",
     fingerprint: "Отпечаток адреса назначения",
     fingerprintHint: "Только для визуальной сверки — не вводите этот отпечаток вручную.",
-    copy: "Копировать адрес",
-    copied: "Скопировано",
+    copy: "Копировать обычный BTC-адрес",
+    copied: "Обычный BTC-адрес скопирован",
     openWallet: "Открыть Bitcoin-кошелёк",
     chooseAmount: "Выберите сумму в кошельке. BIP321 URI и QR содержат только",
     noUriExtras: "без суммы, label или message.",
@@ -92,15 +93,16 @@ const SUPPORT_COPY = {
     noviceSteps: [
       "Нужен Bitcoin-кошелёк, который умеет отправлять BTC через Bitcoin mainnet.",
       "BHRIGU создаёт один новый адрес для текущей сессии поддержки.",
-      "Используйте Сканировать QR, Копировать адрес или Открыть Bitcoin-кошелёк.",
-      "Открыть Bitcoin-кошелёк использует deep link bitcoin:<address>. Некоторые приложения и формы вывода на биржах его не поддерживают. В этом случае отсканируйте QR или скопируйте обычный адрес.",
+      "Для Bitcoin-кошелька используйте QR или Открыть Bitcoin-кошелёк. Для формы вывода биржи используйте Копировать обычный BTC-адрес.",
+      "QR и Открыть Bitcoin-кошелёк используют формат BIP321 bitcoin:<address> для совместимых Bitcoin-кошельков. Формы вывода бирж могут отклонять этот формат.",
       "Выберите сумму в кошельке.",
       "Проверьте адрес назначения, сумму, комиссию сети и сеть = Bitcoin mainnet.",
       "Отправьте ровно один раз.",
       "BHRIGU обнаруживает транзакцию, выводит адрес из дальнейшего использования и ожидает подтверждение.",
     ],
     exchangeTitle: "Отправляете BTC с централизованной биржи?",
-    exchangeBody: "Выберите актив = BTC, сеть = Bitcoin mainnet, получатель = текущий адрес BHRIGU, показанный именно в этой сессии поддержки. Некоторые формы вывода принимают только обычный Bitcoin-адрес и могут не распознавать ссылку bitcoin:. В этом случае используйте Копировать адрес или текущий QR. Не используйте Lightning или другую сеть вывода.",
+    exchangeBody: "Выберите актив = BTC и сеть = Bitcoin mainnet. Используйте Копировать обычный BTC-адрес и вставляйте в поле вывода биржи только обычный адрес. Не вставляйте префикс bitcoin: и не используйте этот BIP321 QR для формы вывода биржи. Не используйте Lightning или другую сеть вывода.",
+    unavailable: "Сейчас нет свободного нового одноразового Bitcoin-адреса. Сессия поддержки не создана. Попробуйте снова после восстановления запаса свежих адресов.",
     endUnused: "Закрыть неиспользованную сессию",
     previewBoundary: "Граница Preview: не отправляйте реальные BTC на этот адрес.",
     synthetic: "Synthetic receipt evidence · UI only",
@@ -223,7 +225,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok || !body.session) {
-        throw new Error(body?.errorCode === "address_unavailable" ? "No fresh donation address is currently available." : "Donation session is unavailable.");
+        throw new Error(body?.errorCode === "address_unavailable" ? supportCopy.unavailable : "Donation session is unavailable.");
       }
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);
       if (hasReceiptEvidence(body.session)) setReceiptLocked(true);
