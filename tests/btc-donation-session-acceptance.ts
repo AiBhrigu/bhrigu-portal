@@ -144,6 +144,9 @@ async function run() {
   assert.match(component, /Choose the amount in your wallet/);
   assert.match(component, /no amount, label, or message/);
   assert.match(component, /Synthetic receipt evidence · UI only/);
+  assert.match(component, /sessionStorage\.getItem\(SESSION_STORAGE_KEY\)/);
+  assert.match(component, /sessionStorage\.setItem\(SESSION_STORAGE_KEY, body\.session\.sessionId\)/);
+  assert.match(component, /fetch\(`\/api\/donation\/session\/\$\{encodeURIComponent\(storedSessionId\)\}`/);
   assert(!/api\.qrserver|quickchart|chart\.google|qr-code-generator/i.test(component));
   assert(!/bc1[ac-hj-np-z02-9]{20,90}/i.test(component));
   assert.match(support, /donationPreviewEnabled \? \(/);

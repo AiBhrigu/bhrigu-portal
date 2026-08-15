@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import QRCode from "qrcode";
 
 const SYNTHETIC_STATES = new Set(["awaiting_payment", "mempool_seen", "confirmed", "confirmation_lost", "retired"]);
+const SESSION_STORAGE_KEY = "bhrigu_btc_donation_session_v1";
 
 export default function BtcDonationSessionPreview() {
   const router = useRouter();
@@ -16,6 +17,28 @@ export default function BtcDonationSessionPreview() {
     const raw = Array.isArray(router.query.syntheticReceipt) ? router.query.syntheticReceipt[0] : router.query.syntheticReceipt;
     return SYNTHETIC_STATES.has(raw) ? raw : null;
   }, [router.query.syntheticReceipt]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const storedSessionId = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!storedSessionId) return () => { cancelled = true; };
+    fetch(`/api/donation/session/${encodeURIComponent(storedSessionId)}`, {
+      method: "GET",
+      cache: "no-store",
+      headers: { Accept: "application/json" },
+    }).then(async (response) => {
+      const body = await response.json().catch(() => null);
+      if (cancelled) return;
+      if (response.ok && body?.ok && body.session) {
+        setSession(body.session);
+      } else if (response.status === 404) {
+        window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+      }
+    }).catch(() => {
+      // Restore is best-effort; durable server state remains authoritative.
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,6 +94,7 @@ export default function BtcDonationSessionPreview() {
       if (!response.ok || !body?.ok || !body.session) {
         throw new Error(body?.errorCode === "address_unavailable" ? "No fresh donation address is available in this preview." : "Donation session is unavailable.");
       }
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);
       setSession(body.session);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Donation session is unavailable.");
