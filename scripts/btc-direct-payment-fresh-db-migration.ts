@@ -7,7 +7,9 @@ const EXPECTED_MIGRATIONS = [
   "20260809_access_private_intake_v1.sql",
   "20260814_btc_direct_payment_v1.sql",
   "20260815_btc_donation_bridge_v1.sql",
+  "20260815_btc_donation_production_opening_v1.sql",
   "20260815_btc_donation_session_v1.sql",
+  "20260815_btc_donation_valuation_v1.sql",
 ];
 
 async function run() {
@@ -42,6 +44,7 @@ async function run() {
     `);
     assert.deepEqual(donationTables.rows.map((row) => row.table_name), [
       "btc_donation_bridge_messages",
+      "btc_donation_receipt_valuations",
       "btc_donation_receipts",
       "btc_donation_receiver_addresses",
       "btc_donation_sessions",

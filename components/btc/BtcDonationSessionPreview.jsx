@@ -4,9 +4,34 @@ import QRCode from "qrcode";
 
 const SYNTHETIC_STATES = new Set(["awaiting_payment", "mempool_seen", "confirmed", "confirmation_lost", "retired"]);
 const SESSION_STORAGE_KEY = "bhrigu_btc_donation_session_v1";
+const SUPPORT_COPY = {
+  en: {
+    title: "Support BHRIGU with Bitcoin",
+    lines: [
+      "This is voluntary support for BHRIGU research, architecture, infrastructure, and public continuity.",
+      "It is not a payment for goods or services and does not provide access, priority, ownership, investment rights, tokens, or any other entitlement.",
+      "BHRIGU does not present this support as a charitable or tax-deductible contribution.",
+      "Send only BTC on the Bitcoin mainnet to the address shown for this session.",
+      "No automatic refund mechanism is provided.",
+    ],
+  },
+  ru: {
+    title: "Поддержать BHRIGU в Bitcoin",
+    lines: [
+      "Это добровольная поддержка исследований, архитектуры, инфраструктуры и публичного контура BHRIGU.",
+      "Это не оплата товаров или услуг и не даёт доступа, приоритета, права собственности, инвестиционных прав, токенов или иных прав.",
+      "BHRIGU не заявляет эту поддержку как благотворительное или налогово-вычитаемое пожертвование.",
+      "Отправляйте только BTC в сети Bitcoin mainnet на адрес, показанный для этой сессии.",
+      "Автоматический механизм возврата не предоставляется.",
+    ],
+  },
+};
 
-export default function BtcDonationSessionPreview() {
+export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const router = useRouter();
+  const locale = (Array.isArray(router.query.lang) ? router.query.lang[0] : router.query.lang) === "ru" ? "ru" : "en";
+  const supportCopy = SUPPORT_COPY[locale];
+  const isProduction = surface === "production";
   const [session, setSession] = useState(null);
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -92,7 +117,7 @@ export default function BtcDonationSessionPreview() {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok || !body.session) {
-        throw new Error(body?.errorCode === "address_unavailable" ? "No fresh donation address is available in this preview." : "Donation session is unavailable.");
+        throw new Error(body?.errorCode === "address_unavailable" ? "No fresh donation address is currently available." : "Donation session is unavailable.");
       }
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);
       setSession(body.session);
@@ -137,12 +162,12 @@ export default function BtcDonationSessionPreview() {
   const syntheticCopy = syntheticState ? donationSessionStateCopy(syntheticState) : null;
 
   return (
-    <section className="donation" data-donation-preview="exact-branch-only">
-      <div className="previewFlag">Protected Preview · No real BTC</div>
-      <h2>Donate Bitcoin</h2>
-      <p className="intro">
-        A voluntary support signal for BHRIGU research and public infrastructure. It does not purchase a service, access, priority, or entitlement.
-      </p>
+    <section className="donation" data-donation-surface={surface}>
+      <div className="previewFlag">{isProduction ? "Bitcoin mainnet · voluntary support" : "Protected Preview · No real BTC"}</div>
+      <h2>{supportCopy.title}</h2>
+      <div className="approvedCopy" data-approved-support-copy={locale}>
+        {supportCopy.lines.map((line) => <p className="intro" key={line}>{line}</p>)}
+      </div>
 
       {!session && (
         <button className="primary" type="button" onClick={startSession} disabled={busy} data-donation-start>
@@ -174,7 +199,7 @@ export default function BtcDonationSessionPreview() {
               <p className="amountNote">
                 Choose the amount in your wallet. The BIP321 URI and QR contain only <code>bitcoin:&lt;address&gt;</code> — no amount, label, or message.
               </p>
-              <p className="stopNote"><strong>Preview boundary:</strong> do not send real BTC to this address.</p>
+              {!isProduction && <p className="stopNote"><strong>Preview boundary:</strong> do not send real BTC to this address.</p>}
             </>
           )}
 
@@ -190,7 +215,7 @@ export default function BtcDonationSessionPreview() {
         </div>
       )}
 
-      {syntheticCopy && (
+      {!isProduction && syntheticCopy && (
         <div className="synthetic" data-synthetic-receipt-state={syntheticState}>
           <div className="micro">Synthetic receipt evidence · UI only</div>
           <strong>{syntheticCopy.label}</strong>

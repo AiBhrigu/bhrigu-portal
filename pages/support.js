@@ -3,7 +3,8 @@ import Link from "next/link";
 import BtcDonationSessionPreview from "../components/btc/BtcDonationSessionPreview";
 import { getDonationSessionRuntimeConfig } from "../lib/btc-donation-session";
 
-export default function Support({ donationPreviewEnabled = false }) {
+export default function Support({ donationSurface = null }) {
+  const donationEnabled = donationSurface === "preview" || donationSurface === "production";
   return (
     <>
       <Head>
@@ -23,10 +24,10 @@ export default function Support({ donationPreviewEnabled = false }) {
           name="twitter:description"
           content="Quiet public support for the research, architecture, infrastructure, and public surface of BHRIGU."
         />
-        {donationPreviewEnabled && <meta name="robots" content="noindex,nofollow,noarchive" />}
+        {donationSurface === "preview" && <meta name="robots" content="noindex,nofollow,noarchive" />}
       </Head>
 
-      <main className="wrap" data-support-surface="SUPPORT_SURFACE_V0_1" data-donation-preview-enabled={donationPreviewEnabled ? "yes" : "no"}>
+      <main className="wrap" data-support-surface="SUPPORT_SURFACE_V0_1" data-donation-enabled={donationEnabled ? "yes" : "no"} data-donation-surface={donationSurface ?? "closed"}>
         <section className="panel">
           <div className="kicker">Support</div>
           <h1 className="title">Support BHRIGU</h1>
@@ -55,8 +56,8 @@ export default function Support({ donationPreviewEnabled = false }) {
             </p>
           </div>
 
-          {donationPreviewEnabled ? (
-            <BtcDonationSessionPreview />
+          {donationEnabled ? (
+            <BtcDonationSessionPreview surface={donationSurface} />
           ) : (
             <div className="action" aria-hidden="true">Support the public surface</div>
           )}
@@ -133,9 +134,10 @@ export default function Support({ donationPreviewEnabled = false }) {
 }
 
 export async function getStaticProps() {
+  const config = getDonationSessionRuntimeConfig();
   return {
     props: {
-      donationPreviewEnabled: getDonationSessionRuntimeConfig().enabled,
+      donationSurface: config.enabled ? config.surface : null,
     },
   };
 }

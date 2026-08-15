@@ -73,7 +73,7 @@ export function createNeonBtcDonationBridgeStore(databaseUrl: string) {
           UPDATE btc_donation_receiver_addresses AS a
           SET state='retired',retired_at=COALESCE(a.retired_at,${payload.observedAt})
           FROM address_guard
-          WHERE a.receiver_address_id=address_guard.receiver_address_id AND address_guard.state='available'
+          WHERE a.receiver_address_id=address_guard.receiver_address_id AND address_guard.state IN ('available','issued')
           RETURNING a.receiver_address_id
         ), upserted AS (
           INSERT INTO btc_donation_receipts(

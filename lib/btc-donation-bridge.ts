@@ -164,14 +164,14 @@ export function parseDonationObservationPayload(value: unknown): DonationObserva
   if (p.blockHash !== null && !TXID.test(p.blockHash)) throw new DonationBridgeError("invalid_block_hash");
   if (p.confirmations === 0) {
     if (p.spvVerified || p.blockHeight !== null || p.blockHash !== null) throw new DonationBridgeError("invalid_mempool_authority");
-  } else if (!p.spvVerified || p.blockHeight === null) {
+  } else if (!p.spvVerified || p.blockHeight === null || p.blockHash === null) {
     throw new DonationBridgeError("spv_confirmation_required");
   }
   return p;
 }
 
 export function proposedDonationReceiptState(p: DonationObservationPayload): "mempool_seen" | "confirmed" {
-  return p.confirmations >= 1 && p.spvVerified && p.blockHeight !== null ? "confirmed" : "mempool_seen";
+  return p.confirmations >= 1 && p.spvVerified && p.blockHeight !== null && p.blockHash !== null ? "confirmed" : "mempool_seen";
 }
 
 export function donationReceiptId(receiverAddressId: string, txid: string, txVout: number): string {
