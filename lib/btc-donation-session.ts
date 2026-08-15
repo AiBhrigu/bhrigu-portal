@@ -39,8 +39,7 @@ export function getDonationSessionRuntimeConfig(env: RuntimeEnv = process.env): 
   const preview =
     env.VERCEL_ENV === "preview" &&
     (env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PREVIEW_BRANCH ||
-      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH ||
-      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH);
+      env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH);
   const production =
     env.VERCEL_ENV === "production" &&
     env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_PRODUCTION_BRANCH &&
