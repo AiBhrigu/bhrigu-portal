@@ -2,6 +2,7 @@ import { BTC_DONATION_MODE, getDonationBridgeRuntimeConfig } from "./btc-donatio
 
 export const BTC_DONATION_SESSION_PREVIEW_BRANCH = "agent/bhrigu-donation-session-support-qr-v0-1";
 export const BTC_DONATION_SESSION_ACTIVATION_PREVIEW_BRANCH = "agent/bhrigu-donation-production-opening-canary-v0-1";
+export const BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH = "agent/bhrigu-bitcoin-support-post-receipt-terminalization-v0-1";
 export const BTC_DONATION_SESSION_PRODUCTION_BRANCH = "master";
 export const BTC_DONATION_SESSION_TTL_MS = 30 * 60 * 1000;
 

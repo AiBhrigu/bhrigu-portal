@@ -1,7 +1,10 @@
 import Head from "next/head";
 import Link from "next/link";
 import BtcDonationSessionPreview from "../components/btc/BtcDonationSessionPreview";
-import { getDonationSessionRuntimeConfig } from "../lib/btc-donation-session";
+import {
+  BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH,
+  getDonationSessionRuntimeConfig,
+} from "../lib/btc-donation-session";
 
 export default function Support({ donationSurface = null }) {
   const donationEnabled = donationSurface === "preview" || donationSurface === "production";
@@ -135,9 +138,12 @@ export default function Support({ donationSurface = null }) {
 
 export async function getStaticProps() {
   const config = getDonationSessionRuntimeConfig();
+  const safetyRepairSyntheticPreview =
+    process.env.VERCEL_ENV === "preview" &&
+    process.env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH;
   return {
     props: {
-      donationSurface: config.enabled ? config.surface : null,
+      donationSurface: config.enabled ? config.surface : safetyRepairSyntheticPreview ? "preview" : null,
     },
   };
 }
