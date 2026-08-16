@@ -1,0 +1,47 @@
+name: BTC Binance Production Activation Readiness PR
+
+on:
+  pull_request:
+    branches: [ master ]
+    paths:
+      - ".github/workflows/btc-binance-production-activation-readiness-pr.yml"
+      - "lib/btc-binance-production-guard.ts"
+      - "lib/btc-binance-public-market-source.ts"
+      - "lib/btc-binance-public-binding.ts"
+      - "pages/crypto-astro/btc/live.tsx"
+      - "components/btc/BtcCosmographerDialogue.tsx"
+      - "tests/btc-binance-public-binding-acceptance.ts"
+      - "tests/btc-binance-production-activation-readiness-acceptance.ts"
+      - "tests/fixtures/btc-binance-production-heldout-v0_1.json"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-production-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Verify bounded Production readiness
+        run: npm run verify:btc-binance-production-activation-readiness
+      - name: Verify existing public binding
+        run: npm run verify:btc-binance-public-binding
+      - name: Verify METHOD live-fetch contract
+        run: node --import tsx tests/btc-binance-method-live-fetch-contract-acceptance.ts
+      - name: Verify public no-key sensor
+        run: npm run verify:btc-binance-public-market-shadow
+      - name: Verify BTC routing regression
+        run: npm run verify:btc-routing
+      - name: Build default public surface
+        run: npm run build

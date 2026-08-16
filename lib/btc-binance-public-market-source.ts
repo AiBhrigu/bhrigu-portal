@@ -51,7 +51,9 @@ export type BinancePublicMarketFailureCode =
   | "BINANCE_CLOCK_DRIFT"
   | "BINANCE_SYMBOL_UNAVAILABLE"
   | "BINANCE_MARKET_HALTED"
-  | "BINANCE_STALE_DATA";
+  | "BINANCE_STALE_DATA"
+  | "BHRIGU_BINANCE_RATE_BUDGET"
+  | "BHRIGU_BINANCE_CIRCUIT_OPEN";
 
 export type BinancePublicMarketFailure = {
   ok: false;
@@ -61,18 +63,24 @@ export type BinancePublicMarketFailure = {
   http_status?: number;
   retry_after_ms?: number;
   market_status?: string;
+  retrieved_at?: string;
 };
 
-export type BinancePublicMarketSuccess = { ok: true; snapshot: BtcBinanceShadowSnapshot };
+export type BinancePublicMarketSuccess = {
+  ok: true;
+  snapshot: BtcBinanceShadowSnapshot;
+  provider_used_weight_1m_max?: number | null;
+};
 export type BinancePublicMarketResult = BinancePublicMarketSuccess | BinancePublicMarketFailure;
 
 type FetchLike = typeof fetch;
 type FetchRecord = { value: unknown; startedAtMs: number; receivedAtMs: number; usedWeight: number | null };
 
-type FetchOptions = {
+export type BinancePublicMarketFetchOptions = {
   fetchImpl?: FetchLike;
   now?: () => number;
   timeoutMs?: number;
+  signal?: AbortSignal;
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -108,12 +116,15 @@ export function buildBinancePublicMarketUrl(path: BinanceEvidenceEndpoint, param
   return url.toString();
 }
 
-async function fetchPublicJson(path: BinanceEvidenceEndpoint, params: Record<string, string | number>, options: FetchOptions): Promise<FetchRecord | BinancePublicMarketFailure> {
+async function fetchPublicJson(path: BinanceEvidenceEndpoint, params: Record<string, string | number>, options: BinancePublicMarketFetchOptions): Promise<FetchRecord | BinancePublicMarketFailure> {
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? Date.now;
   const controller = new AbortController();
   const timeoutMs = options.timeoutMs ?? BTC_BINANCE_PUBLIC_MARKET_TIMEOUT_MS;
   const startedAtMs = now();
+  const abortFromOuter = () => controller.abort();
+  if (options.signal?.aborted) controller.abort();
+  else options.signal?.addEventListener("abort", abortFromOuter, { once: true });
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetchImpl(buildBinancePublicMarketUrl(path, params), {
@@ -143,6 +154,7 @@ async function fetchPublicJson(path: BinanceEvidenceEndpoint, params: Record<str
     return { ok: false, code: timeout ? "BINANCE_TIMEOUT" : "BINANCE_HTTP_ERROR", message: timeout ? "Binance public market request timed out." : "Binance public market request failed.", endpoint: path };
   } finally {
     clearTimeout(timer);
+    options.signal?.removeEventListener("abort", abortFromOuter);
   }
 }
 
@@ -283,7 +295,7 @@ function isFailure(value: FetchRecord | BinancePublicMarketFailure): value is Bi
   return "ok" in value && value.ok === false;
 }
 
-export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {}): Promise<BinancePublicMarketResult> {
+export async function loadBtcBinancePublicMarketShadow(options: BinancePublicMarketFetchOptions = {}): Promise<BinancePublicMarketResult> {
   const now = options.now ?? Date.now;
   const symbolParams = { symbol: BTC_BINANCE_PRIMARY_SYMBOL };
   const exchangeRecord = await fetchPublicJson("/api/v3/exchangeInfo", symbolParams, options);
@@ -319,6 +331,10 @@ export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {
   const failed = requests.find(isFailure);
   if (failed && isFailure(failed)) return failed;
   const [priceRecord, tickerRecord, bookRecord, depthRecord, aggRecord, k1mRecord, k1hRecord, k1dRecord] = requests as FetchRecord[];
+  const providerUsedWeights = [exchangeRecord, timeRecord, priceRecord, tickerRecord, bookRecord, depthRecord, aggRecord, k1mRecord, k1hRecord, k1dRecord]
+    .map((record) => record.usedWeight)
+    .filter((value): value is number => value !== null);
+  const providerUsedWeight1mMax = providerUsedWeights.length ? Math.max(...providerUsedWeights) : null;
 
   try {
     const price = normalizePrice(priceRecord.value);
@@ -389,7 +405,12 @@ export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {
 
     const allEvidence = [exchangeEvidence, timeEvidence, priceEvidence, tickerEvidence, bookEvidence, depthEvidence, aggEvidence, ...klineEvidence, derivedEvidence];
     const requiredCurrent = [priceEvidence, tickerEvidence, bookEvidence, depthEvidence, aggEvidence, derivedEvidence];
-    if (requiredCurrent.some((item) => item.freshness.state === "UNAVAILABLE")) return { ok: false, code: "BINANCE_STALE_DATA", message: "One or more required current Binance BTCUSDT observations are outside the live freshness contract." };
+    if (requiredCurrent.some((item) => item.freshness.state === "UNAVAILABLE")) return {
+      ok: false,
+      code: "BINANCE_STALE_DATA",
+      message: "One or more required current Binance BTCUSDT observations are outside the live freshness contract.",
+      retrieved_at: new Date(nowMs).toISOString(),
+    };
 
     return {
       ok: true,
@@ -417,6 +438,7 @@ export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {
           existing_static_corridor_replaced: false,
         },
       },
+      provider_used_weight_1m_max: providerUsedWeight1mMax,
     };
   } catch {
     return { ok: false, code: "BINANCE_SCHEMA_INVALID", message: "Binance public market payload failed the locked BTCUSDT shadow schema." };

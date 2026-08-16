@@ -1,0 +1,181 @@
+{
+  "schema_version": "btc_binance_production_heldout_v0_1",
+  "semantic_cases": [
+    {
+      "id": "en_field",
+      "locale": "en",
+      "question": "What is happening with Bitcoin now?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "en_structure",
+      "locale": "en",
+      "question": "What is the current Bitcoin market structure?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "en_price",
+      "locale": "en",
+      "question": "What is the current Bitcoin price?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "en_change",
+      "locale": "en",
+      "question": "What changed since the previous snapshot?",
+      "expected_fetch": true,
+      "family": "supported_change"
+    },
+    {
+      "id": "en_method_source",
+      "locale": "en",
+      "question": "Which live Binance source is used?",
+      "expected_fetch": true,
+      "family": "supported_method"
+    },
+    {
+      "id": "en_method_freshness",
+      "locale": "en",
+      "question": "How fresh is Binance live data?",
+      "expected_fetch": false,
+      "family": "safe_unsupported_method"
+    },
+    {
+      "id": "en_method_safe_fallback",
+      "locale": "en",
+      "question": "What sources and method does Cosmographer use?",
+      "expected_fetch": false,
+      "family": "safe_unsupported_method"
+    },
+    {
+      "id": "en_buy",
+      "locale": "en",
+      "question": "Use Binance live data to buy BTC now.",
+      "expected_fetch": false,
+      "family": "trading_purpose"
+    },
+    {
+      "id": "en_sell",
+      "locale": "en",
+      "question": "Should we sell Bitcoin here?",
+      "expected_fetch": false,
+      "family": "trading_purpose"
+    },
+    {
+      "id": "en_ambiguous_price",
+      "locale": "en",
+      "question": "BTC price?",
+      "expected_fetch": false,
+      "family": "ambiguous_market"
+    },
+    {
+      "id": "en_ambiguous_binance",
+      "locale": "en",
+      "question": "Binance BTC?",
+      "expected_fetch": false,
+      "family": "ambiguous_market"
+    },
+    {
+      "id": "en_protocol",
+      "locale": "en",
+      "question": "What is the Bitcoin halving?",
+      "expected_fetch": false,
+      "family": "unsupported_route"
+    },
+    {
+      "id": "ru_field",
+      "locale": "ru",
+      "question": "Что происходит с биткоином сейчас?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "ru_price",
+      "locale": "ru",
+      "question": "Какая сейчас цена биткоина?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "ru_structure",
+      "locale": "ru",
+      "question": "Какая сейчас структура рынка биткоина?",
+      "expected_fetch": true,
+      "family": "supported_informational"
+    },
+    {
+      "id": "ru_change",
+      "locale": "ru",
+      "question": "Что изменилось с предыдущего снимка?",
+      "expected_fetch": true,
+      "family": "supported_change"
+    },
+    {
+      "id": "ru_method_freshness",
+      "locale": "ru",
+      "question": "Какова свежесть живых данных Binance?",
+      "expected_fetch": false,
+      "family": "safe_unsupported_method"
+    },
+    {
+      "id": "ru_method_source",
+      "locale": "ru",
+      "question": "Откуда берутся Binance live данные?",
+      "expected_fetch": true,
+      "family": "supported_method"
+    },
+    {
+      "id": "ru_method_safe_fallback",
+      "locale": "ru",
+      "question": "Какие источники и метод использует Космограф?",
+      "expected_fetch": false,
+      "family": "safe_unsupported_method"
+    },
+    {
+      "id": "ru_buy",
+      "locale": "ru",
+      "question": "Стоит ли покупать биткоин сейчас?",
+      "expected_fetch": false,
+      "family": "trading_purpose"
+    },
+    {
+      "id": "ru_trade",
+      "locale": "ru",
+      "question": "Использовать данные Binance для торговли BTC?",
+      "expected_fetch": false,
+      "family": "trading_purpose"
+    },
+    {
+      "id": "ru_ambiguous_price",
+      "locale": "ru",
+      "question": "Цена BTC?",
+      "expected_fetch": false,
+      "family": "ambiguous_market"
+    },
+    {
+      "id": "ru_ambiguous_binance",
+      "locale": "ru",
+      "question": "Binance биткоин?",
+      "expected_fetch": false,
+      "family": "ambiguous_market"
+    },
+    {
+      "id": "ru_protocol",
+      "locale": "ru",
+      "question": "Что такое халвинг Bitcoin?",
+      "expected_fetch": false,
+      "family": "unsupported_route"
+    }
+  ],
+  "provider_overlays": [
+    "FRESH",
+    "STALE_LIMITED",
+    "BINANCE_TIMEOUT",
+    "HTTP_429",
+    "HTTP_418",
+    "SOURCE_CONFLICT"
+  ]
+}
