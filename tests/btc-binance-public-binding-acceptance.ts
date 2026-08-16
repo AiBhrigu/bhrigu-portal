@@ -292,6 +292,37 @@ async function main() {
     ["ru", "Откуда берутся живые данные Binance?"],
     ["ru", "Какой метод используется для живых данных Binance?"],
   ] as const;
+  const methodWordOrderFalseNegatives = [
+    ["en", "Which Binance live source is used?"],
+    ["en", "What is the live Binance source?"],
+    ["ru", "Какой источник Binance live используется?"],
+    ["ru", "Какой Binance источник используется?"],
+    ["ru", "Откуда берутся Binance live данные?"],
+  ] as const;
+  const generatedSafeMethodWordOrderQuestions = [
+    ["en", "Which live Binance source is used?"],
+    ["en", "Which Binance live source is used?"],
+    ["en", "Which Binance endpoint is used?"],
+    ["en", "Which Binance source is used for live data?"],
+    ["en", "Which source is used for Binance live data?"],
+    ["en", "What is the live Binance source?"],
+    ["en", "What is the Binance live source?"],
+    ["en", "What is the Binance endpoint?"],
+    ["en", "What is Binance live provenance?"],
+    ["en", "What is the freshness of Binance live data?"],
+    ["en", "How are live Binance data verified?"],
+    ["en", "How is Binance live evidence validated?"],
+    ["en", "How fresh is Binance live data?"],
+    ["ru", "Какой живой источник Binance используется?"],
+    ["ru", "Какой источник Binance live используется?"],
+    ["ru", "Какой Binance источник используется?"],
+    ["ru", "Какой Binance эндпоинт используется?"],
+    ["ru", "Какова свежесть Binance live данных?"],
+    ["ru", "Какая свежесть Binance live данных?"],
+    ["ru", "Как проверяются Binance live данные?"],
+    ["ru", "Как валидируются Binance live данные?"],
+    ["ru", "Откуда берутся Binance live данные?"],
+  ] as const;
   const methodTradingPurposeQuestions = [
     ["en", "How do I trade BTC using the Binance live source?"],
     ["en", "Which Binance live source should I use to trade Bitcoin?"],
@@ -394,6 +425,9 @@ async function main() {
   }));
   const safeMethodSyntheticRoutes = safeMethodInformationalQuestions.map(([, question]) => route("methodology", null, question));
   const safeMethodRealRoutes = safeMethodInformationalQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const methodWordOrderFalseNegativeSyntheticRoutes = methodWordOrderFalseNegatives.map(([, question]) => route("methodology", null, question));
+  const methodWordOrderFalseNegativeRealRoutes = methodWordOrderFalseNegatives.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const generatedSafeMethodWordOrderSyntheticRoutes = generatedSafeMethodWordOrderQuestions.map(([, question]) => route("methodology", null, question));
   const methodTradingPurposeRealRoutes = methodTradingPurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const methodTradingPurposeSyntheticRoutes = methodTradingPurposeQuestions.map(([, question]) => route("methodology", null, question));
   const freshMethodSyntheticRoutes = freshMethodHoldoutQuestions.map(([, question]) => route("methodology", null, question));
@@ -439,6 +473,10 @@ async function main() {
   checks.safe_method_descriptive_synthetic_fetch = safeMethodSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   const realMethodSafeRoutes = safeMethodRealRoutes.filter((item) => item.domain === "methodology");
   checks.safe_method_real_router_fetch = realMethodSafeRoutes.length >= 1 && realMethodSafeRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_word_order_false_negatives_recovered = methodWordOrderFalseNegativeSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const realMethodWordOrderRoutes = methodWordOrderFalseNegativeRealRoutes.filter((item) => item.domain === "methodology");
+  checks.method_word_order_real_router_recovered = realMethodWordOrderRoutes.length === methodWordOrderFalseNegatives.length && realMethodWordOrderRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_safe_method_word_order_fetch = generatedSafeMethodWordOrderSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.method_trading_purpose_real_router_zero_fetch = methodTradingPurposeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   const realMethodTradingRoutes = methodTradingPurposeRealRoutes.filter((item) => item.domain === "methodology");
   checks.method_trading_purpose_real_methodology_zero_fetch = realMethodTradingRoutes.length >= 2 && realMethodTradingRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
