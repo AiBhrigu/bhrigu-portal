@@ -228,33 +228,42 @@ type SafeMethodRelation = "SOURCE_ORIGIN" | "SOURCE_PROVISION" | "SOURCE_RETRIEV
 function classifyPositiveEnglishMethodRelation(question: string): SafeMethodRelation | null {
   const tokens = normalizedMethodTokens(question);
   if (!tokens.includes("binance") || !tokens.every((token) => EN_METHOD_SAFE_WORDS.has(token))) return null;
-  const joined = tokens.join(" ");
+  const hasInterrogative = tokens.some((token) => ["what", "which", "where", "how"].includes(token));
   const hasSource = tokens.some((token) => ["source", "sources", "endpoint", "endpoints"].includes(token));
   const hasPayload = tokens.some((token) => ["data", "evidence", "observation", "observations"].includes(token));
+  const hasActor = tokens.includes("binance") || tokens.includes("bhrigu");
+  const hasFrom = tokens.includes("from");
+  const hasOrigin = tokens.some((token) => ["come", "comes", "sourced"].includes(token));
   const hasProvider = tokens.some((token) => ["provide", "provides", "provided", "supply", "supplies", "supplied"].includes(token));
   const hasRetrieval = tokens.some((token) => ["retrieved", "get", "gets", "receive", "receives"].includes(token));
+  const hasUsage = tokens.includes("used");
 
-  if (/^where\b/.test(joined) && hasPayload && ((tokens.includes("from") && (tokens.includes("come") || tokens.includes("comes") || tokens.includes("sourced"))) || hasRetrieval)) return "SOURCE_ORIGIN";
-  if (/^(?:which|what)\b/.test(joined) && hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
-  if (/^(?:where|how)\b/.test(joined) && hasPayload && hasRetrieval) return "SOURCE_RETRIEVAL";
-  if (/^(?:which|what)\b/.test(joined) && hasSource && tokens.includes("used")) return "SOURCE_USAGE";
+  if (!hasInterrogative || !hasActor) return null;
+  if (hasPayload && hasFrom && hasOrigin && (hasSource || tokens.includes("where"))) return "SOURCE_ORIGIN";
+  if (hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
+  if (hasPayload && hasRetrieval && (hasSource || hasFrom || tokens.includes("where") || tokens.includes("bhrigu"))) return "SOURCE_RETRIEVAL";
+  if (hasSource && hasUsage) return "SOURCE_USAGE";
   return null;
 }
 
 function classifyPositiveRussianMethodRelation(question: string): SafeMethodRelation | null {
   const tokens = normalizedMethodTokens(question);
   if (!tokens.includes("binance") || !tokens.every((token) => RU_METHOD_SAFE_WORD.test(token))) return null;
-  const joined = tokens.join(" ");
+  const hasInterrogative = tokens.some((token) => /^(?:какой|какая|какие|какого|как|откуда)$/i.test(token)) || (tokens[0] === "из" && /^какого$/i.test(tokens[1] ?? ""));
   const hasSource = tokens.some((token) => /^источник[а-яё]*$|^эндпоинт[а-яё]*$/i.test(token));
   const hasPayload = tokens.some((token) => /^данн[а-яё]*$|^наблюдени[а-яё]*$/i.test(token));
+  const hasActor = tokens.includes("binance") || tokens.includes("bhrigu");
   const hasOrigin = tokens.some((token) => /^(?:приход[а-яё]*|поступа[а-яё]*|берутся)$/i.test(token));
   const hasProvider = tokens.some((token) => /^(?:да[её]т|предоставля[а-яё]*)$/i.test(token));
   const hasRetrieval = tokens.some((token) => /^получа[а-яё]*$|^извлека[а-яё]*$/i.test(token));
+  const hasUsage = tokens.some((token) => /^использу[а-яё]*$/i.test(token));
+  const hasOriginInterrogative = tokens.includes("откуда") || (tokens[0] === "из" && /^какого$/i.test(tokens[1] ?? ""));
 
-  if ((/^из какого(?:\s|$)/i.test(joined) && hasSource && hasOrigin) || (/^откуда(?:\s|$)/i.test(joined) && hasPayload && (hasOrigin || hasRetrieval))) return "SOURCE_ORIGIN";
-  if (/^(?:какой|какая|какие)(?:\s|$)/i.test(joined) && hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
-  if ((tokens.includes("bhrigu") || /^как(?:\s|$)/i.test(joined)) && hasPayload && hasRetrieval) return "SOURCE_RETRIEVAL";
-  if (/^(?:какой|какая|какие)(?:\s|$)/i.test(joined) && hasSource && tokens.some((token) => /^использу[а-яё]*$/i.test(token))) return "SOURCE_USAGE";
+  if (!hasInterrogative || !hasActor) return null;
+  if (hasPayload && hasOrigin && (hasSource || hasOriginInterrogative)) return "SOURCE_ORIGIN";
+  if (hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
+  if (hasPayload && hasRetrieval && (hasSource || hasOriginInterrogative || tokens.includes("bhrigu"))) return "SOURCE_RETRIEVAL";
+  if (hasSource && hasUsage) return "SOURCE_USAGE";
   return null;
 }
 

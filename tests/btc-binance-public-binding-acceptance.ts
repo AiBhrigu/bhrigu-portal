@@ -346,6 +346,48 @@ async function main() {
     ["ru", "Какой источник используется для live наблюдений Binance?"],
     ["ru", "Как получаются live данные Binance?"],
   ] as const;
+  const methodRelationRoleFalseNegatives = [
+    ["en", "What source does Binance live data come from?"],
+    ["en", "Which source does Binance live evidence come from?"],
+    ["en", "From which source is Binance live data retrieved?"],
+    ["en", "What source does BHRIGU receive Binance live data from?"],
+    ["ru", "Из какого источника Binance получает live данные?"],
+  ] as const;
+  const generatedSafeMethodRelationRoleQuestions = [
+    ["en", "Which source does Binance live data come from?"],
+    ["en", "What source does Binance live evidence come from?"],
+    ["en", "From which source are Binance live observations retrieved?"],
+    ["en", "Which source does BHRIGU receive Binance live data from?"],
+    ["en", "What source supplies Binance live observations?"],
+    ["ru", "Из какого источника BHRIGU получает live данные Binance?"],
+    ["ru", "Из какого источника Binance извлекает live данные?"],
+    ["ru", "Какой источник предоставляет Binance live данные?"],
+    ["ru", "Откуда Binance получает live данные?"],
+    ["ru", "Какой источник используется для Binance live данных?"],
+  ] as const;
+  const generatedMethodRelationRolePermutationQuestions: Array<["en" | "ru", string]> = [];
+  for (const [payload, auxiliary] of [["data", "is"], ["evidence", "is"], ["observations", "are"]] as const) {
+    generatedMethodRelationRolePermutationQuestions.push(
+      ["en", `What source does Binance live ${payload} come from?`],
+      ["en", `From which source ${auxiliary} Binance live ${payload} retrieved?`],
+    );
+  }
+  for (const payload of ["данные", "наблюдения"] as const) {
+    generatedMethodRelationRolePermutationQuestions.push(
+      ["ru", `Из какого источника Binance получает live ${payload}?`],
+      ["ru", `Из какого источника BHRIGU извлекает live ${payload} Binance?`],
+    );
+  }
+  const methodRelationRoleUnsafePurposeQuestions = [
+    ["en", "What source does Binance live data come from for scalping BTC?"],
+    ["en", "Which source does Binance live evidence come from for arbitrage?"],
+    ["en", "From which source should Binance live data be retrieved for trading BTC?"],
+    ["en", "What source does BHRIGU receive Binance live data from for an investment decision?"],
+    ["ru", "Из какого источника Binance получает live данные для торговли BTC?"],
+    ["ru", "Из какого источника BHRIGU получает live данные Binance для арбитража?"],
+    ["ru", "Откуда Binance получает live данные для скальпинга?"],
+    ["ru", "Какой источник предоставляет Binance live данные для инвестиционного решения?"],
+  ] as const;
   const methodRelationUnsafePurposeQuestions = [
     ["en", "Which source provides Binance live data for scalping BTC?"],
     ["en", "Where does Binance live data come from for arbitrage?"],
@@ -464,6 +506,12 @@ async function main() {
   const methodRelationFalseNegativeSyntheticRoutes = methodRelationFalseNegatives.map(([, question]) => route("methodology", null, question));
   const methodRelationFalseNegativeRealRoutes = methodRelationFalseNegatives.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const generatedSafeMethodRelationSyntheticRoutes = generatedSafeMethodRelationQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationRoleFalseNegativeSyntheticRoutes = methodRelationRoleFalseNegatives.map(([, question]) => route("methodology", null, question));
+  const methodRelationRoleFalseNegativeRealRoutes = methodRelationRoleFalseNegatives.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const generatedSafeMethodRelationRoleSyntheticRoutes = generatedSafeMethodRelationRoleQuestions.map(([, question]) => route("methodology", null, question));
+  const generatedMethodRelationRolePermutationSyntheticRoutes = generatedMethodRelationRolePermutationQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationRoleUnsafeSyntheticRoutes = methodRelationRoleUnsafePurposeQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationRoleUnsafeRealRoutes = methodRelationRoleUnsafePurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const methodRelationUnsafeSyntheticRoutes = methodRelationUnsafePurposeQuestions.map(([, question]) => route("methodology", null, question));
   const methodRelationUnsafeRealRoutes = methodRelationUnsafePurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const methodTradingPurposeRealRoutes = methodTradingPurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
@@ -519,6 +567,13 @@ async function main() {
   const realMethodRelationRoutes = methodRelationFalseNegativeRealRoutes.filter((item) => item.domain === "methodology");
   checks.method_relation_real_router_recovered = realMethodRelationRoutes.length === methodRelationFalseNegatives.length && realMethodRelationRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.generated_safe_method_relation_fetch = generatedSafeMethodRelationSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_role_false_negatives_recovered = methodRelationRoleFalseNegativeSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const realMethodRelationRoleRoutes = methodRelationRoleFalseNegativeRealRoutes.filter((item) => item.domain === "methodology");
+  checks.method_relation_role_real_router_recovered = realMethodRelationRoleRoutes.length === methodRelationRoleFalseNegatives.length && realMethodRelationRoleRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_safe_method_relation_role_fetch = generatedSafeMethodRelationRoleSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_method_relation_role_permutation_fetch = generatedMethodRelationRolePermutationSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_role_unsafe_purpose_synthetic_zero_fetch = methodRelationRoleUnsafeSyntheticRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_role_unsafe_purpose_real_router_zero_fetch = methodRelationRoleUnsafeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.method_relation_unsafe_purpose_synthetic_zero_fetch = methodRelationUnsafeSyntheticRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.method_relation_unsafe_purpose_real_router_zero_fetch = methodRelationUnsafeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.method_trading_purpose_real_router_zero_fetch = methodTradingPurposeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
