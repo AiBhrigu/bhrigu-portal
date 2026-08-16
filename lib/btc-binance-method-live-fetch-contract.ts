@@ -38,14 +38,24 @@ export type BtcBinanceMethodLiveFetchContractDecision = {
   production_enabled: false;
 };
 
-const METHOD_UNSAFE_PURPOSE = /\b(?:trade|trading|day\s+trading|scalp|scalping|arbitrage|speculate|speculation|invest|investing|investment|buy|sell|long|short|entry|exit|position|leverage|margin|signal|target)\b|(?:торгов|скальп|арбитраж|спекул|инвест|покуп|купить|прода|лонг|шорт|вход|выход|позици|плеч|марж|сигнал|цел)/i;
+const METHOD_UNSAFE_PURPOSE_CONTEXT: readonly RegExp[] = [
+  /\bfor\s+(?:an?\s+)?(?:trade|trading|day\s+trading|scalp|scalping|arbitrage|speculation|investment|investment\s+decision|buying|selling)\b/i,
+  /\bto\s+(?:trade|scalp|speculate|invest|buy|sell|enter|exit|long|short)\b/i,
+  /\b(?:guide|inform|drive)\s+(?:my|a|the)?\s*(?:btc\s+)?(?:trade|position|entry|exit|signal|target|investment|decision)\b/i,
+  /\b(?:for|toward)\s+(?:my\s+)?(?:btc\s+)?(?:position|entry|exit|trading\s+signal)\b/i,
+  /(?:для\s+(?:торгов|скальп|арбитраж|спекул|инвест|покуп|продаж|торгового\s+сигнал)\w*|использовать[^?!.]*(?:торгов|покуп|продаж|инвест|позици|сигнал)\w*)/i,
+];
+
+function hasMethodUnsafePurposeContext(question: string): boolean {
+  return METHOD_UNSAFE_PURPOSE_CONTEXT.some((pattern) => pattern.test(question));
+}
 
 export function classifyBtcBinanceMethodLiveFetchContract(
   route: BtcCosmographerRoute,
 ): BtcBinanceMethodLiveFetchDisposition {
   if (route.domain !== "methodology") return "NOT_METHOD_ROUTE";
   const question = route.raw_question.trim().replace(/\s+/g, " ");
-  if (hasDirectBtcFinancialActionIntent(question) || METHOD_UNSAFE_PURPOSE.test(question)) {
+  if (hasDirectBtcFinancialActionIntent(question) || hasMethodUnsafePurposeContext(question)) {
     return "UNSAFE_PURPOSE_DENY";
   }
   if (hasPositiveBtcBinanceInformationalEligibility(route, "METHOD_AND_PROOF")) {

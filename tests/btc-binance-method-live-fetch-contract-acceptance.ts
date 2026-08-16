@@ -36,6 +36,26 @@ const safeUnsupported = [
   ["ru", "Какой источник лежит в основе live данных Binance?"],
 ] as const;
 
+
+const safeLexicalCollision = [
+  ["en", "What is the position of Binance live data in the evidence hierarchy?"],
+  ["en", "What target freshness threshold is documented for Binance live evidence?"],
+  ["en", "How is a signal field documented in Binance source evidence?"],
+  ["en", "What margin of timestamp error is allowed for Binance live evidence?"],
+  ["ru", "Какова позиция данных Binance в иерархии доказательств?"],
+  ["ru", "Какой целевой порог свежести используется для данных Binance?"],
+  ["ru", "Как описывается поле сигнала в доказательствах источника Binance?"],
+  ["ru", "Какова допустимая погрешность времени для данных Binance?"],
+] as const;
+
+const unsafeContextualContrasts = [
+  ["en", "What source provides Binance live data for trading BTC?"],
+  ["en", "Which Binance endpoint should I use to buy BTC?"],
+  ["en", "Which Binance live data should guide my BTC position?"],
+  ["ru", "Какой источник Binance использовать для торгового сигнала BTC?"],
+  ["ru", "Какие данные Binance использовать для покупки BTC?"],
+] as const;
+
 const unsafePurpose = [
   ["en", "What source feeds Binance live data for trading BTC?"],
   ["en", "Which source does Binance rely on for scalping BTC?"],
@@ -49,6 +69,11 @@ const unsafePurpose = [
 
 function realRoute(locale: "en" | "ru", question: string) {
   return routeBtcCosmographerQuestion(locale, question, null);
+}
+
+function syntheticMethodRoute(locale: "en" | "ru", question: string) {
+  const seed = realRoute(locale, locale === "en" ? "Which live Binance source is used?" : "Какой живой источник Binance используется?");
+  return { ...seed, raw_question: question };
 }
 
 async function main() {
@@ -81,6 +106,27 @@ async function main() {
       && decision.base_answer_preserved;
   });
 
+  const collisionRealRoutes = safeLexicalCollision.map(([locale, q]) => realRoute(locale, q));
+  checks.safe_lexical_collision_real_router_methodology = collisionRealRoutes
+    .filter((route) => route.domain === "methodology")
+    .every((route) => {
+      const decision = decideBtcBinanceMethodLiveFetchContract({ route, vercelEnv: "preview" });
+      return decision.disposition === "SAFE_FALLBACK_UNSUPPORTED_GRAMMAR" && !decision.fetch && decision.base_answer_preserved;
+    });
+  checks.safe_lexical_collision_real_router_coverage = collisionRealRoutes.filter((route) => route.domain === "methodology").length >= 3;
+
+  const collisionContractRoutes = safeLexicalCollision.map(([locale, q]) => syntheticMethodRoute(locale, q));
+  checks.safe_lexical_collision_contract_not_unsafe = collisionContractRoutes.every((route) => {
+    const decision = decideBtcBinanceMethodLiveFetchContract({ route, vercelEnv: "preview" });
+    return decision.disposition === "SAFE_FALLBACK_UNSUPPORTED_GRAMMAR" && !decision.fetch && decision.base_answer_preserved;
+  });
+
+  const contextualUnsafeRoutes = unsafeContextualContrasts.map(([locale, q]) => syntheticMethodRoute(locale, q));
+  checks.unsafe_contextual_contrasts_zero_fetch = contextualUnsafeRoutes.every((route) => {
+    const decision = decideBtcBinanceMethodLiveFetchContract({ route, vercelEnv: "preview" });
+    return decision.disposition === "UNSAFE_PURPOSE_DENY" && !decision.fetch;
+  });
+
   const unsafeRoutes = unsafePurpose.map(([locale, q]) => realRoute(locale, q));
   checks.unsafe_real_router_methodology = unsafeRoutes.every((route) => route.domain === "methodology");
   checks.unsafe_purpose_zero_fetch = unsafeRoutes.every((route) => {
@@ -111,6 +157,8 @@ async function main() {
     supported_cases: supported.length,
     safe_fallback_cases: safeUnsupported.length,
     unsafe_cases: unsafePurpose.length,
+    safe_lexical_collision_cases: safeLexicalCollision.length,
+    unsafe_contextual_contrast_cases: unsafeContextualContrasts.length,
     checks,
   }));
 }
