@@ -1,0 +1,27 @@
+name: BTC Market Evidence Consumer Shadow
+
+on:
+  pull_request:
+    paths:
+      - "lib/btc-market-evidence-consumer.ts"
+      - "tests/btc-market-evidence-consumer-acceptance.ts"
+      - ".github/workflows/btc-market-evidence-consumer-shadow-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-consumer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Provider-neutral consumer acceptance
+        run: node --import tsx tests/btc-market-evidence-consumer-acceptance.ts
+      - name: Production build regression
+        run: npm run build
