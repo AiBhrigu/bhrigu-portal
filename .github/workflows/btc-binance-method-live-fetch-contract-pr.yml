@@ -1,0 +1,37 @@
+name: BTC Binance Method Live Fetch Contract PR
+
+on:
+  pull_request:
+    paths:
+      - "lib/btc-binance-method-live-fetch-contract.ts"
+      - "tests/btc-binance-method-live-fetch-contract-acceptance.ts"
+      - "lib/btc-binance-public-binding.ts"
+      - "tests/btc-binance-public-binding-acceptance.ts"
+      - ".github/workflows/btc-binance-method-live-fetch-contract-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  method-live-fetch-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout exact head
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Verify existing public binding
+        run: npm run verify:btc-binance-public-binding
+      - name: Verify v0.10 supported grammar and safe fallback contract
+        run: node --import tsx tests/btc-binance-method-live-fetch-contract-acceptance.ts
+      - name: Verify public market shadow regression
+        run: npm run verify:btc-binance-public-market-shadow
+      - name: Verify BTC routing regression
+        run: npm run verify:btc-routing
+      - name: Build default public surface
+        run: npm run build
