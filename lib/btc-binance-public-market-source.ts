@@ -257,6 +257,7 @@ function evidence<T>(input: {
   eventOrUpdateId?: string | number | null;
   closed?: boolean;
   nowMs: number;
+  providerClockOffsetMs: number;
   uncertainty?: string[];
 }): BtcBinancePublicMarketEvidence<T> {
   const meta = BTC_BINANCE_PUBLIC_REST_REQUESTS[input.key];
@@ -271,6 +272,7 @@ function evidence<T>(input: {
     parameters: input.params,
     eventOrUpdateId: input.eventOrUpdateId,
     nowMs: input.nowMs,
+    providerClockOffsetMs: input.providerClockOffsetMs,
     closed: input.closed,
     uncertainty: input.uncertainty,
   });
@@ -329,14 +331,14 @@ export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {
     if (aggTrades.length === 0 || k1m.length === 0 || k1h.length === 0 || k1d.length === 0 || depth.bids.length === 0 || depth.asks.length === 0) throw new Error("BINANCE_REQUIRED_ROWS_MISSING");
 
     const nowMs = now();
-    const exchangeEvidence = evidence({ key: "exchangeInfo", record: exchangeRecord, params: symbolParams, normalized: exchangeInfo, raw: exchangeInfo, eventTimeMs: null, freshnessKind: "EXCHANGE_INFO", nowMs, uncertainty: ["Binance exchangeInfo REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
-    const timeEvidence = evidence({ key: "time", record: timeRecord, params: {}, normalized: serverTime, raw: serverTime, eventTimeMs: serverTime.server_time_ms, freshnessKind: "SERVER_TIME", nowMs });
-    const priceEvidence = evidence({ key: "price", record: priceRecord, params: symbolParams, normalized: price, raw: price, eventTimeMs: null, freshnessKind: "PRICE_BOOK_TRADE", nowMs, uncertainty: ["Binance ticker/price REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
-    const tickerEvidence = evidence({ key: "ticker24h", record: tickerRecord, params: symbolParams, normalized: ticker24h, raw: ticker24h, eventTimeMs: ticker24h.close_time_ms, freshnessKind: "TICKER_24H", eventOrUpdateId: ticker24h.trade_count, nowMs });
-    const bookEvidence = evidence({ key: "bookTicker", record: bookRecord, params: symbolParams, normalized: book, raw: book, eventTimeMs: null, freshnessKind: "PRICE_BOOK_TRADE", nowMs, uncertainty: ["Binance bookTicker REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
-    const depthEvidence = evidence({ key: "depth100", record: depthRecord, params: { symbol: BTC_BINANCE_PRIMARY_SYMBOL, limit: 100 }, normalized: depth, raw: depth, eventTimeMs: null, freshnessKind: "DEPTH", eventOrUpdateId: depth.last_update_id, nowMs, uncertainty: ["Binance depth REST snapshot has an update ID but no provider event timestamp; freshness is bounded to retrieval time."] });
+    const exchangeEvidence = evidence({ key: "exchangeInfo", record: exchangeRecord, params: symbolParams, normalized: exchangeInfo, raw: exchangeInfo, eventTimeMs: null, freshnessKind: "EXCHANGE_INFO", nowMs, providerClockOffsetMs: clockDriftMs, uncertainty: ["Binance exchangeInfo REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
+    const timeEvidence = evidence({ key: "time", record: timeRecord, params: {}, normalized: serverTime, raw: serverTime, eventTimeMs: serverTime.server_time_ms, freshnessKind: "SERVER_TIME", nowMs, providerClockOffsetMs: clockDriftMs });
+    const priceEvidence = evidence({ key: "price", record: priceRecord, params: symbolParams, normalized: price, raw: price, eventTimeMs: null, freshnessKind: "PRICE_BOOK_TRADE", nowMs, providerClockOffsetMs: clockDriftMs, uncertainty: ["Binance ticker/price REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
+    const tickerEvidence = evidence({ key: "ticker24h", record: tickerRecord, params: symbolParams, normalized: ticker24h, raw: ticker24h, eventTimeMs: ticker24h.close_time_ms, freshnessKind: "TICKER_24H", eventOrUpdateId: ticker24h.trade_count, nowMs, providerClockOffsetMs: clockDriftMs });
+    const bookEvidence = evidence({ key: "bookTicker", record: bookRecord, params: symbolParams, normalized: book, raw: book, eventTimeMs: null, freshnessKind: "PRICE_BOOK_TRADE", nowMs, providerClockOffsetMs: clockDriftMs, uncertainty: ["Binance bookTicker REST payload has no provider event timestamp; freshness is bounded to retrieval time."] });
+    const depthEvidence = evidence({ key: "depth100", record: depthRecord, params: { symbol: BTC_BINANCE_PRIMARY_SYMBOL, limit: 100 }, normalized: depth, raw: depth, eventTimeMs: null, freshnessKind: "DEPTH", eventOrUpdateId: depth.last_update_id, nowMs, providerClockOffsetMs: clockDriftMs, uncertainty: ["Binance depth REST snapshot has an update ID but no provider event timestamp; freshness is bounded to retrieval time."] });
     const latestAgg = aggTrades[aggTrades.length - 1];
-    const aggEvidence = evidence({ key: "aggTrades", record: aggRecord, params: { symbol: BTC_BINANCE_PRIMARY_SYMBOL, limit: 100 }, normalized: aggTrades, raw: aggTrades, eventTimeMs: latestAgg.trade_time_ms, freshnessKind: "PRICE_BOOK_TRADE", eventOrUpdateId: latestAgg.aggregate_trade_id, nowMs });
+    const aggEvidence = evidence({ key: "aggTrades", record: aggRecord, params: { symbol: BTC_BINANCE_PRIMARY_SYMBOL, limit: 100 }, normalized: aggTrades, raw: aggTrades, eventTimeMs: latestAgg.trade_time_ms, freshnessKind: "PRICE_BOOK_TRADE", eventOrUpdateId: latestAgg.aggregate_trade_id, nowMs, providerClockOffsetMs: clockDriftMs });
 
     const klineEvidence = ([
       ["klines1m", k1mRecord, "1m", k1m],
@@ -356,6 +358,7 @@ export async function loadBtcBinancePublicMarketShadow(options: FetchOptions = {
         eventOrUpdateId: latest.open_time_ms,
         closed,
         nowMs,
+        providerClockOffsetMs: clockDriftMs,
         uncertainty: closed ? [] : ["The latest REST kline is still open and has no provider event timestamp; live freshness is bounded to retrieval time."],
       });
     });

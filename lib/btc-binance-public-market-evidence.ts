@@ -147,18 +147,20 @@ export function classifyBinanceEvidenceFreshness(input: {
   eventTimeMs: number | null;
   retrievalTimeMs: number;
   nowMs?: number;
+  providerClockOffsetMs?: number;
   closed?: boolean;
 }): BinanceFreshness {
   const nowMs = input.nowMs ?? Date.now();
+  const providerNowMs = nowMs + (input.providerClockOffsetMs ?? 0);
   const retrievalAge = Math.max(0, nowMs - input.retrievalTimeMs);
   if (input.kind === "CLOSED_KLINE" || input.closed) {
-    return { contract_id: BTC_BINANCE_LIVE_FRESHNESS_CONTRACT_ID, state: "CLOSED_AS_OF", event_age_ms: input.eventTimeMs === null ? null : Math.max(0, nowMs - input.eventTimeMs), retrieval_age_ms: retrievalAge, reason: "CLOSED_CANDLE" };
+    return { contract_id: BTC_BINANCE_LIVE_FRESHNESS_CONTRACT_ID, state: "CLOSED_AS_OF", event_age_ms: input.eventTimeMs === null ? null : Math.max(0, providerNowMs - input.eventTimeMs), retrieval_age_ms: retrievalAge, reason: "CLOSED_CANDLE" };
   }
   const window = WINDOWS[input.kind];
-  if (input.eventTimeMs !== null && input.eventTimeMs > nowMs + 5_000) {
-    return { contract_id: BTC_BINANCE_LIVE_FRESHNESS_CONTRACT_ID, state: "UNAVAILABLE", event_age_ms: nowMs - input.eventTimeMs, retrieval_age_ms: retrievalAge, reason: "FUTURE_EVENT" };
+  if (input.eventTimeMs !== null && input.eventTimeMs > providerNowMs + 5_000) {
+    return { contract_id: BTC_BINANCE_LIVE_FRESHNESS_CONTRACT_ID, state: "UNAVAILABLE", event_age_ms: providerNowMs - input.eventTimeMs, retrieval_age_ms: retrievalAge, reason: "FUTURE_EVENT" };
   }
-  const age = input.eventTimeMs === null ? retrievalAge : Math.max(0, nowMs - input.eventTimeMs);
+  const age = input.eventTimeMs === null ? retrievalAge : Math.max(0, providerNowMs - input.eventTimeMs);
   if (age <= window.freshMs) {
     return { contract_id: BTC_BINANCE_LIVE_FRESHNESS_CONTRACT_ID, state: "FRESH", event_age_ms: input.eventTimeMs === null ? null : age, retrieval_age_ms: retrievalAge, reason: input.eventTimeMs === null ? "NO_PROVIDER_EVENT_TIME" : "OK" };
   }
@@ -182,6 +184,7 @@ export function buildBinanceEvidence<T>(input: {
   inputEvidenceIds?: string[];
   uncertainty?: string[];
   nowMs?: number;
+  providerClockOffsetMs?: number;
   closed?: boolean;
 }): BtcBinancePublicMarketEvidence<T> {
   const retrievalTime = new Date(input.retrievalTimeMs).toISOString();
@@ -205,7 +208,7 @@ export function buildBinanceEvidence<T>(input: {
     data_source: input.dataSource,
     raw_value: input.rawValue,
     normalized_value: input.normalizedValue,
-    freshness: classifyBinanceEvidenceFreshness({ kind: input.freshnessKind, eventTimeMs: input.eventTimeMs, retrievalTimeMs: input.retrievalTimeMs, nowMs: input.nowMs, closed: input.closed }),
+    freshness: classifyBinanceEvidenceFreshness({ kind: input.freshnessKind, eventTimeMs: input.eventTimeMs, retrievalTimeMs: input.retrievalTimeMs, nowMs: input.nowMs, providerClockOffsetMs: input.providerClockOffsetMs, closed: input.closed }),
     provenance: {
       provider: BTC_BINANCE_PROVIDER,
       venue: BTC_BINANCE_VENUE,

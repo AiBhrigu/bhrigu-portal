@@ -133,6 +133,8 @@ async function main() {
   checks.closed_candle_not_stale = closed.state === "CLOSED_AS_OF";
   const future = classifyBinanceEvidenceFreshness({ kind: "TICKER_24H", eventTimeMs: NOW + 5_001, retrievalTimeMs: NOW, nowMs: NOW });
   checks.future_event_fails_closed = future.state === "UNAVAILABLE" && future.reason === "FUTURE_EVENT";
+  const clockCorrected = classifyBinanceEvidenceFreshness({ kind: "PRICE_BOOK_TRADE", eventTimeMs: NOW + 400, retrievalTimeMs: NOW, nowMs: NOW, providerClockOffsetMs: 450 });
+  checks.provider_clock_correction = clockCorrected.state === "FRESH" && clockCorrected.event_age_ms === 50 && clockCorrected.retrieval_age_ms === 0;
 
   const disagreement = compareMarketSources(
     { provider: "Binance", venue: "Binance Spot", symbol: "BTCUSDT", value: 60200, event_time: new Date(NOW).toISOString() },
