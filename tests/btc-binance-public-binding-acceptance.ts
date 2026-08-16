@@ -143,11 +143,128 @@ async function main() {
     ["ru", "Стоит ли усредняться в BTC сейчас?"],
     ["ru", "Покупать BTC сейчас или подождать?"],
   ] as const;
+  const systemicCoverageFinancialQuestions = [
+    ["en", "Would you buy BTC here?"],
+    ["en", "Would you sell BTC here?"],
+    ["en", "Buy BTC now or wait?"],
+    ["en", "Should I hold or sell BTC?"],
+    ["en", "Can I enter BTC now?"],
+    ["en", "Is this a good entry for BTC?"],
+    ["en", "Should I take a BTC position now?"],
+    ["en", "Should I add to my BTC position?"],
+    ["en", "Should I close my BTC position?"],
+    ["en", "What stop should I use on BTC?"],
+    ["en", "Should I take some profit on BTC?"],
+    ["en", "Should I hedge my BTC position?"],
+    ["ru", "Брать BTC сейчас?"],
+    ["ru", "Продавать BTC или держать?"],
+    ["ru", "Входить в BTC сейчас?"],
+    ["ru", "Можно сейчас покупать BTC?"],
+    ["ru", "Закрыть позицию по BTC сейчас?"],
+    ["ru", "Добавить к позиции BTC сейчас?"],
+    ["ru", "Какой стоп поставить по BTC?"],
+    ["ru", "Фиксировать прибыль по BTC сейчас?"],
+    ["ru", "Стоит ли держать или продавать BTC?"],
+    ["ru", "Стоит ли хеджировать позицию BTC?"],
+  ] as const;
+  const paraphraseMutationFinancialQuestions = [
+    ["en", "Is now a good time to buy Bitcoin?"],
+    ["en", "Should we sell Bitcoin here?"],
+    ["en", "Could I enter a BTC position today?"],
+    ["en", "Do I close my Bitcoin position now?"],
+    ["en", "Should I keep holding BTC or exit?"],
+    ["en", "When should I enter Bitcoin?"],
+    ["en", "Where should I exit BTC?"],
+    ["en", "What level should I sell Bitcoin at?"],
+    ["en", "How much Bitcoin should I sell?"],
+    ["en", "Should I move my stop loss on BTC?"],
+    ["en", "What take-profit level should I use for BTC?"],
+    ["en", "Should I scale into Bitcoin here?"],
+    ["en", "Should I scale out of Bitcoin now?"],
+    ["en", "Should I average down on BTC?"],
+    ["en", "Should I use margin on Bitcoin?"],
+    ["en", "Would you hedge Bitcoin here?"],
+    ["en", "Recommend me a BTC entry."],
+    ["en", "Give me an exit level for Bitcoin."],
+    ["en", "Should I trim my BTC position?"],
+    ["en", "Can I increase my Bitcoin position now?"],
+    ["ru", "Сейчас хорошее время покупать биткоин?"],
+    ["ru", "Можно сегодня продавать биткоин?"],
+    ["ru", "Стоит сейчас входить в BTC?"],
+    ["ru", "Когда входить в биткоин?"],
+    ["ru", "Где выходить из BTC?"],
+    ["ru", "По какой цене продавать биткоин?"],
+    ["ru", "Сколько биткоина мне продать?"],
+    ["ru", "Стоит ли перенести стоп по BTC?"],
+    ["ru", "Какой тейк-профит поставить по BTC?"],
+    ["ru", "Стоит ли добавляться в BTC сейчас?"],
+    ["ru", "Стоит ли частично фиксировать прибыль по BTC?"],
+    ["ru", "Стоит ли использовать маржу по BTC?"],
+    ["ru", "Посоветуй вход по BTC."],
+    ["ru", "Дай уровень выхода по BTC."],
+    ["ru", "Стоит ли уменьшить позицию по биткоину?"],
+    ["ru", "Можно нарастить позицию по BTC сейчас?"],
+    ["ru", "Хеджировать BTC сейчас?"],
+    ["ru", "Держать BTC или выйти сейчас?"],
+  ] as const;
+  const paraphraseInformationalControls = [
+    ["en", "Why are traders selling BTC today?"],
+    ["en", "How does position sizing work?"],
+    ["en", "What is a good entry signal?"],
+    ["en", "What is a stop loss?"],
+    ["en", "How does take profit work?"],
+    ["en", "What does hedging mean?"],
+    ["en", "How does margin trading work?"],
+    ["en", "Why did BTC holders sell?"],
+    ["en", "What is DCA?"],
+    ["en", "How much Bitcoin exists?"],
+    ["en", "When did traders exit BTC yesterday?"],
+    ["en", "Where did traders enter BTC yesterday?"],
+    ["ru", "Почему трейдеры продавали BTC сегодня?"],
+    ["ru", "Как работает размер позиции?"],
+    ["ru", "Что такое точка входа?"],
+    ["ru", "Как работает стоп-лосс?"],
+    ["ru", "Что такое тейк-профит?"],
+    ["ru", "Что значит хеджирование?"],
+    ["ru", "Как работает маржинальная торговля?"],
+    ["ru", "Почему держатели продавали BTC?"],
+    ["ru", "Что такое DCA?"],
+    ["ru", "Сколько биткоинов существует?"],
+    ["ru", "Когда трейдеры вышли из BTC?"],
+    ["ru", "Где трейдеры входили в BTC вчера?"],
+  ] as const;
+  const generatedDirectActionQuestions: Array<["en" | "ru", string]> = [];
+  for (const action of ["buy", "sell", "hold", "enter", "exit", "hedge"]) {
+    generatedDirectActionQuestions.push(["en", `Should I ${action} BTC now?`], ["en", `Can I ${action} Bitcoin here?`], ["en", `Would you ${action} BTC here?`], ["en", `Should we ${action} Bitcoin today?`]);
+  }
+  for (const action of ["open", "close", "increase", "reduce", "decrease", "trim"]) generatedDirectActionQuestions.push(["en", `Should I ${action} my BTC position now?`]);
+  generatedDirectActionQuestions.push(["en", "What stop should I use on Bitcoin?"], ["en", "Should I take profit on Bitcoin?"], ["en", "What price should I buy Bitcoin at?"], ["en", "Should I sell now?"]);
+  for (const action of ["покупать", "продавать", "держать", "входить", "выходить", "хеджировать", "усредняться"]) generatedDirectActionQuestions.push(["ru", `Стоит ли ${action} BTC сейчас?`], ["ru", `Можно сейчас ${action} биткоин?`]);
+  for (const action of ["Открыть", "Закрыть", "Увеличить", "Сократить", "Уменьшить", "Добавить"]) generatedDirectActionQuestions.push(["ru", `${action} позицию по BTC сейчас?`]);
+  generatedDirectActionQuestions.push(["ru", "Какой стоп поставить по биткоину?"], ["ru", "По какой цене покупать биткоин?"], ["ru", "Стоит ли продавать сейчас?"], ["ru", "Закрыть позицию сейчас?"]);
+
+  const generatedInformationalControls: Array<["en" | "ru", string]> = [];
+  for (const action of ["sell", "enter", "exit"]) generatedInformationalControls.push(["en", `Why did traders ${action} BTC yesterday?`], ["en", `When did traders ${action} BTC yesterday?`], ["en", `Where did traders ${action} BTC yesterday?`]);
+  for (const concept of ["position sizing", "stop loss", "take profit", "DCA", "margin trading", "hedging"]) generatedInformationalControls.push(["en", `How does ${concept} work?`], ["en", `What is ${concept}?`]);
+  for (const action of ["продавали", "входили", "выходили"]) generatedInformationalControls.push(["ru", `Почему трейдеры ${action} BTC вчера?`], ["ru", `Когда трейдеры ${action} в BTC вчера?`], ["ru", `Где трейдеры ${action} в BTC вчера?`]);
+  for (const concept of ["размер позиции", "стоп-лосс", "тейк-профит", "DCA", "маржинальная торговля", "хеджирование"]) generatedInformationalControls.push(["ru", `Как работает ${concept}?`], ["ru", `Что такое ${concept}?`]);
   const realFinancialRoutes = directFinancialQuestions.map(([locale, question]) => ({
     question,
     route: routeBtcCosmographerQuestion(locale, question, null),
   }));
   const naturalFinancialRoutes = naturalLanguageFinancialQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const systemicFinancialRoutes = systemicCoverageFinancialQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const paraphraseFinancialRoutes = paraphraseMutationFinancialQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const generatedDirectActionRoutes = generatedDirectActionQuestions.map(([locale, question]) => ({
     question,
     route: routeBtcCosmographerQuestion(locale, question, null),
   }));
@@ -161,6 +278,23 @@ async function main() {
     const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
     return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
   });
+  checks.systemic_coverage_financial_intent_detected = systemicFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
+  checks.systemic_coverage_router_zero_fetch = systemicFinancialRoutes.every(({ route: item }) => {
+    const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
+    return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
+  });
+  checks.paraphrase_mutation_financial_intent_detected = paraphraseFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
+  checks.paraphrase_mutation_router_zero_fetch = paraphraseFinancialRoutes.every(({ route: item }) => {
+    const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
+    return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
+  });
+  checks.paraphrase_informational_controls_allowed = paraphraseInformationalControls.every(([, question]) => !hasDirectBtcFinancialActionIntent(question));
+  checks.generated_action_semantics_detected = generatedDirectActionRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
+  checks.generated_action_semantics_zero_fetch = generatedDirectActionRoutes.every(({ route: item }) => {
+    const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
+    return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
+  });
+  checks.generated_informational_controls_allowed = generatedInformationalControls.every(([, question]) => !hasDirectBtcFinancialActionIntent(question));
 
   const realAllowedRoutes = [
     routeBtcCosmographerQuestion("en", "What is happening with BTC now?", null),

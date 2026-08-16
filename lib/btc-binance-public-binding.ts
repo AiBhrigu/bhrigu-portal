@@ -104,43 +104,47 @@ export type BtcBinancePublicBindingPacket = {
   };
 };
 
-const DIRECT_FINANCIAL_ACTION_PATTERNS: readonly RegExp[] = [
-  /\b(?:should|shall|do i|can i|would you|when should i|is it (?:a )?good time to)\s+(?:buy|sell|long|short)\b/i,
-  /^(?:buy|sell|long|short)\b/i,
-  /\b(?:buy|sell)\s+(?:btc|bitcoin)\s+(?:now|today)\b/i,
-  /\b(?:is|are)\s+(?:btc|bitcoin)\s+(?:a\s+)?(?:buy|sell)\b/i,
-  /\b(?:what|which)\s+(?:price|level)\s+should\s+i\s+(?:buy|sell)\b/i,
-  /\bhow\s+much\s+(?:btc|bitcoin)\s+should\s+i\s+(?:buy|sell)\b/i,
-  /\bshould\s+i\s+(?:increase|reduce|decrease|trim|add\s+to)\s+(?:my\s+)?(?:btc|bitcoin)?\s*position\b/i,
-  /\bshould\s+i\s+open\s+(?:a\s+)?(?:leveraged|margin)\s+(?:btc|bitcoin)?\s*position\b/i,
-  /\b(?:go|enter)\s+(?:long|short)\b/i,
-  /\b(?:use|with)\s+(?:leverage|margin)\b/i,
-  /\b(?:entry|exit)\s+(?:point|level|price)\b/i,
-  /\bposition\s+(?:size|sizing)\b/i,
-  /\b(?:where|what\s+(?:price|level))\s+should\s+i\s+(?:set|place)\s+(?:my\s+)?(?:stop(?:[- ]loss)?|take[- ]?profit)\b/i,
-  /\b(?:where|when)\s+should\s+i\s+(?:take\s+profit|exit|enter)\b/i,
-  /\bshould\s+i\s+(?:dca|average(?:\s+down)?|scale)\s+(?:into|in|up)?\s*(?:btc|bitcoin)\b/i,
-  /\bprice\s+target\b/i,
-  /\btrading\s+signal\b/i,
-  /(?:стоит\s+ли|следует\s+ли|мне\s+ли|можно\s+ли).*?(?:купить|покупать|продать|продавать|войти|входить|выйти|выходить)/i,
-  /(?:купить|покупать|продать|продавать)\s+(?:btc|bitcoin|биткоин[а-яё]*)[^?!.]*(?:сейчас|сегодня)/i,
-  /(?:btc|bitcoin|биткоин[а-яё]*)\s+(?:сейчас\s+)?(?:покупать|продавать)/i,
-  /по\s+какой\s+цен[еы]\s+(?:покупать|продавать|купить|продать)/i,
-  /сколько\s+(?:btc|bitcoin|биткоин[а-яё]*)[^?!.]{0,40}(?:купить|покупать|продать|продавать)/i,
-  /(?:увеличить|сократить|уменьшить|нарастить)\s+(?:мою\s+)?позици[а-яё]*[^?!.]{0,40}(?:btc|bitcoin|биткоин[а-яё]*)/i,
-  /(?:лонг|шорт|в\s+лонг|в\s+шорт|плеч[оа]|маржинальн)/i,
-  /точк[а-яё]*\s+(?:вход|выход)|(?:вход|выход)[а-яё]*\s+(?:точк|уров|цен)/i,
-  /размер[а-яё]*\s+позици|позици[а-яё]*\s+размер/i,
-  /(?:где|куда|какой|какую).*?(?:поставить|разместить).*?(?:стоп|стоп[- ]лосс)/i,
-  /(?:где|когда|как).*?(?:фиксировать|зафиксировать)\s+прибыл/i,
-  /(?:стоит\s+ли\s+)?(?:усредняться|усреднить|dca)(?:\s+(?:в|по))?\s+(?:btc|bitcoin|биткоин[а-яё]*)/i,
-  /ценов[а-яё]*\s+цел|цел[а-яё]*\s+по\s+цен/i,
-  /торгов[а-яё]*\s+сигнал/i,
-];
+const INFORMATIONAL_QUESTION_PREFIX = /^(?:what\s+(?:is|are|was|were|does)|how\s+(?:does|do|did|is|are)|why\s+(?:did|does|is|are|was|were)|(?:when|where)\s+did|explain\b|define\b|что\s+такое\b|как\s+(?:работает|работают|устроен[а-яё]*)\b|почему\b|объясни\b|(?:когда|где)\s+[^?!.]{0,80}(?:входил[а-яё]*|вошл[а-яё]*|выходил[а-яё]*|вышл[а-яё]*|покупал[а-яё]*|купил[а-яё]*|продавал[а-яё]*|продал[а-яё]*))/i;
+const EN_DECISION_MARKER = /\b(?:(?:should|shall|can|could|do)\s+(?:i|we)|would\s+you|give\s+me|recommend(?:\s+me)?|is\s+(?:this|it|btc|bitcoin)\s+(?:a\s+)?(?:good\s+)?(?:buy|sell|entry|exit)|(?:good|best)\s+(?:time\s+to\s+)?(?:buy|sell|enter|exit))\b/i;
+const RU_DECISION_MARKER = /(?:стоит\s+ли|следует\s+ли|можно(?:\s+ли)?|лучше\s+ли|дай|посоветуй|мне\s+(?:купить|продать|войти|выйти|держать|закрыть|открыть|добавить|сократить|хеджировать))/i;
+const EN_SELECTION_MARKER = /^(?:what|which|where|when|how\s+much|how\s+many)\b|\bwhat\s+(?:price|level|size|amount|stop)\b/i;
+const RU_SELECTION_MARKER = /^(?:какой|какую|какое|где|когда|сколько|по\s+какой\s+цене)(?:\s|$)/i;
+const EN_EXECUTION_ACTION = /\b(?:buy|sell|hold|enter|entry|exit|long|short|hedge|dca|average(?:\s+down)?|scale\s+(?:in(?:to)?|out(?:\s+of)?)|use\s+(?:leverage|margin))\b/i;
+const RU_EXECUTION_ACTION = /(?:купить|покупать|продать|продавать|брать|держать|войти|входить|выйти|выходить|вход|выход|лонг|шорт|хеджировать|усредняться|усреднить|добавляться|использовать\s+плеч[оа]|использовать\s+марж[а-яё]*)/i;
+const EN_POSITION_ACTION = /\b(?:take|open|close|increase|reduce|decrease|trim|add\s+to|size)\b[^?!.]{0,40}\bposition\b|\bposition\b[^?!.]{0,40}\b(?:open|close|increase|reduce|decrease|trim|add|size)\b/i;
+const RU_POSITION_ACTION = /(?:открыть|закрыть|увеличить|сократить|уменьшить|нарастить|добавить|размер)[^?!.]{0,40}позици[а-яё]*|позици[а-яё]*[^?!.]{0,40}(?:открыть|закрыть|увеличить|сократить|уменьшить|нарастить|добавить|размер)/i;
+const EN_RISK_ACTION = /\b(?:set|place|use|move)\b[^?!.]{0,30}\bstop(?:[- ]loss)?\b|\b(?:take|lock|secure)\b[^?!.]{0,20}\bprofit\b|\b(?:stop(?:[- ]loss)?|take[- ]?profit)\b[^?!.]{0,30}\b(?:set|place|use|level|price)\b/i;
+const RU_RISK_ACTION = /(?:поставить|разместить|использовать|перенести)[^?!.]{0,30}(?:стоп|стоп[- ]лосс|тейк[- ]?профит)|(?:фиксировать|зафиксировать)[^?!.]{0,20}прибыл|(?:стоп|стоп[- ]лосс|тейк[- ]?профит)[^?!.]{0,30}(?:поставить|разместить|использовать|уров|цен)/i;
+const EN_SIZE_PRICE_ACTION = /\b(?:price\s+target|trading\s+signal|entry\s+(?:point|level|price)|exit\s+(?:point|level|price)|position\s+(?:size|sizing))\b|\b(?:price|level|amount)\b[^?!.]{0,40}\b(?:buy|sell|enter|exit)\b|\bhow\s+much\b[^?!.]{0,40}\b(?:buy|sell)\b/i;
+const RU_SIZE_PRICE_ACTION = /(?:ценов[а-яё]*\s+цел|торгов[а-яё]*\s+сигнал|(?:точк[а-яё]*|уров[а-яё]*)\s+(?:вход|выход)|размер[а-яё]*\s+позици|по\s+какой\s+цен[еы][^?!.]{0,30}(?:покупать|продавать|купить|продать)|сколько[^?!.]{0,40}(?:купить|покупать|продать|продавать))/i;
+const BTC_OR_TRADE_CONTEXT = /\b(?:btc|bitcoin|position|trade|trading|entry|exit|stop|profit|leverage|margin|long|short|dca)\b|(?:биткоин|позици|сделк|торгов|вход|выход|стоп|тейк[- ]?профит|прибыл|плеч|марж|лонг|шорт|усредн)/i;
+const EN_IMPERATIVE_START = /^(?:buy|sell|hold|enter|exit|open|close|increase|reduce|decrease|trim|hedge|dca|average|take\s+profit|set\s+(?:a\s+)?stop)\b/i;
+const RU_IMPERATIVE_OR_INFINITIVE_START = /^(?:купить|покупать|продать|продавать|брать|держать|войти|входить|выйти|выходить|открыть|закрыть|увеличить|сократить|уменьшить|нарастить|добавить|хеджировать|усредняться|усреднить|фиксировать)\b/i;
+const CHOICE_OR_TIMING_MARKER = /\b(?:now|today|here|or\s+(?:wait|hold|sell|buy|exit|enter))\b|(?:сейчас|сегодня|или\s+(?:подождать|держать|продавать|покупать|выйти|войти))/i;
+
+function hasActionSemantics(question: string): boolean {
+  const action = EN_EXECUTION_ACTION.test(question) || RU_EXECUTION_ACTION.test(question) || EN_POSITION_ACTION.test(question) || RU_POSITION_ACTION.test(question) || EN_RISK_ACTION.test(question) || RU_RISK_ACTION.test(question) || EN_SIZE_PRICE_ACTION.test(question) || RU_SIZE_PRICE_ACTION.test(question);
+  if (!action) return false;
+
+  const explicitDecision = EN_DECISION_MARKER.test(question) || RU_DECISION_MARKER.test(question);
+  const selection = EN_SELECTION_MARKER.test(question) || RU_SELECTION_MARKER.test(question);
+  const imperative = EN_IMPERATIVE_START.test(question) || RU_IMPERATIVE_OR_INFINITIVE_START.test(question);
+  const choiceOrTiming = CHOICE_OR_TIMING_MARKER.test(question);
+  const tradeContext = BTC_OR_TRADE_CONTEXT.test(question);
+
+  if (explicitDecision) return true;
+  if (imperative && (tradeContext || choiceOrTiming)) return true;
+  if (selection && tradeContext) return true;
+  if (tradeContext && choiceOrTiming) return true;
+  return false;
+}
 
 export function hasDirectBtcFinancialActionIntent(question: string): boolean {
   const normalized = question.trim().replace(/\s+/g, " ");
-  return DIRECT_FINANCIAL_ACTION_PATTERNS.some((pattern) => pattern.test(normalized));
+  if (!normalized) return false;
+  const informational = INFORMATIONAL_QUESTION_PREFIX.test(normalized);
+  if (informational && !EN_DECISION_MARKER.test(normalized) && !RU_DECISION_MARKER.test(normalized)) return false;
+  return hasActionSemantics(normalized);
 }
 
 function eligibleMode(route: BtcCosmographerRoute): BtcBinancePublicBindingMode | null {
