@@ -1,0 +1,29 @@
+name: BTC Binance Public Binding PR
+
+on:
+  pull_request:
+    paths:
+      - "lib/btc-binance-public-binding.ts"
+      - "pages/crypto-astro/btc/live.tsx"
+      - "components/btc/BtcCosmographerDialogue.tsx"
+      - "tests/btc-binance-public-binding-acceptance.ts"
+      - "tests/btc-binance-public-market-shadow-acceptance.ts"
+      - ".github/workflows/btc-binance-public-binding-pr.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-public-binding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run verify:btc-binance-public-binding
+      - run: npm run verify:btc-binance-public-market-shadow
+      - run: npm run verify:btc-routing

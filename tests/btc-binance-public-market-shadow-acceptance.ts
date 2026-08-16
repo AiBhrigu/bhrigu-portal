@@ -196,7 +196,7 @@ async function main() {
   checks.source_has_no_private_endpoint = !source.match(/\/sapi\/|\/api\/v3\/(?:account|order|myTrades|allOrders)/);
   checks.source_has_no_secret_header = !source.match(/X-MBX-APIKEY|authorization|apiSecret|secretKey/i);
   checks.source_get_only = source.includes('method: "GET"') && !source.match(/method:\s*"(?:POST|PUT|DELETE|PATCH)"/);
-  checks.no_public_activation = !publicPage.includes("btc-binance-public-market-source") && !livePage.includes("btc-binance-public-market-source");
+  checks.no_public_activation = !publicPage.includes("btc-binance-public-market-source") && livePage.includes("btc-binance-public-market-source") && livePage.includes("process.env.VERCEL_ENV") && livePage.includes("BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE");
   checks.static_corridor_untouched = !staticSource.includes("btc-binance-public-market-source");
   checks.provider_neutral_disagreement = evidenceSource.includes("btc_market_source_disagreement_v0_1") && evidenceSource.includes("VISIBLE_NO_SILENT_REPLACEMENT");
 
