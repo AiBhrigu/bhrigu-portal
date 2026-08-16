@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import type { BtcCosmographerRoute } from "../lib/btc-cosmographer-route-graph";
+import { routeBtcCosmographerQuestion, type BtcCosmographerRoute } from "../lib/btc-cosmographer-route-graph";
 import { buildBinanceEvidence, type BtcBinanceShadowSnapshot } from "../lib/btc-binance-public-market-evidence";
 import {
   buildBtcBinancePublicBinding,
   decideBtcBinancePublicBinding,
   formatBtcBinancePublicFactDisplayValue,
+  hasDirectBtcFinancialActionIntent,
 } from "../lib/btc-binance-public-binding";
 
 const NOW = 1_786_861_000_000;
@@ -97,6 +98,47 @@ async function main() {
   checks.production_hard_off = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "production" }).fetch;
   checks.kill_switch_wins = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview", disabled: true }).fetch;
   checks.ineligible_routes_no_fetch = [protocol, astro, bridge, liquidity].every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+
+  const directFinancialQuestions = [
+    ["en", "Should I buy BTC now based on the market?"],
+    ["en", "Should I sell BTC now?"],
+    ["en", "Should I go long BTC now?"],
+    ["en", "Should I go short BTC now?"],
+    ["en", "Should I use leverage on BTC now?"],
+    ["en", "What entry point should I use for BTC?"],
+    ["en", "What exit price should I use for BTC?"],
+    ["en", "What position size should I use for BTC?"],
+    ["en", "Give me a BTC price target for tomorrow."],
+    ["en", "Give me a BTC trading signal now."],
+    ["ru", "Стоит ли сейчас покупать BTC?"],
+    ["ru", "Стоит ли сейчас продавать BTC?"],
+    ["ru", "Стоит ли входить в лонг BTC?"],
+    ["ru", "Стоит ли входить в шорт BTC?"],
+    ["ru", "Стоит ли использовать плечо для BTC?"],
+    ["ru", "Какая точка входа по BTC сейчас?"],
+    ["ru", "Какая точка выхода по BTC сейчас?"],
+    ["ru", "Какой размер позиции выбрать по BTC?"],
+    ["ru", "Дай ценовую цель BTC на завтра."],
+    ["ru", "Дай торговый сигнал по BTC сейчас."],
+  ] as const;
+  const realFinancialRoutes = directFinancialQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  checks.direct_financial_intent_detected = realFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
+  checks.real_router_trading_intent_zero_fetch = realFinancialRoutes.every(({ route: item }) => {
+    const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
+    return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
+  });
+
+  const realAllowedRoutes = [
+    routeBtcCosmographerQuestion("en", "What is happening with BTC now?", null),
+    routeBtcCosmographerQuestion("en", "What is the current BTC market structure?", null),
+    routeBtcCosmographerQuestion("en", "What changed since the previous Snapshot?", null),
+    routeBtcCosmographerQuestion("en", "Which live Binance source is used?", null),
+  ];
+  checks.real_router_allowed_routes_still_fetch = realAllowedRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.informational_selloff_not_financial_intent = !hasDirectBtcFinancialActionIntent("Why did BTC sell off today?");
 
   const decision = decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview" });
   const packet = buildBtcBinancePublicBinding({

@@ -12,6 +12,7 @@ export type BtcBinancePublicBindingGateState =
   | "ENABLED_PREVIEW"
   | "DISABLED_PRODUCTION"
   | "DISABLED_KILL_SWITCH"
+  | "INELIGIBLE_FINANCIAL_INTENT"
   | "INELIGIBLE_ROUTE";
 
 export type BtcBinancePublicBindingDecision = {
@@ -103,6 +104,30 @@ export type BtcBinancePublicBindingPacket = {
   };
 };
 
+const DIRECT_FINANCIAL_ACTION_PATTERNS: readonly RegExp[] = [
+  /\b(?:should|shall|do i|can i|would you|when should i|is it (?:a )?good time to)\s+(?:buy|sell|long|short)\b/i,
+  /^(?:buy|sell|long|short)\b/i,
+  /\b(?:buy|sell)\s+(?:btc|bitcoin)\s+(?:now|today)\b/i,
+  /\b(?:go|enter)\s+(?:long|short)\b/i,
+  /\b(?:use|with)\s+(?:leverage|margin)\b/i,
+  /\b(?:entry|exit)\s+(?:point|level|price)\b/i,
+  /\bposition\s+(?:size|sizing)\b/i,
+  /\bprice\s+target\b/i,
+  /\btrading\s+signal\b/i,
+  /(?:стоит\s+ли|следует\s+ли|мне\s+ли|можно\s+ли).*?(?:купить|покупать|продать|продавать|войти|входить|выйти|выходить)/i,
+  /(?:купить|покупать|продать|продавать)\s+(?:btc|bitcoin|биткоин[а-яё]*)[^?!.]*(?:сейчас|сегодня)/i,
+  /(?:лонг|шорт|в\s+лонг|в\s+шорт|плеч[оа]|маржинальн)/i,
+  /точк[а-яё]*\s+(?:вход|выход)|(?:вход|выход)[а-яё]*\s+(?:точк|уров|цен)/i,
+  /размер[а-яё]*\s+позици|позици[а-яё]*\s+размер/i,
+  /ценов[а-яё]*\s+цел|цел[а-яё]*\s+по\s+цен/i,
+  /торгов[а-яё]*\s+сигнал/i,
+];
+
+export function hasDirectBtcFinancialActionIntent(question: string): boolean {
+  const normalized = question.trim().replace(/\s+/g, " ");
+  return DIRECT_FINANCIAL_ACTION_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
 function eligibleMode(route: BtcCosmographerRoute): BtcBinancePublicBindingMode | null {
   if (route.domain === "btc_market") {
     if (route.market_question_class === "general_btc_field" || route.market_question_class === "market_structure") {
@@ -124,6 +149,9 @@ export function decideBtcBinancePublicBinding(input: {
   vercelEnv: string | undefined;
   disabled?: boolean;
 }): BtcBinancePublicBindingDecision {
+  if (hasDirectBtcFinancialActionIntent(input.route.raw_question)) {
+    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_FINANCIAL_INTENT", preview_only: true, production_enabled: false };
+  }
   const mode = eligibleMode(input.route);
   if (!mode) return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_ROUTE", preview_only: true, production_enabled: false };
   if (input.disabled) return { eligible: true, fetch: false, mode, gate_state: "DISABLED_KILL_SWITCH", preview_only: true, production_enabled: false };
