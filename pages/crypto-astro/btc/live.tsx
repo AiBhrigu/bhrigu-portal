@@ -20,6 +20,7 @@ import {
   type BtcBinancePublicBindingPacket,
 } from "../../../lib/btc-binance-public-binding";
 import { loadBtcBinancePublicMarketShadow, type BinancePublicMarketResult } from "../../../lib/btc-binance-public-market-source";
+import { loadBtcBinanceProductionGuarded } from "../../../lib/btc-binance-production-guard";
 import {
   applyBtcRelationIntentPrecedence,
   BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
@@ -443,9 +444,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     route,
     vercelEnv: process.env.VERCEL_ENV,
     disabled: process.env.BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE === "1",
+    productionEnabled: process.env.BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE === "1",
   });
   const binancePromise: Promise<BinancePublicMarketResult | null> = binanceDecision.fetch
-    ? loadBtcBinancePublicMarketShadow()
+    ? process.env.VERCEL_ENV === "production"
+      ? loadBtcBinanceProductionGuarded((signal) => loadBtcBinancePublicMarketShadow({ signal }))
+      : loadBtcBinancePublicMarketShadow()
     : Promise.resolve(null);
 
   const { source, sourceTimestamp, sourceContext } = await finishSource();

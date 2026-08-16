@@ -616,23 +616,33 @@ function Exchange({
 
 function BinanceLiveBindingPanel({ locale, binding }: { locale: BtcPublicLocale; binding: BtcBinancePublicBindingPacket }) {
   const ru = locale === "ru";
+  const unavailable = binding.status === "LIVE_VENUE_UNAVAILABLE";
+  const staleLimited = binding.status === "LIVE_VENUE_LIMITED";
   return <section
     className="dialogueTurn cosmographerTurn"
     data-binance-public-binding={binding.schema_version}
     data-binance-binding-status={binding.status}
     data-binance-binding-mode={binding.mode}
-    data-binance-preview-only="true"
+    data-binance-preview-only={binding.preview_only ? "true" : "false"}
+    data-binance-production-enabled={binding.production_enabled ? "true" : "false"}
     data-binance-session-persistence="false"
   >
-    <div className="turnRole"><FieldAnchorGlyph className="turnGlyph"/><span>{ru ? "Live evidence" : "Live evidence"}</span></div>
+    <div className="turnRole"><FieldAnchorGlyph className="turnGlyph"/><span>Live evidence</span></div>
     <div className="turnBody">
       <header className="answerHeader">
-        <p className="eyebrow">{ru ? "Текущее наблюдение площадки · Preview" : "Live venue observation · Preview"}</p>
+        <p className="eyebrow">{binding.preview_only
+          ? (ru ? "Текущее наблюдение площадки · Preview" : "Live venue observation · Preview")
+          : (ru ? "Текущее наблюдение площадки" : "Live venue observation")}</p>
         <h2>Binance Spot BTCUSDT</h2>
       </header>
-      {binding.status === "LIVE_VENUE_UNAVAILABLE" ? <>
-        <p className="answerLead">{ru ? "Текущее наблюдение Binance недоступно; основной ответ Космографа сохранён без замены источника." : "The current Binance observation is unavailable; the Cosmographer base answer remains intact without source replacement."}</p>
-        <p>{binding.failure?.code ?? "LIVE_VENUE_UNAVAILABLE"}</p>
+      {unavailable ? <>
+        <p className="answerLead">{ru
+          ? "Текущее биржевое наблюдение Binance временно недоступно. Основной ответ Космографа выше сохраняется на принятых первичных источниках."
+          : "Live Binance venue evidence is temporarily unavailable. The Cosmographer answer above remains based on its accepted primary sources."}</p>
+      </> : staleLimited ? <>
+        <p className="answerLead">{ru
+          ? "Биржевые данные Binance получены, но вышли за допустимое окно текущей свежести. Они не используются для изменения текущего вывода Космографа."
+          : "Binance venue evidence was retrieved but is outside the current-live freshness window. It is not used to change the Cosmographer's current-state answer."}</p>
       </> : <>
         <p className="answerLead">{ru ? "Это наблюдение одной биржевой площадки. Оно дополняет, но не заменяет принятый Market Snapshot." : "This is a single-venue observation. It supplements but does not replace the accepted Market Snapshot."}</p>
         {binding.facts.length > 0 && <dl className="answerEvidenceMeta" data-binance-live-facts="whitelist-only">
@@ -647,14 +657,17 @@ function BinanceLiveBindingPanel({ locale, binding }: { locale: BtcPublicLocale;
             ? (ru ? "Совместимые источники показаны без выбора победителя." : "Compatible sources are shown without selecting a winner.")
             : (ru ? `Прямое сравнение с принятым Snapshot не выполняется: ${binding.source_comparison.reasons.join(", ")}.` : `Direct comparison with the accepted Snapshot is not performed: ${binding.source_comparison.reasons.join(", ")}.`)}
         </p>}
-        <p>{ru ? "Граница: Binance Spot BTCUSDT не является глобальной ценой Bitcoin и не создаёт торговый сигнал." : "Boundary: Binance Spot BTCUSDT is not a global Bitcoin price and does not create a trading signal."}</p>
       </>}
+      <p>{ru ? "Граница: Binance Spot BTCUSDT — наблюдение конкретной площадки, а не глобальная цена Bitcoin, не on-chain истина и не торговый сигнал." : "Boundary: Binance Spot BTCUSDT is a venue-specific observation, not a global Bitcoin price, on-chain truth, or trading signal."}</p>
       <details className="answerSource" data-binance-proof-metadata="no-values">
-        <summary>{ru ? "Provenance / freshness" : "Provenance / freshness"}</summary>
+        <summary>Provenance / freshness</summary>
         <div>
+          <span>{ru ? "Провайдер" : "Provider"}: {binding.provider}</span>
+          <span>{ru ? "Площадка" : "Venue"}: {binding.venue}</span>
+          <span>{ru ? "Символ" : "Symbol"}: {binding.symbol}</span>
           <span>{binding.observed_at ? `${ru ? "Наблюдение" : "Observed"}: ${binding.observed_at}` : (ru ? "Время наблюдения недоступно" : "Observation time unavailable")}</span>
-          {binding.retrieved_at && <span>{ru ? "Получено" : "Retrieved"}: {binding.retrieved_at}</span>}
-          <span>{ru ? "Состояние" : "State"}: {binding.freshness_state}</span>
+          <span>{ru ? "Получено" : "Retrieved"}: {binding.retrieved_at ?? (ru ? "недоступно" : "unavailable")}</span>
+          <span>{ru ? "Свежесть" : "Freshness"}: {binding.freshness_state}</span>
           {binding.proof.slice(0, 8).map((item) => <code key={item.evidence_id}>{item.endpoint_or_stream} · {item.freshness_state} · {item.observation_hash.slice(0, 12)}</code>)}
         </div>
       </details>

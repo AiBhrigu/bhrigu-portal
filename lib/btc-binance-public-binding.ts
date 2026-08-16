@@ -10,6 +10,7 @@ export const BTC_BINANCE_PUBLIC_BINDING_SCHEMA = "btc_binance_public_binding_v0_
 export type BtcBinancePublicBindingMode = "BTC_FIELD_NOW" | "BTC_CHANGE_MEMORY" | "METHOD_AND_PROOF";
 export type BtcBinancePublicBindingGateState =
   | "ENABLED_PREVIEW"
+  | "ENABLED_PRODUCTION"
   | "DISABLED_PRODUCTION"
   | "DISABLED_KILL_SWITCH"
   | "INELIGIBLE_FINANCIAL_INTENT"
@@ -21,8 +22,8 @@ export type BtcBinancePublicBindingDecision = {
   fetch: boolean;
   mode: BtcBinancePublicBindingMode | null;
   gate_state: BtcBinancePublicBindingGateState;
-  preview_only: true;
-  production_enabled: false;
+  preview_only: boolean;
+  production_enabled: boolean;
 };
 
 export type BtcBinancePublicFact = {
@@ -72,17 +73,17 @@ export type BtcBinanceAcceptedStaticPeer = {
 
 export type BtcBinancePublicBindingPacket = {
   schema_version: typeof BTC_BINANCE_PUBLIC_BINDING_SCHEMA;
-  status: "READY" | "LIVE_VENUE_UNAVAILABLE";
+  status: "READY" | "LIVE_VENUE_LIMITED" | "LIVE_VENUE_UNAVAILABLE";
   mode: BtcBinancePublicBindingMode;
-  preview_only: true;
-  production_enabled: false;
+  preview_only: boolean;
+  production_enabled: boolean;
   provider: "Binance";
   venue: "Binance Spot";
   market: "spot";
   symbol: "BTCUSDT";
   observed_at: string | null;
   retrieved_at: string | null;
-  freshness_state: "FRESH" | "UNAVAILABLE";
+  freshness_state: "FRESH" | "STALE_LIMITED" | "UNAVAILABLE";
   facts: BtcBinancePublicFact[];
   proof: BtcBinancePublicProof[];
   source_comparison: {
@@ -307,18 +308,22 @@ export function decideBtcBinancePublicBinding(input: {
   route: BtcCosmographerRoute;
   vercelEnv: string | undefined;
   disabled?: boolean;
+  productionEnabled?: boolean;
 }): BtcBinancePublicBindingDecision {
+  const productionEnabled = input.vercelEnv === "production" && input.productionEnabled === true;
+  const previewOnly = !productionEnabled;
   if (hasDirectBtcFinancialActionIntent(input.route.raw_question)) {
-    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_FINANCIAL_INTENT", preview_only: true, production_enabled: false };
+    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_FINANCIAL_INTENT", preview_only: previewOnly, production_enabled: productionEnabled };
   }
   const mode = eligibleMode(input.route);
-  if (!mode) return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_ROUTE", preview_only: true, production_enabled: false };
+  if (!mode) return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_ROUTE", preview_only: previewOnly, production_enabled: productionEnabled };
   if (!hasPositiveBtcBinanceInformationalEligibility(input.route, mode)) {
-    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_INFORMATIONAL_PROOF", preview_only: true, production_enabled: false };
+    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_INFORMATIONAL_PROOF", preview_only: previewOnly, production_enabled: productionEnabled };
   }
-  if (input.disabled) return { eligible: true, fetch: false, mode, gate_state: "DISABLED_KILL_SWITCH", preview_only: true, production_enabled: false };
-  if (input.vercelEnv !== "preview") return { eligible: true, fetch: false, mode, gate_state: "DISABLED_PRODUCTION", preview_only: true, production_enabled: false };
-  return { eligible: true, fetch: true, mode, gate_state: "ENABLED_PREVIEW", preview_only: true, production_enabled: false };
+  if (input.disabled) return { eligible: true, fetch: false, mode, gate_state: "DISABLED_KILL_SWITCH", preview_only: previewOnly, production_enabled: productionEnabled };
+  if (input.vercelEnv === "preview") return { eligible: true, fetch: true, mode, gate_state: "ENABLED_PREVIEW", preview_only: true, production_enabled: false };
+  if (productionEnabled) return { eligible: true, fetch: true, mode, gate_state: "ENABLED_PRODUCTION", preview_only: false, production_enabled: true };
+  return { eligible: true, fetch: false, mode, gate_state: "DISABLED_PRODUCTION", preview_only: true, production_enabled: false };
 }
 
 function record(value: unknown): Record<string, unknown> | null {
@@ -426,19 +431,20 @@ export function buildBtcBinancePublicBinding(input: {
   if (!input.decision.fetch || !input.decision.mode) return null;
   const mode = input.decision.mode;
   if (input.result.ok === false) {
+    const staleLimited = input.result.code === "BINANCE_STALE_DATA";
     return {
       schema_version: BTC_BINANCE_PUBLIC_BINDING_SCHEMA,
-      status: "LIVE_VENUE_UNAVAILABLE",
+      status: staleLimited ? "LIVE_VENUE_LIMITED" : "LIVE_VENUE_UNAVAILABLE",
       mode,
-      preview_only: true,
-      production_enabled: false,
+      preview_only: input.decision.preview_only,
+      production_enabled: input.decision.production_enabled,
       provider: "Binance",
       venue: "Binance Spot",
       market: "spot",
       symbol: "BTCUSDT",
       observed_at: null,
-      retrieved_at: null,
-      freshness_state: "UNAVAILABLE",
+      retrieved_at: input.result.retrieved_at ?? null,
+      freshness_state: staleLimited ? "STALE_LIMITED" : "UNAVAILABLE",
       facts: [],
       proof: [],
       source_comparison: null,
@@ -465,19 +471,20 @@ export function buildBtcBinancePublicBinding(input: {
   ].filter((item): item is BtcBinancePublicFact => item !== null);
 
   if (mode !== "METHOD_AND_PROOF" && facts.length === 0) {
+    const staleLimited = view.suppressed.some((item) => item.reason === "STALE_NOT_CURRENT");
     return {
       schema_version: BTC_BINANCE_PUBLIC_BINDING_SCHEMA,
-      status: "LIVE_VENUE_UNAVAILABLE",
+      status: staleLimited ? "LIVE_VENUE_LIMITED" : "LIVE_VENUE_UNAVAILABLE",
       mode,
-      preview_only: true,
-      production_enabled: false,
+      preview_only: input.decision.preview_only,
+      production_enabled: input.decision.production_enabled,
       provider: "Binance",
       venue: "Binance Spot",
       market: "spot",
       symbol: "BTCUSDT",
       observed_at: null,
       retrieved_at: input.result.snapshot.retrieved_at,
-      freshness_state: "UNAVAILABLE",
+      freshness_state: staleLimited ? "STALE_LIMITED" : "UNAVAILABLE",
       facts: [],
       proof: proof(admitted),
       source_comparison: null,
@@ -490,8 +497,8 @@ export function buildBtcBinancePublicBinding(input: {
     schema_version: BTC_BINANCE_PUBLIC_BINDING_SCHEMA,
     status: "READY",
     mode,
-    preview_only: true,
-    production_enabled: false,
+    preview_only: input.decision.preview_only,
+    production_enabled: input.decision.production_enabled,
     provider: "Binance",
     venue: "Binance Spot",
     market: "spot",

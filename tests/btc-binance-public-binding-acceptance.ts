@@ -96,6 +96,8 @@ async function main() {
   checks.preview_memory_fetch = decideBtcBinancePublicBinding({ route: memory, vercelEnv: "preview" }).fetch;
   checks.preview_explicit_method_fetch = decideBtcBinancePublicBinding({ route: method, vercelEnv: "preview" }).fetch;
   checks.production_hard_off = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "production" }).fetch;
+  checks.production_positive_opt_in = decideBtcBinancePublicBinding({ route: general, vercelEnv: "production", productionEnabled: true }).fetch;
+  checks.production_kill_switch_wins = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "production", productionEnabled: true, disabled: true }).fetch;
   checks.kill_switch_wins = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview", disabled: true }).fetch;
   checks.ineligible_routes_no_fetch = [protocol, astro, bridge, liquidity].every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
 
@@ -696,7 +698,7 @@ async function main() {
   const session = await readFile("lib/btc-live-dialogue-session.ts", "utf8");
   const makeTurn = dialogue.slice(dialogue.indexOf("function makeTurn"), dialogue.indexOf("function AstroWindowSection"));
   checks.live_only_wiring = livePage.includes("btc-binance-public-binding") && !staticPage.includes("btc-binance-public-binding");
-  checks.preview_gate_server_side = livePage.includes('process.env.VERCEL_ENV') && livePage.includes('BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE') && !livePage.includes("query.binance");
+  checks.preview_gate_server_side = livePage.includes('process.env.VERCEL_ENV') && livePage.includes('BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE') && livePage.includes('BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE') && !livePage.includes("query.binance");
   checks.live_values_not_in_make_turn = !makeTurn.includes("binanceLiveBinding");
   checks.session_schema_untouched_by_binding = !session.includes("btc_binance_public_binding_v0_1") && !session.includes("binanceLiveBinding");
   const answerBuilder = livePage.slice(livePage.indexOf("const answer ="), livePage.indexOf("const evidenceNavigation"));
@@ -704,7 +706,7 @@ async function main() {
   checks.no_private_or_trade_authority = ![livePage, dialogue, await readFile("lib/btc-binance-public-binding.ts", "utf8")].join("\n").match(/\/sapi\/|X-MBX-APIKEY|apiSecret|placeOrder|cancelOrder|withdrawApply|withdrawRequest|universalTransfer|internalTransfer/i);
 
   for (const [name, passed] of Object.entries(checks)) assert.equal(passed, true, name);
-  console.log(JSON.stringify({ schema_version: "btc_binance_public_binding_acceptance_v0_1", status: "PASS", checks, decision: { preview_only: true, production_activation: false, account_access: false, trading: false, withdrawal: false, transfer: false } }, null, 2));
+  console.log(JSON.stringify({ schema_version: "btc_binance_public_binding_acceptance_v0_1", status: "PASS", checks, decision: { preview_only: false, production_capable_default_off: true, production_activation: false, account_access: false, trading: false, withdrawal: false, transfer: false } }, null, 2));
 }
 
 main().catch((error) => { console.error(error); process.exitCode = 1; });
