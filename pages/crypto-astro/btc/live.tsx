@@ -15,6 +15,12 @@ import {
 } from "../../../lib/btc-cosmographer-route-graph";
 import { buildBtcCosmographerAnswer } from "../../../lib/btc-cosmographer-answer";
 import {
+  buildBtcBinancePublicBinding,
+  decideBtcBinancePublicBinding,
+  type BtcBinancePublicBindingPacket,
+} from "../../../lib/btc-binance-public-binding";
+import { loadBtcBinancePublicMarketShadow, type BinancePublicMarketResult } from "../../../lib/btc-binance-public-market-source";
+import {
   applyBtcRelationIntentPrecedence,
   BTC_EVIDENCE_NAVIGATION_RUNTIME_SCHEMA,
   buildBtcEvidenceNavigationRuntimeDecision,
@@ -138,6 +144,7 @@ type Props = {
   pendingClarificationOriginFingerprint: string | null;
   evidenceRevisionId: string | null;
   evidenceTargets: BtcEvidenceArtifactTarget[];
+  binanceLiveBinding: BtcBinancePublicBindingPacket | null;
 };
 
 // Connector-authored deployment pulse: PR114 exact Preview identity v0.2.
@@ -365,23 +372,18 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
   const resolvedLocale = resolveBtcPublicLocale(first(query.lang), initialQuestion);
-  const source = await loadBtcStaticSource();
-  const sourceTimestamp = source.ok === false ? source.last_verified_at_utc ?? null : source.snapshot.generated_at_utc;
-  const sourceContext: BtcCosmographerSourceContext = source.ok === false
-    ? {
-        state: "UNAVAILABLE",
-        generated_at_utc: sourceTimestamp,
-        age_hours: failureAgeHours(sourceTimestamp),
-        proof_available: false,
-      }
-    : {
-        state: source.freshness,
-        generated_at_utc: sourceTimestamp,
-        age_hours: source.age_hours,
-        proof_available: true,
-      };
+  const sourcePromise = loadBtcStaticSource();
 
-  const base: Props = {
+  const finishSource = async () => {
+    const source = await sourcePromise;
+    const sourceTimestamp = source.ok === false ? source.last_verified_at_utc ?? null : source.snapshot.generated_at_utc;
+    const sourceContext: BtcCosmographerSourceContext = source.ok === false
+      ? { state: "UNAVAILABLE", generated_at_utc: sourceTimestamp, age_hours: failureAgeHours(sourceTimestamp), proof_available: false }
+      : { state: source.freshness, generated_at_utc: sourceTimestamp, age_hours: source.age_hours, proof_available: true };
+    return { source, sourceTimestamp, sourceContext };
+  };
+
+  const emptyProps = (sourceContext: BtcCosmographerSourceContext): Props => ({
     locale: resolvedLocale.locale,
     initialQuestion: "",
     initialDate,
@@ -395,44 +397,26 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     pendingClarificationOriginFingerprint: null,
     evidenceRevisionId: null,
     evidenceTargets: [],
-  };
+    binanceLiveBinding: null,
+  });
 
   if (initialDate && !validObservationDate(initialDate)) {
-    return {
-      props: {
-        ...base,
-        initialQuestion,
-        inputError: resolvedLocale.locale === "ru"
-          ? "Укажите реальную дату UTC в формате YYYY-MM-DD."
-          : "Enter a real UTC date in YYYY-MM-DD format.",
-      },
-    };
+    const { sourceContext } = await finishSource();
+    return { props: { ...emptyProps(sourceContext), initialQuestion, inputError: resolvedLocale.locale === "ru" ? "Укажите реальную дату UTC в формате YYYY-MM-DD." : "Enter a real UTC date in YYYY-MM-DD format." } };
+  }
+  if (!initialQuestion) {
+    const { sourceContext } = await finishSource();
+    return { props: emptyProps(sourceContext) };
   }
 
-  if (!initialQuestion) return { props: base };
-
   const parsed = parseBtcCosmographerContext(query);
-  const packet = parsed.malformed
-  ? null
-  : parsed.packet ?? parseLegacyContext(query);
+  const packet = parsed.malformed ? null : parsed.packet ?? parseLegacyContext(query);
   const returnPacket = parseReturnContext(query);
   const pendingClarification = parsePendingClarification(query);
-  const routingQuestion = resolvePendingClarificationQuestion(
-    resolvedLocale.locale,
-    initialQuestion,
-    pendingClarification,
-  );
+  const routingQuestion = resolvePendingClarificationQuestion(resolvedLocale.locale, initialQuestion, pendingClarification);
   const retainedAstroMemory = parseRetainedAstroMemory(query);
-  const activePacket = isReturnRequest(routingQuestion)
-    ? returnPacket ?? packet
-    : packet;
-  const initialRoute = routeBtcCosmographerLocalRc(
-    resolvedLocale.locale,
-    routingQuestion,
-    activePacket,
-    initialDate || undefined,
-    retainedAstroMemory,
-  );
+  const activePacket = isReturnRequest(routingQuestion) ? returnPacket ?? packet : packet;
+  const initialRoute = routeBtcCosmographerLocalRc(resolvedLocale.locale, routingQuestion, activePacket, initialDate || undefined, retainedAstroMemory);
   const explicitReturn = Boolean(returnPacket && isReturnRequest(routingQuestion));
   const returnRoute = explicitReturn && returnPacket
     ? {
@@ -442,61 +426,43 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
         intents: returnPacket.prior_intents,
         context_relation: "RETURN_TO_PREVIOUS_TOPIC" as const,
         time_range: returnPacket.prior_time_start && returnPacket.prior_time_end
-          ? {
-              start: returnPacket.prior_time_start,
-              end: returnPacket.prior_time_end,
-              label: returnPacket.prior_time_start === returnPacket.prior_time_end
-                ? returnPacket.prior_time_start
-                : `${returnPacket.prior_time_start} — ${returnPacket.prior_time_end}`,
-              source: "CONTEXT" as const,
-            }
+          ? { start: returnPacket.prior_time_start, end: returnPacket.prior_time_end, label: returnPacket.prior_time_start === returnPacket.prior_time_end ? returnPacket.prior_time_start : `${returnPacket.prior_time_start} — ${returnPacket.prior_time_end}`, source: "CONTEXT" as const }
           : null,
         market_question_class: returnPacket.prior_market_question_class,
         capability_id: `${returnPacket.prior_domain}.${returnPacket.prior_subject}`,
         confidence: "HIGH" as const,
-        explicit_entities: Array.from(new Set([
-          ...initialRoute.explicit_entities,
-          returnPacket.prior_subject,
-        ])),
+        explicit_entities: Array.from(new Set([...initialRoute.explicit_entities, returnPacket.prior_subject])),
       }
     : null;
   const relationResolution = returnRoute
-    ? {
-        route: returnRoute,
-        relation_resolution: "SINGLE_DOMAIN" as const,
-        btc_side_state_type: null,
-      }
-    : applyBtcRelationIntentPrecedence(
-        initialRoute,
-        routingQuestion,
-        activePacket,
-        retainedAstroMemory,
-      );
+    ? { route: returnRoute, relation_resolution: "SINGLE_DOMAIN" as const, btc_side_state_type: null }
+    : applyBtcRelationIntentPrecedence(initialRoute, routingQuestion, activePacket, retainedAstroMemory);
   const route = relationResolution.route;
+
+  const binanceDecision = decideBtcBinancePublicBinding({
+    route,
+    vercelEnv: process.env.VERCEL_ENV,
+    disabled: process.env.BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE === "1",
+  });
+  const binancePromise: Promise<BinancePublicMarketResult | null> = binanceDecision.fetch
+    ? loadBtcBinancePublicMarketShadow()
+    : Promise.resolve(null);
+
+  const { source, sourceTimestamp, sourceContext } = await finishSource();
+  const base = emptyProps(sourceContext);
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
   if (needsMarket(route) && source.ok !== false) {
     const marketQuestion = marketEvidenceQuestion(route);
-    const composed = await composeBtcPublicSnapshot(source, {
-      question: marketQuestion,
-      date: initialDate || undefined,
-    });
+    const composed = await composeBtcPublicSnapshot(source, { question: marketQuestion, date: initialDate || undefined });
     if (composed.ok !== false) {
       snapshot = {
         ...composed.value,
-        question: {
-          ...composed.value.question,
-          raw: initialQuestion,
-          normalized: route.normalized_question,
-        },
+        question: { ...composed.value.question, raw: initialQuestion, normalized: route.normalized_question },
       };
       const market = await loadBtcMarketEnvelope(marketQuestion, {
-        temporal: {
-          state: snapshot.temporal_context.state,
-          label: snapshot.temporal_context.label,
-          harmonic_tension: snapshot.aspect_pressure.harmonic_tension,
-        },
+        temporal: { state: snapshot.temporal_context.state, label: snapshot.temporal_context.label, harmonic_tension: snapshot.aspect_pressure.harmonic_tension },
       });
       if (market.ok !== false) envelope = applyFreshnessTruth(market.value, source.freshness);
     }
@@ -506,21 +472,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     ? buildPublicMultiBodyAnswer(
         resolvedLocale.locale,
         route,
-        snapshot && envelope
-          ? buildBtcCosmographerAnswer(
-              resolvedLocale.locale,
-              marketOnlyRoute(route),
-              { snapshot, envelope },
-            )
-          : null,
+        snapshot && envelope ? buildBtcCosmographerAnswer(resolvedLocale.locale, marketOnlyRoute(route), { snapshot, envelope }) : null,
       ) as unknown as BtcCosmographerAnswerProjection
     : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
-  const evidenceNavigation = buildEvidenceNavigation(
-    route,
-    envelope,
-    servedDeploymentSha,
-    sourceTimestamp,
-  );
+  const evidenceNavigation = buildEvidenceNavigation(route, envelope, servedDeploymentSha, sourceTimestamp);
   const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
     resolvedLocale.locale,
     route,
@@ -530,11 +485,19 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
     relationResolution.btc_side_state_type,
     pendingClarification?.origin_fingerprint ?? null,
   );
-  const sourceBindingChanged = Boolean(
-    packet?.prior_snapshot_generated_at_utc &&
-    sourceTimestamp &&
-    packet.prior_snapshot_generated_at_utc !== sourceTimestamp,
-  );
+  const sourceBindingChanged = Boolean(packet?.prior_snapshot_generated_at_utc && sourceTimestamp && packet.prior_snapshot_generated_at_utc !== sourceTimestamp);
+  const binanceResult = await binancePromise;
+  const binanceLiveBinding = binanceResult
+    ? buildBtcBinancePublicBinding({
+        decision: binanceDecision,
+        result: binanceResult,
+        staticPeer: source.ok === false ? null : {
+          price_usd: source.snapshot.public_samples.assets.BTC.price_usd,
+          observed_at: source.snapshot.generated_at_utc,
+          freshness: source.freshness,
+        },
+      })
+    : null;
 
   return {
     props: {
@@ -547,10 +510,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
       pendingClarificationOriginFingerprint: pendingClarification?.origin_fingerprint ?? null,
       evidenceRevisionId: evidenceNavigation.revisionId,
       evidenceTargets: evidenceNavigation.targets,
+      binanceLiveBinding,
     },
   };
 };
-
 export default function BtcLivePage(props: Props) {
   const title = props.locale === "ru"
     ? "Чтение поля BTC · Market Cosmographer"
