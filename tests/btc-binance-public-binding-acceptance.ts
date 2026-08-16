@@ -121,12 +121,43 @@ async function main() {
     ["ru", "Дай ценовую цель BTC на завтра."],
     ["ru", "Дай торговый сигнал по BTC сейчас."],
   ] as const;
+  const naturalLanguageFinancialQuestions = [
+    ["en", "Is BTC a buy right now?"],
+    ["en", "Is BTC a sell right now?"],
+    ["en", "What price should I buy BTC at?"],
+    ["en", "How much BTC should I buy?"],
+    ["en", "Should I increase my BTC position now?"],
+    ["en", "Should I reduce my BTC position now?"],
+    ["en", "Should I open a leveraged BTC position?"],
+    ["en", "Where should I set my stop loss on BTC?"],
+    ["en", "Where should I take profit on BTC?"],
+    ["en", "Should I DCA into BTC now?"],
+    ["ru", "BTC сейчас покупать?"],
+    ["ru", "Биткоин сейчас продавать?"],
+    ["ru", "По какой цене покупать BTC?"],
+    ["ru", "Сколько BTC мне купить?"],
+    ["ru", "Увеличить позицию по BTC сейчас?"],
+    ["ru", "Сократить позицию по BTC сейчас?"],
+    ["ru", "Где поставить стоп по BTC?"],
+    ["ru", "Где фиксировать прибыль по BTC?"],
+    ["ru", "Стоит ли усредняться в BTC сейчас?"],
+    ["ru", "Покупать BTC сейчас или подождать?"],
+  ] as const;
   const realFinancialRoutes = directFinancialQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const naturalFinancialRoutes = naturalLanguageFinancialQuestions.map(([locale, question]) => ({
     question,
     route: routeBtcCosmographerQuestion(locale, question, null),
   }));
   checks.direct_financial_intent_detected = realFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
   checks.real_router_trading_intent_zero_fetch = realFinancialRoutes.every(({ route: item }) => {
+    const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
+    return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
+  });
+  checks.natural_language_financial_intent_detected = naturalFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
+  checks.natural_language_router_zero_fetch = naturalFinancialRoutes.every(({ route: item }) => {
     const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
     return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
   });
@@ -139,6 +170,16 @@ async function main() {
   ];
   checks.real_router_allowed_routes_still_fetch = realAllowedRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.informational_selloff_not_financial_intent = !hasDirectBtcFinancialActionIntent("Why did BTC sell off today?");
+  const informationalNonActionQuestions = [
+    "What is the current BTC price?",
+    "How much BTC exists?",
+    "What is a stop loss?",
+    "How does DCA work in general?",
+    "What is BTC's current market position?",
+    "Что такое стоп-лосс?",
+    "Как работает усреднение в целом?",
+  ];
+  checks.informational_market_language_not_financial_intent = informationalNonActionQuestions.every((question) => !hasDirectBtcFinancialActionIntent(question));
 
   const decision = decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview" });
   const packet = buildBtcBinancePublicBinding({
