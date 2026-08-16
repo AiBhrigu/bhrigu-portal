@@ -169,6 +169,28 @@ export function hasDirectBtcFinancialActionIntent(question: string): boolean {
   return hasActionSemantics(normalized);
 }
 
+const METHOD_TRADING_PURPOSE = /\b(?:trade|trading|speculate|speculation|buy|sell|long|short|entry|exit|position|leverage|margin|signal|target)\b|(?:торгов|спекул|покуп|купить|прода|лонг|шорт|вход|выход|позици|плеч|марж|сигнал|цел)/i;
+const EN_POSITIVE_METHOD_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
+  /^which\s+(?:live\s+)?binance\s+(?:source|endpoint|endpoints)\s+(?:is|are)\s+used[?!.]*$/i,
+  /^what\s+(?:is|are)\s+(?:the\s+)?(?:binance\s+)?(?:live\s+)?(?:source|endpoint|endpoints|data\s+source|provenance|freshness|method|verification|evidence\s+boundary)(?:\s+(?:of|for)\s+(?:the\s+)?(?:binance\s+)?(?:live\s+)?(?:data|evidence|observation|source))?[?!.]*$/i,
+  /^what\s+(?:source|provenance|freshness|method|verification|evidence\s+boundary)\s+(?:is|are)\s+used\s+for\s+(?:the\s+)?(?:binance\s+)?(?:live\s+)?(?:data|evidence|observation)[?!.]*$/i,
+  /^how\s+(?:is|are)\s+(?:the\s+)?(?:binance\s+)?(?:live\s+)?(?:data|evidence|observation|source)\s+(?:sourced|retrieved|verified|validated|observed|timestamped)[?!.]*$/i,
+  /^how\s+fresh\s+(?:is|are)\s+(?:the\s+)?(?:binance\s+)?(?:live\s+)?(?:data|evidence|observation)[?!.]*$/i,
+];
+const RU_POSITIVE_METHOD_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
+  /^(?:какой|какая|какие)\s+(?:жив[а-яё]*\s+)?(?:источник|источники|эндпоинт|эндпоинты|метод)\s+binance\s+использу[а-яё]*[?!.]*$/i,
+  /^(?:какова|каково|какой|какая|какие)\s+(?:свежесть|метод|проверка|верификация|происхождение)\s+(?:жив[а-яё]*\s+)?(?:данн[а-яё]*|источник[а-яё]*|наблюдени[а-яё]*)\s+binance[?!.]*$/i,
+  /^как\s+(?:проверяются|верифицируются|валидируются|получаются|извлекаются|наблюдаются)\s+(?:жив[а-яё]*\s+)?данн[а-яё]*\s+binance[?!.]*$/i,
+  /^откуда\s+(?:берутся|получаются)\s+(?:жив[а-яё]*\s+)?данн[а-яё]*\s+binance[?!.]*$/i,
+  /^какой\s+метод\s+используется\s+для\s+(?:жив[а-яё]*\s+)?данн[а-яё]*\s+binance[?!.]*$/i,
+];
+
+function hasPositiveMethodAndProofForm(question: string): boolean {
+  if (METHOD_TRADING_PURPOSE.test(question)) return false;
+  return EN_POSITIVE_METHOD_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question))
+    || RU_POSITIVE_METHOD_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question));
+}
+
 export function hasPositiveBtcBinanceInformationalEligibility(route: BtcCosmographerRoute, mode: BtcBinancePublicBindingMode): boolean {
   const normalized = route.raw_question.trim().replace(/\s+/g, " ");
   if (!normalized) return false;
@@ -176,8 +198,7 @@ export function hasPositiveBtcBinanceInformationalEligibility(route: BtcCosmogra
   if (mode === "BTC_CHANGE_MEMORY") {
     return /^(?:what\s+(?:changed|has\s+changed)(?:\s+since\s+(?:the\s+)?previous\s+snapshot|\s+(?:in|with|for)\s+(?:btc|bitcoin|the\s+btc\s+market|the\s+market)(?:\s+(?:today|now))?)|что\s+изменилось(?:\s+с\s+(?:предыдущего|последнего)\s+снимк[а-яё]*|\s+(?:на\s+рынке|в\s+рынке|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сегодня|сейчас))?))[?!.]*$/i.test(normalized);
   }
-  return /^(?:which|what|how|какой|какая|какие|как)\b/i.test(normalized)
-    && /\bbinance\b|live\s+(?:source|market|venue|data)|venue\s+observation|жив[а-яё]*\s+(?:источник|рынок|данн)|бирж[а-яё]*\s+(?:источник|данн)/i.test(normalized);
+  return hasPositiveMethodAndProofForm(normalized);
 }
 
 function eligibleMode(route: BtcCosmographerRoute): BtcBinancePublicBindingMode | null {

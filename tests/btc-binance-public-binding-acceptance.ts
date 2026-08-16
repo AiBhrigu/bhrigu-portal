@@ -277,6 +277,48 @@ async function main() {
     ["ru", "Как изменилась цена BTC сегодня?"],
     ["ru", "Покажи текущие данные рынка BTC."],
   ] as const;
+  const safeMethodInformationalQuestions = [
+    ["en", "Which live Binance source is used?"],
+    ["en", "Which Binance endpoints are used?"],
+    ["en", "What is the provenance of Binance live data?"],
+    ["en", "How fresh is the Binance live data?"],
+    ["en", "How is Binance live evidence verified?"],
+    ["en", "What method is used for Binance live evidence?"],
+    ["en", "How is Binance live data retrieved?"],
+    ["ru", "Какой живой источник Binance используется?"],
+    ["ru", "Какие эндпоинты Binance используются?"],
+    ["ru", "Какова свежесть живых данных Binance?"],
+    ["ru", "Как проверяются живые данные Binance?"],
+    ["ru", "Откуда берутся живые данные Binance?"],
+    ["ru", "Какой метод используется для живых данных Binance?"],
+  ] as const;
+  const methodTradingPurposeQuestions = [
+    ["en", "How do I trade BTC using the Binance live source?"],
+    ["en", "Which Binance live source should I use to trade Bitcoin?"],
+    ["en", "How can I trade BTC with Binance live data?"],
+    ["en", "How should I speculate on BTC using Binance live data?"],
+    ["en", "What Binance live data should I use for trading BTC?"],
+    ["en", "Which Binance endpoint should I use for a BTC trading signal?"],
+    ["ru", "Как мне торговать BTC используя живые данные Binance?"],
+    ["ru", "Как торговать биткоином по данным Binance?"],
+    ["ru", "Какие данные Binance использовать для торговли BTC?"],
+    ["ru", "Как спекулировать BTC используя живые данные Binance?"],
+    ["ru", "Какой источник Binance использовать для торгового сигнала BTC?"],
+  ] as const;
+  const freshMethodHoldoutQuestions = [
+    ["en", "How is the Binance live observation validated?"],
+    ["en", "What is the evidence boundary for Binance live data?"],
+    ["en", "What is the Binance live data source?"],
+    ["ru", "Как валидируются живые данные Binance?"],
+    ["ru", "Каково происхождение живых данных Binance?"],
+  ] as const;
+  const freshMethodTradingHoldout = [
+    ["en", "How do I speculate with the Binance live source?"],
+    ["en", "What Binance endpoint should I use to buy BTC?"],
+    ["en", "Which live Binance data should guide my BTC position?"],
+    ["ru", "Как использовать живые данные Binance для покупки BTC?"],
+    ["ru", "Какой эндпоинт Binance использовать для позиции BTC?"],
+  ] as const;
   const generatedPositiveFetchQuestions: Array<["en" | "ru", string]> = [];
   for (const metric of ["price", "volume", "buy volume", "sell pressure", "spread", "order-book depth", "market structure"]) {
     generatedPositiveFetchQuestions.push(["en", `What is the current BTC ${metric}?`]);
@@ -350,6 +392,12 @@ async function main() {
     question,
     route: routeBtcCosmographerQuestion(locale, question, null),
   }));
+  const safeMethodSyntheticRoutes = safeMethodInformationalQuestions.map(([, question]) => route("methodology", null, question));
+  const safeMethodRealRoutes = safeMethodInformationalQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const methodTradingPurposeRealRoutes = methodTradingPurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const methodTradingPurposeSyntheticRoutes = methodTradingPurposeQuestions.map(([, question]) => route("methodology", null, question));
+  const freshMethodSyntheticRoutes = freshMethodHoldoutQuestions.map(([, question]) => route("methodology", null, question));
+  const freshMethodTradingSyntheticRoutes = freshMethodTradingHoldout.map(([, question]) => route("methodology", null, question));
   const generatedPositiveFetchRoutes = generatedPositiveFetchQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const generatedDefaultDenyRoutes = generatedDefaultDenyQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   checks.direct_financial_intent_detected = realFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
@@ -387,6 +435,18 @@ async function main() {
   const unknownGeneralRoute = route("btc_market", "general_btc_field", "BTC vibes please");
   const unknownGeneralDecision = decideBtcBinancePublicBinding({ route: unknownGeneralRoute, vercelEnv: "preview" });
   checks.general_route_alone_not_sufficient = !unknownGeneralDecision.fetch && unknownGeneralDecision.gate_state === "INELIGIBLE_INFORMATIONAL_PROOF";
+
+  checks.safe_method_descriptive_synthetic_fetch = safeMethodSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const realMethodSafeRoutes = safeMethodRealRoutes.filter((item) => item.domain === "methodology");
+  checks.safe_method_real_router_fetch = realMethodSafeRoutes.length >= 1 && realMethodSafeRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_trading_purpose_real_router_zero_fetch = methodTradingPurposeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const realMethodTradingRoutes = methodTradingPurposeRealRoutes.filter((item) => item.domain === "methodology");
+  checks.method_trading_purpose_real_methodology_zero_fetch = realMethodTradingRoutes.length >= 2 && realMethodTradingRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_trading_purpose_synthetic_zero_fetch = methodTradingPurposeSyntheticRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.fresh_method_descriptive_holdout_fetch = freshMethodSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.fresh_method_trading_holdout_zero_fetch = freshMethodTradingSyntheticRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const unknownMethodDecision = decideBtcBinancePublicBinding({ route: route("methodology", null, "Tell me about Binance live source usage."), vercelEnv: "preview" });
+  checks.unknown_method_request_zero_fetch = !unknownMethodDecision.fetch && unknownMethodDecision.gate_state === "INELIGIBLE_INFORMATIONAL_PROOF";
 
   const realAllowedRoutes = [
     routeBtcCosmographerQuestion("en", "What is happening with BTC now?", null),
