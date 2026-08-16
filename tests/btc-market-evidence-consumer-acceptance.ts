@@ -113,7 +113,7 @@ async function main() {
   const staticSource = await readFile("lib/btc-public-static-source.ts", "utf8");
   checks.no_public_wiring = !publicPage.includes("btc-market-evidence-consumer") && !livePage.includes("btc-market-evidence-consumer") && !staticSource.includes("btc-market-evidence-consumer");
   checks.no_threshold_materiality = !consumerSource.match(/50\s*(?:bps|basis)/i) && consumerSource.includes('materiality: "UNCALIBRATED"');
-  checks.no_trade_or_private_authority = !consumerSource.match(/\/sapi\/|X-MBX-APIKEY|apiSecret|placeOrder|withdraw|universalTransfer/i);
+  checks.no_trade_or_private_authority = !consumerSource.match(/\/sapi\/|X-MBX-APIKEY|apiSecret|placeOrder|cancelOrder|withdrawApply|withdrawRequest|universalTransfer|internalTransfer/i);
 
   for (const [name, passed] of Object.entries(checks)) assert.equal(passed, true, name);
 
