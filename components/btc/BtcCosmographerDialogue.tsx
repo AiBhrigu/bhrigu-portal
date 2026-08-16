@@ -23,7 +23,10 @@ import {
   type BtcDialogueTurn,
 } from "../../lib/btc-live-dialogue-session";
 import type { FreshnessState } from "../../lib/btc-public-output-contract";
-import type { BtcBinancePublicBindingPacket } from "../../lib/btc-binance-public-binding";
+import {
+  formatBtcBinancePublicFactDisplayValue,
+  type BtcBinancePublicBindingPacket,
+} from "../../lib/btc-binance-public-binding";
 import {
   formatBtcUtcTimestamp,
   getBtcExampleRoutes,
@@ -635,7 +638,7 @@ function BinanceLiveBindingPanel({ locale, binding }: { locale: BtcPublicLocale;
         {binding.facts.length > 0 && <dl className="answerEvidenceMeta" data-binance-live-facts="whitelist-only">
           {binding.facts.map((item) => <div key={item.id} data-binance-fact={item.id}>
             <dt>{ru ? item.label_ru : item.label_en}</dt>
-            <dd>{item.value} {item.unit}</dd>
+            <dd>{formatBtcBinancePublicFactDisplayValue(item)} {item.unit}</dd>
           </div>)}
         </dl>}
         {binding.mode === "METHOD_AND_PROOF" && <p>{ru ? "В режиме метода числовые значения скрыты; показаны только provenance и freshness metadata." : "In method mode, numerical values are hidden; only provenance and freshness metadata are shown."}</p>}

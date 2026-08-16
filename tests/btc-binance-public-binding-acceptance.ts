@@ -5,6 +5,7 @@ import { buildBinanceEvidence, type BtcBinanceShadowSnapshot } from "../lib/btc-
 import {
   buildBtcBinancePublicBinding,
   decideBtcBinancePublicBinding,
+  formatBtcBinancePublicFactDisplayValue,
 } from "../lib/btc-binance-public-binding";
 
 const NOW = 1_786_861_000_000;
@@ -52,7 +53,7 @@ const ticker = evidence("/api/v3/ticker/24hr", {
   quote_volume_usdt: "74000000.00000000",
 });
 const book = evidence("/api/v3/ticker/bookTicker", { bid_price_usdt: "60199.00000000", ask_price_usdt: "60201.00000000" });
-const derived = evidence("derived", { spread_usdt: 2, spread_bps: 0.33222, top_book_imbalance: -0.12 }, [book.evidence_id]);
+const derived = evidence("derived", { spread_usdt: 0.010000000002037268, spread_bps: 0.0015856179382284902, top_book_imbalance: 0.44645775973333757 }, [book.evidence_id]);
 const snapshot: BtcBinanceShadowSnapshot = {
   schema_version: "btc_binance_public_market_shadow_snapshot_v0_1",
   status: "READY_SHADOW",
@@ -64,7 +65,7 @@ const snapshot: BtcBinanceShadowSnapshot = {
   clock_drift_ms: 10,
   request_weight_budget: 42,
   evidence: [price, ticker, book, derived],
-  derived: { mid_price_usdt: 60200, spread_usdt: 2, spread_bps: 0.33222, top_book_imbalance: -0.12 },
+  derived: { mid_price_usdt: 60200, spread_usdt: 0.010000000002037268, spread_bps: 0.0015856179382284902, top_book_imbalance: 0.44645775973333757 },
   boundary: {
     api_key_required: false,
     authentication_used: false,
@@ -105,6 +106,13 @@ async function main() {
   });
   assert(packet && packet.status === "READY");
   checks.public_whitelist_has_values = packet.facts.some((item) => item.id === "last_price") && packet.facts.some((item) => item.id === "top5_book_imbalance");
+  const spreadFact = packet.facts.find((item) => item.id === "spread");
+  const spreadBpsFact = packet.facts.find((item) => item.id === "spread_bps");
+  const imbalanceFact = packet.facts.find((item) => item.id === "top5_book_imbalance");
+  const rawPriceFact = packet.facts.find((item) => item.id === "last_price");
+  checks.derived_evidence_precision_preserved = spreadFact?.value === "0.010000000002037268" && spreadBpsFact?.value === "0.0015856179382284902" && imbalanceFact?.value === "0.44645775973333757";
+  checks.derived_display_precision_bounded = Boolean(spreadFact && spreadBpsFact && imbalanceFact && formatBtcBinancePublicFactDisplayValue(spreadFact) === "0.01" && formatBtcBinancePublicFactDisplayValue(spreadBpsFact) === "0.0016" && formatBtcBinancePublicFactDisplayValue(imbalanceFact) === "0.446");
+  checks.raw_display_precision_unchanged = Boolean(rawPriceFact && formatBtcBinancePublicFactDisplayValue(rawPriceFact) === "60200.12000000");
   checks.raw_payload_absent = !JSON.stringify(packet).includes("secret_raw_fixture") && !JSON.stringify(packet).includes("raw_value");
   checks.usdt_vs_usd_not_comparable = packet.source_comparison?.status === "NOT_COMPARABLE" && packet.source_comparison.reasons.includes("QUOTE_BASIS_MISMATCH") && packet.source_comparison.winner === null;
   checks.authority_boundary = packet.boundary.accepted_snapshot_remains_primary && !packet.boundary.base_answer_rewrite && !packet.boundary.global_btc_price_claim;

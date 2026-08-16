@@ -32,6 +32,22 @@ export type BtcBinancePublicFact = {
   authority_layer: "RAW" | "DERIVED";
 };
 
+const DERIVED_DISPLAY_DECIMALS: Readonly<Record<string, number>> = {
+  spread: 4,
+  spread_bps: 4,
+  top5_book_imbalance: 3,
+};
+
+export function formatBtcBinancePublicFactDisplayValue(item: BtcBinancePublicFact): string {
+  if (item.authority_layer !== "DERIVED") return item.value;
+  const decimals = DERIVED_DISPLAY_DECIMALS[item.id];
+  if (decimals === undefined) return item.value;
+  const numeric = Number(item.value);
+  if (!Number.isFinite(numeric)) return item.value;
+  const bounded = numeric.toFixed(decimals).replace(/\.?0+$/, "");
+  return bounded === "-0" ? "0" : bounded;
+}
+
 export type BtcBinancePublicProof = {
   evidence_id: string;
   authority_layer: "RAW" | "DERIVED";
