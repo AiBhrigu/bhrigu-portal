@@ -98,7 +98,7 @@ async function main() {
   checks.market_positive_gate_unchanged = decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview" }).fetch;
 
   const livePage = await readFile(new URL("../pages/crypto-astro/btc/live.tsx", import.meta.url), "utf8");
-  checks.consumer_fetch_gate_preserved = /binanceDecision\.fetch\s*\?\s*loadBtcBinancePublicMarketShadow\(\)\s*:\s*Promise\.resolve\(null\)/s.test(livePage);
+  checks.consumer_fetch_gate_preserved = /binanceDecision\.fetch\s*\?\s*loadBtcBinancePublicMarketShadow\(\)\s*:\s*Promise\.resolve\(null\)/.test(livePage);
   checks.base_answer_independent_of_binance_fetch = /const answer\s*=/.test(livePage)
     && /const binanceResult\s*=\s*await binancePromise/.test(livePage)
     && /const binanceLiveBinding\s*=\s*binanceResult\s*\?/.test(livePage);
