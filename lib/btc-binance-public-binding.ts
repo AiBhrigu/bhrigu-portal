@@ -187,7 +187,7 @@ const RU_POSITIVE_METHOD_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
 
 const EN_METHOD_SAFE_WORDS = new Set([
   "which", "what", "how", "is", "are", "the", "live", "binance", "source", "sources", "endpoint", "endpoints",
-  "data", "provenance", "freshness", "method", "verification", "evidence", "boundary", "observation", "observations", "used", "sourced",
+  "data", "provenance", "freshness", "method", "verification", "evidence", "boundary", "observation", "observations", "use", "uses", "used", "sourced",
   "retrieved", "verified", "validated", "observed", "timestamped", "fresh", "of", "for", "where", "does", "come", "comes", "from",
   "provide", "provides", "provided", "supply", "supplies", "supplied", "get", "gets", "receive", "receives", "bhrigu",
 ]);
@@ -236,10 +236,10 @@ function classifyPositiveEnglishMethodRelation(question: string): SafeMethodRela
   const hasOrigin = tokens.some((token) => ["come", "comes", "sourced"].includes(token));
   const hasProvider = tokens.some((token) => ["provide", "provides", "provided", "supply", "supplies", "supplied"].includes(token));
   const hasRetrieval = tokens.some((token) => ["retrieved", "get", "gets", "receive", "receives"].includes(token));
-  const hasUsage = tokens.includes("used");
+  const hasUsage = tokens.some((token) => ["use", "uses", "used"].includes(token));
 
   if (!hasInterrogative || !hasActor) return null;
-  if (hasPayload && hasFrom && hasOrigin && (hasSource || tokens.includes("where"))) return "SOURCE_ORIGIN";
+  if (hasPayload && hasFrom && (hasSource || tokens.includes("where"))) return "SOURCE_ORIGIN";
   if (hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
   if (hasPayload && hasRetrieval && (hasSource || hasFrom || tokens.includes("where") || tokens.includes("bhrigu"))) return "SOURCE_RETRIEVAL";
   if (hasSource && hasUsage) return "SOURCE_USAGE";
@@ -260,7 +260,7 @@ function classifyPositiveRussianMethodRelation(question: string): SafeMethodRela
   const hasOriginInterrogative = tokens.includes("откуда") || (tokens[0] === "из" && /^какого$/i.test(tokens[1] ?? ""));
 
   if (!hasInterrogative || !hasActor) return null;
-  if (hasPayload && hasOrigin && (hasSource || hasOriginInterrogative)) return "SOURCE_ORIGIN";
+  if (hasPayload && (hasOriginInterrogative || (hasOrigin && hasSource))) return "SOURCE_ORIGIN";
   if (hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
   if (hasPayload && hasRetrieval && (hasSource || hasOriginInterrogative || tokens.includes("bhrigu"))) return "SOURCE_RETRIEVAL";
   if (hasSource && hasUsage) return "SOURCE_USAGE";
