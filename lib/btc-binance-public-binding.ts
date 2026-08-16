@@ -187,10 +187,11 @@ const RU_POSITIVE_METHOD_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
 
 const EN_METHOD_SAFE_WORDS = new Set([
   "which", "what", "how", "is", "are", "the", "live", "binance", "source", "sources", "endpoint", "endpoints",
-  "data", "provenance", "freshness", "method", "verification", "evidence", "boundary", "observation", "used", "sourced",
-  "retrieved", "verified", "validated", "observed", "timestamped", "fresh", "of", "for",
+  "data", "provenance", "freshness", "method", "verification", "evidence", "boundary", "observation", "observations", "used", "sourced",
+  "retrieved", "verified", "validated", "observed", "timestamped", "fresh", "of", "for", "where", "does", "come", "comes", "from",
+  "provide", "provides", "provided", "supply", "supplies", "supplied", "get", "gets", "receive", "receives", "bhrigu",
 ]);
-const RU_METHOD_SAFE_WORD = /^(?:какой|какая|какие|какова|каково|как|откуда|binance|live|для|жив[а-яё]*|источник[а-яё]*|эндпоинт[а-яё]*|метод[а-яё]*|использу[а-яё]*|свежест[а-яё]*|проверк[а-яё]*|верификац[а-яё]*|происхожд[а-яё]*|данн[а-яё]*|наблюдени[а-яё]*|валидиру[а-яё]*|получа[а-яё]*|извлека[а-яё]*|берутся|проверя[а-яё]*|верифициру[а-яё]*)$/i;
+const RU_METHOD_SAFE_WORD = /^(?:какой|какая|какие|какова|каково|какого|как|откуда|из|binance|bhrigu|live|для|жив[а-яё]*|источник[а-яё]*|эндпоинт[а-яё]*|метод[а-яё]*|использу[а-яё]*|свежест[а-яё]*|проверк[а-яё]*|верификац[а-яё]*|происхожд[а-яё]*|данн[а-яё]*|наблюдени[а-яё]*|валидиру[а-яё]*|получа[а-яё]*|извлека[а-яё]*|берутся|приход[а-яё]*|поступа[а-яё]*|да[её]т|предоставля[а-яё]*|проверя[а-яё]*|верифициру[а-яё]*)$/i;
 
 function normalizedMethodTokens(question: string): string[] {
   return question.toLowerCase().replace(/[?!.:,;()]/g, " ").trim().split(/\s+/).filter(Boolean);
@@ -205,7 +206,7 @@ function hasPositiveEnglishMethodWordOrder(question: string): boolean {
   if (/^which\b/.test(joined) && hasSource && /\b(?:source|sources|endpoint|endpoints) (?:is|are) used\b/.test(joined)) return true;
   if (/^what (?:is|are)\b/.test(joined) && hasConcept) return true;
   if (/^how (?:is|are)\b/.test(joined) && /\b(?:sourced|retrieved|verified|validated|observed|timestamped)$/.test(joined)) return true;
-  if (/^how fresh (?:is|are)\b/.test(joined) && tokens.some((token) => ["data", "evidence", "observation"].includes(token))) return true;
+  if (/^how fresh (?:is|are)\b/.test(joined) && tokens.some((token) => ["data", "evidence", "observation", "observations"].includes(token))) return true;
   return false;
 }
 
@@ -222,12 +223,49 @@ function hasPositiveRussianMethodWordOrder(question: string): boolean {
   return false;
 }
 
+type SafeMethodRelation = "SOURCE_ORIGIN" | "SOURCE_PROVISION" | "SOURCE_RETRIEVAL" | "SOURCE_USAGE";
+
+function classifyPositiveEnglishMethodRelation(question: string): SafeMethodRelation | null {
+  const tokens = normalizedMethodTokens(question);
+  if (!tokens.includes("binance") || !tokens.every((token) => EN_METHOD_SAFE_WORDS.has(token))) return null;
+  const joined = tokens.join(" ");
+  const hasSource = tokens.some((token) => ["source", "sources", "endpoint", "endpoints"].includes(token));
+  const hasPayload = tokens.some((token) => ["data", "evidence", "observation", "observations"].includes(token));
+  const hasProvider = tokens.some((token) => ["provide", "provides", "provided", "supply", "supplies", "supplied"].includes(token));
+  const hasRetrieval = tokens.some((token) => ["retrieved", "get", "gets", "receive", "receives"].includes(token));
+
+  if (/^where\b/.test(joined) && hasPayload && ((tokens.includes("from") && (tokens.includes("come") || tokens.includes("comes") || tokens.includes("sourced"))) || hasRetrieval)) return "SOURCE_ORIGIN";
+  if (/^(?:which|what)\b/.test(joined) && hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
+  if (/^(?:where|how)\b/.test(joined) && hasPayload && hasRetrieval) return "SOURCE_RETRIEVAL";
+  if (/^(?:which|what)\b/.test(joined) && hasSource && tokens.includes("used")) return "SOURCE_USAGE";
+  return null;
+}
+
+function classifyPositiveRussianMethodRelation(question: string): SafeMethodRelation | null {
+  const tokens = normalizedMethodTokens(question);
+  if (!tokens.includes("binance") || !tokens.every((token) => RU_METHOD_SAFE_WORD.test(token))) return null;
+  const joined = tokens.join(" ");
+  const hasSource = tokens.some((token) => /^источник[а-яё]*$|^эндпоинт[а-яё]*$/i.test(token));
+  const hasPayload = tokens.some((token) => /^данн[а-яё]*$|^наблюдени[а-яё]*$/i.test(token));
+  const hasOrigin = tokens.some((token) => /^(?:приход[а-яё]*|поступа[а-яё]*|берутся)$/i.test(token));
+  const hasProvider = tokens.some((token) => /^(?:да[её]т|предоставля[а-яё]*)$/i.test(token));
+  const hasRetrieval = tokens.some((token) => /^получа[а-яё]*$|^извлека[а-яё]*$/i.test(token));
+
+  if ((/^из какого(?:\s|$)/i.test(joined) && hasSource && hasOrigin) || (/^откуда(?:\s|$)/i.test(joined) && hasPayload && (hasOrigin || hasRetrieval))) return "SOURCE_ORIGIN";
+  if (/^(?:какой|какая|какие)(?:\s|$)/i.test(joined) && hasSource && hasPayload && hasProvider) return "SOURCE_PROVISION";
+  if ((tokens.includes("bhrigu") || /^как(?:\s|$)/i.test(joined)) && hasPayload && hasRetrieval) return "SOURCE_RETRIEVAL";
+  if (/^(?:какой|какая|какие)(?:\s|$)/i.test(joined) && hasSource && tokens.some((token) => /^использу[а-яё]*$/i.test(token))) return "SOURCE_USAGE";
+  return null;
+}
+
 function hasPositiveMethodAndProofForm(question: string): boolean {
   if (METHOD_TRADING_PURPOSE.test(question)) return false;
   return EN_POSITIVE_METHOD_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question))
     || RU_POSITIVE_METHOD_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question))
     || hasPositiveEnglishMethodWordOrder(question)
-    || hasPositiveRussianMethodWordOrder(question);
+    || hasPositiveRussianMethodWordOrder(question)
+    || classifyPositiveEnglishMethodRelation(question) !== null
+    || classifyPositiveRussianMethodRelation(question) !== null;
 }
 
 export function hasPositiveBtcBinanceInformationalEligibility(route: BtcCosmographerRoute, mode: BtcBinancePublicBindingMode): boolean {

@@ -323,6 +323,39 @@ async function main() {
     ["ru", "Как валидируются Binance live данные?"],
     ["ru", "Откуда берутся Binance live данные?"],
   ] as const;
+  const methodRelationFalseNegatives = [
+    ["en", "Where does Binance live data come from?"],
+    ["en", "Which source provides Binance live data?"],
+    ["en", "What source provides the live Binance observation?"],
+    ["en", "Where is Binance live data sourced from?"],
+    ["ru", "Из какого источника приходят live данные Binance?"],
+    ["ru", "Какой источник даёт live данные Binance?"],
+    ["ru", "Откуда BHRIGU получает live данные Binance?"],
+  ] as const;
+  const generatedSafeMethodRelationQuestions = [
+    ["en", "Where does Binance live evidence come from?"],
+    ["en", "Where are Binance live observations sourced from?"],
+    ["en", "Which source provides Binance live evidence?"],
+    ["en", "What source supplies Binance live data?"],
+    ["en", "Which source is used for Binance live observations?"],
+    ["en", "How is Binance live data retrieved?"],
+    ["ru", "Из какого источника поступают live данные Binance?"],
+    ["ru", "Какой источник предоставляет live данные Binance?"],
+    ["ru", "Какой источник даёт live наблюдения Binance?"],
+    ["ru", "Откуда BHRIGU получает live наблюдения Binance?"],
+    ["ru", "Какой источник используется для live наблюдений Binance?"],
+    ["ru", "Как получаются live данные Binance?"],
+  ] as const;
+  const methodRelationUnsafePurposeQuestions = [
+    ["en", "Which source provides Binance live data for scalping BTC?"],
+    ["en", "Where does Binance live data come from for arbitrage?"],
+    ["en", "What source provides live Binance observation for investment decisions?"],
+    ["en", "Which source is used for Binance live data to trade BTC?"],
+    ["ru", "Какой источник даёт live данные Binance для скальпинга BTC?"],
+    ["ru", "Из какого источника приходят live данные Binance для арбитража?"],
+    ["ru", "Откуда BHRIGU получает live данные Binance для инвестиционного решения?"],
+    ["ru", "Какой источник используется для live данных Binance для торговли BTC?"],
+  ] as const;
   const methodTradingPurposeQuestions = [
     ["en", "How do I trade BTC using the Binance live source?"],
     ["en", "Which Binance live source should I use to trade Bitcoin?"],
@@ -428,6 +461,11 @@ async function main() {
   const methodWordOrderFalseNegativeSyntheticRoutes = methodWordOrderFalseNegatives.map(([, question]) => route("methodology", null, question));
   const methodWordOrderFalseNegativeRealRoutes = methodWordOrderFalseNegatives.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const generatedSafeMethodWordOrderSyntheticRoutes = generatedSafeMethodWordOrderQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationFalseNegativeSyntheticRoutes = methodRelationFalseNegatives.map(([, question]) => route("methodology", null, question));
+  const methodRelationFalseNegativeRealRoutes = methodRelationFalseNegatives.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const generatedSafeMethodRelationSyntheticRoutes = generatedSafeMethodRelationQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationUnsafeSyntheticRoutes = methodRelationUnsafePurposeQuestions.map(([, question]) => route("methodology", null, question));
+  const methodRelationUnsafeRealRoutes = methodRelationUnsafePurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const methodTradingPurposeRealRoutes = methodTradingPurposeQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   const methodTradingPurposeSyntheticRoutes = methodTradingPurposeQuestions.map(([, question]) => route("methodology", null, question));
   const freshMethodSyntheticRoutes = freshMethodHoldoutQuestions.map(([, question]) => route("methodology", null, question));
@@ -477,6 +515,12 @@ async function main() {
   const realMethodWordOrderRoutes = methodWordOrderFalseNegativeRealRoutes.filter((item) => item.domain === "methodology");
   checks.method_word_order_real_router_recovered = realMethodWordOrderRoutes.length === methodWordOrderFalseNegatives.length && realMethodWordOrderRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.generated_safe_method_word_order_fetch = generatedSafeMethodWordOrderSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_false_negatives_recovered = methodRelationFalseNegativeSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const realMethodRelationRoutes = methodRelationFalseNegativeRealRoutes.filter((item) => item.domain === "methodology");
+  checks.method_relation_real_router_recovered = realMethodRelationRoutes.length === methodRelationFalseNegatives.length && realMethodRelationRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_safe_method_relation_fetch = generatedSafeMethodRelationSyntheticRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_unsafe_purpose_synthetic_zero_fetch = methodRelationUnsafeSyntheticRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.method_relation_unsafe_purpose_real_router_zero_fetch = methodRelationUnsafeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   checks.method_trading_purpose_real_router_zero_fetch = methodTradingPurposeRealRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
   const realMethodTradingRoutes = methodTradingPurposeRealRoutes.filter((item) => item.domain === "methodology");
   checks.method_trading_purpose_real_methodology_zero_fetch = realMethodTradingRoutes.length >= 2 && realMethodTradingRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
