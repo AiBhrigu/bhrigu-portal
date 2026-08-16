@@ -233,6 +233,80 @@ async function main() {
     ["ru", "Когда трейдеры вышли из BTC?"],
     ["ru", "Где трейдеры входили в BTC вчера?"],
   ] as const;
+  const blindHoldoutDirectActionQuestions = [
+    ["en", "Should I cash out of BTC now?"],
+    ["en", "Would it make sense to add more Bitcoin here?"],
+    ["en", "Do I keep my BTC or get out now?"],
+    ["en", "Should I cut my Bitcoin exposure today?"],
+    ["en", "Would you rotate out of BTC here?"],
+    ["en", "Should I put more money into Bitcoin now?"],
+    ["en", "Do you think I should dump BTC?"],
+    ["en", "Should I lighten my BTC position?"],
+    ["en", "Would you take risk off BTC now?"],
+    ["en", "Should I rebalance away from Bitcoin today?"],
+    ["en", "Is now the moment to accumulate more BTC?"],
+    ["en", "Would you initiate a Bitcoin position here?"],
+    ["ru", "Скинуть биткоин сейчас?"],
+    ["ru", "Мне уменьшить экспозицию к BTC?"],
+    ["ru", "Добавить ещё биткоина сейчас?"],
+    ["ru", "Нужно ли закрывать BTC позицию?"],
+    ["ru", "Стоит ли переложиться из BTC сейчас?"],
+    ["ru", "Зафиксировать часть позиции по биткоину?"],
+    ["ru", "Мне нарастить долю BTC сегодня?"],
+    ["ru", "Есть смысл докупать биткоин здесь?"],
+    ["ru", "Стоит ли снять риск по BTC сейчас?"],
+    ["ru", "Открывать позицию по биткоину сейчас?"],
+  ] as const;
+  const positiveInformationalMarketQuestions = [
+    ["en", "What is BTC buy volume today?"],
+    ["en", "What is BTC sell pressure today?"],
+    ["en", "How much buy-side volume is visible in BTC today?"],
+    ["en", "What is the current BTC price?"],
+    ["en", "What is happening with BTC now?"],
+    ["en", "What is the current BTC market structure?"],
+    ["en", "What is the current BTC spread?"],
+    ["en", "What is the BTC order-book depth?"],
+    ["en", "Why did BTC sell off today?"],
+    ["en", "How has BTC price changed today?"],
+    ["ru", "Какая сейчас цена BTC?"],
+    ["ru", "Какой сейчас объём BTC?"],
+    ["ru", "Какая сейчас структура рынка BTC?"],
+    ["ru", "Какой сейчас спред BTC?"],
+    ["ru", "Что происходит с BTC сейчас?"],
+    ["ru", "Почему биткоин падает сегодня?"],
+    ["ru", "Как изменилась цена BTC сегодня?"],
+    ["ru", "Покажи текущие данные рынка BTC."],
+  ] as const;
+  const generatedPositiveFetchQuestions: Array<["en" | "ru", string]> = [];
+  for (const metric of ["price", "volume", "buy volume", "sell pressure", "spread", "order-book depth", "market structure"]) {
+    generatedPositiveFetchQuestions.push(["en", `What is the current BTC ${metric}?`]);
+  }
+  generatedPositiveFetchQuestions.push(
+    ["ru", "Какая сейчас цена BTC?"],
+    ["ru", "Какой сейчас объём BTC?"],
+    ["ru", "Какой сейчас спред BTC?"],
+    ["ru", "Какая сейчас структура рынка BTC?"],
+    ["ru", "Что происходит с биткоином сейчас?"],
+  );
+  const generatedDefaultDenyQuestions: Array<["en" | "ru", string]> = [
+    ["en", "Should I cash out of BTC now?"],
+    ["en", "Should I dump BTC now?"],
+    ["en", "Would you rotate out of BTC here?"],
+    ["en", "Should I add more Bitcoin here?"],
+    ["en", "Should I reduce my Bitcoin exposure today?"],
+    ["en", "Would you take risk off BTC now?"],
+    ["en", "Should I rebalance away from Bitcoin today?"],
+    ["en", "Is now the moment to accumulate more BTC?"],
+    ["en", "Would you initiate a Bitcoin position here?"],
+    ["ru", "Скинуть биткоин сейчас?"],
+    ["ru", "Мне уменьшить экспозицию к BTC?"],
+    ["ru", "Добавить ещё биткоина сейчас?"],
+    ["ru", "Стоит ли переложиться из BTC сейчас?"],
+    ["ru", "Стоит ли снять риск по BTC сейчас?"],
+    ["ru", "Мне нарастить долю BTC сегодня?"],
+    ["ru", "Есть смысл докупать биткоин здесь?"],
+    ["ru", "Открывать позицию по биткоину сейчас?"],
+  ];
   const generatedDirectActionQuestions: Array<["en" | "ru", string]> = [];
   for (const action of ["buy", "sell", "hold", "enter", "exit", "hedge"]) {
     generatedDirectActionQuestions.push(["en", `Should I ${action} BTC now?`], ["en", `Can I ${action} Bitcoin here?`], ["en", `Would you ${action} BTC here?`], ["en", `Should we ${action} Bitcoin today?`]);
@@ -268,6 +342,16 @@ async function main() {
     question,
     route: routeBtcCosmographerQuestion(locale, question, null),
   }));
+  const blindHoldoutDirectActionRoutes = blindHoldoutDirectActionQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const positiveInformationalMarketRoutes = positiveInformationalMarketQuestions.map(([locale, question]) => ({
+    question,
+    route: routeBtcCosmographerQuestion(locale, question, null),
+  }));
+  const generatedPositiveFetchRoutes = generatedPositiveFetchQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
+  const generatedDefaultDenyRoutes = generatedDefaultDenyQuestions.map(([locale, question]) => routeBtcCosmographerQuestion(locale, question, null));
   checks.direct_financial_intent_detected = realFinancialRoutes.every(({ question }) => hasDirectBtcFinancialActionIntent(question));
   checks.real_router_trading_intent_zero_fetch = realFinancialRoutes.every(({ route: item }) => {
     const binding = decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" });
@@ -295,6 +379,14 @@ async function main() {
     return !binding.fetch && binding.gate_state === "INELIGIBLE_FINANCIAL_INTENT";
   });
   checks.generated_informational_controls_allowed = generatedInformationalControls.every(([, question]) => !hasDirectBtcFinancialActionIntent(question));
+  checks.blind_holdout_direct_action_zero_fetch = blindHoldoutDirectActionRoutes.every(({ route: item }) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.positive_informational_market_fetch = positiveInformationalMarketRoutes.every(({ route: item }) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.buy_volume_sell_pressure_informational_allowed = positiveInformationalMarketRoutes.slice(0, 3).every(({ route: item }) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_positive_fetch_eligibility = generatedPositiveFetchRoutes.every((item) => decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  checks.generated_default_deny_zero_fetch = generatedDefaultDenyRoutes.every((item) => !decideBtcBinancePublicBinding({ route: item, vercelEnv: "preview" }).fetch);
+  const unknownGeneralRoute = route("btc_market", "general_btc_field", "BTC vibes please");
+  const unknownGeneralDecision = decideBtcBinancePublicBinding({ route: unknownGeneralRoute, vercelEnv: "preview" });
+  checks.general_route_alone_not_sufficient = !unknownGeneralDecision.fetch && unknownGeneralDecision.gate_state === "INELIGIBLE_INFORMATIONAL_PROOF";
 
   const realAllowedRoutes = [
     routeBtcCosmographerQuestion("en", "What is happening with BTC now?", null),

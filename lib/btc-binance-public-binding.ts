@@ -13,6 +13,7 @@ export type BtcBinancePublicBindingGateState =
   | "DISABLED_PRODUCTION"
   | "DISABLED_KILL_SWITCH"
   | "INELIGIBLE_FINANCIAL_INTENT"
+  | "INELIGIBLE_INFORMATIONAL_PROOF"
   | "INELIGIBLE_ROUTE";
 
 export type BtcBinancePublicBindingDecision = {
@@ -121,6 +122,26 @@ const BTC_OR_TRADE_CONTEXT = /\b(?:btc|bitcoin|position|trade|trading|entry|exit
 const EN_IMPERATIVE_START = /^(?:buy|sell|hold|enter|exit|open|close|increase|reduce|decrease|trim|hedge|dca|average|take\s+profit|set\s+(?:a\s+)?stop)\b/i;
 const RU_IMPERATIVE_OR_INFINITIVE_START = /^(?:купить|покупать|продать|продавать|брать|держать|войти|входить|выйти|выходить|открыть|закрыть|увеличить|сократить|уменьшить|нарастить|добавить|хеджировать|усредняться|усреднить|фиксировать)\b/i;
 const CHOICE_OR_TIMING_MARKER = /\b(?:now|today|here|or\s+(?:wait|hold|sell|buy|exit|enter))\b|(?:сейчас|сегодня|или\s+(?:подождать|держать|продавать|покупать|выйти|войти))/i;
+const EN_POSITIVE_MARKET_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
+  /^what\s+is\s+happening\s+with\s+(?:btc|bitcoin)(?:\s+(?:now|today))?[?!.]*$/i,
+  /^what\s+(?:is|are)\s+(?:the\s+)?(?:current\s+)?(?:btc|bitcoin)\s+(?:price|volume|buy\s+volume|sell\s+volume|buy\s+pressure|sell\s+pressure|spread|order[- ]?book(?:\s+depth)?|depth|imbalance|market\s+structure|market\s+data|quote|bid|ask)(?:\s+(?:today|now))?[?!.]*$/i,
+  /^what\s+(?:is|are)\s+(?:the\s+)?(?:current\s+)?(?:price|volume|spread|market\s+structure|market\s+data|quote|bid|ask)\s+(?:of\s+)?(?:btc|bitcoin)(?:\s+(?:today|now))?[?!.]*$/i,
+  /^how\s+much\s+(?:buy[- ]side|sell[- ]side|spot)?\s*volume\s+(?:is\s+)?(?:visible\s+)?(?:in|on|for)\s+(?:btc|bitcoin)(?:\s+(?:today|now))?[?!.]*$/i,
+  /^why\s+did\s+(?:btc|bitcoin)\s+(?:sell\s+off|rally|drop|rise)(?:\s+(?:today|yesterday|now))?[?!.]*$/i,
+  /^how\s+has\s+(?:btc|bitcoin)(?:\s+(?:price|market))?\s+changed(?:\s+(?:today|since\s+the\s+previous\s+snapshot))?[?!.]*$/i,
+];
+const RU_POSITIVE_MARKET_INFORMATIONAL_PATTERNS: readonly RegExp[] = [
+  /^что\s+происходит\s+с\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сейчас|сегодня))?[?!.]*$/i,
+  /^как(?:ая|ой|ое|ие)\s+(?:сейчас|текущ[а-яё]*)\s+(?:цена|объ[её]м|спред|структура\s+рынка|данн[а-яё]*\s+рынка|котировк[а-яё]*|спрос|предложен[а-яё]*)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сейчас|сегодня))?[?!.]*$/i,
+  /^почему\s+(?:btc|bitcoin|биткоин[а-яё]*)\s+(?:падает|раст[её]т)(?:\s+(?:сейчас|сегодня))?[?!.]*$/i,
+  /^как\s+изменил(?:ась|ся|ось)\s+(?:цена|рынок|структура\s+рынка)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сегодня|сейчас))?[?!.]*$/i,
+  /^покажи\s+текущ[а-яё]*\s+данн[а-яё]*\s+рынка\s+(?:btc|bitcoin|биткоин[а-яё]*)[?!.]*$/i,
+];
+
+function hasPositiveMarketObservationForm(question: string): boolean {
+  return EN_POSITIVE_MARKET_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question))
+    || RU_POSITIVE_MARKET_INFORMATIONAL_PATTERNS.some((pattern) => pattern.test(question));
+}
 
 function hasActionSemantics(question: string): boolean {
   const action = EN_EXECUTION_ACTION.test(question) || RU_EXECUTION_ACTION.test(question) || EN_POSITION_ACTION.test(question) || RU_POSITION_ACTION.test(question) || EN_RISK_ACTION.test(question) || RU_RISK_ACTION.test(question) || EN_SIZE_PRICE_ACTION.test(question) || RU_SIZE_PRICE_ACTION.test(question);
@@ -143,8 +164,20 @@ export function hasDirectBtcFinancialActionIntent(question: string): boolean {
   const normalized = question.trim().replace(/\s+/g, " ");
   if (!normalized) return false;
   const informational = INFORMATIONAL_QUESTION_PREFIX.test(normalized);
+  if (hasPositiveMarketObservationForm(normalized)) return false;
   if (informational && !EN_DECISION_MARKER.test(normalized) && !RU_DECISION_MARKER.test(normalized)) return false;
   return hasActionSemantics(normalized);
+}
+
+export function hasPositiveBtcBinanceInformationalEligibility(route: BtcCosmographerRoute, mode: BtcBinancePublicBindingMode): boolean {
+  const normalized = route.raw_question.trim().replace(/\s+/g, " ");
+  if (!normalized) return false;
+  if (mode === "BTC_FIELD_NOW") return hasPositiveMarketObservationForm(normalized);
+  if (mode === "BTC_CHANGE_MEMORY") {
+    return /^(?:what\s+(?:changed|has\s+changed)(?:\s+since\s+(?:the\s+)?previous\s+snapshot|\s+(?:in|with|for)\s+(?:btc|bitcoin|the\s+btc\s+market|the\s+market)(?:\s+(?:today|now))?)|что\s+изменилось(?:\s+с\s+(?:предыдущего|последнего)\s+снимк[а-яё]*|\s+(?:на\s+рынке|в\s+рынке|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сегодня|сейчас))?))[?!.]*$/i.test(normalized);
+  }
+  return /^(?:which|what|how|какой|какая|какие|как)\b/i.test(normalized)
+    && /\bbinance\b|live\s+(?:source|market|venue|data)|venue\s+observation|жив[а-яё]*\s+(?:источник|рынок|данн)|бирж[а-яё]*\s+(?:источник|данн)/i.test(normalized);
 }
 
 function eligibleMode(route: BtcCosmographerRoute): BtcBinancePublicBindingMode | null {
@@ -173,6 +206,9 @@ export function decideBtcBinancePublicBinding(input: {
   }
   const mode = eligibleMode(input.route);
   if (!mode) return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_ROUTE", preview_only: true, production_enabled: false };
+  if (!hasPositiveBtcBinanceInformationalEligibility(input.route, mode)) {
+    return { eligible: false, fetch: false, mode: null, gate_state: "INELIGIBLE_INFORMATIONAL_PROOF", preview_only: true, production_enabled: false };
+  }
   if (input.disabled) return { eligible: true, fetch: false, mode, gate_state: "DISABLED_KILL_SWITCH", preview_only: true, production_enabled: false };
   if (input.vercelEnv !== "preview") return { eligible: true, fetch: false, mode, gate_state: "DISABLED_PRODUCTION", preview_only: true, production_enabled: false };
   return { eligible: true, fetch: true, mode, gate_state: "ENABLED_PREVIEW", preview_only: true, production_enabled: false };
