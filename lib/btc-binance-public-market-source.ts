@@ -4,6 +4,7 @@ import {
   buildBinanceEvidence,
   finiteNumber,
   normalizeDecimal,
+  normalizeSignedDecimal,
   type BtcBinancePublicMarketEvidence,
   type BtcBinanceShadowSnapshot,
   type BinanceEvidenceDataSource,
@@ -173,8 +174,8 @@ function normalizeTicker24h(value: unknown) {
   const row = asRecord(value);
   if (row.symbol !== BTC_BINANCE_PRIMARY_SYMBOL) throw new Error("BINANCE_SYMBOL_MISMATCH");
   return {
-    price_change_usdt: normalizeDecimal(row.priceChange),
-    price_change_percent: normalizeDecimal(row.priceChangePercent),
+    price_change_usdt: normalizeSignedDecimal(row.priceChange),
+    price_change_percent: normalizeSignedDecimal(row.priceChangePercent),
     last_price_usdt: normalizeDecimal(row.lastPrice),
     high_price_usdt: normalizeDecimal(row.highPrice),
     low_price_usdt: normalizeDecimal(row.lowPrice),

@@ -5,6 +5,7 @@ import {
   classifyBinanceEvidenceFreshness,
   compareMarketSources,
   normalizeDecimal,
+  normalizeSignedDecimal,
 } from "../lib/btc-binance-public-market-evidence";
 import {
   BTC_BINANCE_PUBLIC_MARKET_BASE_URL,
@@ -53,8 +54,8 @@ function successfulFetch(log: Array<{ url: string; method?: string; headers: Hea
     if (url.pathname === "/api/v3/ticker/price") return response({ symbol: "BTCUSDT", price: "60200.12345678" }, 200, headers);
     if (url.pathname === "/api/v3/ticker/24hr") return response({
       symbol: "BTCUSDT",
-      priceChange: "1200.12345678",
-      priceChangePercent: "2.03400000",
+      priceChange: "-1200.12345678",
+      priceChangePercent: "-2.03400000",
       lastPrice: "60200.12345678",
       highPrice: "61000.00000000",
       lowPrice: "58000.00000000",
@@ -91,6 +92,9 @@ async function main() {
   checks.market_only_host = BTC_BINANCE_PUBLIC_MARKET_BASE_URL === "https://data-api.binance.vision";
   checks.weight_budget = BTC_BINANCE_PUBLIC_REST_TOTAL_WEIGHT === 42;
   checks.decimal_precision = normalizeDecimal("60200.123456780000") === "60200.123456780000";
+  checks.signed_change_precision = normalizeSignedDecimal("-1200.123456780000") === "-1200.123456780000";
+  assert.throws(() => normalizeDecimal("-1.00000000"), /BINANCE_DECIMAL_INVALID/);
+  checks.non_negative_price_guard = true;
 
   const priceUrl = new URL(buildBinancePublicMarketUrl("/api/v3/ticker/price", { symbol: "BTCUSDT" }));
   checks.exact_host = priceUrl.origin === "https://data-api.binance.vision";

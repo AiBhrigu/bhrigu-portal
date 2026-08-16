@@ -136,6 +136,11 @@ export function normalizeDecimal(value: unknown): string {
   return value;
 }
 
+export function normalizeSignedDecimal(value: unknown): string {
+  if (typeof value !== "string" || !/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)) throw new Error("BINANCE_SIGNED_DECIMAL_INVALID");
+  return value;
+}
+
 export function finiteNumber(value: unknown): number {
   const number = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(number)) throw new Error("BINANCE_NUMBER_INVALID");
