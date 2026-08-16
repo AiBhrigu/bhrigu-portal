@@ -11,11 +11,11 @@ const supported = [
   ["en", "Which live Binance source is used?"],
   ["en", "What source is Binance live data from?"],
   ["en", "Which source does Binance use for live data?"],
-  ["en", "How is Binance live data retrieved?"],
+  ["en", "What method is used for Binance live evidence?"],
   ["ru", "Какой живой источник Binance используется?"],
   ["ru", "Откуда данные Binance live?"],
   ["ru", "Какой источник BHRIGU использует для live данных Binance?"],
-  ["ru", "Как проверяются живые данные Binance?"],
+  ["ru", "Какой метод используется для живых данных Binance?"],
 ] as const;
 
 const safeUnsupported = [
