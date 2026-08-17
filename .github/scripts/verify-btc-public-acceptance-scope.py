@@ -83,6 +83,7 @@ BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_SCOPE = {
     "tests/btc-public-corridor-proven-defect-repair-acceptance.ts",
 }
 
+# Canonical routing repair stays fail-closed to this exact eleven-file product/acceptance surface.
 BTC_CANONICAL_ROUTING_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-clarification-resolution-pr.yml",
