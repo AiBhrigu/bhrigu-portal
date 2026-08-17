@@ -559,20 +559,40 @@ export function buildBtcProtocolAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
 ): BtcCosmographerAnswerProjection {
-  if (
-    route.subject === "satoshi_history" ||
-    route.subject === "bitcoin_origin" ||
-    route.subject === "genesis_history"
-  ) {
-    return originsHistoryAnswer(locale, route);
+  const question = route.normalized_question.toLowerCase();
+  const isRu = locale === "ru";
+  if (/карт[ау]\s+генезис|genesis\s+chart/.test(question)) {
+    return {
+      answer_state: "LIMITED", answer_mode: "CLARIFICATION",
+      headline: isRu ? "Для карты генезиса нужна принятая модель события" : "A genesis chart requires an accepted event model",
+      direct_answer: isRu ? "Протокольный Genesis известен, но астрологическая карта требует отдельно принятого события, времени UTC и правила координат; эти параметры нельзя выдумать." : "Protocol Genesis is known, but an astrological chart requires a separately accepted event, UTC time, and coordinate rule; those parameters cannot be invented.",
+      sections: [],
+      source_boundary: isRu ? "Протокольный факт не преобразуется автоматически в астрологическую карту." : "A protocol fact does not automatically become an astrological chart.",
+      proof_label: isRu ? "Граница Genesis подтверждена" : "Genesis boundary confirmed",
+    };
+  }
+  if (route.subject === "satoshi_history" || route.subject === "bitcoin_origin" || route.subject === "genesis_history") {
+    const history = originsHistoryAnswer(locale, route);
+    return /что\s+известно.*genesis|what\s+is\s+known.*genesis/.test(question) ? { ...history, answer_mode: "PROTOCOL_FACT" } : history;
   }
   const item = evidence[route.subject] ?? evidence.overview;
   const mechanism = item.mechanism.map((line) => pick(locale, line));
+  const supplyFact = route.subject === "supply" && /предел|limit|how\s+does.*supply/.test(question);
+  const genesisFact = route.subject === "genesis" && /что\s+было|what\s+(?:was|happened)|генезис|genesis/.test(question);
+  const latestBlockState = route.subject === "blocks" && /latest\s+accepted\s+block|current\s+(?:block|tip)|последн[а-яё]*\s+принят[а-яё]*\s+блок|текущ[а-яё]*\s+(?:высот|tip)/.test(question);
+  const exactFutureHeight = route.subject === "blocks" && /2030|future|будущ|точн[а-яё]*\s+block\s*height|exact\s+block\s+height/.test(question);
+  const subsidyVsReward = route.subject === "subsidy" && /отлич|difference|total\s+(?:miner\s+)?reward|общ[а-яё]*\s+наград/.test(question);
+  const miningIssuance = route.subject === "mining" && /выпуск|эмисси|issuance|new\s+(?:btc|coins?)/.test(question);
+  let direct = pick(locale, item.direct);
+  if (subsidyVsReward) direct = isRu ? "Block subsidy — это новые BTC по графику эмиссии; общая награда майнера за блок равна subsidy плюс допустимые комиссии из уже существующих BTC." : "Block subsidy is newly issued BTC under the issuance schedule; total miner reward for a block is subsidy plus valid transaction fees paid from existing BTC.";
+  if (miningIssuance) direct = isRu ? "Майнинг связывает Proof of Work и эмиссию через допустимый блок: майнер доказывает работу, а coinbase может получить не больше протокольной subsidy плюс комиссии; новые BTC появляются только в части subsidy." : "Mining links proof of work and issuance through a valid block: a miner proves work, and coinbase may claim no more than the protocol subsidy plus fees; only the subsidy portion creates new BTC.";
+  if (latestBlockState) direct = isRu ? "Точный текущий tip/height нельзя назвать без привязанного динамического chain-state snapshot; этот публичный ответ не будет выдумывать состояние цепи." : "The exact current tip/height cannot be stated without a bound dynamic chain-state snapshot; this public answer will not invent chain state.";
+  if (exactFutureHeight) direct = isRu ? "Точная высота блока на календарную дату 1 января 2030 заранее неизвестна: её можно только оценивать из предположений о времени блоков, а не утверждать как факт." : "The exact block height on a calendar date such as 1 January 2030 is not knowable in advance; it can only be estimated from block-time assumptions, not stated as fact.";
   return {
-    answer_state: "CONFIRMED",
-    answer_mode: route.intents.includes("fact") ? "PROTOCOL_FACT" : "PROTOCOL_EXPLAIN",
+    answer_state: latestBlockState ? "LIMITED" : "CONFIRMED",
+    answer_mode: (route.intents.includes("fact") || supplyFact || genesisFact || latestBlockState) ? "PROTOCOL_FACT" : "PROTOCOL_EXPLAIN",
     headline: pick(locale, item.headline),
-    direct_answer: pick(locale, item.direct),
+    direct_answer: direct,
     sections: [
       {
         id: "mechanism",
