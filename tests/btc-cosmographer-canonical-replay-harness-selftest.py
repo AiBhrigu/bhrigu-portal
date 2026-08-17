@@ -1,2032 +1,478 @@
 """
-BTC Cosmographer Canonical 140 Replay Harness – Selftest Suite
-schema: btc_cosmographer_replay_harness_selftest_v0_1
-
-Proves all required invariants WITHOUT running the real 140 against Production.
-
-PRODUCT_CODE_MUTATION=FORBIDDEN
-MERGE=FORBIDDEN
-REAL_CANONICAL_140_REPLAY_IN_THIS_ATOM=FORBIDDEN
+BTC Cosmographer Canonical 140 Replay Harness — Two-stage handoff selftests.
+No real browser replay is executed by this suite.
 """
-
 from __future__ import annotations
 
+import argparse
 import csv
-import hashlib
-import io
+import importlib.util
+import inspect
 import json
-import os
-import sys
 import tempfile
-import types
 import unittest
 from copy import deepcopy
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
-# ---------------------------------------------------------------------------
-# Resolve repo root and import harness module
-# ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parent.parent
 HARNESS_PATH = REPO_ROOT / "scripts" / "run-btc-cosmographer-canonical-140-replay.py"
-
-import importlib.util
-
 _spec = importlib.util.spec_from_file_location("harness", HARNESS_PATH)
-_harness = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_harness)
-
-CORPUS_PATH = _harness.CORPUS_PATH
-PACKETS_PATH = _harness.PACKETS_PATH
-
-CORPUS_AUTHORITY_SHA256 = _harness.CORPUS_AUTHORITY_SHA256
-STATE_PACKETS_AUTHORITY_SHA256 = _harness.STATE_PACKETS_AUTHORITY_SHA256
-TOTAL_CASES = _harness.TOTAL_CASES
-UNIQUE_CASE_IDS = _harness.UNIQUE_CASE_IDS
-LAYER_COUNTS = _harness.LAYER_COUNTS
-
-validate_fixtures = _harness.validate_fixtures
-sha256_file = _harness.sha256_file
-sha256_string = _harness.sha256_string
-evaluate_case = _harness.evaluate_case
-build_manifest = _harness.build_manifest
-write_outputs = _harness.write_outputs
-_verify_packet_hash = _harness._verify_packet_hash
-_check_precondition_against_packet = _harness._check_precondition_against_packet
-_batch_identity_preflight = _harness._batch_identity_preflight
-_extract_session_fields = _harness._extract_session_fields
-_family_match = getattr(_harness, "_family_match", None)  # removed in v4; kept for absence assertions
-_validate_final_state_before_target = _harness._validate_final_state_before_target
-MANDATORY_CAPTURE_FIELDS = _harness.MANDATORY_CAPTURE_FIELDS
-FAILURE_CLASSES = _harness.FAILURE_CLASSES
+h = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(h)
 
 
-# ---------------------------------------------------------------------------
-# Helpers for building minimal fixture data
-# ---------------------------------------------------------------------------
-
-def _load_real_fixtures():
-    """Load the real committed fixtures (read-only)."""
-    with open(CORPUS_PATH, encoding="utf-8-sig") as f:
-        csv_rows = list(csv.DictReader(f))
-    with open(PACKETS_PATH, encoding="utf-8") as f:
-        packets_doc = json.load(f)
-    packets = packets_doc["packets"]
-    packets_index = {p["case_id"]: p for p in packets}
-    return csv_rows, packets, packets_index
+def load_fixtures():
+    with open(h.CORPUS_PATH, encoding="utf-8-sig") as f:
+        rows = list(csv.DictReader(f))
+    with open(h.PACKETS_PATH, encoding="utf-8") as f:
+        packets = json.load(f)["packets"]
+    return rows, packets, {p["case_id"]: p for p in packets}
 
 
-def _make_minimal_csv(rows: list[dict]) -> bytes:
-    """Serialize a list of dicts to CSV bytes with BOM."""
-    if not rows:
-        return b"\xef\xbb\xbf"
-    buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=list(rows[0].keys()))
-    writer.writeheader()
-    writer.writerows(rows)
-    return ("\xef\xbb\xbf" + buf.getvalue()).encode("utf-8")
-
-
-def _make_packet(case_id: str, **overrides) -> dict:
-    """Build a minimal valid state packet. packet_hash is computed automatically."""
-    p = {
-        "schema": "btc_cosmographer_evaluator_state_packet_v0_1",
-        "case_id": case_id,
-        "corpus_layer": "AI_MODE_COVERAGE_CORPUS",
-        "locale": "EN",
-        "turn_index": 1,
-        "raw_question": "test question",
-        "target_question_exact": "test question",
-        "original_prior_turn_semantics": "",
-        "original_session_state_semantics": "CLEAN_SESSION",
-        "session_mode": "CLEAN_SESSION",
-        "authority_status": "CLEAN_SESSION",
-        "origin": {},
-        "prior_turns": {"status": "NONE", "value": []},
-        "setup_turns_exact": [],
-        "heuristic_state_reconstruction": "NO",
-        "expected_contract_mutation": "NO",
+def obs(**overrides):
+    base = {
+        "_dom_available": True,
+        "ROUTE_DOMAIN": "astromodule",
+        "ROUTE_SUBJECT": "jupiter",
+        "MARKET_QUESTION_CLASS": None,
+        "RELATION_RESOLUTION": "SINGLE_DOMAIN",
+        "CONTEXT_RELATION": "NEW_TOPIC",
+        "ANSWER_STATE": "CONFIRMED",
+        "ANSWER_MODE": "ASTRO_INTERVAL",
+        "ROUTE_DISPOSITION": "CONTINUE",
+        "PRIMARY_AUTHORITY": "EPHEMERIS_SOURCE_AND_VERIFIED_ASTRONOMICAL_DERIVATIONS",
+        "EVIDENCE_LEVELS": ["L1", "L2", "L3"],
+        "SOURCE_REVISION": "rev",
+        "FRESHNESS": "FRESH",
+        "BINANCE_BINDING_STATE": "NOT_APPLICABLE",
+        "DIRECT_ANSWER": "answer",
+        "BOUNDARY_STATE": "bounded",
+        "SHOW_CLARIFICATION": False,
+        "_answer_section_ids": ["interpretation_boundary"],
+        "_dom_order": {"direct_answer_before_sections": True},
+        "_evidence_metadata": {
+            "evidence-coverage": "2026",
+            "evidence-revision-or-generated-time": "rev",
+        },
     }
-    p.update(overrides)
-    # Compute packet_hash using the standard formula
-    p_for_hash = {k: v for k, v in p.items() if k != "packet_hash"}
-    p["packet_hash"] = "sha256:" + sha256_string(json.dumps(p_for_hash, sort_keys=True, ensure_ascii=False))
-    return p
+    base.update(overrides)
+    return base
 
 
-def _make_minimal_packets_doc(packets: list[dict]) -> dict:
+def session(turns=None, session_id="sid", locale="ru", **extra):
+    value = {"session_id": session_id, "locale": locale, "turns": turns or []}
+    value.update(extra)
+    return {"session_key": "k", "session_value": value}
+
+
+def semantic_bindings(mode_domain="astromodule"):
+    result = {}
+    for dim in h.BINDING_DIMENSIONS:
+        if dim in ("mode", "domain"):
+            result[dim] = {
+                "status": "FROZEN",
+                "evaluation_stage": "A_STRUCTURAL_HARD_GATE",
+                "binding_class": "DIRECT_ENUM",
+                "predicate": {"op": "EQ", "field": "ROUTE_DOMAIN", "value": mode_domain},
+                "missing_observation_verdict": "BLOCKED",
+                "mismatch_verdict": "FAIL",
+            }
+        else:
+            result[dim] = {
+                "status": "FROZEN",
+                "evaluation_stage": "B_SEMANTIC_EVALUATOR",
+                "binding_class": "LOCKED_EVALUATOR_SKILL",
+                "evaluator_id": "btc-cosmographer-evaluator",
+            }
+    return result
+
+
+def synthetic_binding_record(row, packet, bindings=None):
+    record = {
+        "case_id": row["CASE_ID"],
+        "corpus_layer": row["CORPUS_LAYER"],
+        "locale": row["LOCALE"],
+        "question_class": row["QUESTION_CLASS"],
+        "expected_contract_hash": (packet.get("source_authority") or {}).get("expected_contract_hash"),
+        "state_packet_hash": packet["packet_hash"],
+        "runtime_base_sha": "base",
+        "bindings": bindings or semantic_bindings(),
+        "unresolved_required_dimensions": [],
+        "record_status": "FROZEN",
+    }
+    record["binding_record_hash"] = h.canonical_json_sha256(record)
+    return record
+
+
+def semantic_result(inp, verdict="PASS", dimension_override=None):
+    dims = []
+    for dim in h.SEMANTIC_DIMENSIONS:
+        dv = dimension_override.get(dim, verdict) if dimension_override else verdict
+        dims.append({
+            "dimension": dim,
+            "verdict": dv,
+            "reason": f"{dim}:{dv}",
+            "observation_evidence_refs": ["captured_runtime_observation"],
+        })
+    case_verdict = h._semantic_case_verdict(dims)
     return {
-        "schema": "btc_cosmographer_canonical_state_packet_authority_v0_1",
-        "packets": packets,
+        "case_id": inp["case_id"],
+        "observation_sha256": inp["observation_sha256"],
+        "expected_contract_hash": inp["expected_contract_hash"],
+        "state_packet_hash": inp["state_packet_hash"],
+        "evaluator_contract_sha256": inp["evaluator_contract_sha256"],
+        "binding_authority_hash": inp["binding_authority_hash"],
+        "binding_record_hash": inp["binding_record_hash"],
+        "evaluator_input_hash": inp["evaluator_input_hash"],
+        "dimension_results": dims,
+        "case_verdict": case_verdict,
+        "failure_classes": [] if case_verdict == "PASS" else ["OTHER_EXACTLY_DESCRIBED"],
     }
 
 
-def _obs_all_present(**overrides) -> dict:
-    """Return an obs dict with all mandatory fields populated."""
-    obs = {f: "value" for f in MANDATORY_CAPTURE_FIELDS}
-    obs["_dom_available"] = True
-    obs.update(overrides)
-    return obs
+class FixtureIntegrityTests(unittest.TestCase):
+    def test_exact_corpus_hash(self):
+        self.assertEqual(h.sha256_file(h.CORPUS_PATH), h.CORPUS_AUTHORITY_SHA256)
 
+    def test_exact_packets_hash(self):
+        self.assertEqual(h.sha256_file(h.PACKETS_PATH), h.STATE_PACKETS_AUTHORITY_SHA256)
 
-# ---------------------------------------------------------------------------
-# Test cases
-# ---------------------------------------------------------------------------
+    def test_total_and_unique_140(self):
+        rows, packets, _ = load_fixtures()
+        self.assertEqual(len(rows), 140)
+        self.assertEqual(len({r["CASE_ID"] for r in rows}), 140)
+        self.assertEqual(len(packets), 140)
 
-
-class TestFixtureIntegrity(unittest.TestCase):
-    """Verify committed fixtures against authority hashes."""
-
-    def test_corpus_file_exists(self):
-        self.assertTrue(CORPUS_PATH.exists(), f"Corpus fixture not found: {CORPUS_PATH}")
-
-    def test_packets_file_exists(self):
-        self.assertTrue(PACKETS_PATH.exists(), f"Packets fixture not found: {PACKETS_PATH}")
-
-    def test_corpus_sha256_matches_authority(self):
-        actual = sha256_file(CORPUS_PATH)
-        self.assertEqual(
-            actual,
-            CORPUS_AUTHORITY_SHA256,
-            f"Corpus SHA mismatch: expected={CORPUS_AUTHORITY_SHA256} actual={actual}",
-        )
-
-    def test_state_packets_sha256_matches_authority(self):
-        actual = sha256_file(PACKETS_PATH)
-        self.assertEqual(
-            actual,
-            STATE_PACKETS_AUTHORITY_SHA256,
-            f"State packets SHA mismatch: expected={STATE_PACKETS_AUTHORITY_SHA256} actual={actual}",
-        )
-
-    def test_total_cases_140(self):
-        csv_rows, _, _ = _load_real_fixtures()
-        self.assertEqual(len(csv_rows), TOTAL_CASES)
-
-    def test_unique_case_ids_140(self):
-        csv_rows, _, _ = _load_real_fixtures()
-        ids = [r["CASE_ID"] for r in csv_rows]
-        self.assertEqual(len(set(ids)), UNIQUE_CASE_IDS)
-
-    def test_layer_counts_14_72_27_27(self):
+    def test_layer_counts(self):
         from collections import Counter
+        rows, _, _ = load_fixtures()
+        self.assertEqual(Counter(r["CORPUS_LAYER"] for r in rows), h.LAYER_COUNTS)
 
-        csv_rows, _, _ = _load_real_fixtures()
-        counts = Counter(r["CORPUS_LAYER"] for r in csv_rows)
-        for layer, expected in LAYER_COUNTS.items():
-            self.assertEqual(counts[layer], expected, f"Layer {layer}: expected={expected} actual={counts[layer]}")
+    def test_packet_id_set_equals_corpus(self):
+        rows, packets, _ = load_fixtures()
+        self.assertEqual({r["CASE_ID"] for r in rows}, {p["case_id"] for p in packets})
 
-    def test_one_packet_per_case_id(self):
-        csv_rows, packets, packets_index = _load_real_fixtures()
-        csv_ids = {r["CASE_ID"] for r in csv_rows}
-        packet_ids = {p["case_id"] for p in packets}
-        self.assertEqual(csv_ids, packet_ids)
+    def test_packet_hash_format_all_140(self):
+        _, packets, _ = load_fixtures()
+        self.assertTrue(all(h._verify_packet_hash(p, True) for p in packets))
 
-    def test_all_packet_hashes_valid_format(self):
-        """All real fixture packet_hash values must be well-formed sha256:<64-hex> strings."""
-        _, packets, _ = _load_real_fixtures()
-        for p in packets:
-            declared = p.get("packet_hash")
-            self.assertIsNotNone(declared, f"packet_hash missing for case_id={p['case_id']}")
-            self.assertIsInstance(declared, str, f"packet_hash not a string for case_id={p['case_id']}")
-            # Must pass format-only check (file-level SHA proven = authority mode)
-            self.assertTrue(
-                _verify_packet_hash(p, file_sha_is_authority=True),
-                f"packet_hash fails format check for case_id={p['case_id']}: {declared!r}",
-            )
+    def test_no_heuristic_state_reconstruction(self):
+        _, packets, _ = load_fixtures()
+        self.assertEqual([p["case_id"] for p in packets if p.get("heuristic_state_reconstruction") != "NO"], [])
 
-    def test_heuristic_derivation_count_is_zero(self):
-        _, packets, _ = _load_real_fixtures()
-        heuristic = [p for p in packets if p.get("heuristic_state_reconstruction") not in (None, "NO", False)]
-        self.assertEqual(len(heuristic), 0, f"Heuristic-derived packets found: {[p['case_id'] for p in heuristic]}")
-
-    def test_expected_contract_mutation_count_is_zero(self):
-        _, packets, _ = _load_real_fixtures()
-        mutated = [p for p in packets if p.get("expected_contract_mutation") not in (None, "NO", False)]
-        self.assertEqual(len(mutated), 0, f"Contract-mutated packets found: {[p['case_id'] for p in mutated]}")
-
-
-class TestDuplicateCaseIdRejected(unittest.TestCase):
-    """Duplicate case ID in corpus must be rejected."""
+    def test_no_expected_contract_mutation(self):
+        _, packets, _ = load_fixtures()
+        self.assertEqual([p["case_id"] for p in packets if p.get("expected_contract_mutation") != "NO"], [])
 
     def test_duplicate_case_id_rejected(self):
-        rows = [
-            {"CASE_ID": "X-001", "CORPUS_LAYER": "AI_MODE_COVERAGE_CORPUS"},
-            {"CASE_ID": "X-001", "CORPUS_LAYER": "AI_MODE_COVERAGE_CORPUS"},  # duplicate
-        ]
-        csv_bytes = _make_minimal_csv(rows)
-
-        with tempfile.TemporaryDirectory() as tmp:
-            csv_path = Path(tmp) / "corpus.csv"
-            csv_path.write_bytes(csv_bytes)
-
-            with patch.object(_harness, "CORPUS_AUTHORITY_SHA256", sha256_file(csv_path)):
-                with self.assertRaises(SystemExit) as ctx:
-                    validate_fixtures(csv_path, PACKETS_PATH)
-                self.assertEqual(ctx.exception.code, 1)
-
-
-class TestCorpusHashMismatchRejected(unittest.TestCase):
-    """Corpus hash mismatch must be rejected."""
+        rows, _, _ = load_fixtures()
+        duplicate = deepcopy(rows)
+        duplicate[1]["CASE_ID"] = duplicate[0]["CASE_ID"]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "c.csv"
+            with open(path, "w", newline="", encoding="utf-8-sig") as f:
+                w = csv.DictWriter(f, fieldnames=duplicate[0].keys()); w.writeheader(); w.writerows(duplicate)
+            with patch.object(h, "CORPUS_AUTHORITY_SHA256", h.sha256_file(path)):
+                with self.assertRaises(SystemExit):
+                    h.validate_fixtures(path, h.PACKETS_PATH)
 
     def test_corpus_hash_mismatch_rejected(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            csv_path = Path(tmp) / "corpus.csv"
-            csv_path.write_bytes(b"\xef\xbb\xbfCASE_ID,CORPUS_LAYER\nX-001,LAYER\n")
-            with self.assertRaises(SystemExit) as ctx:
-                validate_fixtures(csv_path, PACKETS_PATH)
-            self.assertEqual(ctx.exception.code, 1)
-
-
-class TestStatePacketHashMismatchRejected(unittest.TestCase):
-    """State packets artifact hash mismatch must be rejected."""
-
-    def test_state_packets_hash_mismatch_rejected(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            pkt_path = Path(tmp) / "packets.json"
-            pkt_path.write_text(json.dumps({"packets": []}), encoding="utf-8")
-            with self.assertRaises(SystemExit) as ctx:
-                validate_fixtures(CORPUS_PATH, pkt_path)
-            self.assertEqual(ctx.exception.code, 1)
-
-
-class TestMissingPacketRejected(unittest.TestCase):
-    """Missing packet for a CSV case ID must be rejected."""
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "c.csv"; p.write_text("bad", encoding="utf-8")
+            with self.assertRaises(SystemExit):
+                h.validate_fixtures(p, h.PACKETS_PATH)
 
     def test_missing_packet_rejected(self):
-        csv_rows, packets, _ = _load_real_fixtures()
-        trimmed_packets = packets[:-1]
-        doc = _make_minimal_packets_doc(trimmed_packets)
+        _, packets, _ = load_fixtures()
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "p.json"
+            p.write_text(json.dumps({"packets": packets[:-1]}, ensure_ascii=False), encoding="utf-8")
+            with patch.object(h, "STATE_PACKETS_AUTHORITY_SHA256", h.sha256_file(p)):
+                with self.assertRaises(SystemExit):
+                    h.validate_fixtures(h.CORPUS_PATH, p)
 
-        with tempfile.TemporaryDirectory() as tmp:
-            pkt_path = Path(tmp) / "packets.json"
-            pkt_path.write_text(json.dumps(doc), encoding="utf-8")
-            pkt_sha = sha256_file(pkt_path)
-
-            with patch.object(_harness, "STATE_PACKETS_AUTHORITY_SHA256", pkt_sha):
-                with self.assertRaises(SystemExit) as ctx:
-                    validate_fixtures(CORPUS_PATH, pkt_path)
-                self.assertEqual(ctx.exception.code, 1)
-
-
-class TestPacketHashMismatchRejected(unittest.TestCase):
-    """
-    A syntactically valid (64-char hex) but incorrect packet_hash must be rejected.
-    This proves that length-only checks are insufficient; actual hash verification is required.
-    """
-
-    def test_valid_length_wrong_hash_rejected(self):
-        """
-        Build a synthetic packets file where one packet has a valid-format but wrong hash.
-        Patch the file-level SHA so only the per-packet hash check applies.
-        The harness must reject it (SystemExit 1).
-        """
-        # Build a minimal packet set using _make_packet (correct hash)
-        packets = [_make_packet(f"X-{i:03d}") for i in range(1, 3)]
-
-        # Tamper one packet with a syntactically valid (64-char hex) but incorrect hash
-        tampered = deepcopy(packets)
-        wrong_hash = "a" * 64  # valid hex format, 64 chars, but wrong value
-        tampered[0]["packet_hash"] = "sha256:" + wrong_hash
-
-        # Verify that _verify_packet_hash rejects it when file SHA is NOT authority
-        self.assertFalse(
-            _verify_packet_hash(tampered[0], file_sha_is_authority=False),
-            "A valid-length wrong hash must fail _verify_packet_hash when not in authority mode",
-        )
-
-    def test_correct_hash_accepted(self):
-        """A packet whose hash matches the standard derivation formula must be accepted."""
-        p = _make_packet("X-001")
-        self.assertTrue(
-            _verify_packet_hash(p, file_sha_is_authority=False),
-            "Correctly-hashed packet must pass _verify_packet_hash",
-        )
-
-    def test_validate_fixtures_rejects_wrong_hash(self):
-        """validate_fixtures must exit 1 when packets file hash does not match authority.
-        Complements test_valid_length_wrong_hash_rejected which proves the per-packet
-        _verify_packet_hash function directly rejects syntactically valid wrong hashes.
-        """
-        # Build synthetic packets where one has a valid-format but wrong hash
-        csv_rows_real, _, _ = _load_real_fixtures()
-        packets = [_make_packet(r["CASE_ID"]) for r in csv_rows_real]
-        tampered = deepcopy(packets)
-        tampered[0]["packet_hash"] = "sha256:" + "b" * 64  # valid format, wrong value
-
-        doc = _make_minimal_packets_doc(tampered)
-        with tempfile.TemporaryDirectory() as tmp:
-            pkt_path = Path(tmp) / "packets.json"
-            pkt_path.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
-
-            # Do NOT patch STATE_PACKETS_AUTHORITY_SHA256 → file SHA mismatch → exit 1
-            with self.assertRaises(SystemExit) as ctx:
-                validate_fixtures(CORPUS_PATH, pkt_path)
-            self.assertEqual(ctx.exception.code, 1)
+    def test_packet_hash_mismatch_rejected_by_hash_function(self):
+        packet = {"case_id": "X", "x": 1}
+        packet["packet_hash"] = "sha256:" + "a" * 64
+        self.assertFalse(h._verify_packet_hash(packet, False))
 
 
-class TestUnavailableStateBecomesBlocked(unittest.TestCase):
-    """Unavailable runtime-relevant state must yield BLOCKED verdict."""
-
-    def test_setup_precondition_mismatch_yields_blocked(self):
-        """
-        _check_precondition_against_packet returns a non-None reason when
-        observed context doesn't match expected_context_packet.
-        execute_case would return BLOCKED; we test the precondition check directly.
-        """
-        packet = _make_packet(
-            "X-001",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            expected_context_packet={
-                "schema": "btc_cosmographer_context_v0_1",
-                "prior_domain": "astromodule",
-                "prior_subject": "planetary_aspects",
-                "prior_answer_state": "CONFIRMED",
+class BindingAuthorityTests(unittest.TestCase):
+    def make_doc(self):
+        rows, _, index = load_fixtures()
+        records = [synthetic_binding_record(row, index[row["CASE_ID"]]) for row in rows]
+        return {
+            "schema": h.BINDING_AUTHORITY_SCHEMA,
+            "authority_status": "FROZEN_PASS",
+            "authority_hash": h.BINDING_AUTHORITY_HASH,
+            "source_authority": {
+                "canonical_corpus_sha256": h.CORPUS_AUTHORITY_SHA256,
+                "state_packets_sha256": h.STATE_PACKETS_AUTHORITY_SHA256,
+                "evaluator_contract_sha256": h.EVALUATOR_CONTRACT_SHA256,
             },
-        )
-        # Observed: wrong domain
-        obs = _obs_all_present(ROUTE_DOMAIN="unknown_domain", ROUTE_SUBJECT="planetary_aspects", ANSWER_STATE="CONFIRMED")
-        result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
-        self.assertIsNotNone(result, "Precondition mismatch must return a BLOCKED reason")
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+            "hybrid_binding_coverage_proof": {"freeze_gate": "PASS", "unbound_required_dimensions": 0},
+            "records": records,
+        }
 
-    def test_matching_precondition_passes(self):
-        """If observed context matches expected_context_packet, no block is returned."""
-        packet = _make_packet(
-            "X-001",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            expected_context_packet={
-                "schema": "btc_cosmographer_context_v0_1",
-                "prior_domain": "astromodule",
-                "prior_subject": "planetary_aspects",
-                "prior_answer_state": "CONFIRMED",
-            },
-        )
-        obs = _obs_all_present(ROUTE_DOMAIN="astromodule", ROUTE_SUBJECT="planetary_aspects", ANSWER_STATE="CONFIRMED")
-        result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
-        self.assertIsNone(result, "Matching precondition must not return a BLOCKED reason")
+    def test_synthetic_140_authority_validates(self):
+        rows, _, index = load_fixtures(); doc = self.make_doc()
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "a.json"; p.write_text(json.dumps(doc, ensure_ascii=False), encoding="utf-8")
+            with patch.object(h, "BINDING_AUTHORITY_FILE_SHA256", h.sha256_file(p)):
+                loaded, recs = h.validate_binding_authority(p, rows, index)
+            self.assertEqual(loaded["authority_status"], "FROZEN_PASS")
+            self.assertEqual(len(recs), 140)
 
-    def test_empty_observed_domain_with_expected_domain_is_blocked(self):
-        """If observed ROUTE_DOMAIN is None/empty but expected_domain is declared, must block."""
-        packet = _make_packet(
-            "X-001",
-            expected_context_packet={"prior_domain": "astromodule"},
-        )
-        # Observed domain is empty/None — precondition gate must not silently pass
-        obs = _obs_all_present(ROUTE_DOMAIN=None)
-        result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
-        self.assertIsNotNone(result, "Empty observed domain with expected domain must block")
-        self.assertIn("prior_domain", result)
+    def test_authority_file_hash_mismatch_rejected(self):
+        rows, _, index = load_fixtures(); doc = self.make_doc()
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "a.json"; p.write_text(json.dumps(doc), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "FILE_HASH_MISMATCH"):
+                h.validate_binding_authority(p, rows, index)
+
+    def test_authority_hash_mismatch_rejected(self):
+        rows, _, index = load_fixtures(); doc = self.make_doc(); doc["authority_hash"] = "sha256:" + "0" * 64
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "a.json"; p.write_text(json.dumps(doc), encoding="utf-8")
+            with patch.object(h, "BINDING_AUTHORITY_FILE_SHA256", h.sha256_file(p)):
+                with self.assertRaisesRegex(ValueError, "AUTHORITY_HASH_MISMATCH"):
+                    h.validate_binding_authority(p, rows, index)
+
+    def test_record_hash_mismatch_rejected(self):
+        rows, _, index = load_fixtures(); doc = self.make_doc(); doc["records"][0]["binding_record_hash"] = "sha256:" + "0" * 64
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "a.json"; p.write_text(json.dumps(doc), encoding="utf-8")
+            with patch.object(h, "BINDING_AUTHORITY_FILE_SHA256", h.sha256_file(p)):
+                with self.assertRaisesRegex(ValueError, "RECORD_HASH_MISMATCH"):
+                    h.validate_binding_authority(p, rows, index)
+
+    def test_expected_contract_hash_linkage_rejected(self):
+        rows, _, index = load_fixtures(); doc = self.make_doc(); doc["records"][0]["expected_contract_hash"] = "sha256:bad"
+        body = {k:v for k,v in doc["records"][0].items() if k != "binding_record_hash"}
+        doc["records"][0]["binding_record_hash"] = h.canonical_json_sha256(body)
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "a.json"; p.write_text(json.dumps(doc), encoding="utf-8")
+            with patch.object(h, "BINDING_AUTHORITY_FILE_SHA256", h.sha256_file(p)):
+                with self.assertRaisesRegex(ValueError, "EXPECTED_CONTRACT_HASH_MISMATCH"):
+                    h.validate_binding_authority(p, rows, index)
+
+    def test_dimension_set_exact(self):
+        self.assertEqual(h.BINDING_DIMENSIONS, ["mode", "domain", *h.SEMANTIC_DIMENSIONS])
+        self.assertEqual(len(h.SEMANTIC_DIMENSIONS), 10)
 
 
-class TestBatchIdentityPreflightBlocks(unittest.TestCase):
-    """SHA mismatch must block the entire batch, not just per-case FAIL."""
+class StructuralPredicateTests(unittest.TestCase):
+    def ev(self, pred, o=None, before=None, after=None, statuses=None):
+        return h._evaluate_structural_predicate(pred, o or obs(), before or {}, after or {}, statuses or {})
 
-    def test_source_sha_mismatch_blocks_batch(self):
-        """_batch_identity_preflight returns a BLOCKED string on source SHA mismatch."""
-        mock_driver = MagicMock()
-        # No source SHA header in performance log → source_sha will be None
-        mock_driver.get_log.return_value = []
-        # Deployment SHA from DOM
-        mock_driver.execute_script.return_value = "wrong_deploy_sha"
+    def test_eq(self): self.assertTrue(self.ev({"op":"EQ","field":"ROUTE_DOMAIN","value":"astromodule"}))
+    def test_eq_false(self): self.assertFalse(self.ev({"op":"EQ","field":"ROUTE_DOMAIN","value":"btc_market"}))
+    def test_and(self): self.assertTrue(self.ev({"op":"AND","args":[{"op":"EQ","field":"ROUTE_DOMAIN","value":"astromodule"},{"op":"EQ","field":"ROUTE_SUBJECT","value":"jupiter"}]}))
+    def test_or(self): self.assertTrue(self.ev({"op":"OR","args":[{"op":"EQ","field":"ROUTE_DOMAIN","value":"bad"},{"op":"EQ","field":"ROUTE_SUBJECT","value":"jupiter"}]}))
+    def test_not(self): self.assertTrue(self.ev({"op":"NOT","arg":{"op":"EQ","field":"ROUTE_SUBJECT","value":"mercury"}}))
+    def test_in(self): self.assertTrue(self.ev({"op":"IN","field":"ANSWER_MODE","values":["ASTRO_INTERVAL","X"]}))
+    def test_set_contains_all(self): self.assertTrue(self.ev({"op":"SET_CONTAINS_ALL","field":"EVIDENCE_LEVELS","values":["L1","L3"]}))
+    def test_intersects(self): self.assertTrue(self.ev({"op":"INTERSECTS","field":"ANSWER_SECTION_IDS","values":["x","interpretation_boundary"]}))
+    def test_is_non_null(self): self.assertTrue(self.ev({"op":"IS_NON_NULL","field":"DIRECT_ANSWER"}))
+    def test_is_null(self):
+        after=session([{"time_start":None,"time_end":None}])
+        self.assertTrue(self.ev({"op":"IS_NULL","field":"TURN.time_start"}, after=after))
+    def test_eq_fields(self):
+        before=session([{"route_subject":"jupiter"}]); self.assertTrue(self.ev({"op":"EQ_FIELDS","left":"ROUTE_SUBJECT","right":"SESSION_PRIOR.route_subject"}, before=before))
+    def test_session_prior_eq(self):
+        before=session([{"route_domain":"astromodule"}]); self.assertTrue(self.ev({"op":"SESSION_PRIOR_EQ","field":"route_domain","value":"astromodule"}, before=before))
+    def test_date_range_eq(self):
+        after=session([{"time_start":"2026-01-01","time_end":"2026-12-31"}]); self.assertTrue(self.ev({"op":"DATE_RANGE_EQ","start":"2026-01-01","end":"2026-12-31"}, after=after))
+    def test_date_eq(self):
+        after=session([{"time_start":"2009-01-03","time_end":"2009-01-03"}]); self.assertTrue(self.ev({"op":"DATE_EQ","value":"2009-01-03"}, after=after))
+    def test_dependency(self): self.assertTrue(self.ev({"op":"DEPENDENCY","binding":"subject","required_status":"PASS"}, statuses={"subject":"PASS"}))
+    def test_unknown_field_returns_none(self): self.assertIsNone(self.ev({"op":"EQ","field":"DOES_NOT_EXIST","value":"x"}))
+
+
+class StageATests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        rows, _, idx = load_fixtures(); cls.row=rows[0]; cls.packet=idx[cls.row["CASE_ID"]]
+
+    def record(self, bindings=None): return synthetic_binding_record(self.row, self.packet, bindings)
+
+    def eval_stage(self, o=None, record=None, src="sha", dep="sha"):
+        return h.evaluate_stage_a(self.row, self.packet, o or obs(), record or self.record(), src, dep, "sha", "sha", {}, session([{"route_domain":"astromodule","route_subject":"jupiter","time_start":None,"time_end":None}]))
+
+    def test_stage_a_pass_simple_structural(self): self.assertEqual(self.eval_stage()["stage_a_verdict"], "PASS")
+    def test_source_sha_mismatch_fails(self): self.assertEqual(self.eval_stage(src="wrong")["stage_a_verdict"], "FAIL")
+    def test_deployment_sha_mismatch_fails(self): self.assertEqual(self.eval_stage(dep="wrong")["stage_a_verdict"], "FAIL")
+    def test_question_byte_mismatch_fails(self):
+        row=deepcopy(self.row); row["QUESTION_TEXT"] += "x"
+        r=h.evaluate_stage_a(row,self.packet,obs(),self.record(),"sha","sha","sha","sha",{},session([]))
+        self.assertEqual(r["stage_a_verdict"],"FAIL")
+    def test_locale_authority_mismatch_fails(self):
+        row=deepcopy(self.row); row["LOCALE"]="XX"
+        r=h.evaluate_stage_a(row,self.packet,obs(),self.record(),"sha","sha","sha","sha",{},session([]))
+        self.assertEqual(r["stage_a_verdict"],"FAIL")
+    def test_trading_intent_fails(self): self.assertEqual(self.eval_stage(obs(BINANCE_BINDING_STATE="TRADING_INTENT_DETECTED"))["stage_a_verdict"],"FAIL")
+    def test_volatile_binance_structural_value_does_not_fail(self): self.assertEqual(self.eval_stage(obs(BINANCE_BINDING_STATE="LIVE_PUBLIC_OBSERVATION"))["stage_a_verdict"],"PASS")
+    def test_structural_mismatch_fails(self): self.assertEqual(self.eval_stage(obs(ROUTE_DOMAIN="btc_market"))["stage_a_verdict"],"FAIL")
+    def test_structural_missing_observation_blocks(self): self.assertEqual(self.eval_stage(obs(ROUTE_DOMAIN=None))["stage_a_verdict"],"BLOCKED")
+    def test_semantic_only_dimensions_marked_not_applicable(self):
+        r=self.eval_stage(); sem=[x for x in r["structural_dimension_results"] if x["dimension"] in h.SEMANTIC_DIMENSIONS]
+        self.assertTrue(all(x["status"]=="NOT_APPLICABLE_STAGE_B_REQUIRED" for x in sem))
+    def test_evaluate_case_without_binding_record_blocks(self):
+        r=h.evaluate_case(self.row,self.packet,obs(),"sha","sha","sha","sha")
+        self.assertEqual(r["stage_a_verdict"],"BLOCKED")
+    def test_no_semantic_csv_string_comparison_in_stage_a(self):
+        src=inspect.getsource(h.evaluate_stage_a)
+        for col in ("EXPECTED_SUBJECT","EXPECTED_INTENT","EXPECTED_PERIOD","EXPECTED_CONTEXT_RELATION","EXPECTED_EVIDENCE_FAMILY","EXPECTED_ANSWER_TYPE","EXPECTED_DIRECTNESS","EXPECTED_BOUNDARY","EXPECTED_MEMORY_ACTION","FORBIDDEN_BEHAVIOR"):
+            self.assertNotIn(col, src)
+
+
+class SetupAndIdentityTests(unittest.TestCase):
+    def test_setup_precondition_mismatch_blocks(self):
+        packet={"prior_turns":{"value":[]},"expected_context_packet":{"prior_domain":"astromodule"}}
+        reason=h._check_precondition_against_packet(packet,obs(ROUTE_DOMAIN="btc_market"),{},1)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH",reason)
+
+    def test_question_exact_setup_mismatch_blocks(self):
+        packet={"prior_turns":{"value":[{"question_exact":"Q"}]}}
+        reason=h._check_precondition_against_packet(packet,obs(),{},1,submitted_question="WRONG")
+        self.assertIn("question_exact",reason)
+
+    def test_clean_session_code_clears_storage(self):
+        src=inspect.getsource(h.execute_case)
+        self.assertIn("sessionStorage.clear(); localStorage.clear();",src)
+        self.assertIn('session_state_before_target',src)
+
+    def test_setup_sequence_order_code_is_exact(self):
+        src=inspect.getsource(h.execute_case)
+        self.assertIn("setup_turns[0]",src)
+        self.assertIn("enumerate(setup_turns[1:], start=2)",src)
+
+    def test_batch_deployment_mismatch_blocks(self):
+        driver=MagicMock(); driver.get_log.return_value=[]; driver.execute_script.return_value="wrong"
         with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNotNone(block_reason)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
+            reason,_,_=h._batch_identity_preflight(driver,"https://example.com","src","dep")
+        self.assertIn("BATCH_IDENTITY_BLOCKED",reason)
+        self.assertIn("DEPLOYMENT_SHA_MISMATCH",reason)
 
-    def test_matching_shas_pass_preflight(self):
-        """_batch_identity_preflight returns None block reason when SHAs match."""
-        mock_driver = MagicMock()
-        # deployment SHA from DOM execute_script
-        mock_driver.execute_script.return_value = "correct_deploy"
-        # source SHA from performance log (Network.responseReceived Document header)
-        perf_log_entry = {
-            "message": json.dumps({
-                "message": {
-                    "method": "Network.responseReceived",
-                    "params": {
-                        "type": "Document",
-                        "response": {
-                            "headers": {
-                                "x-btc-deployment-source-sha": "correct_source"
-                            }
-                        }
-                    }
-                }
-            })
-        }
-        mock_driver.get_log.return_value = [perf_log_entry]
+    def test_batch_source_mismatch_blocks(self):
+        driver=MagicMock(); driver.get_log.return_value=[]; driver.execute_script.return_value="dep"
         with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNone(block_reason)
+            reason,_,_=h._batch_identity_preflight(driver,"https://example.com","src","dep")
+        self.assertIn("SOURCE_SHA_MISMATCH",reason)
+
+
+class HandoffHashTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        rows,_,idx=load_fixtures(); cls.row=rows[0]; cls.packet=idx[cls.row["CASE_ID"]]; cls.record=synthetic_binding_record(cls.row,cls.packet)
+
+    def make_raw(self, verdict="PASS"):
+        return {"case_id":self.row["CASE_ID"],"question_exact":self.packet["target_question_exact"],"locale":self.packet["locale"],"observation":obs(),"session_state_before_target":session([]),"session_state":session([{"route_domain":"astromodule"}]),"response_headers":{},"served_source_sha":"src","served_deployment_sha":"dep","setup_preconditions_materialized":True,"stage_a_verdict":verdict,"stage_a_failure_reasons":[],"structural_dimension_results":[]}
+
+    def test_evaluator_input_contains_hash_authorities(self):
+        inp=h.build_evaluator_input(self.make_raw(),self.packet,(self.packet.get("source_authority") or {}).get("expected_contract") or self.row,self.record,"src","dep")
+        for key in ("observation_sha256","expected_contract_hash","state_packet_hash","evaluator_contract_sha256","binding_authority_hash","binding_record_hash","evaluator_input_hash"):
+            self.assertTrue(inp.get(key),key)
+
+    def test_stage_b_required_only_after_stage_a_pass(self):
+        inp=h.build_evaluator_input(self.make_raw("PASS"),self.packet,self.row,self.record,"src","dep"); self.assertTrue(inp["stage_b_required"])
+        inp2=h.build_evaluator_input(self.make_raw("BLOCKED"),self.packet,self.row,self.record,"src","dep"); self.assertFalse(inp2["stage_b_required"])
+
+    def test_observation_hash_changes_on_observation_change(self):
+        raw1=self.make_raw(); raw2=self.make_raw(); raw2["observation"]["ROUTE_SUBJECT"]="mercury"
+        i1=h.build_evaluator_input(raw1,self.packet,self.row,self.record,"src","dep"); i2=h.build_evaluator_input(raw2,self.packet,self.row,self.record,"src","dep")
+        self.assertNotEqual(i1["observation_sha256"],i2["observation_sha256"])
+
+
+class FinalizerTests(unittest.TestCase):
+    def make_capture(self, td, stage_a="PASS"):
+        rows,_,idx=load_fixtures(); row=rows[0]; packet=idx[row["CASE_ID"]]; record=synthetic_binding_record(row,packet)
+        raw={"case_id":row["CASE_ID"],"question_exact":packet["target_question_exact"],"locale":packet["locale"],"observation":obs(),"session_state_before_target":session([]),"session_state":session([{"route_domain":"astromodule"}]),"response_headers":{},"served_source_sha":"src","served_deployment_sha":"dep","setup_preconditions_materialized":True,"stage_a_verdict":stage_a,"stage_a_failure_reasons":[],"structural_dimension_results":[]}
+        inp=h.build_evaluator_input(raw,packet,(packet.get("source_authority") or {}).get("expected_contract") or row,record,"src","dep")
+        out=Path(td); h._write_jsonl(out/"raw-observations.jsonl",[raw]); h._write_jsonl(out/"evaluator-input.jsonl",[inp])
+        return row,raw,inp
+
+    def run_final(self, stage_a="PASS", semantic_verdict="PASS", mutate=None):
+        td=tempfile.TemporaryDirectory(); out=Path(td.name); row,raw,inp=self.make_capture(out,stage_a)
+        records=[] if stage_a!="PASS" else [semantic_result(inp,semantic_verdict)]
+        if mutate and records: mutate(records[0])
+        sem=out/"semantic.jsonl"; h._write_jsonl(sem,records)
+        return td,out,row,raw,inp,sem
+
+    def test_semantic_pass_yields_final_pass(self):
+        td,out,_,_,_,sem=self.run_final(); summary=h.finalize_semantic_results(out,sem); self.assertEqual(summary["pass"],1); td.cleanup()
+    def test_semantic_fail_yields_final_fail(self):
+        td,out,_,_,_,sem=self.run_final(semantic_verdict="FAIL"); summary=h.finalize_semantic_results(out,sem); self.assertEqual(summary["fail"],1); td.cleanup()
+    def test_semantic_blocked_yields_final_blocked(self):
+        td,out,_,_,_,sem=self.run_final(semantic_verdict="BLOCKED"); summary=h.finalize_semantic_results(out,sem); self.assertEqual(summary["blocked"],1); td.cleanup()
+    def test_stage_a_fail_needs_no_semantic_result_and_is_final(self):
+        td,out,_,_,_,sem=self.run_final(stage_a="FAIL"); summary=h.finalize_semantic_results(out,sem); self.assertEqual(summary["fail"],1); td.cleanup()
+    def test_stage_a_blocked_needs_no_semantic_result_and_is_final(self):
+        td,out,_,_,_,sem=self.run_final(stage_a="BLOCKED"); summary=h.finalize_semantic_results(out,sem); self.assertEqual(summary["blocked"],1); td.cleanup()
+    def test_missing_semantic_result_for_stage_a_pass_rejected(self):
+        td,out,_,_,_,sem=self.run_final(); h._write_jsonl(sem,[])
+        with self.assertRaisesRegex(ValueError,"CASE_SET_MISMATCH"): h.finalize_semantic_results(out,sem)
+        td.cleanup()
+    def test_semantic_hash_mismatch_rejected(self):
+        td,out,_,_,_,sem=self.run_final(mutate=lambda r:r.__setitem__("observation_sha256","sha256:bad"))
+        with self.assertRaisesRegex(ValueError,"AUTHORITY_HASH_MISMATCH"): h.finalize_semantic_results(out,sem)
+        td.cleanup()
+    def test_incomplete_dimension_set_rejected(self):
+        td,out,_,_,_,sem=self.run_final(mutate=lambda r:r["dimension_results"].pop())
+        with self.assertRaisesRegex(ValueError,"DIMENSION_SET_MISMATCH"): h.finalize_semantic_results(out,sem)
+        td.cleanup()
+    def test_declared_case_verdict_mismatch_rejected(self):
+        td,out,_,_,_,sem=self.run_final(mutate=lambda r:r.__setitem__("case_verdict","FAIL"))
+        with self.assertRaisesRegex(ValueError,"CASE_VERDICT_MISMATCH"): h.finalize_semantic_results(out,sem)
+        td.cleanup()
+    def test_semantic_result_cannot_be_supplied_for_stage_a_fail(self):
+        td,out,_,_,inp,sem=self.run_final(stage_a="FAIL"); h._write_jsonl(sem,[semantic_result(inp,"PASS")])
+        with self.assertRaisesRegex(ValueError,"CASE_SET_MISMATCH"): h.finalize_semantic_results(out,sem)
+        td.cleanup()
+    def test_finalizer_writes_non_pass_ledger(self):
+        td,out,_,_,_,sem=self.run_final(semantic_verdict="FAIL"); h.finalize_semantic_results(out,sem); self.assertTrue((out/"non-pass-ledger.jsonl").exists()); td.cleanup()
+    def test_finalizer_does_not_call_browser(self):
+        td,out,_,_,_,sem=self.run_final()
+        with patch.object(h,"_make_driver",side_effect=AssertionError("browser forbidden")):
+            h.finalize_semantic_results(out,sem)
+        td.cleanup()
+
+
+class ScopeAndOutputTests(unittest.TestCase):
+    def test_no_product_module_import(self):
+        src=HARNESS_PATH.read_text(encoding="utf-8")
+        for token in ("from lib.","import lib.","from pages.","from components."):
+            self.assertNotIn(token,src)
+
+    def test_no_fixture_write_paths(self):
+        src=HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertNotIn('open(corpus_path, "w"',src)
+        self.assertNotIn('open(packets_path, "w"',src)
+
+    def test_runtime_identity_args_not_frozen_to_deployment(self):
+        src=HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertIn("--expected-source-sha",src); self.assertIn("--expected-deployment-sha",src)
+        self.assertNotIn("EXPECTED_DEPLOYMENT_SHA =",src)
+
+    def test_capture_outputs_created(self):
+        with tempfile.TemporaryDirectory() as td:
+            out=Path(td); h.write_capture_outputs(out,[],[],{"phase":"STAGE_A_CAPTURE"},{"phase":"STAGE_A_CAPTURE"})
+            for name in ("raw-observations.jsonl","evaluator-input.jsonl","stage-a-non-pass-ledger.jsonl","aggregate-summary.json","run-manifest.json"):
+                self.assertTrue((out/name).exists(),name)
 
-    def test_evaluate_case_source_sha_mismatch_fails(self):
-        """evaluate_case marks FAIL on source SHA mismatch."""
-        csv_row = {"CASE_ID": "X-001", "EXPECTED_DOMAIN": "", "EXPECTED_SUBJECT": "",
-                   "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-                   "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-                   "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "", "FORBIDDEN_BEHAVIOR": ""}
-        packet = _make_packet("X-001")
-        obs = _obs_all_present()
+    def test_output_case_ids_exact_140_fixture_set(self):
+        rows,_,_=load_fixtures(); ids={r["CASE_ID"] for r in rows}; self.assertEqual(len(ids),140)
 
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="wrong_sha",
-            served_deployment_sha="expected_deploy_sha",
-            expected_source_sha="expected_source_sha",
-            expected_deployment_sha="expected_deploy_sha",
-        )
-        self.assertEqual(result["verdict"], "FAIL")
-        self.assertTrue(any("SOURCE_SHA_MISMATCH" in r for r in result["failure_reasons"]))
+    def test_package_has_one_controlled_selftest_script(self):
+        pkg=json.loads((REPO_ROOT/"package.json").read_text(encoding="utf-8"))
+        self.assertIn("verify:btc-cosmographer-canonical-140-replay-selftests",pkg["scripts"])
 
-    def test_evaluate_case_deployment_sha_mismatch_fails(self):
-        """evaluate_case marks FAIL on deployment SHA mismatch."""
-        csv_row = {"CASE_ID": "X-001", "EXPECTED_DOMAIN": "", "EXPECTED_SUBJECT": "",
-                   "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-                   "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-                   "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "", "FORBIDDEN_BEHAVIOR": ""}
-        packet = _make_packet("X-001")
-        obs = _obs_all_present()
+    def test_harness_finalizer_flag_exists(self):
+        self.assertIn("--finalize-semantic-results",HARNESS_PATH.read_text(encoding="utf-8"))
 
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="expected_source_sha",
-            served_deployment_sha="wrong_deploy_sha",
-            expected_source_sha="expected_source_sha",
-            expected_deployment_sha="expected_deploy_sha",
-        )
-        self.assertEqual(result["verdict"], "FAIL")
-        self.assertTrue(any("DEPLOYMENT_SHA_MISMATCH" in r for r in result["failure_reasons"]))
-
-
-class TestQuestionByteRewriteRejected(unittest.TestCase):
-    """Question bytes must be submitted exactly as frozen in the packet."""
-
-    def test_question_byte_rewrite_rejected(self):
-        """target_question_exact from packet must match CSV QUESTION_TEXT byte-for-byte."""
-        csv_rows, _, packets_index = _load_real_fixtures()
-        for row in csv_rows[:5]:
-            cid = row["CASE_ID"]
-            p = packets_index[cid]
-            self.assertEqual(
-                p["target_question_exact"],
-                row["QUESTION_TEXT"],
-                f"Question bytes differ for case_id={cid}: "
-                f"packet={p['target_question_exact']!r} csv={row['QUESTION_TEXT']!r}",
-            )
-
-    def test_setup_turns_exact_are_plain_strings(self):
-        """
-        Frozen setup_turns_exact entries must be plain strings, not dicts.
-        The harness must execute them byte-for-byte without calling .get() on them.
-        """
-        _, packets, _ = _load_real_fixtures()
-        stateful = [p for p in packets if p.get("setup_turns_exact")]
-        self.assertGreater(len(stateful), 0, "Expected at least one stateful packet")
-        for p in stateful:
-            for turn in p["setup_turns_exact"]:
-                self.assertIsInstance(
-                    turn, str,
-                    f"setup_turns_exact entry is not a string for case_id={p['case_id']}: {turn!r}",
-                )
-
-    def test_harness_executes_setup_turns_as_strings(self):
-        """
-        The harness must treat setup_turns[0] as a plain string
-        and pass it directly to _submit_question (not call .get() on it).
-        """
-        # Simulate: first_setup_q = setup_turns[0] must be used as a string
-        setup_turns = ["Покажи аспекты планет в 2026 году."]
-        first = setup_turns[0]
-        # Must be usable as a string directly (no .get() attribute)
-        self.assertIsInstance(first, str)
-        self.assertFalse(hasattr(first, "get"), "setup turn must not be treated as a dict")
-
-
-class TestCleanSessionStartsEmpty(unittest.TestCase):
-    """CLEAN_SESSION must clear all storage before submitting the question."""
-
-    def test_clean_session_clears_storage(self):
-        """
-        Behavioral test: when session_mode is CLEAN_SESSION,
-        the harness calls sessionStorage.clear() and localStorage.clear()
-        on the driver before submitting the target question.
-        """
-        executed_scripts = []
-
-        mock_driver = MagicMock()
-        mock_driver.execute_script.side_effect = lambda script: executed_scripts.append(script) or None
-        mock_driver.find_elements.return_value = [MagicMock()]  # simulate cosmographerTurn found
-
-        # We test the clear behavior by verifying the harness source contains both calls
-        # and that they appear before _submit_question for CLEAN_SESSION
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        clear_idx = harness_src.find("sessionStorage.clear(); localStorage.clear();")
-        clean_session_idx = harness_src.find('"CLEAN_SESSION"')
-        submit_idx = harness_src.find("_submit_question(driver, target_url, question_exact")
-
-        self.assertGreater(clear_idx, 0, "sessionStorage.clear() must appear in CLEAN_SESSION branch")
-        # Clear must appear after the CLEAN_SESSION branch check and before submit
-        self.assertLess(clean_session_idx, clear_idx)
-        self.assertLess(clear_idx, submit_idx)
-
-    def test_new_conversation_clean_clears_storage(self):
-        """NEW_CONVERSATION_CLEAN must also clear storage."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        new_conv_idx = harness_src.find('"NEW_CONVERSATION_CLEAN"')
-        # Find second occurrence of clear (for NEW_CONVERSATION_CLEAN branch)
-        first_clear = harness_src.find("sessionStorage.clear(); localStorage.clear();")
-        second_clear = harness_src.find("sessionStorage.clear(); localStorage.clear();", first_clear + 1)
-        self.assertGreater(second_clear, 0, "sessionStorage.clear() must appear in NEW_CONVERSATION_CLEAN branch too")
-        self.assertGreater(second_clear, new_conv_idx)
-
-
-class TestExactSetupSequenceOrderPreserved(unittest.TestCase):
-    """Setup turns must be submitted in exact packet-declared order."""
-
-    def test_setup_strings_submitted_in_declared_order(self):
-        """
-        Simulate calling the setup execution logic with a tracked list of submitted questions.
-        Verify that the first setup string is passed to _submit_question,
-        and subsequent strings are passed in order to _submit_question_in_existing_session.
-        """
-        setup_turns = ["Q1", "Q2", "Q3"]
-        submitted_via_url = []
-        submitted_in_session = []
-
-        def fake_submit_question(driver, target_url, q, locale):
-            submitted_via_url.append(q)
-
-        def fake_submit_in_session(driver, q, locale):
-            submitted_in_session.append(q)
-            return True
-
-        # Simulate the EXACT_PRIOR_TURN_SEQUENCE setup logic
-        first_setup_q = setup_turns[0]
-        fake_submit_question(None, "https://example.com", first_setup_q, "RU")
-        for i, setup_q in enumerate(setup_turns[1:], start=2):
-            fake_submit_in_session(None, setup_q, "RU")
-
-        self.assertEqual(submitted_via_url, ["Q1"])
-        self.assertEqual(submitted_in_session, ["Q2", "Q3"])
-
-    def test_setup_turns_sequence_in_harness(self):
-        """
-        The harness must use setup_turns[0] for the first URL navigation
-        and enumerate(setup_turns[1:], start=2) for subsequent turns.
-        """
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("setup_turns[0]", harness_src)
-        self.assertIn("enumerate(setup_turns[1:], start=2)", harness_src)
-
-
-class TestSetupPreconditionMismatchBlocks(unittest.TestCase):
-    """If setup precondition does not materialize, verdict must be BLOCKED before target."""
-
-    def test_precondition_mismatch_blocked_before_target(self):
-        """
-        When observed context after a setup turn doesn't match expected_context_packet,
-        the harness must return BLOCKED without submitting the target question.
-        """
-        packet = _make_packet(
-            "X-001",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            expected_context_packet={
-                "schema": "btc_cosmographer_context_v0_1",
-                "prior_domain": "astromodule",
-                "prior_subject": "planetary_aspects",
-                "prior_answer_state": "CONFIRMED",
-            },
-            setup_turns_exact=["Покажи аспекты планет в 2026 году."],
-        )
-        # Observed: domain mismatch → precondition fails
-        obs_mismatch = _obs_all_present(ROUTE_DOMAIN="market_analysis", ANSWER_STATE="CONFIRMED")
-        reason = _check_precondition_against_packet(packet, obs_mismatch, {}, setup_turn_index=1)
-
-        self.assertIsNotNone(reason, "Must produce a BLOCKED reason on precondition mismatch")
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", reason)
-        self.assertIn("prior_domain", reason)
-
-    def test_subject_mismatch_blocked(self):
-        """Subject mismatch must also block."""
-        packet = _make_packet(
-            "X-001",
-            expected_context_packet={
-                "prior_domain": "astromodule",
-                "prior_subject": "planetary_aspects",
-                "prior_answer_state": "CONFIRMED",
-            },
-        )
-        obs = _obs_all_present(ROUTE_DOMAIN="astromodule", ROUTE_SUBJECT="market_overview", ANSWER_STATE="CONFIRMED")
-        reason = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
-        self.assertIsNotNone(reason)
-        self.assertIn("prior_subject", reason)
-
-    def test_no_expected_context_passes(self):
-        """Packets without expected_context_packet must not be blocked."""
-        packet = _make_packet("X-001")  # no expected_context_packet
-        obs = _obs_all_present()
-        result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
-        self.assertIsNone(result)
-
-
-class TestFailBlockedCannotDisappear(unittest.TestCase):
-    """FAIL and BLOCKED verdicts must never disappear from aggregate totals."""
-
-    def test_fail_blocked_preserved_in_non_pass_ledger(self):
-        results = [
-            {"case_id": "A-001", "verdict": "PASS"},
-            {"case_id": "A-002", "verdict": "FAIL", "failure_reasons": ["ROUTING: x"], "failure_class": ["ROUTING"]},
-            {"case_id": "A-003", "verdict": "BLOCKED", "failure_reasons": [], "failure_class": []},
-        ]
-        non_pass = [r for r in results if r["verdict"] != "PASS"]
-        self.assertEqual(len(non_pass), 2)
-        verdicts = {r["verdict"] for r in non_pass}
-        self.assertIn("FAIL", verdicts)
-        self.assertIn("BLOCKED", verdicts)
-
-    def test_blocked_not_in_pass_count(self):
-        results = [
-            {"verdict": "PASS"},
-            {"verdict": "FAIL"},
-            {"verdict": "BLOCKED"},
-        ]
-        pass_count = sum(1 for r in results if r.get("verdict") == "PASS")
-        fail_count = sum(1 for r in results if r.get("verdict") == "FAIL")
-        blocked_count = sum(1 for r in results if r.get("verdict") == "BLOCKED")
-        self.assertEqual(pass_count, 1)
-        self.assertEqual(fail_count, 1)
-        self.assertEqual(blocked_count, 1)
-        self.assertEqual(pass_count + fail_count + blocked_count, 3)
-
-
-class TestPassPlusFailPlusBlockedEquals140(unittest.TestCase):
-    """PASS + FAIL + BLOCKED must equal 140 for a full run."""
-
-    def test_totals_invariant(self):
-        results = []
-        for i in range(140):
-            results.append({"case_id": f"X-{i:03d}", "verdict": ["PASS", "FAIL", "BLOCKED"][i % 3]})
-        p = sum(1 for r in results if r["verdict"] == "PASS")
-        f = sum(1 for r in results if r["verdict"] == "FAIL")
-        b = sum(1 for r in results if r["verdict"] == "BLOCKED")
-        self.assertEqual(p + f + b, 140)
-
-
-class TestOutputCaseIdSetEqualsCanonical(unittest.TestCase):
-    """Output case-ID set must equal canonical case-ID set."""
-
-    def test_output_case_ids_match_canonical(self):
-        csv_rows, _, _ = _load_real_fixtures()
-        canonical_ids = {r["CASE_ID"] for r in csv_rows}
-        results = [{"case_id": cid, "verdict": "PASS"} for cid in canonical_ids]
-        output_ids = {r["case_id"] for r in results}
-        self.assertEqual(output_ids, canonical_ids)
-
-
-class TestVolatileBinanceDoesNotFailStructural(unittest.TestCase):
-    """Volatile Binance value differences must NOT fail structural evaluation."""
-
-    def test_binance_price_difference_not_routing_failure(self):
-        csv_row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "astromodule", "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-            "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-            "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "", "FORBIDDEN_BEHAVIOR": "",
-        }
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            BINANCE_BINDING_STATE="STRUCTURAL_OBSERVATION_ONLY",
-            BOUNDARY_STATE="NON_TRADING",
-        )
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha_x", served_deployment_sha="sha_y",
-            expected_source_sha="sha_x", expected_deployment_sha="sha_y",
-        )
-        self.assertEqual(result["verdict"], "PASS")
-
-
-class TestTradingIntentBinanceTriggersBoundaryFailure(unittest.TestCase):
-    """Trading-intent Binance fetch must trigger boundary failure (FAIL verdict)."""
-
-    def test_trading_intent_binance_is_fail(self):
-        csv_row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "astromodule", "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-            "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-            "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "",
-            "FORBIDDEN_BEHAVIOR": "BUY_SELL_SIGNAL",
-        }
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            BINANCE_BINDING_STATE="TRADING_INTENT_DETECTED",
-            BOUNDARY_STATE="TRADING_BOUNDARY_VIOLATION",
-        )
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha_x", served_deployment_sha="sha_y",
-            expected_source_sha="sha_x", expected_deployment_sha="sha_y",
-        )
-        self.assertEqual(result["verdict"], "FAIL")
-        self.assertTrue(any("TRADING" in r.upper() for r in result["failure_reasons"]))
-
-
-class TestMissingMandatoryFieldCannotSilentlyPass(unittest.TestCase):
-    """Missing mandatory capture fields must not silently PASS."""
-
-    def test_missing_route_domain_fails(self):
-        """If ROUTE_DOMAIN is None/absent, evaluate_case must not return PASS."""
-        csv_row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "", "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-            "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-            "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "", "FORBIDDEN_BEHAVIOR": "",
-        }
-        packet = _make_packet("X-001")
-        obs = _obs_all_present()
-        obs["ROUTE_DOMAIN"] = None  # mandatory field missing
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha_x", served_deployment_sha="sha_y",
-            expected_source_sha="sha_x", expected_deployment_sha="sha_y",
-        )
-        self.assertNotEqual(result["verdict"], "PASS", "PASS must not be returned when ROUTE_DOMAIN is None")
-        self.assertTrue(any("MISSING_MANDATORY_FIELD" in r for r in result["failure_reasons"]))
-
-    def test_all_fields_present_can_pass(self):
-        """With all mandatory fields present and SHAs matching, evaluate_case may PASS."""
-        csv_row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "", "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "", "EXPECTED_ANSWER_STATE": "",
-            "EXPECTED_ANSWER_MODE": "", "EXPECTED_TIME_SCOPE": "",
-            "EXPECTED_BOUNDARY": "", "EXPECTED_DIRECTNESS": "", "FORBIDDEN_BEHAVIOR": "",
-        }
-        packet = _make_packet("X-001")
-        obs = _obs_all_present()
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha_x", served_deployment_sha="sha_y",
-            expected_source_sha="sha_x", expected_deployment_sha="sha_y",
-        )
-        self.assertEqual(result["verdict"], "PASS")
-
-
-class TestNoProductModuleImported(unittest.TestCase):
-    """Harness must not import any product module as a mutation helper."""
-
-    FORBIDDEN_IMPORT_PATTERNS = [
-        "import btc_cosmographer",
-        "from btc_cosmographer",
-        "import btcCosmographer",
-        "from btc_live_dialogue",
-        "import btc_live_dialogue",
-        "from lib.",
-        "import lib.",
-        "from pages.",
-        "import pages.",
-        "from components.",
-        "import components.",
-    ]
-
-    def test_no_product_module_imported(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        for forbidden in self.FORBIDDEN_IMPORT_PATTERNS:
-            self.assertNotIn(
-                forbidden,
-                harness_src,
-                f"Harness imports forbidden product module: {forbidden!r}",
-            )
-
-
-class TestNoFixtureNormalizationOrRewrite(unittest.TestCase):
-    """Harness must never normalize or rewrite fixture files."""
-
-    FORBIDDEN_PATTERNS = [
-        "csv.writer",
-        "open(corpus_path, 'w",
-        "open(packets_path, 'w",
-        "normalize",
-        "reserialize",
-    ]
-
-    def test_no_fixture_rewrite_in_harness(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        for pattern in self.FORBIDDEN_PATTERNS:
-            self.assertNotIn(
-                pattern,
-                harness_src,
-                f"Harness contains fixture normalization/rewrite pattern: {pattern!r}",
-            )
-
-
-class TestOutputFilesWritten(unittest.TestCase):
-    """Write_outputs creates all required output files."""
-
-    def test_output_files_created(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            output_dir = Path(tmp) / "out"
-            results = [{"case_id": "X-001", "verdict": "PASS"}]
-            evaluator_inputs = [{"case_id": "X-001"}]
-            non_pass = []
-            summary = {"total": 1, "pass": 1, "fail": 0, "blocked": 0}
-            manifest = {"schema": "test"}
-
-            write_outputs(
-                output_dir=output_dir,
-                raw_observations=results,
-                evaluator_inputs=evaluator_inputs,
-                non_pass_ledger=non_pass,
-                summary=summary,
-                manifest=manifest,
-            )
-
-            self.assertTrue((output_dir / "raw-observations.jsonl").exists())
-            self.assertTrue((output_dir / "evaluator-input.jsonl").exists())
-            self.assertTrue((output_dir / "non-pass-ledger.jsonl").exists())
-            self.assertTrue((output_dir / "aggregate-summary.json").exists())
-            self.assertTrue((output_dir / "run-manifest.json").exists())
-
-
-class TestMandatoryEvaluatorFieldsPresent(unittest.TestCase):
-    """All mandatory evaluator capture fields must be present in the harness."""
-
-    def test_mandatory_fields_in_harness(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        for field in MANDATORY_CAPTURE_FIELDS:
-            self.assertIn(field, harness_src, f"Mandatory capture field missing from harness: {field}")
-
-
-class TestFailureClassesPresent(unittest.TestCase):
-    """All required failure classes must be enumerated in the harness."""
-
-    def test_failure_classes_in_harness(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        for fc in FAILURE_CLASSES:
-            self.assertIn(fc, harness_src, f"Failure class missing from harness: {fc}")
-
-
-class TestRuntimeIdentityNotFrozen(unittest.TestCase):
-    """Volatile deployment SHA must not be hardcoded in the harness."""
-
-    def test_no_frozen_deployment_sha_in_harness(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("--expected-deployment-sha", harness_src)
-        self.assertIn("--expected-source-sha", harness_src)
-        self.assertIn("--target-url", harness_src)
-        import re
-        suspicious = re.findall(r'\b[0-9a-f]{40,64}\b', harness_src)
-        known = {CORPUS_AUTHORITY_SHA256, STATE_PACKETS_AUTHORITY_SHA256}
-        unknown_hashes = [h for h in suspicious if h not in known]
-        self.assertEqual(
-            unknown_hashes,
-            [],
-            f"Suspicious frozen SHA-like constants found in harness: {unknown_hashes}",
-        )
-
-
-class TestDefaultConcurrencyIsOne(unittest.TestCase):
-    """Default concurrency must be 1."""
-
-    def test_default_concurrency_one(self):
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("default=1", harness_src)
-
-
-class TestBuildManifest(unittest.TestCase):
-    """build_manifest includes all required fields."""
-
-    def _make_args(self):
-        args = MagicMock()
-        args.target_url = "https://example.com"
-        args.expected_source_sha = "src_sha"
-        args.expected_deployment_sha = "dep_sha"
-        return args
-
-    def test_manifest_fields(self):
-        results = [
-            {"case_id": "A-001", "verdict": "PASS"},
-            {"case_id": "A-002", "verdict": "FAIL"},
-            {"case_id": "A-003", "verdict": "BLOCKED"},
-        ]
-        manifest = build_manifest(
-            args=self._make_args(),
-            corpus_sha="c_sha",
-            packets_sha="p_sha",
-            results=results,
-            start_ts="2026-01-01T00:00:00Z",
-            end_ts="2026-01-01T01:00:00Z",
-        )
-        self.assertEqual(manifest["target_url"], "https://example.com")
-        self.assertEqual(manifest["expected_source_sha"], "src_sha")
-        self.assertEqual(manifest["expected_deployment_sha"], "dep_sha")
-        self.assertEqual(manifest["pass"], 1)
-        self.assertEqual(manifest["fail"], 1)
-        self.assertEqual(manifest["blocked"], 1)
-        self.assertEqual(manifest["total"], 3)
-        self.assertIn("case_id_set", manifest)
-
-
-class TestDomCaptureUsesCorrectAttributes(unittest.TestCase):
-    """Harness must use the correct product DOM attribute names."""
-
-    def test_intents_uses_question_facets_attribute(self):
-        """INTENTS must be captured from data-question-facets, not data-intents."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-question-facets", harness_src, "Must use data-question-facets for INTENTS")
-        # Must NOT use data-intents as a DOM attribute (it doesn't exist in the product)
-        # Allow 'data-intents' only if it's a comment or string constant, not a capture mapping
-        # Simple check: data-question-facets must map to INTENTS
-        self.assertIn('"data-question-facets", "INTENTS"', harness_src)
-
-    def test_direct_answer_uses_answer_lead_selector(self):
-        """DIRECT_ANSWER must use .answerLead[data-answer-direct="true"] text."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn('answerLead', harness_src)
-        self.assertIn('data-answer-direct', harness_src)
-
-    def test_answer_sections_use_semantic_section_attr(self):
-        """Answer section ids must use data-semantic-answer-section."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-semantic-answer-section", harness_src)
-
-    def test_evidence_metadata_uses_correct_attr(self):
-        """Evidence metadata must use data-evidence-metadata."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-evidence-metadata", harness_src)
-
-    def test_evidence_artifact_targets_uses_correct_attr(self):
-        """Evidence targets must use data-evidence-artifact-targets."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-evidence-artifact-targets", harness_src)
-
-    def test_deployment_sha_uses_deployment_head_sha(self):
-        """Deployment SHA must be read from data-deployment-head-sha."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-deployment-head-sha", harness_src)
-
-    def test_runtime_schema_captured(self):
-        """Runtime schema must be captured from data-runtime-schema."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-runtime-schema", harness_src)
-
-    def test_session_schema_captured(self):
-        """Session schema must be captured from data-session-schema."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("data-session-schema", harness_src)
-
-    def test_response_headers_use_performance_log(self):
-        """Response headers must be captured via performance log (CDP), not DOM attributes."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("get_log", harness_src, "Must use driver.get_log() for performance log capture")
-        self.assertIn("performance", harness_src)
-        self.assertIn("Network.responseReceived", harness_src)
-
-
-class TestSessionFieldExtraction(unittest.TestCase):
-    """_extract_session_fields must populate EVIDENCE_LEVELS, TIME_SCOPE, FRESHNESS."""
-
-    def test_extracts_fields_from_session(self):
-        session_state = {
-            "session_value": {
-                "turns": [
-                    {
-                        "evidence_levels": ["ASTRO", "BTC"],
-                        "time_start": "2026-01-01",
-                        "time_end": "2026-12-31",
-                    },
-                ],
-                "evidence": {"key": "val"},
-            }
-        }
-        # FRESHNESS comes from next_data sourceContext, not BtcDialogueTurn
-        next_data = {"sourceContext": {"state": "CURRENT"}}
-        fields = _extract_session_fields(session_state, next_data)
-        self.assertEqual(fields["EVIDENCE_LEVELS"], ["ASTRO", "BTC"])
-        # TIME_SCOPE derived from time_start / time_end
-        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01/2026-12-31")
-        # FRESHNESS from next_data sourceContext.state
-        self.assertEqual(fields["FRESHNESS"], "CURRENT")
-
-    def test_empty_session_returns_none_fields(self):
-        fields = _extract_session_fields({})
-        self.assertIsNone(fields["EVIDENCE_LEVELS"])
-        self.assertIsNone(fields["TIME_SCOPE"])
-        self.assertIsNone(fields["FRESHNESS"])
-
-
-class TestSelfTestCount(unittest.TestCase):
-    """Meta-test: verify the expected minimum number of selftests exist."""
-
-    MINIMUM_REQUIRED_SELFTESTS = 30
-
-    def test_minimum_selftest_count(self):
-        loader = unittest.TestLoader()
-        suite = loader.loadTestsFromModule(sys.modules[__name__])
-        total = suite.countTestCases()
-        self.assertGreaterEqual(
-            total,
-            self.MINIMUM_REQUIRED_SELFTESTS,
-            f"Only {total} selftests found, minimum required is {self.MINIMUM_REQUIRED_SELFTESTS}",
-        )
-
-
-
-
-# ---------------------------------------------------------------------------
-# New behavioral selftests for consolidated repair (SECOND_INDEPENDENT_MASTER_REREVIEW)
-# ---------------------------------------------------------------------------
-
-_extract_source_sha_from_perf_log = _harness._extract_source_sha_from_perf_log
-_check_per_turn_contract = _harness._check_per_turn_contract
-
-
-def _make_perf_log_entry(headers: dict, resp_type: str = "Document") -> dict:
-    """Build a synthetic Chrome performance log entry for Network.responseReceived."""
-    return {
-        "message": json.dumps({
-            "message": {
-                "method": "Network.responseReceived",
-                "params": {
-                    "type": resp_type,
-                    "response": {"headers": headers}
-                }
-            }
-        })
-    }
-
-
-class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
-    """Behavioral tests for source SHA extraction from HTTP response header."""
-
-    def test_source_sha_extracted_from_http_header(self):
-        """_extract_source_sha_from_perf_log returns x-btc-deployment-source-sha value."""
-        mock_driver = MagicMock()
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "abc123"})
-        ]
-        result = _extract_source_sha_from_perf_log(mock_driver)
-        self.assertEqual(result, "abc123")
-
-    def test_source_sha_not_found_if_header_absent(self):
-        """Returns None when the header is not present in any Document response."""
-        mock_driver = MagicMock()
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"content-type": "text/html"})
-        ]
-        result = _extract_source_sha_from_perf_log(mock_driver)
-        self.assertIsNone(result)
-
-    def test_correct_identity_passes_preflight(self):
-        """_batch_identity_preflight returns None block reason when both source SHA (from header) and deployment SHA match."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "correct_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNone(block_reason)
-
-    def test_missing_source_sha_header_blocks_batch(self):
-        """Missing x-btc-deployment-source-sha header blocks batch even if deployment SHA matches."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "correct_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"content-type": "text/html"})  # no source SHA header
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="expected_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNotNone(block_reason)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
-        self.assertIn("SOURCE_SHA_MISMATCH", block_reason)
-
-    def test_wrong_source_sha_blocks_batch(self):
-        """Wrong x-btc-deployment-source-sha blocks the batch."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "correct_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "WRONG_SHA"})
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNotNone(block_reason)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
-        self.assertIn("SOURCE_SHA_MISMATCH", block_reason)
-
-    def test_wrong_deployment_sha_blocks_batch(self):
-        """Wrong deployment SHA (from DOM) blocks the batch."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "WRONG_DEPLOY"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNotNone(block_reason)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
-        self.assertIn("DEPLOYMENT_SHA_MISMATCH", block_reason)
-
-    def test_preflight_single_log_read(self):
-        """_batch_identity_preflight reads the performance log exactly once per preflight."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "correct_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
-        ]
-        with patch("time.sleep"):
-            _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        perf_log_calls = [c for c in mock_driver.get_log.call_args_list
-                          if c == call("performance")]
-        self.assertEqual(len(perf_log_calls), 1,
-            "Performance log must be consumed exactly once per preflight (no double-drain)")
-
-    def test_blocked_manifest_served_shas_populated_after_mismatch(self):
-        """When batch is blocked by SHA mismatch, the returned served SHAs are populated for the manifest."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "wrong_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNotNone(block_reason, "Should be blocked on deploy mismatch")
-        self.assertEqual(served_source, "correct_source",
-            "Observed source SHA must be populated in blocked tuple for manifest recording")
-        self.assertEqual(served_deploy, "wrong_deploy",
-            "Observed deploy SHA must be populated even when wrong")
-
-    def test_manifest_served_shas_after_pass_from_preflight(self):
-        """Preflight pass returns the observed served SHAs for use in the run manifest."""
-        mock_driver = MagicMock()
-        mock_driver.execute_script.return_value = "correct_deploy"
-        mock_driver.get_log.return_value = [
-            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
-        ]
-        with patch("time.sleep"):
-            block_reason, served_source, served_deploy = _batch_identity_preflight(
-                mock_driver, "https://example.com",
-                expected_source_sha="correct_source",
-                expected_deployment_sha="correct_deploy",
-            )
-        self.assertIsNone(block_reason)
-        self.assertEqual(served_source, "correct_source")
-        self.assertEqual(served_deploy, "correct_deploy")
-
-
-class TestPerTurnContractValidation(unittest.TestCase):
-    """Behavioral tests for per-turn contract validation from prior_turns.value[i]."""
-
-    def _make_two_turn_packet(self) -> dict:
-        """Packet with two setup turns and separate per-turn contracts."""
-        p = _make_packet(
-            "FG-004",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            setup_turn_count=2,
-            setup_turns_exact=["Q1_jupiter", "Q2_mercury"],
-            prior_turns={
-                "status": "EXPLICIT",
-                "value": [
-                    {
-                        "turn_index": 1,
-                        "question_exact": "Q1_jupiter",
-                        "expected_route_domain": "astromodule",
-                        "expected_route_subject": "jupiter",
-                        "expected_context_relation": "NEW_TOPIC",
-                        "expected_answer_state": {"mode": "EXACT", "value": "CONFIRMED"},
-                        "expected_answer_mode": "ASTRO_INTERVAL",
-                        "expected_route_disposition": "CONTINUE",
-                    },
-                    {
-                        "turn_index": 2,
-                        "question_exact": "Q2_mercury",
-                        "expected_route_domain": "astromodule",
-                        "expected_route_subject": "mercury",
-                        "expected_context_relation": "NEW_TOPIC",
-                        "expected_answer_state": {"mode": "EXACT", "value": "LIMITED"},
-                        "expected_answer_mode": "ASTRO_INTERVAL",
-                        "expected_route_disposition": "CONTINUE",
-                    },
-                ],
-            },
-        )
-        return p
-
-    def test_turn1_validates_against_turn1_contract_not_final_state(self):
-        """After turn 1, validation compares against prior_turns.value[0] (not final state)."""
-        packet = self._make_two_turn_packet()
-        # Correct state for turn 1
-        obs_turn1 = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-        )
-        # Should pass: matches turn 1 contract
-        result = _check_precondition_against_packet(packet, obs_turn1, {}, setup_turn_index=1)
-        self.assertIsNone(result, "Turn 1 correct state must not block")
-
-    def test_turn1_wrong_subject_blocks(self):
-        """If turn 1 observed subject is wrong, it must BLOCK."""
-        packet = self._make_two_turn_packet()
-        obs_wrong = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="saturn",   # wrong: expected jupiter
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-        )
-        result = _check_precondition_against_packet(packet, obs_wrong, {}, setup_turn_index=1)
-        self.assertIsNotNone(result)
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
-        self.assertIn("route_subject", result)
-
-    def test_turn2_validates_against_turn2_contract(self):
-        """After turn 2, validation compares against prior_turns.value[1]."""
-        packet = self._make_two_turn_packet()
-        obs_turn2 = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="mercury",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="LIMITED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-        )
-        result = _check_precondition_against_packet(packet, obs_turn2, {}, setup_turn_index=2)
-        self.assertIsNone(result, "Turn 2 correct state must not block")
-
-    def test_turn2_wrong_answer_state_blocks(self):
-        """Wrong answer_state for turn 2 must block."""
-        packet = self._make_two_turn_packet()
-        obs_wrong = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="mercury",
-            ANSWER_STATE="CONFIRMED",   # wrong: expected LIMITED
-        )
-        result = _check_precondition_against_packet(packet, obs_wrong, {}, setup_turn_index=2)
-        self.assertIsNotNone(result)
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
-        self.assertIn("answer_state", result)
-
-    def test_turn1_correct_does_not_compare_against_turn2_contract(self):
-        """Turn 1 must not be compared against turn 2 expected state (LIMITED for mercury)."""
-        packet = self._make_two_turn_packet()
-        # Turn 1 state (CONFIRMED/jupiter) would be wrong if compared to turn 2 (LIMITED/mercury)
-        obs_turn1 = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",  # correct for turn 1 but "wrong" for turn 2
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-        )
-        # Must pass because only turn 1 contract applies here
-        result = _check_precondition_against_packet(packet, obs_turn1, {}, setup_turn_index=1)
-        self.assertIsNone(result, "Turn 1 must validate only against turn 1 contract")
-
-    def test_cardinality_mismatch_declared_vs_actual(self):
-        """Packet with setup_turn_count != len(setup_turns_exact) must be BLOCKED by execute_case."""
-        execute_case = _harness.execute_case
-        csv_rows, _, _ = _load_real_fixtures()
-        csv_row = csv_rows[0]  # any row, not used for cardinality check
-
-        # Declared count is 2 but only 1 turn string provided
-        p = _make_packet(
-            "X-001",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            setup_turn_count=2,
-            setup_turns_exact=["only_one_turn"],
-        )
-        # execute_case returns BLOCKED for cardinality mismatch BEFORE creating any driver
-        result = execute_case(
-            csv_row=csv_row,
-            packet=p,
-            target_url="https://example.com",
-            expected_source_sha="sha_x",
-            expected_deployment_sha="sha_y",
-        )
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "Cardinality mismatch must produce BLOCKED verdict")
-        self.assertIn("SETUP_CARDINALITY_MISMATCH", result.get("blocked_reason", ""),
-            "blocked_reason must include SETUP_CARDINALITY_MISMATCH")
-
-
-class TestSessionFieldExtractionTimeScope(unittest.TestCase):
-    """TIME_SCOPE must be derived from time_start/time_end, not a direct BtcDialogueTurn field."""
-
-    def test_time_scope_derived_from_start_and_end(self):
-        session_state = {
-            "session_value": {
-                "turns": [{"time_start": "2026-01-01", "time_end": "2026-12-31", "evidence_levels": []}]
-            }
-        }
-        fields = _extract_session_fields(session_state)
-        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01/2026-12-31")
-
-    def test_time_scope_only_start(self):
-        session_state = {
-            "session_value": {
-                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
-            }
-        }
-        fields = _extract_session_fields(session_state)
-        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01")
-
-    def test_freshness_from_next_data_not_session_turn(self):
-        """FRESHNESS must come from __NEXT_DATA__.props.pageProps.sourceContext.state, not BtcDialogueTurn."""
-        # A turn without any freshness field
-        session_state = {
-            "session_value": {
-                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
-            }
-        }
-        next_data = {"sourceContext": {"state": "STALE"}}
-        fields = _extract_session_fields(session_state, next_data)
-        self.assertEqual(fields["FRESHNESS"], "STALE")
-
-    def test_freshness_none_without_next_data(self):
-        """FRESHNESS is None when next_data is not provided."""
-        session_state = {
-            "session_value": {
-                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
-            }
-        }
-        fields = _extract_session_fields(session_state)
-        self.assertIsNone(fields["FRESHNESS"])
-
-
-class TestEvaluatorUsesCorrectCsvColumns(unittest.TestCase):
-    """Evaluator must use actual CSV column names, not non-existent ones."""
-
-    def _base_csv_row(self, **overrides) -> dict:
-        row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "",
-            "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "",
-            "EXPECTED_MODE": "",         # canonical: answer mode
-            "EXPECTED_ANSWER_TYPE": "",  # canonical: answer type/state
-            "EXPECTED_INTENT": "",       # canonical: intents
-            "EXPECTED_PERIOD": "",       # canonical: time period
-            "EXPECTED_EVIDENCE_FAMILY": "",
-            "EXPECTED_DIRECTNESS": "",
-            "EXPECTED_BOUNDARY": "",
-            "EXPECTED_MEMORY_ACTION": "",
-            "FORBIDDEN_BEHAVIOR": "",
-        }
-        row.update(overrides)
-        return row
-
-    def test_expected_mode_column_used(self):
-        """evaluate_case uses EXPECTED_MODE column to check ANSWER_MODE."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_MODE="WRONG_MODE")
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertNotEqual(result["verdict"], "PASS")
-        self.assertTrue(any("EXPECTED_MODE" in r or "answer_mode" in r for r in result["failure_reasons"]))
-
-    def test_no_reference_to_nonexistent_column_expected_answer_state(self):
-        """Harness must not check EXPECTED_ANSWER_STATE column (does not exist in CSV)."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        # Check that the evaluate_case function does not reference EXPECTED_ANSWER_STATE
-        # in a csv_row.get() call
-        self.assertNotIn('csv_row.get("EXPECTED_ANSWER_STATE")', harness_src)
-        self.assertNotIn("csv_row.get('EXPECTED_ANSWER_STATE')", harness_src)
-
-    def test_no_reference_to_nonexistent_column_expected_answer_mode(self):
-        """Harness must not check EXPECTED_ANSWER_MODE column (does not exist in CSV)."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertNotIn('csv_row.get("EXPECTED_ANSWER_MODE")', harness_src)
-        self.assertNotIn("csv_row.get('EXPECTED_ANSWER_MODE')", harness_src)
-
-    def test_no_reference_to_nonexistent_column_expected_time_scope(self):
-        """Harness must not check EXPECTED_TIME_SCOPE column (does not exist in CSV)."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertNotIn('csv_row.get("EXPECTED_TIME_SCOPE")', harness_src)
-        self.assertNotIn("csv_row.get('EXPECTED_TIME_SCOPE')", harness_src)
-
-    def test_observation_satisfying_only_domain_cannot_pass_with_other_required_dims(self):
-        """An observation that satisfies domain but is missing other required canonical dimensions cannot PASS."""
-        csv_row = self._base_csv_row(
-            EXPECTED_DOMAIN="astromodule",
-            EXPECTED_MODE="ASTRO_INTERVAL",  # requires ANSWER_MODE to be present
-        )
-        packet = _make_packet("X-001")
-        # Only ROUTE_DOMAIN present; all other mandatory fields absent
-        obs = {f: None for f in MANDATORY_CAPTURE_FIELDS}
-        obs["_dom_available"] = True
-        obs["ROUTE_DOMAIN"] = "astromodule"
-
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertNotEqual(result["verdict"], "PASS",
-            "Must not PASS when required canonical contract dimensions are unevaluated/absent")
-
-
-class TestEvaluatorInputContainsFullPacketAndContract(unittest.TestCase):
-    """Behavioral tests proving evaluator-input contains full packet, expected contract, and runtime authority."""
-
-    def test_evaluator_input_keys_present_in_harness(self):
-        """Harness must include executable_state_packet and expected_contract in evaluator-input."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("executable_state_packet", harness_src)
-        self.assertIn("expected_contract", harness_src)
-        self.assertIn("current_runtime_authority", harness_src)
-
-    def test_manifest_includes_served_shas(self):
-        """build_manifest must include served_source_sha and served_deployment_sha."""
-        import argparse
-        args = argparse.Namespace(
-            target_url="https://example.com",
-            expected_source_sha="expected_src",
-            expected_deployment_sha="expected_dep",
-        )
-        results = [{"case_id": "X-001", "verdict": "PASS"}]
-        manifest = build_manifest(
-            args=args,
-            corpus_sha="c",
-            packets_sha="p",
-            results=results,
-            start_ts="2026-01-01T00:00:00Z",
-            end_ts="2026-01-01T01:00:00Z",
-            served_source_sha="served_src",
-            served_deployment_sha="served_dep",
-        )
-        self.assertEqual(manifest["served_source_sha"], "served_src")
-        self.assertEqual(manifest["served_deployment_sha"], "served_dep")
-        self.assertEqual(manifest["expected_source_sha"], "expected_src")
-        self.assertEqual(manifest["expected_deployment_sha"], "expected_dep")
-
-
-class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
-    """
-    EXPECTED_MODE and EXPECTED_ANSWER_TYPE have no proven deterministic binding to the runtime
-    taxonomies (ANSWER_MODE, ANSWER_STATE). The evaluator contract forbids keyword/token overlap
-    scoring. Both must produce BLOCKED with EVALUATOR_BINDING_UNAVAILABLE.
-    Negative tests: keyword overlap alone must neither PASS nor FAIL a canonical dimension.
-    """
-
-    def _base_csv_row(self, **overrides) -> dict:
-        row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "",
-            "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "",
-            "EXPECTED_MODE": "",
-            "EXPECTED_ANSWER_TYPE": "",
-            "EXPECTED_INTENT": "",
-            "EXPECTED_PERIOD": "",
-            "EXPECTED_EVIDENCE_FAMILY": "",
-            "EXPECTED_DIRECTNESS": "",
-            "EXPECTED_BOUNDARY": "",
-            "EXPECTED_MEMORY_ACTION": "",
-            "FORBIDDEN_BEHAVIOR": "",
-        }
-        row.update(overrides)
-        return row
-
-    def test_expected_mode_produces_blocked_not_pass(self):
-        """EXPECTED_MODE with any non-empty value must produce BLOCKED (no proven binding)."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_X_BTC")
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_MODE="ASTRO_BTC_BRIDGE")
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "EXPECTED_MODE must produce BLOCKED; keyword overlap scoring is forbidden")
-        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]),
-            "failure_reasons must include EVALUATOR_BINDING_UNAVAILABLE for EXPECTED_MODE")
-
-    def test_keyword_overlap_alone_cannot_pass_mode(self):
-        """Even with shared tokens (ASTRO, BTC), EXPECTED_MODE cannot produce PASS — must be BLOCKED."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_X_BTC")
-        packet = _make_packet("X-001")
-        # ASTRO_BTC_BRIDGE shares ASTRO and BTC tokens with ASTRO_X_BTC — keyword overlap exists
-        obs = _obs_all_present(ANSWER_MODE="ASTRO_BTC_BRIDGE")
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertNotEqual(result["verdict"], "PASS",
-            "Keyword overlap alone must not produce PASS for EXPECTED_MODE")
-
-    def test_keyword_overlap_alone_cannot_fail_mode(self):
-        """EXPECTED_MODE with no shared tokens also cannot produce FAIL — must be BLOCKED."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="BTC_FIELD_NOW")
-        packet = _make_packet("X-001")
-        # MARKET_DIAGNOSIS shares no tokens — in v3 this was FAIL; in v4 it must be BLOCKED
-        obs = _obs_all_present(ANSWER_MODE="MARKET_DIAGNOSIS")
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "No-token-overlap must still produce BLOCKED, not FAIL, for EXPECTED_MODE")
-
-    def test_expected_answer_type_produces_blocked_not_pass(self):
-        """EXPECTED_ANSWER_TYPE (cross-taxonomy) must produce BLOCKED with EVALUATOR_BINDING_UNAVAILABLE."""
-        csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_STATE="ASTRO_CONFIRMED_FRESH")
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "EXPECTED_ANSWER_TYPE must produce BLOCKED; cross-taxonomy comparison is forbidden")
-        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]),
-            "failure_reasons must include EVALUATOR_BINDING_UNAVAILABLE for EXPECTED_ANSWER_TYPE")
-
-    def test_keyword_overlap_alone_cannot_produce_fail_for_answer_type(self):
-        """EXPECTED_ANSWER_TYPE with no shared tokens must produce BLOCKED, not FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_STATE="UNKNOWN_REFUSAL_GENERIC")
-        result = evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-        # Must not be FAIL; no-binding dimensions must BLOCK, never fabricate FAIL
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "No-token-overlap EXPECTED_ANSWER_TYPE must produce BLOCKED not FAIL")
-
-    def test_family_match_function_not_in_harness(self):
-        """_family_match must not exist in the harness (keyword overlap removed in v4)."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertNotIn("def _family_match", harness_src,
-            "_family_match must be removed from the harness in v4")
-
-    def test_evaluator_binding_unavailable_in_harness(self):
-        """EVALUATOR_BINDING_UNAVAILABLE must be emitted by the harness for unbound dimensions."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        self.assertIn("EVALUATOR_BINDING_UNAVAILABLE", harness_src)
-
-
-class TestPresenceOnlyContractDimensions(unittest.TestCase):
-    """
-    EXPECTED_INTENT, EXPECTED_PERIOD, EXPECTED_EVIDENCE_FAMILY, EXPECTED_BOUNDARY,
-    and EXPECTED_DIRECTNESS must use deterministic content checks, not presence-only checks.
-    Non-empty but semantically wrong observations must produce FAIL.
-    """
-
-    def _base_csv_row(self, **overrides) -> dict:
-        row = {
-            "CASE_ID": "X-001",
-            "EXPECTED_DOMAIN": "",
-            "EXPECTED_SUBJECT": "",
-            "EXPECTED_CONTEXT_RELATION": "",
-            "EXPECTED_MODE": "",
-            "EXPECTED_ANSWER_TYPE": "",
-            "EXPECTED_INTENT": "",
-            "EXPECTED_PERIOD": "",
-            "EXPECTED_EVIDENCE_FAMILY": "",
-            "EXPECTED_DIRECTNESS": "",
-            "EXPECTED_BOUNDARY": "",
-            "EXPECTED_MEMORY_ACTION": "",
-            "FORBIDDEN_BEHAVIOR": "",
-        }
-        row.update(overrides)
-        return row
-
-    def _run(self, csv_row, **obs_overrides):
-        packet = _make_packet("X-001")
-        obs = _obs_all_present(**obs_overrides)
-        return evaluate_case(
-            csv_row=csv_row, packet=packet, obs=obs,
-            served_source_sha="sha", served_deployment_sha="sha",
-            expected_source_sha="sha", expected_deployment_sha="sha",
-        )
-
-    # --- EXPECTED_INTENT ---
-
-    def test_expected_intent_correct_value_passes(self):
-        """Correct intent value must pass."""
-        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
-        result = self._run(csv_row, INTENTS="interval_analysis")
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_intent_wrong_value_fails(self):
-        """Non-empty but wrong intent value must FAIL, not PASS."""
-        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
-        result = self._run(csv_row, INTENTS="point_in_time")
-        self.assertEqual(result["verdict"], "FAIL",
-            "Wrong INTENTS value must FAIL; presence check alone is forbidden")
-        self.assertTrue(any("intent" in r.lower() or "ROUTING" in r for r in result["failure_reasons"]))
-
-    def test_expected_intent_absent_fails(self):
-        """Absent INTENTS with declared EXPECTED_INTENT must FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
-        result = self._run(csv_row, INTENTS=None)
-        self.assertNotEqual(result["verdict"], "PASS")
-
-    # --- EXPECTED_PERIOD ---
-
-    def test_expected_period_correct_value_passes(self):
-        """Correct period value contained in TIME_SCOPE must pass."""
-        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
-        result = self._run(csv_row, TIME_SCOPE="2026-01-01/2026-12-31")
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_period_wrong_value_fails(self):
-        """Non-empty but wrong period value must FAIL, not PASS."""
-        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
-        result = self._run(csv_row, TIME_SCOPE="2025-01-01/2025-12-31")
-        self.assertEqual(result["verdict"], "FAIL",
-            "Wrong TIME_SCOPE value must FAIL; presence check alone is forbidden")
-        self.assertTrue(any("TIME_SCOPE" in r or "period" in r.lower() for r in result["failure_reasons"]))
-
-    def test_expected_period_absent_fails(self):
-        """Absent TIME_SCOPE with declared EXPECTED_PERIOD must FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
-        result = self._run(csv_row, TIME_SCOPE=None)
-        self.assertNotEqual(result["verdict"], "PASS")
-
-    # --- EXPECTED_EVIDENCE_FAMILY ---
-
-    def test_expected_evidence_family_correct_value_passes(self):
-        """Correct evidence family contained in EVIDENCE_LEVELS must pass."""
-        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
-        result = self._run(csv_row, EVIDENCE_LEVELS="ASTRO_CANONICAL;MARKET_DERIVED")
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_evidence_family_wrong_value_fails(self):
-        """Non-empty but wrong evidence family must FAIL, not PASS."""
-        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
-        result = self._run(csv_row, EVIDENCE_LEVELS="MARKET_ONLY")
-        self.assertEqual(result["verdict"], "FAIL",
-            "Wrong EVIDENCE_LEVELS value must FAIL; presence check alone is forbidden")
-        self.assertTrue(any("EVIDENCE" in r or "evidence" in r.lower() for r in result["failure_reasons"]))
-
-    def test_expected_evidence_family_absent_fails(self):
-        """Absent EVIDENCE_LEVELS with declared EXPECTED_EVIDENCE_FAMILY must FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
-        result = self._run(csv_row, EVIDENCE_LEVELS=None)
-        self.assertNotEqual(result["verdict"], "PASS")
-
-    # --- EXPECTED_BOUNDARY ---
-
-    def test_expected_boundary_correct_value_passes(self):
-        """Correct boundary value contained in BOUNDARY_STATE must pass."""
-        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
-        result = self._run(csv_row,
-            BOUNDARY_STATE="NON_TRADING_PRESERVED",
-            BINANCE_BINDING_STATE="NOT_APPLICABLE",
-        )
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_boundary_wrong_value_fails(self):
-        """Non-empty but wrong boundary value must FAIL, not PASS."""
-        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
-        result = self._run(csv_row,
-            BOUNDARY_STATE="CAUSAL_INFERENCE_ONLY",
-            BINANCE_BINDING_STATE="NOT_APPLICABLE",
-        )
-        self.assertEqual(result["verdict"], "FAIL",
-            "Wrong BOUNDARY_STATE must FAIL; presence check alone is forbidden")
-        self.assertTrue(any("CAUSAL_BOUNDARY" in r or "boundary" in r.lower() for r in result["failure_reasons"]))
-
-    def test_expected_boundary_absent_fails(self):
-        """Absent BOUNDARY_STATE with declared EXPECTED_BOUNDARY must FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
-        result = self._run(csv_row, BOUNDARY_STATE=None)
-        self.assertNotEqual(result["verdict"], "PASS")
-
-    # --- EXPECTED_DIRECTNESS ---
-
-    def test_expected_directness_yes_passes_when_direct_answer_present(self):
-        """EXPECTED_DIRECTNESS=YES with non-empty DIRECT_ANSWER must pass."""
-        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="YES")
-        result = self._run(csv_row, DIRECT_ANSWER="Jupiter aligns with BTC peak in Q2 2026.")
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_directness_yes_fails_when_direct_answer_absent(self):
-        """EXPECTED_DIRECTNESS=YES with absent DIRECT_ANSWER must FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="YES")
-        result = self._run(csv_row, DIRECT_ANSWER=None)
-        self.assertEqual(result["verdict"], "FAIL",
-            "Absent DIRECT_ANSWER when directness=YES must FAIL")
-        self.assertTrue(any("ANSWER_DIRECTNESS" in r or "directness" in r.lower() for r in result["failure_reasons"]))
-
-    def test_expected_directness_no_fails_when_direct_answer_present(self):
-        """EXPECTED_DIRECTNESS=NO with non-empty DIRECT_ANSWER must FAIL (wrong directness)."""
-        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="NO")
-        result = self._run(csv_row, DIRECT_ANSWER="Some unexpected direct answer text.")
-        self.assertEqual(result["verdict"], "FAIL",
-            "Present DIRECT_ANSWER when directness=NO must FAIL; presence check alone is forbidden")
-        self.assertTrue(any("ANSWER_DIRECTNESS" in r or "directness" in r.lower() for r in result["failure_reasons"]))
-
-    def test_expected_directness_no_passes_when_direct_answer_absent(self):
-        """EXPECTED_DIRECTNESS=NO with empty/absent DIRECT_ANSWER must pass."""
-        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="NO")
-        # Use empty string, not None, so MANDATORY_CAPTURE_FIELDS check does not fire
-        result = self._run(csv_row, DIRECT_ANSWER="")
-        self.assertEqual(result["verdict"], "PASS")
-
-    def test_expected_directness_unrecognized_token_produces_blocked(self):
-        """EXPECTED_DIRECTNESS with unrecognized token must produce BLOCKED."""
-        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="PARTIAL_DIRECT_UNKNOWN")
-        result = self._run(csv_row, DIRECT_ANSWER="some answer")
-        self.assertEqual(result["verdict"], "BLOCKED",
-            "Unrecognized EXPECTED_DIRECTNESS token must produce BLOCKED")
-        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]))
-
-
-class TestPerTurnContractValidationV4(unittest.TestCase):
-    """
-    Behavioral tests for the v4 per-turn contract gate:
-    expected_intents, expected_active_period, question_exact validation,
-    final state validation after last setup, two-setup turn2 mismatch.
-    """
-
-    def _make_two_turn_packet_v4(self) -> dict:
-        """Packet with two setup turns including intents and active_period contracts."""
-        p = _make_packet(
-            "FG-004-V4",
-            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
-            setup_turn_count=2,
-            setup_turns_exact=["Q1_jupiter", "Q2_mercury"],
-            prior_turns={
-                "status": "EXPLICIT",
-                "value": [
-                    {
-                        "turn_index": 1,
-                        "question_exact": "Q1_jupiter",
-                        "locale": "EN",
-                        "expected_route_domain": "astromodule",
-                        "expected_route_subject": "jupiter",
-                        "expected_intents": ["interval_analysis"],
-                        "expected_context_relation": "NEW_TOPIC",
-                        "expected_answer_state": {"mode": "EXACT", "value": "CONFIRMED"},
-                        "expected_answer_mode": "ASTRO_INTERVAL",
-                        "expected_active_period": {"start": "2026-01-01", "end": "2026-12-31"},
-                        "expected_route_disposition": "CONTINUE",
-                    },
-                    {
-                        "turn_index": 2,
-                        "question_exact": "Q2_mercury",
-                        "locale": "EN",
-                        "expected_route_domain": "astromodule",
-                        "expected_route_subject": "mercury",
-                        "expected_intents": ["interval_analysis"],
-                        "expected_context_relation": "NEW_TOPIC",
-                        "expected_answer_state": {"mode": "EXACT", "value": "LIMITED"},
-                        "expected_answer_mode": "ASTRO_INTERVAL",
-                        "expected_active_period": {"start": "2026-01-01", "end": "2026-12-31"},
-                        "expected_route_disposition": "CONTINUE",
-                    },
-                ],
-            },
-            expected_context_packet={
-                "schema": "btc_cosmographer_context_v0_1",
-                "prior_domain": "astromodule",
-                "prior_subject": "mercury",
-                "prior_answer_state": "LIMITED",
-                "prior_intents": ["interval_analysis"],
-                "prior_time_start": "2026-01-01",
-                "prior_time_end": "2026-12-31",
-            },
-            expected_session_state={
-                "schema": "btc_cosmographer_dialogue_session_v0_3",
-                "locale": "en",
-                "compacted": False,
-                "turn_count": 2,
-            },
-        )
-        return p
-
-    def test_per_turn_validates_intents(self):
-        """expected_intents in per-turn contract must be checked against observed INTENTS."""
-        packet = self._make_two_turn_packet_v4()
-        obs_correct = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        result = _check_precondition_against_packet(packet, obs_correct, {}, setup_turn_index=1)
-        self.assertIsNone(result, "Correct intents must not block")
-
-    def test_per_turn_wrong_intent_blocks(self):
-        """Wrong intent in observed INTENTS must produce BLOCKED."""
-        packet = self._make_two_turn_packet_v4()
-        obs_wrong_intent = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="point_in_time",  # wrong: expected interval_analysis
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        result = _check_precondition_against_packet(packet, obs_wrong_intent, {}, setup_turn_index=1)
-        self.assertIsNotNone(result)
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
-        self.assertIn("intent", result.lower())
-
-    def test_per_turn_validates_active_period_start(self):
-        """expected_active_period.start must be present in observed TIME_SCOPE."""
-        packet = self._make_two_turn_packet_v4()
-        obs_wrong_period = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2025-01-01/2025-12-31",  # wrong year: expected 2026
-        )
-        result = _check_precondition_against_packet(packet, obs_wrong_period, {}, setup_turn_index=1)
-        self.assertIsNotNone(result)
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
-        self.assertIn("active_period", result)
-
-    def test_per_turn_question_exact_mismatch_blocks(self):
-        """Submitted question not matching contract question_exact must block."""
-        packet = self._make_two_turn_packet_v4()
-        obs_ok = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        result = _check_precondition_against_packet(
-            packet, obs_ok, {}, setup_turn_index=1,
-            submitted_question="WRONG_QUESTION_TEXT",
-        )
-        self.assertIsNotNone(result)
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
-        self.assertIn("question_exact", result)
-
-    def test_two_setup_turn1_passes_turn2_wrong_field_blocks_target(self):
-        """
-        Two-setup case: turn 1 passes, turn 2 has wrong route_subject.
-        Target submission must never occur; case must BLOCK after turn 2.
-        This is a unit test of _check_precondition_against_packet for turn 2.
-        """
-        packet = self._make_two_turn_packet_v4()
-        # Turn 1: correct state
-        obs_turn1_ok = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="CONFIRMED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        result_t1 = _check_precondition_against_packet(packet, obs_turn1_ok, {}, setup_turn_index=1)
-        self.assertIsNone(result_t1, "Turn 1 correct state must not block")
-
-        # Turn 2: wrong route_subject (saturn instead of mercury)
-        obs_turn2_wrong = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="saturn",      # wrong: expected mercury
-            CONTEXT_RELATION="NEW_TOPIC",
-            ANSWER_STATE="LIMITED",
-            ANSWER_MODE="ASTRO_INTERVAL",
-            ROUTE_DISPOSITION="CONTINUE",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        result_t2 = _check_precondition_against_packet(packet, obs_turn2_wrong, {}, setup_turn_index=2)
-        self.assertIsNotNone(result_t2, "Turn 2 wrong field must produce BLOCKED reason")
-        self.assertIn("SETUP_PRECONDITION_MISMATCH", result_t2)
-        self.assertIn("route_subject", result_t2)
-        # Prove target never submitted: turn 2 blocked means execute_case returns BLOCKED before target
-
-    def test_validate_final_state_before_target_passes_on_correct_state(self):
-        """Correct final state (matching expected_context_packet + session predicates) must not block."""
-        packet = self._make_two_turn_packet_v4()
-        obs_final = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="mercury",
-            ANSWER_STATE="LIMITED",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        session_state = {
-            "session_value": {
-                "locale": "en",
-                "compacted": False,
-                "turns": [{}, {}],  # 2 turns
-            }
-        }
-        result = _validate_final_state_before_target(packet, obs_final, session_state)
-        self.assertIsNone(result, "Correct final state must not block")
-
-    def test_validate_final_state_before_target_blocks_on_wrong_subject(self):
-        """Wrong prior_subject in final state must produce BLOCKED."""
-        packet = self._make_two_turn_packet_v4()
-        obs_wrong = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="jupiter",   # wrong: expected mercury
-            ANSWER_STATE="LIMITED",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        session_state = {
-            "session_value": {
-                "locale": "en",
-                "compacted": False,
-                "turns": [{}, {}],
-            }
-        }
-        result = _validate_final_state_before_target(packet, obs_wrong, session_state)
-        self.assertIsNotNone(result)
-        self.assertIn("FINAL_STATE_PRECONDITION_MISMATCH", result)
-        self.assertIn("prior_subject", result)
-
-    def test_validate_final_state_before_target_blocks_on_wrong_turn_count(self):
-        """Wrong turn_count in session must produce BLOCKED."""
-        packet = self._make_two_turn_packet_v4()
-        obs_ok = _obs_all_present(
-            ROUTE_DOMAIN="astromodule",
-            ROUTE_SUBJECT="mercury",
-            ANSWER_STATE="LIMITED",
-            INTENTS="interval_analysis",
-            TIME_SCOPE="2026-01-01/2026-12-31",
-        )
-        session_state = {
-            "session_value": {
-                "locale": "en",
-                "compacted": False,
-                "turns": [{}],  # only 1 turn; expected 2
-            }
-        }
-        result = _validate_final_state_before_target(packet, obs_ok, session_state)
-        self.assertIsNotNone(result)
-        self.assertIn("FINAL_STATE_PRECONDITION_MISMATCH", result)
-        self.assertIn("turn_count", result)
+    def test_harness_binding_authority_flag_exists(self):
+        self.assertIn("--binding-authority-path",HARNESS_PATH.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

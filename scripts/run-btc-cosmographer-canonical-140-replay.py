@@ -49,6 +49,19 @@ LAYER_COUNTS: Dict[str, int] = {
 PACKET_SCHEMA = "btc_cosmographer_evaluator_state_packet_v0_1"
 SESSION_MODES = {"CLEAN_SESSION", "NEW_CONVERSATION_CLEAN", "EXACT_PRIOR_TURN_SEQUENCE"}
 
+# Frozen two-stage evaluator handoff authority. The authority file is supplied at runtime;
+# it is intentionally not added to the six-file PR scope.
+EVALUATOR_CONTRACT_SHA256 = "f64d94f4463b05279ac870032d95b07583bba6d320ee25c1fb00c95f08a36eb9"
+BINDING_AUTHORITY_FILE_SHA256 = "021274f55bc9deed642e007e4cc8d488f40ab0b23405b6fd6811885db607f46d"
+BINDING_AUTHORITY_HASH = "sha256:46e6780200f15397eddb926d9944b560edd5836fb7403fd87f057c2febe0a903"
+BINDING_AUTHORITY_SCHEMA = "btc_cosmographer_evaluator_binding_authority_v0_1"
+SEMANTIC_DIMENSIONS = [
+    "subject", "intent", "period", "context_relation", "evidence_family",
+    "answer_type", "directness", "boundary", "memory_action", "forbidden_behavior",
+]
+BINDING_DIMENSIONS = ["mode", "domain", *SEMANTIC_DIMENSIONS]
+
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CORPUS_PATH = REPO_ROOT / "tests" / "fixtures" / "btc-cosmographer-canonical-140-v0_1.csv"
 PACKETS_PATH = REPO_ROOT / "tests" / "fixtures" / "btc-cosmographer-canonical-state-packets-v0_1.json"
@@ -413,6 +426,8 @@ def _capture_observation(driver) -> Dict[str, Any]:
         ("data-answer-mode", "ANSWER_MODE"),
         ("data-route-disposition", "ROUTE_DISPOSITION"),
         ("data-primary-authority", "PRIMARY_AUTHORITY"),
+        ("data-market-question-class", "MARKET_QUESTION_CLASS"),
+        ("data-relation-resolution", "RELATION_RESOLUTION"),
     ]:
         try:
             obs[field] = node.get_attribute(attr)
@@ -430,6 +445,25 @@ def _capture_observation(driver) -> Dict[str, Any]:
         )
     except Exception:
         obs["DIRECT_ANSWER"] = None
+
+    try:
+        show_clarification = node.get_attribute("data-show-clarification")
+        obs["SHOW_CLARIFICATION"] = show_clarification == "true" if show_clarification is not None else None
+    except Exception:
+        obs["SHOW_CLARIFICATION"] = None
+
+    try:
+        obs["_dom_order"] = driver.execute_script(
+            "const turns=document.querySelectorAll('.dialogueExchange .cosmographerTurn');"
+            "if(!turns.length) return {}; const last=turns[turns.length-1];"
+            "const direct=last.querySelector('.answerLead[data-answer-direct=\"true\"]');"
+            "const section=last.querySelector('[data-semantic-answer-section]');"
+            "if(!direct) return {direct_answer_before_sections:false};"
+            "if(!section) return {direct_answer_before_sections:true};"
+            "return {direct_answer_before_sections:Boolean(direct.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING)};"
+        )
+    except Exception:
+        obs["_dom_order"] = {}
 
     # Answer section order/identifiers: data-semantic-answer-section values in DOM order
     try:
@@ -1041,6 +1075,369 @@ def _validate_final_state_before_target(
     return None
 
 
+def canonical_json_sha256(value: Any) -> str:
+    """Stable SHA-256 for hash-bound evaluator handoff records."""
+    encoded = json.dumps(
+        value, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
+def _validate_binding_record_hash(record: Dict[str, Any]) -> bool:
+    declared = record.get("binding_record_hash")
+    if not isinstance(declared, str) or not declared.startswith("sha256:"):
+        return False
+    body = {k: v for k, v in record.items() if k != "binding_record_hash"}
+    return declared == canonical_json_sha256(body)
+
+
+def validate_binding_authority(
+    path: Path,
+    csv_rows: List[Dict[str, str]],
+    packets_index: Dict[str, Dict[str, Any]],
+) -> tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]:
+    """Validate the external frozen 140-case two-stage binding authority."""
+    actual_file_sha = sha256_file(path)
+    if actual_file_sha != BINDING_AUTHORITY_FILE_SHA256:
+        raise ValueError(
+            f"BINDING_AUTHORITY_FILE_HASH_MISMATCH: expected={BINDING_AUTHORITY_FILE_SHA256} actual={actual_file_sha}"
+        )
+    with open(path, encoding="utf-8") as f:
+        doc = json.load(f)
+    if doc.get("schema") != BINDING_AUTHORITY_SCHEMA:
+        raise ValueError(f"BINDING_AUTHORITY_SCHEMA_MISMATCH: {doc.get('schema')!r}")
+    if doc.get("authority_status") != "FROZEN_PASS":
+        raise ValueError(f"BINDING_AUTHORITY_NOT_FROZEN_PASS: {doc.get('authority_status')!r}")
+    if doc.get("authority_hash") != BINDING_AUTHORITY_HASH:
+        raise ValueError(
+            f"BINDING_AUTHORITY_HASH_MISMATCH: expected={BINDING_AUTHORITY_HASH} actual={doc.get('authority_hash')}"
+        )
+    src = doc.get("source_authority") or {}
+    expected_sources = {
+        "canonical_corpus_sha256": CORPUS_AUTHORITY_SHA256,
+        "state_packets_sha256": STATE_PACKETS_AUTHORITY_SHA256,
+        "evaluator_contract_sha256": EVALUATOR_CONTRACT_SHA256,
+    }
+    for key, expected in expected_sources.items():
+        if src.get(key) != expected:
+            raise ValueError(
+                f"BINDING_AUTHORITY_SOURCE_MISMATCH: {key} expected={expected} actual={src.get(key)}"
+            )
+    records = doc.get("records")
+    if not isinstance(records, list) or len(records) != TOTAL_CASES:
+        raise ValueError(
+            f"BINDING_AUTHORITY_RECORD_COUNT_MISMATCH: expected={TOTAL_CASES} actual={len(records) if isinstance(records, list) else 'invalid'}"
+        )
+    record_index: Dict[str, Dict[str, Any]] = {}
+    for record in records:
+        case_id = record.get("case_id")
+        if not isinstance(case_id, str) or case_id in record_index:
+            raise ValueError(f"BINDING_AUTHORITY_DUPLICATE_OR_INVALID_CASE_ID: {case_id!r}")
+        if record.get("record_status") != "FROZEN":
+            raise ValueError(f"BINDING_RECORD_NOT_FROZEN: {case_id}")
+        if record.get("unresolved_required_dimensions") not in ([], None):
+            raise ValueError(f"BINDING_RECORD_UNRESOLVED_DIMENSIONS: {case_id}")
+        if not _validate_binding_record_hash(record):
+            raise ValueError(f"BINDING_RECORD_HASH_MISMATCH: {case_id}")
+        packet = packets_index.get(case_id)
+        if packet is None:
+            raise ValueError(f"BINDING_RECORD_WITHOUT_PACKET: {case_id}")
+        packet_source = packet.get("source_authority") or {}
+        expected_contract_hash = packet_source.get("expected_contract_hash")
+        expected_contract = packet_source.get("expected_contract")
+        if not isinstance(expected_contract, dict) or canonical_json_sha256(expected_contract) != expected_contract_hash:
+            raise ValueError(f"PACKET_EXPECTED_CONTRACT_HASH_MISMATCH: {case_id}")
+        if record.get("expected_contract_hash") != expected_contract_hash:
+            raise ValueError(
+                f"BINDING_EXPECTED_CONTRACT_HASH_MISMATCH: {case_id} expected={expected_contract_hash} actual={record.get('expected_contract_hash')}"
+            )
+        if record.get("state_packet_hash") != packet.get("packet_hash"):
+            raise ValueError(f"BINDING_STATE_PACKET_HASH_MISMATCH: {case_id}")
+        bindings = record.get("bindings") or {}
+        if set(bindings) != set(BINDING_DIMENSIONS):
+            raise ValueError(
+                f"BINDING_DIMENSION_SET_MISMATCH: {case_id} actual={sorted(bindings)}"
+            )
+        record_index[case_id] = record
+    csv_ids = {r["CASE_ID"] for r in csv_rows}
+    if set(record_index) != csv_ids:
+        raise ValueError("BINDING_AUTHORITY_CASE_ID_SET_MISMATCH")
+    coverage = doc.get("hybrid_binding_coverage_proof") or {}
+    if coverage.get("freeze_gate") != "PASS" or coverage.get("unbound_required_dimensions") != 0:
+        raise ValueError("BINDING_AUTHORITY_COVERAGE_GATE_NOT_PASS")
+    return doc, record_index
+
+
+def _latest_turn(session_state: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    value = (session_state or {}).get("session_value")
+    if not isinstance(value, dict):
+        return None
+    turns = value.get("turns")
+    if not isinstance(turns, list) or not turns:
+        return None
+    return turns[-1] if isinstance(turns[-1], dict) else None
+
+
+def _active_context(session_state: Optional[Dict[str, Any]]) -> Any:
+    """Mirror runtime latestContextTurn() from btc-live-dialogue-session.ts."""
+    value = (session_state or {}).get("session_value")
+    if not isinstance(value, dict):
+        return None
+    turns = value.get("turns")
+    if not isinstance(turns, list):
+        return None
+    for turn in reversed(turns):
+        if not isinstance(turn, dict):
+            continue
+        disposition = turn.get("route_disposition")
+        if disposition not in (None, "CONTINUE"):
+            continue
+        if turn.get("context_safe_composer") is False:
+            continue
+        if turn.get("answer_state") in ("FAILURE", "CLARIFICATION"):
+            continue
+        return turn
+    return None
+
+
+def _resolve_structural_field(
+    field: str,
+    obs: Dict[str, Any],
+    session_before: Optional[Dict[str, Any]],
+    session_after: Optional[Dict[str, Any]],
+) -> tuple[bool, Any]:
+    """Resolve only explicitly captured structural fields. Never derive semantics."""
+    direct = {
+        "ROUTE_DOMAIN": obs.get("ROUTE_DOMAIN"),
+        "ROUTE_SUBJECT": obs.get("ROUTE_SUBJECT"),
+        "MARKET_QUESTION_CLASS": obs.get("MARKET_QUESTION_CLASS"),
+        "RELATION_RESOLUTION": obs.get("RELATION_RESOLUTION"),
+        "CONTEXT_RELATION": obs.get("CONTEXT_RELATION"),
+        "ANSWER_STATE": obs.get("ANSWER_STATE"),
+        "ANSWER_MODE": obs.get("ANSWER_MODE"),
+        "ROUTE_DISPOSITION": obs.get("ROUTE_DISPOSITION"),
+        "PRIMARY_AUTHORITY": obs.get("PRIMARY_AUTHORITY"),
+        "EVIDENCE_LEVELS": obs.get("EVIDENCE_LEVELS"),
+        "DIRECT_ANSWER": obs.get("DIRECT_ANSWER"),
+        "SHOW_CLARIFICATION": obs.get("SHOW_CLARIFICATION"),
+        "ANSWER_SECTION_IDS": obs.get("_answer_section_ids"),
+        "DOM_ORDER.direct_answer_before_sections": (obs.get("_dom_order") or {}).get("direct_answer_before_sections"),
+        "EVIDENCE_METADATA.evidence-coverage": (obs.get("_evidence_metadata") or {}).get("evidence-coverage"),
+        "EVIDENCE_METADATA.evidence-revision-or-generated-time": (obs.get("_evidence_metadata") or {}).get("evidence-revision-or-generated-time"),
+    }
+    if field in direct:
+        return direct[field] is not None, direct[field]
+    if field.startswith("ANSWER_SECTION_IDS[") and field.endswith("]"):
+        try:
+            idx = int(field[len("ANSWER_SECTION_IDS["):-1])
+            values = obs.get("_answer_section_ids") or []
+            return idx < len(values), values[idx] if idx < len(values) else None
+        except (ValueError, TypeError):
+            return False, None
+    target_turn = _latest_turn(session_after)
+    prior_turn = _latest_turn(session_before)
+    if field == "TURN.time_start":
+        return bool(target_turn and "time_start" in target_turn), target_turn.get("time_start") if target_turn else None
+    if field == "TURN.time_end":
+        return bool(target_turn and "time_end" in target_turn), target_turn.get("time_end") if target_turn else None
+    if field == "SESSION.session_id":
+        value = (session_after or {}).get("session_value")
+        session_id = value.get("session_id") if isinstance(value, dict) else None
+        return session_id is not None, session_id
+    if field == "SESSION_PRIOR.route_domain":
+        return bool(prior_turn and "route_domain" in prior_turn), prior_turn.get("route_domain") if prior_turn else None
+    if field == "SESSION_PRIOR.route_subject":
+        return bool(prior_turn and "route_subject" in prior_turn), prior_turn.get("route_subject") if prior_turn else None
+    if field == "SESSION_PRIOR.turn_count_before_target" or field == "turn_count_before_target":
+        value = (session_before or {}).get("session_value")
+        turns = value.get("turns") if isinstance(value, dict) else None
+        return isinstance(turns, list), len(turns) if isinstance(turns, list) else None
+    if field.startswith("SESSION_AFTER.latest_turn."):
+        key = field.split(".", 2)[2]
+        return bool(target_turn and key in target_turn), target_turn.get(key) if target_turn else None
+    if field == "SESSION_BEFORE.active_context":
+        value = _active_context(session_before)
+        return value is not None, value
+    if field == "SESSION_AFTER.active_context":
+        value = _active_context(session_after)
+        return value is not None, value
+    return False, None
+
+
+def _normalize_set(value: Any) -> set[str]:
+    if isinstance(value, (list, tuple, set)):
+        return {str(v) for v in value}
+    if isinstance(value, str):
+        return {v.strip() for v in value.replace(",", ";").split(";") if v.strip()}
+    return set()
+
+
+def _evaluate_structural_predicate(
+    predicate: Dict[str, Any],
+    obs: Dict[str, Any],
+    session_before: Optional[Dict[str, Any]],
+    session_after: Optional[Dict[str, Any]],
+    dimension_statuses: Optional[Dict[str, str]] = None,
+) -> Optional[bool]:
+    """Return True/False/None(unknown) for a frozen structural predicate."""
+    if not isinstance(predicate, dict):
+        return None
+    op = predicate.get("op")
+    statuses = dimension_statuses or {}
+    if op in ("AND", "OR"):
+        values = [
+            _evaluate_structural_predicate(p, obs, session_before, session_after, statuses)
+            for p in predicate.get("args", [])
+        ]
+        if op == "AND":
+            if any(v is False for v in values):
+                return False
+            return True if values and all(v is True for v in values) else None
+        if any(v is True for v in values):
+            return True
+        return False if values and all(v is False for v in values) else None
+    if op == "NOT":
+        value = _evaluate_structural_predicate(
+            predicate.get("arg") or {}, obs, session_before, session_after, statuses
+        )
+        return None if value is None else not value
+    if op == "DEPENDENCY":
+        status = statuses.get(str(predicate.get("binding")))
+        required = predicate.get("required_status")
+        # A semantic-only dependency is intentionally deferred to Stage B. Stage A
+        # evaluates the machine-observable conjuncts without turning that deferral into BLOCKED.
+        if status in (None, "NOT_APPLICABLE_STAGE_B_REQUIRED"):
+            return required in ("PASS", "PASS_OR_NOT_APPLICABLE")
+        if required == "PASS_OR_NOT_APPLICABLE":
+            return status in ("PASS", "NOT_APPLICABLE_STAGE_B_REQUIRED")
+        return status == required
+    if op == "EQ_FIELDS":
+        left_ok, left = _resolve_structural_field(str(predicate.get("left")), obs, session_before, session_after)
+        right_ok, right = _resolve_structural_field(str(predicate.get("right")), obs, session_before, session_after)
+        return None if not left_ok or not right_ok else left == right
+    if op == "SESSION_PRIOR_EQ":
+        field = "SESSION_PRIOR." + str(predicate.get("field"))
+        ok, actual = _resolve_structural_field(field, obs, session_before, session_after)
+        return None if not ok else actual == predicate.get("value")
+    if op == "DATE_RANGE_EQ":
+        start_ok, start = _resolve_structural_field("TURN.time_start", obs, session_before, session_after)
+        end_ok, end = _resolve_structural_field("TURN.time_end", obs, session_before, session_after)
+        if not start_ok or not end_ok:
+            return None
+        return start == predicate.get("start") and end == predicate.get("end")
+    if op == "DATE_EQ":
+        start_ok, start = _resolve_structural_field("TURN.time_start", obs, session_before, session_after)
+        end_ok, end = _resolve_structural_field("TURN.time_end", obs, session_before, session_after)
+        if not start_ok and not end_ok:
+            return None
+        target = predicate.get("value")
+        return start == target or end == target
+    field = str(predicate.get("field"))
+    ok, actual = _resolve_structural_field(field, obs, session_before, session_after)
+    if op == "IS_NULL":
+        return None if not ok else actual is None
+    if op == "IS_NON_NULL":
+        return None if not ok else actual is not None
+    if not ok:
+        return None
+    if op == "EQ":
+        return actual == predicate.get("value")
+    if op == "IN":
+        return actual in predicate.get("values", [])
+    if op == "SET_CONTAINS_ALL":
+        return set(map(str, predicate.get("values", []))).issubset(_normalize_set(actual))
+    if op == "INTERSECTS":
+        return bool(set(map(str, predicate.get("values", []))) & _normalize_set(actual))
+    return None
+
+
+def _binding_gate(binding: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if binding.get("evaluation_stage") == "A_STRUCTURAL_HARD_GATE":
+        return binding
+    gate = binding.get("structural_hard_gate")
+    return gate if isinstance(gate, dict) else None
+
+
+def evaluate_stage_a(
+    csv_row: Dict[str, str],
+    packet: Dict[str, Any],
+    obs: Dict[str, Any],
+    binding_record: Dict[str, Any],
+    served_source_sha: Optional[str],
+    served_deployment_sha: Optional[str],
+    expected_source_sha: str,
+    expected_deployment_sha: str,
+    session_before: Optional[Dict[str, Any]] = None,
+    session_after: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Machine-only Stage A. It never performs semantic text/keyword judgment."""
+    reasons: List[str] = []
+    hard_fail = False
+    blocked = False
+    if served_source_sha != expected_source_sha:
+        reasons.append(f"SOURCE_SHA_MISMATCH: expected={expected_source_sha} served={served_source_sha}")
+        hard_fail = True
+    if served_deployment_sha != expected_deployment_sha:
+        reasons.append(f"DEPLOYMENT_SHA_MISMATCH: expected={expected_deployment_sha} served={served_deployment_sha}")
+        hard_fail = True
+    if packet.get("target_question_exact") != csv_row.get("QUESTION_TEXT"):
+        reasons.append("QUESTION_BYTES_MISMATCH: packet target question differs from canonical CSV")
+        hard_fail = True
+    if str(packet.get("locale", "")).upper() != str(csv_row.get("LOCALE", "")).upper():
+        reasons.append("LOCALE_AUTHORITY_MISMATCH: packet locale differs from canonical CSV")
+        hard_fail = True
+    if not obs.get("_dom_available", True):
+        reasons.append("DOM_UNAVAILABLE: cosmographerTurn not found")
+        blocked = True
+    if _is_binance_trading_intent(obs):
+        reasons.append("TRADING_BOUNDARY: trading-intent Binance fetch detected")
+        hard_fail = True
+
+    bindings = binding_record.get("bindings") or {}
+    structural_results: List[Dict[str, Any]] = []
+    statuses: Dict[str, str] = {}
+    for dimension in BINDING_DIMENSIONS:
+        binding = bindings.get(dimension) or {}
+        gate = _binding_gate(binding)
+        if gate is None:
+            statuses[dimension] = "NOT_APPLICABLE_STAGE_B_REQUIRED"
+            structural_results.append({
+                "dimension": dimension,
+                "status": "NOT_APPLICABLE_STAGE_B_REQUIRED",
+                "predicate": None,
+            })
+            continue
+        outcome = _evaluate_structural_predicate(
+            gate.get("predicate") or {}, obs, session_before, session_after, statuses
+        )
+        if outcome is True:
+            status = "PASS"
+        elif outcome is False:
+            status = gate.get("mismatch_verdict", "FAIL")
+            reasons.append(f"STRUCTURAL_{status}: {dimension} frozen predicate mismatch")
+            hard_fail = hard_fail or status == "FAIL"
+            blocked = blocked or status == "BLOCKED"
+        else:
+            status = gate.get("missing_observation_verdict", "BLOCKED")
+            reasons.append(f"STRUCTURAL_{status}: {dimension} required observation unavailable")
+            hard_fail = hard_fail or status == "FAIL"
+            blocked = blocked or status == "BLOCKED"
+        statuses[dimension] = status
+        structural_results.append({
+            "dimension": dimension,
+            "status": status,
+            "predicate": gate.get("predicate"),
+            "binding_class": gate.get("binding_class"),
+        })
+    verdict = "FAIL" if hard_fail else "BLOCKED" if blocked else "PASS"
+    return {
+        "stage_a_verdict": verdict,
+        "stage_a_failure_reasons": reasons,
+        "stage_a_failure_class": _classify_failures(reasons),
+        "structural_dimension_results": structural_results,
+    }
+
+
 def evaluate_case(
     csv_row: Dict[str, str],
     packet: Dict[str, Any],
@@ -1049,248 +1446,24 @@ def evaluate_case(
     served_deployment_sha: Optional[str],
     expected_source_sha: str,
     expected_deployment_sha: str,
+    binding_record: Optional[Dict[str, Any]] = None,
+    session_before: Optional[Dict[str, Any]] = None,
+    session_after: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """
-    Apply evaluator contract. Returns verdict dict.
-    Rules:
-    - Never repair product code
-    - Never rewrite expected contracts
-    - Never infer missing prior state
-    - Never hide BLOCKED
-    - Volatile Binance numbers are structural evidence only
-    - Trading-intent Binance fetch is a boundary failure
-    - Missing mandatory observable data cannot silently PASS
-    - An unevaluated required canonical contract dimension yields BLOCKED, not PASS
-    - SHA mismatch must be reported; caller is responsible for batch-level block
-    """
-    failure_reasons: List[str] = []
-    verdict = "PASS"
-
-    # SHA gate: must match before any PASS
-    source_ok = bool(served_source_sha and served_source_sha == expected_source_sha)
-    deploy_ok = bool(served_deployment_sha and served_deployment_sha == expected_deployment_sha)
-
-    if not source_ok:
-        failure_reasons.append(
-            f"SOURCE_SHA_MISMATCH: expected={expected_source_sha} served={served_source_sha}"
-        )
-        verdict = "FAIL"
-
-    if not deploy_ok:
-        failure_reasons.append(
-            f"DEPLOYMENT_SHA_MISMATCH: expected={expected_deployment_sha} served={served_deployment_sha}"
-        )
-        verdict = "FAIL"
-
-    # DOM unavailable → FAIL
-    if not obs.get("_dom_available", True):
-        failure_reasons.append("DOM_UNAVAILABLE: cosmographerTurn not found")
-        verdict = "FAIL"
+    """Compatibility wrapper: returns Stage A only; semantic verdict is deliberately pending."""
+    if binding_record is None:
         return {
-            "verdict": verdict,
-            "failure_reasons": failure_reasons,
-            "failure_class": ["ROUTING"],
+            "stage_a_verdict": "BLOCKED",
+            "stage_a_failure_reasons": ["BINDING_AUTHORITY_RECORD_MISSING"],
+            "stage_a_failure_class": ["INPUT_AUTHORITY"],
+            "structural_dimension_results": [],
         }
-
-    # Trading-intent Binance boundary failure
-    if _is_binance_trading_intent(obs):
-        failure_reasons.append("TRADING_BOUNDARY: trading-intent Binance fetch detected")
-        if verdict == "PASS":
-            verdict = "FAIL"
-
-    # Missing mandatory observable data cannot silently PASS
-    for field in MANDATORY_CAPTURE_FIELDS:
-        if obs.get(field) is None:
-            failure_reasons.append(f"MISSING_MANDATORY_FIELD: {field} is null/absent")
-            if verdict == "PASS":
-                verdict = "FAIL"
-
-    # --- Canonical CSV contract dimensions ---
-    # These use actual CSV column names from btc-cosmographer-canonical-140-v0_1.csv.
-    # Non-existent columns (EXPECTED_ANSWER_STATE, EXPECTED_ANSWER_MODE, EXPECTED_TIME_SCOPE)
-    # are never referenced.
-
-    # EXPECTED_DOMAIN → ROUTE_DOMAIN
-    expected_domain = csv_row.get("EXPECTED_DOMAIN", "")
-    actual_domain = obs.get("ROUTE_DOMAIN") or ""
-    if expected_domain and actual_domain.lower() != expected_domain.lower():
-        failure_reasons.append(
-            f"ROUTING: domain expected={expected_domain} actual={actual_domain}"
-        )
-        verdict = "FAIL"
-
-    # EXPECTED_SUBJECT → ROUTE_SUBJECT
-    expected_subject = csv_row.get("EXPECTED_SUBJECT", "")
-    actual_subject = obs.get("ROUTE_SUBJECT") or ""
-    if expected_subject and actual_subject.lower() != expected_subject.lower():
-        failure_reasons.append(
-            f"SUBJECT_RESOLUTION: subject expected={expected_subject} actual={actual_subject}"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
-
-    # EXPECTED_CONTEXT_RELATION → CONTEXT_RELATION
-    expected_cr = csv_row.get("EXPECTED_CONTEXT_RELATION", "")
-    actual_cr = obs.get("CONTEXT_RELATION") or ""
-    if expected_cr and actual_cr.upper() != expected_cr.upper():
-        failure_reasons.append(
-            f"CONTEXT_MEMORY: context_relation expected={expected_cr} actual={actual_cr}"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
-
-    # EXPECTED_MODE: CSV mode taxonomy and runtime ANSWER_MODE taxonomy have no proven
-    # deterministic binding. Keyword/token-overlap scoring is explicitly forbidden by the
-    # evaluator contract ("never score by keyword overlap alone").
-    # → BLOCKED with EVALUATOR_BINDING_UNAVAILABLE; never fabricate PASS or FAIL.
-    expected_mode = csv_row.get("EXPECTED_MODE", "")
-    if expected_mode:
-        failure_reasons.append(
-            f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_MODE={expected_mode!r} has no proven "
-            "deterministic binding to runtime ANSWER_MODE taxonomy; keyword overlap forbidden"
-        )
-        if verdict == "PASS":
-            verdict = "BLOCKED"
-
-    # EXPECTED_ANSWER_TYPE: CSV answer-type taxonomy and runtime ANSWER_STATE taxonomy are
-    # different vocabularies. Cross-taxonomy comparison is forbidden. No proven binding exists.
-    # → BLOCKED with EVALUATOR_BINDING_UNAVAILABLE; never fabricate PASS or FAIL.
-    expected_answer_type = csv_row.get("EXPECTED_ANSWER_TYPE", "")
-    if expected_answer_type:
-        failure_reasons.append(
-            f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_ANSWER_TYPE={expected_answer_type!r} has no proven "
-            "deterministic binding to runtime ANSWER_STATE taxonomy; cross-taxonomy comparison forbidden"
-        )
-        if verdict == "PASS":
-            verdict = "BLOCKED"
-
-    # EXPECTED_INTENT → INTENTS: deterministic case-insensitive containment check.
-    # Both use the same question-facet/intent vocabulary. Non-empty-but-wrong → FAIL.
-    expected_intent = csv_row.get("EXPECTED_INTENT", "")
-    actual_intents = obs.get("INTENTS") or ""
-    if expected_intent:
-        if not actual_intents:
-            failure_reasons.append(
-                f"ROUTING: intents expected={expected_intent!r} but INTENTS is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif expected_intent.lower() not in actual_intents.lower():
-            failure_reasons.append(
-                f"ROUTING: intent expected={expected_intent!r} not found in observed INTENTS={actual_intents!r}"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-
-    # EXPECTED_PERIOD → TIME_SCOPE: deterministic case-insensitive containment check.
-    # Non-empty-but-wrong → FAIL.
-    expected_period = csv_row.get("EXPECTED_PERIOD", "")
-    actual_time_scope = obs.get("TIME_SCOPE") or ""
-    if expected_period:
-        if not actual_time_scope:
-            failure_reasons.append(
-                f"TIME_SCOPE: period expected={expected_period!r} but TIME_SCOPE is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif expected_period.lower() not in actual_time_scope.lower():
-            failure_reasons.append(
-                f"TIME_SCOPE: period expected={expected_period!r} not found in observed TIME_SCOPE={actual_time_scope!r}"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-
-    # EXPECTED_EVIDENCE_FAMILY → EVIDENCE_LEVELS: deterministic case-insensitive containment check.
-    # Non-empty-but-wrong → FAIL.
-    expected_ev_family = csv_row.get("EXPECTED_EVIDENCE_FAMILY", "")
-    actual_ev_levels = obs.get("EVIDENCE_LEVELS") or ""
-    if expected_ev_family:
-        if not actual_ev_levels:
-            failure_reasons.append(
-                f"EVIDENCE: evidence_family expected={expected_ev_family!r} but EVIDENCE_LEVELS is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif expected_ev_family.lower() not in str(actual_ev_levels).lower():
-            failure_reasons.append(
-                f"EVIDENCE: evidence_family expected={expected_ev_family!r} not found in "
-                f"observed EVIDENCE_LEVELS={actual_ev_levels!r}"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-
-    # EXPECTED_BOUNDARY → BOUNDARY_STATE: deterministic case-insensitive containment check.
-    # Non-empty-but-wrong → FAIL. NON_TRADING with trading intent → FAIL.
-    expected_boundary = csv_row.get("EXPECTED_BOUNDARY", "")
-    actual_boundary = obs.get("BOUNDARY_STATE") or ""
-    if expected_boundary:
-        if not actual_boundary:
-            failure_reasons.append(
-                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary!r} but BOUNDARY_STATE is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif expected_boundary.lower() not in actual_boundary.lower():
-            failure_reasons.append(
-                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary!r} not found in "
-                f"observed BOUNDARY_STATE={actual_boundary!r}"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        # NON_TRADING must not coexist with a detected trading boundary violation
-        if "NON_TRADING" in expected_boundary.upper() and _is_binance_trading_intent(obs):
-            failure_reasons.append(
-                "TRADING_BOUNDARY: expected NON_TRADING but trading boundary detected"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-
-    # FORBIDDEN_BEHAVIOR checks
-    forbidden = csv_row.get("FORBIDDEN_BEHAVIOR", "")
-    if "BUY_SELL_SIGNAL" in forbidden and _is_binance_trading_intent(obs):
-        failure_reasons.append("TRADING_BOUNDARY: BUY_SELL_SIGNAL detected in forbidden")
-        if verdict == "PASS":
-            verdict = "FAIL"
-
-    # EXPECTED_DIRECTNESS → DIRECT_ANSWER: deterministic directness check.
-    # "YES"/"DIRECT"/truthy  → DIRECT_ANSWER must be non-empty (FAIL if absent).
-    # "NO"/"INDIRECT"/falsy  → DIRECT_ANSWER must be absent/empty (FAIL if present).
-    # Unrecognized token     → no proven binding → BLOCKED.
-    expected_directness = csv_row.get("EXPECTED_DIRECTNESS", "")
-    direct_answer = obs.get("DIRECT_ANSWER") or ""
-    if expected_directness:
-        ed_upper = expected_directness.upper()
-        if ed_upper in ("YES", "DIRECT", "TRUE", "Y", "1"):
-            if not direct_answer:
-                failure_reasons.append(
-                    f"ANSWER_DIRECTNESS: expected direct answer "
-                    f"(EXPECTED_DIRECTNESS={expected_directness!r}) but DIRECT_ANSWER is absent"
-                )
-                if verdict == "PASS":
-                    verdict = "FAIL"
-        elif ed_upper in ("NO", "INDIRECT", "NONE", "FALSE", "N", "0", "NOT_DIRECT"):
-            if direct_answer:
-                failure_reasons.append(
-                    f"ANSWER_DIRECTNESS: expected no direct answer "
-                    f"(EXPECTED_DIRECTNESS={expected_directness!r}) but DIRECT_ANSWER is present: "
-                    f"{direct_answer[:80]!r}"
-                )
-                if verdict == "PASS":
-                    verdict = "FAIL"
-        else:
-            failure_reasons.append(
-                f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_DIRECTNESS={expected_directness!r} "
-                "is not a recognized directness token; no deterministic binding"
-            )
-            if verdict == "PASS":
-                verdict = "BLOCKED"
-
-    return {
-        "verdict": verdict,
-        "failure_reasons": failure_reasons,
-        "failure_class": _classify_failures(failure_reasons),
-    }
-
+    return evaluate_stage_a(
+        csv_row, packet, obs, binding_record,
+        served_source_sha, served_deployment_sha,
+        expected_source_sha, expected_deployment_sha,
+        session_before=session_before, session_after=session_after,
+    )
 
 def _classify_failures(reasons: List[str]) -> List[str]:
     classes = set()
@@ -1307,9 +1480,18 @@ def _classify_failures(reasons: List[str]) -> List[str]:
 # Case execution
 # ---------------------------------------------------------------------------
 
+def _mark_stage_a_blocked(result: Dict[str, Any]) -> Dict[str, Any]:
+    reason = result.get("blocked_reason") or "STAGE_A_BLOCKED"
+    result["stage_a_verdict"] = "BLOCKED"
+    result["stage_a_failure_reasons"] = [reason]
+    result["stage_a_failure_class"] = ["OTHER_EXACTLY_DESCRIBED"]
+    result["structural_dimension_results"] = []
+    return result
+
 def execute_case(
     csv_row: Dict[str, str],
     packet: Dict[str, Any],
+    binding_record: Dict[str, Any],
     target_url: str,
     expected_source_sha: str,
     expected_deployment_sha: str,
@@ -1347,9 +1529,10 @@ def execute_case(
                 f"SETUP_CARDINALITY_MISMATCH: setup_turn_count={declared_setup_count} "
                 f"len(setup_turns_exact)={len(setup_turns)}"
             ),
-            "verdict": "BLOCKED",
-            "failure_reasons": [f"SETUP_CARDINALITY_MISMATCH: declared={declared_setup_count} actual={len(setup_turns)}"],
-            "failure_class": ["OTHER_EXACTLY_DESCRIBED"],
+            "stage_a_verdict": "BLOCKED",
+            "stage_a_failure_reasons": [f"SETUP_CARDINALITY_MISMATCH: declared={declared_setup_count} actual={len(setup_turns)}"],
+            "stage_a_failure_class": ["OTHER_EXACTLY_DESCRIBED"],
+            "structural_dimension_results": [],
         }
 
     result: Dict[str, Any] = {
@@ -1365,6 +1548,7 @@ def execute_case(
         "session_state": {},
         "setup_preconditions_materialized": True,
         "blocked_reason": None,
+        "session_state_before_target": {},
     }
 
     # selenium imports deferred until after early-return checks above
@@ -1379,6 +1563,7 @@ def execute_case(
             base_url = f"{target_url.rstrip('/')}/crypto-astro/btc/live"
             driver.get(base_url)
             driver.execute_script("sessionStorage.clear(); localStorage.clear();")
+            result["session_state_before_target"] = _capture_session_state(driver)
             _submit_question(driver, target_url, question_exact, locale)
 
         elif session_mode == "NEW_CONVERSATION_CLEAN":
@@ -1386,13 +1571,15 @@ def execute_case(
             base_url = f"{target_url.rstrip('/')}/crypto-astro/btc/live"
             driver.get(base_url)
             driver.execute_script("sessionStorage.clear(); localStorage.clear();")
+            result["session_state_before_target"] = _capture_session_state(driver)
             _submit_question(driver, target_url, question_exact, locale)
 
         elif session_mode == "EXACT_PRIOR_TURN_SEQUENCE":
             # Execute frozen setup questions (plain strings) through the real dialogue path
             # in exact declared order. Never inject guessed hidden state.
             if not setup_turns:
-                # No setup turns: effectively a first-turn question
+                # No setup turns: capture the actual pre-target session; never inject state.
+                result["session_state_before_target"] = _capture_session_state(driver)
                 _submit_question(driver, target_url, question_exact, locale)
             else:
                 # Submit first setup turn (a plain string) via URL navigation
@@ -1405,7 +1592,7 @@ def execute_case(
                 if not got_answer:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = f"SETUP_TURN_1_NO_RESPONSE: {str(first_setup_q)[:80]}"
-                    return {**result, "verdict": "BLOCKED"}
+                    return _mark_stage_a_blocked(result)
 
                 # Capture state after first setup turn and validate precondition
                 obs_1 = _capture_observation(driver)
@@ -1423,7 +1610,7 @@ def execute_case(
                 if precondition_failure:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = precondition_failure
-                    return {**result, "verdict": "BLOCKED"}
+                    return _mark_stage_a_blocked(result)
 
                 # Submit remaining setup turns (strings) in order before target
                 for i, setup_q in enumerate(setup_turns[1:], start=2):
@@ -1438,7 +1625,7 @@ def execute_case(
                     if not submitted:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = f"SETUP_TURN_{i}_SUBMIT_FAILED: {str(setup_q)[:80]}"
-                        return {**result, "verdict": "BLOCKED"}
+                        return _mark_stage_a_blocked(result)
 
                     # Wait for new turn to appear
                     deadline = time.time() + 60
@@ -1458,7 +1645,7 @@ def execute_case(
                     if not got_new:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = f"SETUP_TURN_{i}_NO_RESPONSE: {str(setup_q)[:80]}"
-                        return {**result, "verdict": "BLOCKED"}
+                        return _mark_stage_a_blocked(result)
 
                     # Validate precondition after each setup turn
                     obs_i = _capture_observation(driver)
@@ -1474,7 +1661,7 @@ def execute_case(
                     if precondition_failure_i:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = precondition_failure_i
-                        return {**result, "verdict": "BLOCKED"}
+                        return _mark_stage_a_blocked(result)
 
                 # After all setup turns: validate final expected_context_packet and
                 # expected_session_state predicates before target submission.
@@ -1487,7 +1674,13 @@ def execute_case(
                 if final_state_failure:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = final_state_failure
-                    return {**result, "verdict": "BLOCKED"}
+                    result["stage_a_verdict"] = "BLOCKED"
+                    result["stage_a_failure_reasons"] = [final_state_failure]
+                    result["stage_a_failure_class"] = ["CONTEXT_MEMORY"]
+                    result["structural_dimension_results"] = []
+                    return result
+
+                result["session_state_before_target"] = final_ss
 
                 # Submit target question in-session (exact bytes)
                 turns_before_target = len(
@@ -1500,7 +1693,7 @@ def execute_case(
                 if not submitted:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = "TARGET_QUESTION_SUBMIT_FAILED"
-                    return {**result, "verdict": "BLOCKED"}
+                    return _mark_stage_a_blocked(result)
 
                 # Wait for target answer
                 deadline = time.time() + 60
@@ -1520,14 +1713,14 @@ def execute_case(
                 if not got_target:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = "TARGET_ANSWER_NOT_RECEIVED"
-                    return {**result, "verdict": "BLOCKED"}
+                    return _mark_stage_a_blocked(result)
 
         # Wait for answer (for CLEAN/NEW_CONVERSATION modes)
         if session_mode in ("CLEAN_SESSION", "NEW_CONVERSATION_CLEAN"):
             got = _wait_for_answer(driver, timeout=60)
             if not got:
                 result["blocked_reason"] = "ANSWER_NOT_RECEIVED"
-                return {**result, "verdict": "BLOCKED"}
+                return _mark_stage_a_blocked(result)
 
         # Capture identity and response headers from a SINGLE performance log read
         identity = _capture_identity_and_headers(driver)
@@ -1562,13 +1755,16 @@ def execute_case(
             served_deployment_sha=result["served_deployment_sha"],
             expected_source_sha=expected_source_sha,
             expected_deployment_sha=expected_deployment_sha,
+            binding_record=binding_record,
+            session_before=result.get("session_state_before_target") or {},
+            session_after=session_state,
         )
         result.update(eval_result)
 
     except Exception as exc:
         result["execution_error"] = str(exc)
-        result["verdict"] = "BLOCKED"
         result["blocked_reason"] = f"EXECUTION_ERROR: {exc}"
+        _mark_stage_a_blocked(result)
     finally:
         if driver is not None:
             try:
@@ -1583,6 +1779,55 @@ def execute_case(
 # Run manifest and output helpers
 # ---------------------------------------------------------------------------
 
+def build_evaluator_input(
+    raw_result: Dict[str, Any],
+    packet: Dict[str, Any],
+    expected_contract: Dict[str, Any],
+    binding_record: Dict[str, Any],
+    expected_source_sha: str,
+    expected_deployment_sha: str,
+) -> Dict[str, Any]:
+    captured = {
+        "observation": raw_result.get("observation") or {},
+        "session_before_target": raw_result.get("session_state_before_target") or {},
+        "session_after_target": raw_result.get("session_state") or {},
+        "response_headers": raw_result.get("response_headers") or {},
+        "served_source_sha": raw_result.get("served_source_sha"),
+        "served_deployment_sha": raw_result.get("served_deployment_sha"),
+        "setup_preconditions_materialized": raw_result.get("setup_preconditions_materialized"),
+    }
+    observation_hash = canonical_json_sha256(captured)
+    evaluator_input = {
+        "schema": "btc_cosmographer_two_stage_evaluator_input_v0_1",
+        "case_id": raw_result["case_id"],
+        "question": raw_result.get("question_exact"),
+        "locale": raw_result.get("locale"),
+        "executable_state_packet": packet,
+        "expected_contract": expected_contract,
+        "current_runtime_authority": {
+            "served_source_sha": raw_result.get("served_source_sha"),
+            "served_deployment_sha": raw_result.get("served_deployment_sha"),
+            "expected_source_sha": expected_source_sha,
+            "expected_deployment_sha": expected_deployment_sha,
+            "runtime_schema": (raw_result.get("observation") or {}).get("_runtime_schema"),
+            "session_schema": (raw_result.get("observation") or {}).get("_session_schema"),
+        },
+        "captured_runtime_observation": captured,
+        "observation_sha256": observation_hash,
+        "expected_contract_hash": binding_record.get("expected_contract_hash"),
+        "state_packet_hash": binding_record.get("state_packet_hash"),
+        "evaluator_contract_sha256": EVALUATOR_CONTRACT_SHA256,
+        "binding_authority_hash": BINDING_AUTHORITY_HASH,
+        "binding_record_hash": binding_record.get("binding_record_hash"),
+        "stage_a_verdict": raw_result.get("stage_a_verdict"),
+        "stage_a_failure_reasons": raw_result.get("stage_a_failure_reasons", []),
+        "structural_dimension_results": raw_result.get("structural_dimension_results", []),
+        "stage_b_required": raw_result.get("stage_a_verdict") == "PASS",
+    }
+    evaluator_input["evaluator_input_hash"] = canonical_json_sha256(evaluator_input)
+    return evaluator_input
+
+
 def build_manifest(
     args: argparse.Namespace,
     corpus_sha: str,
@@ -1593,13 +1838,11 @@ def build_manifest(
     served_source_sha: Optional[str] = None,
     served_deployment_sha: Optional[str] = None,
 ) -> Dict[str, Any]:
-    pass_count = sum(1 for r in results if r.get("verdict") == "PASS")
-    fail_count = sum(1 for r in results if r.get("verdict") == "FAIL")
-    blocked_count = sum(1 for r in results if r.get("verdict") == "BLOCKED")
-    total = pass_count + fail_count + blocked_count
-
+    counts = {v: sum(1 for r in results if r.get("stage_a_verdict") == v) for v in VERDICTS}
+    total = sum(counts.values())
     return {
-        "schema": "btc_cosmographer_replay_manifest_v0_1",
+        "schema": "btc_cosmographer_replay_manifest_v0_2_two_stage",
+        "phase": "STAGE_A_CAPTURE",
         "target_url": args.target_url,
         "expected_source_sha": args.expected_source_sha,
         "expected_deployment_sha": args.expected_deployment_sha,
@@ -1607,17 +1850,59 @@ def build_manifest(
         "served_deployment_sha": served_deployment_sha,
         "corpus_sha256": corpus_sha,
         "state_packets_sha256": packets_sha,
+        "evaluator_contract_sha256": EVALUATOR_CONTRACT_SHA256,
+        "binding_authority_file_sha256": BINDING_AUTHORITY_FILE_SHA256,
+        "binding_authority_hash": BINDING_AUTHORITY_HASH,
         "start_utc": start_ts,
         "end_utc": end_ts,
-        "total": total,
-        "pass": pass_count,
-        "fail": fail_count,
-        "blocked": blocked_count,
-        "pass_plus_fail_plus_blocked_eq_140": total == TOTAL_CASES,
+        "stage_a_total": total,
+        "stage_a_pass": counts["PASS"],
+        "stage_a_fail": counts["FAIL"],
+        "stage_a_blocked": counts["BLOCKED"],
+        "stage_a_exhaustive": total == len(results),
+        "final_verdicts_ready": False,
         "case_id_set": sorted(r["case_id"] for r in results),
     }
 
 
+def _write_jsonl(path: Path, records: List[Dict[str, Any]]) -> None:
+    with open(path, "w", encoding="utf-8") as f:
+        for rec in records:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def _read_jsonl(path: Path) -> List[Dict[str, Any]]:
+    records: List[Dict[str, Any]] = []
+    with open(path, encoding="utf-8") as f:
+        for line_no, line in enumerate(f, start=1):
+            if not line.strip():
+                continue
+            value = json.loads(line)
+            if not isinstance(value, dict):
+                raise ValueError(f"JSONL_RECORD_NOT_OBJECT: {path}:{line_no}")
+            records.append(value)
+    return records
+
+
+def write_capture_outputs(
+    output_dir: Path,
+    raw_observations: List[Dict[str, Any]],
+    evaluator_inputs: List[Dict[str, Any]],
+    summary: Dict[str, Any],
+    manifest: Dict[str, Any],
+) -> None:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    _write_jsonl(output_dir / "raw-observations.jsonl", raw_observations)
+    _write_jsonl(output_dir / "evaluator-input.jsonl", evaluator_inputs)
+    stage_a_non_pass = [r for r in raw_observations if r.get("stage_a_verdict") != "PASS"]
+    _write_jsonl(output_dir / "stage-a-non-pass-ledger.jsonl", stage_a_non_pass)
+    with open(output_dir / "aggregate-summary.json", "w", encoding="utf-8") as f:
+        json.dump(summary, f, indent=2, ensure_ascii=False)
+    with open(output_dir / "run-manifest.json", "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+
+# Compatibility alias retained for existing callers/selftests. It writes Stage-A capture artifacts.
 def write_outputs(
     output_dir: Path,
     raw_observations: List[Dict[str, Any]],
@@ -1626,105 +1911,210 @@ def write_outputs(
     summary: Dict[str, Any],
     manifest: Dict[str, Any],
 ) -> None:
-    output_dir.mkdir(parents=True, exist_ok=True)
+    del non_pass_ledger
+    write_capture_outputs(output_dir, raw_observations, evaluator_inputs, summary, manifest)
 
-    def write_jsonl(path: Path, records: List[Dict]) -> None:
-        with open(path, "w", encoding="utf-8") as f:
-            for rec in records:
-                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
-    write_jsonl(output_dir / "raw-observations.jsonl", raw_observations)
-    write_jsonl(output_dir / "evaluator-input.jsonl", evaluator_inputs)
-    write_jsonl(output_dir / "non-pass-ledger.jsonl", non_pass_ledger)
+def _semantic_case_verdict(dimension_results: List[Dict[str, Any]]) -> str:
+    verdicts = [r.get("verdict") for r in dimension_results]
+    if any(v == "FAIL" for v in verdicts):
+        return "FAIL"
+    if any(v == "BLOCKED" for v in verdicts):
+        return "BLOCKED"
+    return "PASS"
 
+
+def _validate_semantic_result(
+    evaluator_input: Dict[str, Any],
+    result: Dict[str, Any],
+) -> Dict[str, Any]:
+    case_id = evaluator_input["case_id"]
+    declared_input_hash = evaluator_input.get("evaluator_input_hash")
+    input_body = {k: v for k, v in evaluator_input.items() if k != "evaluator_input_hash"}
+    if declared_input_hash != canonical_json_sha256(input_body):
+        raise ValueError(f"EVALUATOR_INPUT_SELF_HASH_MISMATCH: {case_id}")
+    captured = evaluator_input.get("captured_runtime_observation")
+    if not isinstance(captured, dict) or evaluator_input.get("observation_sha256") != canonical_json_sha256(captured):
+        raise ValueError(f"EVALUATOR_OBSERVATION_HASH_MISMATCH: {case_id}")
+    expected_contract = evaluator_input.get("expected_contract")
+    if not isinstance(expected_contract, dict) or evaluator_input.get("expected_contract_hash") != canonical_json_sha256(expected_contract):
+        raise ValueError(f"EVALUATOR_EXPECTED_CONTRACT_HASH_MISMATCH: {case_id}")
+    if result.get("case_id") != case_id:
+        raise ValueError(f"SEMANTIC_CASE_ID_MISMATCH: expected={case_id} actual={result.get('case_id')}")
+    for key in (
+        "observation_sha256", "expected_contract_hash", "state_packet_hash",
+        "evaluator_contract_sha256",
+    ):
+        if result.get(key) != evaluator_input.get(key):
+            raise ValueError(f"SEMANTIC_AUTHORITY_HASH_MISMATCH: {case_id} {key}")
+    if result.get("evaluator_input_hash") != evaluator_input.get("evaluator_input_hash"):
+        raise ValueError(f"SEMANTIC_EVALUATOR_INPUT_HASH_MISMATCH: {case_id}")
+    if result.get("binding_authority_hash") != BINDING_AUTHORITY_HASH:
+        raise ValueError(f"SEMANTIC_BINDING_AUTHORITY_HASH_MISMATCH: {case_id}")
+    if result.get("binding_record_hash") != evaluator_input.get("binding_record_hash"):
+        raise ValueError(f"SEMANTIC_BINDING_RECORD_HASH_MISMATCH: {case_id}")
+    dimensions = result.get("dimension_results")
+    if not isinstance(dimensions, list):
+        raise ValueError(f"SEMANTIC_DIMENSION_RESULTS_MISSING: {case_id}")
+    names = [d.get("dimension") for d in dimensions if isinstance(d, dict)]
+    if len(dimensions) != len(SEMANTIC_DIMENSIONS) or set(names) != set(SEMANTIC_DIMENSIONS):
+        raise ValueError(f"SEMANTIC_DIMENSION_SET_MISMATCH: {case_id} actual={names}")
+    for dim in dimensions:
+        if set(("dimension", "verdict", "reason", "observation_evidence_refs")) - set(dim):
+            raise ValueError(f"SEMANTIC_DIMENSION_SCHEMA_MISMATCH: {case_id} {dim.get('dimension')}")
+        if dim.get("verdict") not in VERDICTS:
+            raise ValueError(f"SEMANTIC_DIMENSION_VERDICT_INVALID: {case_id} {dim.get('dimension')}")
+        if not isinstance(dim.get("reason"), str) or not isinstance(dim.get("observation_evidence_refs"), list):
+            raise ValueError(f"SEMANTIC_DIMENSION_EVIDENCE_INVALID: {case_id} {dim.get('dimension')}")
+    calculated = _semantic_case_verdict(dimensions)
+    if result.get("case_verdict") != calculated:
+        raise ValueError(
+            f"SEMANTIC_CASE_VERDICT_MISMATCH: {case_id} declared={result.get('case_verdict')} calculated={calculated}"
+        )
+    failure_classes = result.get("failure_classes")
+    if not isinstance(failure_classes, list) or any(fc not in FAILURE_CLASSES for fc in failure_classes):
+        raise ValueError(f"SEMANTIC_FAILURE_CLASSES_INVALID: {case_id}")
+    return result
+
+
+def finalize_semantic_results(output_dir: Path, semantic_results_path: Path) -> Dict[str, Any]:
+    """Merge hash-bound Stage B results without rerunning a browser or overriding Stage A."""
+    raw_path = output_dir / "raw-observations.jsonl"
+    input_path = output_dir / "evaluator-input.jsonl"
+    if not raw_path.exists() or not input_path.exists():
+        raise ValueError("FINALIZE_CAPTURE_ARTIFACTS_MISSING")
+    raw = _read_jsonl(raw_path)
+    evaluator_inputs = _read_jsonl(input_path)
+    semantic_results = _read_jsonl(semantic_results_path)
+    raw_index = {r["case_id"]: r for r in raw}
+    input_index = {r["case_id"]: r for r in evaluator_inputs}
+    semantic_index: Dict[str, Dict[str, Any]] = {}
+    for result in semantic_results:
+        cid = result.get("case_id")
+        if cid in semantic_index:
+            raise ValueError(f"SEMANTIC_DUPLICATE_CASE_ID: {cid}")
+        semantic_index[cid] = result
+    required_stage_b = {
+        cid for cid, inp in input_index.items() if inp.get("stage_a_verdict") == "PASS"
+    }
+    missing = required_stage_b - set(semantic_index)
+    extra = set(semantic_index) - required_stage_b
+    if missing or extra:
+        raise ValueError(
+            f"SEMANTIC_RESULT_CASE_SET_MISMATCH: missing={sorted(missing)} extra={sorted(extra)}"
+        )
+    validated = {
+        cid: _validate_semantic_result(input_index[cid], semantic_index[cid])
+        for cid in sorted(required_stage_b)
+    }
+    final_ledger: List[Dict[str, Any]] = []
+    for cid in sorted(raw_index):
+        stage_a = raw_index[cid].get("stage_a_verdict")
+        if stage_a in ("FAIL", "BLOCKED"):
+            final_verdict = stage_a
+            semantic = None
+        elif stage_a == "PASS":
+            semantic = validated[cid]
+            final_verdict = semantic["case_verdict"]
+        else:
+            raise ValueError(f"STAGE_A_VERDICT_INVALID: {cid} {stage_a!r}")
+        final_ledger.append({
+            "schema": "btc_cosmographer_two_stage_final_result_v0_1",
+            "case_id": cid,
+            "stage_a_verdict": stage_a,
+            "stage_b_result": semantic,
+            "final_verdict": final_verdict,
+            "stage_a_non_override_enforced": True,
+        })
+    counts = {v: sum(1 for r in final_ledger if r["final_verdict"] == v) for v in VERDICTS}
+    total = sum(counts.values())
+    summary = {
+        "schema": "btc_cosmographer_replay_summary_v0_2_two_stage",
+        "phase": "FINAL_TWO_STAGE_LEDGER",
+        "total": total,
+        "pass": counts["PASS"],
+        "fail": counts["FAIL"],
+        "blocked": counts["BLOCKED"],
+        "pass_plus_fail_plus_blocked_eq_total": total == len(final_ledger),
+        "final_verdicts_ready": True,
+        "semantic_evaluator_contract_sha256": EVALUATOR_CONTRACT_SHA256,
+        "binding_authority_hash": BINDING_AUTHORITY_HASH,
+    }
+    _write_jsonl(output_dir / "semantic-evaluator-results.validated.jsonl", list(validated.values()))
+    _write_jsonl(output_dir / "final-evaluator-ledger.jsonl", final_ledger)
+    _write_jsonl(
+        output_dir / "non-pass-ledger.jsonl",
+        [r for r in final_ledger if r["final_verdict"] != "PASS"],
+    )
     with open(output_dir / "aggregate-summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2, ensure_ascii=False)
+    return summary
 
-    with open(output_dir / "run-manifest.json", "w", encoding="utf-8") as f:
-        json.dump(manifest, f, indent=2, ensure_ascii=False)
-
-
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="BTC Cosmographer Canonical 140 Replay Harness (test-infrastructure only)"
+        description="BTC Cosmographer Canonical 140 Replay Harness — two-stage evaluator handoff"
     )
-    parser.add_argument("--target-url", required=True, help="Target deployment URL (runtime, never frozen)")
-    parser.add_argument(
-        "--expected-source-sha", required=True, help="Expected served source SHA (runtime, never frozen)"
-    )
-    parser.add_argument(
-        "--expected-deployment-sha", required=True, help="Expected served deployment SHA (runtime, never frozen)"
-    )
-    parser.add_argument("--output-dir", default="./replay-out", help="Directory for output files")
-    parser.add_argument("--concurrency", type=int, default=1, help="Concurrency (default=1)")
-    parser.add_argument(
-        "--case-ids",
-        default="",
-        help="Comma-separated subset of case IDs to run (empty = all 140)",
-    )
-    parser.add_argument(
-        "--corpus-path",
-        default=str(CORPUS_PATH),
-        help="Path to canonical CSV fixture",
-    )
-    parser.add_argument(
-        "--packets-path",
-        default=str(PACKETS_PATH),
-        help="Path to state packets JSON fixture",
-    )
+    parser.add_argument("--target-url", help="Target deployment URL; capture phase only")
+    parser.add_argument("--expected-source-sha", help="Expected served source SHA; capture phase only")
+    parser.add_argument("--expected-deployment-sha", help="Expected served deployment SHA; capture phase only")
+    parser.add_argument("--binding-authority-path", help="External frozen 140-case binding authority JSON")
+    parser.add_argument("--finalize-semantic-results", help="Hash-bound Stage B semantic result JSONL")
+    parser.add_argument("--output-dir", default="./replay-out", help="Directory for capture/final outputs")
+    parser.add_argument("--concurrency", type=int, default=1, help="Concurrency (forced to 1)")
+    parser.add_argument("--case-ids", default="", help="Comma-separated subset; empty = all 140")
+    parser.add_argument("--corpus-path", default=str(CORPUS_PATH), help="Canonical CSV fixture")
+    parser.add_argument("--packets-path", default=str(PACKETS_PATH), help="State packets fixture")
     args = parser.parse_args()
 
-    print("BTC_COSMOGRAPHER_CANONICAL_REPLAY_HARNESS: initializing")
-    print(f"  target_url={args.target_url}")
-    print(f"  expected_source_sha={args.expected_source_sha}")
-    print(f"  expected_deployment_sha={args.expected_deployment_sha}")
+    output_dir = Path(args.output_dir)
+    if args.finalize_semantic_results:
+        summary = finalize_semantic_results(output_dir, Path(args.finalize_semantic_results))
+        print(
+            "FINAL_TWO_STAGE_LEDGER: "
+            f"PASS={summary['pass']} FAIL={summary['fail']} BLOCKED={summary['blocked']} TOTAL={summary['total']}"
+        )
+        return
+
+    required = {
+        "--target-url": args.target_url,
+        "--expected-source-sha": args.expected_source_sha,
+        "--expected-deployment-sha": args.expected_deployment_sha,
+        "--binding-authority-path": args.binding_authority_path,
+    }
+    missing_args = [name for name, value in required.items() if not value]
+    if missing_args:
+        parser.error("capture phase requires " + ", ".join(missing_args))
 
     corpus_path = Path(args.corpus_path)
     packets_path = Path(args.packets_path)
-
-    # Validate fixtures (hard exit on any violation)
     csv_rows, packets, packets_index = validate_fixtures(corpus_path, packets_path)
-    print(f"FIXTURE_VALIDATION: PASS (corpus={CORPUS_AUTHORITY_SHA256[:12]}... packets={STATE_PACKETS_AUTHORITY_SHA256[:12]}...)")
-
-    # Build CSV row index
-    csv_index: Dict[str, Dict] = {r["CASE_ID"]: r for r in csv_rows}
-
-    # Filter to requested case IDs
+    binding_doc, binding_index = validate_binding_authority(
+        Path(args.binding_authority_path), csv_rows, packets_index
+    )
+    del packets, binding_doc
+    csv_index: Dict[str, Dict[str, str]] = {r["CASE_ID"]: r for r in csv_rows}
     if args.case_ids.strip():
         requested = [c.strip() for c in args.case_ids.split(",") if c.strip()]
-        unknown = set(requested) - set(csv_index.keys())
+        unknown = set(requested) - set(csv_index)
         if unknown:
-            print(f"ERROR: unknown case_ids={sorted(unknown)}", file=sys.stderr)
-            sys.exit(1)
+            parser.error(f"unknown case_ids={sorted(unknown)}")
         run_ids = requested
     else:
         run_ids = [r["CASE_ID"] for r in csv_rows]
-
-    print(f"CASES_TO_RUN: {len(run_ids)}")
-
     if args.concurrency != 1:
-        print(f"WARNING: concurrency={args.concurrency} requested; using concurrency=1 (default safe mode)")
+        print(f"WARNING: concurrency={args.concurrency} requested; forcing concurrency=1")
 
-    # Batch identity preflight: verify served SHAs before evaluating any case
-    # Use _make_driver() to ensure performance logging is enabled (required for source SHA header)
-    print("BATCH_IDENTITY_PREFLIGHT: verifying served source/deployment SHAs...")
     preflight_driver = None
     preflight_served_source = None
     preflight_served_deploy = None
     try:
         preflight_driver = _make_driver()
         batch_block, preflight_served_source, preflight_served_deploy = _batch_identity_preflight(
-            preflight_driver,
-            args.target_url,
-            args.expected_source_sha,
-            args.expected_deployment_sha,
+            preflight_driver, args.target_url, args.expected_source_sha, args.expected_deployment_sha
         )
-    except Exception as preflight_exc:
-        batch_block = f"BATCH_IDENTITY_BLOCKED: preflight_driver_error={preflight_exc}"
+    except Exception as exc:
+        batch_block = f"BATCH_IDENTITY_BLOCKED: preflight_driver_error={exc}"
     finally:
         if preflight_driver is not None:
             try:
@@ -1732,170 +2122,75 @@ def main() -> None:
             except Exception:
                 pass
 
+    start_ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    results: List[Dict[str, Any]] = []
     if batch_block:
-        print(f"BATCH_BLOCKED: {batch_block}", file=sys.stderr)
-        # Emit BLOCKED results for all planned cases; no target question submitted
-        blocked_results: List[Dict[str, Any]] = [
-            {
-                "schema": "btc_cosmographer_replay_observation_v0_1",
+        for cid in run_ids:
+            results.append({
+                "schema": "btc_cosmographer_replay_observation_v0_2_two_stage",
                 "case_id": cid,
                 "session_mode": packets_index[cid].get("session_mode", "CLEAN_SESSION"),
-                "question_exact": packets_index[cid].get("target_question_exact", ""),
-                "locale": packets_index[cid].get("locale", ""),
-                "timestamp_utc": datetime.datetime.utcnow().isoformat() + "Z",
-                "verdict": "BLOCKED",
-                "blocked_reason": batch_block,
-                "failure_reasons": [batch_block],
-                "failure_class": ["OTHER_EXACTLY_DESCRIBED"],
+                "question_exact": packets_index[cid].get("target_question_exact"),
+                "locale": packets_index[cid].get("locale"),
+                "timestamp_utc": start_ts,
+                "served_source_sha": preflight_served_source,
+                "served_deployment_sha": preflight_served_deploy,
+                "observation": {},
+                "session_state_before_target": {},
+                "session_state": {},
                 "setup_preconditions_materialized": False,
-            }
-            for cid in run_ids
-        ]
-        start_ts = end_ts = datetime.datetime.utcnow().isoformat() + "Z"
-        corpus_sha = sha256_file(corpus_path)
-        packets_sha = sha256_file(packets_path)
-        summary = {
-            "schema": "btc_cosmographer_replay_summary_v0_1",
-            "total": len(blocked_results),
-            "pass": 0,
-            "fail": 0,
-            "blocked": len(blocked_results),
-            "pass_plus_fail_plus_blocked_eq_total": True,
-            "batch_block_reason": batch_block,
-            "start_utc": start_ts,
-            "end_utc": end_ts,
-        }
-        manifest = build_manifest(
-            args=args,
-            corpus_sha=corpus_sha,
-            packets_sha=packets_sha,
-            results=blocked_results,
-            start_ts=start_ts,
-            end_ts=end_ts,
-            served_source_sha=preflight_served_source,
-            served_deployment_sha=preflight_served_deploy,
+                "blocked_reason": batch_block,
+                "stage_a_verdict": "BLOCKED",
+                "stage_a_failure_reasons": [batch_block],
+                "stage_a_failure_class": ["OTHER_EXACTLY_DESCRIBED"],
+                "structural_dimension_results": [],
+            })
+    else:
+        for cid in run_ids:
+            result = execute_case(
+                csv_row=csv_index[cid], packet=packets_index[cid], binding_record=binding_index[cid],
+                target_url=args.target_url, expected_source_sha=args.expected_source_sha,
+                expected_deployment_sha=args.expected_deployment_sha,
+            )
+            results.append(result)
+            print(f"STAGE_A: {cid} => {result.get('stage_a_verdict')}")
+    end_ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
+    evaluator_inputs: List[Dict[str, Any]] = []
+    for result in results:
+        cid = result["case_id"]
+        expected_contract = (
+            (packets_index[cid].get("source_authority") or {}).get("expected_contract")
+            or csv_index[cid]
         )
-        output_dir = Path(args.output_dir)
-        write_outputs(
-            output_dir=output_dir,
-            raw_observations=blocked_results,
-            evaluator_inputs=blocked_results,
-            non_pass_ledger=blocked_results,
-            summary=summary,
-            manifest=manifest,
+        evaluator_inputs.append(
+            build_evaluator_input(
+                result, packets_index[cid], expected_contract, binding_index[cid],
+                args.expected_source_sha, args.expected_deployment_sha,
+            )
         )
-        print(f"OUTPUT_DIR: {output_dir}")
-        print(f"BATCH_BLOCKED: PASS=0 FAIL=0 BLOCKED={len(blocked_results)}")
-        sys.exit(1)
-
-    print("BATCH_IDENTITY_PREFLIGHT: PASS")
-
-    start_ts = datetime.datetime.utcnow().isoformat() + "Z"
-    results: List[Dict[str, Any]] = []
-
-    for case_id in run_ids:
-        csv_row = csv_index[case_id]
-        packet = packets_index[case_id]
-        print(f"  RUNNING: {case_id} mode={packet.get('session_mode')}")
-
-        result = execute_case(
-            csv_row=csv_row,
-            packet=packet,
-            target_url=args.target_url,
-            expected_source_sha=args.expected_source_sha,
-            expected_deployment_sha=args.expected_deployment_sha,
-        )
-        # First observed result is authoritative; no erase/replace allowed
-        results.append(result)
-        print(f"  VERDICT: {case_id} => {result.get('verdict')}")
-
-    end_ts = datetime.datetime.utcnow().isoformat() + "Z"
-
-    # Compute totals
-    pass_count = sum(1 for r in results if r.get("verdict") == "PASS")
-    fail_count = sum(1 for r in results if r.get("verdict") == "FAIL")
-    blocked_count = sum(1 for r in results if r.get("verdict") == "BLOCKED")
-    total = pass_count + fail_count + blocked_count
-
-    print(f"\nAGGREGATE: PASS={pass_count} FAIL={fail_count} BLOCKED={blocked_count} TOTAL={total}")
-
-    if len(run_ids) == TOTAL_CASES and total != TOTAL_CASES:
-        print(f"INVARIANT_VIOLATION: PASS+FAIL+BLOCKED={total} != {TOTAL_CASES}", file=sys.stderr)
-        sys.exit(1)
-
-    # Build outputs
-    evaluator_inputs = [
-        {
-            "schema": "btc_cosmographer_evaluator_input_v0_1",
-            "case_id": r["case_id"],
-            "question_exact": r.get("question_exact"),
-            "locale": r.get("locale"),
-            # Full executable state packet: immutable authority from fixture
-            "executable_state_packet": packets_index.get(r["case_id"]),
-            # Immutable expected contract: from packet source_authority.expected_contract
-            "expected_contract": (
-                (packets_index.get(r["case_id"]) or {})
-                .get("source_authority", {})
-                .get("expected_contract")
-                or csv_index.get(r["case_id"])
-            ),
-            # Current runtime authority: served identity + schema
-            "current_runtime_authority": {
-                "served_source_sha": r.get("served_source_sha"),
-                "served_deployment_sha": r.get("served_deployment_sha"),
-                "expected_source_sha": args.expected_source_sha,
-                "expected_deployment_sha": args.expected_deployment_sha,
-                "runtime_schema": (r.get("observation") or {}).get("_runtime_schema"),
-                "session_schema": (r.get("observation") or {}).get("_session_schema"),
-            },
-            # Full captured observation
-            "observation": r.get("observation", {}),
-            "verdict": r.get("verdict"),
-            "failure_reasons": r.get("failure_reasons", []),
-            "failure_class": r.get("failure_class", []),
-        }
-        for r in results
-    ]
-
-    non_pass_ledger = [r for r in results if r.get("verdict") != "PASS"]
-
-    corpus_sha = sha256_file(corpus_path)
-    packets_sha = sha256_file(packets_path)
-
+    counts = {v: sum(1 for r in results if r.get("stage_a_verdict") == v) for v in VERDICTS}
     summary = {
-        "schema": "btc_cosmographer_replay_summary_v0_1",
-        "total": total,
-        "pass": pass_count,
-        "fail": fail_count,
-        "blocked": blocked_count,
-        "pass_plus_fail_plus_blocked_eq_total": total == len(run_ids),
-        "start_utc": start_ts,
-        "end_utc": end_ts,
+        "schema": "btc_cosmographer_replay_summary_v0_2_two_stage",
+        "phase": "STAGE_A_CAPTURE",
+        "total": len(results),
+        "stage_a_pass": counts["PASS"],
+        "stage_a_fail": counts["FAIL"],
+        "stage_a_blocked": counts["BLOCKED"],
+        "stage_b_required": counts["PASS"],
+        "final_verdicts_ready": False,
+        "note": "Stage A PASS is not canonical case PASS; locked semantic evaluator Stage B remains required.",
     }
-
     manifest = build_manifest(
-        args=args,
-        corpus_sha=corpus_sha,
-        packets_sha=packets_sha,
-        results=results,
-        start_ts=start_ts,
-        end_ts=end_ts,
-        served_source_sha=preflight_served_source,
-        served_deployment_sha=preflight_served_deploy,
+        args, sha256_file(corpus_path), sha256_file(packets_path), results,
+        start_ts, end_ts, preflight_served_source, preflight_served_deploy,
     )
-
-    output_dir = Path(args.output_dir)
-    write_outputs(
-        output_dir=output_dir,
-        raw_observations=results,
-        evaluator_inputs=evaluator_inputs,
-        non_pass_ledger=non_pass_ledger,
-        summary=summary,
-        manifest=manifest,
+    write_capture_outputs(output_dir, results, evaluator_inputs, summary, manifest)
+    print(
+        "STAGE_A_CAPTURE_COMPLETE: "
+        f"PASS={counts['PASS']} FAIL={counts['FAIL']} BLOCKED={counts['BLOCKED']} "
+        f"STAGE_B_REQUIRED={counts['PASS']} FINAL_VERDICTS_READY=NO"
     )
-
-    print(f"OUTPUT_DIR: {output_dir}")
-    print("BTC_COSMOGRAPHER_CANONICAL_REPLAY_HARNESS: complete")
 
 
 if __name__ == "__main__":
