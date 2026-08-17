@@ -367,6 +367,36 @@ export function buildBtcAstroAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
 ): BtcCosmographerAnswerProjection {
+  const raw = route.raw_question.toLowerCase();
+  const aliasUncertain = /\bmercurry\b|юпитир/i.test(raw);
+  if (aliasUncertain) {
+    const label = /mercurry/i.test(raw) ? (locale === "ru" ? "Меркурий" : "Mercury") : (locale === "ru" ? "Юпитер" : "Jupiter");
+    return {
+      answer_state: "LIMITED", answer_mode: "CLARIFICATION",
+      headline: locale === "ru" ? `Подтвердите, что имеется в виду ${label}` : `Confirm that you mean ${label}`,
+      direct_answer: locale === "ru" ? `Форма имени неоднозначна; прежде чем строить астрономический ответ, подтвердите ${label}.` : `The body name is ambiguous; confirm ${label} before an astronomical answer is built.`,
+      sections: [],
+      source_boundary: locale === "ru" ? "Неоднозначный alias не преобразуется в астрономический факт молча." : "An ambiguous alias is not silently converted into an astronomical fact.",
+      proof_label: locale === "ru" ? "Требуется подтверждение предмета" : "Subject confirmation required",
+    };
+  }
+  if (route.subject === "multiple_planetary_objects") {
+    const patterns: Array<[string, RegExp]> = [["mercury", /\bmercury\b|меркур/i], ["jupiter", /\bjupiter\b|юпитер/i], ["saturn", /\bsaturn\b|сатурн/i], ["mars", /\bmars\b|марс/i], ["venus", /\bvenus\b|венер/i], ["uranus", /\buranus\b|уран/i], ["neptune", /\bneptune\b|нептун/i], ["pluto", /\bpluto\b|плутон/i]];
+    const bodies = patterns.filter(([, re]) => re.test(raw)).map(([body]) => body).slice(0, 2);
+    if (bodies.length === 2) {
+      const answers = bodies.map((subject) => buildBtcAstroAnswer(locale, { ...route, subject }));
+      const names = bodies.map((body) => bodyLabel(locale, body));
+      return {
+        answer_state: answers.some((a) => a.answer_state === "LIMITED") ? "LIMITED" : "CONFIRMED",
+        answer_mode: "ASTRO_INTERVAL",
+        headline: locale === "ru" ? `Сравнение ${names[0]} и ${names[1]}` : `${names[0]} and ${names[1]} comparison`,
+        direct_answer: locale === "ru" ? `${names[0]}: ${answers[0].direct_answer} ${names[1]}: ${answers[1].direct_answer}` : `${names[0]}: ${answers[0].direct_answer} ${names[1]}: ${answers[1].direct_answer}`,
+        sections: [{ id: "comparison", label: locale === "ru" ? "Два явных предмета" : "Two explicit subjects", bullets: answers.map((a, i) => `${names[i]} — ${a.direct_answer}`) }],
+        source_boundary: answers.map((a) => a.source_boundary).join(" "),
+        proof_label: locale === "ru" ? "Оба астрономических предмета проверены отдельно" : "Both astronomical subjects checked separately",
+      };
+    }
+  }
   if (!data.bodies.includes(route.subject)) {
     return limitedAnswer(
       locale,
@@ -389,15 +419,14 @@ export function buildBtcAstroAnswer(
   };
 
   if (requested.end < data.range.start || requested.start > data.range.end) {
-    return limitedAnswer(
-      locale,
-      locale === "ru"
-        ? "Запрошенный период пока вне публичного астрономического evidence"
-        : "Requested period is outside public astronomical evidence",
-      locale === "ru"
-        ? `Публичный индекс сейчас покрывает ${data.range.start}–${data.range.end}. Отсутствующие эфемеридные данные не заменяются догадкой.`
-        : `The public index currently covers ${data.range.start}–${data.range.end}. Missing ephemeris evidence is not replaced with a guess.`,
-    );
+    return {
+      answer_state: "LIMITED", answer_mode: "CLARIFICATION",
+      headline: locale === "ru" ? "Запрошенный период вне принятого evidence" : "Requested period is outside accepted evidence",
+      direct_answer: locale === "ru" ? `Публичный индекс покрывает ${data.range.start}–${data.range.end}; для запрошенного периода нужно другое принятое evidence, а не экстраполяция.` : `The public index covers ${data.range.start}–${data.range.end}; the requested period needs separately accepted evidence rather than extrapolation.`,
+      sections: [],
+      source_boundary: locale === "ru" ? "Отсутствующие эфемеридные данные не заменяются догадкой." : "Missing ephemeris evidence is not replaced with a guess.",
+      proof_label: locale === "ru" ? "Покрытие evidence ограничено" : "Evidence coverage limited",
+    };
   }
 
   const start = requested.start < data.range.start ? data.range.start : requested.start;

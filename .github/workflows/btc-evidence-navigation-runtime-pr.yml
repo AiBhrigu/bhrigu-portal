@@ -10,15 +10,20 @@ on:
       - .github/workflows/btc-evidence-navigation-runtime-pr.yml
       - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-answer.ts
+      - lib/btc-cosmographer-specialized-answer.ts
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
       - lib/btc-cosmographer-route-graph.ts
       - lib/btc-live-dialogue-session.ts
       - lib/btc-public-output-contract.ts
       - lib/btc-public-snapshot-composer.ts
       - lib/btc-live-dialogue-style.ts
+      - lib/btc-cosmographer-public-multi-body-projection.ts
+      - lib/btc-protocol-evidence.ts
+      - lib/btc-public-astro-evidence.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
       - tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
+      - tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts
       - tests/btc-public-corridor-proven-defect-repair-acceptance.ts
   workflow_dispatch:
 
@@ -64,6 +69,9 @@ jobs:
 
       - name: Verify canonical 140 routing repair contract
         run: node --import tsx tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
+
+      - name: Verify canonical answer specialization contract
+        run: node --import tsx tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts
 
       - name: Verify inherited BTC routing
         run: npm run verify:btc-routing

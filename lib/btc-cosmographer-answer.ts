@@ -14,6 +14,12 @@ import {
   type BtcCosmographerAnswerProjection,
 } from "./btc-protocol-evidence";
 import type { BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
+import {
+  buildSpecializedMethodologyAnswer,
+  buildSpecializedNavigationAnswer,
+  specializeBridgeAnswer,
+  specializeMarketAnswer,
+} from "./btc-cosmographer-specialized-answer";
 
 const MODULE_LABELS: Record<BtcPublicLocale, Record<string, string>> = {
   en: {
@@ -372,7 +378,7 @@ export function buildBtcCosmographerAnswer(
           : bridgeState === "CONFIRMED"
             ? (locale === "ru" ? "Заранее объявленный рыночный критерий подтверждения выполнен." : "The predeclared market confirmation criterion is met.")
             : (locale === "ru" ? "Зафиксировано только временное совпадение; направленное подтверждение не установлено." : "Only temporal concurrence is established; directional confirmation is not established.");
-        return {
+        const bridgeAnswer: BtcCosmographerAnswerProjection = {
           answer_state: bridgeState,
           answer_mode: "ASTRO_BTC_BRIDGE",
           headline: locale === "ru"
@@ -433,13 +439,14 @@ export function buildBtcCosmographerAnswer(
             ? "Рыночные и астрономические доказательства проверены отдельно"
             : "Market and astronomical evidence were checked independently",
         };
+        return specializeBridgeAnswer(locale, route, bridgeAnswer);
       }
-      return buildAstroBtcBridgeBoundary(locale, astro);
+      return specializeBridgeAnswer(locale, route, buildAstroBtcBridgeBoundary(locale, astro));
     }
     case "btc_market":
     case "snapshot_memory":
       if (inputs.snapshot && inputs.envelope) {
-        return marketAnswer(locale, route, inputs.snapshot, inputs.envelope);
+        return specializeMarketAnswer(locale, route, marketAnswer(locale, route, inputs.snapshot, inputs.envelope));
       }
       return {
         answer_state: "LIMITED",
@@ -457,12 +464,10 @@ export function buildBtcCosmographerAnswer(
         proof_label: locale === "ru" ? "Рыночные доказательства недоступны" : "Market evidence unavailable",
       };
     case "methodology":
-      return methodologyAnswer(locale);
+      return buildSpecializedMethodologyAnswer(locale, route);
     case "navigation":
-      if (route.subject === "unsupported_asset" || route.subject === "routing_conflict") {
-        return navigationAnswer(locale, route.raw_question);
-      }
-      return navigationAnswer(locale);
+      if (route.subject === "unsupported_asset") return navigationAnswer(locale, route.raw_question);
+      return buildSpecializedNavigationAnswer(locale, route);
     case "unsupported":
       if (route.subject === "bitcoin_genesis_chart") return genesisChartClarification(locale);
       if (route.subject === "unsupported_market_request") return unsupportedMarketRequestAnswer(locale);
