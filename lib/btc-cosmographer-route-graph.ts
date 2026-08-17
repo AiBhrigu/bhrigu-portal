@@ -4,6 +4,8 @@ import type { BtcPublicLocale } from "./btc-public-language-contract";
 export const BTC_COSMOGRAPHER_ROUTE_SCHEMA =
   "btc_cosmographer_semantic_route_graph_v0_1" as const;
 
+// Canonical-140 routing repair keeps supported semantics out of unsupported/false-ambiguity fallbacks.
+
 export type BtcCosmographerDomain =
   | "bitcoin_protocol"
   | "btc_market"
