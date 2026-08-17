@@ -263,9 +263,44 @@ function namedCalendarDate(question: string): string | null {
   return validDate(value) ? value : null;
 }
 
+function calendarRange(startYear: number, startMonth: number, startDay: number, endYear: number, endMonth: number, endDay: number): BtcCosmographerTimeRange | null {
+  if (!startYear || !startMonth || !startDay || !endYear || !endMonth || !endDay) return null;
+  const start = `${startYear}-${String(startMonth).padStart(2, "0")}-${String(startDay).padStart(2, "0")}`;
+  const end = `${endYear}-${String(endMonth).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+  if (!validDate(start) || !validDate(end) || end < start) return null;
+  return { start, end, label: `${start} — ${end}`, source: "QUESTION" };
+}
+
+function namedCalendarRange(question: string, contextYear?: number): BtcCosmographerTimeRange | null {
+  const sameMonthRu = question.match(/(?:^|\s)(?:с\s+)?([0-3]?\d)\s*(?:[-–—]|по)\s*([0-3]?\d)\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(20\d{2}))?/i);
+  if (sameMonthRu) {
+    const year = Number(sameMonthRu[4] ?? contextYear ?? 2026);
+    const month = NAMED_MONTHS[sameMonthRu[3].toLowerCase()];
+    return calendarRange(year, month, Number(sameMonthRu[1]), year, month, Number(sameMonthRu[2]));
+  }
+  const crossMonthRu = question.match(/(?:^|\s)(?:с\s+)?([0-3]?\d)\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)\s+(?:по|[-–—])\s*([0-3]?\d)\s+(января|февраля|марта|апреля|мая|июня|июля|августа|сентября|октября|ноября|декабря)(?:\s+(20\d{2}))?/i);
+  if (crossMonthRu) {
+    const year = Number(crossMonthRu[5] ?? contextYear ?? 2026);
+    return calendarRange(year, NAMED_MONTHS[crossMonthRu[2].toLowerCase()], Number(crossMonthRu[1]), year, NAMED_MONTHS[crossMonthRu[4].toLowerCase()], Number(crossMonthRu[3]));
+  }
+  const sameMonthEn = question.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+([0-3]?\d)(?:st|nd|rd|th)?\s*(?:[-–—]|to)\s*([0-3]?\d)(?:st|nd|rd|th)?(?:[,]?\s+(20\d{2}))?\b/i);
+  if (sameMonthEn) {
+    const year = Number(sameMonthEn[4] ?? contextYear ?? 2026);
+    const month = NAMED_MONTHS[sameMonthEn[1].toLowerCase()];
+    return calendarRange(year, month, Number(sameMonthEn[2]), year, month, Number(sameMonthEn[3]));
+  }
+  const crossMonthEn = question.match(/(?:from\s+)?(january|february|march|april|may|june|july|august|september|october|november|december)\s+([0-3]?\d)(?:st|nd|rd|th)?\s+(?:to|[-–—])\s*(january|february|march|april|may|june|july|august|september|october|november|december)\s+([0-3]?\d)(?:st|nd|rd|th)?(?:[,]?\s+(20\d{2}))?/i);
+  if (crossMonthEn) {
+    const year = Number(crossMonthEn[5] ?? contextYear ?? 2026);
+    return calendarRange(year, NAMED_MONTHS[crossMonthEn[1].toLowerCase()], Number(crossMonthEn[2]), year, NAMED_MONTHS[crossMonthEn[3].toLowerCase()], Number(crossMonthEn[4]));
+  }
+  return null;
+}
+
 export function extractBtcCosmographerTimeRange(
   question: string,
   selectedDate?: string,
+  contextYear?: number,
 ): BtcCosmographerTimeRange | null {
   const q = question.toLowerCase();
   const dates = explicitDates(q);
@@ -285,6 +320,9 @@ export function extractBtcCosmographerTimeRange(
       source: "QUESTION",
     };
   }
+
+  const namedRange = namedCalendarRange(q, contextYear);
+  if (namedRange) return namedRange;
 
   const namedDate = namedCalendarDate(q);
   if (namedDate) {
@@ -363,7 +401,7 @@ function isChangeMemoryIntent(question: string): boolean {
 }
 
 function isAstroWindowLanguage(question: string): boolean {
-  return /annual\s+priority|local\s+concentration|planetary\s+windows?|astronomical\s+windows?|планетарн[а-яё]*\s+окн|астрономическ[а-яё]*\s+окн|главн[а-яё]*\s+окн|окн[а-яё]*\s+(?:20\d{2}|июл|март)|stations?|ingresses?|станци[а-яё]*|ингресси[а-яё]*|long[-\s]?term\s+cycles?|долгосрочн[а-яё]*\s+цикл|точн[а-яё]*\s+аспект|обзор\s+планетарн[а-яё]*\s+окон|календар[а-яё]*\s+окон|пик[а-яё]*\s+.*20\d{2}|сильн[а-яё]*\s+дат|rank\s*\d/i.test(question);
+  return /annual\s+priority|local\s+concentration|planetary\s+windows?|astronomical\s+windows?|планетарн[а-яё]*\s+окн|астрономическ[а-яё]*\s+окн|главн[а-яё]*\s+окн|окн[а-яё]*(?:\s+на)?\s+(?:20\d{2}|июл|март)|stations?|ingresses?|станци[а-яё]*|ингресси[а-яё]*|long[-\s]?term\s+cycles?|долгосрочн[а-яё]*\s+цикл|точн[а-яё]*\s+аспект|обзор\s+планетарн[а-яё]*\s+окон|календар[а-яё]*\s+окон|пик[а-яё]*\s+.*20\d{2}|сильн[а-яё]*\s+дат|rank\s*\d/i.test(question);
 }
 
 function isMethodologyFollowUpLanguage(question: string): boolean {
@@ -442,7 +480,7 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
   if (/breadth|rotation|altcoin|participation|eth|ширин|ротац|альткоин|участи/i.test(question)) return "market_participation_rotation";
   if (/structure|regime|field score|market cap|структур|режим|капитализац/i.test(question)) return "market_structure";
   if (/snapshot|memory|previous checkpoint|delta|сним[а-яё]*|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
-  if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль/i.test(question)) return "temporal_pressure";
+  if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль|дат[а-яё]*[^?!.]{0,48}контекст[а-яё]*\s+наблюден[а-яё]*\s+(?:btc|bitcoin|биткоин)/i.test(question)) return "temporal_pressure";
   if (/btc field|market field|present[-\s]?field read|current btc field|accepted market evidence|поле btc|общее поле|текущ[а-яё]*\s+поле\s+btc|рынок btc|рынок биткоин|на\s+рынке\s+btc|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
   return null;
 }
@@ -500,7 +538,7 @@ function classifyIntents(
   if (/сколько|какое количество|what is|how many|how much|maximum|максимальн/i.test(question)) values.push("fact");
   if (/why|explain|how does|what should i know|почему|объясни|как устро|что нужно знать|что означает/i.test(question)) values.push("explain");
   if (timeRange && (domain === "astromodule" || domain === "astro_btc_bridge")) values.push("interval_analysis");
-  if (/compare|versus|\bvs\b|сравн|отличи|между/i.test(question)) values.push("compare");
+  if (/compare|versus|\bvs\b|сравн|отличи|между|between[^?!.]{0,48}(?:current|previous)[^?!.]{0,48}snapshot|между[^?!.]{0,48}(?:текущ|предыдущ)[^?!.]{0,48}(?:snapshot|сним)/i.test(question)) values.push("compare");
   if (/what changed|changed|change since|что измен|изменени/i.test(question)) values.push("change");
   if (/why|matter|reason|important|почему|важно|причин|напряж|volatil|волатиль/i.test(question)) values.push("reason");
   if (/confirm|support|agree|подтверж|соглас/i.test(question)) values.push("confirmation");
@@ -533,7 +571,18 @@ export function routeBtcCosmographerQuestion(
 ): BtcCosmographerRoute {
   const normalized = rawQuestion.trim().replace(/\s+/g, " ");
   const q = normalized.toLowerCase();
-  const protocol = protocolSubject(q);
+  const protocolDetected = protocolSubject(q);
+  const preserveContextualGenesisHistory = Boolean(
+    protocolDetected === "genesis_history" &&
+    packet?.prior_domain === "btc_market" &&
+    packet.prior_subject === "general_btc_field" &&
+    /что\s+известно.*genesis|what\s+is\s+known.*genesis/i.test(q)
+  );
+  const protocol = protocolDetected === "genesis_history" &&
+    /что\s+известно.*genesis|what\s+is\s+known.*genesis/i.test(q) &&
+    !preserveContextualGenesisHistory
+      ? "genesis"
+      : protocolDetected;
   const bodies = bodySubjects(q);
   const overrideBody = bodies.length > 1 && isBodyOverrideLanguage(q) ? lastMentionedBody(q) : null;
   const body = overrideBody ?? bodies[0] ?? null;
@@ -575,12 +624,22 @@ export function routeBtcCosmographerQuestion(
   else if (hasBtcReference(q)) inferredDomain = "btc_market";
   else inferredDomain = "navigation";
 
+  const genericAspectSubject = !body && /\baspects?\b|аспект[а-яё]*/i.test(q) ? "planetary_aspects" : null;
+  const transitionSubject = !body && /ingresses?|ингресси[а-яё]*/i.test(q)
+    ? "planetary_ingresses"
+    : !body && /stations?|станци[а-яё]*/i.test(q)
+      ? "planetary_stations"
+      : null;
   let forcedSubject: string | null = overrideBody ??
     (routingConflict ? "routing_conflict" : null) ??
     (unsupportedAsset ? "unsupported_asset" : null) ??
     (multipleExplicitBodies ? "multiple_planetary_objects" : null) ??
     (genesisChart ? "bitcoin_genesis_chart" : null) ??
     (unsupportedMarketRequest ? "unsupported_market_request" : null) ??
+    (inferredDomain === "snapshot_memory" && changeMemoryFocused ? "change_memory" : null) ??
+    (inferredDomain === "btc_market" && market === "temporal_pressure" ? "temporal_pressure" : null) ??
+    transitionSubject ??
+    genericAspectSubject ??
     (multiBody || astroWindow ? "planetary_aspects" : null) ??
     (explicitBridge && !body ? (packet && (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") ? packet.prior_subject : "planetary_aspects") : null);
 
@@ -607,7 +666,17 @@ export function routeBtcCosmographerQuestion(
   const domain: BtcCosmographerDomain = contextBridge
     ? "astro_btc_bridge"
     : inferredDomain;
-  const timeRange = extractBtcCosmographerTimeRange(q, selectedDate);
+  let timeRange = extractBtcCosmographerTimeRange(
+    q,
+    selectedDate,
+    packet?.prior_time_start ? Number(packet.prior_time_start.slice(0, 4)) : undefined,
+  );
+  if (!timeRange && protocol && ["genesis", "genesis_history"].includes(protocol)) {
+    timeRange = { start: "2009-01-03", end: "2009-01-03", label: "2009-01-03", source: "QUESTION" };
+  }
+  if (!timeRange && /июльск[а-яё]*\s+совпад|july[^?!.]{0,24}concurrence/i.test(q)) {
+    timeRange = { start: "2026-07-20", end: "2026-07-21", label: "2026-07-20 — 2026-07-21", source: "QUESTION" };
+  }
   const subject =
     forcedSubject ??
     (contextBridge ? packet?.prior_subject ?? null : null) ??
@@ -661,6 +730,19 @@ export function routeBtcCosmographerQuestion(
   inheritsContext && packet && (!explicit || bridgeContinuation)
     ? packet.prior_subject
     : subject;
+  const compatibleSubjectOverrideTime =
+    !timeRange &&
+    Boolean(overrideBody) &&
+    packet?.prior_domain === "astromodule" &&
+    packet.prior_time_start &&
+    packet.prior_time_end
+      ? {
+          start: packet.prior_time_start,
+          end: packet.prior_time_end,
+          label: `${packet.prior_time_start} — ${packet.prior_time_end}`,
+          source: "CONTEXT" as const,
+        }
+      : null;
   const inheritedTime =
     !timeRange &&
     packet?.prior_time_start &&
@@ -672,15 +754,15 @@ export function routeBtcCosmographerQuestion(
           label: `${packet.prior_time_start} — ${packet.prior_time_end}`,
           source: "CONTEXT" as const,
         }
-      : null;
+      : compatibleSubjectOverrideTime;
   const resolvedMarket =
-    resolvedDomain === "btc_market" ||
-    resolvedDomain === "snapshot_memory" ||
-    resolvedDomain === "astro_btc_bridge"
-      ? referential && packet && !market
-        ? packet.prior_market_question_class ?? "general_btc_field"
-        : market ?? packet?.prior_market_question_class ?? "general_btc_field"
-      : null;
+    resolvedDomain === "snapshot_memory"
+      ? "change_memory"
+      : resolvedDomain === "btc_market" || resolvedDomain === "astro_btc_bridge"
+        ? referential && packet && !market
+          ? packet.prior_market_question_class ?? "general_btc_field"
+          : market ?? packet?.prior_market_question_class ?? "general_btc_field"
+        : null;
   const confidence =
     resolvedDomain === "unsupported" || relation === "GENUINELY_AMBIGUOUS"
       ? "LOW"

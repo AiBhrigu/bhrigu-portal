@@ -149,7 +149,7 @@ export function specializeMarketAnswer(
       isRu ? "Принятый Snapshot не доказывает точную будущую цену BTC или точный ценовой пик." : "The accepted Snapshot does not establish an exact future BTC price or exact price peak.",
       isRu ? "Можно показать только принятое текущее состояние и условия, которые изменят чтение." : "Only the accepted current state and conditions that would change the read can be shown.");
   }
-  if (/previous\s+verified\s+snapshot\s+is\s+unavailable|предыдущ[а-яё]*\s+проверенн[а-яё]*\s+(?:снимок|snapshot)\s+недоступ/.test(text)) {
+  if (/previous\s+verified\s+snapshot\s+is\s+unavailable|compare[^?!.]{0,48}previous[^?!.]{0,32}(?:verified|accepted)[^?!.]{0,24}snapshot|предыдущ[а-яё]*\s+проверенн[а-яё]*\s+(?:снимок|snapshot)\s+недоступ|сравн[а-яё]*[^?!.]{0,48}предыдущ[а-яё]*[^?!.]{0,32}(?:проверенн[а-яё]*|принят[а-яё]*)[^?!.]{0,24}(?:snapshot|снимок)/.test(text)) {
     return boundedClarification(locale,
       isRu ? "Сравнение без предыдущего принятого Snapshot невозможно" : "Comparison is unavailable without the previous accepted Snapshot",
       isRu ? "Без предыдущего принятого Snapshot нельзя честно утверждать, что именно изменилось." : "Without the previous accepted Snapshot, it is not possible to state honestly what changed.",

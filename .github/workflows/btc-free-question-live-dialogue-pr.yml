@@ -11,11 +11,14 @@ on:
       - "components/btc/BtcQuestionMembrane.tsx"
       - "docs/research/BTC_COSMOGRAPHER_PUBLIC_USER_ACCEPTANCE_REPORT_01_v0_1.md"
       - "lib/btc-cosmographer-answer.ts"
+      - "lib/btc-cosmographer-multi-body-astro-rc.ts"
       - "lib/btc-cosmographer-public-multi-body-projection.ts"
       - "lib/btc-cosmographer-route-graph.ts"
+      - "lib/btc-cosmographer-specialized-answer.ts"
       - "lib/btc-live-dialogue-style.ts"
       - "lib/btc-product-rebalance-style.ts"
       - "lib/btc-public-astro-evidence.ts"
+      - "tests/btc-cosmographer-canonical-time-context-state-acceptance.ts"
       - "pages/crypto-astro/btc.tsx"
       - "pages/crypto-astro/btc/live.tsx"
       - "scripts/run-btc-cosmographer-semantic-route-fixture.mjs"
@@ -62,6 +65,9 @@ jobs:
         run: |
           mkdir -p artifacts
           node scripts/run-btc-cosmographer-semantic-route-fixture.mjs 2>&1 | tee artifacts/btc-cosmographer-static.log
+
+      - name: Canonical time and context state acceptance
+        run: npx tsx tests/btc-cosmographer-canonical-time-context-state-acceptance.ts
 
       - name: Preserve inherited BTC routing gates
         run: |

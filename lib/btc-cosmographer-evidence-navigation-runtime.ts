@@ -122,7 +122,7 @@ const BTC_REFERENCE = /\bbtc\b|\bbitcoin\b|бит(?:коин|койн|окин|�
 const SNAPSHOT_REFERENCE = /snapshot|снимок|памят|previous checkpoint|delta|дельт/i;
 const PROTOCOL_REFERENCE = /halving|халвинг|protocol|протокол|block height|высот.*блок|supply|эмисси|consensus|консенсус/i;
 const MARKET_REFERENCE = /market|рынок|liquid|ликвид|structure|структур|regime|режим|dominance|доминир|volatil|волатиль/i;
-const RELATION_OPERATOR = /impact|influence|affect|cause|caused|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влия(?:ни|ет|ют|ть)|вызвал|обрушил|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|одновремен[а-яё]*/i;
+const RELATION_OPERATOR = /impact|influence|affect|cause|caused|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|confirm|diverg|повлиял|влия(?:ни|ет|ют|ть)|вызвал|обрушил|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|сопостав[а-яё]*|расхожд[а-яё]*|одновремен[а-яё]*/i;
 const GENERIC_PLANET_POSITION = /(?:текущ[а-яё]*|сейчас)[^?!.]{0,48}положен[а-яё]*[^?!.]{0,24}планет[а-яё]*/i;
 const UNRESOLVED_PRONOUN = /^(?:it|this|that|them|what about it|and this|это|этот|эта|они|а это|и это|там)\b/i;
 const RELATION_OBJECT_PRONOUN = /\b(?:it|this|that|them|это|этот|эта|они|там)\b/i;
@@ -195,7 +195,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   retainedAstroMemory: BtcRetainedAstroRelationMemory | null = null,
 ): BtcRelationIntentResolution<T> {
   const question = rawQuestion.trim();
-  if (route.domain === "navigation") {
+  if (route.domain === "navigation" || route.domain === "methodology") {
     return {
       route,
       relation_resolution: "SINGLE_DOMAIN",

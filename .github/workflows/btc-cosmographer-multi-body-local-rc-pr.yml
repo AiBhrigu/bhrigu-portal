@@ -103,10 +103,22 @@ jobs:
               "scripts/verify-btc-public-live-multi-body-projection.mjs",
               "scripts/verify-btc-public-live-visual-information-acceptance.py",
           }
+          canonical_time_context_scope = {
+              ".github/scripts/verify-btc-public-acceptance-scope.py",
+              ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+              ".github/workflows/btc-free-question-live-dialogue-pr.yml",
+              "lib/btc-cosmographer-evidence-navigation-runtime.ts",
+              "lib/btc-cosmographer-multi-body-astro-rc.ts",
+              "lib/btc-cosmographer-route-graph.ts",
+              "lib/btc-cosmographer-specialized-answer.ts",
+              "tests/btc-cosmographer-canonical-time-context-state-acceptance.ts",
+          }
           combined_scope = local_scope | projection_scope
           integrated_scope = semantic_scope | combined_scope
 
-          if changed == local_scope:
+          if changed == canonical_time_context_scope:
+              status = "PASS_CANONICAL_TIME_CONTEXT_8_FILE_SCOPE"
+          elif changed == local_scope:
               status = "PASS_LOCAL_RC_ISOLATED_12_FILE_SCOPE"
           elif changed == combined_scope:
               status = "PASS_LOCAL_RC_COMBINED_25_FILE_SCOPE"
