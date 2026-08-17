@@ -401,10 +401,25 @@ class TestBatchIdentityPreflightBlocks(unittest.TestCase):
     def test_matching_shas_pass_preflight(self):
         """_batch_identity_preflight returns None when SHAs match."""
         mock_driver = MagicMock()
-        mock_driver.execute_script.side_effect = [
-            "correct_deploy",   # deployment_sha
-            "correct_source",   # source_sha
-        ]
+        # deployment SHA from DOM execute_script
+        mock_driver.execute_script.return_value = "correct_deploy"
+        # source SHA from performance log (Network.responseReceived Document header)
+        perf_log_entry = {
+            "message": json.dumps({
+                "message": {
+                    "method": "Network.responseReceived",
+                    "params": {
+                        "type": "Document",
+                        "response": {
+                            "headers": {
+                                "x-btc-deployment-source-sha": "correct_source"
+                            }
+                        }
+                    }
+                }
+            })
+        }
+        mock_driver.get_log.return_value = [perf_log_entry]
         with patch("time.sleep"):
             result = _batch_identity_preflight(
                 mock_driver, "https://example.com",
@@ -993,14 +1008,22 @@ class TestSessionFieldExtraction(unittest.TestCase):
         session_state = {
             "session_value": {
                 "turns": [
-                    {"evidence_levels": ["ASTRO", "BTC"], "time_scope": "HISTORICAL", "freshness": "CURRENT"},
+                    {
+                        "evidence_levels": ["ASTRO", "BTC"],
+                        "time_start": "2026-01-01",
+                        "time_end": "2026-12-31",
+                    },
                 ],
                 "evidence": {"key": "val"},
             }
         }
-        fields = _extract_session_fields(session_state)
+        # FRESHNESS comes from next_data sourceContext, not BtcDialogueTurn
+        next_data = {"sourceContext": {"state": "CURRENT"}}
+        fields = _extract_session_fields(session_state, next_data)
         self.assertEqual(fields["EVIDENCE_LEVELS"], ["ASTRO", "BTC"])
-        self.assertEqual(fields["TIME_SCOPE"], "HISTORICAL")
+        # TIME_SCOPE derived from time_start / time_end
+        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01/2026-12-31")
+        # FRESHNESS from next_data sourceContext.state
         self.assertEqual(fields["FRESHNESS"], "CURRENT")
 
     def test_empty_session_returns_none_fields(self):
@@ -1024,6 +1047,413 @@ class TestSelfTestCount(unittest.TestCase):
             self.MINIMUM_REQUIRED_SELFTESTS,
             f"Only {total} selftests found, minimum required is {self.MINIMUM_REQUIRED_SELFTESTS}",
         )
+
+
+
+
+# ---------------------------------------------------------------------------
+# New behavioral selftests for consolidated repair (SECOND_INDEPENDENT_MASTER_REREVIEW)
+# ---------------------------------------------------------------------------
+
+_extract_source_sha_from_perf_log = _harness._extract_source_sha_from_perf_log
+_check_per_turn_contract = _harness._check_per_turn_contract
+
+
+def _make_perf_log_entry(headers: dict, resp_type: str = "Document") -> dict:
+    """Build a synthetic Chrome performance log entry for Network.responseReceived."""
+    return {
+        "message": json.dumps({
+            "message": {
+                "method": "Network.responseReceived",
+                "params": {
+                    "type": resp_type,
+                    "response": {"headers": headers}
+                }
+            }
+        })
+    }
+
+
+class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
+    """Behavioral tests for source SHA extraction from HTTP response header."""
+
+    def test_source_sha_extracted_from_http_header(self):
+        """_extract_source_sha_from_perf_log returns x-btc-deployment-source-sha value."""
+        mock_driver = MagicMock()
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "abc123"})
+        ]
+        result = _extract_source_sha_from_perf_log(mock_driver)
+        self.assertEqual(result, "abc123")
+
+    def test_source_sha_not_found_if_header_absent(self):
+        """Returns None when the header is not present in any Document response."""
+        mock_driver = MagicMock()
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"content-type": "text/html"})
+        ]
+        result = _extract_source_sha_from_perf_log(mock_driver)
+        self.assertIsNone(result)
+
+    def test_correct_identity_passes_preflight(self):
+        """_batch_identity_preflight returns None when both source SHA (from header) and deployment SHA match."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "correct_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
+        ]
+        with patch("time.sleep"):
+            result = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNone(result)
+
+    def test_missing_source_sha_header_blocks_batch(self):
+        """Missing x-btc-deployment-source-sha header blocks batch even if deployment SHA matches."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "correct_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"content-type": "text/html"})  # no source SHA header
+        ]
+        with patch("time.sleep"):
+            result = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="expected_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNotNone(result)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
+        self.assertIn("SOURCE_SHA_MISMATCH", result)
+
+    def test_wrong_source_sha_blocks_batch(self):
+        """Wrong x-btc-deployment-source-sha blocks the batch."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "correct_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "WRONG_SHA"})
+        ]
+        with patch("time.sleep"):
+            result = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNotNone(result)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
+        self.assertIn("SOURCE_SHA_MISMATCH", result)
+
+    def test_wrong_deployment_sha_blocks_batch(self):
+        """Wrong deployment SHA (from DOM) blocks the batch."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "WRONG_DEPLOY"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
+        ]
+        with patch("time.sleep"):
+            result = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNotNone(result)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
+        self.assertIn("DEPLOYMENT_SHA_MISMATCH", result)
+
+
+class TestPerTurnContractValidation(unittest.TestCase):
+    """Behavioral tests for per-turn contract validation from prior_turns.value[i]."""
+
+    def _make_two_turn_packet(self) -> dict:
+        """Packet with two setup turns and separate per-turn contracts."""
+        p = _make_packet(
+            "FG-004",
+            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
+            setup_turn_count=2,
+            setup_turns_exact=["Q1_jupiter", "Q2_mercury"],
+            prior_turns={
+                "status": "EXPLICIT",
+                "value": [
+                    {
+                        "turn_index": 1,
+                        "question_exact": "Q1_jupiter",
+                        "expected_route_domain": "astromodule",
+                        "expected_route_subject": "jupiter",
+                        "expected_context_relation": "NEW_TOPIC",
+                        "expected_answer_state": {"mode": "EXACT", "value": "CONFIRMED"},
+                        "expected_answer_mode": "ASTRO_INTERVAL",
+                        "expected_route_disposition": "CONTINUE",
+                    },
+                    {
+                        "turn_index": 2,
+                        "question_exact": "Q2_mercury",
+                        "expected_route_domain": "astromodule",
+                        "expected_route_subject": "mercury",
+                        "expected_context_relation": "NEW_TOPIC",
+                        "expected_answer_state": {"mode": "EXACT", "value": "LIMITED"},
+                        "expected_answer_mode": "ASTRO_INTERVAL",
+                        "expected_route_disposition": "CONTINUE",
+                    },
+                ],
+            },
+        )
+        return p
+
+    def test_turn1_validates_against_turn1_contract_not_final_state(self):
+        """After turn 1, validation compares against prior_turns.value[0] (not final state)."""
+        packet = self._make_two_turn_packet()
+        # Correct state for turn 1
+        obs_turn1 = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+        )
+        # Should pass: matches turn 1 contract
+        result = _check_precondition_against_packet(packet, obs_turn1, {}, setup_turn_index=1)
+        self.assertIsNone(result, "Turn 1 correct state must not block")
+
+    def test_turn1_wrong_subject_blocks(self):
+        """If turn 1 observed subject is wrong, it must BLOCK."""
+        packet = self._make_two_turn_packet()
+        obs_wrong = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="saturn",   # wrong: expected jupiter
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+        )
+        result = _check_precondition_against_packet(packet, obs_wrong, {}, setup_turn_index=1)
+        self.assertIsNotNone(result)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+        self.assertIn("route_subject", result)
+
+    def test_turn2_validates_against_turn2_contract(self):
+        """After turn 2, validation compares against prior_turns.value[1]."""
+        packet = self._make_two_turn_packet()
+        obs_turn2 = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="mercury",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="LIMITED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+        )
+        result = _check_precondition_against_packet(packet, obs_turn2, {}, setup_turn_index=2)
+        self.assertIsNone(result, "Turn 2 correct state must not block")
+
+    def test_turn2_wrong_answer_state_blocks(self):
+        """Wrong answer_state for turn 2 must block."""
+        packet = self._make_two_turn_packet()
+        obs_wrong = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="mercury",
+            ANSWER_STATE="CONFIRMED",   # wrong: expected LIMITED
+        )
+        result = _check_precondition_against_packet(packet, obs_wrong, {}, setup_turn_index=2)
+        self.assertIsNotNone(result)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+        self.assertIn("answer_state", result)
+
+    def test_turn1_correct_does_not_compare_against_turn2_contract(self):
+        """Turn 1 must not be compared against turn 2 expected state (LIMITED for mercury)."""
+        packet = self._make_two_turn_packet()
+        # Turn 1 state (CONFIRMED/jupiter) would be wrong if compared to turn 2 (LIMITED/mercury)
+        obs_turn1 = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",  # correct for turn 1 but "wrong" for turn 2
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+        )
+        # Must pass because only turn 1 contract applies here
+        result = _check_precondition_against_packet(packet, obs_turn1, {}, setup_turn_index=1)
+        self.assertIsNone(result, "Turn 1 must validate only against turn 1 contract")
+
+    def test_cardinality_mismatch_declared_vs_actual(self):
+        """Packet with setup_turn_count != len(setup_turns_exact) must be BLOCKED by execute_case."""
+        execute_case = _harness.execute_case
+        csv_rows, _, _ = _load_real_fixtures()
+        csv_row = csv_rows[0]  # any row, not used for cardinality check
+
+        # Declared count is 2 but only 1 turn string provided
+        p = _make_packet(
+            "X-001",
+            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
+            setup_turn_count=2,
+            setup_turns_exact=["only_one_turn"],
+        )
+        # execute_case returns BLOCKED for cardinality mismatch BEFORE creating any driver
+        result = execute_case(
+            csv_row=csv_row,
+            packet=p,
+            target_url="https://example.com",
+            expected_source_sha="sha_x",
+            expected_deployment_sha="sha_y",
+        )
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "Cardinality mismatch must produce BLOCKED verdict")
+        self.assertIn("SETUP_CARDINALITY_MISMATCH", result.get("blocked_reason", ""),
+            "blocked_reason must include SETUP_CARDINALITY_MISMATCH")
+
+
+class TestSessionFieldExtractionTimeScope(unittest.TestCase):
+    """TIME_SCOPE must be derived from time_start/time_end, not a direct BtcDialogueTurn field."""
+
+    def test_time_scope_derived_from_start_and_end(self):
+        session_state = {
+            "session_value": {
+                "turns": [{"time_start": "2026-01-01", "time_end": "2026-12-31", "evidence_levels": []}]
+            }
+        }
+        fields = _extract_session_fields(session_state)
+        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01/2026-12-31")
+
+    def test_time_scope_only_start(self):
+        session_state = {
+            "session_value": {
+                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
+            }
+        }
+        fields = _extract_session_fields(session_state)
+        self.assertEqual(fields["TIME_SCOPE"], "2026-01-01")
+
+    def test_freshness_from_next_data_not_session_turn(self):
+        """FRESHNESS must come from __NEXT_DATA__.props.pageProps.sourceContext.state, not BtcDialogueTurn."""
+        # A turn without any freshness field
+        session_state = {
+            "session_value": {
+                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
+            }
+        }
+        next_data = {"sourceContext": {"state": "STALE"}}
+        fields = _extract_session_fields(session_state, next_data)
+        self.assertEqual(fields["FRESHNESS"], "STALE")
+
+    def test_freshness_none_without_next_data(self):
+        """FRESHNESS is None when next_data is not provided."""
+        session_state = {
+            "session_value": {
+                "turns": [{"time_start": "2026-01-01", "evidence_levels": []}]
+            }
+        }
+        fields = _extract_session_fields(session_state)
+        self.assertIsNone(fields["FRESHNESS"])
+
+
+class TestEvaluatorUsesCorrectCsvColumns(unittest.TestCase):
+    """Evaluator must use actual CSV column names, not non-existent ones."""
+
+    def _base_csv_row(self, **overrides) -> dict:
+        row = {
+            "CASE_ID": "X-001",
+            "EXPECTED_DOMAIN": "",
+            "EXPECTED_SUBJECT": "",
+            "EXPECTED_CONTEXT_RELATION": "",
+            "EXPECTED_MODE": "",         # canonical: answer mode
+            "EXPECTED_ANSWER_TYPE": "",  # canonical: answer type/state
+            "EXPECTED_INTENT": "",       # canonical: intents
+            "EXPECTED_PERIOD": "",       # canonical: time period
+            "EXPECTED_EVIDENCE_FAMILY": "",
+            "EXPECTED_DIRECTNESS": "",
+            "EXPECTED_BOUNDARY": "",
+            "EXPECTED_MEMORY_ACTION": "",
+            "FORBIDDEN_BEHAVIOR": "",
+        }
+        row.update(overrides)
+        return row
+
+    def test_expected_mode_column_used(self):
+        """evaluate_case uses EXPECTED_MODE column to check ANSWER_MODE."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_MODE="WRONG_MODE")
+
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertNotEqual(result["verdict"], "PASS")
+        self.assertTrue(any("EXPECTED_MODE" in r or "answer_mode" in r for r in result["failure_reasons"]))
+
+    def test_no_reference_to_nonexistent_column_expected_answer_state(self):
+        """Harness must not check EXPECTED_ANSWER_STATE column (does not exist in CSV)."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        # Check that the evaluate_case function does not reference EXPECTED_ANSWER_STATE
+        # in a csv_row.get() call
+        self.assertNotIn('csv_row.get("EXPECTED_ANSWER_STATE")', harness_src)
+        self.assertNotIn("csv_row.get('EXPECTED_ANSWER_STATE')", harness_src)
+
+    def test_no_reference_to_nonexistent_column_expected_answer_mode(self):
+        """Harness must not check EXPECTED_ANSWER_MODE column (does not exist in CSV)."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertNotIn('csv_row.get("EXPECTED_ANSWER_MODE")', harness_src)
+        self.assertNotIn("csv_row.get('EXPECTED_ANSWER_MODE')", harness_src)
+
+    def test_no_reference_to_nonexistent_column_expected_time_scope(self):
+        """Harness must not check EXPECTED_TIME_SCOPE column (does not exist in CSV)."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertNotIn('csv_row.get("EXPECTED_TIME_SCOPE")', harness_src)
+        self.assertNotIn("csv_row.get('EXPECTED_TIME_SCOPE')", harness_src)
+
+    def test_observation_satisfying_only_domain_cannot_pass_with_other_required_dims(self):
+        """An observation that satisfies domain but is missing other required canonical dimensions cannot PASS."""
+        csv_row = self._base_csv_row(
+            EXPECTED_DOMAIN="astromodule",
+            EXPECTED_MODE="ASTRO_INTERVAL",  # requires ANSWER_MODE to be present
+        )
+        packet = _make_packet("X-001")
+        # Only ROUTE_DOMAIN present; all other mandatory fields absent
+        obs = {f: None for f in MANDATORY_CAPTURE_FIELDS}
+        obs["_dom_available"] = True
+        obs["ROUTE_DOMAIN"] = "astromodule"
+
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertNotEqual(result["verdict"], "PASS",
+            "Must not PASS when required canonical contract dimensions are unevaluated/absent")
+
+
+class TestEvaluatorInputContainsFullPacketAndContract(unittest.TestCase):
+    """Behavioral tests proving evaluator-input contains full packet, expected contract, and runtime authority."""
+
+    def test_evaluator_input_keys_present_in_harness(self):
+        """Harness must include executable_state_packet and expected_contract in evaluator-input."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertIn("executable_state_packet", harness_src)
+        self.assertIn("expected_contract", harness_src)
+        self.assertIn("current_runtime_authority", harness_src)
+
+    def test_manifest_includes_served_shas(self):
+        """build_manifest must include served_source_sha and served_deployment_sha."""
+        import argparse
+        args = argparse.Namespace(
+            target_url="https://example.com",
+            expected_source_sha="expected_src",
+            expected_deployment_sha="expected_dep",
+        )
+        results = [{"case_id": "X-001", "verdict": "PASS"}]
+        manifest = build_manifest(
+            args=args,
+            corpus_sha="c",
+            packets_sha="p",
+            results=results,
+            start_ts="2026-01-01T00:00:00Z",
+            end_ts="2026-01-01T01:00:00Z",
+            served_source_sha="served_src",
+            served_deployment_sha="served_dep",
+        )
+        self.assertEqual(manifest["served_source_sha"], "served_src")
+        self.assertEqual(manifest["served_deployment_sha"], "served_dep")
+        self.assertEqual(manifest["expected_source_sha"], "expected_src")
+        self.assertEqual(manifest["expected_deployment_sha"], "expected_dep")
 
 
 if __name__ == "__main__":

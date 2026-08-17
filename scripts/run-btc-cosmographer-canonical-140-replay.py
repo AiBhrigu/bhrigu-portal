@@ -263,7 +263,7 @@ def _make_driver():
     options = webdriver.ChromeOptions()
     for arg in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
         options.add_argument(arg)
-    # Enable performance logging for HTTP response header capture
+    # Enable performance logging for HTTP response header capture (required for source SHA)
     caps = {
         "goog:loggingPrefs": {"performance": "ALL"},
     }
@@ -272,20 +272,53 @@ def _make_driver():
     return webdriver.Chrome(options=options)
 
 
+def _extract_source_sha_from_perf_log(driver) -> Optional[str]:
+    """
+    Extract the source SHA from the HTTP response header `x-btc-deployment-source-sha`
+    of the main Document response, using the Chrome performance log (CDP).
+    Returns None if not found.
+    """
+    try:
+        logs = driver.get_log("performance")
+        for entry in logs:
+            try:
+                msg = json.loads(entry.get("message", "{}"))
+                params = msg.get("message", {}).get("params", {})
+                if msg.get("message", {}).get("method") == "Network.responseReceived":
+                    resp_type = params.get("type", "")
+                    resp = params.get("response", {})
+                    if resp_type == "Document":
+                        hdrs = {k.lower(): v for k, v in resp.get("headers", {}).items()}
+                        sha = hdrs.get("x-btc-deployment-source-sha")
+                        if sha:
+                            return sha.strip()
+            except Exception:
+                continue
+    except Exception:
+        pass
+    return None
+
+
 def _capture_sha_headers(driver) -> Dict[str, Optional[str]]:
-    """Read source/deployment SHAs from page meta tags or data attributes."""
+    """
+    Read source/deployment SHAs for the currently loaded page.
+
+    - Source SHA: HTTP response header `x-btc-deployment-source-sha` (from performance log CDP events).
+      This is the canonical identity signal for batch preflight. meta tags / DOM data attributes
+      do not carry this value.
+    - Deployment SHA: DOM attribute `data-deployment-head-sha` on the page root/main element.
+    """
+    # Deployment SHA from DOM
     try:
         deployment_sha = driver.execute_script(
-            "return document.querySelector('[data-deployment-head-sha]')?.dataset?.deploymentHeadSha || null"
-        )
-        # Source SHA may be in a meta tag or other attribute
-        source_sha = driver.execute_script(
-            "return document.querySelector('meta[name=\"x-source-sha\"]')?.content "
-            "|| document.querySelector('[data-source-sha]')?.dataset?.sourceSha || null"
+            "return document.querySelector('[data-deployment-head-sha]')?.getAttribute('data-deployment-head-sha') || null"
         )
     except Exception:
-        source_sha = None
         deployment_sha = None
+
+    # Source SHA from HTTP response header via performance log
+    source_sha = _extract_source_sha_from_perf_log(driver)
+
     return {"source_sha": source_sha, "deployment_sha": deployment_sha}
 
 
@@ -452,14 +485,16 @@ def _capture_observation(driver) -> Dict[str, Any]:
     except Exception:
         obs["_evidence_targets"] = []
 
-    # BINANCE_BINDING_STATE: from data-binance-binding-status (on BinanceLiveBindingPanel)
+    # BINANCE_BINDING_STATE: from data-binance-binding-status (on BinanceLiveBindingPanel).
+    # When no binding panel is present, record explicit NOT_APPLICABLE (not null ambiguity).
     try:
-        obs["BINANCE_BINDING_STATE"] = driver.execute_script(
+        binance_val = driver.execute_script(
             "const el = document.querySelector('[data-binance-binding-status]');"
-            "return el ? el.getAttribute('data-binance-binding-status') : null;"
+            "return el ? el.getAttribute('data-binance-binding-status') : 'NOT_APPLICABLE';"
         )
+        obs["BINANCE_BINDING_STATE"] = binance_val if binance_val else "NOT_APPLICABLE"
     except Exception:
-        obs["BINANCE_BINDING_STATE"] = None
+        obs["BINANCE_BINDING_STATE"] = "NOT_APPLICABLE"
 
     # Runtime schema and session schema from main element
     try:
@@ -505,9 +540,32 @@ def _capture_session_state(driver) -> Dict[str, Any]:
         return {"session_key": session_raw.get("key"), "session_raw": session_raw.get("value")}
 
 
-def _extract_session_fields(session_state: Dict[str, Any]) -> Dict[str, Any]:
+def _capture_next_data(driver) -> Dict[str, Any]:
     """
-    Extract EVIDENCE_LEVELS, TIME_SCOPE, FRESHNESS from the serialized session.
+    Capture window.__NEXT_DATA__.props.pageProps from the page.
+    Returns an empty dict if unavailable.
+    """
+    try:
+        data = driver.execute_script(
+            "try { return window.__NEXT_DATA__?.props?.pageProps || {}; } catch(e) { return {}; }"
+        )
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _extract_session_fields(session_state: Dict[str, Any], next_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Extract evaluator fields from the serialized session and __NEXT_DATA__.
+
+    BtcDialogueTurn fields used:
+      - `evidence_levels` → EVIDENCE_LEVELS
+      - `time_start` / `time_end` → TIME_SCOPE (derived range; NOT a direct field on BtcDialogueTurn)
+      - `source_snapshot_generated_at_utc` → SOURCE_REVISION (when not already captured from DOM)
+
+    FRESHNESS is derived from window.__NEXT_DATA__.props.pageProps.sourceContext.state (page props),
+    not from a BtcDialogueTurn field (which does not expose a `freshness` field).
+
     Returns a dict of field overrides for the observation.
     """
     out: Dict[str, Any] = {
@@ -518,17 +576,32 @@ def _extract_session_fields(session_state: Dict[str, Any]) -> Dict[str, Any]:
         "_session_evidence": None,
     }
     session_value = session_state.get("session_value")
-    if not isinstance(session_value, dict):
-        return out
-    turns = session_value.get("turns", [])
-    if not turns:
-        return out
-    latest = turns[-1]
-    out["_latest_turn"] = latest
-    out["EVIDENCE_LEVELS"] = latest.get("evidence_levels")
-    out["TIME_SCOPE"] = latest.get("time_scope")
-    out["FRESHNESS"] = latest.get("freshness")
-    out["_session_evidence"] = session_value.get("evidence")
+    if isinstance(session_value, dict):
+        turns = session_value.get("turns", [])
+        if turns:
+            latest = turns[-1]
+            out["_latest_turn"] = latest
+            out["EVIDENCE_LEVELS"] = latest.get("evidence_levels")
+            # Derive TIME_SCOPE from time_start / time_end (BtcDialogueTurn fields)
+            t_start = latest.get("time_start")
+            t_end = latest.get("time_end")
+            if t_start and t_end:
+                out["TIME_SCOPE"] = f"{t_start}/{t_end}"
+            elif t_start:
+                out["TIME_SCOPE"] = t_start
+            elif t_end:
+                out["TIME_SCOPE"] = t_end
+            # SOURCE_REVISION from session turn if not already in DOM evidence
+            out["_session_source_snapshot"] = latest.get("source_snapshot_generated_at_utc")
+        out["_session_evidence"] = session_value.get("evidence")
+
+    # FRESHNESS from __NEXT_DATA__ page props sourceContext
+    if next_data:
+        source_context = next_data.get("sourceContext") or {}
+        freshness_state = source_context.get("state")
+        if freshness_state:
+            out["FRESHNESS"] = freshness_state
+
     return out
 
 
@@ -588,6 +661,86 @@ def _submit_question_in_existing_session(driver, question: str, locale: str) -> 
 # Precondition gate
 # ---------------------------------------------------------------------------
 
+def _check_per_turn_contract(
+    turn_contract: Dict[str, Any],
+    obs: Dict[str, Any],
+    turn_index: int,
+) -> Optional[str]:
+    """
+    Validate observable state after a setup turn against the frozen per-turn contract
+    from `prior_turns.value[turn_index - 1]`.
+
+    Validates observable fields against the per-turn contract from prior_turns.value[i]:
+      route_domain, route_subject, context_relation,
+      answer_state (from expected_answer_state.value), answer_mode, route_disposition.
+    Runtime-generated/bound fields (e.g. active_period) are not compared here;
+    they are validated as binding predicates by the evaluator after target execution.
+
+    Returns a BLOCKED reason string if mismatch, or None if OK.
+    """
+    mismatches: List[str] = []
+
+    # expected_route_domain
+    exp_domain = turn_contract.get("expected_route_domain")
+    obs_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
+    if exp_domain and obs_domain != exp_domain.lower():
+        mismatches.append(
+            f"route_domain: expected={exp_domain} observed={obs_domain!r}"
+        )
+
+    # expected_route_subject
+    exp_subject = turn_contract.get("expected_route_subject")
+    obs_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
+    if exp_subject and obs_subject != exp_subject.lower():
+        mismatches.append(
+            f"route_subject: expected={exp_subject} observed={obs_subject!r}"
+        )
+
+    # expected_context_relation
+    exp_cr = turn_contract.get("expected_context_relation")
+    obs_cr = (obs.get("CONTEXT_RELATION") or "").upper()
+    if exp_cr and obs_cr != exp_cr.upper():
+        mismatches.append(
+            f"context_relation: expected={exp_cr} observed={obs_cr!r}"
+        )
+
+    # expected_answer_state: dict with mode/value or a string
+    exp_answer_state_raw = turn_contract.get("expected_answer_state")
+    if exp_answer_state_raw:
+        if isinstance(exp_answer_state_raw, dict):
+            exp_as_value = exp_answer_state_raw.get("value", "")
+        else:
+            exp_as_value = str(exp_answer_state_raw)
+        obs_as = (obs.get("ANSWER_STATE") or "").upper()
+        if exp_as_value and obs_as != exp_as_value.upper():
+            mismatches.append(
+                f"answer_state: expected={exp_as_value} observed={obs_as!r}"
+            )
+
+    # expected_answer_mode
+    exp_am = turn_contract.get("expected_answer_mode")
+    obs_am = (obs.get("ANSWER_MODE") or "").upper()
+    if exp_am and obs_am != exp_am.upper():
+        mismatches.append(
+            f"answer_mode: expected={exp_am} observed={obs_am!r}"
+        )
+
+    # expected_route_disposition
+    exp_disp = turn_contract.get("expected_route_disposition")
+    obs_disp = (obs.get("ROUTE_DISPOSITION") or "").upper()
+    if exp_disp and obs_disp != exp_disp.upper():
+        mismatches.append(
+            f"route_disposition: expected={exp_disp} observed={obs_disp!r}"
+        )
+
+    if mismatches:
+        return (
+            f"SETUP_PRECONDITION_MISMATCH: turn_{turn_index} "
+            + "; ".join(mismatches)
+        )
+    return None
+
+
 def _check_precondition_against_packet(
     packet: Dict[str, Any],
     obs: Dict[str, Any],
@@ -596,21 +749,27 @@ def _check_precondition_against_packet(
 ) -> Optional[str]:
     """
     Compare the observable session/context state after a setup turn against
-    the frozen packet's expected_context_packet contract.
+    the frozen packet's per-turn contract (from prior_turns.value[i]).
+    Falls back to expected_context_packet for final-state validation.
     Returns a BLOCKED reason string if mismatch, or None if OK.
 
     runtime_seed.value.precondition_gate =
       "COMPARE_OBSERVED_SESSION_AND_CONTEXT_TO_FROZEN_PACKET_BEFORE_TARGET; MISMATCH=BLOCKED"
     """
+    # Per-turn contract from prior_turns.value[setup_turn_index - 1]
+    prior_turns = packet.get("prior_turns") or {}
+    prior_turns_value = prior_turns.get("value") or []
+    idx = setup_turn_index - 1  # 0-based
+    if idx < len(prior_turns_value):
+        turn_contract = prior_turns_value[idx]
+        return _check_per_turn_contract(turn_contract, obs, setup_turn_index)
+
+    # Fallback: expected_context_packet for packets that don't have per-turn contracts
     expected_ctx = packet.get("expected_context_packet")
     if not expected_ctx or not isinstance(expected_ctx, dict):
-        # No precondition contract in this packet; nothing to check
         return None
 
     mismatches: List[str] = []
-
-    # Check prior_domain against observed ROUTE_DOMAIN
-    # A missing/empty observed value while an expected value is declared is a mismatch.
     expected_domain = expected_ctx.get("prior_domain")
     observed_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
     if expected_domain and observed_domain != expected_domain.lower():
@@ -618,7 +777,6 @@ def _check_precondition_against_packet(
             f"prior_domain: expected={expected_domain} observed={observed_domain!r}"
         )
 
-    # Check prior_subject against observed ROUTE_SUBJECT
     expected_subject = expected_ctx.get("prior_subject")
     observed_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
     if expected_subject and observed_subject != expected_subject.lower():
@@ -626,7 +784,6 @@ def _check_precondition_against_packet(
             f"prior_subject: expected={expected_subject} observed={observed_subject!r}"
         )
 
-    # Check prior_answer_state against observed ANSWER_STATE
     expected_answer_state = expected_ctx.get("prior_answer_state")
     observed_answer_state = (obs.get("ANSWER_STATE") or "").upper()
     if expected_answer_state and observed_answer_state != expected_answer_state.upper():
@@ -657,28 +814,35 @@ def _batch_identity_preflight(
     match the expected values. If any mismatch, return a BLOCKED batch reason string.
     Returns None if identity is confirmed.
 
-    Any SHA mismatch blocks the entire batch; no cases are evaluated.
+    Source SHA is read from HTTP response header `x-btc-deployment-source-sha` (via performance log).
+    Deployment SHA is read from DOM attribute `data-deployment-head-sha`.
+    Both values must be present and match their respective expected values.
+    Any mismatch or missing value blocks the entire batch; no cases are evaluated.
     """
     try:
         base_url = f"{target_url.rstrip('/')}/crypto-astro/btc/live"
         driver.get(base_url)
-        # Give the page a moment to load
+        # Give the page a moment to load and emit Network events
         time.sleep(2)
         sha_data = _capture_sha_headers(driver)
         served_source = sha_data.get("source_sha")
         served_deploy = sha_data.get("deployment_sha")
 
         reasons: List[str] = []
-        if served_source != expected_source_sha:
+        if not served_source or served_source != expected_source_sha:
             reasons.append(
                 f"SOURCE_SHA_MISMATCH: expected={expected_source_sha} served={served_source}"
             )
-        if served_deploy != expected_deployment_sha:
+        if not served_deploy or served_deploy != expected_deployment_sha:
             reasons.append(
                 f"DEPLOYMENT_SHA_MISMATCH: expected={expected_deployment_sha} served={served_deploy}"
             )
         if reasons:
-            return "BATCH_IDENTITY_BLOCKED: " + "; ".join(reasons)
+            return (
+                "BATCH_IDENTITY_BLOCKED: "
+                + "; ".join(reasons)
+                + f" | served_source={served_source} served_deploy={served_deploy}"
+            )
         return None
     except Exception as exc:
         return f"BATCH_IDENTITY_BLOCKED: preflight_error={exc}"
@@ -720,6 +884,7 @@ def evaluate_case(
     - Volatile Binance numbers are structural evidence only
     - Trading-intent Binance fetch is a boundary failure
     - Missing mandatory observable data cannot silently PASS
+    - An unevaluated required canonical contract dimension yields BLOCKED, not PASS
     - SHA mismatch must be reported; caller is responsible for batch-level block
     """
     failure_reasons: List[str] = []
@@ -764,7 +929,12 @@ def evaluate_case(
             if verdict == "PASS":
                 verdict = "FAIL"
 
-    # Route domain check
+    # --- Canonical CSV contract dimensions ---
+    # These use actual CSV column names from btc-cosmographer-canonical-140-v0_1.csv.
+    # Non-existent columns (EXPECTED_ANSWER_STATE, EXPECTED_ANSWER_MODE, EXPECTED_TIME_SCOPE)
+    # are never referenced.
+
+    # EXPECTED_DOMAIN → ROUTE_DOMAIN
     expected_domain = csv_row.get("EXPECTED_DOMAIN", "")
     actual_domain = obs.get("ROUTE_DOMAIN") or ""
     if expected_domain and actual_domain.lower() != expected_domain.lower():
@@ -773,7 +943,7 @@ def evaluate_case(
         )
         verdict = "FAIL"
 
-    # Route subject check
+    # EXPECTED_SUBJECT → ROUTE_SUBJECT
     expected_subject = csv_row.get("EXPECTED_SUBJECT", "")
     actual_subject = obs.get("ROUTE_SUBJECT") or ""
     if expected_subject and actual_subject.lower() != expected_subject.lower():
@@ -783,7 +953,7 @@ def evaluate_case(
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # Context relation check
+    # EXPECTED_CONTEXT_RELATION → CONTEXT_RELATION
     expected_cr = csv_row.get("EXPECTED_CONTEXT_RELATION", "")
     actual_cr = obs.get("CONTEXT_RELATION") or ""
     if expected_cr and actual_cr.upper() != expected_cr.upper():
@@ -793,44 +963,98 @@ def evaluate_case(
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # Answer state check
-    expected_answer_state = csv_row.get("EXPECTED_ANSWER_STATE", "")
+    # EXPECTED_MODE → ANSWER_MODE (canonical CSV column for answer mode)
+    expected_mode = csv_row.get("EXPECTED_MODE", "")
+    actual_mode = obs.get("ANSWER_MODE") or ""
+    if expected_mode:
+        if not actual_mode:
+            failure_reasons.append(
+                f"ANSWER_GRAMMAR: answer_mode expected={expected_mode} but ANSWER_MODE is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        elif actual_mode.upper() != expected_mode.upper():
+            failure_reasons.append(
+                f"ANSWER_GRAMMAR: answer_mode expected={expected_mode} actual={actual_mode}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+
+    # EXPECTED_ANSWER_TYPE → ANSWER_STATE (the type/state of the answer)
+    expected_answer_type = csv_row.get("EXPECTED_ANSWER_TYPE", "")
     actual_answer_state = obs.get("ANSWER_STATE") or ""
-    if expected_answer_state and actual_answer_state.upper() != expected_answer_state.upper():
+    if expected_answer_type:
+        if not actual_answer_state:
+            failure_reasons.append(
+                f"ANSWER_GRAMMAR: answer_type expected={expected_answer_type} but ANSWER_STATE is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        elif actual_answer_state.upper() != expected_answer_type.upper():
+            # Structural check: answer state must not contradict the expected answer type
+            failure_reasons.append(
+                f"ANSWER_GRAMMAR: answer_type expected={expected_answer_type} actual={actual_answer_state}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+
+    # EXPECTED_INTENT → INTENTS (structural check: declared intents must be non-empty)
+    expected_intent = csv_row.get("EXPECTED_INTENT", "")
+    actual_intents = obs.get("INTENTS") or ""
+    if expected_intent and not actual_intents:
         failure_reasons.append(
-            f"ANSWER_GRAMMAR: answer_state expected={expected_answer_state} actual={actual_answer_state}"
+            f"ROUTING: intents expected={expected_intent} but INTENTS is absent"
         )
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # Answer mode check
-    expected_answer_mode = csv_row.get("EXPECTED_ANSWER_MODE", "")
-    actual_answer_mode = obs.get("ANSWER_MODE") or ""
-    if expected_answer_mode and actual_answer_mode.upper() != expected_answer_mode.upper():
-        failure_reasons.append(
-            f"ANSWER_GRAMMAR: answer_mode expected={expected_answer_mode} actual={actual_answer_mode}"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
-
-    # Time scope check
-    expected_time_scope = csv_row.get("EXPECTED_TIME_SCOPE", "")
+    # EXPECTED_PERIOD → TIME_SCOPE (structural: must be present if period is required)
+    expected_period = csv_row.get("EXPECTED_PERIOD", "")
     actual_time_scope = obs.get("TIME_SCOPE") or ""
-    if expected_time_scope and actual_time_scope.upper() != expected_time_scope.upper():
+    if expected_period and not actual_time_scope:
         failure_reasons.append(
-            f"TIME_SCOPE: expected={expected_time_scope} actual={actual_time_scope}"
+            f"TIME_SCOPE: period expected={expected_period} but TIME_SCOPE is absent"
         )
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # Forbidden behavior check
+    # EXPECTED_EVIDENCE_FAMILY → EVIDENCE_LEVELS (structural: must be present)
+    expected_ev_family = csv_row.get("EXPECTED_EVIDENCE_FAMILY", "")
+    actual_ev_levels = obs.get("EVIDENCE_LEVELS") or ""
+    if expected_ev_family and not actual_ev_levels:
+        failure_reasons.append(
+            f"EVIDENCE: evidence_family expected={expected_ev_family} but EVIDENCE_LEVELS is absent"
+        )
+        if verdict == "PASS":
+            verdict = "FAIL"
+
+    # EXPECTED_BOUNDARY → BOUNDARY_STATE (structural)
+    expected_boundary = csv_row.get("EXPECTED_BOUNDARY", "")
+    actual_boundary = obs.get("BOUNDARY_STATE") or ""
+    if expected_boundary:
+        if not actual_boundary:
+            failure_reasons.append(
+                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary} but BOUNDARY_STATE is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        else:
+            # NON_TRADING must not appear as trading boundary
+            if "NON_TRADING" in expected_boundary.upper() and _is_binance_trading_intent(obs):
+                failure_reasons.append(
+                    f"TRADING_BOUNDARY: expected NON_TRADING but trading boundary detected"
+                )
+                if verdict == "PASS":
+                    verdict = "FAIL"
+
+    # FORBIDDEN_BEHAVIOR checks
     forbidden = csv_row.get("FORBIDDEN_BEHAVIOR", "")
     if "BUY_SELL_SIGNAL" in forbidden and _is_binance_trading_intent(obs):
         failure_reasons.append("TRADING_BOUNDARY: BUY_SELL_SIGNAL detected in forbidden")
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # Directness check
+    # EXPECTED_DIRECTNESS → DIRECT_ANSWER
     expected_directness = csv_row.get("EXPECTED_DIRECTNESS", "")
     direct_answer = obs.get("DIRECT_ANSWER") or ""
     if expected_directness and not direct_answer:
@@ -876,13 +1100,36 @@ def execute_case(
     setup_turns_exact entries are plain strings (the exact question text to submit),
     not dicts. Execute them byte-for-byte in declared order.
     """
-    from selenium.webdriver.common.by import By
-
     case_id = packet["case_id"]
     session_mode = packet.get("session_mode", "CLEAN_SESSION")
     locale = packet.get("locale", "RU")
     question_exact = packet.get("target_question_exact", csv_row.get("QUESTION_TEXT", ""))
     setup_turns = packet.get("setup_turns_exact", []) or []
+
+    # Cardinality check: setup_turn_count must equal len(setup_turns_exact).
+    # This check runs before any selenium import so it can be tested without a real driver.
+    declared_setup_count = packet.get("setup_turn_count", len(setup_turns))
+    if declared_setup_count != len(setup_turns):
+        return {
+            "schema": "btc_cosmographer_replay_observation_v0_1",
+            "case_id": case_id,
+            "session_mode": session_mode,
+            "question_exact": question_exact,
+            "locale": locale,
+            "timestamp_utc": datetime.datetime.utcnow().isoformat() + "Z",
+            "served_source_sha": None,
+            "served_deployment_sha": None,
+            "observation": {},
+            "session_state": {},
+            "setup_preconditions_materialized": False,
+            "blocked_reason": (
+                f"SETUP_CARDINALITY_MISMATCH: setup_turn_count={declared_setup_count} "
+                f"len(setup_turns_exact)={len(setup_turns)}"
+            ),
+            "verdict": "BLOCKED",
+            "failure_reasons": [f"SETUP_CARDINALITY_MISMATCH: declared={declared_setup_count} actual={len(setup_turns)}"],
+            "failure_class": ["OTHER_EXACTLY_DESCRIBED"],
+        }
 
     result: Dict[str, Any] = {
         "schema": "btc_cosmographer_replay_observation_v0_1",
@@ -898,6 +1145,9 @@ def execute_case(
         "setup_preconditions_materialized": True,
         "blocked_reason": None,
     }
+
+    # selenium imports deferred until after early-return checks above
+    from selenium.webdriver.common.by import By
 
     driver = None
     try:
@@ -1046,17 +1296,18 @@ def execute_case(
         # Capture observations
         obs = _capture_observation(driver)
 
+        # Capture __NEXT_DATA__ for FRESHNESS and sourceContext
+        next_data = _capture_next_data(driver)
+
         # Capture session state and merge session-derived fields into observation
         session_state = _capture_session_state(driver)
         result["session_state"] = session_state
-        session_fields = _extract_session_fields(session_state)
+        session_fields = _extract_session_fields(session_state, next_data)
         for key, val in session_fields.items():
             if key in MANDATORY_CAPTURE_FIELDS and obs.get(key) is None:
                 obs[key] = val
-            else:
-                # Store non-mandatory session fields with underscore prefix
-                if key not in MANDATORY_CAPTURE_FIELDS:
-                    obs[key] = val
+            elif key not in MANDATORY_CAPTURE_FIELDS:
+                obs[key] = val
 
         result["observation"] = obs
 
@@ -1097,6 +1348,8 @@ def build_manifest(
     results: List[Dict[str, Any]],
     start_ts: str,
     end_ts: str,
+    served_source_sha: Optional[str] = None,
+    served_deployment_sha: Optional[str] = None,
 ) -> Dict[str, Any]:
     pass_count = sum(1 for r in results if r.get("verdict") == "PASS")
     fail_count = sum(1 for r in results if r.get("verdict") == "FAIL")
@@ -1108,6 +1361,8 @@ def build_manifest(
         "target_url": args.target_url,
         "expected_source_sha": args.expected_source_sha,
         "expected_deployment_sha": args.expected_deployment_sha,
+        "served_source_sha": served_source_sha,
+        "served_deployment_sha": served_deployment_sha,
         "corpus_sha256": corpus_sha,
         "state_packets_sha256": packets_sha,
         "start_utc": start_ts,
@@ -1213,21 +1468,24 @@ def main() -> None:
         print(f"WARNING: concurrency={args.concurrency} requested; using concurrency=1 (default safe mode)")
 
     # Batch identity preflight: verify served SHAs before evaluating any case
-    from selenium import webdriver as _selenium_webdriver
-
+    # Use _make_driver() to ensure performance logging is enabled (required for source SHA header)
     print("BATCH_IDENTITY_PREFLIGHT: verifying served source/deployment SHAs...")
-    preflight_options = _selenium_webdriver.ChromeOptions()
-    for arg in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--hide-scrollbars"):
-        preflight_options.add_argument(arg)
     preflight_driver = None
+    preflight_served_source = None
+    preflight_served_deploy = None
     try:
-        preflight_driver = _selenium_webdriver.Chrome(options=preflight_options)
+        preflight_driver = _make_driver()
         batch_block = _batch_identity_preflight(
             preflight_driver,
             args.target_url,
             args.expected_source_sha,
             args.expected_deployment_sha,
         )
+        if not batch_block:
+            # Capture served SHAs for manifest
+            _sha = _capture_sha_headers(preflight_driver)
+            preflight_served_source = _sha.get("source_sha")
+            preflight_served_deploy = _sha.get("deployment_sha")
     except Exception as preflight_exc:
         batch_block = f"BATCH_IDENTITY_BLOCKED: preflight_driver_error={preflight_exc}"
     finally:
@@ -1329,9 +1587,29 @@ def main() -> None:
     # Build outputs
     evaluator_inputs = [
         {
+            "schema": "btc_cosmographer_evaluator_input_v0_1",
             "case_id": r["case_id"],
             "question_exact": r.get("question_exact"),
             "locale": r.get("locale"),
+            # Full executable state packet: immutable authority from fixture
+            "executable_state_packet": packets_index.get(r["case_id"]),
+            # Immutable expected contract: from packet source_authority.expected_contract
+            "expected_contract": (
+                (packets_index.get(r["case_id"]) or {})
+                .get("source_authority", {})
+                .get("expected_contract")
+                or csv_index.get(r["case_id"])
+            ),
+            # Current runtime authority: served identity + schema
+            "current_runtime_authority": {
+                "served_source_sha": r.get("served_source_sha"),
+                "served_deployment_sha": r.get("served_deployment_sha"),
+                "expected_source_sha": args.expected_source_sha,
+                "expected_deployment_sha": args.expected_deployment_sha,
+                "runtime_schema": (r.get("observation") or {}).get("_runtime_schema"),
+                "session_schema": (r.get("observation") or {}).get("_session_schema"),
+            },
+            # Full captured observation
             "observation": r.get("observation", {}),
             "verdict": r.get("verdict"),
             "failure_reasons": r.get("failure_reasons", []),
@@ -1363,6 +1641,8 @@ def main() -> None:
         results=results,
         start_ts=start_ts,
         end_ts=end_ts,
+        served_source_sha=preflight_served_source,
+        served_deployment_sha=preflight_served_deploy,
     )
 
     output_dir = Path(args.output_dir)
