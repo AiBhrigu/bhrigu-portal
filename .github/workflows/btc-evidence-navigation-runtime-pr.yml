@@ -18,6 +18,7 @@ on:
       - lib/btc-live-dialogue-style.ts
       - pages/crypto-astro/btc/live.tsx
       - scripts/run-btc-evidence-navigation-runtime-fixture.mjs
+      - tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
       - tests/btc-public-corridor-proven-defect-repair-acceptance.ts
   workflow_dispatch:
 
@@ -60,6 +61,9 @@ jobs:
 
       - name: Verify proven-defect repair contract
         run: node --import tsx tests/btc-public-corridor-proven-defect-repair-acceptance.ts
+
+      - name: Verify canonical 140 routing repair contract
+        run: node --import tsx tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
 
       - name: Verify inherited BTC routing
         run: npm run verify:btc-routing
@@ -474,22 +478,23 @@ jobs:
                   protocol_override = submit_question(driver, "Что такое халвинг?")
                   assert_route(protocol_override, "bitcoin_protocol", "halving", "PROTOCOL_EXPLAIN", "CONTINUE")
 
-                  # Explicit multiple objects must never silently collapse.
-                  for index, question in enumerate((
-                      "Юпитер и Меркурий в августе 2026?",
-                      "Юпитер или Меркурий — который важнее для BTC в августе 2026?",
-                  ), start=1):
-                      clear_session(driver)
-                      turn = open_question(driver, question, f"multi-object-{index}-{suffix}")
-                      assert_route(turn, "unsupported", "multiple_planetary_objects", "CLARIFICATION", "CLARIFY")
-                      assert turn.get_attribute("data-show-clarification") == "true"
-                      assert not turn.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+                  # Pure multi-body Astro is supported; a cross-mode multi-body+Btc conflict must clarify.
+                  clear_session(driver)
+                  pure_multi = open_question(driver, "Юпитер и Меркурий в августе 2026?", f"multi-object-1-{suffix}")
+                  assert_route(pure_multi, "astromodule", "multiple_planetary_objects", "ASTRO_INTERVAL", "CONTINUE")
+                  assert pure_multi.get_attribute("data-show-clarification") == "false"
+                  assert pure_multi.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
 
-                  # BTC-only asset boundary.
+                  clear_session(driver)
+                  conflict_multi = open_question(driver, "Юпитер или Меркурий — который важнее для BTC в августе 2026?", f"multi-object-2-{suffix}")
+                  assert_route(conflict_multi, "navigation", "routing_conflict", "CLARIFICATION", "CLARIFY")
+                  assert conflict_multi.get_attribute("data-show-clarification") == "true"
+                  assert not conflict_multi.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
+
+                  # BTC-only asset boundary: navigate to an explicit corridor clarification, never BTC market substitution.
                   clear_session(driver)
                   eth = open_question(driver, "ETH сейчас?", f"unsupported-asset-{suffix}")
-                  assert eth.get_attribute("data-route-domain") == "unsupported"
-                  assert eth.get_attribute("data-route-disposition") == "CLARIFY"
+                  assert_route(eth, "navigation", "unsupported_asset", "CLARIFICATION", "CLARIFY")
                   assert eth.get_attribute("data-clarification-target") == "ASSET"
                   assert not eth.find_elements(By.CSS_SELECTOR, '[data-answer-direct="true"]')
 

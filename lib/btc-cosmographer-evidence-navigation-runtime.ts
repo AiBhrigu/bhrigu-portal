@@ -122,7 +122,7 @@ const BTC_REFERENCE = /\bbtc\b|\bbitcoin\b|бит(?:коин|койн|окин|�
 const SNAPSHOT_REFERENCE = /snapshot|снимок|памят|previous checkpoint|delta|дельт/i;
 const PROTOCOL_REFERENCE = /halving|халвинг|protocol|протокол|block height|высот.*блок|supply|эмисси|consensus|консенсус/i;
 const MARKET_REFERENCE = /market|рынок|liquid|ликвид|structure|структур|regime|режим|dominance|доминир|volatil|волатиль/i;
-const RELATION_OPERATOR = /impact|influence|affect|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влияни|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|одновремен[а-яё]*/i;
+const RELATION_OPERATOR = /impact|influence|affect|cause|caused|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|повлиял|влия(?:ни|ет|ют|ть)|вызвал|обрушил|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|одновремен[а-яё]*/i;
 const GENERIC_PLANET_POSITION = /(?:текущ[а-яё]*|сейчас)[^?!.]{0,48}положен[а-яё]*[^?!.]{0,24}планет[а-яё]*/i;
 const UNRESOLVED_PRONOUN = /^(?:it|this|that|them|what about it|and this|это|этот|эта|они|а это|и это|там)\b/i;
 const RELATION_OBJECT_PRONOUN = /\b(?:it|this|that|them|это|этот|эта|они|там)\b/i;
@@ -144,12 +144,18 @@ function hasAstroObject(
   packet: BtcCosmographerContextPacket | null,
   retainedAstroMemory: BtcRetainedAstroRelationMemory | null,
 ): boolean {
+  const contextualAstroReference = BODY_REFERENCE.test(question) ||
+    RELATION_OBJECT_PRONOUN.test(question) ||
+    /astro|астро|planet|планет|aspect|аспект|\bwindow\b|окн[а-яё]*/i.test(question) ||
+    (RELATION_OPERATOR.test(question) && !/current[^?!.]{0,32}(?:btc|market)[^?!.]{0,24}field|текущ[а-яё]*[^?!.]{0,24}поле\s+btc/i.test(question));
+  const inheritedAstro = contextualAstroReference && (
+    packet?.prior_domain === "astromodule" ||
+    packet?.prior_domain === "astro_btc_bridge"
+  );
   return route.domain === "astromodule" ||
     route.domain === "astro_btc_bridge" ||
     BODY_REFERENCE.test(question) ||
-    packet?.prior_domain === "astromodule" ||
-    packet?.prior_domain === "astro_btc_bridge" ||
-    retainedAstroMemory?.domain === "astromodule";
+    inheritedAstro;
 }
 
 function btcSideTypeFromDomain(domain: BtcCosmographerDomain): BtcSideStateType | null {
@@ -189,6 +195,13 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   retainedAstroMemory: BtcRetainedAstroRelationMemory | null = null,
 ): BtcRelationIntentResolution<T> {
   const question = rawQuestion.trim();
+  if (route.domain === "navigation") {
+    return {
+      route,
+      relation_resolution: "SINGLE_DOMAIN",
+      btc_side_state_type: null,
+    };
+  }
   if (route.subject === "multiple_planetary_objects") {
     return {
       route,
@@ -221,7 +234,7 @@ export function applyBtcRelationIntentPrecedence<T extends BtcCosmographerRoute>
   }
 
   const astroResolved = hasAstroObject(route, question, packet, retainedAstroMemory);
-  const unresolvedAstroRelationHint = /astro|астро|planet|планет|aspect|аспект|(?:strong|intense)[^?!.]{0,24}window|сильн[а-яё]*[^?!.]{0,24}окн/i.test(question);
+  const unresolvedAstroRelationHint = /astro|астро|planet|планет|aspect|аспект|\bwindow\b|окн[а-яё]*/i.test(question);
   if (!astroResolved && !unresolvedAstroRelationHint && ["btc_market", "snapshot_memory", "bitcoin_protocol"].includes(route.domain)) {
     return {
       route,

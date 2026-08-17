@@ -39,18 +39,28 @@ assert.equal(mercury.domain, "astromodule", "explicit Mercury must stay Astro");
 assert.equal(mercury.subject, "mercury", "explicit Mercury must replace Jupiter");
 assert.equal(mercury.time_range?.start, "2026-08-01", "compatible period retained");
 
-for (const question of [
-  "Юпитер и Меркурий в августе 2026?",
-  "Юпитер или Меркурий — который важнее для BTC в августе 2026?",
-]) {
-  const route = routeBtcCosmographerQuestion("ru", question, null);
-  const resolved = applyBtcRelationIntentPrecedence(route, question, null);
-  assert.equal(resolved.route.domain, "unsupported", `multi-object must fail closed: ${question}`);
-  assert.equal(resolved.route.subject, "multiple_planetary_objects", `multi-object subject: ${question}`);
-}
+const pureMultiBodyQuestion = "Юпитер и Меркурий в августе 2026?";
+const pureMultiBody = routeBtcCosmographerQuestion("ru", pureMultiBodyQuestion, null);
+const pureMultiBodyResolved = applyBtcRelationIntentPrecedence(pureMultiBody, pureMultiBodyQuestion, null);
+assert.equal(pureMultiBodyResolved.route.domain, "astromodule", "pure multi-body Astro must not be rejected as unsupported");
+assert.equal(pureMultiBodyResolved.route.subject, "multiple_planetary_objects", "multi-body Astro keeps explicit object conflict visible");
+
+const btcMultiBodyQuestion = "Юпитер или Меркурий — который важнее для BTC в августе 2026?";
+const btcMultiBody = routeBtcCosmographerQuestion("ru", btcMultiBodyQuestion, null);
+const btcMultiBodyResolved = applyBtcRelationIntentPrecedence(btcMultiBody, btcMultiBodyQuestion, null);
+assert.equal(btcMultiBodyResolved.route.domain, "navigation", "multi-body + BTC conflict must fail closed into navigation, never market/bridge analysis");
 
 const eth = routeBtcCosmographerQuestion("ru", "ETH сейчас?", null);
-assert.equal(eth.domain, "unsupported", "standalone ETH must not become BTC market analysis");
+assert.equal(eth.domain, "navigation", "standalone ETH must fail closed into navigation");
+assert.notEqual(eth.domain, "btc_market", "standalone ETH must never become BTC market analysis");
+const ethAnswer = await buildBtcCosmographerAnswer("ru", eth, {} as any);
+assert.equal(ethAnswer.answer_mode, "CLARIFICATION", "unsupported asset navigation must clarify corridor scope");
+assert.equal(ethAnswer.answer_state, "CLARIFICATION", "unsupported asset must not fabricate analysis");
+
+const conflict = routeBtcCosmographerQuestion("ru", "Юпитер или Меркурий — который важнее для BTC в августе 2026?", null);
+const conflictAnswer = await buildBtcCosmographerAnswer("ru", conflict, {} as any);
+assert.equal(conflict.domain, "navigation", "cross-mode subject conflict remains navigation");
+assert.equal(conflictAnswer.answer_mode, "CLARIFICATION", "cross-mode conflict must request resolution");
 const astroProtocolQuestion = "Как Юпитер связан с протоколом Bitcoin в августе 2026?";
 const astroProtocolInitial = routeBtcCosmographerQuestion("ru", astroProtocolQuestion, null);
 const astroProtocol = applyBtcRelationIntentPrecedence(astroProtocolInitial, astroProtocolQuestion, null);
