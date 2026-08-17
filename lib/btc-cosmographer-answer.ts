@@ -13,7 +13,7 @@ import {
   buildBtcProtocolAnswer,
   type BtcCosmographerAnswerProjection,
 } from "./btc-protocol-evidence";
-import type { BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
+import type { BtcCosmographerContextPacket, BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
 import {
   buildSpecializedMethodologyAnswer,
   buildSpecializedNavigationAnswer,
@@ -345,11 +345,20 @@ export function buildBtcCosmographerAnswer(
   inputs: {
     snapshot: BtcPublicSnapshot | null;
     envelope: BtcMarketEnvelope | null;
+    priorContext?: BtcCosmographerContextPacket | null;
   },
 ): BtcCosmographerAnswerProjection {
   switch (route.domain) {
-    case "bitcoin_protocol":
-      return buildBtcProtocolAnswer(locale, route);
+    case "bitcoin_protocol": {
+      const protocol = buildBtcProtocolAnswer(locale, route);
+      const preserveGenesisHistoryExplain =
+        inputs.priorContext?.prior_domain === "btc_market" &&
+        inputs.priorContext.prior_subject === "general_btc_field" &&
+        route.context_relation === "NEW_TOPIC" &&
+        route.subject === "genesis_history" &&
+        /что\s+известно.*genesis|what\s+is\s+known.*genesis/i.test(route.normalized_question);
+      return preserveGenesisHistoryExplain ? { ...protocol, answer_mode: "PROTOCOL_EXPLAIN" } : protocol;
+    }
     case "astromodule":
       return buildBtcAstroAnswer(locale, route);
     case "astro_btc_bridge": {

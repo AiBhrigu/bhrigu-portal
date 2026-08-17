@@ -478,7 +478,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
         route,
         snapshot && envelope ? buildBtcCosmographerAnswer(resolvedLocale.locale, marketOnlyRoute(route), { snapshot, envelope }) : null,
       ) as unknown as BtcCosmographerAnswerProjection
-    : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope });
+    : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope, priorContext: activePacket });
   const evidenceNavigation = buildEvidenceNavigation(route, envelope, servedDeploymentSha, sourceTimestamp);
   const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
     resolvedLocale.locale,

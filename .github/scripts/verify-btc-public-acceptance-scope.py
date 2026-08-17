@@ -110,6 +110,15 @@ BTC_CANONICAL_ANSWER_SPECIALIZATION_SCOPE = {
     "tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts",
 }
 
+# Post-merge answer-specialization setup compatibility: exact two-regression repair surface.
+BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "lib/btc-cosmographer-answer.ts",
+    "lib/btc-public-astro-evidence.ts",
+    "pages/crypto-astro/btc/live.tsx",
+    "tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts",
+}
+
 BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/bhrigu-home-market-cosmographer-pr.yml",
@@ -217,6 +226,7 @@ accepted_scopes = {
     "PASS_BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_EXACT_11_FILE_SCOPE": BTC_PUBLIC_CORRIDOR_PROVEN_DEFECT_REPAIR_SCOPE,
     "PASS_BTC_CANONICAL_ROUTING_REPAIR_EXACT_11_FILE_SCOPE": BTC_CANONICAL_ROUTING_REPAIR_SCOPE,
     "PASS_BTC_CANONICAL_ANSWER_SPECIALIZATION_EXACT_8_FILE_SCOPE": BTC_CANONICAL_ANSWER_SPECIALIZATION_SCOPE,
+    "PASS_BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE,
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
     "PASS_BTC_PRIMARY_QUESTION_NATIVE_PRICE_EXACT_3_FILE_SCOPE": BTC_PRIMARY_QUESTION_NATIVE_PRICE_SCOPE,
