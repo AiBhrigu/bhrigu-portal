@@ -16,9 +16,8 @@ PUBLIC_ACCEPTANCE_SCOPE = {
     "components/btc/BtcQuestionMembrane.tsx",
     "docs/research/BTC_COSMOGRAPHER_PUBLIC_USER_ACCEPTANCE_REPORT_01_v0_1.md",
     "lib/btc-cosmographer-answer.ts",
-    "lib/btc-cosmographer-multi-body-astro-rc.ts",
+    "lib/btc-cosmographer-public-multi-body-projection.ts",
     "lib/btc-cosmographer-route-graph.ts",
-    "lib/btc-cosmographer-specialized-answer.ts",
     "lib/btc-live-dialogue-style.ts",
     "lib/btc-product-rebalance-style.ts",
     "lib/btc-public-astro-evidence.ts",
@@ -120,7 +119,7 @@ BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE = {
     "tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts",
 }
 
-# Canonical time/context repair: parser, relation resolution and immutable-fixture acceptance only.
+# Canonical time/context repair: exact bounded product/CI surface; existing acceptance scopes remain unchanged.
 BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
