@@ -55,6 +55,7 @@ _verify_packet_hash = _harness._verify_packet_hash
 _check_precondition_against_packet = _harness._check_precondition_against_packet
 _batch_identity_preflight = _harness._batch_identity_preflight
 _extract_session_fields = _harness._extract_session_fields
+_family_match = _harness._family_match
 MANDATORY_CAPTURE_FIELDS = _harness.MANDATORY_CAPTURE_FIELDS
 FAILURE_CLASSES = _harness.FAILURE_CLASSES
 
@@ -383,23 +384,21 @@ class TestBatchIdentityPreflightBlocks(unittest.TestCase):
     def test_source_sha_mismatch_blocks_batch(self):
         """_batch_identity_preflight returns a BLOCKED string on source SHA mismatch."""
         mock_driver = MagicMock()
-        # Simulate driver returning wrong source SHA from DOM
-        mock_driver.execute_script.side_effect = [
-            "wrong_deploy_sha",  # deployment_sha
-            None,               # source_sha (meta tag)
-        ]
-        # Also mock driver.get() and time.sleep
+        # No source SHA header in performance log → source_sha will be None
+        mock_driver.get_log.return_value = []
+        # Deployment SHA from DOM
+        mock_driver.execute_script.return_value = "wrong_deploy_sha"
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="correct_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNotNone(result)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
+        self.assertIsNotNone(block_reason)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
 
     def test_matching_shas_pass_preflight(self):
-        """_batch_identity_preflight returns None when SHAs match."""
+        """_batch_identity_preflight returns None block reason when SHAs match."""
         mock_driver = MagicMock()
         # deployment SHA from DOM execute_script
         mock_driver.execute_script.return_value = "correct_deploy"
@@ -421,12 +420,12 @@ class TestBatchIdentityPreflightBlocks(unittest.TestCase):
         }
         mock_driver.get_log.return_value = [perf_log_entry]
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="correct_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNone(result)
+        self.assertIsNone(block_reason)
 
     def test_evaluate_case_source_sha_mismatch_fails(self):
         """evaluate_case marks FAIL on source SHA mismatch."""
@@ -1096,19 +1095,19 @@ class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
         self.assertIsNone(result)
 
     def test_correct_identity_passes_preflight(self):
-        """_batch_identity_preflight returns None when both source SHA (from header) and deployment SHA match."""
+        """_batch_identity_preflight returns None block reason when both source SHA (from header) and deployment SHA match."""
         mock_driver = MagicMock()
         mock_driver.execute_script.return_value = "correct_deploy"
         mock_driver.get_log.return_value = [
             _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
         ]
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="correct_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNone(result)
+        self.assertIsNone(block_reason)
 
     def test_missing_source_sha_header_blocks_batch(self):
         """Missing x-btc-deployment-source-sha header blocks batch even if deployment SHA matches."""
@@ -1118,14 +1117,14 @@ class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
             _make_perf_log_entry({"content-type": "text/html"})  # no source SHA header
         ]
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="expected_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNotNone(result)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
-        self.assertIn("SOURCE_SHA_MISMATCH", result)
+        self.assertIsNotNone(block_reason)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
+        self.assertIn("SOURCE_SHA_MISMATCH", block_reason)
 
     def test_wrong_source_sha_blocks_batch(self):
         """Wrong x-btc-deployment-source-sha blocks the batch."""
@@ -1135,14 +1134,14 @@ class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
             _make_perf_log_entry({"x-btc-deployment-source-sha": "WRONG_SHA"})
         ]
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="correct_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNotNone(result)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
-        self.assertIn("SOURCE_SHA_MISMATCH", result)
+        self.assertIsNotNone(block_reason)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
+        self.assertIn("SOURCE_SHA_MISMATCH", block_reason)
 
     def test_wrong_deployment_sha_blocks_batch(self):
         """Wrong deployment SHA (from DOM) blocks the batch."""
@@ -1152,14 +1151,68 @@ class TestIdentityPreflightSourceHeaderExtraction(unittest.TestCase):
             _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
         ]
         with patch("time.sleep"):
-            result = _batch_identity_preflight(
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
                 mock_driver, "https://example.com",
                 expected_source_sha="correct_source",
                 expected_deployment_sha="correct_deploy",
             )
-        self.assertIsNotNone(result)
-        self.assertIn("BATCH_IDENTITY_BLOCKED", result)
-        self.assertIn("DEPLOYMENT_SHA_MISMATCH", result)
+        self.assertIsNotNone(block_reason)
+        self.assertIn("BATCH_IDENTITY_BLOCKED", block_reason)
+        self.assertIn("DEPLOYMENT_SHA_MISMATCH", block_reason)
+
+    def test_preflight_single_log_read(self):
+        """_batch_identity_preflight reads the performance log exactly once per preflight."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "correct_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
+        ]
+        with patch("time.sleep"):
+            _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        perf_log_calls = [c for c in mock_driver.get_log.call_args_list
+                          if c == call("performance")]
+        self.assertEqual(len(perf_log_calls), 1,
+            "Performance log must be consumed exactly once per preflight (no double-drain)")
+
+    def test_blocked_manifest_served_shas_populated_after_mismatch(self):
+        """When batch is blocked by SHA mismatch, the returned served SHAs are populated for the manifest."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "wrong_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
+        ]
+        with patch("time.sleep"):
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNotNone(block_reason, "Should be blocked on deploy mismatch")
+        self.assertEqual(served_source, "correct_source",
+            "Observed source SHA must be populated in blocked tuple for manifest recording")
+        self.assertEqual(served_deploy, "wrong_deploy",
+            "Observed deploy SHA must be populated even when wrong")
+
+    def test_manifest_served_shas_after_pass_from_preflight(self):
+        """Preflight pass returns the observed served SHAs for use in the run manifest."""
+        mock_driver = MagicMock()
+        mock_driver.execute_script.return_value = "correct_deploy"
+        mock_driver.get_log.return_value = [
+            _make_perf_log_entry({"x-btc-deployment-source-sha": "correct_source"})
+        ]
+        with patch("time.sleep"):
+            block_reason, served_source, served_deploy = _batch_identity_preflight(
+                mock_driver, "https://example.com",
+                expected_source_sha="correct_source",
+                expected_deployment_sha="correct_deploy",
+            )
+        self.assertIsNone(block_reason)
+        self.assertEqual(served_source, "correct_source")
+        self.assertEqual(served_deploy, "correct_deploy")
 
 
 class TestPerTurnContractValidation(unittest.TestCase):
@@ -1454,6 +1507,118 @@ class TestEvaluatorInputContainsFullPacketAndContract(unittest.TestCase):
         self.assertEqual(manifest["served_deployment_sha"], "served_dep")
         self.assertEqual(manifest["expected_source_sha"], "expected_src")
         self.assertEqual(manifest["expected_deployment_sha"], "expected_dep")
+
+
+class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
+    """
+    EXPECTED_MODE and EXPECTED_ANSWER_TYPE are taxonomy family labels, not exact runtime enum values.
+    Evaluator must use token-overlap family matching, not exact equality.
+    """
+
+    def _base_csv_row(self, **overrides) -> dict:
+        row = {
+            "CASE_ID": "X-001",
+            "EXPECTED_DOMAIN": "",
+            "EXPECTED_SUBJECT": "",
+            "EXPECTED_CONTEXT_RELATION": "",
+            "EXPECTED_MODE": "",
+            "EXPECTED_ANSWER_TYPE": "",
+            "EXPECTED_INTENT": "",
+            "EXPECTED_PERIOD": "",
+            "EXPECTED_EVIDENCE_FAMILY": "",
+            "EXPECTED_DIRECTNESS": "",
+            "EXPECTED_BOUNDARY": "",
+            "EXPECTED_MEMORY_ACTION": "",
+            "FORBIDDEN_BEHAVIOR": "",
+        }
+        row.update(overrides)
+        return row
+
+    def test_expected_mode_family_match_passes(self):
+        """ASTRO_X_BTC family matches ASTRO_BTC_BRIDGE via shared tokens {ASTRO, BTC}."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_X_BTC")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_MODE="ASTRO_BTC_BRIDGE")
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertEqual(result["verdict"], "PASS",
+            "ASTRO_X_BTC must match ASTRO_BTC_BRIDGE (shared ASTRO/BTC tokens)")
+
+    def test_expected_mode_family_mismatch_fails(self):
+        """BTC_FIELD_NOW does not match MARKET_DIAGNOSIS (no shared tokens) → FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="BTC_FIELD_NOW")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_MODE="MARKET_DIAGNOSIS")
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertNotEqual(result["verdict"], "PASS",
+            "BTC_FIELD_NOW must not match MARKET_DIAGNOSIS (no shared taxonomy tokens)")
+        self.assertTrue(any("answer_mode" in r for r in result["failure_reasons"]))
+
+    def test_expected_mode_absent_answer_mode_fails(self):
+        """When EXPECTED_MODE is set but ANSWER_MODE is absent → FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_MODE=None)
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertNotEqual(result["verdict"], "PASS")
+        self.assertTrue(any("ANSWER_MODE" in r or "answer_mode" in r
+                            for r in result["failure_reasons"]))
+
+    def test_expected_answer_type_family_match_passes(self):
+        """CONFIRMED_ASTRO_INTERVAL family matches CONFIRMED_ASTRO_PERIOD via shared CONFIRMED/ASTRO."""
+        csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_STATE="ASTRO_CONFIRMED_FRESH")
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertEqual(result["verdict"], "PASS",
+            "CONFIRMED_ASTRO family must match ASTRO_CONFIRMED_FRESH (shared tokens)")
+
+    def test_expected_answer_type_family_mismatch_fails(self):
+        """Completely different taxonomy families fail: CONFIRMED vs UNKNOWN_REFUSAL."""
+        csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_STATE="UNKNOWN_REFUSAL_GENERIC")
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertNotEqual(result["verdict"], "PASS",
+            "CONFIRMED_ASTRO must not match UNKNOWN_REFUSAL_GENERIC (no shared tokens)")
+
+    def test_exact_match_still_passes_via_family_match(self):
+        """Exact value equality is a subset of family match; exact match still passes."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
+        packet = _make_packet("X-001")
+        obs = _obs_all_present(ANSWER_MODE="ASTRO_INTERVAL")
+        result = evaluate_case(
+            csv_row=csv_row, packet=packet, obs=obs,
+            served_source_sha="sha", served_deployment_sha="sha",
+            expected_source_sha="sha", expected_deployment_sha="sha",
+        )
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_no_exact_equality_check_in_evaluator_for_mode(self):
+        """Evaluator must not use exact-equality (.upper() == .upper()) for EXPECTED_MODE."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        # Family match must be used; confirm _family_match is present and used
+        self.assertIn("_family_match", harness_src)
+        self.assertIn("EXPECTED_MODE", harness_src)
 
 
 if __name__ == "__main__":

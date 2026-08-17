@@ -272,43 +272,84 @@ def _make_driver():
     return webdriver.Chrome(options=options)
 
 
+def _parse_perf_log_entries(entries: list) -> tuple:
+    """
+    Parse an already-read list of Chrome performance log entries and extract:
+    - source_sha: from x-btc-deployment-source-sha header in the first Document response
+      (source SHA header is always set on the main Document response, not XHR/Fetch)
+    - headers: full lower-cased header dict from the first Document response;
+      falls back to the first XHR/Fetch response if no Document response is found,
+      preserving the original _capture_response_headers() fallback behaviour.
+
+    Returns (source_sha_or_None, headers_dict).
+    Consumes no additional log reads.
+    """
+    source_sha: Optional[str] = None
+    headers: Dict[str, Any] = {}
+    fallback_headers: Dict[str, Any] = {}
+    for entry in entries:
+        try:
+            msg = json.loads(entry.get("message", "{}"))
+            params = msg.get("message", {}).get("params", {})
+            if msg.get("message", {}).get("method") == "Network.responseReceived":
+                resp_type = params.get("type", "")
+                resp = params.get("response", {})
+                raw_hdrs = resp.get("headers", {})
+                hdrs = {k.lower(): v for k, v in raw_hdrs.items()}
+                if resp_type == "Document":
+                    # Source SHA is always on the main Document response
+                    if source_sha is None:
+                        sha = hdrs.get("x-btc-deployment-source-sha")
+                        if sha:
+                            source_sha = sha.strip()
+                    # Document headers take priority for the response_headers dict
+                    if not headers:
+                        headers = hdrs
+                elif resp_type in ("XHR", "Fetch") and not fallback_headers:
+                    # Preserve original fallback behaviour from _capture_response_headers
+                    fallback_headers = hdrs
+        except Exception:
+            continue
+    return source_sha, headers if headers else fallback_headers
+
+
 def _extract_source_sha_from_perf_log(driver) -> Optional[str]:
     """
     Extract the source SHA from the HTTP response header `x-btc-deployment-source-sha`
     of the main Document response, using the Chrome performance log (CDP).
     Returns None if not found.
+
+    NOTE: This drains the performance log. Use _capture_identity_and_headers when
+    both source SHA and response headers are needed from the same navigation.
     """
     try:
-        logs = driver.get_log("performance")
-        for entry in logs:
-            try:
-                msg = json.loads(entry.get("message", "{}"))
-                params = msg.get("message", {}).get("params", {})
-                if msg.get("message", {}).get("method") == "Network.responseReceived":
-                    resp_type = params.get("type", "")
-                    resp = params.get("response", {})
-                    if resp_type == "Document":
-                        hdrs = {k.lower(): v for k, v in resp.get("headers", {}).items()}
-                        sha = hdrs.get("x-btc-deployment-source-sha")
-                        if sha:
-                            return sha.strip()
-            except Exception:
-                continue
+        entries = driver.get_log("performance")
+        source_sha, _ = _parse_perf_log_entries(entries)
+        return source_sha
     except Exception:
-        pass
-    return None
+        return None
 
 
-def _capture_sha_headers(driver) -> Dict[str, Optional[str]]:
+def _capture_identity_and_headers(driver) -> Dict[str, Any]:
     """
-    Read source/deployment SHAs for the currently loaded page.
+    Read the Chrome performance log EXACTLY ONCE per navigation and extract
+    source SHA (from x-btc-deployment-source-sha header) and response headers.
+    Also reads deployment SHA from DOM (a separate JS call, not the performance log).
 
-    - Source SHA: HTTP response header `x-btc-deployment-source-sha` (from performance log CDP events).
-      This is the canonical identity signal for batch preflight. meta tags / DOM data attributes
-      do not carry this value.
-    - Deployment SHA: DOM attribute `data-deployment-head-sha` on the page root/main element.
+    Returns {source_sha, deployment_sha, response_headers}.
+
+    This is the single-read replacement for the former separate
+    _capture_sha_headers() + _capture_response_headers() pair.
     """
-    # Deployment SHA from DOM
+    # Read performance log exactly once
+    try:
+        entries = driver.get_log("performance")
+    except Exception:
+        entries = []
+
+    source_sha, response_headers = _parse_perf_log_entries(entries)
+
+    # Deployment SHA from DOM (JS execute_script, not the performance log)
     try:
         deployment_sha = driver.execute_script(
             "return document.querySelector('[data-deployment-head-sha]')?.getAttribute('data-deployment-head-sha') || null"
@@ -316,39 +357,11 @@ def _capture_sha_headers(driver) -> Dict[str, Optional[str]]:
     except Exception:
         deployment_sha = None
 
-    # Source SHA from HTTP response header via performance log
-    source_sha = _extract_source_sha_from_perf_log(driver)
-
-    return {"source_sha": source_sha, "deployment_sha": deployment_sha}
-
-
-def _capture_response_headers(driver) -> Dict[str, Any]:
-    """
-    Capture actual HTTP response headers for the served page via
-    Chrome performance log (Network.responseReceived events).
-    Returns a dict of header-name → value for the main document response.
-    """
-    headers: Dict[str, Any] = {}
-    try:
-        logs = driver.get_log("performance")
-        for entry in logs:
-            try:
-                msg = json.loads(entry.get("message", "{}"))
-                method = msg.get("message", {}).get("method", "")
-                params = msg.get("message", {}).get("params", {})
-                if method == "Network.responseReceived":
-                    resp_type = params.get("type", "")
-                    resp = params.get("response", {})
-                    # Capture headers from the main document or first XHR that looks like the page
-                    if resp_type in ("Document", "XHR", "Fetch") and not headers:
-                        raw_headers = resp.get("headers", {})
-                        headers = {k.lower(): v for k, v in raw_headers.items()}
-                        break
-            except Exception:
-                continue
-    except Exception:
-        pass
-    return headers
+    return {
+        "source_sha": source_sha,
+        "deployment_sha": deployment_sha,
+        "response_headers": response_headers,
+    }
 
 
 def _capture_observation(driver) -> Dict[str, Any]:
@@ -808,25 +821,33 @@ def _batch_identity_preflight(
     target_url: str,
     expected_source_sha: str,
     expected_deployment_sha: str,
-) -> Optional[str]:
+) -> tuple:
     """
     Navigate to the target URL and verify that the served source/deployment SHAs
-    match the expected values. If any mismatch, return a BLOCKED batch reason string.
-    Returns None if identity is confirmed.
+    match the expected values.
 
-    Source SHA is read from HTTP response header `x-btc-deployment-source-sha` (via performance log).
-    Deployment SHA is read from DOM attribute `data-deployment-head-sha`.
-    Both values must be present and match their respective expected values.
-    Any mismatch or missing value blocks the entire batch; no cases are evaluated.
+    Reads the Chrome performance log EXACTLY ONCE per navigation (via
+    _capture_identity_and_headers) to obtain both the source SHA and response
+    headers without a second log drain.
+
+    Returns a 3-tuple: (block_reason_or_None, served_source_sha, served_deployment_sha).
+    - block_reason is None when identity is confirmed (PASS).
+    - served_source_sha and served_deployment_sha are the observed values even when
+      they are wrong/missing, so they can always be recorded in the run manifest.
+
+    Source SHA: HTTP response header `x-btc-deployment-source-sha` (performance log).
+    Deployment SHA: DOM attribute `data-deployment-head-sha`.
+    Both must be present and match; any mismatch blocks the entire batch.
     """
     try:
         base_url = f"{target_url.rstrip('/')}/crypto-astro/btc/live"
         driver.get(base_url)
         # Give the page a moment to load and emit Network events
         time.sleep(2)
-        sha_data = _capture_sha_headers(driver)
-        served_source = sha_data.get("source_sha")
-        served_deploy = sha_data.get("deployment_sha")
+        # Single log read — extracts source SHA, deployment SHA, and response headers
+        identity = _capture_identity_and_headers(driver)
+        served_source = identity.get("source_sha")
+        served_deploy = identity.get("deployment_sha")
 
         reasons: List[str] = []
         if not served_source or served_source != expected_source_sha:
@@ -838,14 +859,15 @@ def _batch_identity_preflight(
                 f"DEPLOYMENT_SHA_MISMATCH: expected={expected_deployment_sha} served={served_deploy}"
             )
         if reasons:
-            return (
+            block_reason = (
                 "BATCH_IDENTITY_BLOCKED: "
                 + "; ".join(reasons)
                 + f" | served_source={served_source} served_deploy={served_deploy}"
             )
-        return None
+            return block_reason, served_source, served_deploy
+        return None, served_source, served_deploy
     except Exception as exc:
-        return f"BATCH_IDENTITY_BLOCKED: preflight_error={exc}"
+        return f"BATCH_IDENTITY_BLOCKED: preflight_error={exc}", None, None
 
 
 # ---------------------------------------------------------------------------
@@ -863,6 +885,29 @@ def _is_binance_trading_intent(obs: Dict[str, Any]) -> bool:
     )
     binance_trading = "TRADING_INTENT" in binance
     return boundary_violation or binance_trading
+
+
+def _family_match(expected: str, observed: str) -> bool:
+    """
+    Token-based taxonomy family match for EXPECTED_MODE and EXPECTED_ANSWER_TYPE.
+
+    Canonical CSV labels (e.g. ASTRO_X_BTC, BTC_FIELD_NOW) are taxonomy family
+    descriptors, not exact runtime enum values. This function checks whether the
+    expected and observed values share at least one meaningful token (length > 1).
+
+    Single-character tokens (e.g. "X" in ASTRO_X_BTC) are deliberately excluded
+    because they are structural connectors rather than semantic identifiers.
+    All canonical taxonomy values use multi-character tokens as their primary
+    semantic units, so this filter does not produce false negatives for valid inputs.
+
+    Examples:
+      ASTRO_X_BTC vs ASTRO_BTC_BRIDGE → tokens {ASTRO, BTC} overlap → True
+      BTC_FIELD_NOW vs MARKET_DIAGNOSIS → no overlap → False
+      ASTRO_INTERVAL vs ASTRO_INTERVAL → exact overlap → True
+    """
+    exp_tokens = {t for t in expected.upper().split("_") if len(t) > 1}
+    obs_tokens = {t for t in observed.upper().split("_") if len(t) > 1}
+    return bool(exp_tokens & obs_tokens)
 
 
 def evaluate_case(
@@ -963,37 +1008,39 @@ def evaluate_case(
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # EXPECTED_MODE → ANSWER_MODE (canonical CSV column for answer mode)
+    # EXPECTED_MODE → family check against ANSWER_MODE (taxonomy family labels, not exact match)
+    # Canonical labels like ASTRO_X_BTC describe a mode family; runtime may report ASTRO_BTC_BRIDGE.
+    # Exact-value equality is forbidden; family token overlap is required.
     expected_mode = csv_row.get("EXPECTED_MODE", "")
     actual_mode = obs.get("ANSWER_MODE") or ""
     if expected_mode:
         if not actual_mode:
             failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_mode expected={expected_mode} but ANSWER_MODE is absent"
+                f"ANSWER_GRAMMAR: answer_mode family expected={expected_mode} but ANSWER_MODE is absent"
             )
             if verdict == "PASS":
                 verdict = "FAIL"
-        elif actual_mode.upper() != expected_mode.upper():
+        elif not _family_match(expected_mode, actual_mode):
             failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_mode expected={expected_mode} actual={actual_mode}"
+                f"ANSWER_GRAMMAR: answer_mode family expected={expected_mode} actual={actual_mode} (no shared taxonomy tokens)"
             )
             if verdict == "PASS":
                 verdict = "FAIL"
 
-    # EXPECTED_ANSWER_TYPE → ANSWER_STATE (the type/state of the answer)
+    # EXPECTED_ANSWER_TYPE → family check against ANSWER_STATE (taxonomy family labels, not exact match)
+    # Same family-token rule: exact equality is forbidden.
     expected_answer_type = csv_row.get("EXPECTED_ANSWER_TYPE", "")
     actual_answer_state = obs.get("ANSWER_STATE") or ""
     if expected_answer_type:
         if not actual_answer_state:
             failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_type expected={expected_answer_type} but ANSWER_STATE is absent"
+                f"ANSWER_GRAMMAR: answer_type family expected={expected_answer_type} but ANSWER_STATE is absent"
             )
             if verdict == "PASS":
                 verdict = "FAIL"
-        elif actual_answer_state.upper() != expected_answer_type.upper():
-            # Structural check: answer state must not contradict the expected answer type
+        elif not _family_match(expected_answer_type, actual_answer_state):
             failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_type expected={expected_answer_type} actual={actual_answer_state}"
+                f"ANSWER_GRAMMAR: answer_type family expected={expected_answer_type} actual={actual_answer_state} (no shared taxonomy tokens)"
             )
             if verdict == "PASS":
                 verdict = "FAIL"
@@ -1285,13 +1332,11 @@ def execute_case(
                 result["blocked_reason"] = "ANSWER_NOT_RECEIVED"
                 return {**result, "verdict": "BLOCKED"}
 
-        # Capture SHAs from DOM
-        sha_data = _capture_sha_headers(driver)
-        result["served_source_sha"] = sha_data["source_sha"]
-        result["served_deployment_sha"] = sha_data["deployment_sha"]
-
-        # Capture response headers via performance log
-        result["response_headers"] = _capture_response_headers(driver)
+        # Capture identity and response headers from a SINGLE performance log read
+        identity = _capture_identity_and_headers(driver)
+        result["served_source_sha"] = identity["source_sha"]
+        result["served_deployment_sha"] = identity["deployment_sha"]
+        result["response_headers"] = identity["response_headers"]
 
         # Capture observations
         obs = _capture_observation(driver)
@@ -1475,17 +1520,12 @@ def main() -> None:
     preflight_served_deploy = None
     try:
         preflight_driver = _make_driver()
-        batch_block = _batch_identity_preflight(
+        batch_block, preflight_served_source, preflight_served_deploy = _batch_identity_preflight(
             preflight_driver,
             args.target_url,
             args.expected_source_sha,
             args.expected_deployment_sha,
         )
-        if not batch_block:
-            # Capture served SHAs for manifest
-            _sha = _capture_sha_headers(preflight_driver)
-            preflight_served_source = _sha.get("source_sha")
-            preflight_served_deploy = _sha.get("deployment_sha")
     except Exception as preflight_exc:
         batch_block = f"BATCH_IDENTITY_BLOCKED: preflight_driver_error={preflight_exc}"
     finally:
@@ -1535,6 +1575,8 @@ def main() -> None:
             results=blocked_results,
             start_ts=start_ts,
             end_ts=end_ts,
+            served_source_sha=preflight_served_source,
+            served_deployment_sha=preflight_served_deploy,
         )
         output_dir = Path(args.output_dir)
         write_outputs(
