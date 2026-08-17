@@ -666,6 +666,34 @@ def _wait_for_answer(driver, timeout: int = 60) -> bool:
         return False
 
 
+def _session_turn_materialized(
+    session_state: Dict[str, Any], previous_turn_count: int, expected_question: str
+) -> bool:
+    """Return True only when the real tab session gained the exact submitted turn."""
+    value = session_state.get("session_value") if isinstance(session_state, dict) else None
+    turns = value.get("turns") if isinstance(value, dict) else None
+    if not isinstance(turns, list) or len(turns) <= previous_turn_count:
+        return False
+    latest = turns[-1] if turns else None
+    if not isinstance(latest, dict):
+        return False
+    return latest.get("user_text") == expected_question
+
+
+def _wait_for_session_turn_materialization(
+    driver, previous_turn_count: int, expected_question: str, timeout: int = 60
+) -> bool:
+    """Wait on serialized session authority, not DOM turn count across GET navigation."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if _session_turn_materialized(
+            _capture_session_state(driver), previous_turn_count, expected_question
+        ):
+            return True
+        time.sleep(0.25)
+    return False
+
+
 def _submit_question(driver, target_url: str, question: str, locale: str):
     """Navigate to target URL and submit a question via the form."""
     params = {"lang": locale.lower(), "q": question}
@@ -675,31 +703,53 @@ def _submit_question(driver, target_url: str, question: str, locale: str):
 
 def _submit_question_in_existing_session(driver, question: str, locale: str) -> bool:
     """
-    Submit a follow-up question in an already-open session by typing into the input form.
-    Returns True if the input was found and submitted.
+    Submit a follow-up through the hydrated product form without relying on a physical
+    pointer click. The live surface auto-focuses/scrolls the newest answer after
+    hydration, which can transiently intercept Selenium element.click().
+
+    We still use the real browser form/session path: fill the actual q control, verify
+    the exact submitted bytes, resolve its owning form, and invoke native
+    HTMLFormElement.requestSubmit() with that form's submit button.
     """
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
 
     try:
-        # Wait for input field
-        WebDriverWait(driver, 10).until(
-            lambda d: d.find_elements(By.CSS_SELECTOR, "input[name='q'], textarea[name='q'], form input[type='text']")
-        )
-        inputs = driver.find_elements(By.CSS_SELECTOR, "input[name='q'], textarea[name='q'], form input[type='text']")
+        selector = "textarea[name='q'], input[name='q'], form input[type='text']"
+        WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, selector))
+        inputs = driver.find_elements(By.CSS_SELECTOR, selector)
         if not inputs:
             return False
         inp = inputs[-1]
         inp.clear()
         inp.send_keys(question)
-        # Find submit button or press Enter
-        btns = driver.find_elements(By.CSS_SELECTOR, "button[type='submit'], form button")
-        if btns:
-            btns[-1].click()
-        else:
-            from selenium.webdriver.common.keys import Keys
-            inp.send_keys(Keys.RETURN)
-        return True
+        if inp.get_attribute("value") != question:
+            return False
+
+        form = driver.execute_script("return arguments[0].form || arguments[0].closest('form')", inp)
+        if form is None:
+            return False
+        submitters = form.find_elements(By.CSS_SELECTOR, "button[type='submit'], input[type='submit'], button")
+        submitter = submitters[-1] if submitters else None
+        submitted = driver.execute_script(
+            """
+            const form = arguments[0];
+            const submitter = arguments[1];
+            if (typeof form.requestSubmit !== 'function') return false;
+            // Schedule the native submit after this script returns. A synchronous
+            // requestSubmit may begin navigation before WebDriver receives the return
+            // value, creating a false TARGET_QUESTION_SUBMIT_FAILED even though the
+            // browser actually submitted the form.
+            window.setTimeout(() => {
+              if (submitter) form.requestSubmit(submitter);
+              else form.requestSubmit();
+            }, 0);
+            return true;
+            """,
+            form,
+            submitter,
+        )
+        return submitted is True
     except Exception:
         return False
 
@@ -707,6 +757,25 @@ def _submit_question_in_existing_session(driver, question: str, locale: str) -> 
 # ---------------------------------------------------------------------------
 # Precondition gate
 # ---------------------------------------------------------------------------
+
+def _answer_state_contract_matches(expected: Any, observed: Any) -> bool:
+    """Evaluate frozen exact or source-bound allowed answer-state contracts."""
+    observed_value = str(observed or "").upper()
+    if not observed_value:
+        return False
+    if isinstance(expected, str):
+        return observed_value == expected.upper()
+    if not isinstance(expected, dict):
+        return False
+    exact = expected.get("value")
+    if isinstance(exact, str) and exact:
+        return observed_value == exact.upper()
+    allowed = expected.get("allowed_values")
+    if isinstance(allowed, list) and allowed:
+        normalized = {str(value).upper() for value in allowed if isinstance(value, str)}
+        return observed_value in normalized
+    return False
+
 
 def _check_per_turn_contract(
     turn_contract: Dict[str, Any],
@@ -782,17 +851,13 @@ def _check_per_turn_contract(
             f"context_relation: expected={exp_cr!r} observed={obs_cr!r}"
         )
 
-    # expected_answer_state: dict with mode/value or a string
+    # expected_answer_state supports both exact and source-bound allowed-value contracts.
     exp_answer_state_raw = turn_contract.get("expected_answer_state")
     if exp_answer_state_raw:
-        if isinstance(exp_answer_state_raw, dict):
-            exp_as_value = exp_answer_state_raw.get("value", "")
-        else:
-            exp_as_value = str(exp_answer_state_raw)
-        obs_as = (obs.get("ANSWER_STATE") or "").upper()
-        if exp_as_value and obs_as != exp_as_value.upper():
+        obs_as = obs.get("ANSWER_STATE")
+        if not _answer_state_contract_matches(exp_answer_state_raw, obs_as):
             mismatches.append(
-                f"answer_state: expected={exp_as_value!r} observed={obs_as!r}"
+                f"answer_state: expected_contract={exp_answer_state_raw!r} observed={obs_as!r}"
             )
 
     # expected_answer_mode
@@ -1004,12 +1069,12 @@ def _validate_final_state_before_target(
                 f"expected_context_packet.prior_subject: expected={exp_subject!r} observed={obs_subject!r}"
             )
 
-        # prior_answer_state
+        # prior_answer_state may be exact or source-bound to an allowed runtime state.
         exp_as = expected_ctx.get("prior_answer_state")
-        obs_as = (obs.get("ANSWER_STATE") or "").upper()
-        if exp_as and obs_as != exp_as.upper():
+        obs_as = obs.get("ANSWER_STATE")
+        if exp_as and not _answer_state_contract_matches(exp_as, obs_as):
             mismatches.append(
-                f"expected_context_packet.prior_answer_state: expected={exp_as!r} observed={obs_as!r}"
+                f"expected_context_packet.prior_answer_state: expected_contract={exp_as!r} observed={obs_as!r}"
             )
 
         # prior_intents (list): each declared intent must appear in observed INTENTS
@@ -1615,33 +1680,21 @@ def execute_case(
                 # Submit remaining setup turns (strings) in order before target
                 for i, setup_q in enumerate(setup_turns[1:], start=2):
                     # setup_q is a plain string
-                    turns_before = len(
-                        driver.find_elements(
-                            By.CSS_SELECTOR,
-                            ".dialogueExchange .cosmographerTurn",
-                        )
-                    )
+                    setup_state_before = _capture_session_state(driver)
+                    setup_value_before = setup_state_before.get("session_value") or {}
+                    setup_turns_before = setup_value_before.get("turns") or []
+                    turns_before = len(setup_turns_before) if isinstance(setup_turns_before, list) else 0
                     submitted = _submit_question_in_existing_session(driver, setup_q, locale)
                     if not submitted:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = f"SETUP_TURN_{i}_SUBMIT_FAILED: {str(setup_q)[:80]}"
                         return _mark_stage_a_blocked(result)
 
-                    # Wait for new turn to appear
-                    deadline = time.time() + 60
-                    got_new = False
-                    while time.time() < deadline:
-                        turns_now = len(
-                            driver.find_elements(
-                                By.CSS_SELECTOR,
-                                ".dialogueExchange .cosmographerTurn",
-                            )
-                        )
-                        if turns_now > turns_before:
-                            got_new = True
-                            break
-                        time.sleep(0.5)
-
+                    # A full GET navigation remounts the newest answer as one DOM turn,
+                    # while the authoritative tab session retains the complete sequence.
+                    got_new = _wait_for_session_turn_materialization(
+                        driver, turns_before, setup_q, timeout=60
+                    )
                     if not got_new:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = f"SETUP_TURN_{i}_NO_RESPONSE: {str(setup_q)[:80]}"
@@ -1683,33 +1736,20 @@ def execute_case(
                 result["session_state_before_target"] = final_ss
 
                 # Submit target question in-session (exact bytes)
-                turns_before_target = len(
-                    driver.find_elements(
-                        By.CSS_SELECTOR,
-                        ".dialogueExchange .cosmographerTurn",
-                    )
-                )
+                target_value_before = final_ss.get("session_value") or {}
+                target_turns_before = target_value_before.get("turns") or []
+                turns_before_target = len(target_turns_before) if isinstance(target_turns_before, list) else 0
                 submitted = _submit_question_in_existing_session(driver, question_exact, locale)
                 if not submitted:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = "TARGET_QUESTION_SUBMIT_FAILED"
                     return _mark_stage_a_blocked(result)
 
-                # Wait for target answer
-                deadline = time.time() + 60
-                got_target = False
-                while time.time() < deadline:
-                    turns_now = len(
-                        driver.find_elements(
-                            By.CSS_SELECTOR,
-                            ".dialogueExchange .cosmographerTurn",
-                        )
-                    )
-                    if turns_now > turns_before_target:
-                        got_target = True
-                        break
-                    time.sleep(0.5)
-
+                # Wait for the exact target to materialize in the serialized session.
+                # DOM cardinality is not authoritative across the full-page GET navigation.
+                got_target = _wait_for_session_turn_materialization(
+                    driver, turns_before_target, question_exact, timeout=60
+                )
                 if not got_target:
                     result["setup_preconditions_materialized"] = False
                     result["blocked_reason"] = "TARGET_ANSWER_NOT_RECEIVED"

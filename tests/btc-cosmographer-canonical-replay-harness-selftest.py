@@ -338,6 +338,18 @@ class SetupAndIdentityTests(unittest.TestCase):
         reason=h._check_precondition_against_packet(packet,obs(),{},1,submitted_question="WRONG")
         self.assertIn("question_exact",reason)
 
+    def test_source_bound_setup_answer_state_accepts_allowed_value(self):
+        packet={"prior_turns":{"value":[{"expected_answer_state":{"binding":"setup_turn[1].observed.answer_state","allowed_values":["CONFIRMED","SPLIT","LIMITED"]}}]}}
+        self.assertIsNone(h._check_precondition_against_packet(packet,obs(ANSWER_STATE="SPLIT"),{},1))
+        reason=h._check_precondition_against_packet(packet,obs(ANSWER_STATE="UNKNOWN"),{},1)
+        self.assertIn("answer_state",reason)
+
+    def test_source_bound_final_answer_state_accepts_allowed_value(self):
+        packet={"expected_context_packet":{"prior_answer_state":{"binding":"setup_turn[1].observed.answer_state","allowed_values":["CONFIRMED","SPLIT","LIMITED"]}}}
+        self.assertIsNone(h._validate_final_state_before_target(packet,obs(ANSWER_STATE="LIMITED"),session([])))
+        reason=h._validate_final_state_before_target(packet,obs(ANSWER_STATE="UNKNOWN"),session([]))
+        self.assertIn("prior_answer_state",reason)
+
     def test_clean_session_code_clears_storage(self):
         src=inspect.getsource(h.execute_case)
         self.assertIn("sessionStorage.clear(); localStorage.clear();",src)
@@ -347,6 +359,27 @@ class SetupAndIdentityTests(unittest.TestCase):
         src=inspect.getsource(h.execute_case)
         self.assertIn("setup_turns[0]",src)
         self.assertIn("enumerate(setup_turns[1:], start=2)",src)
+
+    def test_session_turn_materialization_requires_increment_and_exact_question(self):
+        before=session([{"user_text":"setup"}])
+        exact=session([{"user_text":"setup"},{"user_text":"А как это совпадает с Биткоином?"}])
+        wrong=session([{"user_text":"setup"},{"user_text":"другой вопрос"}])
+        self.assertFalse(h._session_turn_materialized(before,1,"А как это совпадает с Биткоином?"))
+        self.assertTrue(h._session_turn_materialized(exact,1,"А как это совпадает с Биткоином?"))
+        self.assertFalse(h._session_turn_materialized(wrong,1,"А как это совпадает с Биткоином?"))
+
+    def test_in_session_submit_uses_native_form_path_not_pointer_click(self):
+        src=inspect.getsource(h._submit_question_in_existing_session)
+        self.assertIn("requestSubmit",src)
+        self.assertIn('get_attribute("value") != question',src)
+        self.assertNotIn("btns[-1].click()",src)
+        self.assertNotIn("submitter.click()",src)
+
+    def test_followup_wait_uses_serialized_session_not_dom_cardinality(self):
+        src=inspect.getsource(h.execute_case)
+        self.assertIn("_wait_for_session_turn_materialization",src)
+        self.assertNotIn("turns_now > turns_before",src)
+        self.assertNotIn("turns_now > turns_before_target",src)
 
     def test_batch_deployment_mismatch_blocks(self):
         driver=MagicMock(); driver.get_log.return_value=[]; driver.execute_script.return_value="wrong"
@@ -473,6 +506,12 @@ class ScopeAndOutputTests(unittest.TestCase):
 
     def test_harness_binding_authority_flag_exists(self):
         self.assertIn("--binding-authority-path",HARNESS_PATH.read_text(encoding="utf-8"))
+
+    def test_workflow_supports_bounded_post_merge_harness_repair(self):
+        workflow=(REPO_ROOT/".github/workflows/btc-cosmographer-canonical-140-replay-pr.yml").read_text(encoding="utf-8")
+        self.assertIn("POST_MERGE_HARNESS_REPAIR_SCOPE=PASS",workflow)
+        self.assertIn("CANONICAL_REPLAY_BOOTSTRAP_EXACT_SIX_FILE_SCOPE=PASS",workflow)
+        self.assertIn("git cat-file -e",workflow)
 
 
 if __name__ == "__main__":
