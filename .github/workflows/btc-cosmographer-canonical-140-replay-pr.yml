@@ -30,7 +30,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
 
-      - name: Lock exact six-file scope
+      - name: Lock bounded harness-only scope
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -38,16 +38,34 @@ jobs:
           set -euo pipefail
           BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
           git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
-          printf '%s\n' \
-            '.github/workflows/btc-cosmographer-canonical-140-replay-pr.yml' \
-            'package.json' \
-            'scripts/run-btc-cosmographer-canonical-140-replay.py' \
-            'tests/btc-cosmographer-canonical-replay-harness-selftest.py' \
-            'tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv' \
-            'tests/fixtures/btc-cosmographer-canonical-state-packets-v0_1.json' \
-            | sort > /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/changed.txt
-          echo CANONICAL_REPLAY_EXACT_SIX_FILE_SCOPE=PASS
+
+          if git cat-file -e "$BASE:scripts/run-btc-cosmographer-canonical-140-replay.py" 2>/dev/null; then
+            printf '%s\n' \
+              '.github/workflows/btc-cosmographer-canonical-140-replay-pr.yml' \
+              'package.json' \
+              'scripts/run-btc-cosmographer-canonical-140-replay.py' \
+              'tests/btc-cosmographer-canonical-replay-harness-selftest.py' \
+              | sort > /tmp/allowed.txt
+            if comm -23 /tmp/changed.txt /tmp/allowed.txt | grep -q .; then
+              echo 'POST_MERGE_HARNESS_REPAIR_UNEXPECTED_SCOPE' >&2
+              comm -23 /tmp/changed.txt /tmp/allowed.txt >&2
+              exit 1
+            fi
+            grep -Fxq 'scripts/run-btc-cosmographer-canonical-140-replay.py' /tmp/changed.txt
+            grep -Fxq 'tests/btc-cosmographer-canonical-replay-harness-selftest.py' /tmp/changed.txt
+            echo POST_MERGE_HARNESS_REPAIR_SCOPE=PASS
+          else
+            printf '%s\n' \
+              '.github/workflows/btc-cosmographer-canonical-140-replay-pr.yml' \
+              'package.json' \
+              'scripts/run-btc-cosmographer-canonical-140-replay.py' \
+              'tests/btc-cosmographer-canonical-replay-harness-selftest.py' \
+              'tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv' \
+              'tests/fixtures/btc-cosmographer-canonical-state-packets-v0_1.json' \
+              | sort > /tmp/expected.txt
+            diff -u /tmp/expected.txt /tmp/changed.txt
+            echo CANONICAL_REPLAY_BOOTSTRAP_EXACT_SIX_FILE_SCOPE=PASS
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v5

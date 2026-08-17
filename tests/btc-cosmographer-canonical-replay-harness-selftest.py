@@ -507,6 +507,12 @@ class ScopeAndOutputTests(unittest.TestCase):
     def test_harness_binding_authority_flag_exists(self):
         self.assertIn("--binding-authority-path",HARNESS_PATH.read_text(encoding="utf-8"))
 
+    def test_workflow_supports_bounded_post_merge_harness_repair(self):
+        workflow=(REPO_ROOT/".github/workflows/btc-cosmographer-canonical-140-replay-pr.yml").read_text(encoding="utf-8")
+        self.assertIn("POST_MERGE_HARNESS_REPAIR_SCOPE=PASS",workflow)
+        self.assertIn("CANONICAL_REPLAY_BOOTSTRAP_EXACT_SIX_FILE_SCOPE=PASS",workflow)
+        self.assertIn("git cat-file -e",workflow)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
