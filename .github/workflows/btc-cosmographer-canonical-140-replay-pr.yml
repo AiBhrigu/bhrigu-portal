@@ -1,0 +1,107 @@
+name: BTC Cosmographer Canonical 140 Replay Harness PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv"
+      - "tests/fixtures/btc-cosmographer-canonical-state-packets-v0_1.json"
+      - "scripts/run-btc-cosmographer-canonical-140-replay.py"
+      - "tests/btc-cosmographer-canonical-replay-harness-selftest.py"
+      - ".github/workflows/btc-cosmographer-canonical-140-replay-pr.yml"
+      - "package.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: btc-cosmographer-canonical-140-replay-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  canonical-replay-harness-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Lock exact six-file scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          BASE=$(git merge-base "$BASE_SHA" "$HEAD_SHA")
+          git diff --name-only "$BASE" "$HEAD_SHA" | sort > /tmp/changed.txt
+          printf '%s\n' \
+            '.github/workflows/btc-cosmographer-canonical-140-replay-pr.yml' \
+            'package.json' \
+            'scripts/run-btc-cosmographer-canonical-140-replay.py' \
+            'tests/btc-cosmographer-canonical-replay-harness-selftest.py' \
+            'tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv' \
+            'tests/fixtures/btc-cosmographer-canonical-state-packets-v0_1.json' \
+            | sort > /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+          echo CANONICAL_REPLAY_EXACT_SIX_FILE_SCOPE=PASS
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Fixture hash and schema validation
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          # Delegate entirely to the harness module so authority constants have a single source.
+          import importlib.util, sys
+          from pathlib import Path
+
+          spec = importlib.util.spec_from_file_location(
+              "harness",
+              Path("scripts/run-btc-cosmographer-canonical-140-replay.py"),
+          )
+          harness = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(harness)
+
+          csv_rows, packets, packets_index = harness.validate_fixtures(
+              harness.CORPUS_PATH, harness.PACKETS_PATH
+          )
+          print("FIXTURE_VALIDATION=PASS")
+          print(f"  corpus_sha256={harness.CORPUS_AUTHORITY_SHA256}")
+          print(f"  packets_sha256={harness.STATE_PACKETS_AUTHORITY_SHA256}")
+          print(f"  total_cases={len(csv_rows)}")
+          print(f"  unique_case_ids={len(set(r['CASE_ID'] for r in csv_rows))}")
+          print(f"  packets={len(packets)}")
+          PY
+
+      - name: Run harness selftests
+        run: |
+          set -euo pipefail
+          pip3 install pytest --quiet
+          python3 -m pytest tests/btc-cosmographer-canonical-replay-harness-selftest.py \
+            -v --tb=short 2>&1
+
+      - name: Inherited BTC routing verification
+        run: |
+          set -euo pipefail
+          node scripts/run-btc-routing-fixture.mjs
+
+      - name: Next.js build
+        run: |
+          set -euo pipefail
+          npm run build
