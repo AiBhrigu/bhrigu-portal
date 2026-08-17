@@ -55,7 +55,8 @@ _verify_packet_hash = _harness._verify_packet_hash
 _check_precondition_against_packet = _harness._check_precondition_against_packet
 _batch_identity_preflight = _harness._batch_identity_preflight
 _extract_session_fields = _harness._extract_session_fields
-_family_match = _harness._family_match
+_family_match = getattr(_harness, "_family_match", None)  # removed in v4; kept for absence assertions
+_validate_final_state_before_target = _harness._validate_final_state_before_target
 MANDATORY_CAPTURE_FIELDS = _harness.MANDATORY_CAPTURE_FIELDS
 FAILURE_CLASSES = _harness.FAILURE_CLASSES
 
@@ -1511,8 +1512,10 @@ class TestEvaluatorInputContainsFullPacketAndContract(unittest.TestCase):
 
 class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
     """
-    EXPECTED_MODE and EXPECTED_ANSWER_TYPE are taxonomy family labels, not exact runtime enum values.
-    Evaluator must use token-overlap family matching, not exact equality.
+    EXPECTED_MODE and EXPECTED_ANSWER_TYPE have no proven deterministic binding to the runtime
+    taxonomies (ANSWER_MODE, ANSWER_STATE). The evaluator contract forbids keyword/token overlap
+    scoring. Both must produce BLOCKED with EVALUATOR_BINDING_UNAVAILABLE.
+    Negative tests: keyword overlap alone must neither PASS nor FAIL a canonical dimension.
     """
 
     def _base_csv_row(self, **overrides) -> dict:
@@ -1534,8 +1537,8 @@ class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
         row.update(overrides)
         return row
 
-    def test_expected_mode_family_match_passes(self):
-        """ASTRO_X_BTC family matches ASTRO_BTC_BRIDGE via shared tokens {ASTRO, BTC}."""
+    def test_expected_mode_produces_blocked_not_pass(self):
+        """EXPECTED_MODE with any non-empty value must produce BLOCKED (no proven binding)."""
         csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_X_BTC")
         packet = _make_packet("X-001")
         obs = _obs_all_present(ANSWER_MODE="ASTRO_BTC_BRIDGE")
@@ -1544,39 +1547,41 @@ class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
-        self.assertEqual(result["verdict"], "PASS",
-            "ASTRO_X_BTC must match ASTRO_BTC_BRIDGE (shared ASTRO/BTC tokens)")
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "EXPECTED_MODE must produce BLOCKED; keyword overlap scoring is forbidden")
+        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]),
+            "failure_reasons must include EVALUATOR_BINDING_UNAVAILABLE for EXPECTED_MODE")
 
-    def test_expected_mode_family_mismatch_fails(self):
-        """BTC_FIELD_NOW does not match MARKET_DIAGNOSIS (no shared tokens) → FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="BTC_FIELD_NOW")
+    def test_keyword_overlap_alone_cannot_pass_mode(self):
+        """Even with shared tokens (ASTRO, BTC), EXPECTED_MODE cannot produce PASS — must be BLOCKED."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_X_BTC")
         packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_MODE="MARKET_DIAGNOSIS")
+        # ASTRO_BTC_BRIDGE shares ASTRO and BTC tokens with ASTRO_X_BTC — keyword overlap exists
+        obs = _obs_all_present(ANSWER_MODE="ASTRO_BTC_BRIDGE")
         result = evaluate_case(
             csv_row=csv_row, packet=packet, obs=obs,
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
         self.assertNotEqual(result["verdict"], "PASS",
-            "BTC_FIELD_NOW must not match MARKET_DIAGNOSIS (no shared taxonomy tokens)")
-        self.assertTrue(any("answer_mode" in r for r in result["failure_reasons"]))
+            "Keyword overlap alone must not produce PASS for EXPECTED_MODE")
 
-    def test_expected_mode_absent_answer_mode_fails(self):
-        """When EXPECTED_MODE is set but ANSWER_MODE is absent → FAIL."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
+    def test_keyword_overlap_alone_cannot_fail_mode(self):
+        """EXPECTED_MODE with no shared tokens also cannot produce FAIL — must be BLOCKED."""
+        csv_row = self._base_csv_row(EXPECTED_MODE="BTC_FIELD_NOW")
         packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_MODE=None)
+        # MARKET_DIAGNOSIS shares no tokens — in v3 this was FAIL; in v4 it must be BLOCKED
+        obs = _obs_all_present(ANSWER_MODE="MARKET_DIAGNOSIS")
         result = evaluate_case(
             csv_row=csv_row, packet=packet, obs=obs,
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
-        self.assertNotEqual(result["verdict"], "PASS")
-        self.assertTrue(any("ANSWER_MODE" in r or "answer_mode" in r
-                            for r in result["failure_reasons"]))
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "No-token-overlap must still produce BLOCKED, not FAIL, for EXPECTED_MODE")
 
-    def test_expected_answer_type_family_match_passes(self):
-        """CONFIRMED_ASTRO_INTERVAL family matches CONFIRMED_ASTRO_PERIOD via shared CONFIRMED/ASTRO."""
+    def test_expected_answer_type_produces_blocked_not_pass(self):
+        """EXPECTED_ANSWER_TYPE (cross-taxonomy) must produce BLOCKED with EVALUATOR_BINDING_UNAVAILABLE."""
         csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
         packet = _make_packet("X-001")
         obs = _obs_all_present(ANSWER_STATE="ASTRO_CONFIRMED_FRESH")
@@ -1585,11 +1590,13 @@ class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
-        self.assertEqual(result["verdict"], "PASS",
-            "CONFIRMED_ASTRO family must match ASTRO_CONFIRMED_FRESH (shared tokens)")
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "EXPECTED_ANSWER_TYPE must produce BLOCKED; cross-taxonomy comparison is forbidden")
+        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]),
+            "failure_reasons must include EVALUATOR_BINDING_UNAVAILABLE for EXPECTED_ANSWER_TYPE")
 
-    def test_expected_answer_type_family_mismatch_fails(self):
-        """Completely different taxonomy families fail: CONFIRMED vs UNKNOWN_REFUSAL."""
+    def test_keyword_overlap_alone_cannot_produce_fail_for_answer_type(self):
+        """EXPECTED_ANSWER_TYPE with no shared tokens must produce BLOCKED, not FAIL."""
         csv_row = self._base_csv_row(EXPECTED_ANSWER_TYPE="CONFIRMED_ASTRO")
         packet = _make_packet("X-001")
         obs = _obs_all_present(ANSWER_STATE="UNKNOWN_REFUSAL_GENERIC")
@@ -1598,27 +1605,428 @@ class TestEvaluatorTaxonomyFamilyMapping(unittest.TestCase):
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
-        self.assertNotEqual(result["verdict"], "PASS",
-            "CONFIRMED_ASTRO must not match UNKNOWN_REFUSAL_GENERIC (no shared tokens)")
+        # Must not be FAIL; no-binding dimensions must BLOCK, never fabricate FAIL
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "No-token-overlap EXPECTED_ANSWER_TYPE must produce BLOCKED not FAIL")
 
-    def test_exact_match_still_passes_via_family_match(self):
-        """Exact value equality is a subset of family match; exact match still passes."""
-        csv_row = self._base_csv_row(EXPECTED_MODE="ASTRO_INTERVAL")
+    def test_family_match_function_not_in_harness(self):
+        """_family_match must not exist in the harness (keyword overlap removed in v4)."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertNotIn("def _family_match", harness_src,
+            "_family_match must be removed from the harness in v4")
+
+    def test_evaluator_binding_unavailable_in_harness(self):
+        """EVALUATOR_BINDING_UNAVAILABLE must be emitted by the harness for unbound dimensions."""
+        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
+        self.assertIn("EVALUATOR_BINDING_UNAVAILABLE", harness_src)
+
+
+class TestPresenceOnlyContractDimensions(unittest.TestCase):
+    """
+    EXPECTED_INTENT, EXPECTED_PERIOD, EXPECTED_EVIDENCE_FAMILY, EXPECTED_BOUNDARY,
+    and EXPECTED_DIRECTNESS must use deterministic content checks, not presence-only checks.
+    Non-empty but semantically wrong observations must produce FAIL.
+    """
+
+    def _base_csv_row(self, **overrides) -> dict:
+        row = {
+            "CASE_ID": "X-001",
+            "EXPECTED_DOMAIN": "",
+            "EXPECTED_SUBJECT": "",
+            "EXPECTED_CONTEXT_RELATION": "",
+            "EXPECTED_MODE": "",
+            "EXPECTED_ANSWER_TYPE": "",
+            "EXPECTED_INTENT": "",
+            "EXPECTED_PERIOD": "",
+            "EXPECTED_EVIDENCE_FAMILY": "",
+            "EXPECTED_DIRECTNESS": "",
+            "EXPECTED_BOUNDARY": "",
+            "EXPECTED_MEMORY_ACTION": "",
+            "FORBIDDEN_BEHAVIOR": "",
+        }
+        row.update(overrides)
+        return row
+
+    def _run(self, csv_row, **obs_overrides):
         packet = _make_packet("X-001")
-        obs = _obs_all_present(ANSWER_MODE="ASTRO_INTERVAL")
-        result = evaluate_case(
+        obs = _obs_all_present(**obs_overrides)
+        return evaluate_case(
             csv_row=csv_row, packet=packet, obs=obs,
             served_source_sha="sha", served_deployment_sha="sha",
             expected_source_sha="sha", expected_deployment_sha="sha",
         )
+
+    # --- EXPECTED_INTENT ---
+
+    def test_expected_intent_correct_value_passes(self):
+        """Correct intent value must pass."""
+        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
+        result = self._run(csv_row, INTENTS="interval_analysis")
         self.assertEqual(result["verdict"], "PASS")
 
-    def test_no_exact_equality_check_in_evaluator_for_mode(self):
-        """Evaluator must not use exact-equality (.upper() == .upper()) for EXPECTED_MODE."""
-        harness_src = HARNESS_PATH.read_text(encoding="utf-8")
-        # Family match must be used; confirm _family_match is present and used
-        self.assertIn("_family_match", harness_src)
-        self.assertIn("EXPECTED_MODE", harness_src)
+    def test_expected_intent_wrong_value_fails(self):
+        """Non-empty but wrong intent value must FAIL, not PASS."""
+        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
+        result = self._run(csv_row, INTENTS="point_in_time")
+        self.assertEqual(result["verdict"], "FAIL",
+            "Wrong INTENTS value must FAIL; presence check alone is forbidden")
+        self.assertTrue(any("intent" in r.lower() or "ROUTING" in r for r in result["failure_reasons"]))
+
+    def test_expected_intent_absent_fails(self):
+        """Absent INTENTS with declared EXPECTED_INTENT must FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_INTENT="interval_analysis")
+        result = self._run(csv_row, INTENTS=None)
+        self.assertNotEqual(result["verdict"], "PASS")
+
+    # --- EXPECTED_PERIOD ---
+
+    def test_expected_period_correct_value_passes(self):
+        """Correct period value contained in TIME_SCOPE must pass."""
+        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
+        result = self._run(csv_row, TIME_SCOPE="2026-01-01/2026-12-31")
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_expected_period_wrong_value_fails(self):
+        """Non-empty but wrong period value must FAIL, not PASS."""
+        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
+        result = self._run(csv_row, TIME_SCOPE="2025-01-01/2025-12-31")
+        self.assertEqual(result["verdict"], "FAIL",
+            "Wrong TIME_SCOPE value must FAIL; presence check alone is forbidden")
+        self.assertTrue(any("TIME_SCOPE" in r or "period" in r.lower() for r in result["failure_reasons"]))
+
+    def test_expected_period_absent_fails(self):
+        """Absent TIME_SCOPE with declared EXPECTED_PERIOD must FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_PERIOD="2026")
+        result = self._run(csv_row, TIME_SCOPE=None)
+        self.assertNotEqual(result["verdict"], "PASS")
+
+    # --- EXPECTED_EVIDENCE_FAMILY ---
+
+    def test_expected_evidence_family_correct_value_passes(self):
+        """Correct evidence family contained in EVIDENCE_LEVELS must pass."""
+        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
+        result = self._run(csv_row, EVIDENCE_LEVELS="ASTRO_CANONICAL;MARKET_DERIVED")
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_expected_evidence_family_wrong_value_fails(self):
+        """Non-empty but wrong evidence family must FAIL, not PASS."""
+        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
+        result = self._run(csv_row, EVIDENCE_LEVELS="MARKET_ONLY")
+        self.assertEqual(result["verdict"], "FAIL",
+            "Wrong EVIDENCE_LEVELS value must FAIL; presence check alone is forbidden")
+        self.assertTrue(any("EVIDENCE" in r or "evidence" in r.lower() for r in result["failure_reasons"]))
+
+    def test_expected_evidence_family_absent_fails(self):
+        """Absent EVIDENCE_LEVELS with declared EXPECTED_EVIDENCE_FAMILY must FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_EVIDENCE_FAMILY="ASTRO")
+        result = self._run(csv_row, EVIDENCE_LEVELS=None)
+        self.assertNotEqual(result["verdict"], "PASS")
+
+    # --- EXPECTED_BOUNDARY ---
+
+    def test_expected_boundary_correct_value_passes(self):
+        """Correct boundary value contained in BOUNDARY_STATE must pass."""
+        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
+        result = self._run(csv_row,
+            BOUNDARY_STATE="NON_TRADING_PRESERVED",
+            BINANCE_BINDING_STATE="NOT_APPLICABLE",
+        )
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_expected_boundary_wrong_value_fails(self):
+        """Non-empty but wrong boundary value must FAIL, not PASS."""
+        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
+        result = self._run(csv_row,
+            BOUNDARY_STATE="CAUSAL_INFERENCE_ONLY",
+            BINANCE_BINDING_STATE="NOT_APPLICABLE",
+        )
+        self.assertEqual(result["verdict"], "FAIL",
+            "Wrong BOUNDARY_STATE must FAIL; presence check alone is forbidden")
+        self.assertTrue(any("CAUSAL_BOUNDARY" in r or "boundary" in r.lower() for r in result["failure_reasons"]))
+
+    def test_expected_boundary_absent_fails(self):
+        """Absent BOUNDARY_STATE with declared EXPECTED_BOUNDARY must FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_BOUNDARY="NON_TRADING")
+        result = self._run(csv_row, BOUNDARY_STATE=None)
+        self.assertNotEqual(result["verdict"], "PASS")
+
+    # --- EXPECTED_DIRECTNESS ---
+
+    def test_expected_directness_yes_passes_when_direct_answer_present(self):
+        """EXPECTED_DIRECTNESS=YES with non-empty DIRECT_ANSWER must pass."""
+        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="YES")
+        result = self._run(csv_row, DIRECT_ANSWER="Jupiter aligns with BTC peak in Q2 2026.")
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_expected_directness_yes_fails_when_direct_answer_absent(self):
+        """EXPECTED_DIRECTNESS=YES with absent DIRECT_ANSWER must FAIL."""
+        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="YES")
+        result = self._run(csv_row, DIRECT_ANSWER=None)
+        self.assertEqual(result["verdict"], "FAIL",
+            "Absent DIRECT_ANSWER when directness=YES must FAIL")
+        self.assertTrue(any("ANSWER_DIRECTNESS" in r or "directness" in r.lower() for r in result["failure_reasons"]))
+
+    def test_expected_directness_no_fails_when_direct_answer_present(self):
+        """EXPECTED_DIRECTNESS=NO with non-empty DIRECT_ANSWER must FAIL (wrong directness)."""
+        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="NO")
+        result = self._run(csv_row, DIRECT_ANSWER="Some unexpected direct answer text.")
+        self.assertEqual(result["verdict"], "FAIL",
+            "Present DIRECT_ANSWER when directness=NO must FAIL; presence check alone is forbidden")
+        self.assertTrue(any("ANSWER_DIRECTNESS" in r or "directness" in r.lower() for r in result["failure_reasons"]))
+
+    def test_expected_directness_no_passes_when_direct_answer_absent(self):
+        """EXPECTED_DIRECTNESS=NO with empty/absent DIRECT_ANSWER must pass."""
+        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="NO")
+        # Use empty string, not None, so MANDATORY_CAPTURE_FIELDS check does not fire
+        result = self._run(csv_row, DIRECT_ANSWER="")
+        self.assertEqual(result["verdict"], "PASS")
+
+    def test_expected_directness_unrecognized_token_produces_blocked(self):
+        """EXPECTED_DIRECTNESS with unrecognized token must produce BLOCKED."""
+        csv_row = self._base_csv_row(EXPECTED_DIRECTNESS="PARTIAL_DIRECT_UNKNOWN")
+        result = self._run(csv_row, DIRECT_ANSWER="some answer")
+        self.assertEqual(result["verdict"], "BLOCKED",
+            "Unrecognized EXPECTED_DIRECTNESS token must produce BLOCKED")
+        self.assertTrue(any("EVALUATOR_BINDING_UNAVAILABLE" in r for r in result["failure_reasons"]))
+
+
+class TestPerTurnContractValidationV4(unittest.TestCase):
+    """
+    Behavioral tests for the v4 per-turn contract gate:
+    expected_intents, expected_active_period, question_exact validation,
+    final state validation after last setup, two-setup turn2 mismatch.
+    """
+
+    def _make_two_turn_packet_v4(self) -> dict:
+        """Packet with two setup turns including intents and active_period contracts."""
+        p = _make_packet(
+            "FG-004-V4",
+            session_mode="EXACT_PRIOR_TURN_SEQUENCE",
+            setup_turn_count=2,
+            setup_turns_exact=["Q1_jupiter", "Q2_mercury"],
+            prior_turns={
+                "status": "EXPLICIT",
+                "value": [
+                    {
+                        "turn_index": 1,
+                        "question_exact": "Q1_jupiter",
+                        "locale": "EN",
+                        "expected_route_domain": "astromodule",
+                        "expected_route_subject": "jupiter",
+                        "expected_intents": ["interval_analysis"],
+                        "expected_context_relation": "NEW_TOPIC",
+                        "expected_answer_state": {"mode": "EXACT", "value": "CONFIRMED"},
+                        "expected_answer_mode": "ASTRO_INTERVAL",
+                        "expected_active_period": {"start": "2026-01-01", "end": "2026-12-31"},
+                        "expected_route_disposition": "CONTINUE",
+                    },
+                    {
+                        "turn_index": 2,
+                        "question_exact": "Q2_mercury",
+                        "locale": "EN",
+                        "expected_route_domain": "astromodule",
+                        "expected_route_subject": "mercury",
+                        "expected_intents": ["interval_analysis"],
+                        "expected_context_relation": "NEW_TOPIC",
+                        "expected_answer_state": {"mode": "EXACT", "value": "LIMITED"},
+                        "expected_answer_mode": "ASTRO_INTERVAL",
+                        "expected_active_period": {"start": "2026-01-01", "end": "2026-12-31"},
+                        "expected_route_disposition": "CONTINUE",
+                    },
+                ],
+            },
+            expected_context_packet={
+                "schema": "btc_cosmographer_context_v0_1",
+                "prior_domain": "astromodule",
+                "prior_subject": "mercury",
+                "prior_answer_state": "LIMITED",
+                "prior_intents": ["interval_analysis"],
+                "prior_time_start": "2026-01-01",
+                "prior_time_end": "2026-12-31",
+            },
+            expected_session_state={
+                "schema": "btc_cosmographer_dialogue_session_v0_3",
+                "locale": "en",
+                "compacted": False,
+                "turn_count": 2,
+            },
+        )
+        return p
+
+    def test_per_turn_validates_intents(self):
+        """expected_intents in per-turn contract must be checked against observed INTENTS."""
+        packet = self._make_two_turn_packet_v4()
+        obs_correct = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        result = _check_precondition_against_packet(packet, obs_correct, {}, setup_turn_index=1)
+        self.assertIsNone(result, "Correct intents must not block")
+
+    def test_per_turn_wrong_intent_blocks(self):
+        """Wrong intent in observed INTENTS must produce BLOCKED."""
+        packet = self._make_two_turn_packet_v4()
+        obs_wrong_intent = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="point_in_time",  # wrong: expected interval_analysis
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        result = _check_precondition_against_packet(packet, obs_wrong_intent, {}, setup_turn_index=1)
+        self.assertIsNotNone(result)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+        self.assertIn("intent", result.lower())
+
+    def test_per_turn_validates_active_period_start(self):
+        """expected_active_period.start must be present in observed TIME_SCOPE."""
+        packet = self._make_two_turn_packet_v4()
+        obs_wrong_period = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2025-01-01/2025-12-31",  # wrong year: expected 2026
+        )
+        result = _check_precondition_against_packet(packet, obs_wrong_period, {}, setup_turn_index=1)
+        self.assertIsNotNone(result)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+        self.assertIn("active_period", result)
+
+    def test_per_turn_question_exact_mismatch_blocks(self):
+        """Submitted question not matching contract question_exact must block."""
+        packet = self._make_two_turn_packet_v4()
+        obs_ok = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        result = _check_precondition_against_packet(
+            packet, obs_ok, {}, setup_turn_index=1,
+            submitted_question="WRONG_QUESTION_TEXT",
+        )
+        self.assertIsNotNone(result)
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result)
+        self.assertIn("question_exact", result)
+
+    def test_two_setup_turn1_passes_turn2_wrong_field_blocks_target(self):
+        """
+        Two-setup case: turn 1 passes, turn 2 has wrong route_subject.
+        Target submission must never occur; case must BLOCK after turn 2.
+        This is a unit test of _check_precondition_against_packet for turn 2.
+        """
+        packet = self._make_two_turn_packet_v4()
+        # Turn 1: correct state
+        obs_turn1_ok = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="CONFIRMED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        result_t1 = _check_precondition_against_packet(packet, obs_turn1_ok, {}, setup_turn_index=1)
+        self.assertIsNone(result_t1, "Turn 1 correct state must not block")
+
+        # Turn 2: wrong route_subject (saturn instead of mercury)
+        obs_turn2_wrong = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="saturn",      # wrong: expected mercury
+            CONTEXT_RELATION="NEW_TOPIC",
+            ANSWER_STATE="LIMITED",
+            ANSWER_MODE="ASTRO_INTERVAL",
+            ROUTE_DISPOSITION="CONTINUE",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        result_t2 = _check_precondition_against_packet(packet, obs_turn2_wrong, {}, setup_turn_index=2)
+        self.assertIsNotNone(result_t2, "Turn 2 wrong field must produce BLOCKED reason")
+        self.assertIn("SETUP_PRECONDITION_MISMATCH", result_t2)
+        self.assertIn("route_subject", result_t2)
+        # Prove target never submitted: turn 2 blocked means execute_case returns BLOCKED before target
+
+    def test_validate_final_state_before_target_passes_on_correct_state(self):
+        """Correct final state (matching expected_context_packet + session predicates) must not block."""
+        packet = self._make_two_turn_packet_v4()
+        obs_final = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="mercury",
+            ANSWER_STATE="LIMITED",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        session_state = {
+            "session_value": {
+                "locale": "en",
+                "compacted": False,
+                "turns": [{}, {}],  # 2 turns
+            }
+        }
+        result = _validate_final_state_before_target(packet, obs_final, session_state)
+        self.assertIsNone(result, "Correct final state must not block")
+
+    def test_validate_final_state_before_target_blocks_on_wrong_subject(self):
+        """Wrong prior_subject in final state must produce BLOCKED."""
+        packet = self._make_two_turn_packet_v4()
+        obs_wrong = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="jupiter",   # wrong: expected mercury
+            ANSWER_STATE="LIMITED",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        session_state = {
+            "session_value": {
+                "locale": "en",
+                "compacted": False,
+                "turns": [{}, {}],
+            }
+        }
+        result = _validate_final_state_before_target(packet, obs_wrong, session_state)
+        self.assertIsNotNone(result)
+        self.assertIn("FINAL_STATE_PRECONDITION_MISMATCH", result)
+        self.assertIn("prior_subject", result)
+
+    def test_validate_final_state_before_target_blocks_on_wrong_turn_count(self):
+        """Wrong turn_count in session must produce BLOCKED."""
+        packet = self._make_two_turn_packet_v4()
+        obs_ok = _obs_all_present(
+            ROUTE_DOMAIN="astromodule",
+            ROUTE_SUBJECT="mercury",
+            ANSWER_STATE="LIMITED",
+            INTENTS="interval_analysis",
+            TIME_SCOPE="2026-01-01/2026-12-31",
+        )
+        session_state = {
+            "session_value": {
+                "locale": "en",
+                "compacted": False,
+                "turns": [{}],  # only 1 turn; expected 2
+            }
+        }
+        result = _validate_final_state_before_target(packet, obs_ok, session_state)
+        self.assertIsNotNone(result)
+        self.assertIn("FINAL_STATE_PRECONDITION_MISMATCH", result)
+        self.assertIn("turn_count", result)
 
 
 if __name__ == "__main__":

@@ -678,27 +678,48 @@ def _check_per_turn_contract(
     turn_contract: Dict[str, Any],
     obs: Dict[str, Any],
     turn_index: int,
+    submitted_question: Optional[str] = None,
 ) -> Optional[str]:
     """
     Validate observable state after a setup turn against the frozen per-turn contract
     from `prior_turns.value[turn_index - 1]`.
 
-    Validates observable fields against the per-turn contract from prior_turns.value[i]:
+    Validates all observable fixed fields from the per-turn contract:
       route_domain, route_subject, context_relation,
-      answer_state (from expected_answer_state.value), answer_mode, route_disposition.
-    Runtime-generated/bound fields (e.g. active_period) are not compared here;
-    they are validated as binding predicates by the evaluator after target execution.
+      answer_state (from expected_answer_state.value), answer_mode, route_disposition,
+      expected_intents (each declared intent must appear in INTENTS),
+      expected_active_period (start/end dates must appear in TIME_SCOPE),
+      question_exact (if submitted_question provided, must match contract),
+      locale (packet-level check; session observable when available).
+
+    COPY_EXACT_OBSERVED_FIELD fields are not compared here; they bind after observation.
 
     Returns a BLOCKED reason string if mismatch, or None if OK.
     """
     mismatches: List[str] = []
+
+    # question_exact: packet integrity — submitted question must match frozen contract
+    if submitted_question is not None:
+        contract_q = turn_contract.get("question_exact")
+        if contract_q and submitted_question != contract_q:
+            mismatches.append(
+                f"question_exact: submitted={submitted_question!r} contract={contract_q!r}"
+            )
+
+    # locale: validate contract locale matches packet locale if observable in obs
+    contract_locale = turn_contract.get("locale")
+    obs_locale = (obs.get("_session_locale") or "").lower()
+    if contract_locale and obs_locale and obs_locale != contract_locale.lower():
+        mismatches.append(
+            f"locale: expected={contract_locale!r} observed={obs_locale!r}"
+        )
 
     # expected_route_domain
     exp_domain = turn_contract.get("expected_route_domain")
     obs_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
     if exp_domain and obs_domain != exp_domain.lower():
         mismatches.append(
-            f"route_domain: expected={exp_domain} observed={obs_domain!r}"
+            f"route_domain: expected={exp_domain!r} observed={obs_domain!r}"
         )
 
     # expected_route_subject
@@ -706,15 +727,25 @@ def _check_per_turn_contract(
     obs_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
     if exp_subject and obs_subject != exp_subject.lower():
         mismatches.append(
-            f"route_subject: expected={exp_subject} observed={obs_subject!r}"
+            f"route_subject: expected={exp_subject!r} observed={obs_subject!r}"
         )
+
+    # expected_intents (list): each declared intent must appear in observed INTENTS
+    exp_intents = turn_contract.get("expected_intents")
+    if isinstance(exp_intents, list) and exp_intents:
+        obs_intents_str = (obs.get("INTENTS") or "").lower()
+        for intent in exp_intents:
+            if intent.lower() not in obs_intents_str:
+                mismatches.append(
+                    f"intents: expected_intent={intent!r} not found in INTENTS={obs.get('INTENTS')!r}"
+                )
 
     # expected_context_relation
     exp_cr = turn_contract.get("expected_context_relation")
     obs_cr = (obs.get("CONTEXT_RELATION") or "").upper()
     if exp_cr and obs_cr != exp_cr.upper():
         mismatches.append(
-            f"context_relation: expected={exp_cr} observed={obs_cr!r}"
+            f"context_relation: expected={exp_cr!r} observed={obs_cr!r}"
         )
 
     # expected_answer_state: dict with mode/value or a string
@@ -727,7 +758,7 @@ def _check_per_turn_contract(
         obs_as = (obs.get("ANSWER_STATE") or "").upper()
         if exp_as_value and obs_as != exp_as_value.upper():
             mismatches.append(
-                f"answer_state: expected={exp_as_value} observed={obs_as!r}"
+                f"answer_state: expected={exp_as_value!r} observed={obs_as!r}"
             )
 
     # expected_answer_mode
@@ -735,15 +766,30 @@ def _check_per_turn_contract(
     obs_am = (obs.get("ANSWER_MODE") or "").upper()
     if exp_am and obs_am != exp_am.upper():
         mismatches.append(
-            f"answer_mode: expected={exp_am} observed={obs_am!r}"
+            f"answer_mode: expected={exp_am!r} observed={obs_am!r}"
         )
+
+    # expected_active_period: start/end dates must appear in TIME_SCOPE
+    exp_period = turn_contract.get("expected_active_period")
+    if isinstance(exp_period, dict):
+        obs_ts = (obs.get("TIME_SCOPE") or "")
+        exp_start = exp_period.get("start")
+        exp_end = exp_period.get("end")
+        if exp_start and exp_start not in obs_ts:
+            mismatches.append(
+                f"active_period.start: expected={exp_start!r} not found in TIME_SCOPE={obs_ts!r}"
+            )
+        if exp_end and exp_end not in obs_ts:
+            mismatches.append(
+                f"active_period.end: expected={exp_end!r} not found in TIME_SCOPE={obs_ts!r}"
+            )
 
     # expected_route_disposition
     exp_disp = turn_contract.get("expected_route_disposition")
     obs_disp = (obs.get("ROUTE_DISPOSITION") or "").upper()
     if exp_disp and obs_disp != exp_disp.upper():
         mismatches.append(
-            f"route_disposition: expected={exp_disp} observed={obs_disp!r}"
+            f"route_disposition: expected={exp_disp!r} observed={obs_disp!r}"
         )
 
     if mismatches:
@@ -759,6 +805,7 @@ def _check_precondition_against_packet(
     obs: Dict[str, Any],
     session_state: Dict[str, Any],
     setup_turn_index: int,
+    submitted_question: Optional[str] = None,
 ) -> Optional[str]:
     """
     Compare the observable session/context state after a setup turn against
@@ -775,7 +822,10 @@ def _check_precondition_against_packet(
     idx = setup_turn_index - 1  # 0-based
     if idx < len(prior_turns_value):
         turn_contract = prior_turns_value[idx]
-        return _check_per_turn_contract(turn_contract, obs, setup_turn_index)
+        return _check_per_turn_contract(
+            turn_contract, obs, setup_turn_index,
+            submitted_question=submitted_question,
+        )
 
     # Fallback: expected_context_packet for packets that don't have per-turn contracts
     expected_ctx = packet.get("expected_context_packet")
@@ -787,21 +837,21 @@ def _check_precondition_against_packet(
     observed_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
     if expected_domain and observed_domain != expected_domain.lower():
         mismatches.append(
-            f"prior_domain: expected={expected_domain} observed={observed_domain!r}"
+            f"prior_domain: expected={expected_domain!r} observed={observed_domain!r}"
         )
 
     expected_subject = expected_ctx.get("prior_subject")
     observed_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
     if expected_subject and observed_subject != expected_subject.lower():
         mismatches.append(
-            f"prior_subject: expected={expected_subject} observed={observed_subject!r}"
+            f"prior_subject: expected={expected_subject!r} observed={observed_subject!r}"
         )
 
     expected_answer_state = expected_ctx.get("prior_answer_state")
     observed_answer_state = (obs.get("ANSWER_STATE") or "").upper()
     if expected_answer_state and observed_answer_state != expected_answer_state.upper():
         mismatches.append(
-            f"prior_answer_state: expected={expected_answer_state} observed={observed_answer_state!r}"
+            f"prior_answer_state: expected={expected_answer_state!r} observed={observed_answer_state!r}"
         )
 
     if mismatches:
@@ -887,27 +937,108 @@ def _is_binance_trading_intent(obs: Dict[str, Any]) -> bool:
     return boundary_violation or binance_trading
 
 
-def _family_match(expected: str, observed: str) -> bool:
+def _validate_final_state_before_target(
+    packet: Dict[str, Any],
+    obs: Dict[str, Any],
+    session_state: Dict[str, Any],
+) -> Optional[str]:
     """
-    Token-based taxonomy family match for EXPECTED_MODE and EXPECTED_ANSWER_TYPE.
+    Validate the final expected_context_packet and expected_session_state cardinality predicates
+    from the frozen packet against observations captured after the LAST setup turn.
 
-    Canonical CSV labels (e.g. ASTRO_X_BTC, BTC_FIELD_NOW) are taxonomy family
-    descriptors, not exact runtime enum values. This function checks whether the
-    expected and observed values share at least one meaningful token (length > 1).
-
-    Single-character tokens (e.g. "X" in ASTRO_X_BTC) are deliberately excluded
-    because they are structural connectors rather than semantic identifiers.
-    All canonical taxonomy values use multi-character tokens as their primary
-    semantic units, so this filter does not produce false negatives for valid inputs.
-
-    Examples:
-      ASTRO_X_BTC vs ASTRO_BTC_BRIDGE → tokens {ASTRO, BTC} overlap → True
-      BTC_FIELD_NOW vs MARKET_DIAGNOSIS → no overlap → False
-      ASTRO_INTERVAL vs ASTRO_INTERVAL → exact overlap → True
+    Must be called only after all setup turns are complete, before target submission.
+    Returns a BLOCKED reason string if any fixed field mismatches, or None if OK.
     """
-    exp_tokens = {t for t in expected.upper().split("_") if len(t) > 1}
-    obs_tokens = {t for t in observed.upper().split("_") if len(t) > 1}
-    return bool(exp_tokens & obs_tokens)
+    mismatches: List[str] = []
+
+    # --- expected_context_packet fixed fields ---
+    expected_ctx = packet.get("expected_context_packet")
+    if isinstance(expected_ctx, dict):
+        # prior_domain
+        exp_domain = expected_ctx.get("prior_domain")
+        obs_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
+        if exp_domain and obs_domain != exp_domain.lower():
+            mismatches.append(
+                f"expected_context_packet.prior_domain: expected={exp_domain!r} observed={obs_domain!r}"
+            )
+
+        # prior_subject
+        exp_subject = expected_ctx.get("prior_subject")
+        obs_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
+        if exp_subject and obs_subject != exp_subject.lower():
+            mismatches.append(
+                f"expected_context_packet.prior_subject: expected={exp_subject!r} observed={obs_subject!r}"
+            )
+
+        # prior_answer_state
+        exp_as = expected_ctx.get("prior_answer_state")
+        obs_as = (obs.get("ANSWER_STATE") or "").upper()
+        if exp_as and obs_as != exp_as.upper():
+            mismatches.append(
+                f"expected_context_packet.prior_answer_state: expected={exp_as!r} observed={obs_as!r}"
+            )
+
+        # prior_intents (list): each declared intent must appear in observed INTENTS
+        exp_intents = expected_ctx.get("prior_intents")
+        if isinstance(exp_intents, list) and exp_intents:
+            obs_intents_str = (obs.get("INTENTS") or "").lower()
+            for intent in exp_intents:
+                if intent.lower() not in obs_intents_str:
+                    mismatches.append(
+                        f"expected_context_packet.prior_intents: intent={intent!r} not found "
+                        f"in observed INTENTS={obs.get('INTENTS')!r}"
+                    )
+
+        # prior_time_start / prior_time_end → TIME_SCOPE
+        obs_ts = (obs.get("TIME_SCOPE") or "")
+        prior_time_start = expected_ctx.get("prior_time_start")
+        prior_time_end = expected_ctx.get("prior_time_end")
+        if prior_time_start and prior_time_start not in obs_ts:
+            mismatches.append(
+                f"expected_context_packet.prior_time_start: expected={prior_time_start!r} "
+                f"not found in TIME_SCOPE={obs_ts!r}"
+            )
+        if prior_time_end and prior_time_end not in obs_ts:
+            mismatches.append(
+                f"expected_context_packet.prior_time_end: expected={prior_time_end!r} "
+                f"not found in TIME_SCOPE={obs_ts!r}"
+            )
+
+    # --- expected_session_state cardinality predicates ---
+    expected_ss = packet.get("expected_session_state")
+    if isinstance(expected_ss, dict):
+        session_value = (session_state.get("session_value") or {}) if session_state else {}
+
+        # locale
+        exp_locale = expected_ss.get("locale")
+        obs_locale = (session_value.get("locale") or "").lower()
+        if exp_locale and obs_locale and obs_locale != exp_locale.lower():
+            mismatches.append(
+                f"expected_session_state.locale: expected={exp_locale!r} observed={obs_locale!r}"
+            )
+
+        # turn_count
+        exp_turn_count = expected_ss.get("turn_count")
+        if isinstance(exp_turn_count, int):
+            obs_turns = session_value.get("turns")
+            obs_turn_count = len(obs_turns) if isinstance(obs_turns, list) else None
+            if obs_turn_count is not None and obs_turn_count != exp_turn_count:
+                mismatches.append(
+                    f"expected_session_state.turn_count: expected={exp_turn_count} observed={obs_turn_count}"
+                )
+
+        # compacted
+        exp_compacted = expected_ss.get("compacted")
+        if exp_compacted is False:
+            obs_compacted = session_value.get("compacted")
+            if obs_compacted is True:
+                mismatches.append(
+                    "expected_session_state.compacted: expected=false but observed=true"
+                )
+
+    if mismatches:
+        return "FINAL_STATE_PRECONDITION_MISMATCH: " + "; ".join(mismatches)
+    return None
 
 
 def evaluate_case(
@@ -1008,91 +1139,111 @@ def evaluate_case(
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # EXPECTED_MODE → family check against ANSWER_MODE (taxonomy family labels, not exact match)
-    # Canonical labels like ASTRO_X_BTC describe a mode family; runtime may report ASTRO_BTC_BRIDGE.
-    # Exact-value equality is forbidden; family token overlap is required.
+    # EXPECTED_MODE: CSV mode taxonomy and runtime ANSWER_MODE taxonomy have no proven
+    # deterministic binding. Keyword/token-overlap scoring is explicitly forbidden by the
+    # evaluator contract ("never score by keyword overlap alone").
+    # → BLOCKED with EVALUATOR_BINDING_UNAVAILABLE; never fabricate PASS or FAIL.
     expected_mode = csv_row.get("EXPECTED_MODE", "")
-    actual_mode = obs.get("ANSWER_MODE") or ""
     if expected_mode:
-        if not actual_mode:
-            failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_mode family expected={expected_mode} but ANSWER_MODE is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif not _family_match(expected_mode, actual_mode):
-            failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_mode family expected={expected_mode} actual={actual_mode} (no shared taxonomy tokens)"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
+        failure_reasons.append(
+            f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_MODE={expected_mode!r} has no proven "
+            "deterministic binding to runtime ANSWER_MODE taxonomy; keyword overlap forbidden"
+        )
+        if verdict == "PASS":
+            verdict = "BLOCKED"
 
-    # EXPECTED_ANSWER_TYPE → family check against ANSWER_STATE (taxonomy family labels, not exact match)
-    # Same family-token rule: exact equality is forbidden.
+    # EXPECTED_ANSWER_TYPE: CSV answer-type taxonomy and runtime ANSWER_STATE taxonomy are
+    # different vocabularies. Cross-taxonomy comparison is forbidden. No proven binding exists.
+    # → BLOCKED with EVALUATOR_BINDING_UNAVAILABLE; never fabricate PASS or FAIL.
     expected_answer_type = csv_row.get("EXPECTED_ANSWER_TYPE", "")
-    actual_answer_state = obs.get("ANSWER_STATE") or ""
     if expected_answer_type:
-        if not actual_answer_state:
-            failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_type family expected={expected_answer_type} but ANSWER_STATE is absent"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
-        elif not _family_match(expected_answer_type, actual_answer_state):
-            failure_reasons.append(
-                f"ANSWER_GRAMMAR: answer_type family expected={expected_answer_type} actual={actual_answer_state} (no shared taxonomy tokens)"
-            )
-            if verdict == "PASS":
-                verdict = "FAIL"
+        failure_reasons.append(
+            f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_ANSWER_TYPE={expected_answer_type!r} has no proven "
+            "deterministic binding to runtime ANSWER_STATE taxonomy; cross-taxonomy comparison forbidden"
+        )
+        if verdict == "PASS":
+            verdict = "BLOCKED"
 
-    # EXPECTED_INTENT → INTENTS (structural check: declared intents must be non-empty)
+    # EXPECTED_INTENT → INTENTS: deterministic case-insensitive containment check.
+    # Both use the same question-facet/intent vocabulary. Non-empty-but-wrong → FAIL.
     expected_intent = csv_row.get("EXPECTED_INTENT", "")
     actual_intents = obs.get("INTENTS") or ""
-    if expected_intent and not actual_intents:
-        failure_reasons.append(
-            f"ROUTING: intents expected={expected_intent} but INTENTS is absent"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
+    if expected_intent:
+        if not actual_intents:
+            failure_reasons.append(
+                f"ROUTING: intents expected={expected_intent!r} but INTENTS is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        elif expected_intent.lower() not in actual_intents.lower():
+            failure_reasons.append(
+                f"ROUTING: intent expected={expected_intent!r} not found in observed INTENTS={actual_intents!r}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
 
-    # EXPECTED_PERIOD → TIME_SCOPE (structural: must be present if period is required)
+    # EXPECTED_PERIOD → TIME_SCOPE: deterministic case-insensitive containment check.
+    # Non-empty-but-wrong → FAIL.
     expected_period = csv_row.get("EXPECTED_PERIOD", "")
     actual_time_scope = obs.get("TIME_SCOPE") or ""
-    if expected_period and not actual_time_scope:
-        failure_reasons.append(
-            f"TIME_SCOPE: period expected={expected_period} but TIME_SCOPE is absent"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
+    if expected_period:
+        if not actual_time_scope:
+            failure_reasons.append(
+                f"TIME_SCOPE: period expected={expected_period!r} but TIME_SCOPE is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        elif expected_period.lower() not in actual_time_scope.lower():
+            failure_reasons.append(
+                f"TIME_SCOPE: period expected={expected_period!r} not found in observed TIME_SCOPE={actual_time_scope!r}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
 
-    # EXPECTED_EVIDENCE_FAMILY → EVIDENCE_LEVELS (structural: must be present)
+    # EXPECTED_EVIDENCE_FAMILY → EVIDENCE_LEVELS: deterministic case-insensitive containment check.
+    # Non-empty-but-wrong → FAIL.
     expected_ev_family = csv_row.get("EXPECTED_EVIDENCE_FAMILY", "")
     actual_ev_levels = obs.get("EVIDENCE_LEVELS") or ""
-    if expected_ev_family and not actual_ev_levels:
-        failure_reasons.append(
-            f"EVIDENCE: evidence_family expected={expected_ev_family} but EVIDENCE_LEVELS is absent"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
+    if expected_ev_family:
+        if not actual_ev_levels:
+            failure_reasons.append(
+                f"EVIDENCE: evidence_family expected={expected_ev_family!r} but EVIDENCE_LEVELS is absent"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        elif expected_ev_family.lower() not in str(actual_ev_levels).lower():
+            failure_reasons.append(
+                f"EVIDENCE: evidence_family expected={expected_ev_family!r} not found in "
+                f"observed EVIDENCE_LEVELS={actual_ev_levels!r}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
 
-    # EXPECTED_BOUNDARY → BOUNDARY_STATE (structural)
+    # EXPECTED_BOUNDARY → BOUNDARY_STATE: deterministic case-insensitive containment check.
+    # Non-empty-but-wrong → FAIL. NON_TRADING with trading intent → FAIL.
     expected_boundary = csv_row.get("EXPECTED_BOUNDARY", "")
     actual_boundary = obs.get("BOUNDARY_STATE") or ""
     if expected_boundary:
         if not actual_boundary:
             failure_reasons.append(
-                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary} but BOUNDARY_STATE is absent"
+                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary!r} but BOUNDARY_STATE is absent"
             )
             if verdict == "PASS":
                 verdict = "FAIL"
-        else:
-            # NON_TRADING must not appear as trading boundary
-            if "NON_TRADING" in expected_boundary.upper() and _is_binance_trading_intent(obs):
-                failure_reasons.append(
-                    f"TRADING_BOUNDARY: expected NON_TRADING but trading boundary detected"
-                )
-                if verdict == "PASS":
-                    verdict = "FAIL"
+        elif expected_boundary.lower() not in actual_boundary.lower():
+            failure_reasons.append(
+                f"CAUSAL_BOUNDARY: boundary expected={expected_boundary!r} not found in "
+                f"observed BOUNDARY_STATE={actual_boundary!r}"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
+        # NON_TRADING must not coexist with a detected trading boundary violation
+        if "NON_TRADING" in expected_boundary.upper() and _is_binance_trading_intent(obs):
+            failure_reasons.append(
+                "TRADING_BOUNDARY: expected NON_TRADING but trading boundary detected"
+            )
+            if verdict == "PASS":
+                verdict = "FAIL"
 
     # FORBIDDEN_BEHAVIOR checks
     forbidden = csv_row.get("FORBIDDEN_BEHAVIOR", "")
@@ -1101,15 +1252,38 @@ def evaluate_case(
         if verdict == "PASS":
             verdict = "FAIL"
 
-    # EXPECTED_DIRECTNESS → DIRECT_ANSWER
+    # EXPECTED_DIRECTNESS → DIRECT_ANSWER: deterministic directness check.
+    # "YES"/"DIRECT"/truthy  → DIRECT_ANSWER must be non-empty (FAIL if absent).
+    # "NO"/"INDIRECT"/falsy  → DIRECT_ANSWER must be absent/empty (FAIL if present).
+    # Unrecognized token     → no proven binding → BLOCKED.
     expected_directness = csv_row.get("EXPECTED_DIRECTNESS", "")
     direct_answer = obs.get("DIRECT_ANSWER") or ""
-    if expected_directness and not direct_answer:
-        failure_reasons.append(
-            f"ANSWER_DIRECTNESS: expected directness={expected_directness} but DIRECT_ANSWER is empty"
-        )
-        if verdict == "PASS":
-            verdict = "FAIL"
+    if expected_directness:
+        ed_upper = expected_directness.upper()
+        if ed_upper in ("YES", "DIRECT", "TRUE", "Y", "1"):
+            if not direct_answer:
+                failure_reasons.append(
+                    f"ANSWER_DIRECTNESS: expected direct answer "
+                    f"(EXPECTED_DIRECTNESS={expected_directness!r}) but DIRECT_ANSWER is absent"
+                )
+                if verdict == "PASS":
+                    verdict = "FAIL"
+        elif ed_upper in ("NO", "INDIRECT", "NONE", "FALSE", "N", "0", "NOT_DIRECT"):
+            if direct_answer:
+                failure_reasons.append(
+                    f"ANSWER_DIRECTNESS: expected no direct answer "
+                    f"(EXPECTED_DIRECTNESS={expected_directness!r}) but DIRECT_ANSWER is present: "
+                    f"{direct_answer[:80]!r}"
+                )
+                if verdict == "PASS":
+                    verdict = "FAIL"
+        else:
+            failure_reasons.append(
+                f"EVALUATOR_BINDING_UNAVAILABLE: EXPECTED_DIRECTNESS={expected_directness!r} "
+                "is not a recognized directness token; no deterministic binding"
+            )
+            if verdict == "PASS":
+                verdict = "BLOCKED"
 
     return {
         "verdict": verdict,
@@ -1237,9 +1411,14 @@ def execute_case(
                 obs_1 = _capture_observation(driver)
                 session_state_1 = _capture_session_state(driver)
                 result["session_state_after_setup_1"] = session_state_1
+                # Merge session-derived fields into obs before precondition validation
+                for k, v in _extract_session_fields(session_state_1).items():
+                    if k in MANDATORY_CAPTURE_FIELDS and obs_1.get(k) is None:
+                        obs_1[k] = v
 
                 precondition_failure = _check_precondition_against_packet(
-                    packet, obs_1, session_state_1, setup_turn_index=1
+                    packet, obs_1, session_state_1, setup_turn_index=1,
+                    submitted_question=first_setup_q,
                 )
                 if precondition_failure:
                     result["setup_preconditions_materialized"] = False
@@ -1284,13 +1463,31 @@ def execute_case(
                     # Validate precondition after each setup turn
                     obs_i = _capture_observation(driver)
                     session_state_i = _capture_session_state(driver)
+                    # Merge session-derived fields into obs before precondition validation
+                    for k, v in _extract_session_fields(session_state_i).items():
+                        if k in MANDATORY_CAPTURE_FIELDS and obs_i.get(k) is None:
+                            obs_i[k] = v
                     precondition_failure_i = _check_precondition_against_packet(
-                        packet, obs_i, session_state_i, setup_turn_index=i
+                        packet, obs_i, session_state_i, setup_turn_index=i,
+                        submitted_question=setup_q,
                     )
                     if precondition_failure_i:
                         result["setup_preconditions_materialized"] = False
                         result["blocked_reason"] = precondition_failure_i
                         return {**result, "verdict": "BLOCKED"}
+
+                # After all setup turns: validate final expected_context_packet and
+                # expected_session_state predicates before target submission.
+                # Use last captured obs/session_state (obs_i for multi-turn or obs_1 for single).
+                final_obs = obs_i if len(setup_turns) > 1 else obs_1
+                final_ss = session_state_i if len(setup_turns) > 1 else session_state_1
+                final_state_failure = _validate_final_state_before_target(
+                    packet, final_obs, final_ss
+                )
+                if final_state_failure:
+                    result["setup_preconditions_materialized"] = False
+                    result["blocked_reason"] = final_state_failure
+                    return {**result, "verdict": "BLOCKED"}
 
                 # Submit target question in-session (exact bytes)
                 turns_before_target = len(
