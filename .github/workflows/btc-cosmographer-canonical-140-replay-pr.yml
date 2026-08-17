@@ -67,116 +67,25 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import csv
-          import hashlib
-          import json
-          import sys
+          # Delegate entirely to the harness module so authority constants have a single source.
+          import importlib.util, sys
           from pathlib import Path
-          from collections import Counter
 
-          CORPUS_PATH = Path("tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv")
-          PACKETS_PATH = Path("tests/fixtures/btc-cosmographer-canonical-state-packets-v0_1.json")
+          spec = importlib.util.spec_from_file_location(
+              "harness",
+              Path("scripts/run-btc-cosmographer-canonical-140-replay.py"),
+          )
+          harness = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(harness)
 
-          CORPUS_AUTHORITY_SHA256 = "ef7a08fa8c4bf764650ffce4a3cb85c7eebf6f19b1409446e5cba92ef06340bd"
-          STATE_PACKETS_AUTHORITY_SHA256 = "631f71d5c2b095248fa3ba9c66d3739d559576e59f93bf1e35e3304f2aa3a464"
-
-          def sha256_file(p):
-              h = hashlib.sha256()
-              with open(p, "rb") as f:
-                  for chunk in iter(lambda: f.read(65536), b""):
-                      h.update(chunk)
-              return h.hexdigest()
-
-          def sha256_str(s):
-              return hashlib.sha256(s.encode("utf-8")).hexdigest()
-
-          failures = []
-
-          # 1. Corpus hash
-          actual_corpus = sha256_file(CORPUS_PATH)
-          if actual_corpus != CORPUS_AUTHORITY_SHA256:
-              failures.append(f"CORPUS_HASH_MISMATCH: expected={CORPUS_AUTHORITY_SHA256} actual={actual_corpus}")
-
-          # 2. Packets hash
-          actual_pkts = sha256_file(PACKETS_PATH)
-          if actual_pkts != STATE_PACKETS_AUTHORITY_SHA256:
-              failures.append(f"PACKETS_HASH_MISMATCH: expected={STATE_PACKETS_AUTHORITY_SHA256} actual={actual_pkts}")
-
-          # 3. Total cases = 140
-          with open(CORPUS_PATH, encoding="utf-8-sig") as f:
-              rows = list(csv.DictReader(f))
-          if len(rows) != 140:
-              failures.append(f"TOTAL_CASES: expected=140 actual={len(rows)}")
-
-          # 4. Unique case IDs = 140
-          ids = [r["CASE_ID"] for r in rows]
-          if len(set(ids)) != 140:
-              failures.append(f"UNIQUE_CASE_IDS: expected=140 actual={len(set(ids))}")
-
-          # 5. Layer counts 14/72/27/27
-          layer_counts = Counter(r["CORPUS_LAYER"] for r in rows)
-          expected_layers = {
-              "FOUNDER_GOLDEN_SET": 14,
-              "AI_MODE_COVERAGE_CORPUS": 72,
-              "REGRESSION_CORPUS": 27,
-              "ADVERSARIAL_AND_AMBIGUITY_CORPUS": 27,
-          }
-          for layer, count in expected_layers.items():
-              actual = layer_counts.get(layer, 0)
-              if actual != count:
-                  failures.append(f"LAYER_COUNT {layer}: expected={count} actual={actual}")
-
-          # 6. Load packets
-          with open(PACKETS_PATH, encoding="utf-8") as f:
-              doc = json.load(f)
-          packets = doc["packets"]
-
-          # 7. One packet per case ID
-          packet_ids = [p["case_id"] for p in packets]
-          if len(packets) != 140:
-              failures.append(f"PACKET_COUNT: expected=140 actual={len(packets)}")
-          if len(set(packet_ids)) != 140:
-              failures.append(f"UNIQUE_PACKET_IDS: expected=140 actual={len(set(packet_ids))}")
-
-          csv_id_set = set(ids)
-          packet_id_set = set(packet_ids)
-          missing = csv_id_set - packet_id_set
-          if missing:
-              failures.append(f"MISSING_PACKETS: {sorted(missing)}")
-
-          # 8. All packet hashes present and valid format (file-level SHA256 seals integrity)
-          for p in packets:
-              declared = p.get("packet_hash")
-              if not declared:
-                  failures.append(f"PACKET_HASH_MISSING: case_id={p['case_id']}")
-                  continue
-              hash_value = declared
-              if isinstance(declared, str) and declared.startswith("sha256:"):
-                  hash_value = declared[len("sha256:"):]
-              if not hash_value or len(hash_value) < 32:
-                  failures.append(f"PACKET_HASH_MALFORMED: case_id={p['case_id']} value={declared!r}")
-
-          # 9. No heuristic derivation
-          heuristic = [p["case_id"] for p in packets if p.get("heuristic_state_reconstruction") not in (None, "NO", False)]
-          if heuristic:
-              failures.append(f"HEURISTIC_DERIVATION_FOUND: {heuristic}")
-
-          # 10. No expected contract mutation
-          mutated = [p["case_id"] for p in packets if p.get("expected_contract_mutation") not in (None, "NO", False)]
-          if mutated:
-              failures.append(f"CONTRACT_MUTATION_FOUND: {mutated}")
-
-          if failures:
-              for f in failures:
-                  print(f"FIXTURE_VALIDATION_FAILURE: {f}", file=sys.stderr)
-              sys.exit(1)
-
+          csv_rows, packets, packets_index = harness.validate_fixtures(
+              harness.CORPUS_PATH, harness.PACKETS_PATH
+          )
           print("FIXTURE_VALIDATION=PASS")
-          print(f"  corpus_sha256={actual_corpus}")
-          print(f"  packets_sha256={actual_pkts}")
-          print(f"  total_cases={len(rows)}")
-          print(f"  unique_case_ids={len(set(ids))}")
-          print(f"  layer_counts={dict(layer_counts)}")
+          print(f"  corpus_sha256={harness.CORPUS_AUTHORITY_SHA256}")
+          print(f"  packets_sha256={harness.STATE_PACKETS_AUTHORITY_SHA256}")
+          print(f"  total_cases={len(csv_rows)}")
+          print(f"  unique_case_ids={len(set(r['CASE_ID'] for r in csv_rows))}")
           print(f"  packets={len(packets)}")
           PY
 

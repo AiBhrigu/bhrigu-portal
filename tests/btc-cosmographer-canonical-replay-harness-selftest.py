@@ -421,7 +421,7 @@ class TestFailBlockedCannotDisappear(unittest.TestCase):
         self.assertIn("BLOCKED", verdicts)
 
 
-class TestPassPlusFailPlusBlocedEquals140(unittest.TestCase):
+class TestPassPlusFailPlusBlockedEquals140(unittest.TestCase):
     """PASS + FAIL + BLOCKED must equal 140 for a full run."""
 
     def test_totals_invariant(self):

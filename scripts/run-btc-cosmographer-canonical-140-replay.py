@@ -476,8 +476,6 @@ def evaluate_case(
         failure_reasons.append("TRADING_BOUNDARY: trading-intent Binance fetch detected")
         if verdict == "PASS":
             verdict = "FAIL"
-        if "TRADING_BOUNDARY" not in failure_reasons:
-            pass  # already appended
 
     # Route domain check
     expected_domain = csv_row.get("EXPECTED_DOMAIN", "")
@@ -552,6 +550,8 @@ def execute_case(
     Execute one case in an isolated browser context.
     Returns a raw observation dict.
     """
+    from selenium.webdriver.common.by import By
+
     case_id = packet["case_id"]
     session_mode = packet.get("session_mode", "CLEAN_SESSION")
     locale = packet.get("locale", "RU")
@@ -638,7 +638,7 @@ def execute_case(
                     # Count current exchanges to detect new answer
                     turns_before = len(
                         driver.find_elements(
-                            __import__("selenium").webdriver.common.by.By.CSS_SELECTOR,
+                            By.CSS_SELECTOR,
                             ".dialogueExchange .cosmographerTurn",
                         )
                     )
@@ -654,7 +654,7 @@ def execute_case(
                     while time.time() < deadline:
                         turns_now = len(
                             driver.find_elements(
-                                __import__("selenium").webdriver.common.by.By.CSS_SELECTOR,
+                                By.CSS_SELECTOR,
                                 ".dialogueExchange .cosmographerTurn",
                             )
                         )
@@ -683,7 +683,7 @@ def execute_case(
                 # Submit target question in-session (exact bytes)
                 turns_before_target = len(
                     driver.find_elements(
-                        __import__("selenium").webdriver.common.by.By.CSS_SELECTOR,
+                        By.CSS_SELECTOR,
                         ".dialogueExchange .cosmographerTurn",
                     )
                 )
@@ -699,7 +699,7 @@ def execute_case(
                 while time.time() < deadline:
                     turns_now = len(
                         driver.find_elements(
-                            __import__("selenium").webdriver.common.by.By.CSS_SELECTOR,
+                            By.CSS_SELECTOR,
                             ".dialogueExchange .cosmographerTurn",
                         )
                     )
