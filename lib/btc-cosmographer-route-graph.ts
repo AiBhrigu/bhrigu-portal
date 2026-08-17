@@ -132,10 +132,10 @@ const MARKET_CLASSES: BtcEnvelopeQuestionClass[] = [
 const BODY_PATTERNS: Array<[string, RegExp]> = [
   ["sun", /\b(?:sun|solar)\b|солнц/i],
   ["moon", /\b(?:moon|lunar)\b|лун/i],
-  ["mercury", /\bmercury\b|меркур/i],
+  ["mercury", /\b(?:mercury|mercurry)\b|меркур/i],
   ["venus", /\bvenus\b|венер/i],
   ["mars", /\bmars\b|марс/i],
-  ["jupiter", /\bjupiter\b|юпитер/i],
+  ["jupiter", /\bjupiter\b|юпит(?:ер|ир)/i],
   ["saturn", /\bsaturn\b|сатурн/i],
   ["uranus", /\buranus\b|уран/i],
   ["neptune", /\bneptune\b|нептун/i],
@@ -325,9 +325,100 @@ function isUnsupportedAssetOnly(question: string): boolean {
   return !hasBtcReference(question) && /\beth\b|ethereum|эфириум|\bsol\b|solana|солан/i.test(question);
 }
 
+function lastMentionedBody(question: string): string | null {
+  let chosen: string | null = null;
+  let latest = -1;
+  for (const [body, pattern] of BODY_PATTERNS) {
+    const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
+    const matcher = new RegExp(pattern.source, flags);
+    let match: RegExpExecArray | null = matcher.exec(question);
+    while (match) {
+      if (match.index >= latest) {
+        latest = match.index;
+        chosen = body;
+      }
+      if (!match[0]) matcher.lastIndex += 1;
+      match = matcher.exec(question);
+    }
+  }
+  return chosen;
+}
+
+function isBodyOverrideLanguage(question: string): boolean {
+  return /instead\s+of|rather\s+than|now\s+only|continue\s+(?:with|about)|вместо|сейчас\s+только|только\s+[а-яёa-z]+|продолжай\s+про|продолжи\s+про|не\s+[а-яёa-z]+[.!?]?\s*продолж/i.test(question);
+}
+
+function isBodyStateConflict(question: string): boolean {
+  return /keep[^?!.]{0,48}active[^?!.]{0,48}(?:but|while)[^?!.]{0,48}only|оставь[^?!.]{0,48}активн[^?!.]{0,48}но[^?!.]{0,48}только/i.test(question);
+}
+
+function isTradingBoundaryRequest(question: string): boolean {
+  return /\bbuy\b|\bsell\b|position\s+size|portfolio\s+allocation|how\s+much.*(?:allocate|invest)|когда\s+покупать|когда\s+продавать|продай\s+мне\s+сигнал|торгов[а-яё]*\s+сигнал|дол[юя]\s+капитал[а-яё]*.*(?:влож|инвест)/i.test(question);
+}
+
+function isChangeMemoryIntent(question: string): boolean {
+  return /material\s+changes?|meaningful\s+changes?|no\s+(?:meaningful|material)\s+change|changes?\s+remain\s+noise|изменени[яй]\s+материал|существенн[а-яё]*\s+измен|нет\s+существенн[а-яё]*\s+измен|остают(?:ся)?\s+шум|принят[а-яё]*\s+(?:снимок|snapshot).*предыдущ/i.test(question);
+}
+
+function isAstroWindowLanguage(question: string): boolean {
+  return /annual\s+priority|local\s+concentration|planetary\s+windows?|astronomical\s+windows?|планетарн[а-яё]*\s+окн|астрономическ[а-яё]*\s+окн|главн[а-яё]*\s+окн|окн[а-яё]*\s+(?:20\d{2}|июл|март)|stations?|ingresses?|станци[а-яё]*|ингресси[а-яё]*|long[-\s]?term\s+cycles?|долгосрочн[а-яё]*\s+цикл|точн[а-яё]*\s+аспект|обзор\s+планетарн[а-яё]*\s+окон|календар[а-яё]*\s+окон|пик[а-яё]*\s+.*20\d{2}|сильн[а-яё]*\s+дат|rank\s*\d/i.test(question);
+}
+
+function isMethodologyFollowUpLanguage(question: string): boolean {
+  return /this\s+answer|этом\s+ответ|где\s+здесь\s+данн|data[^?!.]{0,32}interpretation|данн[а-яё]*[^?!.]{0,32}интерпретац|already\s+proven|уже\s+доказ|пока\s+исслед|why[^?!.]{0,48}rank\s*\d|почему[^?!.]{0,48}rank\s*\d|продолжает\s+сравнив|не\s+показывай\s+доказ|раздели\s+annual\s+priority/i.test(question);
+}
+
+function isNavigationControlQuestion(question: string): boolean {
+  return /what\s+can\s+(?:btc\s+cosmographer|you)\s+(?:answer|do)|what\s+can\s+i\s+ask|available\s+routes?|capabilit|что\s+умеет\s+(?:отвечать\s+)?btc\s+cosmographer|что\s+ты\s+умеешь|какие\s+вопросы\s+можно|с\s+какого\s+вопроса\s+лучше\s+начать|как\s+начать\s+заново|начать\s+новую\s+бесед|очистить\s+контекст|сменить\s+предмет|новый\s+предмет[^?!.]{0,32}новая\s+бесед|какой\s+режим\s+сейчас\s+актив|astro\s+field[^?!.]{0,48}astro\s*[×x]\s*btc|чем\s+astro\s+field[^?!.]{0,48}astro\s*[×x]\s*btc/i.test(question);
+}
+
+function isMethodologyFocused(question: string): boolean {
+  const protocolMechanics = /proof[-\s]?of[-\s]?work|доказательств[ао]\s+работ/i.test(question) &&
+    /mining|miner|issuance|new\s+(?:btc|bitcoin)|майнинг|майнер|выпуск|эмисси/i.test(question);
+  if (protocolMechanics) return false;
+  return isMethodology(question) ||
+    /browser\s+memory|system\s+logic|памят[ьи]\s+браузер|логик[аи]\s+систем|research[^?!.]{0,32}validated|validated[^?!.]{0,32}research|исследован[^?!.]{0,32}доказ|статус[а-яё]*\s+метод|method\s+status|эфемерид|ephemeris|coordinate\s+system|систем[а-яё]*\s+координат|как\s+рассчитывается\s+annual\s+priority|how\s+is\s+annual\s+priority|период\s+покрыти[яе][^?!.]{0,48}ревизи|coverage[^?!.]{0,48}revision|revision[^?!.]{0,48}coverage|к\s+каким\s+активам[^?!.]{0,48}применим|applicab|100%\s+(?:confidence|уверенн)|назови[^?!.]{0,32}validated|объяви\s+метод\s+validated|annual\s+priority[^?!.]{0,48}market\s+concurrence/i.test(question) ||
+    isMethodologyFollowUpLanguage(question);
+}
+
+function hasAstroWindowHint(question: string): boolean {
+  return isAstroWindowLanguage(question) || /astro|астро|planetary|планетарн|astronom|астроном|aspect|аспект|\bwindow\b|окн[а-яё]*/i.test(question);
+}
+
+function hasMarketHint(question: string, market: BtcEnvelopeQuestionClass | null): boolean {
+  return Boolean(market) || hasBtcReference(question) || /market|рынок|snapshot|сним[а-яё]*|liquid|ликвид|historical\s+btc|btc[-\s]?period|btc[-\s]?период/i.test(question);
+}
+
+function isRelationLanguage(question: string): boolean {
+  return /impact|influence|affect|cause|caused|correlat|coincid|relat(?:e|ed|es|ing|ion)?|compare|versus|\bvs\b|confirm|support|agree|diverg|повлиял|влия(?:ни|ет|ют|ть)|вызвал|обрушил|корреляц|между|подтверж|совпад[а-яё]*|соотнос[а-яё]*|связ[а-яё]*|сравн[а-яё]*|сопостав[а-яё]*|расхожд[а-яё]*/i.test(question);
+}
+
+function isExplicitAstroBtcBridgeQuestion(
+  question: string,
+  body: string | null,
+  multiBody: boolean,
+  market: BtcEnvelopeQuestionClass | null,
+): boolean {
+  const astro = Boolean(body) || multiBody || hasAstroWindowHint(question);
+  const btc = hasMarketHint(question, market);
+  if (!astro || !btc) return false;
+  if (/without[^?!.]{0,24}(?:btc|bitcoin)|без\s+привязк[а-яё]*\s+к\s+(?:btc|bitcoin|биткоин)/i.test(question)) return false;
+  return isRelationLanguage(question) || Boolean(body && hasBtcReference(question)) ||
+    /astro|астро|astronom|астроном|planetary|планетарн/i.test(question);
+}
+
+function isBareAmbiguousQuestion(question: string): boolean {
+  const q = question.trim();
+  return /^(?:а\s+)?что\s+с\s+(?:ним|ней|этим)\??$|^что\s+показывает\s+это\??$|^what\s+about\s+(?:it|this|that)\??$|^какие\s+дни\??$|^which\s+days\??$/i.test(q);
+}
+
+function isContextContinuationLanguage(question: string): boolean {
+  return isReferential(question) || /^(?:show|list|put|continue|first|which|what\s+about|покажи|поставь|продолжи|сначала|перечисли|назови|какие\s+пики|какие\s+ингресс|какие\s+станци|какие\s+долгосрочн|какие[^?!.]{0,32}(?:напряженн|сильн)[^?!.]{0,16}дн|which[^?!.]{0,32}(?:intense|strong)[^?!.]{0,16}days)/i.test(question.trim());
+}
+
 function protocolSubject(question: string): string | null {
   if (/halving|халвинг|сокращени[ея]\s+награ|уполовинив/i.test(question)) return "halving";
-  if (/сколько.*(?:btc|биткоин|монет)|количеств.*(?:btc|биткоин|монет)|how\s+many\s+(?:btc|bitcoin)(?:\s+coins?)?(?:\s+can\s+(?:exist|there\s+be))?|total\s+(?:btc|bitcoin)|max(?:imum)?\s+supply|circulating\s+supply|эмисси|предложени[ея]\s+btc|21\s*(?:m|million|млн)/i.test(question)) return "supply";
+  if (/(?:^|\s)сколько\s+.*(?:btc|биткоин|монет)|количеств.*(?:btc|биткоин|монет)|how\s+many\s+(?:btc|bitcoin)(?:\s+coins?)?(?:\s+can\s+(?:exist|there\s+be))?|total\s+(?:btc|bitcoin)|max(?:imum)?\s+supply|circulating\s+supply|supply\s+limit|эмисси|предложени[ея]\s+btc|21\s*(?:m|million|млн)/i.test(question)) return "supply";
   if (/subsid|block reward|награда\s+за\s+блок|субсиди|how\s+(?:are|do)\s+new\s+(?:btc|bitcoin|bitcoins?)\s+(?:issued|created)|new\s+(?:btc|bitcoin|bitcoins?)\s+(?:issuance|creation)|как\s+(?:выпускаются|создаются|появляются)\s+новые\s+(?:btc|биткоин[а-яё]*)/i.test(question)) return "subsidy";
   if (/transaction fee|fees?\b|комисси/i.test(question)) return "fees";
   if (/difficulty|сложност/i.test(question)) return "difficulty";
@@ -348,9 +439,9 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
   if (/liquid|tvl|stablecoin|dex|ликвид|стейблкоин/i.test(question)) return "liquidity";
   if (/breadth|rotation|altcoin|participation|eth|ширин|ротац|альткоин|участи/i.test(question)) return "market_participation_rotation";
   if (/structure|regime|field score|market cap|структур|режим|капитализац/i.test(question)) return "market_structure";
-  if (/snapshot|memory|previous checkpoint|delta|снимок|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
+  if (/snapshot|memory|previous checkpoint|delta|сним[а-яё]*|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
   if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль/i.test(question)) return "temporal_pressure";
-  if (/btc field|market field|поле btc|общее поле|рынок btc|рынок биткоин|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
+  if (/btc field|market field|present[-\s]?field read|current btc field|accepted market evidence|поле btc|общее поле|текущ[а-яё]*\s+поле\s+btc|рынок btc|рынок биткоин|на\s+рынке\s+btc|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
   return null;
 }
 
@@ -442,24 +533,54 @@ export function routeBtcCosmographerQuestion(
   const q = normalized.toLowerCase();
   const protocol = protocolSubject(q);
   const bodies = bodySubjects(q);
-  const body = bodies[0] ?? null;
-  const multipleExplicitBodies = bodies.length > 1;
+  const overrideBody = bodies.length > 1 && isBodyOverrideLanguage(q) ? lastMentionedBody(q) : null;
+  const body = overrideBody ?? bodies[0] ?? null;
+  const multipleExplicitBodies = bodies.length > 1 && !overrideBody;
   const multiBody = isMultiBodyLanguage(q);
   const market = marketClass(q);
   const genesisChart = isBitcoinGenesisChartQuestion(q);
   const unsupportedMarketRequest = isUnsupportedMarketRequest(q);
-  let inferredDomain = multipleExplicitBodies
-    ? "unsupported"
-    : inferDomain(q, protocol, body, market);
-  let forcedSubject: string | null = multipleExplicitBodies
-    ? "multiple_planetary_objects"
-    : genesisChart
-      ? "bitcoin_genesis_chart"
-      : unsupportedMarketRequest
-        ? "unsupported_market_request"
-        : multiBody
-          ? "planetary_aspects"
-          : null;
+  const unsupportedAsset = isUnsupportedAssetOnly(q);
+  const navigationFocused = isNavigation(q) || isNavigationControlQuestion(q);
+  const methodologyFocused = isMethodologyFocused(q);
+  const changeMemoryFocused = market === "change_memory" || isChangeMemoryIntent(q);
+  const astroWindow = isAstroWindowLanguage(q);
+  const astroFocused = Boolean(body) || multiBody || astroWindow || /planet|планет|retrograd|ретроград|aspect|аспект|eclipse|затмени|station|ingress|станци|ингресс|\bwindow\b|окн[а-яё]*/i.test(q);
+  const tradingBoundary = isTradingBoundaryRequest(q);
+  const unresolvedBtcWindow = hasBtcReference(q) && /\bwindow\b|окн[а-яё]*/i.test(q) &&
+    !body && !multiBody && !/astro|астро|astronom|астроном|planetary|планетарн/i.test(q) && !isRelationLanguage(q);
+  const methodologyDominant = methodologyFocused && /статус[а-яё]*\s+метод|method\s+status|validated|research|объяви\s+метод/i.test(q);
+  const marketPrimaryOverride = Boolean(market) && /current[^?!.]{0,32}(?:btc|market)[^?!.]{0,24}field|текущ[а-яё]*[^?!.]{0,24}поле\s+btc|дай\s+текущ[а-яё]*\s+поле\s+btc|give\s+the\s+current\s+btc\s+field/i.test(q);
+  const routingConflict = isBodyStateConflict(q) ||
+    (multipleExplicitBodies && hasBtcReference(q) && !/without[^?!.]{0,24}(?:btc|bitcoin)|без\s+привязк[а-яё]*\s+к\s+(?:btc|bitcoin|биткоин)/i.test(q)) ||
+    Boolean(protocol && market && bodies.length > 0 && /one\s+answer|одним\s+ответ/i.test(q));
+  const explicitBridge = !navigationFocused && !routingConflict && !methodologyDominant &&
+    isExplicitAstroBtcBridgeQuestion(q, body, multiBody || astroWindow, market);
+
+  let inferredDomain: BtcCosmographerDomain;
+  if (genesisChart) inferredDomain = "unsupported";
+  else if (unsupportedMarketRequest) inferredDomain = "unsupported";
+  else if (routingConflict || unsupportedAsset) inferredDomain = "navigation";
+  else if (navigationFocused || unresolvedBtcWindow) inferredDomain = "navigation";
+  else if (protocol) inferredDomain = "bitcoin_protocol";
+  else if (methodologyDominant) inferredDomain = "methodology";
+  else if (explicitBridge) inferredDomain = "astro_btc_bridge";
+  else if (methodologyFocused && !marketPrimaryOverride) inferredDomain = "methodology";
+  else if (market && market !== "change_memory") inferredDomain = "btc_market";
+  else if (changeMemoryFocused) inferredDomain = "snapshot_memory";
+  else if (astroFocused || multipleExplicitBodies) inferredDomain = "astromodule";
+  else if (tradingBoundary) inferredDomain = "btc_market";
+  else if (hasBtcReference(q)) inferredDomain = "btc_market";
+  else inferredDomain = "navigation";
+
+  let forcedSubject: string | null = overrideBody ??
+    (routingConflict ? "routing_conflict" : null) ??
+    (unsupportedAsset ? "unsupported_asset" : null) ??
+    (multipleExplicitBodies ? "multiple_planetary_objects" : null) ??
+    (genesisChart ? "bitcoin_genesis_chart" : null) ??
+    (unsupportedMarketRequest ? "unsupported_market_request" : null) ??
+    (multiBody || astroWindow ? "planetary_aspects" : null) ??
+    (explicitBridge && !body ? (packet && (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") ? packet.prior_subject : "planetary_aspects") : null);
 
   if (isVolatilityQuestion(q) && !body && !multiBody && (market === null || market === "temporal_pressure") && packet) {
     if (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") {
@@ -473,11 +594,13 @@ export function routeBtcCosmographerQuestion(
     }
   }
 
+  const relationPronoun = /\b(?:this|that|it)\b|(?:^|\s)(?:это|этот|эта|эти)(?:\s|$)/i.test(q);
   const contextBridge = Boolean(
     packet &&
-    market &&
     (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
-    /confirm|support|agree|coincid|relation|подтверж|соглас|совпал|связ/i.test(q),
+    hasMarketHint(q, market) &&
+    isRelationLanguage(q) &&
+    (relationPronoun || hasAstroWindowHint(q)),
   );
   const domain: BtcCosmographerDomain = contextBridge
     ? "astro_btc_bridge"
@@ -494,30 +617,46 @@ export function routeBtcCosmographerQuestion(
     (domain === "bitcoin_protocol" ? "overview" :
       domain === "btc_market" ? "general_btc_field" :
         domain === "unsupported" ? "unknown" : "general");
-  const entities = explicitEntities(body, protocol, market, multiBody);
+  const entities = explicitEntities(body, protocol, market, multiBody || astroWindow);
   for (const explicitBody of bodies) entities.push(explicitBody);
   if (genesisChart) entities.push("bitcoin_genesis_chart");
   if (multipleExplicitBodies) entities.push("multiple_planetary_objects");
-  const explicit = entities.length > 0 || domain === "methodology" || domain === "navigation" || genesisChart;
-  const referential = isReferential(q);
+  if (unsupportedAsset) entities.push("unsupported_asset");
+  const explicit = entities.length > 0 || methodologyFocused || navigationFocused ||
+    tradingBoundary || explicitBridge || Boolean(overrideBody) || astroFocused || changeMemoryFocused ||
+    hasBtcReference(q) || Boolean(protocol);
+  const referential = isContextContinuationLanguage(q);
+  const bareAmbiguous = isBareAmbiguousQuestion(q) || unresolvedBtcWindow;
+  const ambiguousSelectedDate = /selected\s+date|выбранн[а-яё]*\s+дат/i.test(q) && !timeRange;
+  const methodologyFollowUp = methodologyFocused && isMethodologyFollowUpLanguage(q);
+  const navigationFollowUp = navigationFocused && /active\s+mode|current\s+mode|какой\s+режим\s+сейчас\s+актив|новый\s+предмет[^?!.]{0,32}новая\s+бесед/i.test(q);
+  const snapshotFollowUp = domain === "snapshot_memory" && Boolean(packet) &&
+    (packet?.prior_domain === "snapshot_memory" || packet?.prior_domain === "btc_market") &&
+    (referential || changeMemoryFocused);
+  const bridgeContinuation = packet?.prior_domain === "astro_btc_bridge" && !body && !market && !protocol &&
+    !methodologyFocused && !navigationFocused && referential;
 
   let relation: BtcCosmographerContextRelation;
-  if (contextBridge) relation = "CROSS_MODULE_BRIDGE";
+  if (explicitBridge || contextBridge) relation = "CROSS_MODULE_BRIDGE";
   else if (isReturn(q)) relation = "RETURN_TO_PREVIOUS_TOPIC";
+  else if (bareAmbiguous || ambiguousSelectedDate) relation = "GENUINELY_AMBIGUOUS";
   else if (!packet) relation = explicit ? "NEW_TOPIC" : "GENUINELY_AMBIGUOUS";
+  else if (methodologyFollowUp || navigationFollowUp || snapshotFollowUp || bridgeContinuation) relation = "FOLLOW_UP";
+  else if (overrideBody) relation = "NEW_TOPIC";
+  else if (explicit && domain !== packet.prior_domain) relation = "NEW_TOPIC";
   else if (referential) relation = "FOLLOW_UP";
-  else if (explicit && (domain !== packet.prior_domain || subject !== packet.prior_subject)) relation = "NEW_TOPIC";
+  else if (explicit && subject !== packet.prior_subject) relation = "NEW_TOPIC";
   else if (explicit || (isVolatilityQuestion(q) && Boolean(forcedSubject))) relation = "FOLLOW_UP";
   else relation = "GENUINELY_AMBIGUOUS";
 
   const inheritsContext =
   relation === "FOLLOW_UP" || relation === "RETURN_TO_PREVIOUS_TOPIC";
   const resolvedDomain =
-  inheritsContext && !explicit && packet
+  inheritsContext && packet && (!explicit || bridgeContinuation)
     ? packet.prior_domain
     : domain;
   const resolvedSubject =
-  inheritsContext && !explicit && packet
+  inheritsContext && packet && (!explicit || bridgeContinuation)
     ? packet.prior_subject
     : subject;
   const inheritedTime =
@@ -536,7 +675,7 @@ export function routeBtcCosmographerQuestion(
     resolvedDomain === "btc_market" ||
     resolvedDomain === "snapshot_memory" ||
     resolvedDomain === "astro_btc_bridge"
-      ? referential && packet
+      ? referential && packet && !market
         ? packet.prior_market_question_class ?? "general_btc_field"
         : market ?? packet?.prior_market_question_class ?? "general_btc_field"
       : null;

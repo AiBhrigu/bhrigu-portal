@@ -306,7 +306,7 @@ def run_view(width, height, suffix):
                 {
                     "domain": "astro_btc_bridge",
                     "subject": "planetary_aspects",
-                    "relation": "NEW_TOPIC" if locale == "ru" else "CROSS_MODULE_BRIDGE",
+                    "relation": "CROSS_MODULE_BRIDGE",
                     "mode": "ASTRO_BTC_BRIDGE",
                 },
             )

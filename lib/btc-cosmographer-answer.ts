@@ -459,6 +459,9 @@ export function buildBtcCosmographerAnswer(
     case "methodology":
       return methodologyAnswer(locale);
     case "navigation":
+      if (route.subject === "unsupported_asset" || route.subject === "routing_conflict") {
+        return navigationAnswer(locale, route.raw_question);
+      }
       return navigationAnswer(locale);
     case "unsupported":
       if (route.subject === "bitcoin_genesis_chart") return genesisChartClarification(locale);

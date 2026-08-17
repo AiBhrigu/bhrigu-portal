@@ -305,17 +305,17 @@ jobs:
 
               reset()
               open_question("Текущая позиция Биткоина в каком окне?")
-              first_unknown = submit("неизвестный предмет один", "CLARIFY", "unsupported", "unknown", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
+              first_unknown = submit("неизвестный предмет один", "CLARIFY", "navigation", "capabilities", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
               record("first_unknown_clarifies", value(first_unknown, "data-route-disposition") == "CLARIFY", value(first_unknown, "data-route-disposition"))
-              second_unknown = submit("неизвестный предмет два", "CLARIFY", "unsupported", "unknown", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
+              second_unknown = submit("неизвестный предмет два", "CLARIFY", "navigation", "capabilities", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
               record("distinct_unknown_clarifies", value(second_unknown, "data-route-disposition") == "CLARIFY", value(second_unknown, "data-route-disposition"))
               record("distinct_unknown_not_loop", value(second_unknown, "data-anti-loop-blocked") == "false", value(second_unknown, "data-anti-loop-blocked"))
 
               reset()
               open_question("Текущая позиция Биткоина в каком окне?")
-              repeated = submit("неизвестный предмет", "CLARIFY", "unsupported", "unknown", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
+              repeated = submit("неизвестный предмет", "CLARIFY", "navigation", "capabilities", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
               record("first_repeat_clarifies", value(repeated, "data-route-disposition") == "CLARIFY", value(repeated, "data-route-disposition"))
-              repeated = submit("неизвестный предмет", "STOP", "unsupported", "unknown", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
+              repeated = submit("неизвестный предмет", "STOP", "navigation", "capabilities", "GENUINELY_AMBIGUOUS", "CLARIFICATION")
               record("exact_repeat_stops", value(repeated, "data-route-disposition") == "STOP", value(repeated, "data-route-disposition"))
               record("exact_repeat_loop_flag", value(repeated, "data-anti-loop-blocked") == "true", value(repeated, "data-anti-loop-blocked"))
 

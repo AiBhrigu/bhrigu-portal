@@ -344,17 +344,12 @@ try {
     null,
     retainedAstroMemory,
   );
-  assert.equal(retainedBridge.relation_resolution, "TWO_DOMAINS_RESOLVED");
-  assert.equal(retainedBridge.btc_side_state_type, "MARKET");
-  assert.equal(retainedBridge.route.domain, "astro_btc_bridge");
-  assert.equal(retainedBridge.route.subject, "planetary_aspects");
-  assert.equal(retainedBridge.route.context_relation, "CROSS_MODULE_BRIDGE");
-  assert.deepEqual(retainedBridge.route.time_range, {
-    start: "2026-01-01",
-    end: "2026-12-31",
-    label: "2026-01-01–2026-12-31",
-    source: "CONTEXT",
-  });
+  assert.equal(retainedBridge.relation_resolution, "SINGLE_DOMAIN");
+  assert.equal(retainedBridge.btc_side_state_type, null);
+  assert.equal(retainedBridge.route.domain, "btc_market");
+  assert.equal(retainedBridge.route.subject, "liquidity");
+  assert.equal(retainedBridge.route.context_relation, "NEW_TOPIC");
+  assert.equal(retainedBridge.route.time_range, null, "retained Astro memory alone must not silently bridge a market-only question");
 
   const unresolvedRelationRoute = {
     ...astroRoute,
