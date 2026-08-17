@@ -364,6 +364,18 @@ class TestUnavailableStateBecomesBlocked(unittest.TestCase):
         result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
         self.assertIsNone(result, "Matching precondition must not return a BLOCKED reason")
 
+    def test_empty_observed_domain_with_expected_domain_is_blocked(self):
+        """If observed ROUTE_DOMAIN is None/empty but expected_domain is declared, must block."""
+        packet = _make_packet(
+            "X-001",
+            expected_context_packet={"prior_domain": "astromodule"},
+        )
+        # Observed domain is empty/None — precondition gate must not silently pass
+        obs = _obs_all_present(ROUTE_DOMAIN=None)
+        result = _check_precondition_against_packet(packet, obs, {}, setup_turn_index=1)
+        self.assertIsNotNone(result, "Empty observed domain with expected domain must block")
+        self.assertIn("prior_domain", result)
+
 
 class TestBatchIdentityPreflightBlocks(unittest.TestCase):
     """SHA mismatch must block the entire batch, not just per-case FAIL."""

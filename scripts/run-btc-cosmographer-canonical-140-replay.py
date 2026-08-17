@@ -610,27 +610,28 @@ def _check_precondition_against_packet(
     mismatches: List[str] = []
 
     # Check prior_domain against observed ROUTE_DOMAIN
+    # A missing/empty observed value while an expected value is declared is a mismatch.
     expected_domain = expected_ctx.get("prior_domain")
     observed_domain = (obs.get("ROUTE_DOMAIN") or "").lower()
-    if expected_domain and observed_domain and observed_domain != expected_domain.lower():
+    if expected_domain and observed_domain != expected_domain.lower():
         mismatches.append(
-            f"prior_domain: expected={expected_domain} observed={observed_domain}"
+            f"prior_domain: expected={expected_domain} observed={observed_domain!r}"
         )
 
     # Check prior_subject against observed ROUTE_SUBJECT
     expected_subject = expected_ctx.get("prior_subject")
     observed_subject = (obs.get("ROUTE_SUBJECT") or "").lower()
-    if expected_subject and observed_subject and observed_subject != expected_subject.lower():
+    if expected_subject and observed_subject != expected_subject.lower():
         mismatches.append(
-            f"prior_subject: expected={expected_subject} observed={observed_subject}"
+            f"prior_subject: expected={expected_subject} observed={observed_subject!r}"
         )
 
     # Check prior_answer_state against observed ANSWER_STATE
     expected_answer_state = expected_ctx.get("prior_answer_state")
     observed_answer_state = (obs.get("ANSWER_STATE") or "").upper()
-    if expected_answer_state and observed_answer_state and observed_answer_state != expected_answer_state.upper():
+    if expected_answer_state and observed_answer_state != expected_answer_state.upper():
         mismatches.append(
-            f"prior_answer_state: expected={expected_answer_state} observed={observed_answer_state}"
+            f"prior_answer_state: expected={expected_answer_state} observed={observed_answer_state!r}"
         )
 
     if mismatches:
