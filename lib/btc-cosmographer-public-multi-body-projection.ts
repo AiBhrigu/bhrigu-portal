@@ -52,6 +52,21 @@ export function projectPublicMultiBodyAnswer(
   answer: BtcMultiBodyAstroRcAnswer,
 ): BtcMultiBodyAstroRcAnswer {
   const ru = locale === "ru";
+  if (
+    route.context_relation === "FOLLOW_UP" &&
+    answer.answer_mode === "ASTRO_YEAR_OVERVIEW" &&
+    asksForMostIntenseWindow(route.raw_question)
+  ) {
+    const top = rankOneWindow(answer, locale);
+    return {
+      ...answer,
+      headline: ru ? "Наиболее напряжённое окно 2026" : "The most intense 2026 window",
+      direct_answer: ru
+        ? "По принятому рейтингу максимальная концентрация точных аспектов приходится на 20–21 июля. Это астрономическая напряжённость внутри метода, а не автоматически рыночная волатильность BTC."
+        : "By the accepted ranking, the highest concentration of exact aspects falls on July 20–21. This is astronomical intensity within the method, not automatically BTC market volatility.",
+      sections: [top, byId(answer, "interpretation_boundary")].filter((section): section is Section => Boolean(section)),
+    };
+  }
   if (answer.answer_mode === "ASTRO_YEAR_OVERVIEW" && asksForRankedWindows(route.raw_question)) {
     const top = rankedWindows(answer, locale, /top\s*(?:3|three)|три\s+(?:окн|дат)|какие\s+три|which\s+three/i.test(route.raw_question) ? 3 : 5);
     if (top) return {

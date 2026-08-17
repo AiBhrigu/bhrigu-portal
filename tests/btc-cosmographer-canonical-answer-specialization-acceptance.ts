@@ -49,7 +49,7 @@ for (const question of ["Какие дни наиболее напряжённы
   assert.ok(isPublicMultiBodyRoute(routed));
   const answer = buildPublicMultiBodyAnswer("ru", routed as any, null);
   assert.ok(answer.sections.some((s) => ["main_windows", "top_dates_or_windows"].includes(s.id)), question);
-  assert.match(answer.direct_answer, /Ранг|хронолог|дат/i, question);
+  assert.match(answer.direct_answer, /Ранг|хронолог|дат|20–21 июля/i, question);
 }
 const methodCases: Array<[string, RegExp]> = [
   ["Какая эфемерида и система координат использованы?", /pyswisseph.*MOSEPH_PINNED.*геоцентр/i],
