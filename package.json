@@ -19,7 +19,8 @@
     "verify:btc-donation-production-opening": "node --import tsx tests/btc-donation-production-opening-acceptance.ts",
     "verify:btc-binance-public-market-shadow": "node --import tsx tests/btc-binance-public-market-shadow-acceptance.ts",
     "verify:btc-binance-public-binding": "node --import tsx tests/btc-binance-public-binding-acceptance.ts",
-    "verify:btc-binance-production-activation-readiness": "node --import tsx tests/btc-binance-production-activation-readiness-acceptance.ts"
+    "verify:btc-binance-production-activation-readiness": "node --import tsx tests/btc-binance-production-activation-readiness-acceptance.ts",
+    "verify:btc-cosmographer-canonical-140-replay-selftests": "python3 -m pytest tests/btc-cosmographer-canonical-replay-harness-selftest.py -v --tb=short"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
