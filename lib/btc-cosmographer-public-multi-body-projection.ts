@@ -35,7 +35,7 @@ function rankedWindows(answer: BtcMultiBodyAstroRcAnswer, locale: BtcPublicLocal
     const br = Number(b.match(marker)?.[1] ?? 999);
     return ar - br;
   }).slice(0, count);
-  return { ...windows, id: "top_dates_or_windows", label: locale === "ru" ? "Главные даты и окна — по рейтингу" : "Top dates and windows — ranked", bullets };
+  return { ...windows, id: "main_windows", label: locale === "ru" ? "Главные даты и окна — по рейтингу" : "Top dates and windows — ranked", bullets };
 }
 
 function rankOneWindow(answer: BtcMultiBodyAstroRcAnswer, locale: BtcPublicLocale): Section | null {
