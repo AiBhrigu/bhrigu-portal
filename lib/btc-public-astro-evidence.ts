@@ -419,8 +419,9 @@ export function buildBtcAstroAnswer(
   };
 
   if (requested.end < data.range.start || requested.start > data.range.end) {
+    const historicalBoundedInterval = requested.end < data.range.start;
     return {
-      answer_state: "LIMITED", answer_mode: "CLARIFICATION",
+      answer_state: "LIMITED", answer_mode: historicalBoundedInterval ? "ASTRO_INTERVAL" : "CLARIFICATION",
       headline: locale === "ru" ? "Запрошенный период вне принятого evidence" : "Requested period is outside accepted evidence",
       direct_answer: locale === "ru" ? `Публичный индекс покрывает ${data.range.start}–${data.range.end}; для запрошенного периода нужно другое принятое evidence, а не экстраполяция.` : `The public index covers ${data.range.start}–${data.range.end}; the requested period needs separately accepted evidence rather than extrapolation.`,
       sections: [],

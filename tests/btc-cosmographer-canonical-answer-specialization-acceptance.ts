@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { buildBtcProtocolAnswer } from "../lib/btc-protocol-evidence";
+import { buildBtcCosmographerAnswer } from "../lib/btc-cosmographer-answer";
 import { buildBtcAstroAnswer } from "../lib/btc-public-astro-evidence";
 import { buildPublicMultiBodyAnswer, isPublicMultiBodyRoute } from "../lib/btc-cosmographer-public-multi-body-projection";
 import { routeBtcCosmographerLocalRc } from "../lib/btc-cosmographer-multi-body-astro-rc";
@@ -30,11 +31,26 @@ assert.equal(chainState.answer_mode, "PROTOCOL_FACT");
 assert.match(chainState.direct_answer, /cannot be stated without.*dynamic chain-state snapshot/i);
 const genesisChart = buildBtcProtocolAnswer("ru", route("Покажи карту генезиса Bitcoin.", "bitcoin_protocol", "genesis", ["explain"]));
 assert.equal(genesisChart.answer_mode, "CLARIFICATION");
+const genesisHistoryRoute = route("Что известно о genesis block Bitcoin?", "bitcoin_protocol", "genesis_history", ["explain"]);
+const cleanGenesisHistory = buildBtcCosmographerAnswer("ru", genesisHistoryRoute, { snapshot: null, envelope: null });
+assert.equal(cleanGenesisHistory.answer_mode, "PROTOCOL_FACT");
+const contextualGenesisHistory = buildBtcCosmographerAnswer("ru", genesisHistoryRoute, {
+  snapshot: null, envelope: null,
+  priorContext: {
+    schema: "btc_cosmographer_context_v0_1", prior_domain: "btc_market", prior_subject: "general_btc_field",
+    prior_intents: ["watch"], prior_answer_state: "SPLIT", prior_market_question_class: "general_btc_field",
+    prior_time_start: null, prior_time_end: null, prior_snapshot_generated_at_utc: null,
+  },
+});
+assert.equal(contextualGenesisHistory.answer_mode, "PROTOCOL_EXPLAIN");
 
 const typo = buildBtcAstroAnswer("ru", { ...route("Что показывает Юпитир в 2026?", "astromodule", "jupiter", ["interval_analysis"]), time_range: { start: "2026-01-01", end: "2026-12-31", label: "2026", source: "QUESTION" } });
 assert.equal(typo.answer_mode, "CLARIFICATION");
 const outOfRange = buildBtcAstroAnswer("ru", { ...route("Покажи окна на 2035 год.", "astromodule", "jupiter", ["interval_analysis"]), time_range: { start: "2035-01-01", end: "2035-12-31", label: "2035", source: "QUESTION" } });
 assert.equal(outOfRange.answer_mode, "CLARIFICATION");
+const historicalOutOfRange = buildBtcAstroAnswer("ru", { ...route("Что показывает Меркурий с 2025-03-10 по 2025-03-20?", "astromodule", "mercury", ["interval_analysis"]), time_range: { start: "2025-03-10", end: "2025-03-20", label: "2025-03-10 — 2025-03-20", source: "QUESTION" } });
+assert.equal(historicalOutOfRange.answer_state, "LIMITED");
+assert.equal(historicalOutOfRange.answer_mode, "ASTRO_INTERVAL");
 const multi = buildBtcAstroAnswer("ru", { ...route("Сравни Юпитер и Сатурн в 2026 без привязки к BTC.", "astromodule", "multiple_planetary_objects", ["interval_analysis", "compare"]), time_range: { start: "2026-01-01", end: "2026-12-31", label: "2026", source: "QUESTION" } });
 assert.equal(multi.answer_mode, "ASTRO_INTERVAL");
 assert.match(multi.headline, /Юпитер.*Сатурн/);
