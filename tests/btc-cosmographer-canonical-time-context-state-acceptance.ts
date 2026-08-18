@@ -6,7 +6,10 @@ import { routeBtcCosmographerLocalRc } from "../lib/btc-cosmographer-multi-body-
 import { applyBtcRelationIntentPrecedence } from "../lib/btc-cosmographer-evidence-navigation-runtime";
 import { buildBtcCosmographerAnswer } from "../lib/btc-cosmographer-answer";
 import { specializeMarketAnswer } from "../lib/btc-cosmographer-specialized-answer";
-import { buildPublicMultiBodyAnswer } from "../lib/btc-cosmographer-public-multi-body-projection";
+import {
+  buildPublicMultiBodyAnswer,
+  isPublicMultiBodyRoute,
+} from "../lib/btc-cosmographer-public-multi-body-projection";
 
 const ROOT = process.cwd();
 const CORPUS = path.join(ROOT, "tests/fixtures/btc-cosmographer-canonical-140-v0_1.csv");
@@ -57,6 +60,14 @@ const ad015Answer = buildPublicMultiBodyAnswer("ru", routed("AD-015") as any, nu
 assert.equal(ad015Answer.answer_mode, "CLARIFICATION");
 const ai039Answer = buildPublicMultiBodyAnswer("ru", routed("AI-039") as any, null);
 assert.ok(ai039Answer.sections.some((section) => section.id === "interpretation_boundary"));
+const ai042Route = routed("AI-042");
+assert.equal(ai042Route.subject, "planetary_stations");
+assert.equal(isPublicMultiBodyRoute(ai042Route), true);
+const ai042Answer = buildPublicMultiBodyAnswer("ru", ai042Route as any, null);
+assert.equal(ai042Answer.answer_mode, "ASTRO_YEAR_OVERVIEW");
+assert.ok(ai042Answer.sections.some((section) => section.id === "fast_triggers"));
+assert.ok(ai042Answer.sections.some((section) => section.id === "main_windows"));
+assert.match(ai042Answer.direct_answer ?? "", /Сначала опубликованные станции/);
 const rg006Answer = buildPublicMultiBodyAnswer("ru", routed("RG-006") as any, null);
 assert.ok(rg006Answer.sections.some((section) => section.id === "main_windows"));
 assert.equal(routed("AI-009").subject, "temporal_pressure");

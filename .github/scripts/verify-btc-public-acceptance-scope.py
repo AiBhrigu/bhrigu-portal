@@ -119,6 +119,14 @@ BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE = {
     "tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts",
 }
 
+# Canonical AI-042 regression repair: exact planetary-stations projection bind + acceptance/CI authority.
+BTC_CANONICAL_AI042_PLANETARY_STATIONS_PROJECTION_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+    "lib/btc-cosmographer-public-multi-body-projection.ts",
+    "tests/btc-cosmographer-canonical-time-context-state-acceptance.ts",
+}
+
 # Canonical time/context repair: exact bounded product/CI surface; existing acceptance scopes remain unchanged.
 BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
@@ -239,6 +247,7 @@ accepted_scopes = {
     "PASS_BTC_CANONICAL_ROUTING_REPAIR_EXACT_11_FILE_SCOPE": BTC_CANONICAL_ROUTING_REPAIR_SCOPE,
     "PASS_BTC_CANONICAL_ANSWER_SPECIALIZATION_EXACT_8_FILE_SCOPE": BTC_CANONICAL_ANSWER_SPECIALIZATION_SCOPE,
     "PASS_BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE,
+    "PASS_BTC_CANONICAL_AI042_PLANETARY_STATIONS_PROJECTION_REPAIR_EXACT_4_FILE_SCOPE": BTC_CANONICAL_AI042_PLANETARY_STATIONS_PROJECTION_REPAIR_SCOPE,
     "PASS_BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_EXACT_8_FILE_SCOPE": BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_SCOPE,
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,

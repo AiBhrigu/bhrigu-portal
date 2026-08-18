@@ -133,6 +133,6 @@ export function buildPublicMultiBodyAnswer(
 }
 
 export function isPublicMultiBodyRoute(route: BtcCosmographerRoute): route is BtcMultiBodyAstroRcRoute {
-  return route.subject === "planetary_aspects" &&
+  return (route.subject === "planetary_aspects" || route.subject === "planetary_stations") &&
     (route.domain === "astromodule" || route.domain === "astro_btc_bridge");
 }
