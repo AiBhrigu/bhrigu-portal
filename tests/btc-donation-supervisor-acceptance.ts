@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { PGlite } from "@electric-sql/pglite";
 import {
   DONATION_BRIDGE_PROTOCOL_VERSION,
   donationBridgeSigningBytes,
@@ -41,12 +42,20 @@ async function run() {
   ok(8, "invalid request signature rejected", () => assert.throws(() => verifyDonationBridgeEnvelope({ envelope:e, signatureBase64:Buffer.alloc(64).toString("base64"), suppliedKeyId:config.keyId, expectedMethod:"POST", expectedPath:e.requestPath, expectedKind:"capacity_read", config }), /invalid_signature/));
   ok(9, "auth precedes capacity query", () => assert.ok(endpoint.indexOf("verifyDonationBridgeEnvelope") < endpoint.indexOf("getAvailableCapacity")));
   ok(10, "capacity endpoint has zero store mutation", () => assert.doesNotMatch(endpoint, /recordMessage|provisionAddress|issueAddress|observe\(|markMessageProcessed|INSERT|UPDATE|DELETE/i));
-  ok(11, "issued excluded from capacity", () => assert.match(neon, /WHERE state='available'/));
-  ok(12, "retired excluded from capacity", () => assert.match(neon, /WHERE state='available'/));
-  ok(13, "COUNT result is safe integer", () => { assert.match(neon, /COUNT\(\*\)::int/); assert.match(neon, /Number\.isSafeInteger/); });
+  const capacityDb = new PGlite(); await capacityDb.waitReady;
+  let availableCount: unknown;
+  try {
+    await capacityDb.exec("CREATE TABLE btc_donation_receiver_addresses(receiver_address_id TEXT PRIMARY KEY,state TEXT NOT NULL)");
+    await capacityDb.exec("INSERT INTO btc_donation_receiver_addresses VALUES ('a','available'),('i','issued'),('r','retired')");
+    const rows = await capacityDb.query<{available_count:number}>("SELECT COUNT(*)::int AS available_count FROM btc_donation_receiver_addresses WHERE state='available'");
+    availableCount = rows.rows[0]?.available_count;
+  } finally { await capacityDb.close(); }
+  ok(11, "issued excluded from capacity", () => { assert.match(neon, /WHERE state='available'/); assert.equal(availableCount,1); });
+  ok(12, "retired excluded from capacity", () => assert.equal(availableCount,1));
+  ok(13, "COUNT result is safe integer", () => { assert.match(neon, /COUNT\(\*\)::int/); assert.match(neon, /Number\.isSafeInteger/); assert.equal(typeof availableCount,"number"); assert.equal(Number.isSafeInteger(availableCount),true); });
   ok(14, "invalid count fails closed", () => assert.match(neon, /throw new Error\("donation_capacity_invalid"\)/));
   const py = String.raw`
-import importlib.util,json,sqlite3,sys,tempfile
+import importlib.util,json,os,sqlite3,sys,tempfile
 from datetime import datetime,timedelta,timezone
 spec=importlib.util.spec_from_file_location("agent",sys.argv[1]); m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
 r={}
@@ -70,7 +79,15 @@ try:
  try: m.derivation_lock(cfg).__enter__(); r['18']=False
  except RuntimeError as e: r['18']=str(e)=='derivation_lock_unavailable'
 finally: lock1.__exit__(None,None,None)
-r['19']='with derivation_lock(cfg):\n                require_no_derivation_ambiguity(cfg)\n                provision(cfg,db,args.classification,args.deliver)' in source
+manual_cfg={'DONATION_BRIDGE_STATE_DB':root+'/manual/state.sqlite3','DONATION_BRIDGE_KEY_ID':'fixture'}; manual_db=db(manual_cfg['DONATION_BRIDGE_STATE_DB']); manual_calls=[0]
+orig_manual_provision=m.provision
+def fake_manual_provision(c,x,classification,send): manual_calls[0]+=1; raise RuntimeError('before_local_bind')
+m.provision=fake_manual_provision
+try:
+ try: m.manual_provision_locked(manual_cfg,manual_db,'PUBLIC_SUPPORT_ELIGIBLE',True); manual_hold=False
+ except RuntimeError as e: manual_hold=str(e)=='provision_failed_derivation_unknown' and m.derivation_ambiguity_present(manual_cfg)
+finally: m.provision=orig_manual_provision
+r['19']='with derivation_lock(cfg):\n                manual_provision_locked(cfg,db,args.classification,args.deliver)' in source and manual_calls[0]==1 and manual_hold
 lock1=m.derivation_lock(cfg); lock1.__enter__(); d.execute('CREATE TABLE IF NOT EXISTS lock_probe(x INTEGER)'); d.commit()
 try:
  try: m.derivation_lock(cfg).__enter__(); r['20']=False
@@ -110,15 +127,30 @@ out,calls=scenario(0,0,settings(MAX_AVAILABLE=1,BATCH_SIZE_MAX=10)); r['33']=cal
 out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=2)); r['34']=calls==2 and out['derive_count']==2
 out,calls=scenario(0,19,settings(BATCH_SIZE_MAX=10)); r['35']=calls==1 and out['derive_count']==1
 r['36']=source.count('next_fresh_address(cfg,db)')==2 and source.count("run_electrum(cfg,'createnewaddress')")==1 and 'provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)' in source
-out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='after'); r['38']=calls==1 and out['local_rows_created']==1 and out['action']=='derived_local_ambiguous_remote'
+out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='after'); r['38']=calls==1 and out['local_rows_created']==1 and out['action']=='derived_local_ambiguous_remote' and not m.derivation_ambiguity_present(cfg)
 out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='before'); r['37']=calls==1 and out['stopped_by_failure'] and out['local_rows_created']==0 and out['action']=='derivation_state_ambiguous' and m.derivation_ambiguity_present(cfg)
 hold=m.supervise_locked(cfg,d,settings()); r['39']=calls==1 and hold['derivation_attempts']==0 and hold['reason']=='derivation_ambiguity_hold'
 r['40']=electrum_calls[0]==0
+names=['BTC_DONATION_SUPERVISOR_MIN_AVAILABLE','BTC_DONATION_SUPERVISOR_TARGET_AVAILABLE','BTC_DONATION_SUPERVISOR_MAX_AVAILABLE','BTC_DONATION_SUPERVISOR_BATCH_SIZE_MAX','BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_WINDOW','BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_MAX']
+saved={name:os.environ.get(name) for name in names}
+for name in names: os.environ.pop(name,None)
+try:
+ try: m.supervisor_settings(); missing_failed=False
+ except SystemExit as e: missing_failed=str(e)=='missing_supervisor_configuration'
+ values=['3','5','10','2','86400','20']
+ for name,value in zip(names,values): os.environ[name]=value
+ parsed=m.supervisor_settings()
+ r['explicit_config']=missing_failed and parsed=={'MIN_AVAILABLE':3,'TARGET_AVAILABLE':5,'MAX_AVAILABLE':10,'BATCH_SIZE_MAX':2,'DERIVATION_BUDGET_WINDOW':86400,'DERIVATION_BUDGET_MAX':20}
+finally:
+ for name in names: os.environ.pop(name,None)
+ for name,value in saved.items():
+  if value is not None: os.environ[name]=value
 print(json.dumps(r,sort_keys=True))
 `;
   const pyRun = spawnSync("python3", ["-c", py, "scripts/btc-donation-receiver-agent.py"], { encoding: "utf8" });
   assert.equal(pyRun.status, 0, pyRun.stderr);
   const pr = JSON.parse(pyRun.stdout.trim()) as Record<string, boolean>;
+  assert.equal(pr.explicit_config, true, "production supervisor settings must be explicit");
   for (let n=15;n<=40;n++) ok(n, `agent acceptance ${n}`, () => assert.equal(pr[String(n)], true, `case ${n}`));
   ok(41, "agent receives no Neon database credential", () => assert.doesNotMatch(agent, /DATABASE_URL|NEON_/));
   ok(42, "no derivation budget table added", () => { assert.doesNotMatch(agent, /CREATE TABLE IF NOT EXISTS derivation_budget/i); assert.equal((agent.match(/CREATE TABLE IF NOT EXISTS/g) ?? []).length, 2); });

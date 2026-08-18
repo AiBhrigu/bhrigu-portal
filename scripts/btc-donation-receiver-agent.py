@@ -80,8 +80,10 @@ def config():
     if missing: raise SystemExit('missing_required_configuration')
     return {k:os.environ[k] for k in required}|{'TOR_SOCKS':os.environ.get('TOR_SOCKS','127.0.0.1:19050')}
 
-def _supervisor_env_int(name,default,minimum,maximum):
-    raw=os.environ.get(name,str(default)).strip()
+def _supervisor_env_int(name,minimum,maximum):
+    raw=os.environ.get(name)
+    if raw is None: raise SystemExit('missing_supervisor_configuration')
+    raw=raw.strip()
     if not re.fullmatch(r'[0-9]+',raw): raise SystemExit('invalid_supervisor_configuration')
     value=int(raw)
     if value<minimum or value>maximum: raise SystemExit('invalid_supervisor_configuration')
@@ -89,12 +91,12 @@ def _supervisor_env_int(name,default,minimum,maximum):
 
 def supervisor_settings():
     settings={
-      'MIN_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MIN_AVAILABLE',3,1,100000),
-      'TARGET_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_TARGET_AVAILABLE',5,1,100000),
-      'MAX_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MAX_AVAILABLE',10,1,100000),
-      'BATCH_SIZE_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_BATCH_SIZE_MAX',2,1,1000),
-      'DERIVATION_BUDGET_WINDOW':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_WINDOW',86400,60,604800),
-      'DERIVATION_BUDGET_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_MAX',20,1,100000),
+      'MIN_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MIN_AVAILABLE',1,100000),
+      'TARGET_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_TARGET_AVAILABLE',1,100000),
+      'MAX_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MAX_AVAILABLE',1,100000),
+      'BATCH_SIZE_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_BATCH_SIZE_MAX',1,1000),
+      'DERIVATION_BUDGET_WINDOW':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_WINDOW',60,604800),
+      'DERIVATION_BUDGET_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_MAX',1,100000),
     }
     if not (settings['MIN_AVAILABLE']<settings['TARGET_AVAILABLE']<=settings['MAX_AVAILABLE']):
         raise SystemExit('invalid_supervisor_configuration')
@@ -160,7 +162,7 @@ def derivation_ambiguity_present(cfg):
     parse_utc_iso(marker.get('markedAt'),'derivation_ambiguity_state_invalid')
     if not isinstance(marker.get('reason'),str) or not marker['reason']:
         raise RuntimeError('derivation_ambiguity_state_invalid')
-    return True
+    return marker['reason']!='resolved'
 
 def mark_derivation_ambiguity(cfg,reason):
     path=derivation_ambiguity_path(cfg); path.parent.mkdir(parents=True,exist_ok=True); os.chmod(path.parent,0o700)
@@ -168,10 +170,14 @@ def mark_derivation_ambiguity(cfg,reason):
     temp_path=path.with_name(path.name+'.tmp-'+uuid.uuid4().hex)
     fd=os.open(temp_path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
     try:
-        os.write(fd,payload); os.fsync(fd)
+        with os.fdopen(fd,'wb',closefd=False) as f:
+            f.write(payload); f.flush(); os.fsync(f.fileno())
     finally:
         os.close(fd)
     os.replace(temp_path,path); os.chmod(path,0o600)
+    directory_fd=os.open(path.parent,os.O_RDONLY)
+    try: os.fsync(directory_fd)
+    finally: os.close(directory_fd)
 
 def require_no_derivation_ambiguity(cfg):
     if derivation_ambiguity_present(cfg): raise RuntimeError('derivation_ambiguity_hold')
@@ -312,6 +318,35 @@ def local_address_count(db):
     if not row or type(row[0]) is not int or row[0]<0: raise RuntimeError('local_address_count_invalid')
     return row[0]
 
+def reinforce_derivation_hold(cfg,reason):
+    try: mark_derivation_ambiguity(cfg,reason)
+    except Exception: pass
+
+def manual_provision_locked(cfg,db,classification,send):
+    require_no_derivation_ambiguity(cfg)
+    before=local_address_count(db)
+    mark_derivation_ambiguity(cfg,'derivation_in_progress')
+    try:
+        provision(cfg,db,classification,send)
+    except Exception as exc:
+        try: after=local_address_count(db)
+        except Exception:
+            reinforce_derivation_hold(cfg,'manual_provision_exception_local_state_unreadable')
+            raise RuntimeError('provision_failed_derivation_unknown') from exc
+        if after==before+1:
+            mark_derivation_ambiguity(cfg,'resolved')
+            raise
+        reinforce_derivation_hold(cfg,'manual_provision_exception_without_exactly_one_local_row')
+        raise RuntimeError('provision_failed_derivation_unknown') from exc
+    try: after=local_address_count(db)
+    except Exception as exc:
+        reinforce_derivation_hold(cfg,'manual_provision_success_local_state_unreadable')
+        raise RuntimeError('provision_failed_derivation_unknown') from exc
+    if after!=before+1:
+        reinforce_derivation_hold(cfg,'manual_provision_success_local_row_count_mismatch')
+        raise RuntimeError('local_row_count_mismatch')
+    mark_derivation_ambiguity(cfg,'resolved')
+
 def emit_supervisor_result(result):
     ordered=(
       'status','reason','available_before','budget_used','derive_count',
@@ -367,7 +402,15 @@ def supervise_locked(cfg,db,settings):
     if derive_count<=0:
         return base|{'status':'healthy','reason':'no_derivation_eligible'}
     for _ in range(derive_count):
-        before=local_address_count(db)
+        try: before=local_address_count(db)
+        except Exception:
+            base['stopped_by_failure']=True
+            base['action']='derivation_state_ambiguous'
+            return base|{'status':'failed','reason':'local_state_unreadable_before_derivation'}
+        try: mark_derivation_ambiguity(cfg,'derivation_in_progress')
+        except Exception:
+            base['action']='zero'
+            return base|{'status':'failed','reason':'derivation_guard_unavailable'}
         base['derivation_attempts']+=1
         try:
             provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)
@@ -376,25 +419,39 @@ def supervise_locked(cfg,db,settings):
             try:
                 after=local_address_count(db)
             except Exception:
-                mark_derivation_ambiguity(cfg,'provision_exception_local_state_unreadable')
+                reinforce_derivation_hold(cfg,'provision_exception_local_state_unreadable')
                 base['action']='derivation_state_ambiguous'
                 return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
             delta=after-before
             if delta==1:
                 base['local_rows_created']+=1
+                try: mark_derivation_ambiguity(cfg,'resolved')
+                except Exception:
+                    base['action']='derivation_state_ambiguous'
+                    return base|{'status':'failed','reason':'derivation_guard_resolution_failed'}
                 base['action']='derived_local_ambiguous_remote'
                 return base|{'status':'failed','reason':'provision_failed_after_local_bind'}
-            mark_derivation_ambiguity(cfg,'provision_exception_without_exactly_one_local_row')
+            reinforce_derivation_hold(cfg,'provision_exception_without_exactly_one_local_row')
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
-        after=local_address_count(db)
+        try: after=local_address_count(db)
+        except Exception:
+            reinforce_derivation_hold(cfg,'provision_success_local_state_unreadable')
+            base['stopped_by_failure']=True
+            base['action']='derivation_state_ambiguous'
+            return base|{'status':'failed','reason':'local_state_unreadable_after_derivation'}
         if after!=before+1:
-            mark_derivation_ambiguity(cfg,'provision_success_local_row_count_mismatch')
+            reinforce_derivation_hold(cfg,'provision_success_local_row_count_mismatch')
             base['stopped_by_failure']=True
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'local_row_count_mismatch'}
         base['local_rows_created']+=1
         base['remote_deliveries_confirmed']+=1
+        try: mark_derivation_ambiguity(cfg,'resolved')
+        except Exception:
+            base['stopped_by_failure']=True
+            base['action']='derivation_state_ambiguous'
+            return base|{'status':'failed','reason':'derivation_guard_resolution_failed'}
     base['action']='derived'
     return base|{'status':'replenished','reason':'bounded_replenishment_complete'}
 
@@ -468,8 +525,7 @@ def main():
     try:
         if args.cmd=='provision':
             with derivation_lock(cfg):
-                require_no_derivation_ambiguity(cfg)
-                provision(cfg,db,args.classification,args.deliver)
+                manual_provision_locked(cfg,db,args.classification,args.deliver)
         elif args.cmd=='scan':
             scan(cfg,db,args.deliver)
         elif args.cmd=='flush':
