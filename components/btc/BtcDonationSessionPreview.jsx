@@ -303,6 +303,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
 
   const stateCopy = donationSessionStateCopy(viewSession?.state ?? "awaiting_payment", locale);
   const terminalCopy = viewSession && !sendSurfaceOpen ? donationTerminalCopy(viewSession, locale) : null;
+  const receiptProgress = viewSession && !sendSurfaceOpen && viewSession.observedSats ? donationReceiptProgress(viewSession, locale) : null;
 
   return (
     <section className="donation" data-donation-surface={surface}>
@@ -435,11 +436,42 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           )}
 
           {!sendSurfaceOpen && terminalCopy && (
-            <div className="terminal" data-post-receipt-terminal>
-              <h3>{terminalCopy.title}</h3>
-              {viewSession.observedSats && <p>{terminalCopy.observed}: <strong>{viewSession.observedSats} sats</strong></p>}
-              {viewSession.observedSats && <p>{terminalCopy.confirmations}: <strong>{viewSession.confirmations ?? 0}</strong></p>}
+            <div className={`terminal terminal-${viewSession.state}`} data-post-receipt-terminal data-receipt-progress={receiptProgress ? "visible" : "none"}>
+              {receiptProgress && (
+                <div className="receiptProgress" data-receipt-progress-rail>
+                  <div className="receiptProgressHead">
+                    <span className="micro">{receiptProgress.kicker}</span>
+                    <span className={`receiptSignal receiptSignal-${receiptProgress.signal}`}>{receiptProgress.signalLabel}</span>
+                  </div>
+                  <div className="receiptSteps">
+                    {receiptProgress.steps.map((step, index) => (
+                      <div className={`receiptStep receiptStep-${step.status}`} key={step.label} data-receipt-step={step.status}>
+                        <span className="receiptNode" aria-hidden="true">{step.status === "complete" ? "✓" : index + 1}</span>
+                        <span>{step.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="terminalHead">
+                <div>
+                  <div className="micro">{terminalCopy.kicker}</div>
+                  <h3>{terminalCopy.title}</h3>
+                </div>
+                {viewSession.observedSats && (
+                  <div className="receiptMetrics">
+                    <span><small>{terminalCopy.observed}</small><strong>{viewSession.observedSats} sats</strong></span>
+                    <span><small>{terminalCopy.confirmations}</small><strong>{viewSession.confirmations ?? 0}</strong></span>
+                  </div>
+                )}
+              </div>
               <p>{terminalCopy.detail}</p>
+              {terminalCopy.gratitude && (
+                <div className="gratitude" data-confirmed-gratitude>
+                  <strong>{terminalCopy.gratitude}</strong>
+                  <span>{terminalCopy.gratitudeDetail}</span>
+                </div>
+              )}
               <p className="terminalStop"><strong>{terminalCopy.stop}</strong></p>
             </div>
           )}
@@ -523,8 +555,30 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .guidance { margin-top: 9px; padding: 10px 12px; border-radius: 11px; border: 1px solid rgba(255,255,255,.075); background: rgba(0,0,0,.08); }
         .guidance summary { cursor: pointer; font-weight: 650; line-height: 1.4; }
         .safetyDetails[open] { border-color: rgba(222,194,125,.15); }
-        .terminal { border-style: solid; }
-        .terminal h3 { margin-top: 0; }
+        .terminal { border-style: solid; position: relative; overflow: hidden; }
+        .terminal h3 { margin: 4px 0 0; }
+        .terminal-confirmed { border-color: rgba(222,194,125,.28); background: radial-gradient(circle at 100% 0, rgba(222,194,125,.06), transparent 36%), rgba(0,0,0,.12); }
+        .terminalHead { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
+        .receiptMetrics { display: flex; gap: 8px; flex-wrap: wrap; }
+        .receiptMetrics span { min-width: 94px; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.075); border-radius: 10px; background: rgba(255,255,255,.014); }
+        .receiptMetrics small { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; opacity: .58; }
+        .receiptMetrics strong { font-size: 13px; }
+        .receiptProgress { margin-bottom: 14px; padding: 12px; border: 1px solid rgba(222,194,125,.15); border-radius: 12px; background: linear-gradient(90deg, rgba(222,194,125,.035), rgba(83,201,230,.015)); }
+        .receiptProgressHead { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .receiptSignal { padding: 4px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.09); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+        .receiptSignal-waiting { color: rgba(222,194,125,.9); border-color: rgba(222,194,125,.18); }
+        .receiptSignal-attention { color: rgba(240,190,120,.9); border-color: rgba(240,190,120,.2); }
+        .receiptSignal-verified { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.2); box-shadow: 0 0 20px rgba(83,201,230,.04); }
+        .receiptSteps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin-top: 10px; }
+        .receiptStep { min-height: 54px; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06); font-size: 10px; line-height: 1.35; opacity: .56; }
+        .receiptStep-complete { opacity: .94; border-color: rgba(188,235,214,.14); }
+        .receiptStep-active { opacity: .94; border-color: rgba(222,194,125,.2); background: rgba(222,194,125,.025); }
+        .receiptNode { flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); font-size: 10px; }
+        .receiptStep-complete .receiptNode { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.24); }
+        .receiptStep-active .receiptNode { color: #dec27d; border-color: rgba(222,194,125,.3); box-shadow: 0 0 14px rgba(222,194,125,.08); }
+        .gratitude { display: grid; gap: 5px; margin: 12px 0; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(222,194,125,.24); background: linear-gradient(90deg, rgba(222,194,125,.055), rgba(83,201,230,.018)); }
+        .gratitude strong { font-size: 15px; }
+        .gratitude span { font-size: 12px; line-height: 1.5; opacity: .76; }
         .synthetic { border-style: dashed; }
         .synthetic p { margin: 7px 0 0; }
         .error { margin: 14px 0 0; line-height: 1.5; }
@@ -539,6 +593,10 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           .amountGrid { grid-template-columns: 1fr; }
           .addressActions { display: grid; grid-template-columns: 1fr; }
           .secondary { justify-content: center; width: 100%; box-sizing: border-box; }
+          .receiptSteps { grid-template-columns: 1fr; }
+          .receiptStep { min-height: 44px; }
+          .receiptMetrics { width: 100%; }
+          .receiptMetrics span { flex: 1 1 0; min-width: 0; }
         }
       `}</style>
     </section>
@@ -599,13 +657,17 @@ function donationSessionStateCopy(state, locale) {
 function donationTerminalCopy(value, locale) {
   if (locale === "ru") {
     if (value.state === "confirmed") return {
+      kicker: "Проверенный Bitcoin receipt",
       title: "Bitcoin подтверждён",
       observed: "Получено",
       confirmations: "Подтверждения",
-      detail: "Проверка BHRIGU завершена. Спасибо за поддержку BHRIGU.",
+      detail: "BHRIGU обнаружил поступление и завершил SPV-проверку подтверждения Bitcoin.",
+      gratitude: "Спасибо, что помогаете BHRIGU оставаться публичным.",
+      gratitudeDetail: "Ваша поддержка помогает сохранять независимые исследования, инфраструктуру и публичную непрерывность BHRIGU.",
       stop: "Этот одноразовый адрес закрыт. Не используйте его повторно и не отправляйте второй платёж.",
     };
     if (value.state === "retired" && !value.observedSats) return {
+      kicker: "Безопасное завершение сессии",
       title: "Сессия закрыта",
       observed: "Получено",
       confirmations: "Подтверждения",
@@ -613,32 +675,60 @@ function donationTerminalCopy(value, locale) {
       stop: "Не используйте этот адрес повторно.",
     };
     return {
-      title: "Bitcoin получен",
+      kicker: "Bitcoin receipt обнаружен",
+      title: value.state === "confirmation_lost" ? "Ожидаем подтверждение снова" : "Bitcoin получен",
       observed: "Получено",
       confirmations: "Подтверждения",
-      detail: value.state === "confirmation_lost" ? "Статус подтверждения изменился. BHRIGU снова ожидает подтверждение сети." : "Ожидаем подтверждение Bitcoin.",
+      detail: value.state === "confirmation_lost" ? "Поступление остаётся обнаруженным. Статус подтверждения изменился, и BHRIGU снова ожидает подтверждение сети." : "Транзакция обнаружена. Одноразовый адрес выведен из дальнейшего использования; BHRIGU ожидает подтверждение Bitcoin.",
       stop: "Не отправляйте повторный платёж на этот адрес.",
     };
   }
   if (value.state === "confirmed") return {
+    kicker: "Verified Bitcoin receipt",
     title: "Bitcoin confirmed",
-    observed: "Observed",
+    observed: "Received",
     confirmations: "Confirmations",
-    detail: "BHRIGU verification complete. Thank you for supporting BHRIGU.",
+    detail: "BHRIGU observed the receipt and completed SPV verification of the Bitcoin confirmation.",
+    gratitude: "Thank you for helping keep BHRIGU public.",
+    gratitudeDetail: "Your support helps sustain independent research, infrastructure, and the public continuity of BHRIGU.",
     stop: "This one-time address is closed. Do not reuse it and do not send a second payment.",
   };
   if (value.state === "retired" && !value.observedSats) return {
+    kicker: "Session ended safely",
     title: "Session closed",
-    observed: "Observed",
+    observed: "Received",
     confirmations: "Confirmations",
     detail: "The unused support session has ended.",
     stop: "Do not reuse this address.",
   };
   return {
-    title: "Bitcoin received",
-    observed: "Observed",
+    kicker: "Bitcoin receipt observed",
+    title: value.state === "confirmation_lost" ? "Waiting for confirmation again" : "Bitcoin received",
+    observed: "Received",
     confirmations: "Confirmations",
-    detail: value.state === "confirmation_lost" ? "Confirmation status has changed. BHRIGU is waiting for confirmation again." : "Waiting for Bitcoin confirmation.",
+    detail: value.state === "confirmation_lost" ? "The receipt remains observed. Confirmation status changed, and BHRIGU is waiting for network confirmation again." : "The transaction has been observed. The one-time address is retired from further use while BHRIGU waits for Bitcoin confirmation.",
     stop: "Do not send another payment to this address.",
+  };
+}
+
+function donationReceiptProgress(value, locale) {
+  const confirmed = value.state === "confirmed";
+  const confirmationLost = value.state === "confirmation_lost";
+  const labels = locale === "ru"
+    ? ["Транзакция обнаружена", "Подтверждение Bitcoin", "Проверено BHRIGU"]
+    : ["Transaction observed", "Bitcoin confirmation", "BHRIGU verified"];
+  return {
+    kicker: locale === "ru" ? "Путь Bitcoin receipt" : "Bitcoin receipt path",
+    signal: confirmed ? "verified" : confirmationLost ? "attention" : "waiting",
+    signalLabel: confirmed
+      ? (locale === "ru" ? "Проверено" : "Verified")
+      : confirmationLost
+        ? (locale === "ru" ? "Повторная проверка" : "Rechecking")
+        : (locale === "ru" ? "Ожидаем сеть" : "Waiting on network"),
+    steps: [
+      { label: labels[0], status: "complete" },
+      { label: labels[1], status: confirmed ? "complete" : "active" },
+      { label: labels[2], status: confirmed ? "complete" : "pending" },
+    ],
   };
 }
