@@ -18,6 +18,17 @@ const SUPPORT_COPY = {
     ],
     donate: "Donate Bitcoin",
     opening: "Opening session…",
+    directAsk: "Support the work with Bitcoin.",
+    suggestedTitle: "Suggested support",
+    suggestedHint: "Suggestions only — choose any amount in your wallet. The QR remains amount-free.",
+    suggestedAmounts: [
+      ["10,000 sats", "Quiet support"],
+      ["25,000 sats", "Keep the corridor live"],
+      ["50,000 sats", "Infrastructure continuity"],
+      ["100,000 sats", "Strong support"],
+      ["Custom", "Choose freely"],
+    ],
+    restart: "Start new support session",
     oneTime: "THIS IS A NEW ONE-TIME BITCOIN ADDRESS.",
     freshAddress: "Fresh address · one session only",
     fingerprint: "Destination fingerprint",
@@ -68,6 +79,17 @@ const SUPPORT_COPY = {
     ],
     donate: "Отправить Bitcoin",
     opening: "Открываем сессию…",
+    directAsk: "Поддержите работу в Bitcoin.",
+    suggestedTitle: "Рекомендуемые суммы поддержки",
+    suggestedHint: "Это только подсказки — выберите любую сумму в кошельке. QR не содержит сумму.",
+    suggestedAmounts: [
+      ["10 000 sats", "Тихая поддержка"],
+      ["25 000 sats", "Поддержать работу коридора"],
+      ["50 000 sats", "Непрерывность инфраструктуры"],
+      ["100 000 sats", "Сильная поддержка"],
+      ["Своя сумма", "Выберите свободно"],
+    ],
+    restart: "Начать новую сессию поддержки",
     oneTime: "ЭТО НОВЫЙ ОДНОРАЗОВЫЙ BITCOIN-АДРЕС.",
     freshAddress: "Новый адрес · только для одной сессии",
     fingerprint: "Отпечаток адреса назначения",
@@ -278,6 +300,21 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     <section className="donation" data-donation-surface={surface}>
       <div className="previewFlag">{isProduction ? "Bitcoin mainnet · voluntary support" : "Protected Preview · No real BTC"}</div>
       <h2>{supportCopy.title}</h2>
+      {(!viewSession || sendSurfaceOpen) && (
+        <div className="decision" data-support-amount-suggestions data-support-amount-binding="none">
+          <p className="directAsk"><strong>{supportCopy.directAsk}</strong></p>
+          <div className="micro">{supportCopy.suggestedTitle}</div>
+          <div className="amountGrid">
+            {supportCopy.suggestedAmounts.map(([amount, meaning]) => (
+              <div className="amountChip" key={amount}>
+                <strong>{amount}</strong>
+                <span>{meaning}</span>
+              </div>
+            ))}
+          </div>
+          <p className="suggestedHint">{supportCopy.suggestedHint}</p>
+        </div>
+      )}
       <div className="approvedCopy" data-approved-support-copy={locale}>
         {supportCopy.lines.map((line) => <p className="intro" key={line}>{line}</p>)}
       </div>
@@ -373,6 +410,19 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
               {supportCopy.endUnused}
             </button>
           )}
+
+          {viewSession.state === "retired" && !viewSession.observedSats && (
+            <button
+              className="primary restart"
+              type="button"
+              onClick={startSession}
+              disabled={busy || syntheticMode}
+              data-donation-restart
+              data-donation-restart-preview={syntheticMode ? "visual-only" : undefined}
+            >
+              {busy ? supportCopy.opening : supportCopy.restart}
+            </button>
+          )}
         </div>
       )}
 
@@ -381,12 +431,20 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       <style jsx>{`
         .donation { margin-top: 22px; padding: 20px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: rgba(255,255,255,.025); }
         .previewFlag, .micro { font-size: 11px; letter-spacing: .11em; text-transform: uppercase; opacity: .68; }
+        .decision { margin: 14px 0 16px; }
+        .directAsk { margin: 0 0 12px; line-height: 1.5; }
+        .amountGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 9px; }
+        .amountChip { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(222,194,125,.16); background: rgba(255,255,255,.018); }
+        .amountChip strong { font-size: 13px; }
+        .amountChip span { font-size: 11px; opacity: .65; }
+        .suggestedHint { margin: 9px 0 0; font-size: 12px; line-height: 1.5; opacity: .68; }
         h2 { margin: 8px 0 10px; font-size: 27px; }
         h3 { margin: 0 0 9px; font-size: 18px; }
         .intro, .stateDetail, .amountNote, .stopNote, .guard, .seedGuard, .terminal p, .synthetic p, .guidance p, .handoff li, .guidance li { line-height: 1.55; opacity: .86; }
         .primary, .secondary, .retire { appearance: none; font: inherit; cursor: pointer; }
         .primary { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.09); color: inherit; font-weight: 650; }
         .primary:disabled, .secondary:disabled, .retire:disabled { opacity: .55; cursor: default; }
+        .restart { margin-top: 14px; }
         .session { margin-top: 16px; }
         .stateRow { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; }
         .state { display: inline-flex; min-height: 30px; align-items: center; padding: 0 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.13); font-size: 13px; }
@@ -418,6 +476,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           h2 { font-size: 24px; }
           .qrShell { min-height: 0; padding: 12px; }
           .primary { width: 100%; justify-content: center; }
+          .amountGrid { grid-template-columns: 1fr; }
           .addressActions { display: grid; grid-template-columns: 1fr; }
           .secondary { justify-content: center; width: 100%; box-sizing: border-box; }
         }
