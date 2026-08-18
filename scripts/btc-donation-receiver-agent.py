@@ -263,12 +263,28 @@ def queued_outbound_provision_count(db):
     if not row or type(row[0]) is not int or row[0]<0: raise RuntimeError('queued_provision_count_invalid')
     return row[0]
 
+def derivation_guard_cfg(cfg,db):
+    if cfg.get('DONATION_BRIDGE_STATE_DB'): return cfg
+    rows=db.execute('PRAGMA database_list').fetchall()
+    state_path=next((row[2] for row in rows if len(row)>=3 and row[1]=='main' and isinstance(row[2],str) and row[2]),None)
+    if not state_path: raise RuntimeError('derivation_guard_state_unavailable')
+    return cfg|{'DONATION_BRIDGE_STATE_DB':state_path}
+
 def provision(cfg,db,classification,send):
+    guard_cfg=derivation_guard_cfg(cfg,db)
+    require_no_derivation_ambiguity(guard_cfg)
     if send:
         require_outbound_provision_classification(classification)
         flush_queued(cfg,db)
-    address=next_fresh_address(cfg,db); receiver_id=f'don_addr_{uuid.uuid4().hex}'; created=now_iso(); message_id=f'don-provision-{uuid.uuid4()}'
-    db.execute('INSERT INTO addresses VALUES(?,?,?,?,?,?)',(receiver_id,address,classification,created,message_id,'queued')); db.commit()
+    mark_derivation_ambiguity(guard_cfg,'derivation_in_progress')
+    try:
+        address=next_fresh_address(cfg,db); receiver_id=f'don_addr_{uuid.uuid4().hex}'; created=now_iso(); message_id=f'don-provision-{uuid.uuid4()}'
+        db.execute('INSERT INTO addresses VALUES(?,?,?,?,?,?)',(receiver_id,address,classification,created,message_id,'queued')); db.commit()
+    except Exception:
+        reinforce_derivation_hold(guard_cfg,'fresh_derivation_or_local_bind_failed')
+        raise
+    try: mark_derivation_ambiguity(guard_cfg,'resolved')
+    except Exception as exc: raise RuntimeError('derivation_guard_resolution_failed') from exc
     payload={'receiverAddressId':receiver_id,'receiveAddress':address,'createdAt':created}
     envelope=make_envelope(cfg,'address_provision',PROVISION_PATH,payload,message_id,created)
     if send:
@@ -321,31 +337,6 @@ def local_address_count(db):
 def reinforce_derivation_hold(cfg,reason):
     try: mark_derivation_ambiguity(cfg,reason)
     except Exception: pass
-
-def manual_provision_locked(cfg,db,classification,send):
-    require_no_derivation_ambiguity(cfg)
-    before=local_address_count(db)
-    mark_derivation_ambiguity(cfg,'derivation_in_progress')
-    try:
-        provision(cfg,db,classification,send)
-    except Exception as exc:
-        try: after=local_address_count(db)
-        except Exception:
-            reinforce_derivation_hold(cfg,'manual_provision_exception_local_state_unreadable')
-            raise RuntimeError('provision_failed_derivation_unknown') from exc
-        if after==before+1:
-            mark_derivation_ambiguity(cfg,'resolved')
-            raise
-        reinforce_derivation_hold(cfg,'manual_provision_exception_without_exactly_one_local_row')
-        raise RuntimeError('provision_failed_derivation_unknown') from exc
-    try: after=local_address_count(db)
-    except Exception as exc:
-        reinforce_derivation_hold(cfg,'manual_provision_success_local_state_unreadable')
-        raise RuntimeError('provision_failed_derivation_unknown') from exc
-    if after!=before+1:
-        reinforce_derivation_hold(cfg,'manual_provision_success_local_row_count_mismatch')
-        raise RuntimeError('local_row_count_mismatch')
-    mark_derivation_ambiguity(cfg,'resolved')
 
 def emit_supervisor_result(result):
     ordered=(
@@ -407,31 +398,29 @@ def supervise_locked(cfg,db,settings):
             base['stopped_by_failure']=True
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'local_state_unreadable_before_derivation'}
-        try: mark_derivation_ambiguity(cfg,'derivation_in_progress')
-        except Exception:
-            base['action']='zero'
-            return base|{'status':'failed','reason':'derivation_guard_unavailable'}
         base['derivation_attempts']+=1
         try:
             provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)
         except Exception:
             base['stopped_by_failure']=True
-            try:
-                after=local_address_count(db)
+            try: after=local_address_count(db)
             except Exception:
-                reinforce_derivation_hold(cfg,'provision_exception_local_state_unreadable')
                 base['action']='derivation_state_ambiguous'
                 return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
             delta=after-before
+            try: hold=derivation_ambiguity_present(cfg)
+            except Exception: hold=True
             if delta==1:
                 base['local_rows_created']+=1
-                try: mark_derivation_ambiguity(cfg,'resolved')
-                except Exception:
+                if hold:
                     base['action']='derivation_state_ambiguous'
                     return base|{'status':'failed','reason':'derivation_guard_resolution_failed'}
                 base['action']='derived_local_ambiguous_remote'
                 return base|{'status':'failed','reason':'provision_failed_after_local_bind'}
-            reinforce_derivation_hold(cfg,'provision_exception_without_exactly_one_local_row')
+            if delta==0 and not hold:
+                base['action']='failed_without_local_bind'
+                return base|{'status':'failed','reason':'provision_failed_before_local_derivation'}
+            reinforce_derivation_hold(cfg,'provision_exception_derivation_state_ambiguous')
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
         try: after=local_address_count(db)
@@ -445,13 +434,16 @@ def supervise_locked(cfg,db,settings):
             base['stopped_by_failure']=True
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'local_row_count_mismatch'}
-        base['local_rows_created']+=1
-        base['remote_deliveries_confirmed']+=1
-        try: mark_derivation_ambiguity(cfg,'resolved')
-        except Exception:
+        try: hold=derivation_ambiguity_present(cfg)
+        except Exception: hold=True
+        if hold:
+            base['local_rows_created']+=1
+            base['remote_deliveries_confirmed']+=1
             base['stopped_by_failure']=True
             base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'derivation_guard_resolution_failed'}
+        base['local_rows_created']+=1
+        base['remote_deliveries_confirmed']+=1
     base['action']='derived'
     return base|{'status':'replenished','reason':'bounded_replenishment_complete'}
 
@@ -525,7 +517,7 @@ def main():
     try:
         if args.cmd=='provision':
             with derivation_lock(cfg):
-                manual_provision_locked(cfg,db,args.classification,args.deliver)
+                provision(cfg,db,args.classification,args.deliver)
         elif args.cmd=='scan':
             scan(cfg,db,args.deliver)
         elif args.cmd=='flush':

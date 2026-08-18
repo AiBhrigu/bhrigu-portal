@@ -80,14 +80,27 @@ try:
  except RuntimeError as e: r['18']=str(e)=='derivation_lock_unavailable'
 finally: lock1.__exit__(None,None,None)
 manual_cfg={'DONATION_BRIDGE_STATE_DB':root+'/manual/state.sqlite3','DONATION_BRIDGE_KEY_ID':'fixture'}; manual_db=db(manual_cfg['DONATION_BRIDGE_STATE_DB']); manual_calls=[0]
-orig_manual_provision=m.provision
-def fake_manual_provision(c,x,classification,send): manual_calls[0]+=1; raise RuntimeError('before_local_bind')
-m.provision=fake_manual_provision
+orig_manual_next=m.next_fresh_address; orig_manual_flush=m.flush_queued
+m.flush_queued=lambda c,x: None
+def fake_manual_next(c,x): manual_calls[0]+=1; raise RuntimeError('ambiguous_derivation')
+m.next_fresh_address=fake_manual_next
 try:
- try: m.manual_provision_locked(manual_cfg,manual_db,'PUBLIC_SUPPORT_ELIGIBLE',True); manual_hold=False
- except RuntimeError as e: manual_hold=str(e)=='provision_failed_derivation_unknown' and m.derivation_ambiguity_present(manual_cfg)
-finally: m.provision=orig_manual_provision
-r['19']='with derivation_lock(cfg):\n                manual_provision_locked(cfg,db,args.classification,args.deliver)' in source and manual_calls[0]==1 and manual_hold
+ try:
+  with m.derivation_lock(manual_cfg): m.provision(manual_cfg,manual_db,'PUBLIC_SUPPORT_ELIGIBLE',True)
+  manual_hold=False
+ except RuntimeError:
+  manual_hold=m.derivation_ambiguity_present(manual_cfg)
+finally:
+ m.next_fresh_address=orig_manual_next; m.flush_queued=orig_manual_flush
+r['19']='with derivation_lock(cfg):\n                provision(cfg,db,args.classification,args.deliver)' in source and manual_calls[0]==1 and manual_hold
+pre_cfg={'DONATION_BRIDGE_STATE_DB':root+'/preflight/state.sqlite3','DONATION_BRIDGE_KEY_ID':'fixture'}; pre_db=db(pre_cfg['DONATION_BRIDGE_STATE_DB'])
+orig_pre_flush=m.flush_queued
+m.flush_queued=lambda c,x: (_ for _ in ()).throw(RuntimeError('preflight_flush_failed'))
+try:
+ try: m.provision(pre_cfg,pre_db,'PUBLIC_SUPPORT_ELIGIBLE',True); preflight_clear=False
+ except RuntimeError: preflight_clear=not m.derivation_ambiguity_present(pre_cfg) and m.local_address_count(pre_db)==0
+finally: m.flush_queued=orig_pre_flush
+r['preflight_clear']=preflight_clear and source.index("mark_derivation_ambiguity(guard_cfg,'derivation_in_progress')") < source.index('address=next_fresh_address(cfg,db)')
 lock1=m.derivation_lock(cfg); lock1.__enter__(); d.execute('CREATE TABLE IF NOT EXISTS lock_probe(x INTEGER)'); d.commit()
 try:
  try: m.derivation_lock(cfg).__enter__(); r['20']=False
@@ -114,9 +127,11 @@ def scenario(available,budget,s,fail=None):
  m.read_available_capacity=lambda c:available; m.rolling_derivation_budget_used=lambda x,st:budget
  def fake_provision(c,x,classification,send):
   calls[0]+=1; counter[0]+=1
-  if fail=='before': raise RuntimeError('before')
+  if fail=='before':
+   m.mark_derivation_ambiguity(c,'derivation_in_progress'); raise RuntimeError('before')
   insert(x,now.isoformat().replace('+00:00','Z'),'queued',counter[0])
-  if fail=='after': raise RuntimeError('after')
+  if fail=='after':
+   m.mark_derivation_ambiguity(c,'resolved'); raise RuntimeError('after')
  m.provision=fake_provision
  return m.supervise_locked(cfg,dx,s),calls[0]
 out,calls=scenario(4,0,settings()); r['29']=calls==0 and out['reason']=='capacity_healthy'
@@ -151,6 +166,7 @@ print(json.dumps(r,sort_keys=True))
   assert.equal(pyRun.status, 0, pyRun.stderr);
   const pr = JSON.parse(pyRun.stdout.trim()) as Record<string, boolean>;
   assert.equal(pr.explicit_config, true, "production supervisor settings must be explicit");
+  assert.equal(pr.preflight_clear, true, "pre-derivation failures must not create false ambiguity holds");
   for (let n=15;n<=40;n++) ok(n, `agent acceptance ${n}`, () => assert.equal(pr[String(n)], true, `case ${n}`));
   ok(41, "agent receives no Neon database credential", () => assert.doesNotMatch(agent, /DATABASE_URL|NEON_/));
   ok(42, "no derivation budget table added", () => { assert.doesNotMatch(agent, /CREATE TABLE IF NOT EXISTS derivation_budget/i); assert.equal((agent.match(/CREATE TABLE IF NOT EXISTS/g) ?? []).length, 2); });
