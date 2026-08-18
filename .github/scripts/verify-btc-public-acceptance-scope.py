@@ -119,6 +119,18 @@ BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE = {
     "tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts",
 }
 
+# Canonical time/context repair: exact bounded product/CI surface; existing acceptance scopes remain unchanged.
+BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-cosmographer-multi-body-local-rc-pr.yml",
+    ".github/workflows/btc-free-question-live-dialogue-pr.yml",
+    "lib/btc-cosmographer-evidence-navigation-runtime.ts",
+    "lib/btc-cosmographer-multi-body-astro-rc.ts",
+    "lib/btc-cosmographer-route-graph.ts",
+    "lib/btc-cosmographer-specialized-answer.ts",
+    "tests/btc-cosmographer-canonical-time-context-state-acceptance.ts",
+}
+
 BTC_POSITIONING_VALUE_ENTRY_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/bhrigu-home-market-cosmographer-pr.yml",
@@ -227,6 +239,7 @@ accepted_scopes = {
     "PASS_BTC_CANONICAL_ROUTING_REPAIR_EXACT_11_FILE_SCOPE": BTC_CANONICAL_ROUTING_REPAIR_SCOPE,
     "PASS_BTC_CANONICAL_ANSWER_SPECIALIZATION_EXACT_8_FILE_SCOPE": BTC_CANONICAL_ANSWER_SPECIALIZATION_SCOPE,
     "PASS_BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_CANONICAL_SETUP_COMPATIBILITY_REPAIR_SCOPE,
+    "PASS_BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_EXACT_8_FILE_SCOPE": BTC_CANONICAL_TIME_CONTEXT_STATE_REPAIR_SCOPE,
     "PASS_BTC_POSITIONING_VALUE_ENTRY_EXACT_19_FILE_SCOPE": BTC_POSITIONING_VALUE_ENTRY_SCOPE,
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
     "PASS_BTC_PRIMARY_QUESTION_NATIVE_PRICE_EXACT_3_FILE_SCOPE": BTC_PRIMARY_QUESTION_NATIVE_PRICE_SCOPE,

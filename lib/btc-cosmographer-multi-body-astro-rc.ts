@@ -396,8 +396,9 @@ function clusterBullet(locale: BtcPublicLocale, cluster: AspectCluster): string 
     : `Rank ${cluster.rank} · ${cluster.start}–${cluster.end} · peak ${peaks}: ${clusterTitle(locale, cluster)}. Basis: ${clusterReasons(locale, cluster)}.`;
 }
 
-function transitionBullets(locale: BtcPublicLocale): string[] {
+function transitionBullets(locale: BtcPublicLocale, start?: string, end?: string): string[] {
   const transitions = [...data.stations, ...data.ingresses]
+    .filter((item) => (!start || item.date >= start) && (!end || item.date <= end))
     .sort((a, b) => a.date.localeCompare(b.date) || transitionKey(a).localeCompare(transitionKey(b)));
 
   return transitions.map((item) => {
@@ -426,55 +427,67 @@ export function buildMultiBodyAstroYearAnswer(
     label: "2026",
     source: "QUESTION" as const,
   };
-  if (!isAnnual2026(route) || requested.start < data.range.start || requested.end > data.range.end) {
+  if (requested.start < data.range.start || requested.end > data.range.end) {
     return {
-      answer_state: "LIMITED",
-      answer_mode: "ASTRO_YEAR_OVERVIEW",
+      answer_state: "CLARIFICATION",
+      answer_mode: "CLARIFICATION",
       headline: locale === "ru"
-        ? "Годовой обзор ограничен опубликованным диапазоном 2026"
-        : "The annual overview is limited to the published 2026 range",
+        ? "Запрошенный период вне опубликованного Astro evidence"
+        : "Requested period is outside published Astro evidence",
       direct_answer: locale === "ru"
-        ? `Этот локальный кандидат использует только ${data.range.start}–${data.range.end}; отсутствующие годы не заменяются догадкой.`
-        : `This local candidate uses only ${data.range.start}–${data.range.end}; missing years are not replaced with a guess.`,
+        ? `Принятый Astro evidence покрывает только ${data.range.start}–${data.range.end}; период ${requested.start}–${requested.end} не экстраполируется.`
+        : `Accepted Astro evidence covers only ${data.range.start}–${data.range.end}; ${requested.start}–${requested.end} is not extrapolated.`,
       sections: [],
       source_boundary: locale === "ru"
-        ? "Локальный RC не расширяет публичный evidence index."
-        : "The local RC does not extend the public evidence index.",
+        ? "Период вне принятого evidence закрывается уточнением, а не синтетическим расчётом."
+        : "A period outside accepted evidence closes with clarification rather than a synthetic calculation.",
       proof_label: locale === "ru" ? "Astro proof ограничен" : "Astro proof limited",
     };
   }
 
+  const annual = isAnnual2026(route);
   const clusters = buildClusters(
-    data.aspects.filter((event) => event.end >= requested.start && event.start <= requested.end),
+    data.aspects.filter((event) => annual
+      ? event.end >= requested.start && event.start <= requested.end
+      : event.peak >= requested.start && event.peak <= requested.end),
   );
   const top = [...clusters]
     .sort((a, b) => a.rank - b.rank)
     .slice(0, 5)
     .sort((a, b) => a.start.localeCompare(b.start));
-  const transitions = transitionBullets(locale);
+  const transitions = transitionBullets(locale, annual ? undefined : requested.start, annual ? undefined : requested.end);
+  const intervalBullets = top.length
+    ? top.map((cluster) => clusterBullet(locale, cluster))
+    : [locale === "ru"
+        ? `В ${requested.start}–${requested.end} нет опубликованного точного пика аспекта; пики вне интервала не импортируются.`
+        : `No published exact aspect peak falls inside ${requested.start}–${requested.end}; peaks outside the interval are not imported.`];
 
-  const direct = locale === "ru"
-    ? "В 2026 году важность определяется не одной планетой, а сочетанием масштаба медленного цикла, точности, длительности окна, кластерности и пересечений со станциями или ингрессиями. Самая плотная тактическая связка приходится на 20–21 июля; многомесячный несущий слой формируют Нептун—Плутон и Уран—Плутон."
-    : "In 2026, importance is determined by slow-cycle scale, exactness, window duration, clustering, and station or ingress overlap—not by one default planet. The densest tactical cluster falls on July 20–21, while Neptune–Pluto and Uranus–Pluto form the multi-month carrier layer.";
+  const direct = annual
+    ? (locale === "ru"
+        ? "В 2026 году важность определяется не одной планетой, а сочетанием масштаба медленного цикла, точности, длительности окна, кластерности и пересечений со станциями или ингрессиями. Самая плотная тактическая связка приходится на 20–21 июля; многомесячный несущий слой формируют Нептун—Плутон и Уран—Плутон."
+        : "In 2026, importance is determined by slow-cycle scale, exactness, window duration, clustering, and station or ingress overlap—not by one default planet. The densest tactical cluster falls on July 20–21, while Neptune–Pluto and Uranus–Pluto form the multi-month carrier layer.")
+    : (locale === "ru"
+        ? `Интервал ${requested.start}–${requested.end} оценивается только по событиям внутри этих границ; точные пики за пределами интервала не подмешиваются.`
+        : `The ${requested.start}–${requested.end} interval is evaluated only from events inside those bounds; exact peaks outside the interval are not imported.`);
 
   return {
-    answer_state: "CONFIRMED",
+    answer_state: annual ? "CONFIRMED" : "LIMITED",
     answer_mode: "ASTRO_YEAR_OVERVIEW",
-    headline: locale === "ru"
-      ? "Планетарные аспекты 2026: пять главных окон"
-      : "Planetary aspects in 2026: five primary windows",
+    headline: annual
+      ? (locale === "ru" ? "Планетарные аспекты 2026: пять главных окон" : "Planetary aspects in 2026: five primary windows")
+      : (locale === "ru" ? `Планетарные аспекты: ${requested.start}–${requested.end}` : `Planetary aspects: ${requested.start}–${requested.end}`),
     direct_answer: direct,
     sections: [
       {
         id: "main_windows",
         label: locale === "ru" ? "Главные окна — по времени" : "Primary windows — chronological",
-        bullets: top.map((cluster) => clusterBullet(locale, cluster)),
+        bullets: intervalBullets,
       },
       {
         id: "fast_triggers",
         label: locale === "ru"
-          ? "Станции и ингрессии внутри годовой структуры — без усечения"
-          : "Stations and ingresses inside the annual structure — complete",
+          ? (annual ? "Станции и ингрессии внутри годовой структуры — без усечения" : "Станции и ингрессии внутри выбранного интервала")
+          : (annual ? "Stations and ingresses inside the annual structure — complete" : "Stations and ingresses inside the selected interval"),
         bullets: transitions,
       },
       {
