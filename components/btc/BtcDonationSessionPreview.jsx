@@ -411,8 +411,15 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
             </button>
           )}
 
-          {!syntheticMode && viewSession.state === "retired" && !viewSession.observedSats && (
-            <button className="primary restart" type="button" onClick={startSession} disabled={busy} data-donation-restart>
+          {viewSession.state === "retired" && !viewSession.observedSats && (
+            <button
+              className="primary restart"
+              type="button"
+              onClick={startSession}
+              disabled={busy || syntheticMode}
+              data-donation-restart
+              data-donation-restart-preview={syntheticMode ? "visual-only" : undefined}
+            >
               {busy ? supportCopy.opening : supportCopy.restart}
             </button>
           )}

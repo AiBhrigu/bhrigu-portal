@@ -191,8 +191,13 @@ async function run() {
   assert.match(component, /Suggestions only — choose any amount in your wallet\. The QR remains amount-free\./);
   assert.match(component, /data-support-amount-binding="none"/);
   assert.match(component, /data-donation-restart/);
+  assert.match(component, /data-donation-restart-preview/);
   assert.match(component, /viewSession\.state === "retired" && !viewSession\.observedSats/);
+  assert.match(component, /disabled=\{busy \|\| syntheticMode\}/);
+  assert.doesNotMatch(component, /!syntheticMode && viewSession\.state === "retired"/);
   assert.match(component, /onClick=\{startSession\}/);
+  assert.match(support, /feature\/btc-support-conversion-atom1-v1/);
+  assert.match(support, /main\[data-support-surface\] ~ nav\[data-prevnext\]/);
   assert.match(store, /FOR UPDATE SKIP LOCKED/);
   assert.match(store, /state='retired'/);
   assert.match(store, /NOT EXISTS \(SELECT 1 FROM btc_donation_receipts/);

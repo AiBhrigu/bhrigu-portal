@@ -7,6 +7,8 @@ import {
   getDonationSessionRuntimeConfig,
 } from "../lib/btc-donation-session";
 
+const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCH = "feature/btc-support-conversion-atom1-v1";
+
 const PAGE_COPY = {
   en: {
     kicker: "Bitcoin-native public support",
@@ -178,6 +180,10 @@ export default function Support({ donationSurface = null }) {
         @media (max-width: 560px) {
           .impactGrid { grid-template-columns: 1fr; }
           .directAsk { font-size: 17px; }
+          :global(main[data-support-surface] ~ nav[data-prevnext]) {
+            position: static !important;
+            margin: 18px auto 8px;
+          }
         }
       `}</style>
     </>
@@ -186,12 +192,13 @@ export default function Support({ donationSurface = null }) {
 
 export async function getStaticProps() {
   const config = getDonationSessionRuntimeConfig();
-  const safetyRepairSyntheticPreview =
+  const syntheticPreviewBranch =
     process.env.VERCEL_ENV === "preview" &&
-    process.env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH;
+    (process.env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH ||
+      process.env.VERCEL_GIT_COMMIT_REF === BTC_SUPPORT_CONVERSION_PREVIEW_BRANCH);
   return {
     props: {
-      donationSurface: config.enabled ? config.surface : safetyRepairSyntheticPreview ? "preview" : null,
+      donationSurface: config.enabled ? config.surface : syntheticPreviewBranch ? "preview" : null,
     },
   };
 }
