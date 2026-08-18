@@ -174,16 +174,16 @@ export default function Support({ donationSurface = null }) {
           margin-top: 14px;
           opacity: .72;
         }
+        :global(main[data-support-surface] ~ nav[data-prevnext]) {
+          position: static !important;
+          margin: 18px auto 8px;
+        }
         @media (max-width: 860px) {
           .title { font-size: 34px; }
         }
         @media (max-width: 560px) {
           .impactGrid { grid-template-columns: 1fr; }
           .directAsk { font-size: 17px; }
-          :global(main[data-support-surface] ~ nav[data-prevnext]) {
-            position: static !important;
-            margin: 18px auto 8px;
-          }
         }
       `}</style>
     </>
