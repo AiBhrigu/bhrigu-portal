@@ -29,6 +29,10 @@ const SUPPORT_COPY = {
       ["Custom", "Choose freely"],
     ],
     restart: "Start new support session",
+    activeSession: "Active support session",
+    freshReceiverSignal: "Fresh receiver",
+    safetyTitle: "Safety checks",
+    safetySignals: ["Bitcoin mainnet", "One session · one address", "Send exactly once", "Never share seed / private keys"],
     oneTime: "THIS IS A NEW ONE-TIME BITCOIN ADDRESS.",
     freshAddress: "Fresh address · one session only",
     fingerprint: "Destination fingerprint",
@@ -90,6 +94,10 @@ const SUPPORT_COPY = {
       ["Своя сумма", "Выберите свободно"],
     ],
     restart: "Начать новую сессию поддержки",
+    activeSession: "Активная сессия поддержки",
+    freshReceiverSignal: "Новый адрес",
+    safetyTitle: "Проверки безопасности",
+    safetySignals: ["Bitcoin mainnet", "Одна сессия · один адрес", "Отправьте ровно один раз", "Не передавайте seed / приватные ключи"],
     oneTime: "ЭТО НОВЫЙ ОДНОРАЗОВЫЙ BITCOIN-АДРЕС.",
     freshAddress: "Новый адрес · только для одной сессии",
     fingerprint: "Отпечаток адреса назначения",
@@ -327,7 +335,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
 
       {viewSession && (
         <div
-          className="session"
+          className={`session ${sendSurfaceOpen ? "sessionActive" : ""}`}
           data-donation-session-state={viewSession.state}
           data-send-surface={sendSurfaceOpen ? "open" : "terminalized"}
           data-synthetic-source-has-address={syntheticMode && viewSession.receiveAddress ? "yes" : "no"}
@@ -339,18 +347,46 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
             </div>
           )}
 
-          <div className="stateRow">
-            <span className={`state state-${viewSession.state}`}>{stateCopy.label}</span>
-            <span className="expiry">{syntheticMode ? "Synthetic fixture" : `Session expires ${formatTime(viewSession.expiresAt)}`}</span>
-          </div>
+          {sendSurfaceOpen ? (
+            <div className="activeHeader" data-active-session-hierarchy="golden-signal-v0-1">
+              <div className="activeSignal">
+                <span className="activePulse" aria-hidden="true" />
+                <div>
+                  <div className="micro">{supportCopy.activeSession}</div>
+                  <strong>{stateCopy.label}</strong>
+                </div>
+              </div>
+              <span className="expiry">{syntheticMode ? "Synthetic fixture" : `Session expires ${formatTime(viewSession.expiresAt)}`}</span>
+            </div>
+          ) : (
+            <div className="stateRow">
+              <span className={`state state-${viewSession.state}`}>{stateCopy.label}</span>
+              <span className="expiry">{syntheticMode ? "Synthetic fixture" : `Session expires ${formatTime(viewSession.expiresAt)}`}</span>
+            </div>
+          )}
           <p className="stateDetail">{stateCopy.detail}</p>
 
           {sendSurfaceOpen && viewSession.receiveAddress && viewSession.bip321Uri && (
             <div data-send-affordances>
-              <p className="oneTime"><strong>{supportCopy.oneTime}</strong></p>
+              <div className="safetyRail" data-primary-safety-rail>
+                {supportCopy.safetySignals.map((signal) => <span key={signal}>{signal}</span>)}
+              </div>
 
-              <div className="qrShell" data-local-qr>
-                {qrDataUrl ? <img src={qrDataUrl} width="288" height="288" alt="Bitcoin support QR generated locally in this browser" /> : <div className="qrLoading">Generating QR locally…</div>}
+              <div className="qrCore" data-qr-core="golden-symmetry-v0-1">
+                <div className="qrCoreHead">
+                  <span className="micro">{supportCopy.freshReceiverSignal}</span>
+                  <span className="qrNetwork">BTC / MAINNET</span>
+                </div>
+                <p className="oneTime"><strong>{supportCopy.oneTime}</strong></p>
+                <div className="qrFrame">
+                  <span className="corner cornerTl" aria-hidden="true" />
+                  <span className="corner cornerTr" aria-hidden="true" />
+                  <span className="corner cornerBl" aria-hidden="true" />
+                  <span className="corner cornerBr" aria-hidden="true" />
+                  <div className="qrShell" data-local-qr>
+                    {qrDataUrl ? <img src={qrDataUrl} width="288" height="288" alt="Bitcoin support QR generated locally in this browser" /> : <div className="qrLoading">Generating QR locally…</div>}
+                  </div>
+                </div>
               </div>
 
               <div className="addressBlock">
@@ -373,13 +409,16 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
               <p className="amountNote">
                 {supportCopy.chooseAmount} <code>bitcoin:&lt;address&gt;</code> — {supportCopy.noUriExtras}
               </p>
-              <p className="guard"><strong>{supportCopy.mainnetOnly}</strong></p>
-              <p className="seedGuard"><strong>{supportCopy.seed}</strong><br />{supportCopy.secrets}</p>
+              <details className="guidance safetyDetails" data-safety-details>
+                <summary>{supportCopy.safetyTitle}</summary>
+                <p className="guard"><strong>{supportCopy.mainnetOnly}</strong></p>
+                <p className="seedGuard"><strong>{supportCopy.seed}</strong><br />{supportCopy.secrets}</p>
+              </details>
 
-              <div className="handoff" data-wallet-handoff>
-                <h3>{supportCopy.walletTitle}</h3>
+              <details className="guidance handoff" data-wallet-handoff>
+                <summary>{supportCopy.walletTitle}</summary>
                 <ol>{supportCopy.walletSteps.map((step) => <li key={step}>{step}</li>)}</ol>
-              </div>
+              </details>
 
               <details className="guidance">
                 <summary>{supportCopy.noviceTitle}</summary>
@@ -446,26 +485,44 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .primary:disabled, .secondary:disabled, .retire:disabled { opacity: .55; cursor: default; }
         .restart { margin-top: 14px; }
         .session { margin-top: 16px; }
+        .sessionActive { position: relative; }
+        .activeHeader { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; padding: 11px 13px; border: 1px solid rgba(222,194,125,.28); border-radius: 14px; background: linear-gradient(90deg, rgba(222,194,125,.055), rgba(83,201,230,.018) 62%, rgba(255,255,255,.012)); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
+        .activeSignal { display: flex; gap: 10px; align-items: center; }
+        .activeSignal strong { display: block; margin-top: 2px; font-size: 14px; }
+        .activePulse { width: 8px; height: 8px; border-radius: 50%; background: #dec27d; box-shadow: 0 0 0 4px rgba(222,194,125,.08), 0 0 18px rgba(83,201,230,.16); }
         .stateRow { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; }
         .state { display: inline-flex; min-height: 30px; align-items: center; padding: 0 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.13); font-size: 13px; }
         .expiry { font-size: 12px; opacity: .66; }
-        .oneTime { margin: 16px 0 10px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16); line-height: 1.45; }
-        .qrShell { width: min(100%, 320px); min-height: 320px; margin: 18px auto; display: grid; place-items: center; padding: 16px; border-radius: 18px; background: #fff; }
+        .safetyRail { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin: 14px 0; }
+        .safetyRail span { min-height: 34px; display: flex; align-items: center; padding: 7px 10px; border: 1px solid rgba(222,194,125,.15); border-radius: 10px; background: rgba(255,255,255,.014); font-size: 10px; letter-spacing: .065em; text-transform: uppercase; opacity: .8; }
+        .qrCore { position: relative; overflow: hidden; margin: 14px 0 18px; padding: 14px; border: 1px solid rgba(222,194,125,.28); border-radius: 18px; background: radial-gradient(circle at 50% 28%, rgba(222,194,125,.07), transparent 36%), linear-gradient(180deg, rgba(222,194,125,.025), rgba(3,5,8,.42)); }
+        .qrCore::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .12; background-image: linear-gradient(rgba(222,194,125,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(222,194,125,.12) 1px, transparent 1px); background-size: 34px 34px; }
+        .qrCoreHead { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .qrNetwork { font-size: 10px; letter-spacing: .1em; color: rgba(222,194,125,.82); }
+        .oneTime { position: relative; z-index: 1; margin: 12px 0 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(222,194,125,.18); line-height: 1.45; background: rgba(0,0,0,.16); }
+        .qrFrame { position: relative; z-index: 1; width: min(100%, 352px); margin: 12px auto 2px; padding: 14px; box-sizing: border-box; }
+        .corner { position: absolute; width: 22px; height: 22px; border-color: rgba(222,194,125,.72); pointer-events: none; }
+        .cornerTl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
+        .cornerTr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
+        .cornerBl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
+        .cornerBr { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
+        .qrShell { width: min(100%, 320px); min-height: 320px; margin: 0 auto; display: grid; place-items: center; padding: 16px; box-sizing: border-box; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(222,194,125,.55), 0 0 34px rgba(222,194,125,.075), 0 0 56px rgba(83,201,230,.035); }
         .qrShell img { display: block; width: 100%; height: auto; max-width: 288px; }
         .qrLoading { color: #111; font-size: 13px; }
-        .addressBlock, .handoff, .terminal, .synthetic { margin-top: 16px; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.12); }
+        .addressBlock, .terminal, .synthetic { margin-top: 16px; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.12); }
         .addressBlock code { display: block; margin-top: 8px; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
         .fingerprint { display: grid; gap: 4px; margin-top: 12px; font-size: 13px; }
         .fingerprint small { opacity: .66; line-height: 1.45; }
         .addressActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
         .secondary { min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: inherit; text-decoration: none; }
         .retire { margin-top: 12px; padding: 0; border: 0; background: transparent; color: inherit; text-decoration: underline; text-underline-offset: 3px; opacity: .72; }
-        .guard, .seedGuard, .stopNote, .terminalStop { padding: 11px 13px; border-radius: 12px; border: 1px solid rgba(255,255,255,.09); }
-        .seedGuard { margin-top: 10px; }
+        .guard, .seedGuard, .stopNote, .terminalStop { padding: 10px 11px; border-radius: 10px; border: 1px solid rgba(255,255,255,.075); }
+        .seedGuard { margin-top: 8px; }
         .handoff ol, .guidance ol { margin: 8px 0 0; padding-left: 20px; }
         .handoff li, .guidance li { margin: 6px 0; }
-        .guidance { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); }
-        .guidance summary { cursor: pointer; font-weight: 650; }
+        .guidance { margin-top: 9px; padding: 10px 12px; border-radius: 11px; border: 1px solid rgba(255,255,255,.075); background: rgba(0,0,0,.08); }
+        .guidance summary { cursor: pointer; font-weight: 650; line-height: 1.4; }
+        .safetyDetails[open] { border-color: rgba(222,194,125,.15); }
         .terminal { border-style: solid; }
         .terminal h3 { margin-top: 0; }
         .synthetic { border-style: dashed; }
@@ -474,6 +531,9 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         @media (max-width: 560px) {
           .donation { padding: 16px; }
           h2 { font-size: 24px; }
+          .safetyRail { grid-template-columns: 1fr; }
+          .qrCore { padding: 12px 10px; }
+          .qrFrame { padding: 11px; }
           .qrShell { min-height: 0; padding: 12px; }
           .primary { width: 100%; justify-content: center; }
           .amountGrid { grid-template-columns: 1fr; }

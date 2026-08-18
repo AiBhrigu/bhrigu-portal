@@ -211,6 +211,13 @@ BTC_SUPPORT_CONVERSION_ATOM1_SCOPE = {
     "tests/btc-donation-session-acceptance.ts",
 }
 
+BTC_SUPPORT_CONVERSION_ATOM2_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "components/btc/BtcDonationSessionPreview.jsx",
+    "pages/support.js",
+    "tests/btc-donation-session-acceptance.ts",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -264,6 +271,7 @@ accepted_scopes = {
     "PASS_BTC_RETURNED_READING_MOBILE_PHI_REFLOW_EXACT_4_FILE_SCOPE": BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE,
     "PASS_BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_EXACT_2_FILE_SCOPE": BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_SCOPE,
     "PASS_BTC_SUPPORT_CONVERSION_ATOM1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_CONVERSION_ATOM1_SCOPE,
+    "PASS_BTC_SUPPORT_CONVERSION_ATOM2_EXACT_4_FILE_SCOPE": BTC_SUPPORT_CONVERSION_ATOM2_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

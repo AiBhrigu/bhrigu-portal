@@ -7,7 +7,10 @@ import {
   getDonationSessionRuntimeConfig,
 } from "../lib/btc-donation-session";
 
-const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCH = "feature/btc-support-conversion-atom1-v1";
+const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCHES = new Set([
+  "feature/btc-support-conversion-atom1-v1",
+  "feature/btc-support-conversion-atom2-v1",
+]);
 
 const PAGE_COPY = {
   en: {
@@ -195,7 +198,7 @@ export async function getStaticProps() {
   const syntheticPreviewBranch =
     process.env.VERCEL_ENV === "preview" &&
     (process.env.VERCEL_GIT_COMMIT_REF === BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH ||
-      process.env.VERCEL_GIT_COMMIT_REF === BTC_SUPPORT_CONVERSION_PREVIEW_BRANCH);
+      BTC_SUPPORT_CONVERSION_PREVIEW_BRANCHES.has(process.env.VERCEL_GIT_COMMIT_REF));
   return {
     props: {
       donationSurface: config.enabled ? config.surface : syntheticPreviewBranch ? "preview" : null,
