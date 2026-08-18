@@ -70,7 +70,7 @@ try:
  try: m.derivation_lock(cfg).__enter__(); r['18']=False
  except RuntimeError as e: r['18']=str(e)=='derivation_lock_unavailable'
 finally: lock1.__exit__(None,None,None)
-r['19']='with derivation_lock(cfg):\n                provision(cfg,db,args.classification,args.deliver)' in source
+r['19']='with derivation_lock(cfg):\n                require_no_derivation_ambiguity(cfg)\n                provision(cfg,db,args.classification,args.deliver)' in source
 lock1=m.derivation_lock(cfg); lock1.__enter__(); d.execute('CREATE TABLE IF NOT EXISTS lock_probe(x INTEGER)'); d.commit()
 try:
  try: m.derivation_lock(cfg).__enter__(); r['20']=False
@@ -110,9 +110,9 @@ out,calls=scenario(0,0,settings(MAX_AVAILABLE=1,BATCH_SIZE_MAX=10)); r['33']=cal
 out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=2)); r['34']=calls==2 and out['derive_count']==2
 out,calls=scenario(0,19,settings(BATCH_SIZE_MAX=10)); r['35']=calls==1 and out['derive_count']==1
 r['36']=source.count('next_fresh_address(cfg,db)')==2 and source.count("run_electrum(cfg,'createnewaddress')")==1 and 'provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)' in source
-out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='before'); r['37']=calls==1 and out['stopped_by_failure'] and out['local_rows_created']==0
 out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='after'); r['38']=calls==1 and out['local_rows_created']==1 and out['action']=='derived_local_ambiguous_remote'
-r['39']=calls==1 and out['stopped_by_failure']
+out,calls=scenario(0,0,settings(BATCH_SIZE_MAX=3),fail='before'); r['37']=calls==1 and out['stopped_by_failure'] and out['local_rows_created']==0 and out['action']=='derivation_state_ambiguous' and m.derivation_ambiguity_present(cfg)
+hold=m.supervise_locked(cfg,d,settings()); r['39']=calls==1 and hold['derivation_attempts']==0 and hold['reason']=='derivation_ambiguity_hold'
 r['40']=electrum_calls[0]==0
 print(json.dumps(r,sort_keys=True))
 `;

@@ -10,6 +10,7 @@ OBSERVE_PATH="/api/donation/bridge/observe"
 CAPACITY_PATH="/api/donation/bridge/capacity"
 SUPERVISOR_CLASSIFICATION="PUBLIC_SUPPORT_ELIGIBLE"
 DERIVATION_LOCK_FILENAME=".btc-donation-receiver-derivation.lock"
+DERIVATION_AMBIGUITY_FILENAME=".btc-donation-receiver-derivation-ambiguity"
 UTC_ISO_RE=re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)$")
 ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$",re.I)
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
@@ -142,6 +143,38 @@ def derivation_lock(cfg):
         except OSError:
             pass
         lock_file.close()
+
+def derivation_ambiguity_path(cfg):
+    return Path(cfg['DONATION_BRIDGE_STATE_DB']).parent/DERIVATION_AMBIGUITY_FILENAME
+
+def derivation_ambiguity_present(cfg):
+    path=derivation_ambiguity_path(cfg)
+    if not path.exists(): return False
+    if not path.is_file(): raise RuntimeError('derivation_ambiguity_state_invalid')
+    try:
+        marker=json.loads(path.read_text(encoding='utf-8'))
+    except Exception as exc:
+        raise RuntimeError('derivation_ambiguity_state_invalid') from exc
+    if not isinstance(marker,dict) or set(marker)!= {'markedAt','reason'}:
+        raise RuntimeError('derivation_ambiguity_state_invalid')
+    parse_utc_iso(marker.get('markedAt'),'derivation_ambiguity_state_invalid')
+    if not isinstance(marker.get('reason'),str) or not marker['reason']:
+        raise RuntimeError('derivation_ambiguity_state_invalid')
+    return True
+
+def mark_derivation_ambiguity(cfg,reason):
+    path=derivation_ambiguity_path(cfg); path.parent.mkdir(parents=True,exist_ok=True); os.chmod(path.parent,0o700)
+    payload=canonical_json({'markedAt':now_iso(),'reason':reason}).encode()
+    temp_path=path.with_name(path.name+'.tmp-'+uuid.uuid4().hex)
+    fd=os.open(temp_path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
+    try:
+        os.write(fd,payload); os.fsync(fd)
+    finally:
+        os.close(fd)
+    os.replace(temp_path,path); os.chmod(path,0o600)
+
+def require_no_derivation_ambiguity(cfg):
+    if derivation_ambiguity_present(cfg): raise RuntimeError('derivation_ambiguity_hold')
 
 def run_electrum(cfg,*args):
     cmd=[cfg['ELECTRUM_CLI'],'-w',cfg['ELECTRUM_WALLET'],*args]
@@ -300,6 +333,10 @@ def supervise_locked(cfg,db,settings):
       'action':'zero',
     }
     try:
+        require_no_derivation_ambiguity(cfg)
+    except Exception:
+        return base|{'status':'failed','reason':'derivation_ambiguity_hold'}
+    try:
         flush_queued(cfg,db)
     except Exception:
         return base|{'status':'failed','reason':'queued_flush_failed'}
@@ -335,22 +372,26 @@ def supervise_locked(cfg,db,settings):
         try:
             provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)
         except Exception:
-            after=local_address_count(db)
-            delta=after-before
             base['stopped_by_failure']=True
+            try:
+                after=local_address_count(db)
+            except Exception:
+                mark_derivation_ambiguity(cfg,'provision_exception_local_state_unreadable')
+                base['action']='derivation_state_ambiguous'
+                return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
+            delta=after-before
             if delta==1:
                 base['local_rows_created']+=1
                 base['action']='derived_local_ambiguous_remote'
                 return base|{'status':'failed','reason':'provision_failed_after_local_bind'}
-            if delta==0:
-                base['action']='failed_without_local_bind'
-                return base|{'status':'failed','reason':'provision_failed_without_local_bind'}
-            base['action']='local_state_ambiguous'
-            return base|{'status':'failed','reason':'local_row_count_mismatch'}
+            mark_derivation_ambiguity(cfg,'provision_exception_without_exactly_one_local_row')
+            base['action']='derivation_state_ambiguous'
+            return base|{'status':'failed','reason':'provision_failed_derivation_unknown'}
         after=local_address_count(db)
         if after!=before+1:
+            mark_derivation_ambiguity(cfg,'provision_success_local_row_count_mismatch')
             base['stopped_by_failure']=True
-            base['action']='local_state_ambiguous'
+            base['action']='derivation_state_ambiguous'
             return base|{'status':'failed','reason':'local_row_count_mismatch'}
         base['local_rows_created']+=1
         base['remote_deliveries_confirmed']+=1
@@ -427,6 +468,7 @@ def main():
     try:
         if args.cmd=='provision':
             with derivation_lock(cfg):
+                require_no_derivation_ambiguity(cfg)
                 provision(cfg,db,args.classification,args.deliver)
         elif args.cmd=='scan':
             scan(cfg,db,args.deliver)
