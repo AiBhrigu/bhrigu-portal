@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-import argparse, base64, hashlib, json, os, re, sqlite3, subprocess, tempfile, uuid
-from datetime import datetime, timezone
+import argparse, base64, fcntl, hashlib, json, os, re, sqlite3, subprocess, tempfile, uuid
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PROTOCOL_VERSION="bhrigu-donation-bridge-v1"
 PROVISION_PATH="/api/donation/bridge/provision"
 OBSERVE_PATH="/api/donation/bridge/observe"
+CAPACITY_PATH="/api/donation/bridge/capacity"
+SUPERVISOR_CLASSIFICATION="PUBLIC_SUPPORT_ELIGIBLE"
+DERIVATION_LOCK_FILENAME=".btc-donation-receiver-derivation.lock"
+UTC_ISO_RE=re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)$")
 ADDRESS_RE=re.compile(r"^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$",re.I)
 TXID_RE=re.compile(r"^[a-f0-9]{64}$")
 OUTBOUND_PROVISION_CLASSIFICATIONS=('PROVISIONED','INTEGRATION_PROVISIONED','PUBLIC_SUPPORT_ELIGIBLE')
@@ -74,6 +79,28 @@ def config():
     if missing: raise SystemExit('missing_required_configuration')
     return {k:os.environ[k] for k in required}|{'TOR_SOCKS':os.environ.get('TOR_SOCKS','127.0.0.1:19050')}
 
+def _supervisor_env_int(name,default,minimum,maximum):
+    raw=os.environ.get(name,str(default)).strip()
+    if not re.fullmatch(r'[0-9]+',raw): raise SystemExit('invalid_supervisor_configuration')
+    value=int(raw)
+    if value<minimum or value>maximum: raise SystemExit('invalid_supervisor_configuration')
+    return value
+
+def supervisor_settings():
+    settings={
+      'MIN_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MIN_AVAILABLE',3,1,100000),
+      'TARGET_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_TARGET_AVAILABLE',5,1,100000),
+      'MAX_AVAILABLE':_supervisor_env_int('BTC_DONATION_SUPERVISOR_MAX_AVAILABLE',10,1,100000),
+      'BATCH_SIZE_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_BATCH_SIZE_MAX',2,1,1000),
+      'DERIVATION_BUDGET_WINDOW':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_WINDOW',86400,60,604800),
+      'DERIVATION_BUDGET_MAX':_supervisor_env_int('BTC_DONATION_SUPERVISOR_DERIVATION_BUDGET_MAX',20,1,100000),
+    }
+    if not (settings['MIN_AVAILABLE']<settings['TARGET_AVAILABLE']<=settings['MAX_AVAILABLE']):
+        raise SystemExit('invalid_supervisor_configuration')
+    if settings['BATCH_SIZE_MAX']>settings['MAX_AVAILABLE']:
+        raise SystemExit('invalid_supervisor_configuration')
+    return settings
+
 def init_db(path):
     p=Path(path); p.parent.mkdir(parents=True,exist_ok=True); os.chmod(p.parent,0o700)
     db=sqlite3.connect(path)
@@ -96,6 +123,25 @@ def init_db(path):
     );
     """)
     db.commit(); return db
+
+@contextmanager
+def derivation_lock(cfg):
+    lock_path=Path(cfg['DONATION_BRIDGE_STATE_DB']).parent/DERIVATION_LOCK_FILENAME
+    fd=os.open(lock_path,os.O_CREAT|os.O_RDWR,0o600)
+    os.fchmod(fd,0o600)
+    lock_file=os.fdopen(fd,'a+')
+    try:
+        try:
+            fcntl.flock(lock_file.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError('derivation_lock_unavailable') from exc
+        yield
+    finally:
+        try:
+            fcntl.flock(lock_file.fileno(),fcntl.LOCK_UN)
+        except OSError:
+            pass
+        lock_file.close()
 
 def run_electrum(cfg,*args):
     cmd=[cfg['ELECTRUM_CLI'],'-w',cfg['ELECTRUM_WALLET'],*args]
@@ -143,7 +189,7 @@ def deliver(cfg,path,envelope,signature):
         p=subprocess.run(cmd,text=True,capture_output=True,timeout=90)
         if p.returncode: raise RuntimeError('bridge_https_delivery_failed')
         result=json.loads(p.stdout)
-        if result.get('ok') is not True: raise RuntimeError('bridge_https_rejected')
+        if not isinstance(result,dict) or result.get('ok') is not True: raise RuntimeError('bridge_https_rejected')
         return result
     finally: Path(body).unlink(missing_ok=True)
 
@@ -169,6 +215,15 @@ def flush_queued(cfg,db):
         terminalize_public_provision(db,receiver_id)
         db.execute("UPDATE observations SET delivery_status='delivered' WHERE event_key=?",(event_key,)); db.commit()
 
+def queued_outbound_provision_count(db):
+    placeholders=','.join('?' for _ in OUTBOUND_PROVISION_CLASSIFICATIONS)
+    row=db.execute(
+      f"SELECT COUNT(*) FROM addresses WHERE delivery_status='queued' AND classification IN ({placeholders})",
+      OUTBOUND_PROVISION_CLASSIFICATIONS
+    ).fetchone()
+    if not row or type(row[0]) is not int or row[0]<0: raise RuntimeError('queued_provision_count_invalid')
+    return row[0]
+
 def provision(cfg,db,classification,send):
     if send:
         require_outbound_provision_classification(classification)
@@ -182,6 +237,141 @@ def provision(cfg,db,classification,send):
         deliver(cfg,PROVISION_PATH,envelope,sign_envelope(cfg,envelope))
         db.execute("UPDATE addresses SET delivery_status='delivered' WHERE receiver_address_id=?",(receiver_id,)); db.commit()
     print('PROVISION_RESULT=RECORDED'); print('CLASSIFICATION='+classification); print('ADDRESS_PUBLICATION=NO')
+
+def parse_utc_iso(value,error_code):
+    if not isinstance(value,str) or not UTC_ISO_RE.fullmatch(value):
+        raise RuntimeError(error_code)
+    normalized=value[:-1]+'+00:00' if value.endswith('Z') else value
+    try:
+        parsed=datetime.fromisoformat(normalized)
+    except ValueError as exc:
+        raise RuntimeError(error_code) from exc
+    if parsed.tzinfo is None or parsed.utcoffset()!=timedelta(0):
+        raise RuntimeError(error_code)
+    return parsed.astimezone(timezone.utc)
+
+def read_available_capacity(cfg):
+    envelope=make_envelope(cfg,'capacity_read',CAPACITY_PATH,{})
+    result=deliver(cfg,CAPACITY_PATH,envelope,sign_envelope(cfg,envelope))
+    available=result.get('availableCapacity')
+    if type(available) is not int or available<0:
+        raise RuntimeError('capacity_response_invalid')
+    parse_utc_iso(result.get('queriedAt'),'capacity_response_invalid')
+    return available
+
+def rolling_derivation_budget_used(db,settings,now_utc=None):
+    now_utc=now_utc or datetime.now(timezone.utc)
+    if now_utc.tzinfo is None or now_utc.utcoffset()!=timedelta(0):
+        raise RuntimeError('budget_time_authority_invalid')
+    now_utc=now_utc.astimezone(timezone.utc)
+    cutoff=now_utc-timedelta(seconds=settings['DERIVATION_BUDGET_WINDOW'])
+    used=0
+    for row in db.execute('SELECT provisioned_at FROM addresses').fetchall():
+        if not row:
+            raise RuntimeError('budget_timestamp_invalid')
+        provisioned_at=parse_utc_iso(row[0],'budget_timestamp_invalid')
+        if provisioned_at>cutoff:
+            used+=1
+    return used
+
+def local_address_count(db):
+    row=db.execute('SELECT COUNT(*) FROM addresses').fetchone()
+    if not row or type(row[0]) is not int or row[0]<0: raise RuntimeError('local_address_count_invalid')
+    return row[0]
+
+def emit_supervisor_result(result):
+    ordered=(
+      'status','reason','available_before','budget_used','derive_count',
+      'derivation_attempts','local_rows_created','remote_deliveries_confirmed',
+      'stopped_by_failure','action'
+    )
+    for key in ordered:
+        if key in result:
+            value=result[key]
+            if isinstance(value,bool): value='YES' if value else 'NO'
+            print(f'SUPERVISOR_{key.upper()}={value}')
+
+def supervise_locked(cfg,db,settings):
+    base={
+      'derivation_attempts':0,
+      'local_rows_created':0,
+      'remote_deliveries_confirmed':0,
+      'stopped_by_failure':False,
+      'action':'zero',
+    }
+    try:
+        flush_queued(cfg,db)
+    except Exception:
+        return base|{'status':'failed','reason':'queued_flush_failed'}
+    try:
+        if queued_outbound_provision_count(db)!=0:
+            return base|{'status':'failed','reason':'queued_provision_remaining'}
+    except Exception:
+        return base|{'status':'failed','reason':'queued_provision_state_invalid'}
+    try:
+        available=read_available_capacity(cfg)
+    except Exception:
+        return base|{'status':'failed','reason':'capacity_authority_unavailable'}
+    base['available_before']=available
+    try:
+        budget_used=rolling_derivation_budget_used(db,settings)
+    except Exception:
+        return base|{'status':'failed','reason':'budget_authority_invalid'}
+    base['budget_used']=budget_used
+    if budget_used>=settings['DERIVATION_BUDGET_MAX']:
+        return base|{'status':'healthy','reason':'derivation_budget_exhausted'}
+    if available>=settings['MIN_AVAILABLE']:
+        return base|{'status':'healthy','reason':'capacity_healthy'}
+    deficit=settings['TARGET_AVAILABLE']-available
+    allowed_by_pool=settings['MAX_AVAILABLE']-available
+    allowed_by_budget=settings['DERIVATION_BUDGET_MAX']-budget_used
+    derive_count=min(deficit,settings['BATCH_SIZE_MAX'],allowed_by_pool,allowed_by_budget)
+    base['derive_count']=derive_count
+    if derive_count<=0:
+        return base|{'status':'healthy','reason':'no_derivation_eligible'}
+    for _ in range(derive_count):
+        before=local_address_count(db)
+        base['derivation_attempts']+=1
+        try:
+            provision(cfg,db,SUPERVISOR_CLASSIFICATION,True)
+        except Exception:
+            after=local_address_count(db)
+            delta=after-before
+            base['stopped_by_failure']=True
+            if delta==1:
+                base['local_rows_created']+=1
+                base['action']='derived_local_ambiguous_remote'
+                return base|{'status':'failed','reason':'provision_failed_after_local_bind'}
+            if delta==0:
+                base['action']='failed_without_local_bind'
+                return base|{'status':'failed','reason':'provision_failed_without_local_bind'}
+            base['action']='local_state_ambiguous'
+            return base|{'status':'failed','reason':'local_row_count_mismatch'}
+        after=local_address_count(db)
+        if after!=before+1:
+            base['stopped_by_failure']=True
+            base['action']='local_state_ambiguous'
+            return base|{'status':'failed','reason':'local_row_count_mismatch'}
+        base['local_rows_created']+=1
+        base['remote_deliveries_confirmed']+=1
+    base['action']='derived'
+    return base|{'status':'replenished','reason':'bounded_replenishment_complete'}
+
+def supervise_run_once(cfg,db,settings):
+    try:
+        with derivation_lock(cfg):
+            result=supervise_locked(cfg,db,settings)
+    except RuntimeError as exc:
+        if str(exc)=='derivation_lock_unavailable':
+            result={
+              'status':'failed','reason':'derivation_lock_unavailable','derivation_attempts':0,
+              'local_rows_created':0,'remote_deliveries_confirmed':0,
+              'stopped_by_failure':False,'action':'zero'
+            }
+        else:
+            raise
+    emit_supervisor_result(result)
+    return result
 
 def decode_tx_outputs(cfg,txid):
     raw=run_electrum(cfg,'gettransaction',txid)
@@ -232,10 +422,17 @@ def main():
     p=sub.add_parser('provision'); p.add_argument('--classification',choices=['PROVISIONED','INTEGRATION_PROVISIONED','PUBLIC_SUPPORT_ELIGIBLE','TEST_PROVISIONED'],default='PROVISIONED'); p.add_argument('--deliver',action='store_true')
     s=sub.add_parser('scan'); s.add_argument('--deliver',action='store_true')
     sub.add_parser('flush')
+    sup=sub.add_parser('supervise'); sup.add_argument('--run-once',action='store_true',required=True)
     args=ap.parse_args(); cfg=config(); db=init_db(cfg['DONATION_BRIDGE_STATE_DB'])
     try:
-        if args.cmd=='provision': provision(cfg,db,args.classification,args.deliver)
-        elif args.cmd=='scan': scan(cfg,db,args.deliver)
-        else: flush_queued(cfg,db); print('QUEUED_DELIVERY_FLUSH=PASS')
+        if args.cmd=='provision':
+            with derivation_lock(cfg):
+                provision(cfg,db,args.classification,args.deliver)
+        elif args.cmd=='scan':
+            scan(cfg,db,args.deliver)
+        elif args.cmd=='flush':
+            flush_queued(cfg,db); print('QUEUED_DELIVERY_FLUSH=PASS')
+        else:
+            supervise_run_once(cfg,db,supervisor_settings())
     finally: db.close()
 if __name__=='__main__': main()
