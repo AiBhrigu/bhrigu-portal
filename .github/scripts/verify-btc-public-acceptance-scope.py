@@ -273,9 +273,15 @@ for status, expected in accepted_scopes.items():
             and os.environ.get("GITHUB_HEAD_REF") in {
                 "feature/btc-support-conversion-atom2-v1",
                 "feature/btc-support-conversion-atom3-v1",
+                "feature/btc-support-conversion-atom4-v1",
             }
         ):
-            atom = "ATOM3" if os.environ.get("GITHUB_HEAD_REF") == "feature/btc-support-conversion-atom3-v1" else "ATOM2"
+            branch = os.environ.get("GITHUB_HEAD_REF")
+            atom = {
+                "feature/btc-support-conversion-atom2-v1": "ATOM2",
+                "feature/btc-support-conversion-atom3-v1": "ATOM3",
+                "feature/btc-support-conversion-atom4-v1": "ATOM4",
+            }[branch]
             status = f"PASS_BTC_SUPPORT_CONVERSION_{atom}_EXACT_4_FILE_SCOPE"
         print({"status": status, "base": base, "head": head, "changed": sorted(actual)})
         raise SystemExit(0)
