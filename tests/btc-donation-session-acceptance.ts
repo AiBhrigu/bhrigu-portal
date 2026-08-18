@@ -214,6 +214,11 @@ async function run() {
   assert.match(support, /feature\/btc-support-conversion-atom1-v1/);
   assert.match(support, /feature\/btc-support-conversion-atom2-v1/);
   assert.match(support, /feature\/btc-support-conversion-atom3-v1/);
+  assert.match(support, /feature\/btc-support-conversion-atom4-v1/);
+  assert.match(support, /data-support-field="golden-symmetry-cyberpunk-v0-1"/);
+  assert.match(support, /data-support-visual-canon="golden-symmetry-restrained-cyberpunk-v0-1"/);
+  assert.match(component, /data-support-final-polish="golden-symmetry-cyberpunk-v0-1"/);
+  assert.match(component, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(support, /main\[data-support-surface\] ~ nav\[data-prevnext\]/);
   assert.match(store, /FOR UPDATE SKIP LOCKED/);
   assert.match(store, /state='retired'/);

@@ -306,7 +306,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const receiptProgress = viewSession && !sendSurfaceOpen && viewSession.observedSats ? donationReceiptProgress(viewSession, locale) : null;
 
   return (
-    <section className="donation" data-donation-surface={surface}>
+    <section className="donation" data-donation-surface={surface} data-support-final-polish="golden-symmetry-cyberpunk-v0-1">
       <div className="previewFlag">{isProduction ? "Bitcoin mainnet · voluntary support" : "Protected Preview · No real BTC"}</div>
       <h2>{supportCopy.title}</h2>
       {(!viewSession || sendSurfaceOpen) && (
@@ -500,12 +500,14 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       {error && <p className="error" role="status">{error}</p>}
 
       <style jsx>{`
-        .donation { margin-top: 22px; padding: 20px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px; background: rgba(255,255,255,.025); }
+        .donation { position: relative; overflow: hidden; margin-top: 22px; padding: 20px; border: 1px solid rgba(222,194,125,.14); border-radius: 18px; background: radial-gradient(circle at 92% 0, rgba(83,201,230,.025), transparent 26%), linear-gradient(180deg, rgba(255,255,255,.026), rgba(255,255,255,.014)); box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
+        .donation::before { content: ""; position: absolute; left: 10%; right: 10%; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(222,194,125,.28), rgba(83,201,230,.08), rgba(222,194,125,.28), transparent); pointer-events: none; }
         .previewFlag, .micro { font-size: 11px; letter-spacing: .11em; text-transform: uppercase; opacity: .68; }
         .decision { margin: 14px 0 16px; }
         .directAsk { margin: 0 0 12px; line-height: 1.5; }
         .amountGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 9px; }
-        .amountChip { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(222,194,125,.16); background: rgba(255,255,255,.018); }
+        .amountChip { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(222,194,125,.16); background: linear-gradient(135deg, rgba(222,194,125,.018), rgba(255,255,255,.014)); transition: border-color .18s ease, box-shadow .18s ease; }
+        .amountChip:hover { border-color: rgba(222,194,125,.28); box-shadow: inset 0 0 18px rgba(222,194,125,.018); }
         .amountChip strong { font-size: 13px; }
         .amountChip span { font-size: 11px; opacity: .65; }
         .suggestedHint { margin: 9px 0 0; font-size: 12px; line-height: 1.5; opacity: .68; }
@@ -513,7 +515,8 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         h3 { margin: 0 0 9px; font-size: 18px; }
         .intro, .stateDetail, .amountNote, .stopNote, .guard, .seedGuard, .terminal p, .synthetic p, .guidance p, .handoff li, .guidance li { line-height: 1.55; opacity: .86; }
         .primary, .secondary, .retire { appearance: none; font: inherit; cursor: pointer; }
-        .primary { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(255,255,255,.22); background: rgba(255,255,255,.09); color: inherit; font-weight: 650; }
+        .primary { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(222,194,125,.34); background: linear-gradient(90deg, rgba(222,194,125,.12), rgba(255,255,255,.075), rgba(83,201,230,.035)); color: inherit; font-weight: 650; box-shadow: 0 0 26px rgba(222,194,125,.025); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+        .primary:not(:disabled):hover { border-color: rgba(222,194,125,.52); box-shadow: 0 0 30px rgba(222,194,125,.055), 0 0 38px rgba(83,201,230,.02); transform: translateY(-1px); }
         .primary:disabled, .secondary:disabled, .retire:disabled { opacity: .55; cursor: default; }
         .restart { margin-top: 14px; }
         .session { margin-top: 16px; }
@@ -521,7 +524,8 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .activeHeader { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; padding: 11px 13px; border: 1px solid rgba(222,194,125,.28); border-radius: 14px; background: linear-gradient(90deg, rgba(222,194,125,.055), rgba(83,201,230,.018) 62%, rgba(255,255,255,.012)); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
         .activeSignal { display: flex; gap: 10px; align-items: center; }
         .activeSignal strong { display: block; margin-top: 2px; font-size: 14px; }
-        .activePulse { width: 8px; height: 8px; border-radius: 50%; background: #dec27d; box-shadow: 0 0 0 4px rgba(222,194,125,.08), 0 0 18px rgba(83,201,230,.16); }
+        .activePulse { width: 8px; height: 8px; border-radius: 50%; background: #dec27d; box-shadow: 0 0 0 4px rgba(222,194,125,.08), 0 0 18px rgba(83,201,230,.16); animation: supportPulse 3.8s ease-in-out infinite; }
+        @keyframes supportPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(222,194,125,.07), 0 0 14px rgba(83,201,230,.11); } 50% { box-shadow: 0 0 0 6px rgba(222,194,125,.035), 0 0 22px rgba(83,201,230,.17); } }
         .stateRow { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; }
         .state { display: inline-flex; min-height: 30px; align-items: center; padding: 0 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.13); font-size: 13px; }
         .expiry { font-size: 12px; opacity: .66; }
@@ -557,7 +561,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .safetyDetails[open] { border-color: rgba(222,194,125,.15); }
         .terminal { border-style: solid; position: relative; overflow: hidden; }
         .terminal h3 { margin: 4px 0 0; }
-        .terminal-confirmed { border-color: rgba(222,194,125,.28); background: radial-gradient(circle at 100% 0, rgba(222,194,125,.06), transparent 36%), rgba(0,0,0,.12); }
+        .terminal-confirmed { border-color: rgba(222,194,125,.3); background: radial-gradient(circle at 100% 0, rgba(222,194,125,.075), transparent 36%), radial-gradient(circle at 0 100%, rgba(83,201,230,.02), transparent 30%), rgba(0,0,0,.12); box-shadow: inset 0 1px 0 rgba(222,194,125,.025); }
         .terminalHead { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
         .receiptMetrics { display: flex; gap: 8px; flex-wrap: wrap; }
         .receiptMetrics span { min-width: 94px; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.075); border-radius: 10px; background: rgba(255,255,255,.014); }
@@ -568,7 +572,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .receiptSignal { padding: 4px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.09); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
         .receiptSignal-waiting { color: rgba(222,194,125,.9); border-color: rgba(222,194,125,.18); }
         .receiptSignal-attention { color: rgba(240,190,120,.9); border-color: rgba(240,190,120,.2); }
-        .receiptSignal-verified { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.2); box-shadow: 0 0 20px rgba(83,201,230,.04); }
+        .receiptSignal-verified { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.22); box-shadow: 0 0 20px rgba(83,201,230,.05), inset 0 0 14px rgba(188,235,214,.018); }
         .receiptSteps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin-top: 10px; }
         .receiptStep { min-height: 54px; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06); font-size: 10px; line-height: 1.35; opacity: .56; }
         .receiptStep-complete { opacity: .94; border-color: rgba(188,235,214,.14); }
@@ -576,14 +580,16 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         .receiptNode { flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); font-size: 10px; }
         .receiptStep-complete .receiptNode { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.24); }
         .receiptStep-active .receiptNode { color: #dec27d; border-color: rgba(222,194,125,.3); box-shadow: 0 0 14px rgba(222,194,125,.08); }
-        .gratitude { display: grid; gap: 5px; margin: 12px 0; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(222,194,125,.24); background: linear-gradient(90deg, rgba(222,194,125,.055), rgba(83,201,230,.018)); }
+        .gratitude { position: relative; overflow: hidden; display: grid; gap: 5px; margin: 12px 0; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(222,194,125,.26); background: linear-gradient(90deg, rgba(222,194,125,.06), rgba(83,201,230,.02)); }
+        .gratitude::after { content: ""; position: absolute; left: 0; right: 58%; bottom: 0; height: 1px; background: linear-gradient(90deg, rgba(222,194,125,.42), transparent); opacity: .7; }
         .gratitude strong { font-size: 15px; }
         .gratitude span { font-size: 12px; line-height: 1.5; opacity: .76; }
         .synthetic { border-style: dashed; }
         .synthetic p { margin: 7px 0 0; }
         .error { margin: 14px 0 0; line-height: 1.5; }
         @media (max-width: 560px) {
-          .donation { padding: 16px; }
+          .donation { padding: 14px 10px; border-radius: 15px; }
+          .previewFlag, .micro { font-size: 10px; }
           h2 { font-size: 24px; }
           .safetyRail { grid-template-columns: 1fr; }
           .qrCore { padding: 12px 10px; }
@@ -597,6 +603,13 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           .receiptStep { min-height: 44px; }
           .receiptMetrics { width: 100%; }
           .receiptMetrics span { flex: 1 1 0; min-width: 0; }
+          .receiptProgress, .terminal, .addressBlock, .synthetic { padding: 11px 9px; }
+          .activeHeader { padding: 10px 9px; align-items: flex-start; }
+          .stateRow { gap: 8px; }
+          .safetyRail span { min-height: 32px; line-height: 1.4; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .activePulse, .primary, .amountChip { animation: none; transition: none; }
         }
       `}</style>
     </section>
