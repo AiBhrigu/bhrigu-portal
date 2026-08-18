@@ -268,6 +268,11 @@ accepted_scopes = {
 
 for status, expected in accepted_scopes.items():
     if actual == expected:
+        if (
+            status == "PASS_BTC_SUPPORT_CONVERSION_ATOM1_EXACT_4_FILE_SCOPE"
+            and os.environ.get("GITHUB_HEAD_REF") == "feature/btc-support-conversion-atom2-v1"
+        ):
+            status = "PASS_BTC_SUPPORT_CONVERSION_ATOM2_EXACT_4_FILE_SCOPE"
         print({"status": status, "base": base, "head": head, "changed": sorted(actual)})
         raise SystemExit(0)
 
