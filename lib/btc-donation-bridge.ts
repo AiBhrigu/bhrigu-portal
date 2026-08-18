@@ -6,7 +6,7 @@ export const DONATION_BRIDGE_PROTOCOL_VERSION = "bhrigu-donation-bridge-v1";
 export const DONATION_BRIDGE_KEY_ID_HEADER = "x-bhrigu-donation-bridge-key-id";
 export const DONATION_BRIDGE_SIGNATURE_HEADER = "x-bhrigu-donation-bridge-signature";
 
-export type DonationBridgeMessageKind = "address_provision" | "receipt_observation";
+export type DonationBridgeMessageKind = "address_provision" | "receipt_observation" | "capacity_read";
 export type DonationReceiptState = "mempool_seen" | "confirmed" | "confirmation_lost";
 
 type RuntimeEnv = Partial<NodeJS.ProcessEnv>;
@@ -25,6 +25,8 @@ export type DonationBridgeEnvelope<T = unknown> = {
   payloadHash: string;
   payload: T;
 };
+
+export type DonationCapacityPayload = Record<string, never>;
 
 export type DonationAddressProvisionPayload = {
   receiverAddressId: string;
@@ -139,6 +141,11 @@ export function verifyDonationBridgeEnvelope(args: {
 
 const MAINNET_ADDRESS = /^(?:bc1[ac-hj-np-z02-9]{20,90}|[13][1-9A-HJ-NP-Za-km-z]{20,60})$/i;
 const TXID = /^[a-f0-9]{64}$/;
+
+export function parseDonationCapacityPayload(value: unknown): DonationCapacityPayload {
+  if (!exactKeys(value, [])) throw new DonationBridgeError("invalid_capacity_payload");
+  return value as DonationCapacityPayload;
+}
 
 export function parseDonationAddressProvisionPayload(value: unknown): DonationAddressProvisionPayload {
   if (!exactKeys(value, ["receiverAddressId", "receiveAddress", "createdAt"])) throw new DonationBridgeError("invalid_provision_payload");

@@ -42,6 +42,19 @@ export function createNeonBtcDonationBridgeStore(databaseUrl: string) {
         ? "replay" : "conflict";
     },
 
+    async getAvailableCapacity(): Promise<number> {
+      const rows = await sql`
+        SELECT COUNT(*)::int AS available_count
+        FROM btc_donation_receiver_addresses
+        WHERE state='available'
+      `;
+      const value = rows[0]?.available_count;
+      if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 0) {
+        throw new Error("donation_capacity_invalid");
+      }
+      return value;
+    },
+
     async issueAddress(sessionId: string, at: string) {
       const rows = await sql`
         WITH candidate AS MATERIALIZED (
