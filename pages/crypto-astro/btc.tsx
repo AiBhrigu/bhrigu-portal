@@ -10,8 +10,7 @@ import PublicSupportRoute from "../../components/btc/PublicSupportRoute";
 import { loadBtcBinanceFreeObservationBridge } from "../../lib/btc-binance-free-observation-bridge";
 import type { BtcBinanceFreeObservation } from "../../lib/btc-binance-free-observation-contract";
 import { BTC_BINANCE_FREE_OBSERVATION_CSS } from "../../lib/btc-binance-free-observation-style";
-import { loadBtcBinancePublicCorridorLive } from "../../lib/btc-binance-public-corridor-live";
-import type { BtcBinancePublicBindingPacket } from "../../lib/btc-binance-public-binding";
+import { loadBtcBinancePublicCorridorLive, type BtcBinancePublicCorridorLiveBinding } from "../../lib/btc-binance-public-corridor-live";
 import { loadBtcMarketEnvelope, type BtcMarketEnvelope, type BtcMarketEnvelopeFailure } from "../../lib/btc-market-envelope";
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../lib/btc-bilingual-surface-style";
 import { MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256 } from "../../lib/btc-existing-glyph-canon";
@@ -68,7 +67,7 @@ type Props = {
   localeSource: BtcLocaleSource;
   deploymentSourceSha: string | null;
   binanceObservation: BtcBinanceFreeObservation | null;
-  binanceLiveBinding: BtcBinancePublicBindingPacket | null;
+  binanceLiveBinding: BtcBinancePublicCorridorLiveBinding | null;
 };
 
 const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
