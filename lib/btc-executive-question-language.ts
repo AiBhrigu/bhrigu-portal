@@ -4,7 +4,12 @@ import type {
   BtcSignalDirection,
   BtcSynthesisState,
 } from "./btc-market-envelope";
-import type { BtcPublicLocale } from "./btc-public-language-contract";
+import {
+  formatBtcMemoryLabel,
+  formatBtcPlain,
+  formatBtcTransitionInterpretation,
+  type BtcPublicLocale,
+} from "./btc-public-language-contract";
 
 export const BTC_EXECUTIVE_QUESTION_LANGUAGE_SCHEMA =
   "btc_executive_question_language_v0_1" as const;
@@ -126,6 +131,41 @@ function fmtSignedPct(value: number, digits = 1): string {
   return `${value > 0 ? "+" : value < 0 ? "−" : ""}${formatted}%`;
 }
 
+function formatMemoryValue(locale: BtcPublicLocale, value: string, unit: string): string {
+  const numeric = Number(value);
+  if (Number.isFinite(numeric)) {
+    if (unit === "percent") return `${fmtNumber(numeric, 2)}%`;
+    if (unit === "usd") return `$${fmtNumber(numeric, 0)}`;
+    if (unit === "score_0_100") return fmtNumber(numeric, 1);
+  }
+  return formatBtcPlain(locale, value);
+}
+
+function formatMemoryMetric(
+  locale: BtcPublicLocale,
+  metric: BtcMarketEnvelope["memory"]["metrics"][number],
+): string {
+  const previous = formatMemoryValue(locale, metric.previous_value, metric.unit);
+  const current = formatMemoryValue(locale, metric.current_value, metric.unit);
+  let change = "";
+  if (metric.type === "NUMERIC" && metric.display_delta) {
+    const delta = Number(metric.display_delta);
+    if (Number.isFinite(delta) && delta !== 0) {
+      const sign = delta > 0 ? "+" : "−";
+      const magnitude = Math.abs(delta);
+      const formattedDelta = metric.unit === "percent"
+        ? `${sign}${fmtNumber(magnitude, 1)} pp`
+        : metric.unit === "usd"
+          ? `${sign}$${fmtNumber(magnitude, 0)}`
+          : `${sign}${fmtNumber(magnitude, 1)}`;
+      change = ` (${formattedDelta})`;
+    }
+  } else if (metric.transition && metric.transition !== "UNCHANGED") {
+    change = ` (${formatBtcPlain(locale, metric.transition)})`;
+  }
+  return `${formatBtcMemoryLabel(locale, metric.metric_id)}: ${previous} → ${current}${change}.`;
+}
+
 function moduleState(envelope: BtcMarketEnvelope, moduleId: string): BtcSignalDirection {
   return envelope.phi_geometry.nodes.find((node) => node.id === moduleId)?.state ?? "UNAVAILABLE";
 }
@@ -193,7 +233,7 @@ function classEvidence(locale: BtcPublicLocale, envelope: BtcMarketEnvelope, obs
         .filter((metric) => metric.direction !== "UNCHANGED" || metric.transition !== "UNCHANGED")
         .slice(0, 3);
       return relevant.length
-        ? relevant.map((metric) => `${metric.metric_id}: ${metric.previous_value} → ${metric.current_value}${metric.display_delta ? ` (${metric.display_delta})` : ""}.`)
+        ? relevant.map((metric) => formatMemoryMetric(locale, metric))
         : [ru ? "Новый сопоставимый переход не подтверждён." : "No new comparable transition is confirmed."];
     }
     case "temporal_pressure":
@@ -249,11 +289,13 @@ export function buildBtcQuestionSpecificAnswer(
     headline: HEADLINES[locale][envelope.question_class][state],
     direct_answer: directAnswer(locale, envelope, state, facets),
     evidence_lines: classEvidence(locale, envelope, observationDate),
-    contradiction_or_limit: state === "CONFIRMED"
-      ? (ru ? `Главное ограничение: это подтверждение относится только к ведущим модулям ${primary}.` : `Main limit: confirmation applies only to the routed primary modules ${primary}.`)
-      : state === "SPLIT"
-        ? (ru ? `Расхождение находится внутри ведущего маршрута ${primary}; поддерживающие модули не скрывают этот конфликт.` : `The split is inside the primary route ${primary}; supporting modules do not erase that conflict.`)
-        : (ru ? `Один из ведущих модулей недоступен, нейтрален или не поддерживает направленный вывод: ${primary}.` : `A primary module is unavailable, neutral, or cannot support a directional conclusion: ${primary}.`),
+    contradiction_or_limit: envelope.question_class === "change_memory"
+      ? formatBtcTransitionInterpretation(locale, envelope.synthesis.state)
+      : state === "CONFIRMED"
+        ? (ru ? `Главное ограничение: это подтверждение относится только к ведущим модулям ${primary}.` : `Main limit: confirmation applies only to the routed primary modules ${primary}.`)
+        : state === "SPLIT"
+          ? (ru ? `Расхождение находится внутри ведущего маршрута ${primary}; поддерживающие модули не скрывают этот конфликт.` : `The split is inside the primary route ${primary}; supporting modules do not erase that conflict.`)
+          : (ru ? `Один из ведущих модулей недоступен, нейтрален или не поддерживает направленный вывод: ${primary}.` : `A primary module is unavailable, neutral, or cannot support a directional conclusion: ${primary}.`),
     what_would_change_the_read: formatBtcQuestionWatchNext(locale, envelope.question_class, envelope.current.source_generated_at_utc),
     source_boundary: ru
       ? "Числа взяты из принятого Snapshot; ответ не является прогнозом, ценовой целью или торговым сигналом. Новый вопрос создаёт новое независимое чтение и не использует память диалога."

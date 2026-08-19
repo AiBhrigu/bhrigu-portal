@@ -278,12 +278,22 @@ function hasPositiveMethodAndProofForm(question: string): boolean {
     || classifyPositiveRussianMethodRelation(question) !== null;
 }
 
+const PRIMARY_CHANGE_MEMORY_HERO_PATTERNS: readonly RegExp[] = [
+  /^what\s+changed\s+in\s+(?:btc|bitcoin)\s+since\s+the\s+previous\s+accepted\s+snapshot\s*(?:[—-]\s*)?and\s+why\s+does\s+it\s+matter[?!.]*$/i,
+  /^что\s+изменилось\s+в\s+(?:btc|bitcoin|биткоин[а-яё]*)\s+с\s+предыдущего\s+принятого\s+snapshot\s*(?:[—-]\s*)?и\s+почему\s+это\s+важно[?!.]*$/i,
+];
+
+function hasPrimaryChangeMemoryHeroForm(question: string): boolean {
+  return PRIMARY_CHANGE_MEMORY_HERO_PATTERNS.some((pattern) => pattern.test(question));
+}
+
 export function hasPositiveBtcBinanceInformationalEligibility(route: BtcCosmographerRoute, mode: BtcBinancePublicBindingMode): boolean {
   const normalized = route.raw_question.trim().replace(/\s+/g, " ");
   if (!normalized) return false;
   if (mode === "BTC_FIELD_NOW") return hasPositiveMarketObservationForm(normalized);
   if (mode === "BTC_CHANGE_MEMORY") {
-    return /^(?:what\s+(?:changed|has\s+changed)(?:\s+since\s+(?:the\s+)?previous\s+snapshot|\s+(?:in|with|for)\s+(?:btc|bitcoin|the\s+btc\s+market|the\s+market)(?:\s+(?:today|now))?)|что\s+изменилось(?:\s+с\s+(?:предыдущего|последнего)\s+снимк[а-яё]*|\s+(?:на\s+рынке|в\s+рынке|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сегодня|сейчас))?))[?!.]*$/i.test(normalized);
+    return hasPrimaryChangeMemoryHeroForm(normalized)
+      || /^(?:what\s+(?:changed|has\s+changed)(?:\s+since\s+(?:the\s+)?previous\s+snapshot|\s+(?:in|with|for)\s+(?:btc|bitcoin|the\s+btc\s+market|the\s+market)(?:\s+(?:today|now))?)|что\s+изменилось(?:\s+с\s+(?:предыдущего|последнего)\s+снимк[а-яё]*|\s+(?:на\s+рынке|в\s+рынке|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)(?:\s+(?:сегодня|сейчас))?))[?!.]*$/i.test(normalized);
   }
   return hasPositiveMethodAndProofForm(normalized);
 }

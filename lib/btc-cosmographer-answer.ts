@@ -1,6 +1,9 @@
 import type { BtcMarketEnvelope } from "./btc-market-envelope";
 import type { BtcPublicSnapshot } from "./btc-public-output-contract";
-import type { BtcPublicLocale } from "./btc-public-language-contract";
+import {
+  formatBtcTransitionLead,
+  type BtcPublicLocale,
+} from "./btc-public-language-contract";
 import {
   buildBtcQuestionSpecificAnswer,
   type BtcQuestionSpecificAnswerState,
@@ -80,6 +83,13 @@ function marketAnswer(
         label: evidenceLabel,
         bullets: raw.evidence_lines.map((line: string) => publicMarketText(locale, line)),
       },
+      ...(route.intents.includes("reason")
+        ? [{
+            id: "market_why_it_matters",
+            label: locale === "ru" ? "Почему это важно" : "Why it matters",
+            paragraph: formatBtcTransitionLead(locale, envelope.synthesis.state),
+          }]
+        : []),
       {
         id: "market_limit",
         label: locale === "ru" ? "Согласие и расхождение" : "Agreement and divergence",

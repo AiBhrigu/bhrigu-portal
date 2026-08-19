@@ -3,6 +3,7 @@ import {
   buildBtcMarketEnvelopeFromDocuments,
   classifyBtcEnvelopeQuestion,
 } from "../lib/btc-market-envelope";
+import { buildBtcQuestionSpecificAnswer } from "../lib/btc-executive-question-language";
 
 declare const process: { exitCode?: number };
 
@@ -94,6 +95,23 @@ assert(result.value.verified_history.available && result.value.verified_history.
 assert(result.value.synthesis.state === "DIVERGENCE", "mixed fixture must route to divergence");
 assert(result.value.synthesis.what_changed.some((line) => line.includes("BTC dominance")), "what changed uses Snapshot Delta");
 assert(result.value.boundary.no_trading_signal && result.value.boundary.no_forecast && result.value.boundary.no_price_target, "public boundary");
+
+const heroEnvelope = JSON.parse(JSON.stringify(result.value)) as typeof result.value;
+const heroDominance = heroEnvelope.memory.metrics.find((metric) => metric.metric_id === "btc_gravity_pct");
+assert(heroDominance, "hero dominance metric exists");
+heroDominance.previous_value = "56.53835512274078";
+heroDominance.current_value = "56.64257678015622";
+const heroAnswer = buildBtcQuestionSpecificAnswer(
+  "en",
+  "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?",
+  heroEnvelope,
+  "2026-07-22",
+);
+const heroText = [heroAnswer.direct_answer, ...heroAnswer.evidence_lines, heroAnswer.contradiction_or_limit].join(" ");
+assert(heroAnswer.question_facets.includes("reason"), "hero retains reason facet");
+assert(heroText.includes("BTC dominance: 56.54% → 56.64%"), "change-memory metric is labeled and precision-bounded");
+assert(!heroText.includes("btc_gravity_pct") && !heroText.includes("change_event_memory:"), "public hero hides internal metric and module ids");
+assert(!heroText.includes("56.53835512274078") && !heroText.includes("56.64257678015622"), "public hero hides raw float precision");
 
 const incompatibleRegistry = JSON.parse(JSON.stringify(registry));
 incompatibleRegistry.metric_methodologies.defi_tvl_usd.comparable = false;
