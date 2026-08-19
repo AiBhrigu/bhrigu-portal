@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import PublicSupportRoute from '../../components/btc/PublicSupportRoute';
 
 const coreDownloads = [
   { label: 'EN Brief Publication v4', href: '/publications/frey/bhrigu-frey-en-brief-v4.pdf' },
@@ -111,6 +112,8 @@ export default function FreyGuidePage() {
           <h2>Boundary</h2>
           <p>BHRIGU / Frey is not financial, medical, legal, trading, or deterministic life advice. It helps transform time from a vague feeling into a readable field.</p>
         </section>
+
+        <PublicSupportRoute locale="en" surface="guide" />
       </main>
 
       <style jsx>{`
