@@ -1,3 +1,4 @@
+import React from "react";
 import type { BtcBinancePublicBindingPacket } from "../../lib/btc-binance-public-binding";
 import { formatBtcUtcTimestamp, type BtcPublicLocale } from "../../lib/btc-public-language-contract";
 
