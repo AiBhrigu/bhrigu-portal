@@ -48,71 +48,78 @@ const binding: BtcBinancePublicBindingPacket = {
   boundary,
 };
 
-const en = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "en", binding }));
-assert.match(en, /data-binance-public-corridor-live="true"/);
-assert.match(en, /Binance Spot · BTCUSDT/);
-assert.match(en, /69,234\.01/);
-assert.match(en, /\+7\.13%/);
-assert.match(en, /69,234\.00 USDT/);
-assert.match(en, /Fresh/);
-assert.match(en, /supplements but does not replace the accepted Market Snapshot/);
-assert.match(en, /different observation times and quote bases/);
-assert.match(en, /not a global Bitcoin price, on-chain truth, or trading signal/);
-assert.doesNotMatch(en, /69234\.01000000/);
-assert.doesNotMatch(en, /QUOTE_BASIS_MISMATCH|TIME_WINDOW_MISMATCH/);
+async function run(): Promise<void> {
+  const en = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "en", binding }));
+  assert.match(en, /data-binance-public-corridor-live="true"/);
+  assert.match(en, /Binance Spot · BTCUSDT/);
+  assert.match(en, /69,234\.01/);
+  assert.match(en, /\+7\.13%/);
+  assert.match(en, /69,234\.00 USDT/);
+  assert.match(en, /Fresh/);
+  assert.match(en, /supplements but does not replace the accepted Market Snapshot/);
+  assert.match(en, /different observation times and quote bases/);
+  assert.match(en, /not a global Bitcoin price, on-chain truth, or trading signal/);
+  assert.doesNotMatch(en, /69234\.01000000/);
+  assert.doesNotMatch(en, /QUOTE_BASIS_MISMATCH|TIME_WINDOW_MISMATCH/);
 
-const ru = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "ru", binding }));
-assert.match(ru, /Текущее наблюдение площадки/);
-assert.match(ru, /Последняя цена/);
-assert.match(ru, /Изменение 24ч/);
-assert.match(ru, /Свежие данные/);
-assert.match(ru, /не заменяют принятый Market Snapshot/);
-assert.match(ru, /разному времени и базе котировки/);
-assert.doesNotMatch(ru, /69234\.01000000/);
-assert.doesNotMatch(ru, /QUOTE_BASIS_MISMATCH|TIME_WINDOW_MISMATCH/);
+  const ru = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "ru", binding }));
+  assert.match(ru, /Текущее наблюдение площадки/);
+  assert.match(ru, /Последняя цена/);
+  assert.match(ru, /Изменение 24ч/);
+  assert.match(ru, /Свежие данные/);
+  assert.match(ru, /не заменяют принятый Market Snapshot/);
+  assert.match(ru, /разному времени и базе котировки/);
+  assert.doesNotMatch(ru, /69234\.01000000/);
+  assert.doesNotMatch(ru, /QUOTE_BASIS_MISMATCH|TIME_WINDOW_MISMATCH/);
 
-const page = readFileSync("pages/crypto-astro/btc.tsx", "utf8");
-const snapshotIndex = page.indexOf('id="snapshot-authority"');
-const liveIndex = page.indexOf("<BtcBinanceCurrentVenuePanel");
-const questionIndex = page.indexOf("<BtcQuestionMembrane");
-assert.ok(snapshotIndex >= 0 && liveIndex > snapshotIndex && questionIndex > liveIndex, "Live Binance surface must sit after accepted Snapshot and before prepared questions");
-assert.match(page, /loadBtcBinancePublicCorridorLive/);
-assert.match(page, /staticPeer/);
+  const page = readFileSync("pages/crypto-astro/btc.tsx", "utf8");
+  const snapshotIndex = page.indexOf('id="snapshot-authority"');
+  const liveIndex = page.indexOf("<BtcBinanceCurrentVenuePanel");
+  const questionIndex = page.indexOf("<BtcQuestionMembrane");
+  assert.ok(snapshotIndex >= 0 && liveIndex > snapshotIndex && questionIndex > liveIndex, "Live Binance surface must sit after accepted Snapshot and before prepared questions");
+  assert.match(page, /loadBtcBinancePublicCorridorLive/);
+  assert.match(page, /staticPeer/);
 
-const adapter = readFileSync("lib/btc-binance-public-corridor-live.ts", "utf8");
-assert.match(adapter, /decideBtcBinancePublicBinding/);
-assert.match(adapter, /loadBtcBinanceProductionGuarded/);
-assert.match(adapter, /loadBtcBinancePublicMarketShadow/);
-assert.match(adapter, /buildBtcBinancePublicBinding/);
-assert.doesNotMatch(adapter, /API[_ -]?KEY|account access|withdraw/i);
+  const adapter = readFileSync("lib/btc-binance-public-corridor-live.ts", "utf8");
+  assert.match(adapter, /decideBtcBinancePublicBinding/);
+  assert.match(adapter, /loadBtcBinanceProductionGuarded/);
+  assert.match(adapter, /loadBtcBinancePublicMarketShadow/);
+  assert.match(adapter, /buildBtcBinancePublicBinding/);
+  assert.doesNotMatch(adapter, /API[_ -]?KEY|account access|withdraw/i);
 
-const disabled = await loadBtcBinancePublicCorridorLive({
-  locale: "en",
-  staticPeer: null,
-  env: {
-    VERCEL_ENV: "production",
-    BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: "1",
-    BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: "1",
-  },
-  loadMarket: async () => { throw new Error("must not fetch when disabled"); },
+  const disabled = await loadBtcBinancePublicCorridorLive({
+    locale: "en",
+    staticPeer: null,
+    env: {
+      VERCEL_ENV: "production",
+      BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: "1",
+      BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: "1",
+    },
+    loadMarket: async () => { throw new Error("must not fetch when disabled"); },
+  });
+  assert.equal(disabled, null);
+
+  const productionOff = await loadBtcBinancePublicCorridorLive({
+    locale: "en",
+    staticPeer: null,
+    env: {
+      VERCEL_ENV: "production",
+      BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: "0",
+    },
+    loadMarket: async () => { throw new Error("must not fetch when production gate is off"); },
+  });
+  assert.equal(productionOff, null);
+
+  console.log("BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_SURFACE=PASS");
+  console.log("CURRENT_BINANCE_PRICE_VISIBLE=PASS");
+  console.log("DISPLAY_PRECISION_BOUNDED=PASS");
+  console.log("ACCEPTED_SNAPSHOT_PRIMARY=PASS");
+  console.log("VENUE_SPECIFIC_BOUNDARY=PASS");
+  console.log("MACHINE_ENUM_PUBLIC_LEAK=ZERO_ON_CORRIDOR_SURFACE");
+  console.log("PRODUCTION_GATE_AND_KILL_SWITCH=PRESERVED");
+}
+
+run().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
 });
-assert.equal(disabled, null);
-
-const productionOff = await loadBtcBinancePublicCorridorLive({
-  locale: "en",
-  staticPeer: null,
-  env: {
-    VERCEL_ENV: "production",
-    BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: "0",
-  },
-  loadMarket: async () => { throw new Error("must not fetch when production gate is off"); },
-});
-assert.equal(productionOff, null);
-
-console.log("BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_SURFACE=PASS");
-console.log("CURRENT_BINANCE_PRICE_VISIBLE=PASS");
-console.log("DISPLAY_PRECISION_BOUNDED=PASS");
-console.log("ACCEPTED_SNAPSHOT_PRIMARY=PASS");
-console.log("VENUE_SPECIFIC_BOUNDARY=PASS");
-console.log("MACHINE_ENUM_PUBLIC_LEAK=ZERO_ON_CORRIDOR_SURFACE");
-console.log("PRODUCTION_GATE_AND_KILL_SWITCH=PRESERVED");
