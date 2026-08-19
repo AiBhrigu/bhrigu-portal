@@ -107,7 +107,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const initialQuestion = first(query.q);
   const initialDate = first(query.d);
   const resolved = resolveBtcPublicLocale(first(query.lang), initialQuestion);
-  const source = await loadBtcStaticSource();
+  const source=await loadBtcStaticSource();
   const observationBridge = await loadBtcBinanceFreeObservationBridge();
   const binanceObservation = observationBridge.status === "READY_PUBLIC" ? observationBridge.packet : null;
   const binanceLiveBinding = await loadBtcBinancePublicCorridorLive({
@@ -156,7 +156,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const coreQuestion = canonicalizeBtcQuestionForRouter(initialQuestion);
   const composed = await composeBtcPublicSnapshot(source, { question: coreQuestion, date: initialDate || undefined });
   if (composed.ok === false) {
-    return { props: { ...empty, initialQuestion, failure: { code: composed.code, message: composed.message, last_verified_at_utc: null } } };
+    return { props: { ...empty, initialQuestion, failure: { code: composed.code, message: composed.message, last_verified_at_utc: null } };
   }
   const result: BtcPublicSnapshot = {
     ...composed.value,
