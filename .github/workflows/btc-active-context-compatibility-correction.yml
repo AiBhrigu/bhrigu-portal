@@ -1,0 +1,84 @@
+name: BTC active-context compatibility correction
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  correct-and-verify:
+    if: github.head_ref == 'agent/btc-active-context-anaphoric-followup-routing-v0-1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Restore ordinary market evidence call compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('pages/crypto-astro/btc/live.tsx')
+          text = p.read_text()
+          old = '''function marketEvidenceQuestion(
+  route: BtcCosmographerRoute,
+  priorContext: BtcCosmographerContextPacket | null,
+): string {'''
+          new = '''function marketEvidenceQuestion(
+  route: BtcCosmographerRoute,
+  priorContext: BtcCosmographerContextPacket | null = null,
+): string {'''
+          if text.count(old) != 1:
+              raise SystemExit('marketEvidenceQuestion signature mismatch')
+          text = text.replace(old, new, 1)
+          old = '''  if (needsMarket(route, activePacket) && source.ok !== false) {
+    const marketQuestion = marketEvidenceQuestion(route, activePacket);'''
+          new = '''  if (needsMarket(route, activePacket) && source.ok !== false) {
+    const marketQuestion = route.domain === "methodology" && route.explicit_entities.includes("active_answer_reference")
+      ? marketEvidenceQuestion(route, activePacket)
+      : marketEvidenceQuestion(route);'''
+          if text.count(old) != 1:
+              raise SystemExit('market evidence call mismatch')
+          p.write_text(text.replace(old, new, 1))
+          PY
+          git diff --check
+
+      - name: Strict bounded checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --import tsx tests/btc-active-context-anaphoric-followup-routing-acceptance.ts
+          node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+          node --import tsx tests/btc-public-corridor-proven-defect-repair-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-time-context-state-acceptance.ts
+          git diff --check
+          npx tsc --noEmit
+          npx next build
+
+      - name: Commit compatibility-pass head
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/btc-active-context-compatibility-correction.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/crypto-astro/btc/live.tsx .github/workflows/btc-active-context-compatibility-correction.yml
+          git diff --cached --check
+          git commit -m "preserve market evidence call compatibility"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
