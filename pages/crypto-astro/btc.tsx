@@ -155,7 +155,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const coreQuestion = canonicalizeBtcQuestionForRouter(initialQuestion);
   const composed = await composeBtcPublicSnapshot(source, { question: coreQuestion, date: initialDate || undefined });
   if (composed.ok === false) {
-    return { props: { ...empty, initialQuestion, failure: { code: composed.code, message: composed.message, last_verified_at_utc: null } };
+    return { props: { ...empty, initialQuestion, failure: { code: composed.code, message: composed.message, last_verified_at_utc: null } } };
   }
   const result: BtcPublicSnapshot = {
     ...composed.value,
