@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
+import { BtcBinanceCurrentVenuePanel } from "../../components/btc/BtcBinanceCurrentVenue";
 import { BtcBinanceFreeObservationPanel } from "../../components/btc/BtcBinanceFreeObservation";
 import { BtcEvidenceZone } from "../../components/btc/BtcEvidence";
 import { BtcObservationZone, BtcPhiZone } from "../../components/btc/BtcExecutivePhi";
@@ -9,6 +10,7 @@ import PublicSupportRoute from "../../components/btc/PublicSupportRoute";
 import { loadBtcBinanceFreeObservationBridge } from "../../lib/btc-binance-free-observation-bridge";
 import type { BtcBinanceFreeObservation } from "../../lib/btc-binance-free-observation-contract";
 import { BTC_BINANCE_FREE_OBSERVATION_CSS } from "../../lib/btc-binance-free-observation-style";
+import { loadBtcBinancePublicCorridorLive, type BtcBinancePublicCorridorLiveBinding } from "../../lib/btc-binance-public-corridor-live";
 import { loadBtcMarketEnvelope, type BtcMarketEnvelope, type BtcMarketEnvelopeFailure } from "../../lib/btc-market-envelope";
 import { BTC_BILINGUAL_SURFACE_CSS } from "../../lib/btc-bilingual-surface-style";
 import { MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_SHA256 } from "../../lib/btc-existing-glyph-canon";
@@ -65,6 +67,7 @@ type Props = {
   localeSource: BtcLocaleSource;
   deploymentSourceSha: string | null;
   binanceObservation: BtcBinanceFreeObservation | null;
+  binanceLiveBinding: BtcBinancePublicCorridorLiveBinding | null;
 };
 
 const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] ?? "" : value ?? "";
@@ -106,6 +109,14 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   const source=await loadBtcStaticSource();
   const observationBridge = await loadBtcBinanceFreeObservationBridge();
   const binanceObservation = observationBridge.status === "READY_PUBLIC" ? observationBridge.packet : null;
+  const binanceLiveBinding = await loadBtcBinancePublicCorridorLive({
+    locale: resolved.locale,
+    staticPeer: source.ok === false ? null : {
+      price_usd: source.snapshot.public_samples.assets.BTC.price_usd,
+      observed_at: source.snapshot.generated_at_utc,
+      freshness: source.freshness,
+    },
+  });
   let sourceContext: SourceContext;
   if (source.ok === false) {
     const lastVerified = source.last_verified_at_utc ?? null;
@@ -135,6 +146,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
     localeSource: resolved.source,
     deploymentSourceSha: deploymentSourceSha(),
     binanceObservation,
+    binanceLiveBinding,
   };
   if (!initialQuestion) return { props: empty };
   if (source.ok === false) {
@@ -310,6 +322,8 @@ export default function Page(p: Props) {
         {truth.ageLine && <p>{truth.ageLine}</p>}
         <p>{truth.proofLine}</p>
       </section>
+
+      {p.binanceLiveBinding && <BtcBinanceCurrentVenuePanel locale={p.locale} binding={p.binanceLiveBinding}/>} 
 
       <BtcQuestionMembrane
         locale={p.locale}

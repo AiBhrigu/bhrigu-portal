@@ -1,0 +1,31 @@
+name: BTC Binance Public Corridor Current Price PR
+
+on:
+  pull_request:
+    paths:
+      - "components/btc/BtcBinanceCurrentVenue.tsx"
+      - "lib/btc-binance-public-corridor-live.ts"
+      - "lib/btc-binance-public-binding.ts"
+      - "lib/btc-binance-public-market-source.ts"
+      - "lib/btc-binance-production-guard.ts"
+      - "pages/crypto-astro/btc.tsx"
+      - "tests/btc-binance-public-corridor-current-price-acceptance.ts"
+      - ".github/workflows/btc-binance-public-corridor-current-price-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-current-price-surface:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node --import tsx tests/btc-binance-public-corridor-current-price-acceptance.ts
+      - run: npm run verify:btc-binance-public-binding
+      - run: npm run verify:btc-binance-public-market-shadow
+      - run: npm run verify:btc-routing

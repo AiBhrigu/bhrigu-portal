@@ -266,6 +266,16 @@ BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE = {
     "tests/btc-donation-supervisor-acceptance.ts",
 }
 
+# Binance current-live public corridor repair: exact presentation + adapter + acceptance/CI authority surface.
+BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-binance-public-corridor-current-price-pr.yml",
+    "components/btc/BtcBinanceCurrentVenue.tsx",
+    "lib/btc-binance-public-corridor-live.ts",
+    "pages/crypto-astro/btc.tsx",
+    "tests/btc-binance-public-corridor-current-price-acceptance.ts",
+}
+
 BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     "components/btc/PublicSupportRoute.tsx",
@@ -338,6 +348,7 @@ accepted_scopes = {
     "PASS_BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_EXACT_2_FILE_SCOPE": BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_SCOPE,
     "PASS_BTC_SUPPORT_CONVERSION_ATOM1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_CONVERSION_ATOM1_SCOPE,
     "PASS_BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_EXACT_15_FILE_SCOPE": BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE,
+    "PASS_BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_EXACT_6_FILE_SCOPE": BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_SCOPE,
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_SCOPE,
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE,
 }
