@@ -18,6 +18,7 @@ on:
       - public/llms.txt
       - scripts/run-btc-natural-followup-discovery-static-fixture.mjs
       - scripts/verify-btc-natural-followup-conversations.py
+      - tests/btc-natural-astro-to-btc-anaphoric-window-bridge-acceptance.ts
       - .github/workflows/btc-natural-followup-discovery-pr.yml
 
 permissions:
@@ -44,6 +45,8 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Static contract
         run: node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
+      - name: Natural Astro-to-BTC anaphoric window bridge acceptance
+        run: npx tsx tests/btc-natural-astro-to-btc-anaphoric-window-bridge-acceptance.ts
       - name: Production build
         run: npm run build
       - name: Start exact-head server
