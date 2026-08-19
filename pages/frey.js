@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EXPORT_GUIDE_LINES, buildFreyExportPayload, buildFreyExportText, mapResultToMinimalVoice } from "../lib/frey-export-minimal";
+import PublicSupportRoute from "../components/btc/PublicSupportRoute";
 
 const MARKER = "__FREY_INTERPRETATION_CONSOLE_V1_4__";
 const QUERY_BIND_FIX_MARKER = "__FREY_QUERY_ACTION_BIND_FIX_V0_1__";
@@ -1112,6 +1113,10 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
                 );
               })()}
+
+              {responseSurface.ui_state === "success" && (
+                <PublicSupportRoute locale="en" surface="frey" />
+              )}
 
               {initialAccessCtx && (
                 <>

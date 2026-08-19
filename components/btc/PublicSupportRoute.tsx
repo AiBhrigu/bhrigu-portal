@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type PublicSupportLocale = "en" | "ru";
-type PublicSupportSurface = "home" | "btc";
+type PublicSupportSurface = "home" | "btc" | "frey" | "guide";
 
 type PublicSupportRouteProps = {
   locale?: PublicSupportLocale;
@@ -22,6 +22,8 @@ const COPY = {
       body: "Support the research, evidence surface, and Bitcoin infrastructure behind BHRIGU.",
       cta: "Support BHRIGU with Bitcoin",
     },
+    frey: { eyebrow: "IF THIS READING WAS USEFUL", title: "Help keep BHRIGU public and independent.", body: "Support the public Frey layer, research, and infrastructure behind this reading.", cta: "Support with Bitcoin" },
+    guide: { eyebrow: "KEEP THE PUBLIC LAYER ALIVE", title: "Support BHRIGU's public Frey materials.", body: "Frey and its public materials are maintained as part of BHRIGU's independent infrastructure.", cta: "Support BHRIGU" },
     boundary: "Voluntary support only · no access, priority, ownership, or investment rights.",
   },  ru: {
     home: {
@@ -36,6 +38,8 @@ const COPY = {
       body: "Поддержите исследования, доказательный публичный контур и Bitcoin-инфраструктуру BHRIGU.",
       cta: "Поддержать BHRIGU в Bitcoin",
     },
+    frey: { eyebrow: "ЕСЛИ ЭТО ЧТЕНИЕ БЫЛО ПОЛЕЗНЫМ", title: "Помогите BHRIGU оставаться публичным и независимым.", body: "Поддержите публичный слой Frey, исследования и инфраструктуру этого чтения.", cta: "Поддержать в Bitcoin" },
+    guide: { eyebrow: "ПОДДЕРЖИТЕ ПУБЛИЧНЫЙ СЛОЙ", title: "Поддержите публичные материалы BHRIGU / Frey.", body: "Frey и его публичные материалы поддерживаются как часть независимой инфраструктуры BHRIGU.", cta: "Поддержать BHRIGU" },
     boundary: "Добровольная поддержка · без доступа, приоритета, собственности или инвестиционных прав.",
   },
 } as const;
@@ -105,7 +109,8 @@ export default function PublicSupportRoute({
           color: rgba(255,255,255,.43);
           font-size: 11px;
           line-height: 1.5;
-        }        .publicSupportCta {
+        }
+        .publicSupportRoute :global(.publicSupportCta) {
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -123,25 +128,33 @@ export default function PublicSupportRoute({
           text-transform: uppercase;
           white-space: nowrap;
         }
-        .publicSupportCta:hover,
-        .publicSupportCta:focus-visible {
+        .publicSupportRoute :global(.publicSupportCta:hover),
+        .publicSupportRoute :global(.publicSupportCta:focus-visible) {
           border-color: rgba(222,194,125,.68);
           background: rgba(222,194,125,.075);
         }
-        .publicSupportCta span { font-size: 16px; }
-        .publicSupportRoute-btc {
-          margin-top: clamp(48px, 6vw, 82px);
-        }        @media (max-width: 760px) {
+        .publicSupportRoute :global(.publicSupportCta) span { font-size: 16px; }
+        .publicSupportRoute-home { width: min(1460px, calc(100% - 96px)); grid-template-columns: minmax(0, 1.618fr) minmax(280px, 1fr); gap: clamp(48px, 7vw, 112px); margin: 0 auto; padding: clamp(56px, 7vw, 92px) 0; }
+        .publicSupportRoute-home :global(.publicSupportCta) { justify-self: start; }
+        .publicSupportRoute-btc { margin-top: clamp(48px, 6vw, 82px); }
+        .publicSupportRoute-frey { grid-template-columns: 1fr; gap: 18px; margin-top: 28px; padding: 24px 0 0; border-bottom: 0; }
+        .publicSupportRoute-frey :global(.publicSupportCta) { justify-self: start; }
+        .publicSupportRoute-guide { width: min(1040px, 100%); margin: 0 auto 24px; padding: 30px 34px; border: 1px solid rgba(226,180,92,.24); border-radius: 24px; background: rgba(9,12,20,.72); }
+        .publicSupportRoute-guide :global(.publicSupportCta) { justify-self: start; }
+        @media (max-width: 1050px) { .publicSupportRoute-home { width: min(1180px, calc(100% - 48px)); } }
+        @media (max-width: 760px) {
           .publicSupportRoute {
             grid-template-columns: 1fr;
             gap: 22px;
           }
-          .publicSupportCta {
+          .publicSupportRoute :global(.publicSupportCta) {
             width: fit-content;
             max-width: 100%;
             white-space: normal;
             text-align: center;
           }
+          .publicSupportRoute-home { width: min(100% - 32px, 1180px); padding: 56px 0; }
+          .publicSupportRoute-guide { padding: 24px; }
         }
       `}</style>
     </section>
