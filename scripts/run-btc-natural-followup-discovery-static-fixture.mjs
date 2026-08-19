@@ -40,10 +40,15 @@ check("methodology_precedence", route.indexOf("if (isMethodology(question))") < 
 check("referential_divergence", route.includes("which facts create"));
 check("named_calendar_date", route.includes("namedCalendarDate"));
 check("return_context_inheritance", route.includes('relation === "RETURN_TO_PREVIOUS_TOPIC"'));
-check("market_evidence_rebinding", live.includes("marketEvidenceQuestion(route)"));
+check(
+  "market_evidence_rebinding",
+  live.includes("marketEvidenceQuestion(route, activePacket)") &&
+    live.includes('route.explicit_entities.includes("active_answer_reference")') &&
+    live.includes("priorContext?.prior_market_question_class"),
+);
 check("return_packet", live.includes("parseReturnContext") && component.includes("returnContextFields"));
 check("live_noindex_header", live.includes('X-Robots-Tag", "noindex, follow'));
-check("dynamic_html_lang", document.includes("<Html lang={lang}>"));
+check("dynamic_html_lang", document.includes("<Html lang={lang}>") );
 check("btc_route_meta", app.includes('"/crypto-astro/btc/live"'));
 check("accepted_public_knowledge", entry.includes("BTC_ACCEPTED_PUBLIC_KNOWLEDGE"));
 check("json_ld", entry.includes("application/ld+json"));

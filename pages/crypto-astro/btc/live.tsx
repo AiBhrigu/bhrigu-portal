@@ -170,6 +170,7 @@ function buildEvidenceNavigation(
   envelope: BtcMarketEnvelope | null,
   deploymentSha: string | null,
   snapshotTimestamp: string | null,
+  priorContext: BtcCosmographerContextPacket | null,
 ): { revisionId: string | null; targets: BtcEvidenceArtifactTarget[] } {
   const targets: BtcEvidenceArtifactTarget[] = [];
   const addPortal = (id: string, label: string, path: string) => {
@@ -180,11 +181,19 @@ function buildEvidenceNavigation(
     targets.push({ id, label, url: marketEvidenceUrl(sha, path), revision: sha });
   };
 
-  const protocolSide = route.domain === "astro_btc_bridge" && route.explicit_entities.includes("btc_side:protocol");
-  const astroSide = route.domain === "astromodule" || route.domain === "astro_btc_bridge";
-  const marketSide = route.domain === "btc_market" || route.domain === "snapshot_memory" || (route.domain === "astro_btc_bridge" && !protocolSide);
+  const activeAnswerContext = route.domain === "methodology" && route.explicit_entities.includes("active_answer_reference")
+    ? priorContext
+    : null;
+  const evidenceDomain = activeAnswerContext?.prior_domain ?? route.domain;
+  const effectiveMarketClass = activeAnswerContext?.prior_market_question_class ?? route.market_question_class;
+  const protocolSide = activeAnswerContext
+    ? evidenceDomain === "bitcoin_protocol"
+    : route.domain === "astro_btc_bridge" && route.explicit_entities.includes("btc_side:protocol");
+  const astroSide = evidenceDomain === "astromodule" || evidenceDomain === "astro_btc_bridge";
+  const marketSide = evidenceDomain === "btc_market" || evidenceDomain === "snapshot_memory" ||
+    (evidenceDomain === "astro_btc_bridge" && !protocolSide && Boolean(effectiveMarketClass));
 
-  if (route.domain === "bitcoin_protocol" || protocolSide) {
+  if (evidenceDomain === "bitcoin_protocol" || protocolSide) {
     addPortal("protocol_evidence", "Bitcoin Protocol evidence object", "lib/btc-protocol-evidence.ts");
   }
   if (astroSide) {
@@ -194,7 +203,7 @@ function buildEvidenceNavigation(
     const current = envelope.memory.current_commit_sha;
     addMarket("market_snapshot", "Accepted Market Snapshot", current, "crypto_astro_snapshot.public.json");
     addMarket("market_proof", "Market source proof", current, "crypto_astro_snapshot_proof.public.json");
-    if (route.domain === "snapshot_memory") {
+    if (evidenceDomain === "snapshot_memory") {
       const previous = envelope.memory.previous_commit_sha;
       addMarket("previous_snapshot", "Previous accepted Market Snapshot", previous, "crypto_astro_snapshot.public.json");
     }
@@ -231,8 +240,15 @@ function applyFreshnessTruth(envelope: BtcMarketEnvelope, freshness: "FRESH" | "
   };
 }
 
-function needsMarket(route: BtcCosmographerRoute): boolean {
+function needsMarket(
+  route: BtcCosmographerRoute,
+  priorContext: BtcCosmographerContextPacket | null,
+): boolean {
   if (route.domain === "astro_btc_bridge" && route.explicit_entities.includes("btc_side:protocol")) return false;
+  if (route.domain === "methodology" && route.explicit_entities.includes("active_answer_reference") && priorContext) {
+    if (priorContext.prior_domain === "btc_market" || priorContext.prior_domain === "snapshot_memory") return true;
+    if (priorContext.prior_domain === "astro_btc_bridge" && priorContext.prior_market_question_class) return true;
+  }
   return ["btc_market", "snapshot_memory", "astro_btc_bridge"].includes(route.domain);
 }
 
@@ -246,9 +262,16 @@ const MARKET_EVIDENCE_QUESTIONS: Record<BtcEnvelopeQuestionClass, string> = {
   general_btc_field: "What is the current BTC field overview and why does it matter?",
 };
 
-function marketEvidenceQuestion(route: BtcCosmographerRoute): string {
-  return route.market_question_class
-    ? MARKET_EVIDENCE_QUESTIONS[route.market_question_class]
+function marketEvidenceQuestion(
+  route: BtcCosmographerRoute,
+  priorContext: BtcCosmographerContextPacket | null,
+): string {
+  const activeMarketClass = route.domain === "methodology" && route.explicit_entities.includes("active_answer_reference")
+    ? priorContext?.prior_market_question_class ?? null
+    : null;
+  const marketClass = route.market_question_class ?? activeMarketClass;
+  return marketClass
+    ? MARKET_EVIDENCE_QUESTIONS[marketClass]
     : canonicalizeBtcQuestionForRouter(route.normalized_question);
 }
 
@@ -457,8 +480,8 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
   let snapshot: BtcPublicSnapshot | null = null;
   let envelope: BtcMarketEnvelope | null = null;
 
-  if (needsMarket(route) && source.ok !== false) {
-    const marketQuestion = marketEvidenceQuestion(route);
+  if (needsMarket(route, activePacket) && source.ok !== false) {
+    const marketQuestion = marketEvidenceQuestion(route, activePacket);
     const composed = await composeBtcPublicSnapshot(source, { question: marketQuestion, date: initialDate || undefined });
     if (composed.ok !== false) {
       snapshot = {
@@ -479,7 +502,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
         snapshot && envelope ? buildBtcCosmographerAnswer(resolvedLocale.locale, marketOnlyRoute(route), { snapshot, envelope }) : null,
       ) as unknown as BtcCosmographerAnswerProjection
     : buildBtcCosmographerAnswer(resolvedLocale.locale, route, { snapshot, envelope, priorContext: activePacket });
-  const evidenceNavigation = buildEvidenceNavigation(route, envelope, servedDeploymentSha, sourceTimestamp);
+  const evidenceNavigation = buildEvidenceNavigation(route, envelope, servedDeploymentSha, sourceTimestamp, activePacket);
   const runtimeDecision = buildBtcEvidenceNavigationRuntimeDecision(
     resolvedLocale.locale,
     route,

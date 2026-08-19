@@ -185,6 +185,17 @@ BTC_PRIMARY_ENTRY_CHANGE_MEMORY_ALIGNMENT_SCOPE = {
     "tests/btc-market-envelope-fixture.ts",
 }
 
+# PR180 CI closure: exact active-context anaphoric follow-up product + compatibility + acceptance authority surface.
+BTC_ACTIVE_CONTEXT_ANAPHORIC_FOLLOWUP_PR180_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "lib/btc-cosmographer-answer.ts",
+    "lib/btc-cosmographer-route-graph.ts",
+    "lib/btc-cosmographer-specialized-answer.ts",
+    "pages/crypto-astro/btc/live.tsx",
+    "scripts/run-btc-natural-followup-discovery-static-fixture.mjs",
+    "tests/btc-active-context-anaphoric-followup-routing-acceptance.ts",
+}
+
 BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-free-corridor-conversational-surface-pr.yml",
@@ -301,6 +312,7 @@ accepted_scopes = {
     "PASS_BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_EXACT_6_FILE_SCOPE": BTC_FIELD_READ_CURRENT_CAPABILITY_COPY_SCOPE,
     "PASS_BTC_PRIMARY_QUESTION_NATIVE_PRICE_EXACT_3_FILE_SCOPE": BTC_PRIMARY_QUESTION_NATIVE_PRICE_SCOPE,
     "PASS_BTC_PRIMARY_ENTRY_CHANGE_MEMORY_ALIGNMENT_EXACT_6_FILE_SCOPE": BTC_PRIMARY_ENTRY_CHANGE_MEMORY_ALIGNMENT_SCOPE,
+    "PASS_BTC_ACTIVE_CONTEXT_ANAPHORIC_FOLLOWUP_PR180_EXACT_7_FILE_SCOPE": BTC_ACTIVE_CONTEXT_ANAPHORIC_FOLLOWUP_PR180_SCOPE,
     "PASS_BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_EXACT_3_FILE_SCOPE": BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE,
     "PASS_BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_EXACT_7_FILE_SCOPE": BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_SCOPE,
     "PASS_BTC_RETURNED_READING_MOBILE_PHI_REFLOW_EXACT_4_FILE_SCOPE": BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE,
