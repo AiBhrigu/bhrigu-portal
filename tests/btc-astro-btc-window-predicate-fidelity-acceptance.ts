@@ -7,6 +7,8 @@ import {
 } from "../lib/btc-cosmographer-route-graph";
 import { specializeBridgeAnswer } from "../lib/btc-cosmographer-specialized-answer";
 import { buildBtcEvidenceNavigationRuntimeDecision } from "../lib/btc-cosmographer-evidence-navigation-runtime";
+import { routeBtcCosmographerLocalRc } from "../lib/btc-cosmographer-multi-body-astro-rc";
+import { buildPublicMultiBodyAnswer } from "../lib/btc-cosmographer-public-multi-body-projection";
 import type { BtcCosmographerAnswerProjection } from "../lib/btc-protocol-evidence";
 
 type Locale = "ru" | "en";
@@ -92,7 +94,8 @@ function currentSnapshotBridge(locale: Locale): BtcCosmographerAnswerProjection 
 
 for (const item of cases) {
   const first = firstTurn(item.locale);
-  const route = routeBtcCosmographerQuestion(item.locale, item.turn2, contextFrom(first));
+  const prior = contextFrom(first);
+  const route = routeBtcCosmographerQuestion(item.locale, item.turn2, prior);
 
   assert.equal(route.domain, "astro_btc_bridge", `${item.id}: domain`);
   assert.equal(route.context_relation, "CROSS_MODULE_BRIDGE", `${item.id}: relation`);
@@ -133,6 +136,25 @@ for (const item of cases) {
   );
   assert.equal(runtime.render_gate.user_intent_resolved, true, `${item.id}: existing field means no clarification, not full predicate proof`);
   assert.equal(runtime.route_disposition, "CONTINUE", `${item.id}: LIMITED direct answer remains a valid non-clarification answer`);
+
+  const publicRoute = routeBtcCosmographerLocalRc(item.locale, item.turn2, prior);
+  assert.equal(publicRoute.domain, "astro_btc_bridge", `${item.id}: public path domain`);
+  assert.equal(publicRoute.context_relation, "CROSS_MODULE_BRIDGE", `${item.id}: public path relation`);
+  assert.equal(publicRoute.subject, "planetary_aspects", `${item.id}: public path subject`);
+  assert.equal(publicRoute.time_range?.source, "CONTEXT", `${item.id}: public path retained period source`);
+  const publicAnswer = buildPublicMultiBodyAnswer(item.locale, publicRoute, currentSnapshotBridge(item.locale));
+  assert.equal(publicAnswer.answer_state, "LIMITED", `${item.id}: public multi-body path must fail closed`);
+  assert.equal(publicAnswer.answer_mode, "ASTRO_BTC_BRIDGE", `${item.id}: public multi-body bridge mode`);
+  assert.match(publicAnswer.direct_answer, item.expectedDirect, `${item.id}: public path resolves the requested predicate first`);
+  assert.match(publicAnswer.direct_answer, /2026/, `${item.id}: public path retained period visible`);
+  assert.doesNotMatch(publicAnswer.direct_answer, /\$68,199|13\.2%/, `${item.id}: public path cannot substitute current Snapshot`);
+  assert.doesNotMatch(publicAnswer.direct_answer, /#\s*1|rank\s*1|ранг\s*1/, `${item.id}: public path no invented ranking`);
+  assert.ok(publicAnswer.sections.some((section) => section.id === "window_comparison_evidence_gap"), `${item.id}: public path adequacy section`);
+  assert.ok(publicAnswer.sections.some((section) => section.id === "current_btc_context_secondary"), `${item.id}: public path current market context is secondary`);
+  assert.ok(publicAnswer.sections.some((section) => section.id === "astro_window_context_only"), `${item.id}: public path preserves referenced Astro windows as context only`);
+  assert.ok(publicAnswer.sections.some((section) => section.id === "astro_not_btc_metric_proxy"), `${item.id}: public path Astro rank is not BTC proxy`);
+  assert.ok(publicAnswer.sections.some((section) => section.id === "bridge_boundary"), `${item.id}: public path bridge boundary preserved`);
+  assert.match(publicAnswer.source_boundary, /does not substitute|не заменяет/, `${item.id}: public path explicit no-substitution boundary`);
 }
 
 const ruContext = contextFrom(firstTurn("ru"));
@@ -161,6 +183,7 @@ console.log("BTC_ASTRO_BTC_WINDOW_PREDICATE_FIDELITY=PASS");
 console.log("EVIDENCE_ADEQUACY=INADEQUATE_FOR_WINDOW_BY_WINDOW_COMPARISON");
 console.log("MANDATORY_RU=3/3_PASS");
 console.log("MANDATORY_EN=3/3_PASS");
+console.log("PUBLIC_MULTI_BODY_RUNTIME_PATH=6/6_PASS");
 console.log("NEGATIVE_CONTROLS=5/5_PASS");
 console.log("HUMAN_PREDICATE_RESOLUTION=PASS");
 console.log("NO_CURRENT_SNAPSHOT_SUBSTITUTION=PASS");
