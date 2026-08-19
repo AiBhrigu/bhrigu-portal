@@ -1,6 +1,7 @@
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 import type { BtcCosmographerAnswerProjection } from "./btc-protocol-evidence";
 import type { BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
+import { specializeBridgeAnswer } from "./btc-cosmographer-specialized-answer";
 import {
   buildMultiBodyAstroYearAnswer,
   combineMultiBodyAstroMarketAnswer,
@@ -105,6 +106,36 @@ export function projectPublicMultiBodyAnswer(
     };
   }
   if (answer.answer_mode === "ASTRO_BTC_BRIDGE") {
+    const adequacyInput: BtcCosmographerAnswerProjection = {
+      ...answer,
+      answer_mode: "ASTRO_BTC_BRIDGE",
+      sections: answer.sections.map((section) =>
+        section.id === "market_layer"
+          ? { ...section, id: "btc_side_state" }
+          : section.id === "main_windows"
+            ? { ...section, id: "astro_window" }
+            : section,
+      ),
+    };
+    const adequacy = specializeBridgeAnswer(locale, route, adequacyInput);
+    if (
+      adequacy.answer_state === "LIMITED" &&
+      adequacy.answer_mode === "ASTRO_BTC_BRIDGE" &&
+      adequacy.sections.some((section) => section.id === "window_comparison_evidence_gap")
+    ) {
+      const bridgeBoundary = byId(answer, "bridge_boundary");
+      return {
+        ...answer,
+        ...adequacy,
+        sections: [
+          ...adequacy.sections,
+          ...(bridgeBoundary && !adequacy.sections.some((section) => section.id === "bridge_boundary")
+            ? [bridgeBoundary]
+            : []),
+        ],
+      };
+    }
+
     const text = route.raw_question.toLowerCase();
     const historical = /historical|историческ|за\s+те\s+же\s+дат|same\s+dates/.test(text);
     const missingMarketPeriod = /market[^?!.]{0,40}(?:snapshot|state)[^?!.]{0,40}(?:missing|unavailable)|рыночн[а-яё]*[^?!.]{0,40}(?:снимок|snapshot)[^?!.]{0,40}(?:нет|недоступ)/.test(text);

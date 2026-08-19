@@ -223,6 +223,109 @@ export function specializeMarketAnswer(
   }
   return answer;
 }
+type AstroBtcWindowMarketPredicate = "volatility" | "liquidity" | "movement" | "market_metric";
+
+function referencedAstroWindowMarketPredicate(
+  route: BtcCosmographerRoute,
+): AstroBtcWindowMarketPredicate | null {
+  const text = q(route);
+  const activeWindowReference = /\b(?:these|those|the)\s+windows?\b|(?:в|внутри|среди|из)\s+(?:них|(?:этих|тех)\s+окн[а-яё]*)|(?:эти|те)\s+окн[а-яё]*/i.test(text);
+  const explicitBtc = /\bbtc\b|\bbitcoin\b|бит(?:коин|койн|окин|окйн|коина|койна)/i.test(text);
+  if (
+    route.domain !== "astro_btc_bridge" ||
+    route.context_relation !== "CROSS_MODULE_BRIDGE" ||
+    route.time_range?.source !== "CONTEXT" ||
+    route.market_question_class === null ||
+    !activeWindowReference ||
+    !explicitBtc
+  ) return null;
+
+  if (route.market_question_class === "liquidity") return "liquidity";
+  if (route.market_question_class === "temporal_pressure" && /volatil|волатиль/i.test(text)) return "volatility";
+  if (route.market_question_class === "change_memory" && /(?:btc|bitcoin)[^?!.]{0,32}move|двигал[а-яё]*[^?!.]{0,32}(?:btc|bitcoin|биткоин)/i.test(text)) return "movement";
+  return "market_metric";
+}
+
+function limitWindowMarketComparisonToAcceptedEvidence(
+  locale: BtcPublicLocale,
+  route: BtcCosmographerRoute,
+  answer: BtcCosmographerAnswerProjection,
+  predicate: AstroBtcWindowMarketPredicate,
+): BtcCosmographerAnswerProjection {
+  const isRu = ru(locale);
+  const startYear = route.time_range?.start.slice(0, 4);
+  const endYear = route.time_range?.end.slice(0, 4);
+  const period = startYear && startYear === endYear ? startYear : null;
+  const windowLabel = period
+    ? (isRu ? `этих окон ${period}` : `these ${period} windows`)
+    : (isRu ? "этих окон" : "these referenced windows");
+
+  const direct = predicate === "volatility"
+    ? (isRu
+        ? `В принятых BTC-данных нет сопоставимых значений волатильности для каждого из ${windowLabel}, поэтому я не могу честно сказать, в каком окне она была выше.`
+        : `The accepted BTC evidence does not contain comparable volatility values for each of ${windowLabel}, so I cannot honestly rank the windows by BTC volatility.`)
+    : predicate === "liquidity"
+      ? (isRu
+          ? `Текущий принятый Snapshot показывает ликвидность сейчас, но не значения ликвидности для каждого из ${windowLabel}; поэтому сравнить окна по ликвидности на этих данных нельзя.`
+          : `The current accepted Snapshot describes liquidity now; it does not provide comparable liquidity values for each of ${windowLabel}, so the windows cannot be compared by BTC liquidity from these data.`)
+      : predicate === "movement"
+        ? (isRu
+            ? `В принятых BTC-данных нет сопоставимого ряда движения BTC для каждого из ${windowLabel}; поэтому я не могу честно описать или ранжировать движение BTC по этим окнам.`
+            : `The accepted BTC evidence does not contain comparable BTC-movement values for each of ${windowLabel}, so I cannot honestly reconstruct or rank BTC movement across the windows.`)
+        : (isRu
+            ? `Принятый BTC evidence не содержит сопоставимых значений запрошенной рыночной метрики для каждого из ${windowLabel}; поэтому сравнение окон по этой метрике на текущих данных недоступно.`
+            : `The accepted BTC evidence does not contain comparable values of the requested market metric for each of ${windowLabel}, so a window-by-window comparison is not supported by the current data.`);
+
+  const currentBtcContext = answer.sections.find((section) => section.id === "btc_side_state");
+  const astroWindowContext = answer.sections.find((section) => section.id === "astro_window");
+  const nonCausal = answer.sections.find((section) => section.id === "non_causal_boundary");
+  const nonTrading = answer.sections.find((section) => section.id === "non_trading_boundary");
+
+  return {
+    ...answer,
+    answer_state: "LIMITED",
+    answer_mode: "ASTRO_BTC_BRIDGE",
+    headline: isRu
+      ? "Сравнение BTC по этим астрономическим окнам не поддержано принятыми данными"
+      : "The accepted evidence does not support a BTC comparison across these astronomical windows",
+    direct_answer: direct,
+    sections: [
+      {
+        id: "window_comparison_evidence_gap",
+        label: isRu ? "Достаточность доказательств" : "Evidence adequacy",
+        paragraph: isRu
+          ? "Текущая BTC authority содержит принятый Snapshot и, где доступно, Delta между Snapshot. Она не содержит сопоставимого BTC-ряда, привязанного отдельно к каждому указанному Astro window."
+          : "The current BTC authority contains the accepted Snapshot and, where available, Snapshot-to-Snapshot Delta. It does not contain a comparable BTC series bound separately to each referenced Astro window.",
+      },
+      ...(currentBtcContext ? [{
+        ...currentBtcContext,
+        id: "current_btc_context_secondary",
+        label: isRu ? "Вторичный контекст · текущее состояние BTC" : "Secondary context · current BTC state",
+      }] : []),
+      ...(astroWindowContext ? [{
+        ...astroWindowContext,
+        id: "astro_window_context_only",
+        label: isRu ? "Контекст · астрономические окна" : "Context · astronomical windows",
+      }] : []),
+      {
+        id: "astro_not_btc_metric_proxy",
+        label: isRu ? "Граница метрики" : "Metric boundary",
+        paragraph: isRu
+          ? "Интенсивность, ранг или плотность астрономического окна не используется как суррогат волатильности, ликвидности или движения BTC."
+          : "Astronomical-window intensity, rank, or density is not used as a proxy for BTC volatility, liquidity, or movement.",
+      },
+      ...(nonCausal ? [nonCausal] : []),
+      ...(nonTrading ? [nonTrading] : []),
+    ],
+    source_boundary: isRu
+      ? "Принятый BTC evidence в этом runtime ограничен текущим Snapshot и, где доступно, Delta; сопоставимые BTC-значения по каждому Astro window не привязаны. Текущий Snapshot может быть показан только как вторичный контекст и не заменяет window-by-window evidence."
+      : "Accepted BTC evidence in this runtime is limited to the current Snapshot and, where available, Delta; comparable BTC values for each Astro window are not bound. The current Snapshot may appear only as secondary context and does not substitute for window-by-window evidence.",
+    proof_label: isRu
+      ? "Достаточность window-by-window BTC evidence проверена · недостаточно"
+      : "Window-by-window BTC evidence adequacy checked · insufficient",
+  };
+}
+
 export function specializeBridgeAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
@@ -235,6 +338,10 @@ export function specializeBridgeAnswer(
     return { ...answer, answer_state: missingPeriodEvidence ? "LIMITED" : answer.answer_state, answer_mode: missingPeriodEvidence ? "CLARIFICATION" : answer.answer_mode, direct_answer: isRu
       ? "Нет: принятое evidence не доказывает причинное влияние планетарной конфигурации на движение BTC. Можно проверять только временное совпадение/расхождение независимых слоёв."
       : "No: accepted evidence does not establish a causal effect of a planetary configuration on BTC. Only temporal concurrence/divergence between independent lanes can be tested." };
+  }
+  const windowMarketPredicate = referencedAstroWindowMarketPredicate(route);
+  if (windowMarketPredicate) {
+    return limitWindowMarketComparisonToAcceptedEvidence(locale, route, answer, windowMarketPredicate);
   }
   if (historical) {
     return { ...answer, answer_state: "LIMITED", direct_answer: isRu

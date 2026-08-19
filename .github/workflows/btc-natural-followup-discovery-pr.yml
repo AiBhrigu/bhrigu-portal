@@ -8,7 +8,9 @@ on:
       - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-answer.ts
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-cosmographer-public-multi-body-projection.ts
       - lib/btc-cosmographer-route-graph.ts
+      - lib/btc-cosmographer-specialized-answer.ts
       - pages/_app.js
       - pages/_document.js
       - pages/crypto-astro/btc.tsx
@@ -19,6 +21,7 @@ on:
       - scripts/run-btc-natural-followup-discovery-static-fixture.mjs
       - scripts/verify-btc-natural-followup-conversations.py
       - tests/btc-natural-astro-to-btc-anaphoric-window-bridge-acceptance.ts
+      - tests/btc-astro-btc-window-predicate-fidelity-acceptance.ts
       - .github/workflows/btc-natural-followup-discovery-pr.yml
 
 permissions:
@@ -47,6 +50,8 @@ jobs:
         run: node scripts/run-btc-natural-followup-discovery-static-fixture.mjs
       - name: Natural Astro-to-BTC anaphoric window bridge acceptance
         run: npx tsx tests/btc-natural-astro-to-btc-anaphoric-window-bridge-acceptance.ts
+      - name: Astro-to-BTC window predicate fidelity acceptance
+        run: npx tsx tests/btc-astro-btc-window-predicate-fidelity-acceptance.ts
       - name: Production build
         run: npm run build
       - name: Start exact-head server

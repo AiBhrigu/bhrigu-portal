@@ -204,6 +204,15 @@ BTC_NATURAL_ASTRO_TO_BTC_ANAPHORIC_WINDOW_BRIDGE_SCOPE = {
     "tests/btc-natural-astro-to-btc-anaphoric-window-bridge-acceptance.ts",
 }
 
+# P0 answer fidelity: fail closed when accepted BTC evidence cannot compare referenced Astro windows.
+BTC_ASTRO_BTC_WINDOW_PREDICATE_FIDELITY_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-natural-followup-discovery-pr.yml",
+    "lib/btc-cosmographer-public-multi-body-projection.ts",
+    "lib/btc-cosmographer-specialized-answer.ts",
+    "tests/btc-astro-btc-window-predicate-fidelity-acceptance.ts",
+}
+
 BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-free-corridor-conversational-surface-pr.yml",
@@ -322,6 +331,7 @@ accepted_scopes = {
     "PASS_BTC_PRIMARY_ENTRY_CHANGE_MEMORY_ALIGNMENT_EXACT_6_FILE_SCOPE": BTC_PRIMARY_ENTRY_CHANGE_MEMORY_ALIGNMENT_SCOPE,
     "PASS_BTC_ACTIVE_CONTEXT_ANAPHORIC_FOLLOWUP_PR180_EXACT_7_FILE_SCOPE": BTC_ACTIVE_CONTEXT_ANAPHORIC_FOLLOWUP_PR180_SCOPE,
     "PASS_BTC_NATURAL_ASTRO_TO_BTC_ANAPHORIC_WINDOW_BRIDGE_EXACT_4_FILE_SCOPE": BTC_NATURAL_ASTRO_TO_BTC_ANAPHORIC_WINDOW_BRIDGE_SCOPE,
+    "PASS_BTC_ASTRO_BTC_WINDOW_PREDICATE_FIDELITY_EXACT_5_FILE_SCOPE": BTC_ASTRO_BTC_WINDOW_PREDICATE_FIDELITY_SCOPE,
     "PASS_BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_EXACT_3_FILE_SCOPE": BTC_QUICK_ENTRY_PROMOTED_ROUTE_REPAIR_SCOPE,
     "PASS_BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_EXACT_7_FILE_SCOPE": BTC_STATIC_ENTRY_SATOSHI_FOOTER_CI_REPAIR_SCOPE,
     "PASS_BTC_RETURNED_READING_MOBILE_PHI_REFLOW_EXACT_4_FILE_SCOPE": BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE,
