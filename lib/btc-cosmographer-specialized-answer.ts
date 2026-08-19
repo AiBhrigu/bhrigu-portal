@@ -74,8 +74,8 @@ export function buildSpecializedMethodologyAnswer(
     headline = isRu ? "Свежесть данных активного ответа" : "Freshness of the active answer";
     direct = boundAt
       ? (isRu
-          ? `Активный ответ был привязан к принятой evidence-ревизии ${boundAt}. Свежесть оценивается относительно этой отметки; смена источника между ходами должна быть показана отдельно.`
-          : `The active answer was bound to the accepted evidence revision at ${boundAt}. Freshness is evaluated against that timestamp; a source change between turns must be shown separately.`)
+          ? `Активный ответ опирается на ${activeLane} и был привязан к принятой evidence-ревизии ${boundAt}. Свежесть оценивается относительно этой отметки; смена источника между ходами должна быть показана отдельно.`
+          : `The active answer uses ${activeLane} and was bound to the accepted evidence revision at ${boundAt}. Freshness is evaluated against that timestamp; a source change between turns must be shown separately.`)
       : (isRu
           ? "Свежесть определяется metadata активного evidence lane; без временной отметки Космограф не объявляет данные текущими."
           : "Freshness comes from the active evidence-lane metadata; without a timestamp, Cosmographer does not claim the data are current.");
