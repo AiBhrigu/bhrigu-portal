@@ -5,6 +5,7 @@ import { BtcEvidenceZone } from "../../components/btc/BtcEvidence";
 import { BtcObservationZone, BtcPhiZone } from "../../components/btc/BtcExecutivePhi";
 import { BtcHeroQuestionLaunch } from "../../components/btc/BtcHeroQuestionLaunch";
 import { BtcQuestionMembrane } from "../../components/btc/BtcQuestionMembrane";
+import PublicSupportRoute from "../../components/btc/PublicSupportRoute";
 import { loadBtcBinanceFreeObservationBridge } from "../../lib/btc-binance-free-observation-bridge";
 import type { BtcBinanceFreeObservation } from "../../lib/btc-binance-free-observation-contract";
 import { BTC_BINANCE_FREE_OBSERVATION_CSS } from "../../lib/btc-binance-free-observation-style";
@@ -350,6 +351,7 @@ export default function Page(p: Props) {
             </>
           : <BoundedFallback locale={p.locale} result={p.result} envelopeFailure={p.envelopeFailure}/>} 
       </section>}
+      <PublicSupportRoute locale={p.locale} surface="btc" />
       <footer className="btcAuthorityFooter" aria-label={ru ? "Закрытие BTC Cosmographer" : "BTC Cosmographer closure"}>
         <div className="btcAuthorityFooterIntro">
           <div className="btcAuthorityFooterIdentity">

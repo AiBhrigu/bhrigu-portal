@@ -5,6 +5,7 @@ import {
   loadBtcHomeAcceptedState,
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
+import PublicSupportRoute from "../components/btc/PublicSupportRoute";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
@@ -232,6 +233,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
       <section id="question-to-knowledge" className={styles.editorialSection}><SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle}/><EditorialList items={copy.questionSteps} numbered/></section>
       <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></section>
+      <PublicSupportRoute locale={locale} surface="home" />
       <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}><SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle}/><EditorialList items={copy.methodItems}/></section>
       <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label="BHRIGU system routes"><Link href="/frey">Frey</Link><Link href="/cosmographer">Cosmographer</Link><Link href="/orion">ORION</Link></nav></section>
       <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}><SectionHeading eyebrow={copy.continuityEyebrow} title={copy.continuityTitle} body={copy.continuityBody}/><p className={styles.boundaryNote}>{copy.continuityBoundary}</p></section>
