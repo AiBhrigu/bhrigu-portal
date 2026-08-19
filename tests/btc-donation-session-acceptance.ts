@@ -68,6 +68,7 @@ async function run() {
 
   const bridgeMigration = await readFile("migrations/20260815_btc_donation_bridge_v1.sql", "utf8");
   const sessionMigration = await readFile("migrations/20260815_btc_donation_session_v1.sql", "utf8");
+  const admissionMigration = await readFile("migrations/20260819_btc_donation_session_admission_v1.sql", "utf8");
   assert.match(sessionMigration, /REFERENCES btc_donation_receiver_addresses/);
   assert.match(sessionMigration, /receiver_address_id TEXT NOT NULL UNIQUE/);
   assert.match(sessionMigration, /donation_session_state_regression/);
@@ -215,12 +216,14 @@ async function run() {
   assert.match(support, /feature\/btc-support-conversion-atom2-v1/);
   assert.match(support, /feature\/btc-support-conversion-atom3-v1/);
   assert.match(support, /feature\/btc-support-conversion-atom4-v1/);
+  assert.match(support, /feature\/btc-support-capacity-admission-v1/);
   assert.match(support, /data-support-field="golden-symmetry-cyberpunk-v0-1"/);
   assert.match(support, /data-support-visual-canon="golden-symmetry-restrained-cyberpunk-v0-1"/);
   assert.match(component, /data-support-final-polish="golden-symmetry-cyberpunk-v0-1"/);
   assert.match(component, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(support, /main\[data-support-surface\] ~ nav\[data-prevnext\]/);
-  assert.match(store, /FOR UPDATE SKIP LOCKED/);
+  assert.match(admissionMigration, /FOR UPDATE SKIP LOCKED/);
+  assert.match(store, /btc_donation_issue_session_admitted/);
   assert.match(store, /state='retired'/);
   assert.match(store, /NOT EXISTS \(SELECT 1 FROM btc_donation_receipts/);
 

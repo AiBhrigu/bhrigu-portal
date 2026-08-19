@@ -68,6 +68,8 @@ const SUPPORT_COPY = {
     exchangeTitle: "Sending from a centralized exchange?",
     exchangeBody: "Withdraw asset = BTC and network = Bitcoin mainnet. Use Copy raw BTC address and paste only the raw address into the exchange withdrawal field. Do not paste the bitcoin: prefix and do not use this BIP321 QR for an exchange withdrawal form. Do not use Lightning or another withdrawal network.",
     unavailable: "No fresh one-time Bitcoin address is available right now. No support session was created. Please try again after fresh-address capacity is restored.",
+    rateLimited: "Fresh Bitcoin session creation is temporarily limited for safety.",
+    retryAfter: "Please try again in",
     endUnused: "End unused session",
     previewBoundary: "Preview boundary: do not send real BTC to this address.",
     synthetic: "Synthetic receipt evidence · UI only",
@@ -133,11 +135,21 @@ const SUPPORT_COPY = {
     exchangeTitle: "Отправляете BTC с централизованной биржи?",
     exchangeBody: "Выберите актив = BTC и сеть = Bitcoin mainnet. Используйте Копировать обычный BTC-адрес и вставляйте в поле вывода биржи только обычный адрес. Не вставляйте префикс bitcoin: и не используйте этот BIP321 QR для формы вывода биржи. Не используйте Lightning или другую сеть вывода.",
     unavailable: "Сейчас нет свободного нового одноразового Bitcoin-адреса. Сессия поддержки не создана. Попробуйте снова после восстановления запаса свежих адресов.",
+    rateLimited: "Создание новых Bitcoin-сессий временно ограничено для защиты запаса одноразовых адресов.",
+    retryAfter: "Попробуйте снова через",
     endUnused: "Закрыть неиспользованную сессию",
     previewBoundary: "Граница Preview: не отправляйте реальные BTC на этот адрес.",
     synthetic: "Synthetic receipt evidence · UI only",
   },
 };
+
+function retryAfterText(value, locale) {
+  const seconds = Number(value);
+  if (!Number.isSafeInteger(seconds) || seconds < 1) return locale === "ru" ? "несколько минут" : "a few minutes";
+  if (seconds < 60) return locale === "ru" ? `${seconds} сек.` : `${seconds} sec`;
+  const minutes = Math.ceil(seconds / 60);
+  return locale === "ru" ? `${minutes} мин.` : `${minutes} min`;
+}
 
 export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const router = useRouter();
@@ -255,6 +267,10 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok || !body.session) {
+        if (body?.errorCode === "session_rate_limited") {
+          const retry = retryAfterText(body?.retryAfterSeconds, locale);
+          throw new Error(`${supportCopy.rateLimited} ${supportCopy.retryAfter} ${retry}.`);
+        }
         throw new Error(body?.errorCode === "address_unavailable" ? supportCopy.unavailable : "Donation session is unavailable.");
       }
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);

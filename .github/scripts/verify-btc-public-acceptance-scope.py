@@ -211,6 +211,22 @@ BTC_SUPPORT_CONVERSION_ATOM1_SCOPE = {
     "tests/btc-donation-session-acceptance.ts",
 }
 
+BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "components/btc/BtcDonationSessionPreview.jsx",
+    "lib/btc-donation-session-admission.ts",
+    "lib/btc-donation-session-neon.ts",
+    "migrations/20260819_btc_donation_session_admission_v1.sql",
+    "package.json",
+    "pages/api/donation/session/index.ts",
+    "pages/support.js",
+    "scripts/btc-direct-payment-fresh-db-migration.ts",
+    "scripts/btc-donation-receiver-agent.py",
+    "tests/btc-donation-admission-acceptance.ts",
+    "tests/btc-donation-session-acceptance.ts",
+    "tests/btc-donation-supervisor-acceptance.ts",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -264,6 +280,7 @@ accepted_scopes = {
     "PASS_BTC_RETURNED_READING_MOBILE_PHI_REFLOW_EXACT_4_FILE_SCOPE": BTC_RETURNED_READING_MOBILE_PHI_REFLOW_SCOPE,
     "PASS_BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_EXACT_2_FILE_SCOPE": BTC_STATIC_PREPARED_QUESTIONS_TOP_SPACING_SCOPE,
     "PASS_BTC_SUPPORT_CONVERSION_ATOM1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_CONVERSION_ATOM1_SCOPE,
+    "PASS_BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_EXACT_13_FILE_SCOPE": BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

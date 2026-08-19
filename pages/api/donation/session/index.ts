@@ -1,6 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getDonationSessionRuntimeConfig, normalizeDonationSessionId } from "../../../../lib/btc-donation-session";
 import { createNeonBtcDonationSessionStore } from "../../../../lib/btc-donation-session-neon";
+import {
+  BTC_DONATION_ADMISSION_COOKIE,
+  donationAdmissionCookie,
+  donationAdmissionKeys,
+  getDonationAdmissionConfig,
+  newDonationAdmissionClientToken,
+  normalizeDonationAdmissionClientToken,
+  normalizeVercelClientIp,
+} from "../../../../lib/btc-donation-session-admission";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   privateHeaders(res);
@@ -10,13 +19,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const config = getDonationSessionRuntimeConfig();
   if (!config.enabled) return res.status(404).json({ ok: false, errorCode: "not_found" });
+  const admissionConfig = getDonationAdmissionConfig();
+  if (!admissionConfig.enabled) return res.status(503).json({ ok: false, errorCode: "donation_session_unavailable" });
   const sessionId = normalizeDonationSessionId(req.body?.sessionId);
   if (!sessionId) return res.status(400).json({ ok: false, errorCode: "invalid_session_id" });
+
+  const existingToken = normalizeDonationAdmissionClientToken(req.cookies?.[BTC_DONATION_ADMISSION_COOKIE]);
+  const clientToken = existingToken ?? newDonationAdmissionClientToken();
+  if (!existingToken) res.setHeader("Set-Cookie", donationAdmissionCookie(clientToken));
+  const clientIp = normalizeVercelClientIp(req.headers["x-forwarded-for"]);
+  const { clientKey, ipKey } = donationAdmissionKeys(admissionConfig.secret, clientToken, clientIp);
+
   try {
     const store = createNeonBtcDonationSessionStore(config.databaseUrl);
-    const session = await store.issueSession(sessionId, new Date());
-    if (!session) return res.status(503).json({ ok: false, errorCode: "address_unavailable" });
-    return res.status(200).json({ ok: true, session });
+    const result = await store.issueSessionAdmitted({ sessionId, at: new Date(), clientKey, ipKey });
+    if (result.disposition === "rate_limited") {
+      const retryAfterSeconds = Math.max(1, result.retryAfterSeconds);
+      res.setHeader("Retry-After", String(retryAfterSeconds));
+      return res.status(429).json({ ok: false, errorCode: "session_rate_limited", retryAfterSeconds });
+    }
+    if (result.disposition === "address_unavailable" || !result.session) {
+      return res.status(503).json({ ok: false, errorCode: "address_unavailable" });
+    }
+    return res.status(200).json({ ok: true, session: result.session });
   } catch {
     return res.status(503).json({ ok: false, errorCode: "donation_session_unavailable" });
   }
