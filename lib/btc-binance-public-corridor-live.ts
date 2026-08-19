@@ -12,6 +12,8 @@ import { loadBtcBinanceProductionGuarded } from "./btc-binance-production-guard"
 import { routeBtcCosmographerQuestion } from "./btc-cosmographer-route-graph";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 
+export type BtcBinancePublicCorridorLiveBinding = BtcBinancePublicBindingPacket;
+
 type PublicCorridorLiveOptions = {
   locale: BtcPublicLocale;
   staticPeer: BtcBinanceAcceptedStaticPeer | null;
@@ -27,7 +29,7 @@ function corridorQuestion(locale: BtcPublicLocale): string {
 
 export async function loadBtcBinancePublicCorridorLive(
   options: PublicCorridorLiveOptions,
-): Promise<BtcBinancePublicBindingPacket | null> {
+): Promise<BtcBinancePublicCorridorLiveBinding | null> {
   const env = options.env ?? process.env;
   const route = routeBtcCosmographerQuestion(
     options.locale,
