@@ -431,7 +431,7 @@ function hasAstroWindowHint(question: string): boolean {
 }
 
 function isAnaphoricAstroWindowReference(question: string): boolean {
-  return /\b(?:these|those|the)\s+windows?\b|(?:в|внутри|среди)\s+(?:этих|тех)\s+окн[а-яё]*|(?:эти|те)\s+окн[а-яё]*/i.test(question);
+  return /\b(?:these|those|the)\s+windows?\b|(?:в|внутри|среди|из)\s+(?:них|(?:этих|тех)\s+окн[а-яё]*)|(?:эти|те)\s+окн[а-яё]*/i.test(question);
 }
 
 function hasMarketHint(question: string, market: BtcEnvelopeQuestionClass | null): boolean {
@@ -494,7 +494,7 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
   if (/liquid|tvl|stablecoin|dex|ликвид|стейблкоин/i.test(question)) return "liquidity";
   if (/breadth|rotation|altcoin|participation|eth|ширин|ротац|альткоин|участи/i.test(question)) return "market_participation_rotation";
   if (/structure|regime|field score|market cap|структур|режим|капитализац/i.test(question)) return "market_structure";
-  if (/snapshot|memory|previous checkpoint|delta|сним[а-яё]*|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
+  if (/snapshot|memory|previous checkpoint|delta|сним[а-яё]*|памят|предыдущ|дельт|что изменилось|how\s+did\s+(?:btc|bitcoin)\s+move|как\s+(?:двигал[а-яё]*|движен[а-яё]*)\s+(?:btc|bitcoin|биткоин[а-яё]*)/i.test(question)) return "change_memory";
   if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль|дат[а-яё]*[^?!.]{0,48}контекст[а-яё]*\s+наблюден[а-яё]*\s+(?:btc|bitcoin|биткоин)/i.test(question)) return "temporal_pressure";
   if (/btc field|market field|present[-\s]?field read|current btc field|accepted market evidence|поле btc|общее поле|текущ[а-яё]*\s+поле\s+btc|рынок btc|рынок биткоин|на\s+рынке\s+btc|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
   return null;
@@ -660,7 +660,10 @@ export function routeBtcCosmographerQuestion(
     (explicitBridge && !body ? (packet && (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") ? packet.prior_subject : "planetary_aspects") : null);
 
   if (isVolatilityQuestion(q) && !body && !multiBody && (market === null || market === "temporal_pressure") && packet) {
-    if (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") {
+    if (
+      (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
+      (!hasBtcReference(q) || astroFocused)
+    ) {
       inferredDomain = packet.prior_domain === "astro_btc_bridge"
         ? "astro_btc_bridge"
         : "astromodule";
@@ -676,9 +679,13 @@ export function routeBtcCosmographerQuestion(
     packet &&
     (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
     hasBtcReference(q) &&
-    isVolatilityQuestion(q) &&
+    market !== null &&
+    !protocol &&
     isAnaphoricAstroWindowReference(q),
   );
+  if (anaphoricWindowBridge && packet) {
+    forcedSubject = packet.prior_subject;
+  }
   const contextBridge = Boolean(
     packet &&
     (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
