@@ -8,6 +8,7 @@ on:
       - components/btc/BtcCosmographerDialogue.tsx
       - lib/btc-cosmographer-answer.ts
       - lib/btc-cosmographer-evidence-navigation-runtime.ts
+      - lib/btc-cosmographer-public-multi-body-projection.ts
       - lib/btc-cosmographer-route-graph.ts
       - lib/btc-cosmographer-specialized-answer.ts
       - pages/_app.js
