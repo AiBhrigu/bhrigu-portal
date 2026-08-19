@@ -10,6 +10,7 @@ import {
 } from "../lib/btc-cosmographer-specialized-answer";
 import type { BtcCosmographerAnswerProjection } from "../lib/btc-protocol-evidence";
 
+// Keep these probes shorter and more natural than canonical corpus wording.
 function marketAnswer(locale: "ru" | "en"): BtcCosmographerAnswerProjection {
   const ru = locale === "ru";
   return {
@@ -22,16 +23,16 @@ function marketAnswer(locale: "ru" | "en"): BtcCosmographerAnswerProjection {
         id: "market_evidence",
         label: ru ? "Что изменилось" : "What changed",
         bullets: ru
-? [
-    "Доминирование BTC: 56.54% → 56.64% (+0.1 pp).",
-    "Доля стейблкоинов: 13.5% → 13.41% (−0.1 pp).",
-    "Ширина альткоинов · 24ч: 38.7% → 26.5% (−12.2 pp).",
-  ]
-: [
-    "BTC dominance: 56.54% → 56.64% (+0.1 pp).",
-    "Stablecoin share: 13.5% → 13.41% (−0.1 pp).",
-    "Altcoin breadth · 24h: 38.7% → 26.5% (−12.2 pp).",
-  ],
+          ? [
+              "Доминирование BTC: 56.54% → 56.64% (+0.1 pp).",
+              "Доля стейблкоинов: 13.5% → 13.41% (−0.1 pp).",
+              "Ширина альткоинов · 24ч: 38.7% → 26.5% (−12.2 pp).",
+            ]
+          : [
+              "BTC dominance: 56.54% → 56.64% (+0.1 pp).",
+              "Stablecoin share: 13.5% → 13.41% (−0.1 pp).",
+              "Altcoin breadth · 24h: 38.7% → 26.5% (−12.2 pp).",
+            ],
       },
       {
         id: "market_limit",
@@ -42,8 +43,8 @@ function marketAnswer(locale: "ru" | "en"): BtcCosmographerAnswerProjection {
         id: "market_watch",
         label: ru ? "Что изменит чтение" : "What would change the read",
         paragraph: ru
-? "Наблюдайте за следующими принятыми изменениями гравитации BTC, ликвидности и участия."
-: "Watch the next accepted changes in BTC gravity, liquidity, and participation.",
+          ? "Наблюдайте за следующими принятыми изменениями гравитации BTC, ликвидности и участия."
+          : "Watch the next accepted changes in BTC gravity, liquidity, and participation.",
       },
     ],
     source_boundary: ru
