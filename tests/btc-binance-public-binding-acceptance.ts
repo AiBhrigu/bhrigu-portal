@@ -85,6 +85,9 @@ async function main() {
   const general = route("btc_market", "general_btc_field");
   const structure = route("btc_market", "market_structure", "What is the current BTC market structure?");
   const memory = route("snapshot_memory", "change_memory", "What changed since the previous Snapshot?");
+  const primaryHeroMemory = routeBtcCosmographerQuestion("en", "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?", null);
+  const primaryHeroMemoryRu = routeBtcCosmographerQuestion("ru", "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?", null);
+  const unsafeHeroMemory = route("snapshot_memory", "change_memory", "What changed in Bitcoin since the previous accepted Snapshot — and should I buy BTC now?");
   const method = route("methodology", null, "Which live Binance source is used?");
   const protocol = route("bitcoin_protocol", null, "What is the Bitcoin halving?");
   const astro = route("astromodule", null, "Where is Jupiter now?");
@@ -94,6 +97,11 @@ async function main() {
   checks.preview_general_fetch = decideBtcBinancePublicBinding({ route: general, vercelEnv: "preview" }).fetch;
   checks.preview_structure_fetch = decideBtcBinancePublicBinding({ route: structure, vercelEnv: "preview" }).fetch;
   checks.preview_memory_fetch = decideBtcBinancePublicBinding({ route: memory, vercelEnv: "preview" }).fetch;
+  checks.primary_hero_routes_change_memory = [primaryHeroMemory, primaryHeroMemoryRu].every((item) => item.domain === "snapshot_memory" && item.market_question_class === "change_memory");
+  checks.primary_hero_change_memory_fetch = decideBtcBinancePublicBinding({ route: primaryHeroMemory, vercelEnv: "preview" }).fetch;
+  checks.primary_hero_change_memory_production_fetch = decideBtcBinancePublicBinding({ route: primaryHeroMemory, vercelEnv: "production", productionEnabled: true }).fetch;
+  checks.primary_hero_change_memory_ru_fetch = decideBtcBinancePublicBinding({ route: primaryHeroMemoryRu, vercelEnv: "preview" }).fetch;
+  checks.primary_hero_financial_mutation_zero_fetch = !decideBtcBinancePublicBinding({ route: unsafeHeroMemory, vercelEnv: "preview" }).fetch;
   checks.preview_explicit_method_fetch = decideBtcBinancePublicBinding({ route: method, vercelEnv: "preview" }).fetch;
   checks.production_hard_off = !decideBtcBinancePublicBinding({ route: general, vercelEnv: "production" }).fetch;
   checks.production_positive_opt_in = decideBtcBinancePublicBinding({ route: general, vercelEnv: "production", productionEnabled: true }).fetch;
@@ -695,6 +703,7 @@ async function main() {
   const livePage = await readFile("pages/crypto-astro/btc/live.tsx", "utf8");
   const staticPage = await readFile("pages/crypto-astro/btc.tsx", "utf8");
   const dialogue = await readFile("components/btc/BtcCosmographerDialogue.tsx", "utf8");
+  const cosmographerAnswer = await readFile("lib/btc-cosmographer-answer.ts", "utf8");
   const session = await readFile("lib/btc-live-dialogue-session.ts", "utf8");
   const makeTurn = dialogue.slice(dialogue.indexOf("function makeTurn"), dialogue.indexOf("function AstroWindowSection"));
   checks.live_only_wiring = livePage.includes("btc-binance-public-binding") && !staticPage.includes("btc-binance-public-binding");
@@ -703,6 +712,7 @@ async function main() {
   checks.session_schema_untouched_by_binding = !session.includes("btc_binance_public_binding_v0_1") && !session.includes("binanceLiveBinding");
   const answerBuilder = livePage.slice(livePage.indexOf("const answer ="), livePage.indexOf("const evidenceNavigation"));
   checks.base_answer_not_bound_to_binance = !answerBuilder.toLowerCase().includes("binance");
+  checks.primary_hero_explicit_why_it_matters_projection = cosmographerAnswer.includes('id: "market_why_it_matters"') && cosmographerAnswer.includes("formatBtcTransitionLead");
   checks.no_private_or_trade_authority = ![livePage, dialogue, await readFile("lib/btc-binance-public-binding.ts", "utf8")].join("\n").match(/\/sapi\/|X-MBX-APIKEY|apiSecret|placeOrder|cancelOrder|withdrawApply|withdrawRequest|universalTransfer|internalTransfer/i);
 
   for (const [name, passed] of Object.entries(checks)) assert.equal(passed, true, name);
