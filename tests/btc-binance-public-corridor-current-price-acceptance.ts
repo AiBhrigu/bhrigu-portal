@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { BtcBinanceCurrentVenuePanel } from "../components/btc/BtcBinanceCurrentVenue";
 import type { BtcBinancePublicBindingPacket } from "../lib/btc-binance-public-binding";
@@ -47,7 +48,7 @@ const binding: BtcBinancePublicBindingPacket = {
   boundary,
 };
 
-const en = renderToStaticMarkup(<BtcBinanceCurrentVenuePanel locale="en" binding={binding}/>);
+const en = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "en", binding }));
 assert.match(en, /data-binance-public-corridor-live="true"/);
 assert.match(en, /Binance Spot · BTCUSDT/);
 assert.match(en, /69,234\.01/);
@@ -60,7 +61,7 @@ assert.match(en, /not a global Bitcoin price, on-chain truth, or trading signal/
 assert.doesNotMatch(en, /69234\.01000000/);
 assert.doesNotMatch(en, /QUOTE_BASIS_MISMATCH|TIME_WINDOW_MISMATCH/);
 
-const ru = renderToStaticMarkup(<BtcBinanceCurrentVenuePanel locale="ru" binding={binding}/>);
+const ru = renderToStaticMarkup(createElement(BtcBinanceCurrentVenuePanel, { locale: "ru", binding }));
 assert.match(ru, /Текущее наблюдение площадки/);
 assert.match(ru, /Последняя цена/);
 assert.match(ru, /Изменение 24ч/);
@@ -76,7 +77,7 @@ const liveIndex = page.indexOf("<BtcBinanceCurrentVenuePanel");
 const questionIndex = page.indexOf("<BtcQuestionMembrane");
 assert.ok(snapshotIndex >= 0 && liveIndex > snapshotIndex && questionIndex > liveIndex, "Live Binance surface must sit after accepted Snapshot and before prepared questions");
 assert.match(page, /loadBtcBinancePublicCorridorLive/);
-assert.match(page, /accepted_snapshot|staticPeer/i);
+assert.match(page, /staticPeer/);
 
 const adapter = readFileSync("lib/btc-binance-public-corridor-live.ts", "utf8");
 assert.match(adapter, /decideBtcBinancePublicBinding/);
