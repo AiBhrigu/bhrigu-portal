@@ -404,6 +404,11 @@ function isAstroWindowLanguage(question: string): boolean {
   return /annual\s+priority|local\s+concentration|planetary\s+windows?|astronomical\s+windows?|планетарн[а-яё]*\s+окн|астрономическ[а-яё]*\s+окн|главн[а-яё]*\s+окн|окн[а-яё]*(?:\s+на)?\s+(?:20\d{2}|июл|март)|stations?|ingresses?|станци[а-яё]*|ингресси[а-яё]*|long[-\s]?term\s+cycles?|долгосрочн[а-яё]*\s+цикл|точн[а-яё]*\s+аспект|обзор\s+планетарн[а-яё]*\s+окон|календар[а-яё]*\s+окон|пик[а-яё]*\s+.*20\d{2}|сильн[а-яё]*\s+дат|rank\s*\d/i.test(question);
 }
 
+function isActiveAnswerEvidenceFollowUp(question: string): boolean {
+  const q = question.trim();
+  return /^(?:how\s+do\s+you\s+know(?:\s+(?:that|this))?|what\s+data\s+did\s+you\s+use|which\s+data\s+did\s+you\s+use|how\s+fresh\s+(?:is|are)\s+(?:the\s+)?(?:data|evidence)|how\s+current\s+(?:is|are)\s+(?:the\s+)?(?:data|evidence)|откуда\s+ты\s+это\s+знаешь|какие\s+данн[а-яё]*\s+(?:ты\s+)?использовал[а-яё]*|насколько\s+свеж[а-яё]*\s+данн[а-яё]*)[?!.]*$/i.test(q);
+}
+
 function isMethodologyFollowUpLanguage(question: string): boolean {
   return /this\s+answer|этом\s+ответ|где\s+здесь\s+данн|data[^?!.]{0,32}interpretation|данн[а-яё]*[^?!.]{0,32}интерпретац|already\s+proven|уже\s+доказ|пока\s+исслед|why[^?!.]{0,48}rank\s*\d|почему[^?!.]{0,48}rank\s*\d|продолжает\s+сравнив|не\s+показывай\s+доказ|раздели\s+annual\s+priority/i.test(question);
 }
@@ -452,7 +457,13 @@ function isBareAmbiguousQuestion(question: string): boolean {
   return /^(?:а\s+)?что\s+с\s+(?:ним|ней|этим)\??$|^что\s+показывает\s+это\??$|^what\s+about\s+(?:it|this|that)\??$|^какие\s+дни\??$|^which\s+days\??$/i.test(q);
 }
 
+function isTargetAnaphoricFollowUp(question: string): boolean {
+  const q = question.trim();
+  return /^(?:what\s+(?:exactly\s+)?creates\s+(?:the\s+)?divergence|which\s+facts\s+create\s+(?:the\s+)?divergence|what\s+(?:has\s+to|needs\s+to|would\s+need\s+to|should)\s+happen[^?!.]{0,80}(?:read|reading)[^?!.]{0,40}change|что\s+(?:именно\s+)?созда[её]т\s+расхождение|какие\s+факты\s+создают\s+расхождение|что\s+должно\s+произойти[^?!.]{0,80}чтени[ея][^?!.]{0,40}измен)/i.test(q);
+}
+
 function isContextContinuationLanguage(question: string): boolean {
+  if (isTargetAnaphoricFollowUp(question)) return true;
   return isReferential(question) || /^(?:show|list|put|continue|first|which|what\s+about|покажи|поставь|продолжи|сначала|перечисли|назови|какие\s+пики|какие\s+ингресс|какие\s+станци|какие\s+долгосрочн|какие[^?!.]{0,32}(?:напряженн|сильн)[^?!.]{0,16}дн|which[^?!.]{0,32}(?:intense|strong)[^?!.]{0,16}days)/i.test(question.trim());
 }
 
@@ -535,14 +546,14 @@ function classifyIntents(
   timeRange: BtcCosmographerTimeRange | null,
 ): BtcCosmographerIntent[] {
   const values: BtcCosmographerIntent[] = [];
-  if (/сколько|какое количество|what is|how many|how much|maximum|максимальн/i.test(question)) values.push("fact");
-  if (/why|explain|how does|what should i know|почему|объясни|как устро|что нужно знать|что означает/i.test(question)) values.push("explain");
+  if (/сколько|какое количество|what is|how many|how much|maximum|максимальн|what\s+data\s+did\s+you\s+use|which\s+data\s+did\s+you\s+use|how\s+(?:fresh|current)\s+(?:is|are)\s+(?:the\s+)?(?:data|evidence)|какие\s+данн[а-яё]*\s+(?:ты\s+)?использовал[а-яё]*|насколько\s+свеж[а-яё]*\s+данн[а-яё]*/i.test(question)) values.push("fact");
+  if (/why|explain|how does|what should i know|how\s+do\s+you\s+know|почему|объясни|как устро|что нужно знать|что означает|откуда\s+ты\s+это\s+знаешь/i.test(question)) values.push("explain");
   if (timeRange && (domain === "astromodule" || domain === "astro_btc_bridge")) values.push("interval_analysis");
   if (/compare|versus|\bvs\b|сравн|отличи|между|between[^?!.]{0,48}(?:current|previous)[^?!.]{0,48}snapshot|между[^?!.]{0,48}(?:текущ|предыдущ)[^?!.]{0,48}(?:snapshot|сним)/i.test(question)) values.push("compare");
-  if (/what changed|changed|change since|что измен|изменени/i.test(question)) values.push("change");
-  if (/why|matter|reason|important|почему|важно|причин|напряж|volatil|волатиль/i.test(question)) values.push("reason");
+  if (/what changed|changed|change since|what\s+(?:has\s+to|needs\s+to|would\s+need\s+to|should)\s+happen[^?!.]{0,80}(?:read|reading)[^?!.]{0,40}change|что измен|изменени|что\s+должно\s+произойти[^?!.]{0,80}чтени[ея][^?!.]{0,40}измен/i.test(question)) values.push("change");
+  if (/why|matter|reason|important|diverg|почему|важно|причин|расхожд|напряж|volatil|волатиль/i.test(question)) values.push("reason");
   if (/confirm|support|agree|подтверж|соглас/i.test(question)) values.push("confirmation");
-  if (/watch|next|condition|наблюд|дальше|услов|today|now|сегодня|сейчас/i.test(question)) values.push("watch");
+  if (/watch|next|condition|what\s+(?:has\s+to|needs\s+to|would\s+need\s+to|should)\s+happen[^?!.]{0,80}(?:read|reading)[^?!.]{0,40}change|наблюд|дальше|услов|что\s+должно\s+произойти[^?!.]{0,80}чтени[ея][^?!.]{0,40}измен|today|now|сегодня|сейчас/i.test(question)) values.push("watch");
   if (/impact|influence|affect|correlat|coincid|relation|повлиял|влияни|связ|совпал|корреляц|показател.*(?:btc|бит)/i.test(question)) values.push("bridge");
   if (domain === "navigation") values.push("navigate");
   if (!values.length) values.push(domain === "bitcoin_protocol" ? "explain" : "fact");
@@ -593,7 +604,8 @@ export function routeBtcCosmographerQuestion(
   const unsupportedMarketRequest = isUnsupportedMarketRequest(q);
   const unsupportedAsset = isUnsupportedAssetOnly(q);
   const navigationFocused = isNavigation(q) || isNavigationControlQuestion(q);
-  const methodologyFocused = isMethodologyFocused(q);
+  const activeAnswerEvidenceFollowUp = Boolean(packet && isActiveAnswerEvidenceFollowUp(q));
+  const methodologyFocused = isMethodologyFocused(q) || activeAnswerEvidenceFollowUp;
   const changeMemoryFocused = market === "change_memory" || isChangeMemoryIntent(q);
   const astroWindow = isAstroWindowLanguage(q);
   const astroFocused = Boolean(body) || multiBody || astroWindow || /planet|планет|retrograd|ретроград|aspect|аспект|eclipse|затмени|station|ingress|станци|ингресс|\bwindow\b|окн[а-яё]*/i.test(q);
@@ -689,6 +701,7 @@ export function routeBtcCosmographerQuestion(
       domain === "btc_market" ? "general_btc_field" :
         domain === "unsupported" ? "unknown" : "general");
   const entities = explicitEntities(body, protocol, market, multiBody || astroWindow);
+  if (activeAnswerEvidenceFollowUp) entities.push("active_answer_reference");
   for (const explicitBody of bodies) entities.push(explicitBody);
   if (genesisChart) entities.push("bitcoin_genesis_chart");
   if (multipleExplicitBodies) entities.push("multiple_planetary_objects");
@@ -699,7 +712,7 @@ export function routeBtcCosmographerQuestion(
   const referential = isContextContinuationLanguage(q);
   const bareAmbiguous = isBareAmbiguousQuestion(q) || unresolvedBtcWindow;
   const ambiguousSelectedDate = /selected\s+date|выбранн[а-яё]*\s+дат/i.test(q) && !timeRange;
-  const methodologyFollowUp = methodologyFocused && isMethodologyFollowUpLanguage(q);
+  const methodologyFollowUp = methodologyFocused && (isMethodologyFollowUpLanguage(q) || activeAnswerEvidenceFollowUp);
   const navigationFollowUp = navigationFocused && /active\s+mode|current\s+mode|какой\s+режим\s+сейчас\s+актив|новый\s+предмет[^?!.]{0,32}новая\s+бесед/i.test(q);
   const snapshotFollowUp = domain === "snapshot_memory" && Boolean(packet) &&
     (packet?.prior_domain === "snapshot_memory" || packet?.prior_domain === "btc_market") &&

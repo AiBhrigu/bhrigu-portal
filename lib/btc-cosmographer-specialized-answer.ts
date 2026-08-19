@@ -1,4 +1,4 @@
-import type { BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
+import type { BtcCosmographerContextPacket, BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
 import type { BtcCosmographerAnswerProjection } from "./btc-protocol-evidence";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
 
@@ -24,6 +24,7 @@ export function boundedClarification(
 export function buildSpecializedMethodologyAnswer(
   locale: BtcPublicLocale,
   route: BtcCosmographerRoute,
+  priorContext?: BtcCosmographerContextPacket | null,
 ): BtcCosmographerAnswerProjection {
   const text = q(route);
   const isRu = ru(locale);
@@ -35,7 +36,53 @@ export function buildSpecializedMethodologyAnswer(
     ? ["Наблюдение и источник фиксируются отдельно.", "Производный расчёт должен быть воспроизводим.", "Интерпретация не повышает статус доказательства."]
     : ["Observation and source are recorded separately.", "A derived calculation must be reproducible.", "Interpretation does not promote evidence status."];
 
-  if (/эфемерид|ephemeris|coordinate|координат/.test(text)) {
+  const activeContext = route.explicit_entities.includes("active_answer_reference")
+    ? priorContext ?? null
+    : null;
+  const activeLane = activeContext
+    ? activeContext.prior_domain === "snapshot_memory"
+      ? (isRu ? "текущий и предыдущий принятые Market Snapshot вместе с Delta" : "the current and previous accepted Market Snapshots plus Delta")
+      : activeContext.prior_domain === "btc_market"
+        ? (isRu ? "принятый Market Snapshot и проверенные рыночные derivations" : "the accepted Market Snapshot and verified market derivations")
+        : activeContext.prior_domain === "bitcoin_protocol"
+          ? (isRu ? "закреплённый Bitcoin Protocol source of truth" : "the pinned Bitcoin Protocol source of truth")
+          : activeContext.prior_domain === "astromodule"
+            ? (isRu ? "эфемеридный источник и проверенные астрономические derivations" : "the ephemeris source and verified astronomical derivations")
+            : activeContext.prior_domain === "astro_btc_bridge"
+              ? (isRu ? "два независимых evidence lane: BTC-side и Astro" : "two independent evidence lanes: BTC-side and Astro")
+              : (isRu ? "активный доказательный контур" : "the active evidence lane")
+    : null;
+
+  if (activeContext && /how\s+do\s+you\s+know|откуда\s+ты\s+это\s+знаешь/.test(text)) {
+    headline = isRu ? "Источник активного ответа" : "Source of the active answer";
+    direct = isRu
+      ? `Этот ответ опирается на ${activeLane}. Контекст вкладки только указывает, какой ответ проверяется, и сам не является доказательством.`
+      : `This answer is grounded in ${activeLane}. Tab context only identifies which answer is being checked; it is not evidence itself.`;
+    bullets = isRu
+      ? ["Источник и наблюдение остаются отдельны от интерпретации.", "Активный subject и период сохраняются только для ссылки на проверяемый ответ.", "Новые факты из памяти диалога не создаются."]
+      : ["Source and observation remain separate from interpretation.", "The active subject and period are retained only to reference the answer being checked.", "Dialogue memory does not create new facts."];
+  } else if (activeContext && /(?:what|which)\s+data\s+did\s+you\s+use|какие\s+данн[а-яё]*\s+(?:ты\s+)?использовал[а-яё]*/.test(text)) {
+    headline = isRu ? "Данные активного ответа" : "Data used by the active answer";
+    direct = isRu
+      ? `Для активного ответа использован ${activeLane}. Ни один дополнительный источник не подставляется из истории диалога.`
+      : `The active answer uses ${activeLane}. No additional source is substituted from dialogue history.`;
+    bullets = isRu
+      ? ["Наблюдение → принятый источник.", "Derivation → воспроизводимое преобразование.", "Интерпретация → ограниченный вывод поверх этих данных."]
+      : ["Observation → accepted source.", "Derivation → reproducible transformation.", "Interpretation → bounded conclusion on top of those data."];
+  } else if (activeContext && /how\s+(?:fresh|current)\s+(?:is|are)\s+(?:the\s+)?(?:data|evidence)|насколько\s+свеж[а-яё]*\s+данн[а-яё]*/.test(text)) {
+    const boundAt = activeContext.prior_snapshot_generated_at_utc;
+    headline = isRu ? "Свежесть данных активного ответа" : "Freshness of the active answer";
+    direct = boundAt
+      ? (isRu
+          ? `Активный ответ был привязан к принятой evidence-ревизии ${boundAt}. Свежесть оценивается относительно этой отметки; смена источника между ходами должна быть показана отдельно.`
+          : `The active answer was bound to the accepted evidence revision at ${boundAt}. Freshness is evaluated against that timestamp; a source change between turns must be shown separately.`)
+      : (isRu
+          ? "Свежесть определяется metadata активного evidence lane; без временной отметки Космограф не объявляет данные текущими."
+          : "Freshness comes from the active evidence-lane metadata; without a timestamp, Cosmographer does not claim the data are current.");
+    bullets = isRu
+      ? [`Доказательный контур: ${activeLane}.`, "Время покрытия и время ревизии не смешиваются.", "Контекст диалога не повышает свежесть источника."]
+      : [`Evidence lane: ${activeLane}.`, "Coverage time and revision time remain distinct.", "Dialogue context cannot make a source fresher."];
+  } else if (/эфемерид|ephemeris|coordinate|координат/.test(text)) {
     headline = isRu ? "Эфемерида и координатная модель" : "Ephemeris and coordinate model";
     direct = isRu
       ? "Астрономический слой использует pyswisseph 2.10.03, MOSEPH_PINNED и геоцентрическую тропическую эклиптическую систему координат."
@@ -155,12 +202,18 @@ export function specializeMarketAnswer(
       isRu ? "Без предыдущего принятого Snapshot нельзя честно утверждать, что именно изменилось." : "Without the previous accepted Snapshot, it is not possible to state honestly what changed.",
       isRu ? "Допустимы только факты текущего принятого Snapshot; прошлое состояние не восстанавливается догадкой." : "Only facts from the current accepted Snapshot are allowed; prior state is not reconstructed by guesswork.");
   }
+  if (/what\s+(?:exactly\s+)?creates\s+(?:the\s+)?divergence|which\s+facts\s+create\s+(?:the\s+)?divergence|что\s+(?:именно\s+)?созда[её]т\s+расхождение|какие\s+факты\s+создают\s+расхождение/.test(text) && evidence.length) {
+    const first = evidence.slice(0, 3).join(" ");
+    return { ...answer, direct_answer: isRu
+      ? `Расхождение создают разнонаправленные принятые изменения: ${first}`
+      : `The divergence comes from accepted indicators moving in different directions: ${first}` };
+  }
+  if (/what\s+conditions?\s+would\s+weaken|what\s+(?:has\s+to|needs\s+to|would\s+need\s+to|should)\s+happen[^?!.]{0,80}(?:read|reading)[^?!.]{0,40}change|что\s+изменит.*чтени|что\s+должно\s+произойти[^?!.]{0,80}чтени[ея][^?!.]{0,40}измен|услов[а-яё]*.*ослаб/.test(text) && watch) {
+    return { ...answer, direct_answer: isRu ? `Условия изменения чтения: ${watch}` : `Conditions that would change the read: ${watch}` };
+  }
   if (route.domain === "snapshot_memory" && evidence.length) {
     const first = evidence.slice(0, 3).join(" ");
     return { ...answer, direct_answer: isRu ? `Сначала изменения: ${first}` : `Changes first: ${first}` };
-  }
-  if (/what\s+conditions?\s+would\s+weaken|что\s+изменит.*чтени|услов[а-яё]*.*ослаб/.test(text) && watch) {
-    return { ...answer, direct_answer: isRu ? `Условия изменения чтения: ${watch}` : `Conditions that would change the read: ${watch}` };
   }
   if (/current\s+enough|fresh|актуальн|свеж/.test(text)) {
     const snapshotLine = evidence.find((line) => /snapshot|принят[а-яё]*\s+цен|accepted btc price/i.test(line));

@@ -483,7 +483,7 @@ export function buildBtcCosmographerAnswer(
         proof_label: locale === "ru" ? "Рыночные доказательства недоступны" : "Market evidence unavailable",
       };
     case "methodology":
-      return buildSpecializedMethodologyAnswer(locale, route);
+      return buildSpecializedMethodologyAnswer(locale, route, inputs.priorContext);
     case "navigation":
       if (route.subject === "unsupported_asset") return navigationAnswer(locale, route.raw_question);
       return buildSpecializedNavigationAnswer(locale, route);
