@@ -44,11 +44,16 @@ export async function loadBtcBinancePublicCorridorLive(
   if (!decision.fetch) return null;
 
   const production = env.VERCEL_ENV === "production";
-  const result = options.loadMarket
-    ? await options.loadMarket(production)
-    : production
-      ? await loadBtcBinanceProductionGuarded((signal) => loadBtcBinancePublicMarketShadow({ signal }))
-      : await loadBtcBinancePublicMarketShadow();
+  let result: BinancePublicMarketResult;
+  try {
+    result = options.loadMarket
+      ? await options.loadMarket(production)
+      : production
+        ? await loadBtcBinanceProductionGuarded((signal) => loadBtcBinancePublicMarketShadow({ signal }))
+        : await loadBtcBinancePublicMarketShadow();
+  } catch {
+    return null;
+  }
 
   return buildBtcBinancePublicBinding({
     decision,
