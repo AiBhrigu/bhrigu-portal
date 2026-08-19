@@ -108,6 +108,7 @@ export function projectPublicMultiBodyAnswer(
   if (answer.answer_mode === "ASTRO_BTC_BRIDGE") {
     const adequacyInput: BtcCosmographerAnswerProjection = {
       ...answer,
+      answer_mode: "ASTRO_BTC_BRIDGE",
       sections: answer.sections.map((section) =>
         section.id === "market_layer"
           ? { ...section, id: "btc_side_state" }
