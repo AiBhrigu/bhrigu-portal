@@ -1,0 +1,76 @@
+name: BTC active-context anaphoric validation fix
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-fix:
+    if: github.head_ref == 'agent/btc-active-context-anaphoric-followup-routing-v0-1'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          persist-credentials: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Bind freshness answer to active evidence lane
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          from pathlib import Path
+          p = Path('lib/btc-cosmographer-specialized-answer.ts')
+          text = p.read_text()
+          replacements = {
+            '? `Активный ответ был привязан к принятой evidence-ревизии ${boundAt}. Свежесть оценивается относительно этой отметки; смена источника между ходами должна быть показана отдельно.`':
+            '? `Активный ответ опирается на ${activeLane} и был привязан к принятой evidence-ревизии ${boundAt}. Свежесть оценивается относительно этой отметки; смена источника между ходами должна быть показана отдельно.`',
+            ': `The active answer was bound to the accepted evidence revision at ${boundAt}. Freshness is evaluated against that timestamp; a source change between turns must be shown separately.`)':
+            ': `The active answer uses ${activeLane} and was bound to the accepted evidence revision at ${boundAt}. Freshness is evaluated against that timestamp; a source change between turns must be shown separately.`)',
+          }
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'expected one freshness replacement, found {count}: {old[:80]}')
+              text = text.replace(old, new, 1)
+          p.write_text(text)
+          PY
+          git diff --check
+
+      - name: Strict targeted and adjacent gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --import tsx tests/btc-active-context-anaphoric-followup-routing-acceptance.ts
+          node --import tsx tests/btc-public-corridor-proven-defect-repair-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-routing-repair-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-answer-specialization-acceptance.ts
+          node --import tsx tests/btc-cosmographer-canonical-time-context-state-acceptance.ts
+          git diff --check
+          npx tsc --noEmit
+          npx next build
+
+      - name: Commit strict-pass exact head
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/btc-active-context-anaphoric-validation-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/btc-cosmographer-specialized-answer.ts \
+                  .github/workflows/btc-active-context-anaphoric-validation-fix.yml
+          git diff --cached --check
+          git commit -m "bind freshness proof to active evidence lane"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
