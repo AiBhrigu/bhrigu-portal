@@ -35,11 +35,29 @@ jobs:
         run: npm ci
 
       - name: Prove bounded implementation scope
+        id: scope
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           set -euo pipefail
-          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" > /tmp/binance-shadow-scope.txt
+          git diff --name-only "${{ github.event.pull_request.base.sha }}...HEAD" | sort > /tmp/binance-shadow-scope.txt
           cat /tmp/binance-shadow-scope.txt
+          domain_changed=$(grep -Ec '^(lib/btc-binance-public-market-evidence.ts|lib/btc-binance-public-market-source.ts|tests/btc-binance-public-market-shadow-acceptance.ts)$' /tmp/binance-shadow-scope.txt || true)
+          if [ "$domain_changed" -eq 0 ]; then
+            printf '%s\n' \
+              '.github/workflows/btc-binance-public-market-shadow-pr.yml' \
+              'package.json' \
+              | sort > /tmp/binance-workflow-only.txt
+            if grep -Fxq '.github/workflows/btc-binance-public-market-shadow-pr.yml' /tmp/binance-shadow-scope.txt \
+              && ! comm -23 /tmp/binance-shadow-scope.txt /tmp/binance-workflow-only.txt | grep -q .; then
+              echo 'BINANCE_PUBLIC_MARKET_SHADOW_WORKFLOW_ONLY_MAINTENANCE=PASS'
+              echo 'relevant=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            echo 'BINANCE_PUBLIC_MARKET_SHADOW_UNRELATED_SHARED_TRIGGER=PASS'
+            echo 'relevant=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo 'relevant=true' >> "$GITHUB_OUTPUT"
           while IFS= read -r path; do
             case "$path" in
               .github/workflows/btc-binance-public-market-shadow-pr.yml|lib/btc-binance-public-market-evidence.ts|lib/btc-binance-public-market-source.ts|tests/btc-binance-public-market-shadow-acceptance.ts|package.json) ;;
@@ -49,13 +67,17 @@ jobs:
           echo "BINANCE_PUBLIC_MARKET_SHADOW_SCOPE=PASS"
 
       - name: Verify public no-key evidence adapter
+        if: ${{ github.event_name != 'pull_request' || steps.scope.outputs.relevant == 'true' }}
         run: npm run verify:btc-binance-public-market-shadow
 
       - name: Verify prior Binance historical bridge unchanged
+        if: ${{ github.event_name != 'pull_request' || steps.scope.outputs.relevant == 'true' }}
         run: npm run verify:btc-binance-observation
 
       - name: Verify existing BTC routing unchanged
+        if: ${{ github.event_name != 'pull_request' || steps.scope.outputs.relevant == 'true' }}
         run: npm run verify:btc-routing
 
       - name: Build default public surface
+        if: ${{ github.event_name != 'pull_request' || steps.scope.outputs.relevant == 'true' }}
         run: npm run build

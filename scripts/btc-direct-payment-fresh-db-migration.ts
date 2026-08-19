@@ -10,6 +10,7 @@ const EXPECTED_MIGRATIONS = [
   "20260815_btc_donation_production_opening_v1.sql",
   "20260815_btc_donation_session_v1.sql",
   "20260815_btc_donation_valuation_v1.sql",
+  "20260819_btc_donation_session_admission_v1.sql",
 ];
 
 async function run() {
@@ -47,6 +48,7 @@ async function run() {
       "btc_donation_receipt_valuations",
       "btc_donation_receipts",
       "btc_donation_receiver_addresses",
+      "btc_donation_session_admissions",
       "btc_donation_sessions",
     ]);
 

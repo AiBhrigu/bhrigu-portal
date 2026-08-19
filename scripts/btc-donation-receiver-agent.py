@@ -382,6 +382,8 @@ def supervise_locked(cfg,db,settings):
         return base|{'status':'failed','reason':'budget_authority_invalid'}
     base['budget_used']=budget_used
     if budget_used>=settings['DERIVATION_BUDGET_MAX']:
+        if available<settings['MIN_AVAILABLE']:
+            return base|{'status':'blocked','reason':'capacity_low_derivation_budget_exhausted'}
         return base|{'status':'healthy','reason':'derivation_budget_exhausted'}
     if available>=settings['MIN_AVAILABLE']:
         return base|{'status':'healthy','reason':'capacity_healthy'}

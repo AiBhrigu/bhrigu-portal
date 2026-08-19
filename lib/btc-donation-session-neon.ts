@@ -87,42 +87,38 @@ export function createNeonBtcDonationSessionStore(databaseUrl: string) {
     return rows.length;
   }
 
-  async function issueSession(sessionId: string, at: Date): Promise<DonationSessionView | null> {
-    const atIso = at.toISOString();
+  async function issueSessionAdmitted(args: {
+    sessionId: string;
+    at: Date;
+    clientKey: string;
+    ipKey: string;
+  }): Promise<{
+    disposition: "issued" | "replay" | "rate_limited" | "address_unavailable";
+    retryAfterSeconds: number;
+    session: DonationSessionView | null;
+  }> {
+    const atIso = args.at.toISOString();
     await retireExpiredSessions(atIso);
-    const existing = await findSession(sessionId);
-    if (existing) return existing;
-    const expiresAt = donationSessionExpiresAt(at);
-    try {
-      const created = await sql`
-        WITH candidate AS MATERIALIZED (
-          SELECT receiver_address_id
-          FROM btc_donation_receiver_addresses
-          WHERE state='available'
-          ORDER BY created_at,receiver_address_id
-          FOR UPDATE SKIP LOCKED
-          LIMIT 1
-        ), issued AS (
-          UPDATE btc_donation_receiver_addresses AS a
-          SET state='issued',issued_session_id=${sessionId},issued_at=${atIso}
-          FROM candidate
-          WHERE a.receiver_address_id=candidate.receiver_address_id AND a.state='available'
-          RETURNING a.receiver_address_id
-        )
-        INSERT INTO btc_donation_sessions(
-          session_id,receiver_address_id,session_state,created_at,expires_at,retired_at,updated_at
-        )
-        SELECT ${sessionId},issued.receiver_address_id,'awaiting_payment',${atIso},${expiresAt},NULL,${atIso}
-        FROM issued
-        RETURNING session_id
-      `;
-      if (!created[0]) return null;
-    } catch (error) {
-      const replay = await findSession(sessionId);
-      if (replay) return replay;
-      throw error;
+    const expiresAt = donationSessionExpiresAt(args.at);
+    const rows = await sql`
+      SELECT disposition,retry_after_seconds
+      FROM btc_donation_issue_session_admitted(
+        ${args.sessionId},${args.clientKey},${args.ipKey},${atIso},${expiresAt}
+      )
+    `;
+    const row = rows[0] as unknown as { disposition?: unknown; retry_after_seconds?: unknown } | undefined;
+    const disposition = row?.disposition;
+    const retryAfterSeconds = Number(row?.retry_after_seconds ?? 0);
+    if (
+      !["issued", "replay", "rate_limited", "address_unavailable"].includes(String(disposition)) ||
+      !Number.isSafeInteger(retryAfterSeconds) || retryAfterSeconds < 0
+    ) throw new Error("donation_session_admission_result_invalid");
+    if (disposition === "rate_limited" || disposition === "address_unavailable") {
+      return { disposition, retryAfterSeconds, session: null } as const;
     }
-    return findSession(sessionId);
+    const session = await findSession(args.sessionId);
+    if (!session) throw new Error("donation_session_admission_missing_session");
+    return { disposition: disposition as "issued" | "replay", retryAfterSeconds, session };
   }
 
   async function retireSession(sessionId: string, at: string): Promise<DonationSessionView | null> {
@@ -151,5 +147,5 @@ export function createNeonBtcDonationSessionStore(databaseUrl: string) {
     return findSession(sessionId);
   }
 
-  return { findSession, issueSession, retireSession, retireExpiredSessions };
+  return { findSession, issueSessionAdmitted, retireSession, retireExpiredSessions };
 }

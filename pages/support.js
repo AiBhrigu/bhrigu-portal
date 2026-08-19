@@ -12,6 +12,7 @@ const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCHES = new Set([
   "feature/btc-support-conversion-atom2-v1",
   "feature/btc-support-conversion-atom3-v1",
   "feature/btc-support-conversion-atom4-v1",
+  "feature/btc-support-capacity-admission-v1",
 ]);
 
 const PAGE_COPY = {

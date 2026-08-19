@@ -120,7 +120,8 @@ persist=root+'/persist.sqlite3'; dp=db(persist); insert(dp,(now-timedelta(hours=
 r['27']=m.rolling_derivation_budget_used(dp,settings(),now)==1
 m.flush_queued=lambda c,x: None; m.queued_outbound_provision_count=lambda x:0
 m.read_available_capacity=lambda c:0; m.rolling_derivation_budget_used=lambda x,s:20
-out=m.supervise_locked(cfg,d,settings()); r['28']=out['derivation_attempts']==0 and out['reason']=='derivation_budget_exhausted'
+out=m.supervise_locked(cfg,d,settings()); r['28']=out['derivation_attempts']==0 and out['status']=='blocked' and out['reason']=='capacity_low_derivation_budget_exhausted'
+m.read_available_capacity=lambda c:4; out=m.supervise_locked(cfg,d,settings()); r['budget_healthy_when_capacity_ok']=out['derivation_attempts']==0 and out['status']=='healthy' and out['reason']=='derivation_budget_exhausted'
 counter=[100]
 def scenario(available,budget,s,fail=None):
  dx=db(root+f'/s{counter[0]}.sqlite3'); calls=[0]
@@ -152,10 +153,10 @@ for name in names: os.environ.pop(name,None)
 try:
  try: m.supervisor_settings(); missing_failed=False
  except SystemExit as e: missing_failed=str(e)=='missing_supervisor_configuration'
- values=['3','5','10','2','86400','20']
+ values=['3','5','6','2','86400','32']
  for name,value in zip(names,values): os.environ[name]=value
  parsed=m.supervisor_settings()
- r['explicit_config']=missing_failed and parsed=={'MIN_AVAILABLE':3,'TARGET_AVAILABLE':5,'MAX_AVAILABLE':10,'BATCH_SIZE_MAX':2,'DERIVATION_BUDGET_WINDOW':86400,'DERIVATION_BUDGET_MAX':20}
+ r['explicit_config']=missing_failed and parsed=={'MIN_AVAILABLE':3,'TARGET_AVAILABLE':5,'MAX_AVAILABLE':6,'BATCH_SIZE_MAX':2,'DERIVATION_BUDGET_WINDOW':86400,'DERIVATION_BUDGET_MAX':32}
 finally:
  for name in names: os.environ.pop(name,None)
  for name,value in saved.items():
@@ -167,6 +168,7 @@ print(json.dumps(r,sort_keys=True))
   const pr = JSON.parse(pyRun.stdout.trim()) as Record<string, boolean>;
   assert.equal(pr.explicit_config, true, "production supervisor settings must be explicit");
   assert.equal(pr.preflight_clear, true, "pre-derivation failures must not create false ambiguity holds");
+  assert.equal(pr.budget_healthy_when_capacity_ok, true, "exhausted budget remains healthy only when capacity is at or above minimum");
   for (let n=15;n<=40;n++) ok(n, `agent acceptance ${n}`, () => assert.equal(pr[String(n)], true, `case ${n}`));
   ok(41, "agent receives no Neon database credential", () => assert.doesNotMatch(agent, /DATABASE_URL|NEON_/));
   ok(42, "no derivation budget table added", () => { assert.doesNotMatch(agent, /CREATE TABLE IF NOT EXISTS derivation_budget/i); assert.equal((agent.match(/CREATE TABLE IF NOT EXISTS/g) ?? []).length, 2); });

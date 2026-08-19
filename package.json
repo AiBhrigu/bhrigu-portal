@@ -15,7 +15,7 @@
     "verify:btc-direct-payment-migrations": "node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-donation-bridge": "node --import tsx tests/btc-donation-bridge-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-donation-bridge-preview-e2e": "node --import tsx scripts/btc-donation-bridge-preview-e2e.ts",
-    "verify:btc-donation-session": "node --import tsx tests/btc-donation-session-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
+    "verify:btc-donation-session": "node --import tsx tests/btc-donation-session-acceptance.ts && node --import tsx tests/btc-donation-admission-acceptance.ts && node --import tsx scripts/btc-direct-payment-fresh-db-migration.ts",
     "verify:btc-donation-production-opening": "node --import tsx tests/btc-donation-production-opening-acceptance.ts",
     "verify:btc-binance-public-market-shadow": "node --import tsx tests/btc-binance-public-market-shadow-acceptance.ts",
     "verify:btc-binance-public-binding": "node --import tsx tests/btc-binance-public-binding-acceptance.ts",
