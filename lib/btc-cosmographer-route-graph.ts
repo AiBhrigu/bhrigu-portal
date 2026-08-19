@@ -430,6 +430,10 @@ function hasAstroWindowHint(question: string): boolean {
   return isAstroWindowLanguage(question) || /astro|астро|planetary|планетарн|astronom|астроном|aspect|аспект|\bwindow\b|окн[а-яё]*/i.test(question);
 }
 
+function isAnaphoricAstroWindowReference(question: string): boolean {
+  return /\b(?:these|those|the)\s+windows?\b|(?:в|внутри|среди)\s+(?:этих|тех)\s+окн[а-яё]*|(?:эти|те)\s+окн[а-яё]*/i.test(question);
+}
+
 function hasMarketHint(question: string, market: BtcEnvelopeQuestionClass | null): boolean {
   return Boolean(market) || hasBtcReference(question) || /market|рынок|snapshot|сним[а-яё]*|liquid|ликвид|historical\s+btc|btc[-\s]?period|btc[-\s]?период/i.test(question);
 }
@@ -492,7 +496,7 @@ function marketClass(question: string): BtcEnvelopeQuestionClass | null {
   if (/structure|regime|field score|market cap|структур|режим|капитализац/i.test(question)) return "market_structure";
   if (/snapshot|memory|previous checkpoint|delta|сним[а-яё]*|памят|предыдущ|дельт|что изменилось/i.test(question)) return "change_memory";
   if (/temporal pressure|market timing|market cycle|volatil|временн.*давлен|рыночн.*цикл|волатиль|дат[а-яё]*[^?!.]{0,48}контекст[а-яё]*\s+наблюден[а-яё]*\s+(?:btc|bitcoin|биткоин)/i.test(question)) return "temporal_pressure";
-  if (/btc field|market field|present[-\s]?field read|current btc field|accepted market evidence|поле btc|общее поле|текущ[а-яё]*\s+поле\s+btc|рынок btc|рынок биткоин|на\s+рынке\s+btc|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
+  if (/btc field|market field|present[-\s]?field read|current btc field|accepted market evidence|поле btc|общее поле|текущ[а-яё]*\s+поле\s+btc|дай\s+текущ[а-яё]*\s+поле\s+btc|рынок btc|рынок биткоин|на\s+рынке\s+btc|btc\s+today|bitcoin\s+today|btc\s+now|bitcoin\s+now|what(?:'s|\s+is)\s+happening\s+(?:with|to)\s+(?:btc|bitcoin)|what\s+is\s+going\s+on\s+(?:with|in)\s+(?:btc|bitcoin)|биткоин\s+(?:сегодня|сейчас)|что\s+(?:сейчас\s+)?происходит\s+(?:с|в)\s+(?:btc|bitcoin|биткоин[а-яё]*)|что\s+сейчас\s+(?:с|у)\s+(?:btc|бит)/i.test(question)) return "general_btc_field";
   return null;
 }
 
@@ -668,12 +672,18 @@ export function routeBtcCosmographerQuestion(
   }
 
   const relationPronoun = /\b(?:this|that|it)\b|(?:^|\s)(?:это|этот|эта|эти)(?:\s|$)/i.test(q);
+  const anaphoricWindowBridge = Boolean(
+    packet &&
+    (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
+    hasBtcReference(q) &&
+    isVolatilityQuestion(q) &&
+    isAnaphoricAstroWindowReference(q),
+  );
   const contextBridge = Boolean(
     packet &&
     (packet.prior_domain === "astromodule" || packet.prior_domain === "astro_btc_bridge") &&
     hasMarketHint(q, market) &&
-    isRelationLanguage(q) &&
-    (relationPronoun || hasAstroWindowHint(q)),
+    ((isRelationLanguage(q) && (relationPronoun || hasAstroWindowHint(q))) || anaphoricWindowBridge),
   );
   const domain: BtcCosmographerDomain = contextBridge
     ? "astro_btc_bridge"
@@ -710,7 +720,7 @@ export function routeBtcCosmographerQuestion(
     tradingBoundary || explicitBridge || Boolean(overrideBody) || astroFocused || changeMemoryFocused ||
     hasBtcReference(q) || Boolean(protocol);
   const referential = isContextContinuationLanguage(q);
-  const bareAmbiguous = isBareAmbiguousQuestion(q) || unresolvedBtcWindow;
+  const bareAmbiguous = (isBareAmbiguousQuestion(q) || unresolvedBtcWindow) && !anaphoricWindowBridge;
   const ambiguousSelectedDate = /selected\s+date|выбранн[а-яё]*\s+дат/i.test(q) && !timeRange;
   const methodologyFollowUp = methodologyFocused && (isMethodologyFollowUpLanguage(q) || activeAnswerEvidenceFollowUp);
   const navigationFollowUp = navigationFocused && /active\s+mode|current\s+mode|какой\s+режим\s+сейчас\s+актив|новый\s+предмет[^?!.]{0,32}новая\s+бесед/i.test(q);
