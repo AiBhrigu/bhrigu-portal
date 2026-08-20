@@ -1,7 +1,6 @@
 import {
   BTC_MARKET_ENVELOPE_URLS,
   loadBtcMarketEnvelope,
-  type BtcMarketEnvelope,
   type BtcMarketEnvelopeResult,
 } from "./btc-market-envelope";
 import {
@@ -204,7 +203,8 @@ function snapshotDigest(result: BtcMarketEnvelopeResult | null): Record<string, 
 }
 
 function binanceDigest(result: BinancePublicMarketResult | null): Record<string, unknown> {
-  if (!result || result.ok === false) return { available: false, code: result?.code ?? "NOT_REQUESTED" };
+  if (!result) return { available: false, code: "NOT_REQUESTED" };
+  if (result.ok === false) return { available: false, code: result.code };
   return {
     available: true,
     retrieved_at: result.snapshot.retrieved_at,
@@ -218,7 +218,8 @@ function binanceDigest(result: BinancePublicMarketResult | null): Record<string,
 }
 
 function polymarketDigest(result: BtcPolymarketExpectationResult | null): Record<string, unknown> {
-  if (!result || result.ok === false) return { available: false, code: result?.code ?? "NOT_REQUESTED" };
+  if (!result) return { available: false, code: "NOT_REQUESTED" };
+  if (result.ok === false) return { available: false, code: result.code };
   return {
     available: true,
     as_of: result.as_of,
