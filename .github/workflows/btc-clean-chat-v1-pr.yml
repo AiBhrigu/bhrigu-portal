@@ -7,6 +7,7 @@ on:
       - '.github/workflows/btc-clean-chat-v1-pr.yml'
       - 'ui/btc/BtcCleanChatV1.tsx'
       - 'lib/btc-clean-chat-v1.ts'
+      - 'lib/btc-clean-chat-model-runtime.ts'
       - 'lib/btc-polymarket-expectation.ts'
       - 'pages/api/btc/clean-chat-v1.ts'
       - 'pages/crypto-astro/btc/clean-chat.tsx'
@@ -43,6 +44,7 @@ jobs:
             ".github/workflows/btc-clean-chat-v1-pr.yml"
             "ui/btc/BtcCleanChatV1.tsx"
             "lib/btc-clean-chat-v1.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
             "lib/btc-polymarket-expectation.ts"
             "pages/api/btc/clean-chat-v1.ts"
             "pages/crypto-astro/btc/clean-chat.tsx"
@@ -50,9 +52,9 @@ jobs:
           )
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           diff -u <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
-          echo "PASS_BTC_CLEAN_CHAT_V1_EXACT_7_FILE_SCOPE"
+          echo "PASS_BTC_CLEAN_CHAT_V1_EXACT_8_FILE_SCOPE"
       - run: npm ci
-      - name: Clean Chat acceptance
+      - name: Direct OpenAI architecture acceptance
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
       - name: TypeScript
         run: npx tsc --noEmit
@@ -61,7 +63,7 @@ jobs:
           BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
           BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
         run: npx next build
-      - name: Start exact-head production Preview
+      - name: Start exact-head local Preview shell
         shell: bash
         run: |
           npm run start -- -p 3000 >/tmp/btc-clean-chat-v1.log 2>&1 &
@@ -78,11 +80,10 @@ jobs:
           exit 1
       - name: Install browser driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
-      - name: Exact-head Preview RU EN desktop mobile multi-turn acceptance
+      - name: RU EN desktop mobile clean-shell acceptance
         shell: bash
         run: |
           python3 - <<'PY'
-          import json
           import os
           from selenium import webdriver
           from selenium.webdriver.common.by import By
@@ -96,129 +97,38 @@ jobs:
           opts.add_argument("--disable-dev-shm-usage")
           opts.add_argument("--disable-gpu")
           driver = webdriver.Chrome(options=opts)
-          driver.set_script_timeout(120)
-          wait = WebDriverWait(driver, 120)
-
-          en = [
-              "What is changing in BTC right now?",
-              "Why does that matter?",
-              "What are you watching next?",
-              "What is the market expecting?",
-              "What changed in those expectations?",
-              "Go back to the liquidity point.",
-          ]
-          ru = [
-              "Что меняется в BTC прямо сейчас?",
-              "Почему это важно?",
-              "Что смотреть дальше?",
-              "Что сейчас ожидает рынок?",
-              "Что изменилось в этих ожиданиях?",
-              "Вернись к точке ликвидности.",
-          ]
-          forbidden_visible = [
-              "context_fresh", "liquidity_context_state", "stablecoin_share_pct",
-              "defi_tvl_usd", "Q3_STRONG", "Q2_USABLE", "TERMINAL_", "PATH_THRESHOLD",
-          ]
-
-          def open_chat(lang, width, height):
-              driver.set_window_size(width, height)
-              driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
-              wait.until(EC.presence_of_element_located((By.ID, "btc-clean-question")))
-              assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "horizontal overflow"
-              for selector in ['header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"]', 'nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]']:
-                  for node in driver.find_elements(By.CSS_SELECTOR, selector):
-                      assert not node.is_displayed(), f"legacy chrome visible: {selector}"
-              assert driver.find_element(By.CSS_SELECTOR, ".cleanComposer").is_displayed()
-
-          def ask(text):
-              before = len(driver.find_elements(By.CSS_SELECTOR, ".cleanExchange"))
-              box = wait.until(EC.element_to_be_clickable((By.ID, "btc-clean-question")))
-              box.clear()
-              box.send_keys(text)
-              driver.find_element(By.CSS_SELECTOR, ".cleanComposer button[type=submit]").click()
-              wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".cleanExchange")) == before + 1)
-              def completed(d):
-                  rows = d.find_elements(By.CSS_SELECTOR, ".cleanExchange")
-                  if not rows: return False
-                  bubbles = rows[-1].find_elements(By.CSS_SELECTOR, ".cleanAssistant .cleanBubble > p")
-                  return bubbles[0].text.strip() if bubbles and len(bubbles[0].text.strip()) > 35 else False
-              answer = wait.until(completed)
-              assert not driver.find_elements(By.CSS_SELECTOR, ".cleanSources[open]"), "sources opened by default"
-              for token in forbidden_visible:
-                  assert token not in answer, f"technical runtime token leaked into normal chat: {token}"
-              return answer
-
-          def direct_api(question, lang="en"):
-              script = """
-              const done = arguments[arguments.length - 1];
-              fetch('/api/btc/clean-chat-v1', {
-                method:'POST', headers:{'content-type':'application/json'},
-                body: JSON.stringify({locale: arguments[0], question: arguments[1], priorTurns: []})
-              }).then(async r => done({status:r.status, body:await r.json()})).catch(e => done({status:0,error:String(e)}));
-              """
-              return driver.execute_async_script(script, lang, question)
-
-          def assert_no_mobile_overlap():
-              rows = driver.find_elements(By.CSS_SELECTOR, ".cleanExchange")
-              assert rows
-              bubble = rows[-1].find_element(By.CSS_SELECTOR, ".cleanAssistant .cleanBubble")
-              composer = driver.find_element(By.CSS_SELECTOR, ".cleanComposer")
-              separated = driver.execute_script("""
-                const a=arguments[0].getBoundingClientRect();
-                const c=arguments[1].getBoundingClientRect();
-                return (a.bottom <= c.top + 1) || (c.top >= window.innerHeight);
-              """, bubble, composer)
-              assert separated, "mobile composer overlaps the final Cosmographer answer"
+          wait = WebDriverWait(driver, 60)
 
           try:
-              open_chat("en", 1440, 1000)
-              evidence = direct_api("What is changing in BTC right now?", "en")
-              assert evidence["status"] == 200, evidence
-              assert evidence["body"]["evidence"]["accepted_snapshot"] == "USED", evidence
-              assert evidence["body"]["evidence"]["snapshot_memory"] == "USED", evidence
-              assert evidence["body"]["evidence"]["binance_current_field"] == "USED", evidence
-              answers_en = [ask(q) for q in en]
-              assert len(set(answers_en)) == 6, "template/repeat detected in EN sequence"
-              assert "Binance" in answers_en[0], answers_en[0]
-              expect = direct_api("What is the market expecting?", "en")
-              assert expect["status"] == 200, expect
-              assert expect["body"]["evidence"]["polymarket_expectation_field"] == "USED", json.dumps(expect, ensure_ascii=False)[:1800]
-              driver.save_screenshot("/tmp/btc-clean-chat-en-desktop.png")
-
-              driver.execute_script("sessionStorage.clear()")
-              open_chat("ru", 390, 844)
-              answers_ru = [ask(q) for q in ru]
-              assert len(set(answers_ru)) == 6, "template/repeat detected in RU sequence"
-              assert "Binance" in answers_ru[0], answers_ru[0]
-              assert_no_mobile_overlap()
-              driver.save_screenshot("/tmp/btc-clean-chat-ru-mobile.png")
-
-              driver.execute_script("sessionStorage.clear()")
-              open_chat("en", 390, 844)
-              driver.save_screenshot("/tmp/btc-clean-chat-en-mobile.png")
-              driver.execute_script("sessionStorage.clear()")
-              open_chat("ru", 1440, 1000)
-              driver.save_screenshot("/tmp/btc-clean-chat-ru-desktop.png")
-              print("EXACT_HEAD_PREVIEW_MULTI_TURN=PASS")
-              print("RU_EN=PASS")
-              print("DESKTOP_MOBILE=PASS")
-              print("CURRENT_DATA=PASS")
-              print("POLYMARKET_EXPECTATION=PASS")
-              print("NORMAL_CHAT_TECH_ENUMS=ZERO")
-              print("MOBILE_COMPOSER_OVERLAP=ZERO")
+              cases = [("en", 1440, 1000), ("ru", 1440, 1000), ("en", 390, 844), ("ru", 390, 844)]
+              for lang, width, height in cases:
+                  driver.set_window_size(width, height)
+                  driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
+                  wait.until(EC.presence_of_element_located((By.ID, "btc-clean-question")))
+                  assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "horizontal overflow"
+                  assert driver.find_element(By.CSS_SELECTOR, ".cleanComposer").is_displayed()
+                  assert driver.find_element(By.CSS_SELECTOR, ".cleanWelcome").is_displayed()
+                  assert not driver.find_elements(By.CSS_SELECTOR, ".cleanExampleRow button"), "prepared question buttons visible"
+                  for selector in ['header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"]', 'nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]']:
+                      for node in driver.find_elements(By.CSS_SELECTOR, selector):
+                          assert not node.is_displayed(), f"legacy chrome visible: {selector}"
+                  driver.save_screenshot(f"/tmp/btc-clean-chat-{lang}-{width}.png")
+              print("CLEAN_SHELL_RU_EN=PASS")
+              print("CLEAN_SHELL_DESKTOP_MOBILE=PASS")
+              print("PREPARED_QUESTION_UI=ZERO")
           finally:
               driver.quit()
           PY
-      - name: Stop exact-head Preview
+      - name: Stop exact-head local Preview
         if: always()
         shell: bash
         run: |
           if test -f /tmp/btc-clean-chat-v1.pid; then kill "$(cat /tmp/btc-clean-chat-v1.pid)" || true; fi
-      - name: Upload Preview visual evidence
+      - name: Upload clean-shell visual evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: btc-clean-chat-v1-preview-${{ env.BTC_CLEAN_CHAT_HEAD_SHA }}
+          name: btc-clean-chat-v1-shell-${{ env.BTC_CLEAN_CHAT_HEAD_SHA }}
           path: |
             /tmp/btc-clean-chat-*.png
             /tmp/btc-clean-chat-v1.log

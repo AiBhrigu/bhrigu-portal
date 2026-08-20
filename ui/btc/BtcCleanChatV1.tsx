@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type {
   BtcCleanChatResponse,
   BtcCleanLocale,
@@ -183,10 +183,6 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
   };
 
   const hasTurns = turns.length > 0;
-  const examples = useMemo(() => ru
-    ? ["Что меняется в BTC прямо сейчас?", "Что сейчас ожидает рынок?"]
-    : ["What is changing in BTC right now?", "What is the market expecting?"], [ru]);
-
   return <main className="cleanChatPage" lang={locale} data-clean-chat="btc-v1" data-session-local="true">
     <header className="cleanTopbar">
       <a href={`/crypto-astro/btc?lang=${locale}`} className="cleanBack">← BTC</a>
@@ -202,11 +198,8 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
         <div className="cleanRole">Cosmographer</div>
         <div className="cleanBubble">
           <p>{ru
-            ? "Спросите меня о том, что меняется в BTC, почему это важно, что я отслеживаю дальше или что рынок закладывает в будущее. Я соберу ответ заново из принятого Snapshot, памяти изменений и нужных live-источников."
-            : "Ask me what is changing in BTC, why it matters, what I am watching next, or what the market is pricing into the future. I will rebuild the answer from the accepted Snapshot, change memory, and the live evidence needed for your question."}</p>
-          <div className="cleanExampleRow">
-            {examples.map((item) => <button key={item} type="button" onClick={() => void send(item)} disabled={busy}>{item}</button>)}
-          </div>
+            ? "Спросите о BTC, будущих рыночных ожиданиях, эфемеридах и планетарных окнах, сопоставлении Astro × BTC или механике Bitcoin. Космограф сам определит, какие доказательства нужны для ответа."
+            : "Ask about BTC, market-priced future expectations, ephemerides and planetary windows, Astro × BTC comparisons, or Bitcoin mechanics. Cosmographer will determine which evidence is needed for the answer."}</p>
         </div>
       </article>}
 

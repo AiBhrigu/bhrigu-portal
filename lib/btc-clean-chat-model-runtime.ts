@@ -285,7 +285,7 @@ function buildAstronomy(locale: BtcCleanLocale, question: string, plan: Plan): B
       rc_scope: "MULTI_BODY",
       rc_intents: ["YEAR_OVERVIEW"],
     };
-    return buildMultiBodyAstroYearAnswer(locale, multi);
+    return buildMultiBodyAstroYearAnswer(locale, multi) as unknown as BtcCosmographerAnswerProjection;
   }
   return buildBtcAstroAnswer(locale, base);
 }
