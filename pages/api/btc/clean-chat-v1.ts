@@ -47,8 +47,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         probe: "CURRENT_EXTERNAL_FACT_WEB_RESEARCH",
         answer: result.answer,
         topic: result.topic,
-        evidence_state: result.evidence_state,
+        evidence: result.evidence,
         sources: result.sources,
+        usage: result.usage,
       });
     } catch (error) {
       return res.status(503).json({
