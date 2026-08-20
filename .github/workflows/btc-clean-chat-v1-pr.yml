@@ -8,6 +8,7 @@ on:
       - 'ui/btc/BtcCleanChatV1.tsx'
       - 'lib/btc-clean-chat-v1.ts'
       - 'lib/btc-clean-chat-model-runtime.ts'
+      - 'lib/btc-astro-field-client.ts'
       - 'lib/btc-polymarket-expectation.ts'
       - 'pages/api/btc/clean-chat-v1.ts'
       - 'pages/crypto-astro/btc/clean-chat.tsx'
@@ -45,6 +46,7 @@ jobs:
             "ui/btc/BtcCleanChatV1.tsx"
             "lib/btc-clean-chat-v1.ts"
             "lib/btc-clean-chat-model-runtime.ts"
+            "lib/btc-astro-field-client.ts"
             "lib/btc-polymarket-expectation.ts"
             "pages/api/btc/clean-chat-v1.ts"
             "pages/crypto-astro/btc/clean-chat.tsx"
@@ -52,7 +54,7 @@ jobs:
           )
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           diff -u <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
-          echo "PASS_BTC_CLEAN_CHAT_V1_EXACT_8_FILE_SCOPE"
+          echo "PASS_BTC_CLEAN_CHAT_V1_EXACT_9_FILE_SCOPE"
       - run: npm ci
       - name: Direct OpenAI architecture acceptance
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
