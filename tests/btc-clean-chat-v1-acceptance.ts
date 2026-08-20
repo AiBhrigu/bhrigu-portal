@@ -56,6 +56,10 @@ for (const required of [
   "uses_same_computed_astro_field",
   "astronomy_not_btc_causality",
   "fact_inference_future_unknown_separated",
+  '"out_of_scope"',
+  "This product is the Bitcoin Corridor, not a general assistant.",
+  "do not use web to answer it",
+  "If plan.request_type is out_of_scope",
 ]) {
   assert.ok(runtime.includes(required), `direct model runtime missing ${required}`);
 }
@@ -94,4 +98,6 @@ console.log("ASTRO_X_BTC_SAME_FIELD=PASS");
 console.log("MODEL_BOUNDED_RETRY=PASS");
 console.log("BITCOIN_PROTOCOL_EVIDENCE=PASS");
 console.log("NATIVE_WEB_SEARCH_BOUNDED=PASS");
+console.log("GENERAL_WEB_ASSISTANT=FORBIDDEN");
+console.log("BITCOIN_CORRIDOR_BOUNDARY=PASS");
 console.log("TRADING_AUTHORITY=ZERO");
