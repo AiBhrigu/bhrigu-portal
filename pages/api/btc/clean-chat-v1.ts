@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import {
-  runBtcCleanChat,
-  type BtcCleanLocale,
-  type BtcCleanPriorTurn,
+import { runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
+import type {
+  BtcCleanLocale,
+  BtcCleanPriorTurn,
 } from "../../../lib/btc-clean-chat-v1";
 
 const MAX_BODY_BYTES = 24 * 1024;
@@ -33,7 +33,7 @@ function priorTurns(value: unknown): BtcCleanPriorTurn[] {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
-  res.setHeader("X-BHRIGU-Clean-Chat", "btc-clean-chat-v1");
+  res.setHeader("X-BHRIGU-Clean-Chat", "btc-clean-chat-v1-model");
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -52,20 +52,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const result = await runBtcCleanChat({
+    const result = await runBtcCleanChatModel({
       locale: locale(body.locale),
       question,
       priorTurns: priorTurns(body.priorTurns),
     });
     return res.status(200).json(result);
   } catch (error) {
-    console.error("BTC_CLEAN_CHAT_RUNTIME_FAILURE", error instanceof Error ? error.message : "unknown");
+    console.error("BTC_CLEAN_CHAT_MODEL_RUNTIME_FAILURE", error instanceof Error ? error.message : "unknown");
     return res.status(503).json({
       ok: false,
-      code: "EVIDENCE_RUNTIME_UNAVAILABLE",
+      code: "MODEL_EVIDENCE_RUNTIME_UNAVAILABLE",
       message: locale(body.locale) === "ru"
-        ? "Текущий evidence runtime временно недоступен. Я не буду подменять его сохранённым ответом."
-        : "The current evidence runtime is temporarily unavailable. I will not replace it with a stored answer.",
+        ? "Модельный evidence runtime временно недоступен. Я не буду подменять его сохранённым ответом."
+        : "The model-backed evidence runtime is temporarily unavailable. I will not replace it with a stored answer.",
     });
   }
 }
