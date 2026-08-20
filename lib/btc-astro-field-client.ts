@@ -95,7 +95,9 @@ export async function loadBtcAstroField(input: {
   timeoutMs?: number;
 }): Promise<BtcAstroFieldResult> {
   const anchor = input.bitcoinEvent ? BTC_ASTRO_EVENT_ANCHORS[input.bitcoinEvent] : null;
-  const phenomena = Array.from(new Set(input.phenomena?.length ? input.phenomena : ["positions", "aspects"]));
+  const phenomena: BtcAstroPhenomenon[] = Array.from(
+    new Set<BtcAstroPhenomenon>(input.phenomena?.length ? input.phenomena : ["positions", "aspects"]),
+  );
   const request: BtcAstroFieldRequest = {
     bodies: normalizeBodies(input.bodies),
     phenomena,
