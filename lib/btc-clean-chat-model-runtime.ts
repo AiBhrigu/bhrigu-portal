@@ -35,6 +35,7 @@ import {
   type BtcCleanEvidenceState,
   type BtcCleanLocale,
   type BtcCleanPriorTurn,
+  type BtcCleanSemanticVisual,
   type BtcCleanSource,
 } from "./btc-clean-chat-v1";
 
@@ -58,6 +59,7 @@ type EvidenceTool =
 
 type RequestType = "fact" | "explain" | "compare" | "change" | "why" | "watch" | "future" | "research" | "trading_boundary" | "out_of_scope" | "other";
 type ContextRelation = "new" | "follow_up" | "return" | "switch";
+type VisualFocus = "none" | "market_structure" | "dominance" | "liquidity" | "rotation" | "expectation" | "astro" | "bridge";
 
 type Plan = {
   topic: string;
@@ -66,6 +68,7 @@ type Plan = {
   focus: string;
   request_type: RequestType;
   context_relation: ContextRelation;
+  visual_focus: VisualFocus;
   astro_bodies: string[];
   astro_phenomena: BtcAstroPhenomenon[];
   astro_timestamp_utc: string | null;
@@ -93,6 +96,7 @@ type EvidenceBundle = {
 const TOOL_VALUES = new Set<EvidenceTool>(["snapshot", "binance", "polymarket", "astronomy", "astro_btc_bridge", "bitcoin_protocol", "web"]);
 const REQUEST_VALUES = new Set<RequestType>(["fact", "explain", "compare", "change", "why", "watch", "future", "research", "trading_boundary", "out_of_scope", "other"]);
 const RELATION_VALUES = new Set<ContextRelation>(["new", "follow_up", "return", "switch"]);
+const VISUAL_FOCUS_VALUES = new Set<VisualFocus>(["none", "market_structure", "dominance", "liquidity", "rotation", "expectation", "astro", "bridge"]);
 const BODY_VALUES = new Set(["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"]);
 const ASTRO_PHENOMENA = new Set<BtcAstroPhenomenon>(["positions", "aspects", "stations", "ingresses", "lunar_phases"]);
 const EVENT_VALUES = new Set<BtcAstroEventId>(["genesis", "halving_1", "halving_2", "halving_3", "halving_4"]);
@@ -101,7 +105,7 @@ const PROTOCOL_VALUES = new Set(["overview", "supply", "halving", "subsidy", "fe
 const PLAN_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["topic", "tools", "polymarket_history", "focus", "request_type", "context_relation", "astro_bodies", "astro_phenomena", "astro_timestamp_utc", "time_start", "time_end", "bitcoin_event", "protocol_subject", "web_reason"],
+  required: ["topic", "tools", "polymarket_history", "focus", "request_type", "context_relation", "visual_focus", "astro_bodies", "astro_phenomena", "astro_timestamp_utc", "time_start", "time_end", "bitcoin_event", "protocol_subject", "web_reason"],
   properties: {
     topic: { type: "string" },
     tools: { type: "array", items: { type: "string", enum: Array.from(TOOL_VALUES) } },
@@ -109,6 +113,7 @@ const PLAN_SCHEMA = {
     focus: { type: "string" },
     request_type: { type: "string", enum: Array.from(REQUEST_VALUES) },
     context_relation: { type: "string", enum: Array.from(RELATION_VALUES) },
+    visual_focus: { type: "string", enum: Array.from(VISUAL_FOCUS_VALUES) },
     astro_bodies: { type: "array", items: { type: "string", enum: Array.from(BODY_VALUES) } },
     astro_phenomena: { type: "array", items: { type: "string", enum: Array.from(ASTRO_PHENOMENA) } },
     astro_timestamp_utc: { type: ["string", "null"] },
@@ -287,6 +292,7 @@ function normalizePlan(raw: Record<string, unknown>): Plan {
   const phenomena = Array.from(new Set((Array.isArray(raw.astro_phenomena) ? raw.astro_phenomena : []).filter((value): value is BtcAstroPhenomenon => typeof value === "string" && ASTRO_PHENOMENA.has(value as BtcAstroPhenomenon))));
   const requestType = typeof raw.request_type === "string" && REQUEST_VALUES.has(raw.request_type as RequestType) ? raw.request_type as RequestType : "other";
   const relation = typeof raw.context_relation === "string" && RELATION_VALUES.has(raw.context_relation as ContextRelation) ? raw.context_relation as ContextRelation : "new";
+  const visualFocus = typeof raw.visual_focus === "string" && VISUAL_FOCUS_VALUES.has(raw.visual_focus as VisualFocus) ? raw.visual_focus as VisualFocus : "none";
   const event = typeof raw.bitcoin_event === "string" && EVENT_VALUES.has(raw.bitcoin_event as BtcAstroEventId) ? raw.bitcoin_event as BtcAstroEventId : null;
   const protocolSubject = stringOrNull(raw.protocol_subject, 40);
   if (requestType === "out_of_scope") {
@@ -297,6 +303,7 @@ function normalizePlan(raw: Record<string, unknown>): Plan {
       focus: "State the Bitcoin Corridor boundary briefly and invite a Bitcoin/BTC, ephemeris, Astro×BTC, market-expectation, or Bitcoin-mechanics question.",
       request_type: requestType,
       context_relation: relation,
+      visual_focus: "none",
       astro_bodies: [],
       astro_phenomena: ["positions", "aspects"],
       astro_timestamp_utc: null,
@@ -315,6 +322,7 @@ function normalizePlan(raw: Record<string, unknown>): Plan {
     focus: stringOrNull(raw.focus, 260) ?? "Answer the user directly from the minimum sufficient evidence.",
     request_type: requestType,
     context_relation: relation,
+    visual_focus: visualFocus,
     astro_bodies: bodies,
     astro_phenomena: phenomena.length ? phenomena : ["positions", "aspects"],
     astro_timestamp_utc: validIsoTimestamp(raw.astro_timestamp_utc),
@@ -332,7 +340,7 @@ function priorContext(priorTurns: BtcCleanPriorTurn[]): string {
 }
 
 async function buildEvidencePlan(input: { locale: BtcCleanLocale; question: string; priorTurns: BtcCleanPriorTurn[] }): Promise<{ plan: Plan; usage: Usage }> {
-  const instructions = `You are the semantic evidence planner for BHRIGU BTC Clean Chat V1. Reason from the user's meaning and conversation, never from keyword or prepared-question routing. This product is the Bitcoin Corridor, not a general assistant. In scope: Bitcoin/BTC current market, accepted market memory, market-priced future expectations, Bitcoin mechanism/history, ephemerides and planetary windows used in this research space, and Astro×BTC. If a question is unrelated to that corridor (for example weather, travel, unrelated assets, or general knowledge), set request_type=out_of_scope, tools=[], web_reason=null and topic=Bitcoin Corridor; do not use web to answer it. Ephemerides and planetary windows remain in scope even when asked directly. Available read-only evidence: snapshot (accepted BTC structural snapshot + Snapshot Memory), binance (current/realized BTCUSDT field), polymarket (market-priced future propositions and same-contract history), astronomy (fresh canonical geocentric tropical ephemeris for arbitrary bounded UTC timestamps/intervals), astro_btc_bridge (comparison using that SAME computed astronomy packet plus independent BTC evidence), bitcoin_protocol (pinned Bitcoin mechanism/history), web (selective OpenAI native web research). Astronomy supports Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune and Pluto; positions, velocity/retrograde, major aspects with orb and applying/separating, stations, ingresses and lunar phases. There is no 2026-only astronomy limit. For a date/month/range set time_start and time_end as YYYY-MM-DD. For an explicit timestamp set astro_timestamp_utc. For 'now', leave all astro time fields null so runtime current UTC is used. Select only the bodies and phenomena needed; an empty body list means all bodies. Bitcoin astronomical chart/canonical launch anchor means Genesis block; set bitcoin_event=genesis. Accepted exact event IDs are genesis, halving_1, halving_2, halving_3, halving_4. When a previous turn established an event and the user says 'at that moment' or equivalent, resolve bitcoin_event from conversation rather than asking again. Never silently combine different Bitcoin anchors. Astro×BTC is temporal comparison only: convergence/divergence/insufficient evidence, never causality. Binance is present/realized. Polymarket is exact-proposition market-implied expectation, never a BHRIGU prediction/global BTC probability. Web is only for Bitcoin/BTC-relevant current external research or independent verification inside this corridor; never use it to answer unrelated general-assistant questions and never use it as blind fallback. Trading requests remain informational only. Current date is 2026-08-20. Return only the required structured object.`;
+  const instructions = `You are the semantic evidence planner for BHRIGU BTC Clean Chat V1. Reason from the user's meaning and the whole conversation, never from keyword or prepared-question routing. Bitcoin remains the primary axis. The crypto ecosystem is supporting context, not a second product and not a general crypto assistant. ETH/Ethereum, TRX/TRON, stablecoins, DeFi TVL, BTC dominance, alt breadth, liquidity, capital rotation and market structure are in scope when they clarify Bitcoin or the current crypto field around Bitcoin. A one-token follow-up like ETH or TRX after an established DeFi/liquidity/ecosystem discussion is a continuation: resolve it from conversation, do not reset context and do not force clarification. A return such as 'вернись к ETH' restores that earlier research line. Prefer the accepted BHRIGU snapshot and Snapshot Memory for ecosystem field evidence; they already carry BTC dominance, stablecoin share/cap, DeFi TVL, DEX volume, alt breadth, ETH rotation anchor, market regime and field state. Use bounded web only when a material current ecosystem fact needed for the Bitcoin relation is missing from the accepted snapshot, for example current TRON-specific evidence; web must remain source-bound and must not become general crypto browsing. If an altcoin request has no research relation to Bitcoin/current crypto field and conversation does not establish one, set request_type=out_of_scope, tools=[], web_reason=null and topic=Bitcoin Corridor. Weather, travel and unrelated general knowledge are always out of scope. Ephemerides and planetary windows remain in scope even when asked directly. Available read-only evidence: snapshot (accepted BTC structural snapshot + Snapshot Memory + crypto field context), binance (current/realized BTCUSDT field), polymarket (market-priced future BTC propositions and same-contract history), astronomy (fresh canonical geocentric tropical ephemeris for arbitrary bounded UTC timestamps/intervals), astro_btc_bridge (comparison using that SAME computed astronomy packet plus independent BTC evidence), bitcoin_protocol (pinned Bitcoin mechanism/history), web (selective source-bound research inside this corridor). Choose visual_focus only when a compact data-bound visual would improve meaning: market_structure, dominance, liquidity, rotation, expectation, astro or bridge; otherwise none. Astronomy supports Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune and Pluto as peers; positions, velocity/retrograde, major aspects with orb and applying/separating, stations, ingresses and lunar phases. There is no 2026-only astronomy limit. For a date/month/range set time_start and time_end as YYYY-MM-DD. For an explicit timestamp set astro_timestamp_utc. For 'now', leave all astro time fields null so runtime current UTC is used. Select only the bodies and phenomena needed; an empty body list means all bodies. Bitcoin astronomical chart/canonical launch anchor means Genesis block; set bitcoin_event=genesis. Accepted exact event IDs are genesis, halving_1, halving_2, halving_3, halving_4. When a previous turn established an event and the user says 'at that moment' or equivalent, resolve bitcoin_event from conversation rather than asking again. Never silently combine different Bitcoin anchors. Astro×BTC is temporal comparison only: convergence/divergence/insufficient evidence, never causality. Binance is present/realized. Polymarket is exact-proposition market-implied expectation, never a BHRIGU prediction/global BTC probability. Trading requests remain informational only. Current UTC date is 2026-08-20. Return only the required structured object.`;
   const structured = await boundedModelValue(
     {
       instructions,
@@ -449,7 +457,7 @@ function extractWebSources(payload: Record<string, unknown>): BtcCleanSource[] {
 async function runBoundedWebResearch(locale: BtcCleanLocale, question: string, plan: Plan): Promise<WebEvidence> {
   const structured = await boundedModelValue(
     {
-      instructions: `You are a bounded research tool for the BHRIGU Bitcoin Corridor. Research only material Bitcoin/BTC questions or in-scope ephemeris/Astro×BTC verification. Never answer unrelated general-assistant questions such as weather or travel. Prefer primary or authoritative sources. Separate verified facts from uncertainty. Do not produce trading instructions. Return a concise source-bound research note in ${locale === "ru" ? "Russian" : "English"}.`,
+      instructions: `You are a bounded research tool for the BHRIGU Bitcoin Corridor. Research only material Bitcoin/BTC questions, in-scope ephemeris/Astro×BTC verification, or a current crypto-ecosystem fact that is necessary to understand Bitcoin/current crypto field context. Bitcoin remains the axis; do not expand into general altcoin coverage. Prefer the accepted BHRIGU snapshot when it already answers the field question, and use web only for a missing material fact. Prefer primary or authoritative sources. Never answer unrelated general-assistant questions such as weather or travel. Separate verified facts from uncertainty. Do not produce trading instructions. Return a concise source-bound research note in ${locale === "ru" ? "Russian" : "English"}.`,
       input: `QUESTION=${question}\nRESEARCH_REASON=${plan.web_reason ?? "Independent current verification required."}`,
       tools: [{ type: "web_search", search_context_size: "low" }],
       tool_choice: "auto",
@@ -503,13 +511,57 @@ function sourceRows(evidence: EvidenceBundle): BtcCleanSource[] {
   return Array.from(new Map(rows.map((row) => [row.href, row])).values()).slice(0, 12);
 }
 
+function compactMoney(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000_000_000) return `$${(value / 1_000_000_000_000).toFixed(2)}T`;
+  if (abs >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`;
+  if (abs >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+  return `$${value.toFixed(0)}`;
+}
+
+function buildSemanticVisual(locale: BtcCleanLocale, plan: Plan, evidence: EvidenceBundle): BtcCleanSemanticVisual | null {
+  const ru = locale === "ru";
+  if (plan.request_type === "out_of_scope" || plan.visual_focus === "none") return null;
+  if (plan.visual_focus === "astro" && evidence.astronomy) return {
+    kind: "ASTRO_FIELD", state: "TEMPORAL", axis_label: ru ? "Астро-поле" : "Astro field", context_label: null, metrics: [], freshness: "FRESH",
+  };
+  if (plan.visual_focus === "bridge" && evidence.astronomy) return {
+    kind: "ASTRO_BTC", state: "TEMPORAL", axis_label: "BTC", context_label: ru ? "астро-поле · независимое сопоставление" : "astro field · independent comparison", metrics: [], freshness: evidence.envelope?.ok ? (evidence.envelope.value.current.source_freshness === "FRESH" ? "FRESH" : "LIMITED") : "UNKNOWN",
+  };
+  if (plan.visual_focus === "expectation" && evidence.polymarket?.ok) return {
+    kind: "EXPECTATION", state: "EXPECTATION", axis_label: "BTC", context_label: ru ? "рыночные ожидания" : "market expectations", metrics: [], freshness: "FRESH",
+  };
+  if (!evidence.envelope?.ok) return null;
+  const current = evidence.envelope.value.current;
+  const state: BtcCleanSemanticVisual["state"] = evidence.envelope.value.synthesis.state === "CONFIRMATION" ? "CONFIRMATION" : evidence.envelope.value.synthesis.state === "DIVERGENCE" ? "DIVERGENCE" : "LIMITED";
+  const freshness: BtcCleanSemanticVisual["freshness"] = current.source_freshness === "FRESH" ? "FRESH" : "LIMITED";
+  let contextLabel = ru ? "рыночное поле" : "market field";
+  let metrics: Array<{ label: string; value: string }> = [];
+  if (plan.visual_focus === "liquidity") {
+    contextLabel = ru ? "ликвидность · контекст" : "liquidity · context";
+    metrics = [{ label: "DeFi TVL", value: compactMoney(current.defi_tvl_usd) }, { label: ru ? "Стейблкоины" : "Stablecoins", value: `${current.stablecoin_share_pct.toFixed(2)}%` }];
+  } else if (plan.visual_focus === "rotation") {
+    contextLabel = ru ? "ротация · контекст" : "rotation · context";
+    metrics = [{ label: ru ? "Ширина 24ч" : "Breadth 24h", value: `${current.alt_breadth_24h_pct.toFixed(1)}%` }, { label: "ETH", value: `${current.eth_rotation_anchor_pct.toFixed(2)}%` }];
+  } else if (plan.visual_focus === "dominance") {
+    contextLabel = ru ? "относительное поле" : "relative field";
+    metrics = [{ label: ru ? "Доминация BTC" : "BTC dominance", value: `${current.btc_dominance_pct.toFixed(2)}%` }, { label: ru ? "Ширина 24ч" : "Breadth 24h", value: `${current.alt_breadth_24h_pct.toFixed(1)}%` }];
+  } else if (plan.visual_focus === "market_structure") {
+    contextLabel = ru ? "структура рынка" : "market structure";
+    metrics = [{ label: ru ? "Поле" : "Field", value: current.market_field_score.toFixed(1) }, { label: ru ? "Доминация BTC" : "BTC dominance", value: `${current.btc_dominance_pct.toFixed(2)}%` }];
+  } else {
+    return null;
+  }
+  return { kind: "BTC_FIELD", state, axis_label: "BTC", context_label: contextLabel, metrics, freshness };
+}
+
 function state(requested: boolean, available: boolean): BtcCleanEvidenceState {
   if (!requested) return "NOT_REQUIRED";
   return available ? "USED" : "UNAVAILABLE";
 }
 
 async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorTurns: BtcCleanPriorTurn[], plan: Plan, evidence: EvidenceBundle): Promise<{ answer: string; topic: string; usage: Usage }> {
-  const instructions = `You are BTC Cosmographer in BHRIGU Clean Chat V1. Synthesize a fresh answer to the actual user question from conversation and supplied evidence, never from prepared answer templates. This is the Bitcoin Corridor, not a general assistant. If plan.request_type is out_of_scope, do not answer the unrelated subject; state the corridor boundary briefly and invite a Bitcoin/BTC, ephemeris, Astro×BTC, market-expectation, or Bitcoin-mechanics question. Ephemerides and planetary windows remain valid in-scope subjects. Match locale exactly. Direct answer first, facts before interpretation, brief by default. Remember follow-ups, topic switches and returns. Keep fact, inference, conditional future and unknown distinct in natural language. Canonical Astro Field evidence is freshly computed from the BHRIGU geocentric tropical ephemeris for the requested UTC timestamp/interval; report exact UTC when relevant. For Bitcoin chart questions, when the evidence anchor is Genesis, explicitly say the canonical anchor being used is the Genesis block timestamp; do not silently combine it with whitepaper/software/other possible anchors. Astro×BTC must use the same computed Astro Field supplied here and independent BTC evidence; state convergence, divergence, or insufficient evidence, never causality. Binance is present/realized. Polymarket is the market-implied price/probability of exact future propositions, never a BHRIGU prediction/global BTC probability; never combine incompatible expiries or turn path propositions into terminal probabilities. Bitcoin protocol evidence describes mechanism/history, not price. Web evidence is bounded external verification and remains source-bound. Never invent unavailable evidence. Never give buy/sell/long/short/entry/exit/leverage/position-sizing instructions. Future outcomes are not established facts. Do not expose internal routing, tool names, JSON, filesystem paths, private modules, CDE or secrets. Return only the required structured object.`;
+  const instructions = `You are BTC Cosmographer in BHRIGU Clean Chat V1. Synthesize a fresh answer to the actual user question from conversation and supplied evidence, never from prepared answer templates. Bitcoin is the central analytical axis. Crypto-ecosystem evidence is supporting context only when it helps explain Bitcoin or the current crypto field. Continue natural research lines across short follow-ups such as ETH or TRX; do not reset context or ask for clarification when prior turns make the intent clear. Allow explicit returns such as 'вернись к ETH'. Do not drift into a general crypto assistant: if plan.request_type is out_of_scope, state the Bitcoin Corridor boundary briefly rather than answering the unrelated subject. For ecosystem questions, prefer accepted Snapshot/Memory facts; if an asset-specific current fact is not present there, use supplied source-bound web evidence if available, otherwise say that the current asset-level evidence is unavailable instead of inventing it. Keep BTC's relation to the supporting context visible when the question calls for that relation. Ephemerides and planetary windows remain valid in-scope subjects. Match locale exactly. Direct answer first, facts before interpretation, brief by default. Remember follow-ups, topic switches and returns. Keep fact, inference, conditional future and unknown distinct in natural language. Canonical Astro Field evidence is freshly computed from the BHRIGU geocentric tropical ephemeris for the requested UTC timestamp/interval; report exact UTC when relevant. For Bitcoin chart questions, when the evidence anchor is Genesis, explicitly say the canonical anchor being used is the Genesis block timestamp; do not silently combine it with whitepaper/software/other possible anchors. Astro×BTC must use the same computed Astro Field supplied here and independent BTC evidence; state convergence, divergence, or insufficient evidence, never causality. Binance is present/realized. Polymarket is the market-implied price/probability of exact future propositions, never a BHRIGU prediction/global BTC probability; never combine incompatible expiries or turn path propositions into terminal probabilities. Bitcoin protocol evidence describes mechanism/history, not price. Web evidence is bounded external verification and remains source-bound. Never invent unavailable evidence. Never give buy/sell/long/short/entry/exit/leverage/position-sizing instructions. Future outcomes are not established facts. Do not expose internal routing, tool names, JSON, filesystem paths, private modules, CDE, Master Control correspondence or secrets. Return only the required structured object.`;
   const prompt = JSON.stringify({
     locale,
     question,
@@ -562,6 +614,7 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
     answer: synthesis.answer,
     as_of: new Date().toISOString(),
     sources: sourceRows(evidence),
+    semantic_visual: buildSemanticVisual(input.locale, planned.plan, evidence),
     evidence: {
       accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),
       snapshot_memory: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),

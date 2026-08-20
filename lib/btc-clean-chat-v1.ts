@@ -18,6 +18,15 @@ export type BtcCleanSource = {
 
 export type BtcCleanEvidenceState = "USED" | "UNAVAILABLE" | "NOT_REQUIRED";
 
+export type BtcCleanSemanticVisual = {
+  kind: "BTC_FIELD" | "EXPECTATION" | "ASTRO_FIELD" | "ASTRO_BTC";
+  state: "CONFIRMATION" | "DIVERGENCE" | "LIMITED" | "TEMPORAL" | "EXPECTATION";
+  axis_label: string;
+  context_label: string | null;
+  metrics: Array<{ label: string; value: string }>;
+  freshness: "FRESH" | "LIMITED" | "UNKNOWN";
+};
+
 export type BtcCleanChatResponse = {
   schema_version: typeof BTC_CLEAN_CHAT_SCHEMA;
   ok: true;
@@ -26,6 +35,7 @@ export type BtcCleanChatResponse = {
   answer: string;
   as_of: string;
   sources: BtcCleanSource[];
+  semantic_visual: BtcCleanSemanticVisual | null;
   evidence: {
     accepted_snapshot: BtcCleanEvidenceState;
     snapshot_memory: BtcCleanEvidenceState;

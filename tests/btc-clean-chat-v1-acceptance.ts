@@ -28,11 +28,15 @@ assert.match(component, /<details className="cleanSources">/);
 assert.match(component, /cleanComposer/);
 assert.match(component, /cleanUser/);
 assert.match(component, /cleanAssistant/);
+assert.match(component, /FieldAnchorGlyph/);
+assert.match(component, /cleanSemanticVisual/);
+assert.match(component, /data-semantic-state/);
 assert.doesNotMatch(component, /examples\.map|MODULE_CARDS|module card/i);
 
 assert.match(api, /runBtcCleanChatModel/);
 assert.doesNotMatch(api, /classifyBtcCleanIntent|canonicalQuestion|runBtcCleanChat\(/);
 assert.doesNotMatch(shared, /classifyBtcCleanIntent|canonicalQuestion|function fieldChange|function expectationNow|runBtcCleanChat\(/);
+assert.match(shared, /semantic_visual/);
 
 for (const required of [
   "https://api.openai.com/v1/responses",
@@ -57,9 +61,15 @@ for (const required of [
   "astronomy_not_btc_causality",
   "fact_inference_future_unknown_separated",
   '"out_of_scope"',
-  "This product is the Bitcoin Corridor, not a general assistant.",
-  "do not use web to answer it",
-  "If plan.request_type is out_of_scope",
+  "Bitcoin remains the primary axis",
+  "crypto ecosystem is supporting context",
+  "A one-token follow-up like ETH or TRX",
+  "Prefer the accepted BHRIGU snapshot",
+  "missing from the accepted snapshot",
+  "do not expand into general altcoin coverage",
+  "if plan.request_type is out_of_scope",
+  "buildSemanticVisual",
+  "visual_focus",
 ]) {
   assert.ok(runtime.includes(required), `direct model runtime missing ${required}`);
 }
@@ -99,5 +109,8 @@ console.log("MODEL_BOUNDED_RETRY=PASS");
 console.log("BITCOIN_PROTOCOL_EVIDENCE=PASS");
 console.log("NATIVE_WEB_SEARCH_BOUNDED=PASS");
 console.log("GENERAL_WEB_ASSISTANT=FORBIDDEN");
+console.log("BITCOIN_PRIMARY_AXIS=PASS");
+console.log("CRYPTO_ECOSYSTEM_SUPPORTING_CONTEXT=PASS");
+console.log("SEMANTIC_VISUAL_LANGUAGE=EXISTING_GLYPH_REUSE");
 console.log("BITCOIN_CORRIDOR_BOUNDARY=PASS");
 console.log("TRADING_AUTHORITY=ZERO");
