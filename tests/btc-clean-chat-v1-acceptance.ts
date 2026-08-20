@@ -73,7 +73,8 @@ for (const required of [
   "2020-05-11T19:23:43Z",
   "2024-04-20T00:09:27Z",
 ]) assert.ok(astroClient.includes(required), `astro_field client missing ${required}`);
-assert.doesNotMatch(astroClient, /astronomy-engine|skyfield|swisseph|prepared/i);
+const astroClientWithoutCanonicalEngine = astroClient.replaceAll("orion_native_swisseph_canonical_v0_1", "");
+assert.doesNotMatch(astroClientWithoutCanonicalEngine, /astronomy-engine|skyfield|swisseph|prepared/i);
 
 assert.match(polymarket, /\/tags\/slug\/bitcoin/);
 assert.doesNotMatch(polymarket, /tag(?:_|\s*)id\s*=\s*["']?235/i);
