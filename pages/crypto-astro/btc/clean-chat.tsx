@@ -48,6 +48,13 @@ export default function BtcCleanChatPage({ locale, initialQuestion, deploymentSo
     <style jsx global>{`
       header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"],
       nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]{display:none!important}
+      .cleanChatPage,.cleanChatPage button,.cleanChatPage textarea{
+        font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif!important
+      }
+      @media(max-width:680px){
+        .cleanComposer{position:relative!important;bottom:auto!important;margin-top:18px!important}
+        .cleanThread{padding-bottom:10px!important}
+      }
     `}</style>
   </>;
 }
