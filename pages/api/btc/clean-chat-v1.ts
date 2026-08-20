@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
+import { loadBtcAstroField } from "../../../lib/btc-astro-field-client";
 import type {
   BtcCleanLocale,
   BtcCleanPriorTurn,
@@ -34,6 +35,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.setHeader("X-BHRIGU-Clean-Chat", "btc-clean-chat-v1-model");
+
+  if (req.method === "GET" && req.query.__astro_probe === "1" && process.env.VERCEL_ENV !== "production") {
+    try {
+      const result = await loadBtcAstroField({
+        timestampUtc: "2024-04-20T00:09:27Z",
+        bodies: ["Sun", "Moon", "Mercury", "Jupiter"],
+        phenomena: ["positions", "aspects"],
+        timeoutMs: 20_000,
+      });
+      const packet = result.packet;
+      const provenance = isRecord(packet.provenance) ? packet.provenance : {};
+      const snapshot = isRecord(packet.snapshot) ? packet.snapshot : {};
+      const bodies = isRecord(snapshot.bodies) ? Object.keys(snapshot.bodies) : [];
+      return res.status(200).json({
+        ok: true,
+        probe: "ASTRO_FIELD_CANONICAL_COMPUTATION",
+        schema_version: packet.schema_version,
+        mode: packet.mode,
+        engine_id: provenance.engine_id,
+        engine_revision: provenance.engine_revision,
+        source_mode: provenance.source_mode,
+        public_safe_output_only: provenance.public_safe_output_only,
+        observation_time_utc: snapshot.observation_time_utc,
+        bodies,
+      });
+    } catch (error) {
+      return res.status(503).json({
+        ok: false,
+        probe: "ASTRO_FIELD_CANONICAL_COMPUTATION",
+        code: error instanceof Error ? error.message : "ASTRO_FIELD_PROBE_FAILED",
+      });
+    }
+  }
 
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
