@@ -5,7 +5,7 @@ on:
     branches: [master]
     paths:
       - '.github/workflows/btc-clean-chat-v1-pr.yml'
-      - 'components/btc/BtcCleanChatV1.tsx'
+      - 'ui/btc/BtcCleanChatV1.tsx'
       - 'lib/btc-clean-chat-v1.ts'
       - 'lib/btc-polymarket-expectation.ts'
       - 'pages/api/btc/clean-chat-v1.ts'
@@ -36,7 +36,7 @@ jobs:
           mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
           expected=(
             ".github/workflows/btc-clean-chat-v1-pr.yml"
-            "components/btc/BtcCleanChatV1.tsx"
+            "ui/btc/BtcCleanChatV1.tsx"
             "lib/btc-clean-chat-v1.ts"
             "lib/btc-polymarket-expectation.ts"
             "pages/api/btc/clean-chat-v1.ts"
