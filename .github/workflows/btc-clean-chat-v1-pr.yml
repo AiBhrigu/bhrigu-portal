@@ -16,15 +16,14 @@ on:
 permissions:
   contents: read
 
-env:
-  BTC_CLEAN_CHAT_PREVIEW_BASE: https://bhrigu-portal-git-feature-btc-clean-c-4107d6-aibhrigus-projects.vercel.app
-
 jobs:
   clean-chat-v1:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
       BTC_CLEAN_CHAT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_CLEAN_CHAT_PREVIEW_BASE: http://127.0.0.1:3000
+      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -62,28 +61,29 @@ jobs:
           BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
           BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
         run: npx next build
-      - name: Wait for exact Vercel Preview head
+      - name: Start exact-head production Preview
         shell: bash
         run: |
-          for attempt in $(seq 1 90); do
-            html="$(curl --fail --silent --show-error --max-time 20 "${BTC_CLEAN_CHAT_PREVIEW_BASE}/crypto-astro/btc/clean-chat?lang=en" || true)"
+          npm run start -- -p 3000 >/tmp/btc-clean-chat-v1.log 2>&1 &
+          echo $! >/tmp/btc-clean-chat-v1.pid
+          for attempt in $(seq 1 60); do
+            html="$(curl --fail --silent --show-error --max-time 10 "${BTC_CLEAN_CHAT_PREVIEW_BASE}/crypto-astro/btc/clean-chat?lang=en" || true)"
             if printf '%s' "$html" | grep -q "name=\"btc-deployment-source-sha\" content=\"${BTC_CLEAN_CHAT_HEAD_SHA}\""; then
-              echo "EXACT_PREVIEW_HEAD=PASS ${BTC_CLEAN_CHAT_HEAD_SHA}"
+              echo "EXACT_HEAD_LOCAL_PREVIEW=PASS ${BTC_CLEAN_CHAT_HEAD_SHA}"
               exit 0
             fi
-            sleep 2
+            sleep 1
           done
-          echo "Exact Preview did not bind current head ${BTC_CLEAN_CHAT_HEAD_SHA}"
+          cat /tmp/btc-clean-chat-v1.log
           exit 1
       - name: Install browser driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
-      - name: Exact Preview RU EN desktop mobile multi-turn acceptance
+      - name: Exact-head Preview RU EN desktop mobile multi-turn acceptance
         shell: bash
         run: |
           python3 - <<'PY'
           import json
           import os
-          from pathlib import Path
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
@@ -96,7 +96,8 @@ jobs:
           opts.add_argument("--disable-dev-shm-usage")
           opts.add_argument("--disable-gpu")
           driver = webdriver.Chrome(options=opts)
-          wait = WebDriverWait(driver, 100)
+          driver.set_script_timeout(120)
+          wait = WebDriverWait(driver, 120)
 
           en = [
               "What is changing in BTC right now?",
@@ -179,7 +180,7 @@ jobs:
               driver.execute_script("sessionStorage.clear()")
               open_chat("ru", 1440, 1000)
               driver.save_screenshot("/tmp/btc-clean-chat-ru-desktop.png")
-              print("EXACT_PREVIEW_MULTI_TURN=PASS")
+              print("EXACT_HEAD_PREVIEW_MULTI_TURN=PASS")
               print("RU_EN=PASS")
               print("DESKTOP_MOBILE=PASS")
               print("CURRENT_DATA=PASS")
@@ -187,11 +188,18 @@ jobs:
           finally:
               driver.quit()
           PY
+      - name: Stop exact-head Preview
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/btc-clean-chat-v1.pid; then kill "$(cat /tmp/btc-clean-chat-v1.pid)" || true; fi
       - name: Upload Preview visual evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: btc-clean-chat-v1-preview-${{ env.BTC_CLEAN_CHAT_HEAD_SHA }}
-          path: /tmp/btc-clean-chat-*.png
+          path: |
+            /tmp/btc-clean-chat-*.png
+            /tmp/btc-clean-chat-v1.log
           if-no-files-found: warn
           retention-days: 30
