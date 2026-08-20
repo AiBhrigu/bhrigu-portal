@@ -1,0 +1,58 @@
+name: BTC Clean Chat V1 PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/btc-clean-chat-v1-pr.yml'
+      - 'components/btc/BtcCleanChatV1.tsx'
+      - 'lib/btc-clean-chat-v1.ts'
+      - 'lib/btc-polymarket-expectation.ts'
+      - 'pages/api/btc/clean-chat-v1.ts'
+      - 'pages/crypto-astro/btc/clean-chat.tsx'
+      - 'tests/btc-clean-chat-v1-acceptance.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clean-chat-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Exact implementation boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin "${GITHUB_BASE_REF}"
+          mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
+          expected=(
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "components/btc/BtcCleanChatV1.tsx"
+            "lib/btc-clean-chat-v1.ts"
+            "lib/btc-polymarket-expectation.ts"
+            "pages/api/btc/clean-chat-v1.ts"
+            "pages/crypto-astro/btc/clean-chat.tsx"
+            "tests/btc-clean-chat-v1-acceptance.ts"
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          diff -u <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
+          echo "PASS_BTC_CLEAN_CHAT_V1_EXACT_7_FILE_SCOPE"
+      - run: npm ci
+      - name: Clean Chat acceptance
+        run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Production build
+        env:
+          BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
+          BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
+        run: npx next build
