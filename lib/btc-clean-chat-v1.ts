@@ -113,9 +113,9 @@ function pct(value: number, digits = 2): string {
   return `${sign}${value.toFixed(digits)}%`;
 }
 
-function pp(value: number, digits = 1): string {
+function probabilityDelta(locale: BtcCleanLocale, value: number, digits = 1): string {
   const sign = value > 0 ? "+" : "";
-  return `${sign}${(value * 100).toFixed(digits)} pp`;
+  return locale === "ru" ? `${sign}${(value * 100).toFixed(digits)} п.п.` : `${sign}${(value * 100).toFixed(digits)} pp`;
 }
 
 function shorten(value: string, max = 210): string {
@@ -123,8 +123,8 @@ function shorten(value: string, max = 210): string {
   return clean.length <= max ? clean : `${clean.slice(0, max - 1).trim()}…`;
 }
 
-function arrayLine(values: string[], fallback: string, max = 2): string {
-  return values.length ? values.slice(0, max).map((value) => shorten(value, 180)).join("; ") : fallback;
+function humanToken(value: string): string {
+  return compact(value.replace(/[_-]+/g, " ").toLowerCase());
 }
 
 function readNormalized(result: BinancePublicMarketResult | null, endpoint: string): Record<string, unknown> | null {
@@ -159,14 +159,65 @@ function binanceObservation(result: BinancePublicMarketResult | null): {
   };
 }
 
-function relevantMemory(envelope: BtcMarketEnvelope, ids: string[]): string[] {
-  return envelope.memory.metrics
-    .filter((metric) => ids.includes(metric.metric_id))
-    .map((metric) => {
-      const delta = metric.display_delta ? ` (${metric.display_delta})` : "";
-      const transition = metric.transition ? ` — ${metric.transition}` : "";
-      return `${metric.metric_id.replaceAll("_", " ")}: ${metric.previous_value} → ${metric.current_value}${delta}${transition}`;
-    });
+function metricLabel(locale: BtcCleanLocale, id: string): string {
+  const en: Record<string, string> = {
+    btc_gravity_pct: "BTC gravity",
+    btc_dominance_pct: "BTC dominance",
+    alt_breadth_24h_pct: "24h altcoin breadth",
+    alt_breadth_7d_pct: "7d altcoin breadth",
+    market_field_score: "market field score",
+    stablecoin_share_pct: "stablecoin share",
+    defi_tvl_usd: "DeFi TVL",
+    liquidity_context_state: "liquidity context",
+  };
+  const ru: Record<string, string> = {
+    btc_gravity_pct: "гравитация BTC",
+    btc_dominance_pct: "доминация BTC",
+    alt_breadth_24h_pct: "ширина альткоинов за 24ч",
+    alt_breadth_7d_pct: "ширина альткоинов за 7д",
+    market_field_score: "оценка рыночного поля",
+    stablecoin_share_pct: "доля стейблкоинов",
+    defi_tvl_usd: "DeFi TVL",
+    liquidity_context_state: "ликвидностный контекст",
+  };
+  return (locale === "ru" ? ru : en)[id] ?? humanToken(id);
+}
+
+function metricValue(locale: BtcCleanLocale, id: string, value: string): string {
+  const number = Number(value);
+  if (id === "defi_tvl_usd" && Number.isFinite(number)) return `$${money(number / 1e9, 1)}B`;
+  if (id.endsWith("_pct") && Number.isFinite(number)) return `${number.toFixed(2)}%`;
+  if (id === "market_field_score" && Number.isFinite(number)) return number.toFixed(2);
+  if (id === "liquidity_context_state") {
+    const state = humanToken(value);
+    if (locale === "ru") {
+      if (state.includes("fresh")) return "свежий и согласованный";
+      if (state.includes("stale")) return "устаревающий";
+      if (state.includes("mixed")) return "смешанный";
+    } else {
+      if (state.includes("fresh")) return "fresh and aligned";
+      if (state.includes("stale")) return "aging";
+      if (state.includes("mixed")) return "mixed";
+    }
+    return state;
+  }
+  return value;
+}
+
+function metricDeltaText(locale: BtcCleanLocale, metric: BtcMarketEnvelope["memory"]["metrics"][number]): string {
+  const label = metricLabel(locale, metric.metric_id);
+  const before = metricValue(locale, metric.metric_id, metric.previous_value);
+  const after = metricValue(locale, metric.metric_id, metric.current_value);
+  if (metric.direction === "UNCHANGED") return locale === "ru" ? `${label} без изменения: ${after}` : `${label} held at ${after}`;
+  return `${label}: ${before} → ${after}`;
+}
+
+function directionalMemory(locale: BtcCleanLocale, envelope: BtcMarketEnvelope, direction: "UP" | "DOWN", max = 2): string[] {
+  return envelope.memory.metrics.filter((metric) => metric.direction === direction).slice(0, max).map((metric) => metricDeltaText(locale, metric));
+}
+
+function currentLiquidityState(locale: BtcCleanLocale, envelope: BtcMarketEnvelope): string {
+  return metricValue(locale, "liquidity_context_state", envelope.current.liquidity_context_state);
 }
 
 function expectationMarkets(field: BtcPolymarketExpectationResult | null): BtcPolymarketExpectationMarket[] {
@@ -176,39 +227,44 @@ function expectationMarkets(field: BtcPolymarketExpectationResult | null): BtcPo
 
 function semanticLabel(locale: BtcCleanLocale, semantic: BtcPolymarketExpectationMarket["semantic"]): string {
   const ru: Record<string, string> = {
-    TERMINAL_BIN: "диапазон к моменту экспирации",
-    TERMINAL_THRESHOLD: "порог к моменту экспирации",
-    PATH_THRESHOLD: "касание порога до экспирации",
-    MILESTONE: "событие/рубеж до экспирации",
+    TERMINAL_BIN: "диапазон на дату расчёта",
+    TERMINAL_THRESHOLD: "порог на дату расчёта",
+    PATH_THRESHOLD: "касание порога до даты расчёта",
+    MILESTONE: "достижение рубежа до даты расчёта",
   };
   const en: Record<string, string> = {
-    TERMINAL_BIN: "terminal range",
-    TERMINAL_THRESHOLD: "terminal threshold",
-    PATH_THRESHOLD: "path/touch threshold",
-    MILESTONE: "milestone before expiry",
+    TERMINAL_BIN: "range at settlement",
+    TERMINAL_THRESHOLD: "threshold at settlement",
+    PATH_THRESHOLD: "touch threshold before settlement",
+    MILESTONE: "milestone before settlement",
   };
-  return (locale === "ru" ? ru : en)[semantic] ?? semantic.toLowerCase();
+  return (locale === "ru" ? ru : en)[semantic] ?? humanToken(semantic);
+}
+
+function qualityLabel(locale: BtcCleanLocale, quality: BtcPolymarketExpectationMarket["quality"]): string {
+  if (quality === "Q3_STRONG") return locale === "ru" ? "книга сильная" : "strong book";
+  return locale === "ru" ? "книга пригодная" : "usable book";
 }
 
 function expectationNow(locale: BtcCleanLocale, field: BtcPolymarketExpectationResult | null, binance: ReturnType<typeof binanceObservation>): string {
   const markets = expectationMarkets(field);
   if (!markets.length) {
     return locale === "ru"
-      ? "Polymarket сейчас не дал достаточно качественного, event-complete набора будущих BTC-контрактов с пригодной двусторонней книгой. Я не заменяю это выборочным рынком и не строю из неполного набора общую вероятность BTC. Binance остаётся только текущим полем, а не заменой ожиданий."
-      : "Polymarket did not return a sufficiently strong, event-complete set of future BTC contracts with usable two-sided books right now. I will not replace that with a cherry-picked market or turn an incomplete set into a global BTC probability. Binance remains the current field, not a substitute for expectations.";
+      ? "Polymarket сейчас не дал достаточно качественного полного набора будущих BTC-контрактов с пригодной двусторонней книгой. Я не заменяю это одним удобным рынком и не превращаю неполный набор в общую вероятность по BTC. Binance остаётся текущим полем, а не заменой ожиданий."
+      : "Polymarket did not return a sufficiently strong complete set of future BTC contracts with usable two-sided books right now. I will not replace that with one convenient market or turn an incomplete set into a global BTC probability. Binance remains the current field, not a substitute for expectations.";
   }
   const lines = markets.slice(0, 3).map((market) => {
     const expiry = market.expiry.slice(0, 10);
     return locale === "ru"
-      ? `«${shorten(market.question, 120)}» — ${(market.probability * 100).toFixed(1)}%, ${semanticLabel(locale, market.semantic)}, экспирация ${expiry}, ${market.quality.replace("Q3_STRONG", "сильная книга").replace("Q2_USABLE", "пригодная книга")}.`
-      : `“${shorten(market.question, 120)}” — ${(market.probability * 100).toFixed(1)}%, ${semanticLabel(locale, market.semantic)}, expiry ${expiry}, ${market.quality === "Q3_STRONG" ? "strong book" : "usable book"}.`;
+      ? `«${shorten(market.question, 118)}» — ${(market.probability * 100).toFixed(1)}%; ${semanticLabel(locale, market.semantic)}, расчёт ${expiry}, ${qualityLabel(locale, market.quality)}`
+      : `“${shorten(market.question, 118)}” — ${(market.probability * 100).toFixed(1)}%; ${semanticLabel(locale, market.semantic)}, settlement ${expiry}, ${qualityLabel(locale, market.quality)}`;
   });
   const current = binance.price !== null
-    ? (locale === "ru" ? `Для сравнения, Binance Spot показывает текущий BTCUSDT около $${money(binance.price, 0)}.` : `For contrast, Binance Spot has current BTCUSDT around $${money(binance.price, 0)}.`)
+    ? (locale === "ru" ? `Для сравнения, Binance Spot показывает BTCUSDT около $${money(binance.price, 0)} сейчас.` : `For contrast, Binance Spot has BTCUSDT around $${money(binance.price, 0)} now.`)
     : (locale === "ru" ? "Текущая Binance-цена в этом запросе недоступна." : "The current Binance price is unavailable in this request.");
   return locale === "ru"
-    ? `Рынок не выражает одно общее «ожидание по BTC» — он оценивает отдельные будущие условия. Сейчас наиболее пригодные контракты в выборке: ${lines.join(" ")} ${current} Binance описывает реализованное состояние сейчас; Polymarket — цены конкретных будущих утверждений. Я не складываю разные экспирации и path/terminal-контракты в одну «вероятность BTC».`
-    : `The market is not expressing one global “BTC expectation”; it is pricing separate future conditions. The strongest usable contracts in the current set are: ${lines.join(" ")} ${current} Binance describes the realized state now; Polymarket prices specific future propositions. I do not combine different expiries or path/terminal contracts into one “BTC probability.”`;
+    ? `Polymarket не выражает одно общее «ожидание по BTC» — он оценивает отдельные будущие условия. Сейчас сильнее всего читаются: ${lines.join("; ")}. ${current} Binance описывает реализованное состояние сейчас; Polymarket — цену конкретных будущих утверждений. Разные даты и разные типы условий я в одну вероятность не складываю.`
+    : `Polymarket is not expressing one global “BTC expectation”; it is pricing separate future conditions. The strongest readable contracts now are: ${lines.join("; ")}. ${current} Binance describes the realized state now; Polymarket prices specific future propositions. I do not combine different dates or different proposition types into one probability.`;
 }
 
 function expectationDelta(locale: BtcCleanLocale, field: BtcPolymarketExpectationResult | null): string {
@@ -217,74 +273,80 @@ function expectationDelta(locale: BtcCleanLocale, field: BtcPolymarketExpectatio
     .sort((a, b) => Math.abs(b.delta_1d ?? 0) - Math.abs(a.delta_1d ?? 0));
   if (!markets.length) {
     return locale === "ru"
-      ? "Для сопоставимых текущих BTC-контрактов Polymarket сейчас недостаточно однодневной истории, чтобы честно сказать, какие ожидания усилились или ослабли. Я не подменяю delta сравнением разных рынков или разных экспираций."
-      : "The current comparable BTC contracts do not have enough usable one-day Polymarket history for a defensible strengthened/weakened read. I will not manufacture a delta by comparing different markets or expiries.";
+      ? "Для сопоставимых текущих BTC-контрактов Polymarket сейчас недостаточно однодневной истории, чтобы честно сказать, какие ожидания усилились или ослабли. Я не подменяю изменение сравнением разных рынков или разных дат."
+      : "The current comparable BTC contracts do not have enough usable one-day Polymarket history for a defensible strengthened/weakened read. I will not manufacture a change by comparing different markets or dates.";
   }
   const strengthened = markets.filter((market) => (market.delta_1d ?? 0) > 0).slice(0, 2);
   const weakened = markets.filter((market) => (market.delta_1d ?? 0) < 0).slice(0, 2);
-  const format = (market: BtcPolymarketExpectationMarket) => `“${shorten(market.question, 105)}” ${pp(market.delta_1d ?? 0)}`;
-  const up = strengthened.length ? strengthened.map(format).join("; ") : (locale === "ru" ? "явного усиления среди пригодных контрактов нет" : "no clear strengthening among usable contracts");
-  const down = weakened.length ? weakened.map(format).join("; ") : (locale === "ru" ? "явного ослабления среди пригодных контрактов нет" : "no clear weakening among usable contracts");
+  const format = (market: BtcPolymarketExpectationMarket) => `“${shorten(market.question, 102)}” ${probabilityDelta(locale, market.delta_1d ?? 0)}`;
+  const up = strengthened.length ? strengthened.map(format).join("; ") : (locale === "ru" ? "явного усиления нет" : "no clear strengthening");
+  const down = weakened.length ? weakened.map(format).join("; ") : (locale === "ru" ? "явного ослабления нет" : "no clear weakening");
   return locale === "ru"
-    ? `За последние ~24 часа я сравниваю только тот же самый контракт с самим собой. Усилились: ${up}. Ослабли: ${down}. Это изменение рыночной цены конкретных утверждений, а не доказанная причина движения BTC и не прогноз BHRIGU. Неопределённость выше там, где книга шире или история тоньше — её нельзя путать с неопределённостью самого будущего.`
-    : `Over roughly 24 hours I compare each contract only with itself. Strengthened: ${up}. Weakened: ${down}. These are changes in market prices for specific propositions, not a proven cause of BTC movement and not a BHRIGU forecast. Measurement uncertainty is higher where books are wider or history is thinner; that is separate from uncertainty about the future itself.`;
+    ? `За последние примерно 24 часа я сравниваю каждый контракт только с ним самим. Усилились: ${up}. Ослабли: ${down}. Это изменение цены конкретных будущих утверждений, а не доказанная причина движения BTC и не прогноз BHRIGU. Отдельно учитываю качество измерения: широкая или тонкая книга делает само чтение менее надёжным.`
+    : `Over roughly 24 hours I compare each contract only with itself. Strengthened: ${up}. Weakened: ${down}. These are changes in the prices of specific future propositions, not a proven cause of BTC movement and not a BHRIGU forecast. Measurement quality remains separate: a wide or thin book makes the read itself less reliable.`;
 }
 
 function fieldChange(locale: BtcCleanLocale, envelope: BtcMarketEnvelope | null, binance: ReturnType<typeof binanceObservation>): string {
   if (!envelope) return locale === "ru"
-    ? "Принятый Snapshot/Memory сейчас недоступен, поэтому я не буду изображать полное чтение поля. Текущая venue-цена сама по себе не заменяет структуру и память изменений."
-    : "The accepted Snapshot/Memory is unavailable right now, so I will not pretend to have a complete field read. A live venue price alone does not replace structure and change memory.";
+    ? "Принятый Snapshot и его память сейчас недоступны, поэтому я не буду изображать полное чтение поля. Живая цена одной площадки сама по себе не заменяет структуру и память изменений."
+    : "The accepted Snapshot and its memory are unavailable right now, so I will not pretend to have a complete field read. A live venue price alone does not replace structure and change memory.";
+
   const live = binance.price !== null
-    ? (locale === "ru" ? `На Binance Spot BTCUSDT сейчас около $${money(binance.price, 0)}, изменение за 24 часа ${binance.change24h === null ? "не подтверждено" : pct(binance.change24h)}.` : `On Binance Spot, BTCUSDT is around $${money(binance.price, 0)} now, with a 24h change of ${binance.change24h === null ? "unconfirmed" : pct(binance.change24h)}.`)
-    : (locale === "ru" ? "Живой Binance-слой сейчас не прошёл получение, поэтому текущую venue-цену я не добавляю." : "The live Binance layer did not resolve, so I am not adding a current venue price.");
-  const changed = arrayLine(envelope.synthesis.what_changed, locale === "ru" ? "между принятыми Snapshot нет подтверждённого существенного изменения" : "no material change is confirmed between accepted Snapshots");
-  const strengthened = arrayLine(envelope.synthesis.confirming_modules, locale === "ru" ? "отдельного усиления подтверждающих слоёв нет" : "no separate confirming layer strengthened");
-  const weakened = arrayLine(envelope.synthesis.contradicting_or_weakening_modules, locale === "ru" ? "явного ослабления нет" : "no clear weakening is identified");
-  const unexplained = arrayLine(envelope.synthesis.uncertainty, locale === "ru" ? "причина движения не установлена этими данными" : "the cause of the move is not established by these data", 1);
-  const watch = arrayLine(envelope.synthesis.watch_next, locale === "ru" ? "следующее принятое обновление структуры и ликвидности" : "the next accepted structure and liquidity update", 2);
-  const liquidity = locale === "ru"
-    ? `Ликвидностный контекст: stablecoin share ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, DEX volume 24h $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B.`
-    : `Liquidity context: stablecoin share ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, 24h DEX volume $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B.`;
+    ? (locale === "ru" ? `На Binance Spot BTCUSDT сейчас около $${money(binance.price, 0)}; за 24 часа ${binance.change24h === null ? "изменение не подтверждено" : pct(binance.change24h)}.` : `On Binance Spot, BTCUSDT is around $${money(binance.price, 0)} now; the 24h change is ${binance.change24h === null ? "unconfirmed" : pct(binance.change24h)}.`)
+    : (locale === "ru" ? "Живой Binance-слой сейчас не ответил, поэтому текущую цену площадки я не добавляю." : "The live Binance layer did not resolve, so I am not adding a current venue price.");
+
+  const changed = envelope.memory.metrics.filter((metric) => metric.direction !== "UNCHANGED").slice(0, 3).map((metric) => metricDeltaText(locale, metric));
+  const stronger = directionalMemory(locale, envelope, "UP");
+  const weaker = directionalMemory(locale, envelope, "DOWN");
+  const changeText = changed.length ? changed.join("; ") : (locale === "ru" ? "существенных сопоставимых сдвигов нет" : "no material comparable shifts");
+  const strongerText = stronger.length ? stronger.join("; ") : (locale === "ru" ? "отдельного усиления не видно" : "no separate strengthening is visible");
+  const weakerText = weaker.length ? weaker.join("; ") : (locale === "ru" ? "отдельного ослабления не видно" : "no separate weakening is visible");
+  const liquidityText = locale === "ru"
+    ? `Ликвидность: доля стейблкоинов ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, DEX-объём за 24ч $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B.`
+    : `Liquidity: stablecoin share ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, 24h DEX volume $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B.`;
+
   return locale === "ru"
-    ? `${live} По памяти принятых Snapshot изменилось: ${changed}. Сильнее выглядит: ${strengthened}. Слабее или противоречивее: ${weakened}. ${liquidity} Пока не объяснено: ${unexplained}. Дальше я смотрю на ${watch}. Это описание текущего поля, не торговый сигнал и не утверждение о будущем.`
-    : `${live} Across accepted Snapshot Memory, what changed is: ${changed}. What looks stronger: ${strengthened}. What weakened or conflicts: ${weakened}. ${liquidity} Still unexplained: ${unexplained}. Next I am watching ${watch}. This is a read of the current field, not a trading signal or an established future outcome.`;
+    ? `${live} Между двумя принятыми точками памяти изменилось: ${changeText}. Сильнее: ${strongerText}. Слабее: ${weakerText}. ${liquidityText} Не объяснено главное: эти данные не устанавливают причину движения цены. Дальше я смотрю, подтверждаются ли изменения доминации и ширины рынка ликвидностью в следующем принятом Snapshot. Это чтение текущего поля, не торговый сигнал и не установленный факт о будущем.`
+    : `${live} Between the two accepted memory checkpoints, what changed is: ${changeText}. Stronger: ${strongerText}. Weaker: ${weakerText}. ${liquidityText} The main unresolved point is causality: these data do not establish why price moved. Next I am watching whether changes in dominance and market breadth are confirmed by liquidity in the next accepted Snapshot. This is a read of the current field, not a trading signal or an established fact about the future.`;
 }
 
 function whyItMatters(locale: BtcCleanLocale, envelope: BtcMarketEnvelope | null, binance: ReturnType<typeof binanceObservation>): string {
-  if (!envelope) return locale === "ru" ? "Без принятого Snapshot/Memory я не могу честно усилить предыдущее чтение." : "Without the accepted Snapshot/Memory I cannot honestly strengthen the previous read.";
-  const current = binance.price !== null ? (locale === "ru" ? `Живой Binance остаётся около $${money(binance.price, 0)}` : `Live Binance remains around $${money(binance.price, 0)}`) : "";
-  const uncertainty = arrayLine(envelope.synthesis.uncertainty, locale === "ru" ? "причинность не установлена" : "causality is not established", 1);
+  if (!envelope) return locale === "ru" ? "Без принятого Snapshot и его памяти я не могу честно усилить предыдущее чтение." : "Without the accepted Snapshot and its memory I cannot honestly strengthen the previous read.";
+  const live = binance.price !== null ? `$${money(binance.price, 0)}` : null;
   return locale === "ru"
-    ? `Это важно потому, что изменение цены само по себе ещё не говорит, изменилось ли устройство поля. Принятая память показывает, какие структурные и ликвидностные слои подтвердили движение, а какие ему не соответствуют. ${envelope.synthesis.why_this_matters} ${current ? `${current}, но это только текущая venue-наблюдаемость.` : ""} Граница остаётся жёсткой: ${uncertainty}. Поэтому меняется уверенность в текущем чтении, а не возникает «доказанное будущее».`
-    : `It matters because a price move alone does not tell us whether the field's structure changed. Accepted memory shows which structural and liquidity layers confirmed the move and which did not. ${envelope.synthesis.why_this_matters} ${current ? `${current}, but that is only a current venue observation.` : ""} The boundary stays strict: ${uncertainty}. So this changes confidence in the current read; it does not create an “established future.”`;
+    ? `Потому что цена и структура — не одно и то же. ${live ? `Binance показывает цену около ${live}, ` : ""}но память Snapshot показывает, меняются ли вместе доминация, ширина рынка и ликвидность. Когда эти слои расходятся, уверенность в простом объяснении падает; когда сходятся, текущее чтение становится устойчивее. Это меняет качество интерпретации настоящего, а не превращает будущее в известный факт.`
+    : `Because price and structure are not the same thing. ${live ? `Binance shows price around ${live}, ` : ""}while Snapshot Memory shows whether dominance, market breadth, and liquidity are moving together. When those layers diverge, confidence in a simple explanation falls; when they converge, the current read becomes more robust. That changes the quality of the present interpretation, not the future into a known fact.`;
 }
 
 function watchNext(locale: BtcCleanLocale, envelope: BtcMarketEnvelope | null, binance: ReturnType<typeof binanceObservation>): string {
-  if (!envelope) return locale === "ru" ? "Сначала нужен новый принятый Snapshot; без него watch-list был бы декоративным." : "A new accepted Snapshot is needed first; without it, a watch list would be decorative.";
-  const watch = envelope.synthesis.watch_next.slice(0, 3);
+  if (!envelope) return locale === "ru" ? "Сначала нужен новый принятый Snapshot; без него список наблюдения был бы декоративным." : "A new accepted Snapshot is needed first; without it, a watch list would be decorative.";
   const live = binance.price !== null && binance.bid !== null && binance.ask !== null
-    ? (locale === "ru" ? `На Binance дополнительно слежу, сохраняется ли текущая книга около $${money(binance.price, 0)} (bid $${money(binance.bid, 0)} / ask $${money(binance.ask, 0)}).` : `On Binance I also watch whether the current book around $${money(binance.price, 0)} holds (bid $${money(binance.bid, 0)} / ask $${money(binance.ask, 0)}).`)
+    ? (locale === "ru" ? `На Binance текущая книга остаётся около $${money(binance.price, 0)} — bid $${money(binance.bid, 0)}, ask $${money(binance.ask, 0)}.` : `On Binance the current book remains around $${money(binance.price, 0)} — bid $${money(binance.bid, 0)}, ask $${money(binance.ask, 0)}.`)
     : "";
   return locale === "ru"
-    ? `Следующий фокус — не угадать цену, а увидеть, подтверждается ли изменение несколькими независимыми слоями. Я смотрю на ${watch.length ? watch.map((item) => shorten(item, 150)).join("; ") : "структуру, ликвидность и следующую точку памяти"}. ${live} Если эти слои расходятся, неопределённость чтения растёт; если сходятся, текущая структура становится убедительнее. Ни один из этих условий сам по себе не является торговым сигналом.`
-    : `The next focus is not guessing price; it is seeing whether the change is confirmed by independent layers. I am watching ${watch.length ? watch.map((item) => shorten(item, 150)).join("; ") : "structure, liquidity, and the next memory checkpoint"}. ${live} If those layers diverge, read uncertainty rises; if they converge, the current structure becomes more convincing. None of these conditions is a trading signal by itself.`;
+    ? `Дальше я смотрю на три вещи: сохраняется ли текущее движение цены; подтверждают ли его доминация BTC и ширина рынка; и поддерживает ли это ликвидность — доля стейблкоинов, DeFi TVL и DEX-объём. ${live} Если слои расходятся, неопределённость чтения растёт. Если сходятся, текущая структура становится убедительнее. Это условия наблюдения, не торговый сигнал.`
+    : `Next I am watching three things: whether the current price move persists; whether BTC dominance and market breadth confirm it; and whether liquidity — stablecoin share, DeFi TVL, and DEX volume — supports the same read. ${live} If those layers diverge, read uncertainty rises. If they converge, the current structure becomes more convincing. These are observation conditions, not a trading signal.`;
 }
 
 function liquidity(locale: BtcCleanLocale, envelope: BtcMarketEnvelope | null, returning: boolean): string {
   if (!envelope) return locale === "ru" ? "Ликвидностный слой принятого Snapshot сейчас недоступен." : "The accepted Snapshot liquidity layer is unavailable right now.";
-  const deltas = relevantMemory(envelope, ["stablecoin_share_pct", "defi_tvl_usd", "liquidity_context_state"]);
-  const prefix = returning ? (locale === "ru" ? "Возвращаюсь к точке ликвидности." : "Back to the liquidity point.") : (locale === "ru" ? "По ликвидности сейчас:" : "On liquidity now:");
+  const stable = envelope.memory.metrics.find((metric) => metric.metric_id === "stablecoin_share_pct");
+  const tvl = envelope.memory.metrics.find((metric) => metric.metric_id === "defi_tvl_usd");
+  const memory = [stable, tvl].filter((metric): metric is NonNullable<typeof metric> => Boolean(metric)).map((metric) => metricDeltaText(locale, metric));
+  const prefix = returning ? (locale === "ru" ? "Возвращаюсь к ликвидности." : "Back to liquidity.") : (locale === "ru" ? "По ликвидности сейчас:" : "On liquidity now:");
+  const state = currentLiquidityState(locale, envelope);
   return locale === "ru"
-    ? `${prefix} Stablecoin share ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, DEX volume 24h $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B; состояние — ${envelope.current.liquidity_context_state}. В памяти Snapshot: ${deltas.length ? deltas.map((item) => shorten(item, 170)).join("; ") : "сопоставимого отдельного сдвига нет"}. Это говорит о доступности и распределении ликвидности в принятом поле; оно не доказывает направление следующего движения BTC.`
-    : `${prefix} Stablecoin share is ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, 24h DEX volume $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B; state: ${envelope.current.liquidity_context_state}. In Snapshot Memory: ${deltas.length ? deltas.map((item) => shorten(item, 170)).join("; ") : "no separate comparable shift is available"}. This describes the availability and distribution of liquidity in the accepted field; it does not establish the direction of BTC's next move.`;
+    ? `${prefix} Доля стейблкоинов ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, DEX-объём за 24ч $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B; общий контекст ${state}. В памяти: ${memory.length ? memory.join("; ") : "отдельного сопоставимого сдвига нет"}. Это показывает доступность и распределение ликвидности в принятом поле; направление следующего движения BTC из этого не следует.`
+    : `${prefix} Stablecoin share is ${envelope.current.stablecoin_share_pct.toFixed(2)}%, DeFi TVL $${money(envelope.current.defi_tvl_usd / 1e9, 1)}B, and 24h DEX volume $${money(envelope.current.dex_volume_24h_usd / 1e9, 1)}B; the overall context is ${state}. In memory: ${memory.length ? memory.join("; ") : "no separate comparable shift"}. This shows the availability and distribution of liquidity in the accepted field; it does not establish the direction of BTC's next move.`;
 }
 
 function generalField(locale: BtcCleanLocale, envelope: BtcMarketEnvelope | null, binance: ReturnType<typeof binanceObservation>): string {
-  if (!envelope) return locale === "ru" ? "Принятый BTC Snapshot сейчас недоступен. Сформулируйте вопрос уже, и я отвечу только в пределах доступного evidence." : "The accepted BTC Snapshot is unavailable right now. Narrow the question and I will answer only within available evidence.";
-  const live = binance.price !== null ? (locale === "ru" ? `Живой Binance Spot: ~$${money(binance.price, 0)}.` : `Live Binance Spot: ~$${money(binance.price, 0)}.`) : "";
+  if (!envelope) return locale === "ru" ? "Принятый BTC Snapshot сейчас недоступен. Сформулируйте вопрос уже, и я отвечу только в пределах доступных данных." : "The accepted BTC Snapshot is unavailable right now. Narrow the question and I will answer only within available evidence.";
+  const live = binance.price !== null ? (locale === "ru" ? `Binance Spot сейчас около $${money(binance.price, 0)}.` : `Binance Spot is around $${money(binance.price, 0)} now.`) : "";
+  const regime = humanToken(envelope.current.regime);
   return locale === "ru"
-    ? `${live} Принятое поле: regime ${envelope.current.regime}, Market Field Score ${envelope.current.market_field_score.toFixed(2)}, BTC dominance ${envelope.current.btc_dominance_pct.toFixed(2)}%. ${envelope.synthesis.why_this_matters} Если вы спросите про изменение, ликвидность или ожидания, я подключу соответствующую память или future-expectation evidence вместо повторения общего обзора.`
-    : `${live} Accepted field: regime ${envelope.current.regime}, Market Field Score ${envelope.current.market_field_score.toFixed(2)}, BTC dominance ${envelope.current.btc_dominance_pct.toFixed(2)}%. ${envelope.synthesis.why_this_matters} Ask about change, liquidity, or expectations and I will bind the relevant memory or future-expectation evidence instead of repeating this overview.`;
+    ? `${live} В принятом Snapshot текущее состояние поля — ${regime}; оценка поля ${envelope.current.market_field_score.toFixed(2)}, доминация BTC ${envelope.current.btc_dominance_pct.toFixed(2)}%. Спросите про изменение, ликвидность или ожидания — я подключу соответствующую память или живые будущие контракты вместо повторения общего обзора.`
+    : `${live} In the accepted Snapshot, the current field is ${regime}; field score ${envelope.current.market_field_score.toFixed(2)}, BTC dominance ${envelope.current.btc_dominance_pct.toFixed(2)}%. Ask about change, liquidity, or expectations and I will bind the relevant memory or live future contracts instead of repeating a general overview.`;
 }
 
 function cleanSources(envelope: BtcMarketEnvelope | null, binance: BinancePublicMarketResult | null, polymarket: BtcPolymarketExpectationResult | null): BtcCleanSource[] {
@@ -294,7 +356,7 @@ function cleanSources(envelope: BtcMarketEnvelope | null, binance: BinancePublic
     sources.push({ id: "snapshot-memory", label: "Snapshot-to-Snapshot Delta", href: BTC_MARKET_ENVELOPE_URLS.delta, as_of: envelope.generated_at_utc });
   }
   if (binance && binance.ok) {
-    sources.push({ id: "binance-current", label: "Binance Spot BTCUSDT public market data", href: "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT", as_of: binance.snapshot.retrieved_at });
+    sources.push({ id: "binance-current", label: "Binance Spot BTCUSDT", href: "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT", as_of: binance.snapshot.retrieved_at });
   }
   if (polymarket && polymarket.ok) {
     const seen = new Set<string>();
@@ -328,7 +390,7 @@ export async function runBtcCleanChat(input: {
 
   if (intent === "TRADING_BOUNDARY") {
     const answer = locale === "ru"
-      ? "Я могу разобрать текущее поле, ликвидность, изменения памяти и рыночные ожидания, но не выбираю вход, выход, позицию или торговое действие. Переформулируйте вопрос как «что сейчас меняется в BTC?» или «что рынок ожидает?» — и я отвечу по read-only evidence."
+      ? "Я могу разобрать текущее поле, ликвидность, изменения памяти и рыночные ожидания, но не выбираю вход, выход, позицию или торговое действие. Переформулируйте вопрос как «что сейчас меняется в BTC?» или «что рынок ожидает?» — и я отвечу по read-only данным."
       : "I can analyze the current field, liquidity, memory changes, and market expectations, but I do not choose entries, exits, positions, or trading actions. Reframe it as “what is changing in BTC now?” or “what is the market expecting?” and I will answer from read-only evidence.";
     return {
       schema_version: BTC_CLEAN_CHAT_SCHEMA, ok: true, intent, topic: "boundary", answer, as_of: asOf, sources: [],
