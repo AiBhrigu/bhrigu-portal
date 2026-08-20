@@ -45,5 +45,9 @@ export default function BtcCleanChatPage({ locale, initialQuestion, deploymentSo
       <meta name="btc-deployment-source-sha" content={deploymentSourceSha ?? ""}/>
     </Head>
     <BtcCleanChatV1 locale={locale} initialQuestion={initialQuestion}/>
+    <style jsx global>{`
+      header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"],
+      nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]{display:none!important}
+    `}</style>
   </>;
 }
