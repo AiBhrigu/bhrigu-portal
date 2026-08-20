@@ -35,6 +35,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.setHeader("X-BHRIGU-Clean-Chat", "btc-clean-chat-v1-model");
 
+  if (req.method === "GET" && req.query.__model_probe === "weather" && process.env.VERCEL_ENV !== "production") {
+    try {
+      const result = await runBtcCleanChatModel({
+        locale: "ru",
+        question: "какая погода сегодня в Дели?",
+        priorTurns: [],
+      });
+      return res.status(200).json({
+        ok: result.ok,
+        probe: "CURRENT_EXTERNAL_FACT_WEB_RESEARCH",
+        answer: result.answer,
+        topic: result.topic,
+        evidence_state: result.evidence_state,
+        sources: result.sources,
+      });
+    } catch (error) {
+      return res.status(503).json({
+        ok: false,
+        probe: "CURRENT_EXTERNAL_FACT_WEB_RESEARCH",
+        code: error instanceof Error ? error.message : "MODEL_WEB_PROBE_FAILED",
+      });
+    }
+  }
+
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, code: "METHOD_NOT_ALLOWED" });
