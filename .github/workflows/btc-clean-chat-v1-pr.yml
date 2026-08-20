@@ -16,13 +16,19 @@ on:
 permissions:
   contents: read
 
+env:
+  BTC_CLEAN_CHAT_PREVIEW_BASE: https://bhrigu-portal-git-feature-btc-clean-c-4107d6-aibhrigus-projects.vercel.app
+
 jobs:
   clean-chat-v1:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      BTC_CLEAN_CHAT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
@@ -56,3 +62,136 @@ jobs:
           BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
           BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
         run: npx next build
+      - name: Wait for exact Vercel Preview head
+        shell: bash
+        run: |
+          for attempt in $(seq 1 90); do
+            html="$(curl --fail --silent --show-error --max-time 20 "${BTC_CLEAN_CHAT_PREVIEW_BASE}/crypto-astro/btc/clean-chat?lang=en" || true)"
+            if printf '%s' "$html" | grep -q "name=\"btc-deployment-source-sha\" content=\"${BTC_CLEAN_CHAT_HEAD_SHA}\""; then
+              echo "EXACT_PREVIEW_HEAD=PASS ${BTC_CLEAN_CHAT_HEAD_SHA}"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Exact Preview did not bind current head ${BTC_CLEAN_CHAT_HEAD_SHA}"
+          exit 1
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Exact Preview RU EN desktop mobile multi-turn acceptance
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          base = os.environ["BTC_CLEAN_CHAT_PREVIEW_BASE"].rstrip("/")
+          opts = webdriver.ChromeOptions()
+          opts.add_argument("--headless=new")
+          opts.add_argument("--no-sandbox")
+          opts.add_argument("--disable-dev-shm-usage")
+          opts.add_argument("--disable-gpu")
+          driver = webdriver.Chrome(options=opts)
+          wait = WebDriverWait(driver, 100)
+
+          en = [
+              "What is changing in BTC right now?",
+              "Why does that matter?",
+              "What are you watching next?",
+              "What is the market expecting?",
+              "What changed in those expectations?",
+              "Go back to the liquidity point.",
+          ]
+          ru = [
+              "Что меняется в BTC прямо сейчас?",
+              "Почему это важно?",
+              "Что смотреть дальше?",
+              "Что сейчас ожидает рынок?",
+              "Что изменилось в этих ожиданиях?",
+              "Вернись к точке ликвидности.",
+          ]
+
+          def open_chat(lang, width, height):
+              driver.set_window_size(width, height)
+              driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
+              wait.until(EC.presence_of_element_located((By.ID, "btc-clean-question")))
+              assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "horizontal overflow"
+              for selector in ['header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"]', 'nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]']:
+                  for node in driver.find_elements(By.CSS_SELECTOR, selector):
+                      assert not node.is_displayed(), f"legacy chrome visible: {selector}"
+              assert driver.find_element(By.CSS_SELECTOR, ".cleanComposer").is_displayed()
+
+          def ask(text):
+              before = len(driver.find_elements(By.CSS_SELECTOR, ".cleanExchange"))
+              box = wait.until(EC.element_to_be_clickable((By.ID, "btc-clean-question")))
+              box.clear()
+              box.send_keys(text)
+              driver.find_element(By.CSS_SELECTOR, ".cleanComposer button[type=submit]").click()
+              wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".cleanExchange")) == before + 1)
+              def completed(d):
+                  rows = d.find_elements(By.CSS_SELECTOR, ".cleanExchange")
+                  if not rows: return False
+                  bubbles = rows[-1].find_elements(By.CSS_SELECTOR, ".cleanAssistant .cleanBubble > p")
+                  return bubbles[0].text.strip() if bubbles and len(bubbles[0].text.strip()) > 35 else False
+              answer = wait.until(completed)
+              assert not driver.find_elements(By.CSS_SELECTOR, ".cleanSources[open]"), "sources opened by default"
+              return answer
+
+          def direct_api(question, lang="en"):
+              script = """
+              const done = arguments[arguments.length - 1];
+              fetch('/api/btc/clean-chat-v1', {
+                method:'POST', headers:{'content-type':'application/json'},
+                body: JSON.stringify({locale: arguments[0], question: arguments[1], priorTurns: []})
+              }).then(async r => done({status:r.status, body:await r.json()})).catch(e => done({status:0,error:String(e)}));
+              """
+              return driver.execute_async_script(script, lang, question)
+
+          try:
+              open_chat("en", 1440, 1000)
+              evidence = direct_api("What is changing in BTC right now?", "en")
+              assert evidence["status"] == 200, evidence
+              assert evidence["body"]["evidence"]["accepted_snapshot"] == "USED", evidence
+              assert evidence["body"]["evidence"]["snapshot_memory"] == "USED", evidence
+              assert evidence["body"]["evidence"]["binance_current_field"] == "USED", evidence
+              answers_en = [ask(q) for q in en]
+              assert len(set(answers_en)) == 6, "template/repeat detected in EN sequence"
+              assert "Binance" in answers_en[0], answers_en[0]
+              expect = direct_api("What is the market expecting?", "en")
+              assert expect["status"] == 200, expect
+              assert expect["body"]["evidence"]["polymarket_expectation_field"] == "USED", json.dumps(expect, ensure_ascii=False)[:1800]
+              driver.save_screenshot("/tmp/btc-clean-chat-en-desktop.png")
+
+              driver.execute_script("sessionStorage.clear()")
+              open_chat("ru", 390, 844)
+              answers_ru = [ask(q) for q in ru]
+              assert len(set(answers_ru)) == 6, "template/repeat detected in RU sequence"
+              assert "Binance" in answers_ru[0], answers_ru[0]
+              driver.save_screenshot("/tmp/btc-clean-chat-ru-mobile.png")
+
+              driver.execute_script("sessionStorage.clear()")
+              open_chat("en", 390, 844)
+              driver.save_screenshot("/tmp/btc-clean-chat-en-mobile.png")
+              driver.execute_script("sessionStorage.clear()")
+              open_chat("ru", 1440, 1000)
+              driver.save_screenshot("/tmp/btc-clean-chat-ru-desktop.png")
+              print("EXACT_PREVIEW_MULTI_TURN=PASS")
+              print("RU_EN=PASS")
+              print("DESKTOP_MOBILE=PASS")
+              print("CURRENT_DATA=PASS")
+              print("POLYMARKET_EXPECTATION=PASS")
+          finally:
+              driver.quit()
+          PY
+      - name: Upload Preview visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-clean-chat-v1-preview-${{ env.BTC_CLEAN_CHAT_HEAD_SHA }}
+          path: /tmp/btc-clean-chat-*.png
+          if-no-files-found: warn
+          retention-days: 30
