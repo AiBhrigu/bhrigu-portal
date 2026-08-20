@@ -1,6 +1,6 @@
 import Head from "next/head";
 import type { GetServerSideProps } from "next";
-import BtcCleanChatV1 from "../../../components/btc/BtcCleanChatV1";
+import BtcCleanChatV1 from "../../../ui/btc/BtcCleanChatV1";
 import type { BtcCleanLocale } from "../../../lib/btc-clean-chat-v1";
 
 type Props = {
