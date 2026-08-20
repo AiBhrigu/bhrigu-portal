@@ -34,7 +34,7 @@ assert.equal(classifyBtcCleanIntent("Should I buy BTC now?"), "TRADING_BOUNDARY"
 assert.equal(classifyBtcCleanIntent("Стоит ли купить BTC сейчас?"), "TRADING_BOUNDARY");
 
 const root = path.resolve(process.cwd());
-const component = fs.readFileSync(path.join(root, "components/btc/BtcCleanChatV1.tsx"), "utf8");
+const component = fs.readFileSync(path.join(root, "ui/btc/BtcCleanChatV1.tsx"), "utf8");
 const polymarket = fs.readFileSync(path.join(root, "lib/btc-polymarket-expectation.ts"), "utf8");
 const runtime = fs.readFileSync(path.join(root, "lib/btc-clean-chat-v1.ts"), "utf8");
 
