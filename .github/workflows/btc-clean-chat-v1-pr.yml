@@ -115,6 +115,10 @@ jobs:
               "Что изменилось в этих ожиданиях?",
               "Вернись к точке ликвидности.",
           ]
+          forbidden_visible = [
+              "context_fresh", "liquidity_context_state", "stablecoin_share_pct",
+              "defi_tvl_usd", "Q3_STRONG", "Q2_USABLE", "TERMINAL_", "PATH_THRESHOLD",
+          ]
 
           def open_chat(lang, width, height):
               driver.set_window_size(width, height)
@@ -140,6 +144,8 @@ jobs:
                   return bubbles[0].text.strip() if bubbles and len(bubbles[0].text.strip()) > 35 else False
               answer = wait.until(completed)
               assert not driver.find_elements(By.CSS_SELECTOR, ".cleanSources[open]"), "sources opened by default"
+              for token in forbidden_visible:
+                  assert token not in answer, f"technical runtime token leaked into normal chat: {token}"
               return answer
 
           def direct_api(question, lang="en"):
@@ -151,6 +157,18 @@ jobs:
               }).then(async r => done({status:r.status, body:await r.json()})).catch(e => done({status:0,error:String(e)}));
               """
               return driver.execute_async_script(script, lang, question)
+
+          def assert_no_mobile_overlap():
+              rows = driver.find_elements(By.CSS_SELECTOR, ".cleanExchange")
+              assert rows
+              bubble = rows[-1].find_element(By.CSS_SELECTOR, ".cleanAssistant .cleanBubble")
+              composer = driver.find_element(By.CSS_SELECTOR, ".cleanComposer")
+              separated = driver.execute_script("""
+                const a=arguments[0].getBoundingClientRect();
+                const c=arguments[1].getBoundingClientRect();
+                return (a.bottom <= c.top + 1) || (c.top >= window.innerHeight);
+              """, bubble, composer)
+              assert separated, "mobile composer overlaps the final Cosmographer answer"
 
           try:
               open_chat("en", 1440, 1000)
@@ -172,6 +190,7 @@ jobs:
               answers_ru = [ask(q) for q in ru]
               assert len(set(answers_ru)) == 6, "template/repeat detected in RU sequence"
               assert "Binance" in answers_ru[0], answers_ru[0]
+              assert_no_mobile_overlap()
               driver.save_screenshot("/tmp/btc-clean-chat-ru-mobile.png")
 
               driver.execute_script("sessionStorage.clear()")
@@ -185,6 +204,8 @@ jobs:
               print("DESKTOP_MOBILE=PASS")
               print("CURRENT_DATA=PASS")
               print("POLYMARKET_EXPECTATION=PASS")
+              print("NORMAL_CHAT_TECH_ENUMS=ZERO")
+              print("MOBILE_COMPOSER_OVERLAP=ZERO")
           finally:
               driver.quit()
           PY
