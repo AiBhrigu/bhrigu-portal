@@ -163,9 +163,12 @@ async function postAstroField(request: BtcAstroFieldRequest, timeoutMs: number):
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    const bypass = process.env.BHRIGU_ASTRO_FIELD_BYPASS_SECRET?.trim();
+    const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
+    if (bypass) headers["x-vercel-protection-bypass"] = bypass;
     const response = await fetch(endpoint(), {
       method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
+      headers,
       body: JSON.stringify(request),
       cache: "no-store",
       signal: controller.signal,

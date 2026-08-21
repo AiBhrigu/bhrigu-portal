@@ -64,6 +64,7 @@ assert.match(component, /data-semantic-state/);
 assert.match(component, /cleanCopyAction/);
 assert.match(component, /navigator\.clipboard\.writeText/);
 assert.match(component, /MAX_CONTEXT_TURNS = 12/);
+assert.doesNotMatch(component, /BHRIGU_ASTRO_FIELD_BYPASS_SECRET|x-vercel-protection-bypass/);
 assert.match(component, /slice\(-MAX_CONTEXT_TURNS\)/);
 assert.doesNotMatch(component, /examples\.map|MODULE_CARDS|module card/i);
 
@@ -128,6 +129,8 @@ assert.doesNotMatch(runtime, /buildBtcAstroAnswer|buildMultiBodyAstroYearAnswer|
 
 for (const required of [
   "BHRIGU_ASTRO_FIELD_URL",
+  "BHRIGU_ASTRO_FIELD_BYPASS_SECRET",
+  "x-vercel-protection-bypass",
   "ASTRO_FIELD_PREVIEW_ONLY",
   "orion_native_swisseph_canonical_v0_1",
   "2009-01-03T18:15:05Z",
