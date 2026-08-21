@@ -3,7 +3,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { BTC_CLEAN_CHAT_SCHEMA } from "../lib/btc-clean-chat-v1";
 import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER } from "../lib/btc-clean-chat-model-runtime";
-import { BTC_ASTRO_CANONICAL_ENGINE, BTC_ASTRO_FIELD_SCHEMA } from "../lib/btc-astro-field-client";
+import {
+  BTC_ASTRO_CANONICAL_ENGINE,
+  BTC_ASTRO_FIELD_SCHEMA,
+  BTC_ASTRO_CHUNK_DAYS,
+  BTC_ASTRO_RANGE_CONCURRENCY,
+  BTC_PROSPECTIVE_HORIZON_DATE,
+  BTC_TEMPORAL_ORIGIN_DATE,
+  BTC_TEMPORAL_ORIGIN_UTC,
+  buildBtcAstroWindows,
+  validateBtcTemporalRange,
+} from "../lib/btc-astro-field-client";
 import { BTC_POLYMARKET_EXPECTATION_SCHEMA } from "../lib/btc-polymarket-expectation";
 
 assert.equal(BTC_CLEAN_CHAT_SCHEMA, "bhrigu_btc_clean_chat_v1");
@@ -11,6 +21,25 @@ assert.equal(BTC_CLEAN_CHAT_MODEL_ID, "gpt-5.6-sol");
 assert.equal(BTC_CLEAN_CHAT_PROVIDER, "DIRECT_OPENAI_API");
 assert.equal(BTC_ASTRO_FIELD_SCHEMA, "bhrigu_public_astro_field_v0_1");
 assert.equal(BTC_ASTRO_CANONICAL_ENGINE, "orion_native_swisseph_canonical_v0_1");
+assert.equal(BTC_TEMPORAL_ORIGIN_UTC, "2009-01-03T18:15:05Z");
+assert.equal(BTC_TEMPORAL_ORIGIN_DATE, "2009-01-03");
+assert.equal(BTC_PROSPECTIVE_HORIZON_DATE, "2028-12-31");
+assert.equal(BTC_ASTRO_CHUNK_DAYS, 369);
+assert.equal(BTC_ASTRO_RANGE_CONCURRENCY, 5);
+const genesisToNowWindows = buildBtcAstroWindows("2009-01-03", "2026-08-21");
+assert.equal(genesisToNowWindows[0].startDate, "2009-01-03");
+assert.equal(genesisToNowWindows.at(-1)?.endDate, "2026-08-21");
+assert.ok(genesisToNowWindows.length > 1 && genesisToNowWindows.length <= 20);
+const fullV1TemporalWindows = buildBtcAstroWindows(BTC_TEMPORAL_ORIGIN_DATE, BTC_PROSPECTIVE_HORIZON_DATE);
+assert.equal(fullV1TemporalWindows.length, 20);
+assert.equal(fullV1TemporalWindows[0].startDate, BTC_TEMPORAL_ORIGIN_DATE);
+assert.equal(fullV1TemporalWindows.at(-1)?.endDate, BTC_PROSPECTIVE_HORIZON_DATE);
+const prospectiveWindows = buildBtcAstroWindows("2027-01-01", "2028-12-31");
+assert.equal(prospectiveWindows.length, 2);
+assert.equal(prospectiveWindows[0].startDate, "2027-01-01");
+assert.equal(prospectiveWindows.at(-1)?.endDate, "2028-12-31");
+assert.throws(() => validateBtcTemporalRange("2008-12-31", "2009-01-03"), /BTC_TEMPORAL_BEFORE_GENESIS/);
+assert.throws(() => validateBtcTemporalRange("2028-12-31", "2029-01-01"), /BTC_TEMPORAL_AFTER_V1_HORIZON/);
 assert.equal(BTC_POLYMARKET_EXPECTATION_SCHEMA, "bhrigu_btc_polymarket_expectation_v1");
 
 const root = path.resolve(process.cwd());
@@ -82,6 +111,12 @@ for (const required of [
   "if plan.request_type is out_of_scope",
   "buildSemanticVisual",
   "visual_focus",
+  "BTC_TEMPORAL_ORIGIN_DATE",
+  "BTC_PROSPECTIVE_HORIZON_DATE",
+  "Long ranges are valid",
+  "Historical reconstruction is not retroactive BHRIGU point-in-time memory",
+  "Prospective 2027-2028 astronomy is computable",
+  "window_summaries",
 ]) {
   assert.ok(runtime.includes(required), `direct model runtime missing ${required}`);
 }
@@ -100,6 +135,16 @@ for (const required of [
   "2016-07-09T16:46:13Z",
   "2020-05-11T19:23:43Z",
   "2024-04-20T00:09:27Z",
+  "BTC_TEMPORAL_ORIGIN_UTC",
+  "BTC_PROSPECTIVE_HORIZON_DATE",
+  "BTC_ASTRO_CHUNK_DAYS",
+  "BTC_ASTRO_RANGE_CONCURRENCY",
+  "mapWithConcurrency",
+  "buildBtcAstroWindows",
+  "interval_series",
+  "compacted_for_model_cost",
+  "historical_reconstruction_not_point_in_time_bhrigu_memory",
+  "future_not_established_fact",
 ]) assert.ok(astroClient.includes(required), `astro_field client missing ${required}`);
 const astroClientWithoutCanonicalEngine = astroClient.replaceAll("orion_native_swisseph_canonical_v0_1", "");
 assert.doesNotMatch(astroClientWithoutCanonicalEngine, /astronomy-engine|skyfield|swisseph|prepared/i);
@@ -132,3 +177,7 @@ console.log("CRYPTO_ECOSYSTEM_SUPPORTING_CONTEXT=PASS");
 console.log("SEMANTIC_VISUAL_LANGUAGE=EXISTING_GLYPH_REUSE");
 console.log("BITCOIN_CORRIDOR_BOUNDARY=PASS");
 console.log("TRADING_AUTHORITY=ZERO");
+console.log("BTC_TEMPORAL_ORIGIN=GENESIS_BLOCK");
+console.log("BTC_TEMPORAL_GENESIS_TO_NOW_AUTO_CHUNK=PASS");
+console.log("BTC_TEMPORAL_2027_2028_PROSPECTIVE=PASS");
+console.log("BTC_TEMPORAL_FUTURE_AS_FACT=ZERO");
