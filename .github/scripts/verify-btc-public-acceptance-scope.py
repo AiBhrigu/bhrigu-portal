@@ -313,6 +313,14 @@ BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE = {
     "tests/btc-clean-chat-link-canonicalization-acceptance.ts",
 }
 
+# Post-release Clean Chat pending-state resilience: presentation + bounded browser lifecycle only.
+BTC_CLEAN_CHAT_PENDING_STATE_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "tests/btc-clean-chat-pending-state-acceptance.ts",
+    "ui/btc/BtcCleanChatV1.tsx",
+}
+
 BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     "components/btc/PublicSupportRoute.tsx",
@@ -383,6 +391,7 @@ accepted_scopes = {
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE,
     "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE": BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_SCOPE,
     "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE": BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE,
+    "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE": BTC_CLEAN_CHAT_PENDING_STATE_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
