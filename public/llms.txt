@@ -15,7 +15,7 @@ BHRIGU provides the public access surface. ORION, Frey and Cosmographer remain d
 
 ## Index policy
 The BTC entry page and its accepted public knowledge are indexable.
-The current Clean Chat dialogue at /crypto-astro/btc/clean-chat is noindex and is not a canonical knowledge page. The legacy /crypto-astro/btc/live route remains noindex for backward compatibility only.
+Arbitrary live dialogue queries at /crypto-astro/btc/live are noindex and are not canonical knowledge pages.
 
 ## Evidence boundary
 Market answers use the accepted Market Snapshot and Delta.
