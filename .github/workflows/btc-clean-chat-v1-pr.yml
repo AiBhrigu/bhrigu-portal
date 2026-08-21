@@ -167,6 +167,7 @@ jobs:
                   assert "EVIDENCE" not in role_text and "..." not in role_text and "…" not in role_text, role_text
                   assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "pending horizontal overflow"
                   driver.save_screenshot(f"/tmp/btc-clean-chat-pending-{lang}-{width}.png")
+                  driver.execute_script("window.sessionStorage.clear()")
               print("CLEAN_SHELL_RU_EN=PASS")
               print("CLEAN_SHELL_DESKTOP_MOBILE=PASS")
               print("PREPARED_QUESTION_UI=ZERO")
