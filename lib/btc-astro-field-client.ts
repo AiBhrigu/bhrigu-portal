@@ -73,7 +73,9 @@ export type BtcAstroFieldResult = {
 };
 
 function endpoint(): string {
-  if (process.env.VERCEL_ENV === "production") throw new Error("ASTRO_FIELD_PREVIEW_ONLY");
+  if (process.env.VERCEL_ENV === "production" && process.env.BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE !== "1") {
+    throw new Error("ASTRO_FIELD_PRODUCTION_DISABLED");
+  }
   const value = process.env.BHRIGU_ASTRO_FIELD_URL?.trim();
   if (!value) throw new Error("ASTRO_FIELD_ENDPOINT_UNAVAILABLE");
   return value;

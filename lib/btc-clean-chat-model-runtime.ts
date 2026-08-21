@@ -150,7 +150,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function directOpenAiAuth(): string {
-  if (process.env.VERCEL_ENV === "production") throw new Error("DIRECT_OPENAI_PREVIEW_ONLY");
+  if (process.env.VERCEL_ENV === "production" && process.env.BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE !== "1") {
+    throw new Error("DIRECT_OPENAI_PRODUCTION_DISABLED");
+  }
   const key = process.env.OPENAI_API_KEY;
   if (!key) throw new Error("DIRECT_OPENAI_AUTH_UNAVAILABLE");
   return key;
