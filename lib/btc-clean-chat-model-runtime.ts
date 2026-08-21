@@ -49,6 +49,8 @@ const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
 const MODEL_TIMEOUT_MS = 35_000;
 const MAX_PLAN_OUTPUT_TOKENS = 360;
 const MAX_FINAL_OUTPUT_TOKENS = 500;
+const MAX_AUX_RETRY_OUTPUT_TOKENS = 720;
+const MAX_FINAL_RETRY_OUTPUT_TOKENS = 2_000;
 const MAX_WEB_OUTPUT_TOKENS = 360;
 const MAX_MODEL_ATTEMPTS = 2;
 const MAX_CONTEXT_TURNS = 12;
@@ -248,7 +250,10 @@ async function boundedModelValue<T>(
           if (lastReason === "max_output_tokens") {
             const currentCap = Number(attemptBody.max_output_tokens);
             if (Number.isFinite(currentCap) && currentCap > 0) {
-              attemptBody = { ...attemptBody, max_output_tokens: Math.min(currentCap * 2, 1_000) };
+              const retryCap = currentCap === MAX_FINAL_OUTPUT_TOKENS
+                ? MAX_FINAL_RETRY_OUTPUT_TOKENS
+                : Math.min(currentCap * 2, MAX_AUX_RETRY_OUTPUT_TOKENS);
+              attemptBody = { ...attemptBody, max_output_tokens: retryCap };
             }
           }
           continue;
