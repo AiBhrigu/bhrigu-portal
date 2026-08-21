@@ -42,7 +42,7 @@ export function BtcBinanceCurrentVenuePanel({
   const ask = number(locale, factValue(binding, "best_ask"));
   const ready = binding.status === "READY" && last !== null;
   const observed = binding.observed_at ? formatBtcUtcTimestamp(locale, binding.observed_at) : null;
-  const liveHref = `/crypto-astro/btc/live?lang=${locale}&q=${encodeURIComponent(
+  const cleanChatHref = `/crypto-astro/btc/clean-chat?lang=${locale}&q=${encodeURIComponent(
     ru ? "Что происходит с BTC сейчас?" : "What is happening with BTC now?",
   )}`;
 
@@ -105,7 +105,7 @@ export function BtcBinanceCurrentVenuePanel({
       {binding.source_comparison?.status === "NOT_COMPARABLE" && <p data-binance-comparison-humanized="true">{ru
         ? "Принятый Snapshot и Binance-наблюдение относятся к разному времени и базе котировки, поэтому прямое числовое сравнение здесь не выполняется."
         : "The accepted Snapshot and the Binance observation use different observation times and quote bases, so no direct numerical comparison is made here."}</p>}
-      <a href={liveHref}>{ru ? "Открыть Binance evidence в диалоге →" : "Open Binance evidence in dialogue →"}</a>
+      <a href={cleanChatHref}>{ru ? "Открыть Binance evidence в диалоге →" : "Open Binance evidence in dialogue →"}</a>
     </div>
 
     <style jsx>{`

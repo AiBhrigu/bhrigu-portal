@@ -14,7 +14,7 @@ export function BtcHeroQuestionLaunch({
     : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
   const params = [`lang=${locale}`, `q=${encodeURIComponent(primaryQuestion)}`];
   if (initialDate) params.push(`d=${encodeURIComponent(initialDate)}`);
-  const liveHref = `/crypto-astro/btc/live?${params.join("&")}`;
+  const cleanChatHref = `/crypto-astro/btc/clean-chat?${params.join("&")}`;
 
   return <aside className="heroQuestionCard heroDialogueGateway" aria-labelledby="hero-dialogue-title">
     <header className="heroQuestionHeader">
@@ -33,7 +33,7 @@ export function BtcHeroQuestionLaunch({
       <span>{ru ? "Условия" : "Conditions"}</span>
       <span>{ru ? "Граница" : "Boundary"}</span>
     </div>
-    <a className="heroDialogueCta" href={liveHref} data-primary-btc-change-question="true">
+    <a className="heroDialogueCta" href={cleanChatHref} data-primary-btc-change-question="true">
       {ru ? "Спросить, что изменилось в Bitcoin" : "Ask what changed in Bitcoin"}
       <span aria-hidden="true">→</span>
     </a>

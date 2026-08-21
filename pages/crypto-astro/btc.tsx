@@ -230,8 +230,11 @@ export default function Page(p: Props) {
   const generalRoute = exampleRoutes.find((route) => route.id === "general_change") ?? exampleRoutes[0];
   const memoryRoute = exampleRoutes.find((route) => route.id === "accepted_memory") ?? exampleRoutes[0];
   const routedHref = (question: string, anchor: string) => `/crypto-astro/btc?lang=${p.locale}&q=${encodeURIComponent(question)}#${anchor}`;
-  const liveHref = `/crypto-astro/btc/live?lang=${p.locale}`;
-  const originsHref = `${liveHref}#bitcoin-origins-dossier`;
+  const cleanChatHref = `/crypto-astro/btc/clean-chat?lang=${p.locale}`;
+  const originsQuestion = ru
+    ? "Кто такой Сатоши Накамото и когда он объявил Bitcoin v0.1?"
+    : "Who is Satoshi Nakamoto and when was Bitcoin v0.1 announced?";
+  const originsHref = `${cleanChatHref}&q=${encodeURIComponent(originsQuestion)}`;
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -381,7 +384,7 @@ export default function Page(p: Props) {
           <section>
             <h3>{ru ? "ПРОДУКТ" : "PRODUCT"}</h3>
             <a href={`/crypto-astro/btc?lang=${p.locale}`}>BTC Field</a>
-            <a href={liveHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
+            <a href={cleanChatHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
             <a href={routedHref(memoryRoute.question, "snapshot-memory")}>Snapshot Memory</a>
             <a href={originsHref}>{ru ? "Происхождение Bitcoin / Сатоши" : "Bitcoin Origins / Satoshi"}</a>
           </section>
@@ -399,7 +402,7 @@ export default function Page(p: Props) {
           </section>
           <section>
             <h3>{ru ? "ДОСТУП" : "ACCESS"}</h3>
-            <a href={liveHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
+            <a href={cleanChatHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
             <a href={`/access?lang=${p.locale}&intent=btc-continuity-status`}>{ru ? "Private BTC Field Review" : "Private BTC Field Review"}</a>
             <a href="/">BHRIGU</a>
           </section>
