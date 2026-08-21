@@ -15,6 +15,7 @@ assert.match(component, /role="status" aria-live="polite"/);
 assert.match(component, /Собираю evidence…/);
 assert.match(component, /Gathering evidence…/);
 assert.match(component, /cleanThinkingDots" aria-hidden="true"/);
+assert.match(component, /grid-template-columns:152px minmax\(0,1fr\)/);
 assert.doesNotMatch(component, /className="cleanThinking"/);
 assert.match(component, /Сбор evidence занял слишком много времени/);
 assert.match(component, /Evidence gathering took too long/);

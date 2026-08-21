@@ -165,6 +165,8 @@ jobs:
                   role_text = " ".join(role.text.split()).upper()
                   assert role_text.endswith("COSMOGRAPHER"), role_text
                   assert "EVIDENCE" not in role_text and "..." not in role_text and "…" not in role_text, role_text
+                  if width > 680:
+                      assert driver.execute_script("return arguments[0].scrollWidth <= arguments[0].clientWidth", role), "Cosmographer role overflows its desktop column"
                   assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "pending horizontal overflow"
                   driver.save_screenshot(f"/tmp/btc-clean-chat-pending-{lang}-{width}.png")
                   driver.execute_script("window.sessionStorage.clear()")
