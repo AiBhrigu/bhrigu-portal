@@ -89,6 +89,8 @@ for (const required of [
   "protocol_subject: { enum: [...Array.from(PROTOCOL_VALUES), null] }",
   "PROTOCOL_VALUES.has(protocolSubjectRaw)",
   "protocol_subject=satoshi_history",
+  "bitcoin-history-${index + 1}",
+  "sourceSection?.bullets",
   "boundedModelValue",
   'type: "json_schema"',
   'type: "web_search"',

@@ -553,8 +553,17 @@ function sourceRows(evidence: EvidenceBundle): BtcCleanSource[] {
     if (evidence.astronomy.anchor) rows.push({ id: `btc-anchor-${evidence.astronomy.anchor.id}`, label: `${evidence.astronomy.anchor.label} · accepted UTC anchor`, href: evidence.astronomy.anchor.source, as_of: evidence.astronomy.anchor.timestamp_utc });
   }
   if (evidence.protocol) {
-    const historySource = BTC_ORIGINS_KNOWLEDGE_CAPSULE.sources[0];
-    rows.push({ id: "bitcoin-protocol", label: "Bitcoin protocol source of truth", href: evidence.protocol.answer_mode === "PROTOCOL_FACT" && historySource ? historySource.url : "https://github.com/bitcoin/bitcoin", as_of: null });
+    const sourceSection = evidence.protocol.sections.find((section) => section.id === "sources");
+    const historyRows = (sourceSection?.bullets ?? []).flatMap((bullet, index) => {
+      const separator = bullet.lastIndexOf("|http");
+      if (separator < 0) return [];
+      const label = bullet.slice(0, separator).trim();
+      const href = bullet.slice(separator + 1).trim();
+      if (!label || !/^https:\/\//.test(href)) return [];
+      return [{ id: `bitcoin-history-${index + 1}`, label, href, as_of: null } satisfies BtcCleanSource];
+    });
+    if (historyRows.length) rows.push(...historyRows);
+    else rows.push({ id: "bitcoin-protocol", label: "Bitcoin protocol source of truth", href: "https://github.com/bitcoin/bitcoin", as_of: null });
   }
   if (evidence.web) rows.push(...evidence.web.sources);
   return Array.from(new Map(rows.map((row) => [row.href, row])).values()).slice(0, 12);
