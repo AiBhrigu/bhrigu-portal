@@ -6,7 +6,7 @@ import type {
 } from "../../../lib/btc-clean-chat-v1";
 
 const MAX_BODY_BYTES = 24 * 1024;
-const MAX_PRIOR_TURNS = 8;
+const MAX_PRIOR_TURNS = 12;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);

@@ -142,7 +142,7 @@ export const BTC_ORIGINS_KNOWLEDGE_CAPSULE: {
       ],
     },
     {
-      date: "2009-01-10",
+      date: "2009-01-08",
       text: [
         "The mailing-list archive recorded the first Bitcoin alpha release announcement and its issuance schedule.",
         "Архив рассылки зафиксировал объявление первого alpha-релиза Bitcoin и график эмиссии.",
@@ -183,10 +183,10 @@ export const BTC_ORIGINS_KNOWLEDGE_CAPSULE: {
     {
       id: "first_release_archive",
       label: [
-        "Bitcoin v0.1 release thread — mailing-list archive, 10 Jan 2009",
-        "Тема о выпуске Bitcoin v0.1 — архив рассылки, 10 января 2009",
+        "Satoshi Nakamoto — Bitcoin v0.1 release announcement, 8 Jan 2009",
+        "Сатоши Накамото — объявление Bitcoin v0.1 в рассылке, 8 января 2009",
       ],
-      url: "https://www.metzdowd.com/pipermail/cryptography/2009-January/015004.html",
+      url: "https://www.metzdowd.com/pipermail/cryptography/2009-January/014994.html",
     },
     {
       id: "genesis_source_code",

@@ -16,6 +16,7 @@ assert.equal(BTC_POLYMARKET_EXPECTATION_SCHEMA, "bhrigu_btc_polymarket_expectati
 const root = path.resolve(process.cwd());
 const component = fs.readFileSync(path.join(root, "ui/btc/BtcCleanChatV1.tsx"), "utf8");
 const api = fs.readFileSync(path.join(root, "pages/api/btc/clean-chat-v1.ts"), "utf8");
+const protocolEvidence = fs.readFileSync(path.join(root, "lib/btc-protocol-evidence.ts"), "utf8");
 const shared = fs.readFileSync(path.join(root, "lib/btc-clean-chat-v1.ts"), "utf8");
 const runtime = fs.readFileSync(path.join(root, "lib/btc-clean-chat-model-runtime.ts"), "utf8");
 const astroClient = fs.readFileSync(path.join(root, "lib/btc-astro-field-client.ts"), "utf8");
@@ -31,9 +32,14 @@ assert.match(component, /cleanAssistant/);
 assert.match(component, /FieldAnchorGlyph/);
 assert.match(component, /cleanSemanticVisual/);
 assert.match(component, /data-semantic-state/);
+assert.match(component, /cleanCopyAction/);
+assert.match(component, /navigator\.clipboard\.writeText/);
+assert.match(component, /MAX_CONTEXT_TURNS = 12/);
+assert.match(component, /slice\(-MAX_CONTEXT_TURNS\)/);
 assert.doesNotMatch(component, /examples\.map|MODULE_CARDS|module card/i);
 
 assert.match(api, /runBtcCleanChatModel/);
+assert.match(api, /MAX_PRIOR_TURNS = 12/);
 assert.doesNotMatch(api, /classifyBtcCleanIntent|canonicalQuestion|runBtcCleanChat\(/);
 assert.doesNotMatch(shared, /classifyBtcCleanIntent|canonicalQuestion|function fieldChange|function expectationNow|runBtcCleanChat\(/);
 assert.match(shared, /semantic_visual/);
@@ -54,6 +60,12 @@ for (const required of [
   'type: "json_schema"',
   'type: "web_search"',
   "MAX_MODEL_ATTEMPTS = 2",
+  "MAX_CONTEXT_TURNS = 12",
+  "safeEvidence",
+  "evidence_unavailable",
+  "PRIMARY_PRODUCT_AXIS",
+  "Public first-party BHRIGU project context",
+  "product_runtime",
   "MAX_FINAL_OUTPUT_TOKENS = 500",
   'reasoning: { effort: "low" }',
   "DIRECT_OPENAI_PREVIEW_ONLY",
@@ -74,6 +86,8 @@ for (const required of [
   assert.ok(runtime.includes(required), `direct model runtime missing ${required}`);
 }
 assert.doesNotMatch(runtime, /ai-gateway\.vercel\.sh|AI_GATEWAY_API_KEY|VERCEL_OIDC_TOKEN/);
+assert.doesNotMatch(runtime, /Current UTC date is 2026-08-20/);
+assert.match(runtime, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
 assert.doesNotMatch(runtime, /classifyBtcCleanIntent|canonicalQuestion|createOrder|postOrder|cancelOrder|withdraw|private key/i);
 assert.doesNotMatch(runtime, /buildBtcAstroAnswer|buildMultiBodyAstroYearAnswer|BTC_PUBLIC_ASTRO_EVIDENCE_META/);
 
@@ -89,6 +103,10 @@ for (const required of [
 ]) assert.ok(astroClient.includes(required), `astro_field client missing ${required}`);
 const astroClientWithoutCanonicalEngine = astroClient.replaceAll("orion_native_swisseph_canonical_v0_1", "");
 assert.doesNotMatch(astroClientWithoutCanonicalEngine, /astronomy-engine|skyfield|swisseph|prepared/i);
+
+assert.match(protocolEvidence, /2009-01-08/);
+assert.match(protocolEvidence, /2009-January\/014994\.html/);
+assert.doesNotMatch(protocolEvidence, /2009-01-10|2009-January\/015004\.html/);
 
 assert.match(polymarket, /\/tags\/slug\/bitcoin/);
 assert.doesNotMatch(polymarket, /tag(?:_|\s*)id\s*=\s*["']?235/i);
