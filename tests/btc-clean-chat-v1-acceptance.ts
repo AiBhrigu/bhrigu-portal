@@ -90,6 +90,8 @@ for (const required of [
   'type: "json_schema"',
   'type: "web_search"',
   "MAX_MODEL_ATTEMPTS = 2",
+  "attemptBody",
+  "max_output_tokens: Math.min(currentCap * 2, 1_000)",
   "MAX_CONTEXT_TURNS = 12",
   "safeEvidence",
   "evidence_unavailable",

@@ -237,13 +237,22 @@ async function boundedModelValue<T>(
 ): Promise<{ value: T; result: ModelResult; usage: Usage }> {
   const total: Usage = { input_tokens: 0, output_tokens: 0, web_search_calls: 0 };
   let lastReason = "unknown";
+  let attemptBody = body;
   for (let attempt = 0; attempt < MAX_MODEL_ATTEMPTS; attempt += 1) {
     try {
-      const result = await singleOpenAiResponse(body);
+      const result = await singleOpenAiResponse(attemptBody);
       addUsage(total, result.usage);
       if (responseIncomplete(result)) {
         lastReason = incompleteReason(result);
-        if (attempt + 1 < MAX_MODEL_ATTEMPTS) continue;
+        if (attempt + 1 < MAX_MODEL_ATTEMPTS) {
+          if (lastReason === "max_output_tokens") {
+            const currentCap = Number(attemptBody.max_output_tokens);
+            if (Number.isFinite(currentCap) && currentCap > 0) {
+              attemptBody = { ...attemptBody, max_output_tokens: Math.min(currentCap * 2, 1_000) };
+            }
+          }
+          continue;
+        }
         throw new Error(`DIRECT_OPENAI_EMPTY_RESPONSE:${lastReason}`);
       }
       const value = parse(result);
