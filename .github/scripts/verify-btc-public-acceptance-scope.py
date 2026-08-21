@@ -283,6 +283,21 @@ BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_SCOPE = {
     "pages/index.js",
 }
 
+# PR185 Clean Chat V1 release repair: exact cumulative product + CI authority surface.
+BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "lib/btc-astro-field-client.ts",
+    "lib/btc-clean-chat-model-runtime.ts",
+    "lib/btc-clean-chat-v1.ts",
+    "lib/btc-polymarket-expectation.ts",
+    "lib/btc-protocol-evidence.ts",
+    "pages/api/btc/clean-chat-v1.ts",
+    "pages/crypto-astro/btc/clean-chat.tsx",
+    "tests/btc-clean-chat-v1-acceptance.ts",
+    "ui/btc/BtcCleanChatV1.tsx",
+}
+
 BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     "components/btc/PublicSupportRoute.tsx",
@@ -351,6 +366,7 @@ accepted_scopes = {
     "PASS_BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_EXACT_6_FILE_SCOPE": BTC_BINANCE_PUBLIC_CORRIDOR_CURRENT_PRICE_SCOPE,
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_SCOPE,
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE,
+    "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE": BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
