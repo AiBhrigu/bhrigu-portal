@@ -1,0 +1,142 @@
+name: BTC Clean Chat V1 PR
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/scripts/verify-btc-public-acceptance-scope.py'
+      - '.github/workflows/btc-clean-chat-v1-pr.yml'
+      - 'ui/btc/BtcCleanChatV1.tsx'
+      - 'lib/btc-clean-chat-v1.ts'
+      - 'lib/btc-clean-chat-model-runtime.ts'
+      - 'lib/btc-astro-field-client.ts'
+      - 'lib/btc-polymarket-expectation.ts'
+      - 'lib/btc-protocol-evidence.ts'
+      - 'pages/api/btc/clean-chat-v1.ts'
+      - 'pages/crypto-astro/btc/clean-chat.tsx'
+      - 'tests/btc-clean-chat-v1-acceptance.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clean-chat-v1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BTC_CLEAN_CHAT_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      BTC_CLEAN_CHAT_PREVIEW_BASE: http://127.0.0.1:3000
+      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Exact implementation boundary
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          git fetch origin "${GITHUB_BASE_REF}"
+          mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
+          expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "ui/btc/BtcCleanChatV1.tsx"
+            "lib/btc-clean-chat-v1.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "lib/btc-astro-field-client.ts"
+            "lib/btc-polymarket-expectation.ts"
+            "lib/btc-protocol-evidence.ts"
+            "pages/api/btc/clean-chat-v1.ts"
+            "pages/crypto-astro/btc/clean-chat.tsx"
+            "tests/btc-clean-chat-v1-acceptance.ts"
+          )
+          mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
+          diff -u <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
+          echo "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE"
+      - run: npm ci
+      - name: Direct OpenAI architecture acceptance
+        run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
+      - name: TypeScript
+        run: npx tsc --noEmit
+      - name: Production build
+        env:
+          BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
+          BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
+        run: npx next build
+      - name: Start exact-head local Preview shell
+        shell: bash
+        run: |
+          npm run start -- -p 3000 >/tmp/btc-clean-chat-v1.log 2>&1 &
+          echo $! >/tmp/btc-clean-chat-v1.pid
+          for attempt in $(seq 1 60); do
+            html="$(curl --fail --silent --show-error --max-time 10 "${BTC_CLEAN_CHAT_PREVIEW_BASE}/crypto-astro/btc/clean-chat?lang=en" || true)"
+            if printf '%s' "$html" | grep -q "name=\"btc-deployment-source-sha\" content=\"${BTC_CLEAN_CHAT_HEAD_SHA}\""; then
+              echo "EXACT_HEAD_LOCAL_PREVIEW=PASS ${BTC_CLEAN_CHAT_HEAD_SHA}"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/btc-clean-chat-v1.log
+          exit 1
+      - name: Install browser driver
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: RU EN desktop mobile clean-shell acceptance
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          base = os.environ["BTC_CLEAN_CHAT_PREVIEW_BASE"].rstrip("/")
+          opts = webdriver.ChromeOptions()
+          opts.add_argument("--headless=new")
+          opts.add_argument("--no-sandbox")
+          opts.add_argument("--disable-dev-shm-usage")
+          opts.add_argument("--disable-gpu")
+          driver = webdriver.Chrome(options=opts)
+          wait = WebDriverWait(driver, 60)
+
+          try:
+              cases = [("en", 1440, 1000), ("ru", 1440, 1000), ("en", 390, 844), ("ru", 390, 844)]
+              for lang, width, height in cases:
+                  driver.set_window_size(width, height)
+                  driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
+                  wait.until(EC.presence_of_element_located((By.ID, "btc-clean-question")))
+                  assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "horizontal overflow"
+                  assert driver.find_element(By.CSS_SELECTOR, ".cleanComposer").is_displayed()
+                  assert driver.find_element(By.CSS_SELECTOR, ".cleanWelcome").is_displayed()
+                  assert not driver.find_elements(By.CSS_SELECTOR, ".cleanExampleRow button"), "prepared question buttons visible"
+                  for selector in ['header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"]', 'nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]']:
+                      for node in driver.find_elements(By.CSS_SELECTOR, selector):
+                          assert not node.is_displayed(), f"legacy chrome visible: {selector}"
+                  driver.save_screenshot(f"/tmp/btc-clean-chat-{lang}-{width}.png")
+              print("CLEAN_SHELL_RU_EN=PASS")
+              print("CLEAN_SHELL_DESKTOP_MOBILE=PASS")
+              print("PREPARED_QUESTION_UI=ZERO")
+          finally:
+              driver.quit()
+          PY
+      - name: Stop exact-head local Preview
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/btc-clean-chat-v1.pid; then kill "$(cat /tmp/btc-clean-chat-v1.pid)" || true; fi
+      - name: Upload clean-shell visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: btc-clean-chat-v1-shell-${{ env.BTC_CLEAN_CHAT_HEAD_SHA }}
+          path: |
+            /tmp/btc-clean-chat-*.png
+            /tmp/btc-clean-chat-v1.log
+          if-no-files-found: warn
+          retention-days: 30
