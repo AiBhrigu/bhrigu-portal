@@ -380,11 +380,11 @@ jobs:
               ).get_attribute("href")
               driver.get(en_primary_href)
               WebDriverWait(driver, 30).until(
-                  lambda current: current.find_element(By.CSS_SELECTOR, "main.liveDialoguePage")
+                  lambda current: current.find_element(By.CSS_SELECTOR, "main.cleanChatPage")
               )
               check(
                   "primary_cta_destination_200",
-                  bool(driver.find_elements(By.CSS_SELECTOR, "main.liveDialoguePage")),
+                  bool(driver.find_elements(By.CSS_SELECTOR, "main.cleanChatPage")),
               )
               check(
                   "primary_cta_question_loaded",

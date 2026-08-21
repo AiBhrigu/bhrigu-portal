@@ -129,7 +129,7 @@ def run_entry(driver, suffix, locale):
     cta = driver.find_element(By.CSS_SELECTOR, ".heroDialogueCta")
     outcomes = driver.find_elements(By.CSS_SELECTOR, ".productOutcomeGrid article")
     check(f"entry_h1_{locale}_{suffix}", "BTC Field" in h1 or "Чтение поля BTC" in h1, h1)
-    check(f"entry_cta_{locale}_{suffix}", "/crypto-astro/btc/live" in cta.get_attribute("href"), cta.text)
+    check(f"entry_cta_{locale}_{suffix}", "/crypto-astro/btc/clean-chat" in cta.get_attribute("href"), cta.text)
     check(f"entry_four_outcomes_{locale}_{suffix}", len(outcomes) == 4, len(outcomes))
     check(f"entry_no_overflow_{locale}_{suffix}", no_overflow(driver))
     family = font_family(driver, ".heroProductCopy h1").lower()
