@@ -76,15 +76,23 @@ jobs:
             "tests/btc-clean-chat-pending-state-acceptance.ts"
             "ui/btc/BtcCleanChatV1.tsx"
           )
+          traffic_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "ui/btc/BtcCleanChatV1.tsx"
+          )
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
+          mapfile -t traffic_expected_sorted < <(printf '%s\n' "${traffic_expected[@]}" | sort)
           if diff -q <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${pending_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${traffic_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE"
           else
             diff -u <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
             exit 1
@@ -94,6 +102,21 @@ jobs:
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
       - name: Pending-state and client-timeout acceptance
         run: node --import tsx tests/btc-clean-chat-pending-state-acceptance.ts
+      - name: Traffic-retention copy attribution acceptance
+        shell: bash
+        run: |
+          node --import tsx - <<'NODE'
+          const module = await import('./ui/btc/BtcCleanChatV1.tsx');
+          const { buildCleanChatCopyText } = module.default ?? module;
+          const canonical = 'https://www.bhrigu.io/crypto-astro/btc/clean-chat';
+          const answer = 'Synthetic Cosmographer answer.';
+          const en = buildCleanChatCopyText('en', answer, 'assistant');
+          const ru = buildCleanChatCopyText('ru', answer, 'assistant');
+          if (en !== `${answer}\n\nSource: BHRIGU BTC Cosmographer\n${canonical}`) throw new Error(`EN attribution mismatch: ${en}`);
+          if (ru !== `${answer}\n\nИсточник: BHRIGU BTC Cosmographer\n${canonical}`) throw new Error(`RU attribution mismatch: ${ru}`);
+          if (buildCleanChatCopyText('en', 'user text', 'user') !== 'user text') throw new Error('User copy must remain unmodified');
+          console.log('PASS_BTC_CLEAN_CHAT_COPY_ATTRIBUTION');
+          NODE
       - name: TypeScript
         run: npx tsc --noEmit
       - name: Production build
@@ -122,6 +145,7 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
+          import json
           import os
           from selenium import webdriver
           from selenium.webdriver.common.by import By
@@ -146,7 +170,48 @@ jobs:
                   assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "horizontal overflow"
                   assert driver.find_element(By.CSS_SELECTOR, ".cleanComposer").is_displayed()
                   assert driver.find_element(By.CSS_SELECTOR, ".cleanWelcome").is_displayed()
+                  support = driver.find_element(By.CSS_SELECTOR, '[data-clean-support-glyph="bitcoin"]')
+                  assert support.is_displayed(), "quiet Bitcoin support glyph hidden"
+                  assert support.text.strip() == "₿", support.text
+                  assert support.get_attribute("href").endswith(f"/support?lang={lang}"), support.get_attribute("href")
+                  assert support.get_attribute("aria-label"), "support glyph needs an accessible label"
+                  assert not driver.find_elements(By.CSS_SELECTOR, 'a[href^="bitcoin:"]'), "raw Bitcoin payment URI exposed in Clean Chat navigation"
                   assert not driver.find_elements(By.CSS_SELECTOR, ".cleanExampleRow button"), "prepared question buttons visible"
+
+                  copy_turn = [{
+                      "id": "traffic-copy-probe",
+                      "user": "User copy probe",
+                      "assistant": "Synthetic Cosmographer answer.",
+                      "topic": "probe",
+                      "asOf": None,
+                      "sources": [],
+                  }]
+                  storage_key = f"bhrigu:btc-clean-chat-v1:{lang}"
+                  driver.execute_script("sessionStorage.setItem(arguments[0], arguments[1])", storage_key, json.dumps(copy_turn))
+                  driver.refresh()
+                  assistant_copy = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '[data-copy-subject="assistant"]')))
+                  clipboard_override = driver.execute_script("""
+                    try {
+                      window.__btcCopiedText = null;
+                      Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async (text) => { window.__btcCopiedText = text; } } });
+                      return typeof navigator.clipboard.writeText === 'function';
+                    } catch (error) { return String(error); }
+                  """)
+                  assert clipboard_override is True, clipboard_override
+                  assert assistant_copy.get_attribute("data-copy-attribution") == "bhrigu-btc-cosmographer"
+                  assistant_copy.click()
+                  copied = wait.until(lambda current: current.execute_script("return window.__btcCopiedText"))
+                  source_label = "Источник" if lang == "ru" else "Source"
+                  expected_copy = f"Synthetic Cosmographer answer.\n\n{source_label}: BHRIGU BTC Cosmographer\nhttps://www.bhrigu.io/crypto-astro/btc/clean-chat"
+                  assert copied == expected_copy, copied
+                  driver.execute_script("window.__btcCopiedText = null")
+                  driver.find_element(By.CSS_SELECTOR, '[data-copy-subject="user"]').click()
+                  copied_user = wait.until(lambda current: current.execute_script("return window.__btcCopiedText"))
+                  assert copied_user == "User copy probe", copied_user
+                  driver.execute_script("sessionStorage.clear()")
+                  driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
+                  wait.until(EC.presence_of_element_located((By.ID, "btc-clean-question")))
+
                   for selector in ['header[data-hdr="BHRIGU_BTC_FIELD_HEADER_V0_1"]', 'nav[data-pn-root="PORTAL_PREVNEXT_V0_2"]']:
                       for node in driver.find_elements(By.CSS_SELECTOR, selector):
                           assert not node.is_displayed(), f"legacy chrome visible: {selector}"
