@@ -215,7 +215,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
   const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
   const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
-  const btcQuestionHref = `/crypto-astro/btc/live?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
+  const btcQuestionHref = `/crypto-astro/btc/clean-chat?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
   const jsonLd = buildJsonLd();
   return <>
     <Head><title>Market Cosmographer · AI Market Intelligence | BHRIGU</title><meta name="description" content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."/><meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta property="og:description" content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."/><meta property="og:url" content="https://www.bhrigu.io/"/><meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta name="twitter:description" content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."/><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>

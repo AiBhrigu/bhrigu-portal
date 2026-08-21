@@ -13,6 +13,13 @@ function first(value: string | string[] | undefined): string {
   return Array.isArray(value) ? value[0] ?? "" : value ?? "";
 }
 
+function validObservationDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
 function sourceSha(): string | null {
   const value = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA ?? null;
   return value && /^[0-9a-f]{40}$/i.test(value) ? value : null;
@@ -20,7 +27,13 @@ function sourceSha(): string | null {
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res }) => {
   const locale: BtcCleanLocale = first(query.lang).toLowerCase() === "ru" ? "ru" : "en";
-  const initialQuestion = first(query.q).trim().slice(0, 500);
+  const rawQuestion = first(query.q).trim();
+  const rawDate = first(query.d).trim();
+  const selectedDate = validObservationDate(rawDate) ? rawDate : "";
+  const dateSuffix = selectedDate ? `\n\n${locale === "ru" ? "Выбранная дата" : "Selected date"}: ${selectedDate}` : "";
+  const initialQuestion = rawQuestion
+    ? `${rawQuestion.slice(0, Math.max(0, 500 - dateSuffix.length))}${dateSuffix}`
+    : "";
   const sha = sourceSha();
   res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   res.setHeader("CDN-Cache-Control", "no-store");

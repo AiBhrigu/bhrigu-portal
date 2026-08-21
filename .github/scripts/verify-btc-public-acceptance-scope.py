@@ -298,6 +298,21 @@ BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_SCOPE = {
     "ui/btc/BtcCleanChatV1.tsx",
 }
 
+# Post-release public navigation canonicalization: active BTC entries move to Clean Chat while legacy /live remains backward-compatible.
+BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/bhrigu-home-market-cosmographer-pr.yml",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "components/btc/BtcBinanceCurrentVenue.tsx",
+    "components/btc/BtcHeroQuestionLaunch.tsx",
+    "components/btc/BtcQuestionMembrane.tsx",
+    "pages/crypto-astro/btc.tsx",
+    "pages/crypto-astro/btc/clean-chat.tsx",
+    "pages/index.js",
+    "scripts/verify-btc-public-acceptance-two-screen.py",
+    "tests/btc-clean-chat-link-canonicalization-acceptance.ts",
+}
+
 BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     "components/btc/PublicSupportRoute.tsx",
@@ -367,6 +382,7 @@ accepted_scopes = {
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D1_SCOPE,
     "PASS_BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_EXACT_4_FILE_SCOPE": BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE,
     "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE": BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_SCOPE,
+    "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE": BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():

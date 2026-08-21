@@ -6,11 +6,11 @@ import {
 } from "../../lib/btc-public-language-contract";
 import { FieldAnchorGlyph, RelationGlyph } from "./BtcSurfaceGlyphs";
 
-const LIVE_PATH = "/crypto-astro/btc/live";
+const CLEAN_CHAT_PATH = "/crypto-astro/btc/clean-chat";
 const href = (locale: BtcPublicLocale, question: string, date: string) => {
   const params = [`lang=${locale}`, `q=${encodeURIComponent(question)}`];
   if (date) params.push(`d=${encodeURIComponent(date)}`);
-  return `${LIVE_PATH}?${params.join("&")}`;
+  return `${CLEAN_CHAT_PATH}?${params.join("&")}`;
 };
 
 export function BtcFieldNavigation({ locale }: { locale: BtcPublicLocale }) {
