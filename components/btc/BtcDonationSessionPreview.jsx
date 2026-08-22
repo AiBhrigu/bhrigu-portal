@@ -322,10 +322,16 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const receiptProgress = viewSession && !sendSurfaceOpen && viewSession.observedSats ? donationReceiptProgress(viewSession, locale) : null;
 
   return (
-    <section className="donation" data-donation-surface={surface} data-support-final-polish="golden-symmetry-cyberpunk-v0-1">
+    <section className="donation" data-donation-surface={surface} data-support-final-polish="bhrigu-phi-structured-cyberpunk-v0-1" data-action-energy="state-driven">
       <div className="previewFlag">{isProduction ? "Bitcoin mainnet · voluntary support" : "Protected Preview · No real BTC"}</div>
       <h2>{supportCopy.title}</h2>
-      {(!viewSession || sendSurfaceOpen) && (
+      {!viewSession && (
+        <div className="approvedCopy" data-approved-support-copy={locale}>
+          {supportCopy.lines.map((line) => <p className="intro" key={line}>{line}</p>)}
+        </div>
+      )}
+
+      {!viewSession && (
         <div className="decision" data-support-amount-suggestions data-support-amount-binding="none">
           <p className="directAsk"><strong>{supportCopy.directAsk}</strong></p>
           <div className="micro">{supportCopy.suggestedTitle}</div>
@@ -340,9 +346,6 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           <p className="suggestedHint">{supportCopy.suggestedHint}</p>
         </div>
       )}
-      <div className="approvedCopy" data-approved-support-copy={locale}>
-        {supportCopy.lines.map((line) => <p className="intro" key={line}>{line}</p>)}
-      </div>
 
       {!viewSession && (
         <button className="primary" type="button" onClick={startSession} disabled={busy} data-donation-start>
@@ -365,7 +368,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           )}
 
           {sendSurfaceOpen ? (
-            <div className="activeHeader" data-active-session-hierarchy="golden-signal-v0-1">
+            <div className="activeHeader" data-active-session-hierarchy="phi-action-signal-v0-1">
               <div className="activeSignal">
                 <span className="activePulse" aria-hidden="true" />
                 <div>
@@ -389,17 +392,13 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
                 {supportCopy.safetySignals.map((signal) => <span key={signal}>{signal}</span>)}
               </div>
 
-              <div className="qrCore" data-qr-core="golden-symmetry-v0-1">
+              <div className="qrCore" data-qr-core="phi-functional-bitcoin-action-v0-1">
                 <div className="qrCoreHead">
                   <span className="micro">{supportCopy.freshReceiverSignal}</span>
                   <span className="qrNetwork">BTC / MAINNET</span>
                 </div>
                 <p className="oneTime"><strong>{supportCopy.oneTime}</strong></p>
                 <div className="qrFrame">
-                  <span className="corner cornerTl" aria-hidden="true" />
-                  <span className="corner cornerTr" aria-hidden="true" />
-                  <span className="corner cornerBl" aria-hidden="true" />
-                  <span className="corner cornerBr" aria-hidden="true" />
                   <div className="qrShell" data-local-qr>
                     {qrDataUrl ? <img src={qrDataUrl} width="288" height="288" alt="Bitcoin support QR generated locally in this browser" /> : <div className="qrLoading">Generating QR locally…</div>}
                   </div>
@@ -516,116 +515,111 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       {error && <p className="error" role="status">{error}</p>}
 
       <style jsx>{`
-        .donation { position: relative; overflow: hidden; margin-top: 22px; padding: 20px; border: 1px solid rgba(222,194,125,.14); border-radius: 18px; background: radial-gradient(circle at 92% 0, rgba(83,201,230,.025), transparent 26%), linear-gradient(180deg, rgba(255,255,255,.026), rgba(255,255,255,.014)); box-shadow: inset 0 1px 0 rgba(255,255,255,.025); }
-        .donation::before { content: ""; position: absolute; left: 10%; right: 10%; top: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(222,194,125,.28), rgba(83,201,230,.08), rgba(222,194,125,.28), transparent); pointer-events: none; }
-        .previewFlag, .micro { font-size: 11px; letter-spacing: .11em; text-transform: uppercase; opacity: .68; }
-        .decision { margin: 14px 0 16px; }
-        .directAsk { margin: 0 0 12px; line-height: 1.5; }
-        .amountGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 9px; }
-        .amountChip { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(222,194,125,.16); background: linear-gradient(135deg, rgba(222,194,125,.018), rgba(255,255,255,.014)); transition: border-color .18s ease, box-shadow .18s ease; }
-        .amountChip:hover { border-color: rgba(222,194,125,.28); box-shadow: inset 0 0 18px rgba(222,194,125,.018); }
-        .amountChip strong { font-size: 13px; }
-        .amountChip span { font-size: 11px; opacity: .65; }
-        .suggestedHint { margin: 9px 0 0; font-size: 12px; line-height: 1.5; opacity: .68; }
-        h2 { margin: 8px 0 10px; font-size: 27px; }
+        .donation { position: relative; margin: 0; padding: 0; background: transparent; }
+        .previewFlag, .micro { font-size: 10px; letter-spacing: .13em; text-transform: uppercase; opacity: .64; }
+        .previewFlag { color: rgba(83,201,230,.72); }
+        h2 { margin: 7px 0 11px; font-size: clamp(24px,3vw,31px); line-height: 1.08; }
         h3 { margin: 0 0 9px; font-size: 18px; }
-        .intro, .stateDetail, .amountNote, .stopNote, .guard, .seedGuard, .terminal p, .synthetic p, .guidance p, .handoff li, .guidance li { line-height: 1.55; opacity: .86; }
+        .approvedCopy { margin: 0 0 13px; padding: 0 0 1px 12px; border-left: 1px solid rgba(222,194,125,.24); }
+        .intro, .stateDetail, .amountNote, .stopNote, .guard, .seedGuard, .terminal p, .synthetic p, .guidance p, .handoff li, .guidance li { line-height: 1.55; opacity: .8; }
+        .intro { margin: 0 0 5px; font-size: 11px; line-height: 1.42; }
+        .decision { margin: 12px 0 14px; }
+        .directAsk { margin: 0 0 12px; color: rgba(222,194,125,.92); line-height: 1.5; }
+        .amountGrid { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 0; margin-top: 9px; }
+        .amountChip { min-width: 0; display: grid; align-content: start; gap: 2px; padding: 6px 5px; border-top: 1px solid rgba(222,194,125,.18); border-bottom: 1px solid rgba(222,194,125,.18); border-right: 1px solid rgba(255,255,255,.055); background: rgba(255,255,255,.012); }
+        .amountChip:first-child { border-left: 1px solid rgba(222,194,125,.18); border-radius: 9px 0 0 9px; }
+        .amountChip:last-child { border-radius: 0 9px 9px 0; }
+        .amountChip strong { font-size: 10px; line-height: 1.2; }
+        .amountChip span { font-size: 8px; line-height: 1.25; opacity: .6; overflow-wrap: anywhere; }
+        .suggestedHint { margin: 6px 0 0; font-size: 10px; line-height: 1.42; opacity: .6; }
         .primary, .secondary, .retire { appearance: none; font: inherit; cursor: pointer; }
-        .primary { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(222,194,125,.34); background: linear-gradient(90deg, rgba(222,194,125,.12), rgba(255,255,255,.075), rgba(83,201,230,.035)); color: inherit; font-weight: 650; box-shadow: 0 0 26px rgba(222,194,125,.025); transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
-        .primary:not(:disabled):hover { border-color: rgba(222,194,125,.52); box-shadow: 0 0 30px rgba(222,194,125,.055), 0 0 38px rgba(83,201,230,.02); transform: translateY(-1px); }
+        .primary { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid rgba(222,194,125,.42); background: linear-gradient(100deg, rgba(222,194,125,.14), rgba(222,194,125,.07) 56%, rgba(83,201,230,.04)); color: inherit; font-weight: 650; box-shadow: 0 0 28px rgba(222,194,125,.035); transition: border-color .22s ease, background .22s ease; }
+        .primary:not(:disabled):hover { border-color: rgba(222,194,125,.6); background: linear-gradient(100deg, rgba(222,194,125,.18), rgba(222,194,125,.08) 56%, rgba(83,201,230,.055)); }
         .primary:disabled, .secondary:disabled, .retire:disabled { opacity: .55; cursor: default; }
         .restart { margin-top: 14px; }
         .session { margin-top: 16px; }
         .sessionActive { position: relative; }
-        .activeHeader { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; padding: 11px 13px; border: 1px solid rgba(222,194,125,.28); border-radius: 14px; background: linear-gradient(90deg, rgba(222,194,125,.055), rgba(83,201,230,.018) 62%, rgba(255,255,255,.012)); box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
+        .activeHeader { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 12px; padding: 10px 0; border-top: 1px solid rgba(222,194,125,.28); border-bottom: 1px solid rgba(83,201,230,.16); }
         .activeSignal { display: flex; gap: 10px; align-items: center; }
         .activeSignal strong { display: block; margin-top: 2px; font-size: 14px; }
-        .activePulse { width: 8px; height: 8px; border-radius: 50%; background: #dec27d; box-shadow: 0 0 0 4px rgba(222,194,125,.08), 0 0 18px rgba(83,201,230,.16); animation: supportPulse 3.8s ease-in-out infinite; }
-        @keyframes supportPulse { 0%,100% { box-shadow: 0 0 0 4px rgba(222,194,125,.07), 0 0 14px rgba(83,201,230,.11); } 50% { box-shadow: 0 0 0 6px rgba(222,194,125,.035), 0 0 22px rgba(83,201,230,.17); } }
+        .activePulse { width: 7px; height: 7px; border-radius: 50%; background: #dec27d; box-shadow: 0 0 0 4px rgba(222,194,125,.055), 0 0 18px rgba(83,201,230,.12); }
         .stateRow { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 14px; }
         .state { display: inline-flex; min-height: 30px; align-items: center; padding: 0 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.13); font-size: 13px; }
-        .expiry { font-size: 12px; opacity: .66; }
-        .safetyRail { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; margin: 14px 0; }
-        .safetyRail span { min-height: 34px; display: flex; align-items: center; padding: 7px 10px; border: 1px solid rgba(222,194,125,.15); border-radius: 10px; background: rgba(255,255,255,.014); font-size: 10px; letter-spacing: .065em; text-transform: uppercase; opacity: .8; }
-        .qrCore { position: relative; overflow: hidden; margin: 14px 0 18px; padding: 14px; border: 1px solid rgba(222,194,125,.28); border-radius: 18px; background: radial-gradient(circle at 50% 28%, rgba(222,194,125,.07), transparent 36%), linear-gradient(180deg, rgba(222,194,125,.025), rgba(3,5,8,.42)); }
-        .qrCore::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .12; background-image: linear-gradient(rgba(222,194,125,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(222,194,125,.12) 1px, transparent 1px); background-size: 34px 34px; }
-        .qrCoreHead { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-        .qrNetwork { font-size: 10px; letter-spacing: .1em; color: rgba(222,194,125,.82); }
-        .oneTime { position: relative; z-index: 1; margin: 12px 0 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(222,194,125,.18); line-height: 1.45; background: rgba(0,0,0,.16); }
-        .qrFrame { position: relative; z-index: 1; width: min(100%, 352px); margin: 12px auto 2px; padding: 14px; box-sizing: border-box; }
-        .corner { position: absolute; width: 22px; height: 22px; border-color: rgba(222,194,125,.72); pointer-events: none; }
-        .cornerTl { top: 0; left: 0; border-top: 1px solid; border-left: 1px solid; }
-        .cornerTr { top: 0; right: 0; border-top: 1px solid; border-right: 1px solid; }
-        .cornerBl { bottom: 0; left: 0; border-bottom: 1px solid; border-left: 1px solid; }
-        .cornerBr { bottom: 0; right: 0; border-bottom: 1px solid; border-right: 1px solid; }
-        .qrShell { width: min(100%, 320px); min-height: 320px; margin: 0 auto; display: grid; place-items: center; padding: 16px; box-sizing: border-box; border-radius: 18px; background: #fff; box-shadow: 0 0 0 1px rgba(222,194,125,.55), 0 0 34px rgba(222,194,125,.075), 0 0 56px rgba(83,201,230,.035); }
+        .expiry { font-size: 12px; opacity: .62; }
+        .safetyRail { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 14px 0; padding: 9px 0; border-top: 1px solid rgba(255,255,255,.055); border-bottom: 1px solid rgba(255,255,255,.055); }
+        .safetyRail span { font-size: 9px; letter-spacing: .06em; text-transform: uppercase; opacity: .72; }
+        .safetyRail span::before { content: "·"; margin-right: 7px; color: rgba(83,201,230,.72); }
+        .qrCore { position: relative; margin: 14px 0 18px; padding: 12px 0 4px; border-top: 1px solid rgba(222,194,125,.24); }
+        .qrCoreHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .qrNetwork { font-size: 9px; letter-spacing: .12em; color: rgba(83,201,230,.82); }
+        .oneTime { margin: 10px 0 8px; line-height: 1.45; color: rgba(222,194,125,.9); }
+        .qrFrame { width: min(100%, 326px); margin: 12px auto 3px; padding: 10px; box-sizing: border-box; border: 1px solid rgba(222,194,125,.42); border-radius: 18px; background: linear-gradient(145deg, rgba(222,194,125,.035), rgba(83,201,230,.025)); box-shadow: 0 0 26px rgba(222,194,125,.045), 0 0 34px rgba(83,201,230,.025); }
+        .qrShell { width: min(100%, 304px); min-height: 304px; margin: 0 auto; display: grid; place-items: center; padding: 8px; box-sizing: border-box; border-radius: 12px; background: #fff; }
         .qrShell img { display: block; width: 100%; height: auto; max-width: 288px; }
         .qrLoading { color: #111; font-size: 13px; }
-        .addressBlock, .terminal, .synthetic { margin-top: 16px; padding: 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,.08); background: rgba(0,0,0,.12); }
-        .addressBlock code { display: block; margin-top: 8px; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
-        .fingerprint { display: grid; gap: 4px; margin-top: 12px; font-size: 13px; }
-        .fingerprint small { opacity: .66; line-height: 1.45; }
+        .addressBlock { margin-top: 16px; padding: 12px 0 0; border-top: 1px solid rgba(255,255,255,.07); }
+        .addressBlock code { display: block; margin-top: 8px; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+        .fingerprint { display: grid; gap: 4px; margin-top: 12px; font-size: 12px; }
+        .fingerprint small { opacity: .62; line-height: 1.45; }
         .addressActions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-        .secondary { min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.12); background: transparent; color: inherit; text-decoration: none; }
-        .retire { margin-top: 12px; padding: 0; border: 0; background: transparent; color: inherit; text-decoration: underline; text-underline-offset: 3px; opacity: .72; }
-        .guard, .seedGuard, .stopNote, .terminalStop { padding: 10px 11px; border-radius: 10px; border: 1px solid rgba(255,255,255,.075); }
-        .seedGuard { margin-top: 8px; }
+        .secondary { min-height: 36px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 999px; border: 1px solid rgba(83,201,230,.18); background: transparent; color: inherit; text-decoration: none; }
+        .retire { margin-top: 12px; padding: 0; border: 0; background: transparent; color: inherit; text-decoration: underline; text-underline-offset: 3px; opacity: .68; }
+        .guard, .seedGuard, .stopNote, .terminalStop { margin: 8px 0; padding-left: 11px; border-left: 1px solid rgba(222,194,125,.22); }
         .handoff ol, .guidance ol { margin: 8px 0 0; padding-left: 20px; }
         .handoff li, .guidance li { margin: 6px 0; }
-        .guidance { margin-top: 9px; padding: 10px 12px; border-radius: 11px; border: 1px solid rgba(255,255,255,.075); background: rgba(0,0,0,.08); }
+        .guidance { margin-top: 8px; padding: 9px 0; border-top: 1px solid rgba(255,255,255,.055); }
         .guidance summary { cursor: pointer; font-weight: 650; line-height: 1.4; }
-        .safetyDetails[open] { border-color: rgba(222,194,125,.15); }
-        .terminal { border-style: solid; position: relative; overflow: hidden; }
+        .safetyDetails[open] { border-top-color: rgba(222,194,125,.18); }
+        .terminal, .synthetic { margin-top: 15px; padding: 12px 0; border-top: 1px solid rgba(255,255,255,.07); border-bottom: 1px solid rgba(255,255,255,.05); }
+        .terminal { position: relative; }
         .terminal h3 { margin: 4px 0 0; }
-        .terminal-confirmed { border-color: rgba(222,194,125,.3); background: radial-gradient(circle at 100% 0, rgba(222,194,125,.075), transparent 36%), radial-gradient(circle at 0 100%, rgba(83,201,230,.02), transparent 30%), rgba(0,0,0,.12); box-shadow: inset 0 1px 0 rgba(222,194,125,.025); }
+        .terminal-mempool_seen { animation: receiptEvidenceIn .62s ease-out both; }
+        .terminal-confirmation_lost { animation: receiptAttentionIn .48s ease-out both; }
+        .terminal-confirmed { border-top-color: rgba(222,194,125,.32); animation: receiptResolutionIn .78s ease-out both; }
         .terminalHead { display: flex; gap: 14px; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; }
-        .receiptMetrics { display: flex; gap: 8px; flex-wrap: wrap; }
-        .receiptMetrics span { min-width: 94px; display: grid; gap: 2px; padding: 8px 10px; border: 1px solid rgba(255,255,255,.075); border-radius: 10px; background: rgba(255,255,255,.014); }
-        .receiptMetrics small { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; opacity: .58; }
+        .receiptMetrics { display: flex; gap: 12px; flex-wrap: wrap; }
+        .receiptMetrics span { display: grid; gap: 2px; padding-left: 9px; border-left: 1px solid rgba(83,201,230,.18); }
+        .receiptMetrics small { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
         .receiptMetrics strong { font-size: 13px; }
-        .receiptProgress { margin-bottom: 14px; padding: 12px; border: 1px solid rgba(222,194,125,.15); border-radius: 12px; background: linear-gradient(90deg, rgba(222,194,125,.035), rgba(83,201,230,.015)); }
+        .receiptProgress { margin-bottom: 14px; padding: 0 0 12px; border-bottom: 1px solid rgba(83,201,230,.11); }
         .receiptProgressHead { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .receiptSignal { padding: 4px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.09); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
-        .receiptSignal-waiting { color: rgba(222,194,125,.9); border-color: rgba(222,194,125,.18); }
-        .receiptSignal-attention { color: rgba(240,190,120,.9); border-color: rgba(240,190,120,.2); }
-        .receiptSignal-verified { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.22); box-shadow: 0 0 20px rgba(83,201,230,.05), inset 0 0 14px rgba(188,235,214,.018); }
-        .receiptSteps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin-top: 10px; }
-        .receiptStep { min-height: 54px; display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06); font-size: 10px; line-height: 1.35; opacity: .56; }
-        .receiptStep-complete { opacity: .94; border-color: rgba(188,235,214,.14); }
-        .receiptStep-active { opacity: .94; border-color: rgba(222,194,125,.2); background: rgba(222,194,125,.025); }
-        .receiptNode { flex: 0 0 22px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); font-size: 10px; }
-        .receiptStep-complete .receiptNode { color: rgba(188,235,214,.95); border-color: rgba(188,235,214,.24); }
-        .receiptStep-active .receiptNode { color: #dec27d; border-color: rgba(222,194,125,.3); box-shadow: 0 0 14px rgba(222,194,125,.08); }
-        .gratitude { position: relative; overflow: hidden; display: grid; gap: 5px; margin: 12px 0; padding: 13px 14px; border-radius: 12px; border: 1px solid rgba(222,194,125,.26); background: linear-gradient(90deg, rgba(222,194,125,.06), rgba(83,201,230,.02)); }
-        .gratitude::after { content: ""; position: absolute; left: 0; right: 58%; bottom: 0; height: 1px; background: linear-gradient(90deg, rgba(222,194,125,.42), transparent); opacity: .7; }
-        .gratitude strong { font-size: 15px; }
-        .gratitude span { font-size: 12px; line-height: 1.5; opacity: .76; }
-        .synthetic { border-style: dashed; }
-        .synthetic p { margin: 7px 0 0; }
+        .receiptSignal { padding: 3px 0 3px 8px; border-left: 1px solid rgba(255,255,255,.12); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+        .receiptSignal-waiting { color: rgba(83,201,230,.9); border-left-color: rgba(83,201,230,.3); }
+        .receiptSignal-attention { color: rgba(240,190,120,.9); border-left-color: rgba(240,190,120,.3); }
+        .receiptSignal-verified { color: rgba(222,194,125,.94); border-left-color: rgba(222,194,125,.4); }
+        .receiptSteps { position: relative; display: grid; gap: 0; margin-top: 11px; }
+        .receiptStep { display: grid; grid-template-columns: 26px minmax(0,1fr); gap: 9px; align-items: center; min-height: 36px; font-size: 10px; line-height: 1.35; opacity: .48; }
+        .receiptStep:not(:last-child)::after { content: ""; position: absolute; left: 10px; height: 14px; margin-top: 34px; border-left: 1px solid rgba(83,201,230,.15); }
+        .receiptStep-complete, .receiptStep-active { opacity: .94; }
+        .receiptNode { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; border: 1px solid rgba(255,255,255,.12); font-size: 9px; }
+        .receiptStep-complete .receiptNode { color: rgba(83,201,230,.95); border-color: rgba(83,201,230,.34); }
+        .receiptStep-active .receiptNode { color: #dec27d; border-color: rgba(222,194,125,.4); }
+        .gratitude { display: grid; gap: 5px; margin: 14px 0; padding: 12px 0 12px 14px; border-left: 1px solid rgba(222,194,125,.48); background: linear-gradient(90deg, rgba(222,194,125,.045), transparent 74%); }
+        .gratitude strong { font-size: 15px; color: rgba(222,194,125,.96); }
+        .gratitude span { font-size: 12px; line-height: 1.5; opacity: .72; }
+        .synthetic { border-style: dashed; font-size: 10px; opacity: .62; }
+        .synthetic p { margin: 5px 0 0; font-size: 10px; line-height: 1.35; }
         .error { margin: 14px 0 0; line-height: 1.5; }
+        @keyframes receiptEvidenceIn { from { opacity: .25; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+        @keyframes receiptAttentionIn { from { opacity: .35; } to { opacity: 1; } }
+        @keyframes receiptResolutionIn { 0% { opacity: .35; box-shadow: inset 0 0 0 rgba(222,194,125,0); } 55% { opacity: 1; box-shadow: inset 0 0 34px rgba(83,201,230,.025); } 100% { opacity: 1; box-shadow: inset 0 0 34px rgba(222,194,125,.035); } }
         @media (max-width: 560px) {
-          .donation { padding: 14px 10px; border-radius: 15px; }
-          .previewFlag, .micro { font-size: 10px; }
-          h2 { font-size: 24px; }
-          .safetyRail { grid-template-columns: 1fr; }
-          .qrCore { padding: 12px 10px; }
-          .qrFrame { padding: 11px; }
-          .qrShell { min-height: 0; padding: 12px; }
+          .donation { padding: 0; }
+          .previewFlag, .micro { font-size: 9px; }
+          h2 { font-size: 25px; }
           .primary { width: 100%; justify-content: center; }
-          .amountGrid { grid-template-columns: 1fr; }
           .addressActions { display: grid; grid-template-columns: 1fr; }
           .secondary { justify-content: center; width: 100%; box-sizing: border-box; }
-          .receiptSteps { grid-template-columns: 1fr; }
-          .receiptStep { min-height: 44px; }
           .receiptMetrics { width: 100%; }
           .receiptMetrics span { flex: 1 1 0; min-width: 0; }
-          .receiptProgress, .terminal, .addressBlock, .synthetic { padding: 11px 9px; }
-          .activeHeader { padding: 10px 9px; align-items: flex-start; }
+          .activeHeader { align-items: flex-start; }
           .stateRow { gap: 8px; }
-          .safetyRail span { min-height: 32px; line-height: 1.4; }
+          .safetyRail { display: grid; grid-template-columns: 1fr 1fr; }
+          .qrFrame { padding: 8px; }
+          .qrShell { min-height: 0; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .activePulse, .primary, .amountChip { animation: none; transition: none; }
+          .donation *, .terminal-mempool_seen, .terminal-confirmation_lost, .terminal-confirmed { animation: none !important; transition: none !important; }
         }
       `}</style>
     </section>

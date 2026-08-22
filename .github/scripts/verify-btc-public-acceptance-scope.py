@@ -248,6 +248,13 @@ BTC_SUPPORT_CONVERSION_ATOM1_SCOPE = {
     "tests/btc-donation-session-acceptance.ts",
 }
 
+BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_SCOPE = set(BTC_SUPPORT_CONVERSION_ATOM1_SCOPE)
+
+BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE = {
+    *BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_SCOPE,
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+}
+
 BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-binance-public-market-shadow-pr.yml",
@@ -400,6 +407,7 @@ accepted_scopes = {
     "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE": BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE,
     "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE": BTC_CLEAN_CHAT_PENDING_STATE_SCOPE,
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
+    "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
@@ -410,15 +418,16 @@ for status, expected in accepted_scopes.items():
                 "feature/btc-support-conversion-atom2-v1",
                 "feature/btc-support-conversion-atom3-v1",
                 "feature/btc-support-conversion-atom4-v1",
+                "feature/btc-support-phi-structured-cyberpunk-v0-1",
             }
         ):
             branch = os.environ.get("GITHUB_HEAD_REF")
-            atom = {
-                "feature/btc-support-conversion-atom2-v1": "ATOM2",
-                "feature/btc-support-conversion-atom3-v1": "ATOM3",
-                "feature/btc-support-conversion-atom4-v1": "ATOM4",
+            status = {
+                "feature/btc-support-conversion-atom2-v1": "PASS_BTC_SUPPORT_CONVERSION_ATOM2_EXACT_4_FILE_SCOPE",
+                "feature/btc-support-conversion-atom3-v1": "PASS_BTC_SUPPORT_CONVERSION_ATOM3_EXACT_4_FILE_SCOPE",
+                "feature/btc-support-conversion-atom4-v1": "PASS_BTC_SUPPORT_CONVERSION_ATOM4_EXACT_4_FILE_SCOPE",
+                "feature/btc-support-phi-structured-cyberpunk-v0-1": "PASS_BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_EXACT_4_FILE_SCOPE",
             }[branch]
-            status = f"PASS_BTC_SUPPORT_CONVERSION_{atom}_EXACT_4_FILE_SCOPE"
         print({"status": status, "base": base, "head": head, "changed": sorted(actual)})
         raise SystemExit(0)
 

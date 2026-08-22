@@ -13,11 +13,12 @@ const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCHES = new Set([
   "feature/btc-support-conversion-atom3-v1",
   "feature/btc-support-conversion-atom4-v1",
   "feature/btc-support-capacity-admission-v1",
+  "feature/btc-support-phi-structured-cyberpunk-v0-1",
 ]);
 
 const PAGE_COPY = {
   en: {
-    kicker: "Bitcoin-native public support",
+    kicker: "BHRIGU · Public continuity",
     title: "Help keep BHRIGU public.",
     lead: "Independent Bitcoin research, systems architecture, and public infrastructure.",
     ask: "If this work is useful to you, support its continuation with Bitcoin.",
@@ -35,7 +36,7 @@ const PAGE_COPY = {
     footer: "Public support does not alter the system boundary.",
   },
   ru: {
-    kicker: "Bitcoin-native публичная поддержка",
+    kicker: "BHRIGU · Публичная непрерывность",
     title: "Помогите BHRIGU оставаться публичным.",
     lead: "Независимые Bitcoin-исследования, системная архитектура и публичная инфраструктура.",
     ask: "Если эта работа полезна вам, поддержите её продолжение в Bitcoin.",
@@ -81,233 +82,180 @@ export default function Support({ donationSurface = null }) {
         {donationSurface === "preview" && <meta name="robots" content="noindex,nofollow,noarchive" />}
       </Head>
 
-      <main className="wrap" data-support-surface="SUPPORT_SURFACE_V0_1" data-donation-enabled={donationEnabled ? "yes" : "no"} data-donation-surface={donationSurface ?? "closed"}>
-        <div className="supportField" data-support-field="golden-symmetry-cyberpunk-v0-1" aria-hidden="true">
-          <span className="fieldAxis fieldAxisLeft">BTC FIELD</span>
-          <span className="fieldAxis fieldAxisRight">INFRASTRUCTURE</span>
-          <span className="fieldAxis fieldAxisTop">PUBLIC RESEARCH</span>
-          <span className="fieldAxis fieldAxisBottom">CONTINUITY</span>
-          <span className="fieldCore" />
-        </div>
-        <section className="panel" data-support-conversion="MOTIVATION_SATS_RECOVERY_V0_1" data-support-visual-canon="golden-symmetry-restrained-cyberpunk-v0-1">
-          <div className="kicker">{copy.kicker}</div>
-          <h1 className="title">{copy.title}</h1>
-          <p className="role">{copy.lead}</p>
-          <p className="directAsk"><strong>{copy.ask}</strong></p>
+      <main
+        className="wrap"
+        data-support-surface="SUPPORT_SURFACE_V0_1"
+        data-donation-enabled={donationEnabled ? "yes" : "no"}
+        data-donation-surface={donationSurface ?? "closed"}
+      >
+        <section
+          className="phiSurface"
+          data-support-conversion="MOTIVATION_SATS_RECOVERY_V0_1"
+          data-support-visual-canon="bhrigu-phi-structured-cyberpunk-v0-1"
+          data-phi-primary-regions="2"
+          data-phi-ratio="61.803398875:38.196601125"
+        >
+          <div className="phiPrimary">
+            <section className="meaningRegion" data-phi-region="meaning-trust-61_8">
+              <div className="kicker">{copy.kicker}</div>
+              <h1 className="title">{copy.title}</h1>
+              <p className="role">{copy.lead}</p>
 
-          <section className="impact" aria-labelledby="support-impact-title">
-            <div className="line" id="support-impact-title">{copy.keepsTitle}</div>
-            <div className="impactGrid">
-              {copy.keeps.map(([name, state]) => (
-                <div className="impactItem" key={name}>
-                  <strong>{name}</strong>
-                  <span>{state}</span>
+              <section className="impact" aria-labelledby="support-impact-title">
+                <div className="line" id="support-impact-title">{copy.keepsTitle}</div>
+                <div className="impactFlow">
+                  {copy.keeps.map(([name, state]) => (
+                    <div className="impactLine" key={name}>
+                      <span className="impactGlyph" aria-hidden="true">Φ</span>
+                      <strong>{name}</strong>
+                      <span>{state}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </section>
+              </section>
 
-          {donationEnabled ? (
-            <BtcDonationSessionPreview surface={donationSurface} />
-          ) : (
-            <div className="action" aria-hidden="true">{copy.closed}</div>
-          )}
+              <p className="boundary">{copy.boundary}</p>
+            </section>
 
-          <p className="boundary">{copy.boundary}</p>
-          <div className="routes">
-            <p>{copy.access} <Link href="/access">/access</Link>.</p>
-            <p>{copy.investors} <Link href="/investors">/investors</Link>.</p>
+            <section className="actionRegion" data-phi-region="bitcoin-action-38_2">
+              {donationEnabled ? (
+                <BtcDonationSessionPreview surface={donationSurface} />
+              ) : (
+                <div className="action" aria-hidden="true">{copy.closed}</div>
+              )}
+            </section>
           </div>
-          <p className="footer">{copy.footer}</p>
+
+          <section className="supportingZone" data-phi-supporting-zone="safety-route-distinction">
+            <p className="directAsk"><strong>{copy.ask}</strong></p>
+            <div className="routes">
+              <p>{copy.access} <Link href="/access">/access</Link>.</p>
+              <p>{copy.investors} <Link href="/investors">/investors</Link>.</p>
+            </div>
+            <p className="footer">{copy.footer}</p>
+          </section>
         </section>
       </main>
 
       <style jsx>{`
         .wrap {
-          position: relative;
-          isolation: isolate;
           max-width: 1080px;
           margin: 0 auto;
           padding: 36px 18px 76px;
         }
-        .supportField {
-          position: absolute;
-          z-index: 0;
-          inset: 18px 18px 56px;
+        .phiSurface {
+          position: relative;
           overflow: hidden;
-          pointer-events: none;
-          border-radius: 42px;
-          opacity: .88;
+          border: 1px solid rgba(222,194,125,.14);
+          border-radius: 24px;
           background:
-            radial-gradient(circle at 50% 18%, rgba(222,194,125,.09), transparent 30%),
-            radial-gradient(circle at 15% 44%, rgba(83,201,230,.035), transparent 24%),
-            radial-gradient(circle at 86% 62%, rgba(111,82,190,.028), transparent 26%),
-            linear-gradient(90deg, transparent 49.82%, rgba(222,194,125,.09) 50%, transparent 50.18%),
-            linear-gradient(0deg, transparent 49.86%, rgba(222,194,125,.045) 50%, transparent 50.14%);
+            radial-gradient(circle at 14% 12%, rgba(222,194,125,.075), transparent 34%),
+            radial-gradient(circle at 92% 18%, rgba(83,201,230,.055), transparent 30%),
+            linear-gradient(148deg, rgba(9,10,13,.98), rgba(4,6,9,.985));
+          box-shadow: 0 30px 90px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.025);
         }
-        .supportField::before {
+        .phiSurface::before {
           content: "";
           position: absolute;
           inset: 0;
-          opacity: .18;
-          background-image:
-            linear-gradient(rgba(222,194,125,.09) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(83,201,230,.055) 1px, transparent 1px);
-          background-size: 52px 52px;
-          mask-image: radial-gradient(circle at 50% 42%, #000 0, rgba(0,0,0,.8) 34%, transparent 78%);
+          pointer-events: none;
+          background: linear-gradient(112deg, rgba(222,194,125,.025), transparent 48%, rgba(83,201,230,.018));
         }
-        .supportField::after {
-          content: "";
-          position: absolute;
-          inset: 13% 18%;
-          border: 1px solid rgba(222,194,125,.075);
-          border-radius: 50%;
-          transform: rotate(-7deg);
-          box-shadow:
-            0 0 0 34px rgba(222,194,125,.006),
-            0 0 0 76px rgba(83,201,230,.005),
-            0 0 90px rgba(222,194,125,.025);
-        }
-        .fieldAxis {
-          position: absolute;
-          z-index: 2;
-          color: rgba(222,194,125,.24);
-          font-size: 9px;
-          letter-spacing: .22em;
-          text-transform: uppercase;
-          text-shadow: 0 0 18px rgba(222,194,125,.08);
-        }
-        .fieldAxisLeft { left: 18px; top: 43%; transform: rotate(-90deg); transform-origin: left top; }
-        .fieldAxisRight { right: 18px; top: 57%; transform: rotate(90deg); transform-origin: right top; }
-        .fieldAxisTop { top: 18px; left: 50%; transform: translateX(-50%); }
-        .fieldAxisBottom { bottom: 18px; left: 50%; transform: translateX(-50%); }
-        .fieldCore {
-          position: absolute;
-          left: 50%;
-          top: 45%;
-          width: 7px;
-          height: 7px;
-          border: 1px solid rgba(222,194,125,.38);
-          border-radius: 50%;
-          transform: translate(-50%,-50%);
-          box-shadow: 0 0 22px rgba(222,194,125,.12), 0 0 42px rgba(83,201,230,.05);
-        }
-        .panel {
+        .phiPrimary {
           position: relative;
           z-index: 1;
-          overflow: hidden;
-          max-width: 760px;
-          margin: 0 auto;
-          padding: 22px 20px 24px;
-          border-radius: 18px;
-          border: 1px solid rgba(222,194,125,.12);
-          background: linear-gradient(180deg, rgba(255,255,255,.026), rgba(255,255,255,.014)), rgba(5,6,8,.91);
-          box-shadow: 0 30px 90px rgba(0,0,0,.44), inset 0 1px 0 rgba(255,255,255,.035), 0 0 0 1px rgba(222,194,125,.018);
+          display: grid;
+          grid-template-columns: minmax(0,61.803398875fr) minmax(0,38.196601125fr);
+          align-items: stretch;
         }
-        .panel::before {
-          content: "";
-          position: absolute;
-          left: 14%;
-          right: 14%;
-          top: 0;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, rgba(222,194,125,.34), rgba(83,201,230,.11), rgba(222,194,125,.34), transparent);
-        }
-        .panel::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 18%;
-          width: 22%;
-          height: 1px;
-          opacity: .2;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,.72), transparent);
-          animation: supportSignalDrift 12s ease-in-out infinite;
-        }
-        @keyframes supportSignalDrift {
-          0%,100% { transform: translateX(-22%); opacity: .12; }
-          50% { transform: translateX(300%); opacity: .28; }
+        .meaningRegion { padding: 38px 42px 34px; }
+        .actionRegion {
+          min-width: 0;
+          padding: 30px 28px 30px 30px;
+          border-left: 1px solid transparent;
+          border-image: linear-gradient(180deg, transparent 4%, rgba(222,194,125,.28) 30%, rgba(83,201,230,.22) 72%, transparent 96%) 1;
+          background: linear-gradient(180deg, rgba(83,201,230,.018), rgba(222,194,125,.012));
         }
         .kicker {
-          font-size: 12px;
-          letter-spacing: .12em;
+          margin-bottom: 13px;
+          color: rgba(222,194,125,.84);
+          font-size: 11px;
+          letter-spacing: .16em;
           text-transform: uppercase;
-          opacity: .72;
-          margin-bottom: 10px;
         }
-        .title {
-          margin: 0 0 12px;
-          font-size: 40px;
-          line-height: 1.08;
+        .title { max-width: 560px; margin: 0 0 15px; font-size: clamp(38px,5vw,58px); line-height: .98; letter-spacing: -.035em; }
+        .role, .directAsk, .footer, .routes p { margin: 0 0 12px; line-height: 1.62; }
+        .role { max-width: 580px; font-size: 17px; opacity: .82; }
+        .impact { margin: 34px 0 28px; }
+        .line { margin-bottom: 13px; color: rgba(222,194,125,.72); font-size: 11px; letter-spacing: .13em; text-transform: uppercase; }
+        .impactFlow { display: grid; gap: 0; }
+        .impactLine {
+          display: grid;
+          grid-template-columns: 18px minmax(0,1fr) auto;
+          gap: 10px;
+          align-items: baseline;
+          padding: 11px 0;
+          border-bottom: 1px solid rgba(255,255,255,.055);
         }
-        .role, .directAsk, .footer, .routes p {
-          margin: 0 0 12px;
-          line-height: 1.6;
-          opacity: .88;
-        }
-        .directAsk { max-width: 620px; margin-top: 18px; font-size: 18px; opacity: .98; }
-        .impact { margin: 22px 0 6px; }
-        .impactGrid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
-        .impactItem { position: relative; overflow: hidden; display: grid; gap: 4px; min-height: 66px; padding: 12px 14px; border-radius: 14px; border: 1px solid rgba(222,194,125,.16); background: linear-gradient(135deg, rgba(222,194,125,.018), rgba(255,255,255,.014)); transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease; }
-        .impactItem::after { content: ""; position: absolute; left: 12px; right: 52%; bottom: 0; height: 1px; background: linear-gradient(90deg, rgba(222,194,125,.28), transparent); opacity: .55; }
-        .impactItem:hover { border-color: rgba(222,194,125,.28); transform: translateY(-1px); box-shadow: 0 10px 28px rgba(0,0,0,.16), 0 0 24px rgba(83,201,230,.018); }
-        .impactItem strong { font-size: 14px; }
-        .impactItem span { font-size: 12px; opacity: .62; text-transform: uppercase; letter-spacing: .08em; }
-        .line {
-          margin: 4px 0 14px;
-          font-size: 13px;
-          letter-spacing: .08em;
-          text-transform: uppercase;
-          opacity: .78;
-        }
+        .impactLine:first-child { border-top: 1px solid rgba(255,255,255,.055); }
+        .impactGlyph { color: rgba(222,194,125,.6); font-size: 11px; }
+        .impactLine strong { font-size: 14px; font-weight: 620; }
+        .impactLine span:last-child { color: rgba(83,201,230,.68); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
         .boundary {
-          margin: 14px 0 14px;
-          padding: 12px 14px;
-          border-radius: 14px;
-          border: 1px solid rgba(255,255,255,.08);
-          background: rgba(255,255,255,.02);
-          line-height: 1.55;
+          max-width: 600px;
+          margin: 0;
+          padding: 14px 0 0 18px;
+          border-left: 1px solid rgba(222,194,125,.38);
+          line-height: 1.58;
+          opacity: .82;
         }
-        .routes {
-          margin-top: 8px;
-          padding-top: 8px;
+        .supportingZone {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          grid-template-columns: minmax(0,1fr) minmax(260px,.7fr);
+          gap: 24px;
+          align-items: start;
+          padding: 22px 42px 26px;
+          border-top: 1px solid rgba(255,255,255,.065);
+          background: rgba(0,0,0,.12);
         }
+        .directAsk { color: rgba(222,194,125,.88); font-size: 15px; }
+        .routes { grid-column: 2; grid-row: 1 / span 2; }
+        .routes a { color: rgba(83,201,230,.88); text-underline-offset: 3px; }
+        .footer { opacity: .58; font-size: 12px; }
         .action {
-          margin-top: 14px;
-          display: inline-flex;
+          min-height: 44px;
+          display: flex;
           align-items: center;
-          min-height: 36px;
-          padding: 0 14px;
-          border-radius: 999px;
-          border: 1px solid rgba(255,255,255,.12);
-          background: rgba(255,255,255,.02);
-          opacity: .88;
+          padding: 0 15px;
+          border-left: 1px solid rgba(222,194,125,.4);
+          color: rgba(222,194,125,.82);
         }
-        .footer {
-          margin-top: 14px;
-          opacity: .72;
-        }
-        :global(main[data-support-surface] ~ nav[data-prevnext]) {
-          position: static !important;
-          margin: 18px auto 8px;
-        }
-        @media (max-width: 900px) {
-          .supportField { inset: 22px 10px 58px; opacity: .68; }
-          .fieldAxis { display: none; }
-          .title { font-size: 34px; }
+        :global(main[data-support-surface] ~ nav[data-prevnext]) { position: static !important; margin: 18px auto 8px; }
+        @media (max-width: 959px) {
+          .wrap { padding: 24px 14px 68px; }
+          .phiPrimary { grid-template-columns: 1fr; }
+          .meaningRegion { padding: 34px 30px 26px; }
+          .actionRegion { padding: 26px 30px 30px; border-left: 0; border-top: 1px solid rgba(222,194,125,.16); border-image: none; }
+          .supportingZone { grid-template-columns: 1fr; padding: 21px 30px 25px; }
+          .routes { grid-column: 1; grid-row: auto; }
         }
         @media (max-width: 560px) {
-          .wrap { padding: 20px 10px 60px; }
-          .supportField { inset: 8px 4px 42px; border-radius: 28px; opacity: .52; }
-          .supportField::before { background-size: 38px 38px; opacity: .12; }
-          .supportField::after { inset: 10% 8%; opacity: .7; }
-          .panel { padding: 18px 12px 20px; border-radius: 16px; }
-          .impactGrid { grid-template-columns: 1fr; gap: 8px; }
-          .impactItem { min-height: 58px; padding: 10px 12px; }
-          .directAsk { font-size: 17px; }
+          .wrap { padding: 13px 8px 56px; }
+          .phiSurface { border-radius: 18px; }
+          .meaningRegion { padding: 34px 21px 21px; }
+          .actionRegion { padding: 21px; }
+          .supportingZone { gap: 13px; padding: 21px; }
+          .title { font-size: 40px; }
+          .role { font-size: 16px; }
+          .impact { margin: 21px 0; }
+          .impactLine { grid-template-columns: 16px minmax(0,1fr); gap: 8px; padding: 8px 0; }
+          .impactLine span:last-child { grid-column: 2; }
+          .boundary { padding-left: 13px; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .panel::after, .impactItem { animation: none; transition: none; }
+          .phiSurface, .phiSurface * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
         }
       `}</style>
     </>
