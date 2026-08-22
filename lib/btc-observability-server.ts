@@ -131,3 +131,10 @@ export function parseChatObservability(body: Record<string, unknown>) {
   if (!visitSessionId || !chatTurnId) return null;
   return { visitSessionId, chatTurnId, ...normalizeAttribution(obs) };
 }
+
+export function parseSupportObservability(body: Record<string, unknown>) {
+  const obs = body.observability && typeof body.observability === "object" && !Array.isArray(body.observability) ? body.observability as Record<string, unknown> : {};
+  const visitSessionId = normalizeObservabilityId(obs.visitSessionId);
+  if (!visitSessionId) return null;
+  return { visitSessionId, ...normalizeAttribution(obs) };
+}

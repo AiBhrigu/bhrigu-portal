@@ -15,6 +15,7 @@ on:
       - 'pages/api/btc/clean-chat-v1.ts'
       - 'pages/api/btc/observability/v1/event.ts'
       - 'pages/api/btc/observability/v1/summary.ts'
+      - 'pages/api/donation/session/index.ts'
       - 'lib/btc-observability-client.ts'
       - 'lib/btc-observability-contract.ts'
       - 'lib/btc-observability-neon.ts'
@@ -117,6 +118,7 @@ jobs:
             "pages/api/btc/clean-chat-v1.ts"
             "pages/api/btc/observability/v1/event.ts"
             "pages/api/btc/observability/v1/summary.ts"
+            "pages/api/donation/session/index.ts"
             "pages/support.js"
             "scripts/btc-direct-payment-fresh-db-migration.ts"
             "tests/btc-observability-v1-acceptance.ts"
@@ -142,7 +144,7 @@ jobs:
           elif diff -q <(printf '%s\n' "${support_ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${observability_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
-            echo "PASS_BTC_OBSERVABILITY_V1_EXACT_15_FILE_SCOPE"
+            echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
           else
             diff -u <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
             exit 1

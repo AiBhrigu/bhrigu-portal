@@ -36,6 +36,8 @@ async function run() {
   assert.equal(clientEvent.trafficSource, "bitcointalk");
   assert.equal(parseClientObservabilityEvent({ ...clientEvent, eventType: "BTC_CHAT_ANSWER_COMPLETED" }), null);
   assert.equal(parseClientObservabilityEvent({ eventType: "BTC_CHAT_OPENED", locale: "en", surface: "btc_clean_chat", question: "must never enter telemetry", observability: { visitSessionId: "visit_12345678" } }), null);
+  assert.equal(parseClientObservabilityEvent({ eventType: "BTC_SUPPORT_SESSION_STARTED", locale: "en", surface: "btc_support", donationSessionId: "session_fake_12345678", observability: { visitSessionId: "visit_12345678" } }), null);
+  assert.equal(parseClientObservabilityEvent({ eventType: "BTC_SUPPORT_RECEIPT_OBSERVED", locale: "en", surface: "btc_support", donationSessionId: "session_fake_12345678", observability: { visitSessionId: "visit_12345678" } }), null);
 
   const migration = await readFile("migrations/20260822_btc_observability_v1.sql", "utf8");
   const db = new PGlite();
@@ -62,10 +64,13 @@ async function run() {
   const api = await readFile("pages/api/btc/clean-chat-v1.ts", "utf8");
   const eventApi = await readFile("pages/api/btc/observability/v1/event.ts", "utf8");
   const client = await readFile("lib/btc-observability-client.ts", "utf8");
+  const donationSessionApi = await readFile("pages/api/donation/session/index.ts", "utf8");
   assert(api.includes("BTC_CHAT_QUESTION_SENT") && api.includes("BTC_CHAT_ANSWER_COMPLETED") && api.includes("BTC_CHAT_ANSWER_FAILED"));
   assert(eventApi.includes("parseClientObservabilityEvent"));
   assert(!client.includes("navigator.userAgent"));
   assert(!client.includes("canvas"));
+  assert(donationSessionApi.includes("BTC_SUPPORT_SESSION_STARTED"));
+  assert(donationSessionApi.includes("result.session.sessionId"));
   console.log("BTC_OBSERVABILITY_V1_ACCEPTANCE=PASS");
   console.log("HUMANS_CLAIMED=NO");
   console.log("RAW_QUESTION_STORAGE=ZERO");

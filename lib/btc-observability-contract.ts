@@ -19,8 +19,6 @@ export const BTC_OBSERVABILITY_CLIENT_EVENTS = new Set<BtcObservabilityEventType
   "BTC_CHAT_OPENED",
   "BTC_SUPPORT_GLYPH_CLICKED",
   "BTC_SUPPORT_PAGE_REACHED",
-  "BTC_SUPPORT_SESSION_STARTED",
-  "BTC_SUPPORT_RECEIPT_OBSERVED",
 ]);
 
 export type BtcObservabilityLocale = "ru" | "en";

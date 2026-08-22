@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
-import { recordBtcClientEvent } from "../../lib/btc-observability-client";
+import { getBtcObservabilityContext, recordBtcClientEvent } from "../../lib/btc-observability-client";
 
 const SYNTHETIC_STATES = new Set(["awaiting_payment", "mempool_seen", "confirmed", "confirmation_lost", "retired"]);
 const RECEIPT_LOCKED_STATES = new Set(["mempool_seen", "confirmed", "confirmation_lost", "retired"]);
@@ -163,7 +163,6 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const receiptTelemetryRef = useRef(new Set());
 
   const syntheticState = useMemo(() => {
     if (isProduction) return null;
@@ -213,17 +212,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     if (session && hasReceiptEvidence(session)) setReceiptLocked(true);
   }, [session?.state, session?.observedSats]);
 
-  useEffect(() => {
-    if (syntheticMode || !session?.sessionId || !hasReceiptEvidence(session)) return;
-    if (receiptTelemetryRef.current.has(session.sessionId)) return;
-    receiptTelemetryRef.current.add(session.sessionId);
-    recordBtcClientEvent({
-      eventType: "BTC_SUPPORT_RECEIPT_OBSERVED",
-      locale,
-      surface: "btc_support",
-      donationSessionId: session.sessionId,
-    });
-  }, [syntheticMode, session?.sessionId, session?.state, session?.observedSats, locale]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -277,7 +266,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, locale, observability: getBtcObservabilityContext() }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok || !body.session) {
@@ -290,12 +279,6 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);
       if (hasReceiptEvidence(body.session)) setReceiptLocked(true);
       setSession(body.session);
-      recordBtcClientEvent({
-        eventType: "BTC_SUPPORT_SESSION_STARTED",
-        locale,
-        surface: "btc_support",
-        donationSessionId: body.session.sessionId,
-      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Donation session is unavailable.");
     } finally {

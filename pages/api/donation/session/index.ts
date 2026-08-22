@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getDonationSessionRuntimeConfig, normalizeDonationSessionId } from "../../../../lib/btc-donation-session";
 import { createNeonBtcDonationSessionStore } from "../../../../lib/btc-donation-session-neon";
+import { createNeonBtcObservabilityStore } from "../../../../lib/btc-observability-neon";
+import { ensureBtcObserver, getBtcObservabilityConfig, parseSupportObservability } from "../../../../lib/btc-observability-server";
 import {
   BTC_DONATION_ADMISSION_COOKIE,
   donationAdmissionCookie,
@@ -40,6 +42,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     if (result.disposition === "address_unavailable" || !result.session) {
       return res.status(503).json({ ok: false, errorCode: "address_unavailable" });
+    }
+    const telemetryConfig = getBtcObservabilityConfig();
+    const telemetryContext = parseSupportObservability(req.body ?? {});
+    if (telemetryConfig.enabled && telemetryContext) {
+      const anonBrowserKey = ensureBtcObserver(req, res, telemetryConfig.secret);
+      try {
+        await createNeonBtcObservabilityStore(telemetryConfig.databaseUrl).recordEvent({
+          eventType: "BTC_SUPPORT_SESSION_STARTED", anonBrowserKey, visitSessionId: telemetryContext.visitSessionId, locale: req.body?.locale === "ru" ? "ru" : "en", surface: "btc_support",
+          chatTurnId: null, donationSessionId: result.session.sessionId, model: null, inputTokens: null, outputTokens: null, webSearchCalls: null, nominalCostMicros: null, pricePolicy: null, completionStatus: null, errorClass: null,
+          trafficSource: telemetryContext.source, trafficMedium: telemetryContext.medium, trafficCampaign: telemetryContext.campaign,
+        });
+      } catch { /* Observability never blocks Support. */ }
     }
     return res.status(200).json({ ok: true, session: result.session });
   } catch {

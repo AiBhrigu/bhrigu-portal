@@ -354,6 +354,7 @@ BTC_OBSERVABILITY_V1_SCOPE = {
     "pages/api/btc/clean-chat-v1.ts",
     "pages/api/btc/observability/v1/event.ts",
     "pages/api/btc/observability/v1/summary.ts",
+    "pages/api/donation/session/index.ts",
     "pages/support.js",
     "scripts/btc-direct-payment-fresh-db-migration.ts",
     "tests/btc-observability-v1-acceptance.ts",
@@ -426,7 +427,7 @@ accepted_scopes = {
     "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE": BTC_CLEAN_CHAT_PENDING_STATE_SCOPE,
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
-    "PASS_BTC_OBSERVABILITY_V1_EXACT_15_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
+    "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
