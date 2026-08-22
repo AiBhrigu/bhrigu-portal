@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { FieldAnchorGlyph } from "../../components/btc/BtcSurfaceGlyphs";
+import { getBtcObservabilityContext, newBtcObservabilityTurnId, recordBtcClientEvent } from "../../lib/btc-observability-client";
 import type {
   BtcCleanChatResponse,
   BtcCleanLocale,
@@ -177,6 +178,7 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
   const initialSentRef = useRef(false);
+  const observabilityOpenedRef = useRef(false);
 
   useEffect(() => {
     setTurns(readTurns(locale));
@@ -189,11 +191,17 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
     endRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, [hydrated, locale, turns]);
 
+  useEffect(() => {
+    if (!hydrated || observabilityOpenedRef.current) return;
+    observabilityOpenedRef.current = true;
+    recordBtcClientEvent({ eventType: "BTC_CHAT_OPENED", locale, surface: "btc_clean_chat" });
+  }, [hydrated, locale]);
+
   const send = async (raw: string) => {
     const nextQuestion = raw.trim().replace(/\s+/g, " ").slice(0, 500);
     if (nextQuestion.length < 2 || busy) return;
     setBusy(true);
-    const id = makeId();
+    const id = newBtcObservabilityTurnId();
     const pending: CleanTurn = { id, user: nextQuestion, assistant: null, topic: null, asOf: null, sources: [] };
     const before = turns.slice(-MAX_TURNS);
     setTurns([...before, pending]);
@@ -207,7 +215,15 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
         headers: { "content-type": "application/json", accept: "application/json" },
         cache: "no-store",
         signal: controller.signal,
-        body: JSON.stringify({ locale, question: nextQuestion, priorTurns: priorPayload(before) }),
+        body: JSON.stringify({
+          locale,
+          question: nextQuestion,
+          priorTurns: priorPayload(before),
+          observability: (() => {
+            const context = getBtcObservabilityContext();
+            return context ? { ...context, chatTurnId: id } : undefined;
+          })(),
+        }),
       });
       const payload = await response.json() as Partial<BtcCleanChatResponse> & { message?: string };
       if (!response.ok || payload.ok !== true || typeof payload.answer !== "string") {
@@ -270,6 +286,7 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
         <a
           href={`/support?lang=${locale}`}
           className="cleanSupportGlyph"
+          onClick={() => recordBtcClientEvent({ eventType: "BTC_SUPPORT_GLYPH_CLICKED", locale, surface: "btc_clean_chat" })}
           data-clean-support-glyph="bitcoin"
           aria-label={ru ? "Поддержать BHRIGU в Bitcoin" : "Support BHRIGU with Bitcoin"}
           title={ru ? "Поддержать BHRIGU в Bitcoin" : "Support BHRIGU with Bitcoin"}

@@ -342,6 +342,24 @@ BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     "pages/guide/frey.js",
 }
 
+BTC_OBSERVABILITY_V1_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "components/btc/BtcDonationSessionPreview.jsx",
+    "lib/btc-observability-client.ts",
+    "lib/btc-observability-contract.ts",
+    "lib/btc-observability-neon.ts",
+    "lib/btc-observability-server.ts",
+    "migrations/20260822_btc_observability_v1.sql",
+    "pages/api/btc/clean-chat-v1.ts",
+    "pages/api/btc/observability/v1/event.ts",
+    "pages/api/btc/observability/v1/summary.ts",
+    "pages/support.js",
+    "scripts/btc-direct-payment-fresh-db-migration.ts",
+    "tests/btc-observability-v1-acceptance.ts",
+    "ui/btc/BtcCleanChatV1.tsx",
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -408,6 +426,7 @@ accepted_scopes = {
     "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE": BTC_CLEAN_CHAT_PENDING_STATE_SCOPE,
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
+    "PASS_BTC_OBSERVABILITY_V1_EXACT_15_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
