@@ -274,6 +274,13 @@ function verifyPolymarketExactPropositionSelection(): void {
   const selected = selectBtcPolymarketEvidenceMarkets("What does Polymarket imply about Bitcoin reaching $150k by December 31, 2026?", result, 10);
   assert.equal(selected[0]?.market_id, "reach150", "exact reach proposition must outrank a same-threshold hit contract and global quality distractors");
   assert.equal(selected[1]?.market_id, "hit150", "same threshold/expiry alternate proposition may remain supporting evidence but cannot replace exact wording");
+
+  const ruVerbReach = selectBtcPolymarketEvidenceMarkets("Достигнет ли Bitcoin $150k к 31 декабря 2026?", result, 10);
+  assert.equal(ruVerbReach[0]?.market_id, "reach150", "RU достигнет must bind to reach independently of source ordering");
+  const ruNounReach = selectBtcPolymarketEvidenceMarkets("Что показывает Polymarket о достижении Bitcoin $150k к 31 декабря 2026?", result, 10);
+  assert.equal(ruNounReach[0]?.market_id, "reach150", "RU достижение-family wording must bind to reach independently of source ordering");
+  const ruHit = selectBtcPolymarketEvidenceMarkets("Коснётся ли Bitcoin $150k к 31 декабря 2026?", result, 10);
+  assert.equal(ruHit[0]?.market_id, "hit150", "RU коснётся must bind to hit independently of source ordering");
   assert.ok(selected.some((row) => row.market_id === "reach150"), "exact usable proposition must survive global top-N truncation");
   assert.equal(selected.some((row) => row.market_id === "weak150"), false, "Q1 exact-looking market must not gain authority through relevance");
   assert.ok(selected.length === 10, "quality-ranked context may fill remaining slots after relevant exact evidence");
