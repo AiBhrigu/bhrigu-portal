@@ -504,8 +504,30 @@ export function selectBtcPolymarketEvidenceMarkets(query: string, result: BtcPol
   return Array.from(new Map(ordered.map((row) => [row.market.market_id, row.market])).values()).slice(0, limit);
 }
 
-function polymarketQueryContext(question: string, priorTurns: BtcCleanPriorTurn[]): string {
-  return [...priorTurns.slice(-2).map((turn) => turn.user), question].join("\n");
+const POLYMARKET_MONTH_TOKENS = new Set([
+  "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+  "январь", "января", "февраль", "февраля", "март", "марта", "апрель", "апреля", "май", "мая", "июнь", "июня", "июль", "июля", "август", "августа", "сентябрь", "сентября", "октябрь", "октября", "ноябрь", "ноября", "декабрь", "декабря",
+]);
+
+export function buildBtcPolymarketQueryContext(question: string, priorTurns: BtcCleanPriorTurn[]): string {
+  const current = propositionTokens(question);
+  const previousUser = priorTurns.at(-1)?.user ?? "";
+  const previous = propositionTokens(previousUser);
+  if (!previous.size) return question;
+
+  const inherited: string[] = [];
+  const inheritCategory = (currentCategory: string[], previousCategory: string[]) => {
+    if (!currentCategory.length && previousCategory.length) inherited.push(...previousCategory);
+  };
+  const values = (tokens: Set<string>, predicate: (token: string) => boolean) => Array.from(tokens).filter(predicate);
+
+  inheritCategory(values(current, (token) => token.startsWith("usd")), values(previous, (token) => token.startsWith("usd")));
+  inheritCategory(values(current, (token) => /^20\d{2}$/.test(token)), values(previous, (token) => /^20\d{2}$/.test(token)));
+  inheritCategory(values(current, (token) => POLYMARKET_MONTH_TOKENS.has(token)), values(previous, (token) => POLYMARKET_MONTH_TOKENS.has(token)));
+  inheritCategory(values(current, (token) => /^(?:[1-9]|[12]\d|3[01])$/.test(token)), values(previous, (token) => /^(?:[1-9]|[12]\d|3[01])$/.test(token)));
+  inheritCategory(values(current, (token) => token === "reach" || token === "hit"), values(previous, (token) => token === "reach" || token === "hit"));
+
+  return inherited.length ? `${question} ${inherited.join(" ")}` : question;
 }
 
 function polymarketDigest(query: string, result: BtcPolymarketExpectationResult | null): Record<string, unknown> {
@@ -733,7 +755,7 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
     evidence: {
       accepted_snapshot_and_memory: snapshotDigest(evidence.envelope),
       binance_current_field: binanceDigest(evidence.binance),
-      polymarket_expectation_field: polymarketDigest(polymarketQueryContext(question, priorTurns), evidence.polymarket),
+      polymarket_expectation_field: polymarketDigest(buildBtcPolymarketQueryContext(question, priorTurns), evidence.polymarket),
       astronomy_field: astroDigest(evidence.astronomy),
       astro_btc_bridge: evidence.astroBridge ?? { available: false },
       bitcoin_protocol: projectionDigest(evidence.protocol),
@@ -776,7 +798,7 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
     topic: synthesis.topic,
     answer: synthesis.answer,
     as_of: new Date().toISOString(),
-    sources: sourceRows(polymarketQueryContext(input.question, priorTurns), evidence),
+    sources: sourceRows(buildBtcPolymarketQueryContext(input.question, priorTurns), evidence),
     semantic_visual: buildSemanticVisual(input.locale, planned.plan, evidence),
     evidence: {
       accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),

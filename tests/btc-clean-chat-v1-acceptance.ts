@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { BTC_CLEAN_CHAT_SCHEMA } from "../lib/btc-clean-chat-v1";
-import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
+import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, buildBtcPolymarketQueryContext, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
 import {
   BTC_ASTRO_CANONICAL_ENGINE,
   BTC_ASTRO_FIELD_SCHEMA,
@@ -191,7 +191,7 @@ assert.match(polymarket, /event_complete: true/);
 assert.match(polymarket, /global_btc_probability: false/);
 assert.match(polymarket, /trading_signal: false/);
 assert.match(runtime, /selectBtcPolymarketEvidenceMarkets/);
-assert.match(runtime, /polymarketQueryContext/);
+assert.match(runtime, /buildBtcPolymarketQueryContext/);
 assert.doesNotMatch(runtime, /evidence\.polymarket\.markets\.filter\(.*slice\(0, 4\)/);
 assert.doesNotMatch(polymarket, /createOrder|postOrder|cancelOrder|private key|api key/i);
 assert.match(runtime, /event_id: market\.event_id, market_id: market\.market_id, condition_id: market\.condition_id/);
@@ -250,7 +250,9 @@ function verifyPolymarketExactPropositionSelection(): void {
 
   const hit150 = market("hit150", "Will Bitcoin hit $150k by December 31, 2026?");
   const exactReach150 = market("reach150", "Will Bitcoin reach $150,000 by December 31, 2026?", "Q2_USABLE");
-  const distractors = Array.from({ length: 11 }, (_, index) => market(`d${index}`, `Will Bitcoin reach $${160 + index * 10}k by December 31, 2026?`));
+  const reach150_2027 = market("reach150-2027", "Will Bitcoin reach $150,000 by December 31, 2027?");
+  const reach160 = market("reach160", "Will Bitcoin reach $160,000 by December 31, 2026?");
+  const distractors = Array.from({ length: 11 }, (_, index) => market(`d${index}`, `Will Bitcoin reach $${170 + index * 10}k by December 31, 2026?`));
   const weakExact = market("weak150", "Will Bitcoin reach $150,000 by December 31, 2026?", "Q1_WEAK");
   const result: BtcPolymarketExpectationField = {
     schema_version: BTC_POLYMARKET_EXPECTATION_SCHEMA,
@@ -265,7 +267,7 @@ function verifyPolymarketExactPropositionSelection(): void {
     discovered_markets: 800,
     future_valid_markets: 700,
     expectation_candidates: 180,
-    markets: [hit150, ...distractors, weakExact, exactReach150],
+    markets: [hit150, ...distractors, reach150_2027, reach160, weakExact, exactReach150],
     boundary: { expectation_evidence_only: true, global_btc_probability: false, prediction_claim: false, trading_signal: false, cross_expiry_aggregation: false },
   };
 
@@ -274,7 +276,17 @@ function verifyPolymarketExactPropositionSelection(): void {
   assert.equal(selected[1]?.market_id, "hit150", "same threshold/expiry alternate proposition may remain supporting evidence but cannot replace exact wording");
   assert.ok(selected.some((row) => row.market_id === "reach150"), "exact usable proposition must survive global top-N truncation");
   assert.equal(selected.some((row) => row.market_id === "weak150"), false, "Q1 exact-looking market must not gain authority through relevance");
-  assert.equal(selected.some((row) => /\$160k/.test(row.question)), true, "quality-ranked context may fill remaining slots after relevant exact evidence");
+  assert.ok(selected.length === 10, "quality-ranked context may fill remaining slots after relevant exact evidence");
+
+  const priorTurns = [{ user: "What does Polymarket imply about Bitcoin reaching $150k by December 31, 2026?" }];
+  const explicitOverrideContext = buildBtcPolymarketQueryContext("What about $160k?", priorTurns);
+  assert.equal(explicitOverrideContext.includes("usd150000"), false, "current-turn threshold override must not inherit the prior threshold");
+  const explicitOverride = selectBtcPolymarketEvidenceMarkets(explicitOverrideContext, result, 10);
+  assert.equal(explicitOverride[0]?.market_id, "reach160", "current-turn threshold override must select the new threshold");
+
+  const followUpContext = buildBtcPolymarketQueryContext("And in 2027?", priorTurns);
+  const followUp = selectBtcPolymarketEvidenceMarkets(followUpContext, result, 10);
+  assert.equal(followUp[0]?.market_id, "reach150-2027", "missing threshold/action/date parts may inherit while current-turn year remains authoritative");
   console.log("PASS_BTC_POLYMARKET_EXACT_PROPOSITION_RELEVANCE_FIRST_SELECTION");
 }
 
