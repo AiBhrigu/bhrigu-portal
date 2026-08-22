@@ -48,7 +48,10 @@ export function createNeonBtcObservabilityStore(databaseUrl: string) {
       ), browser_sessions AS (
         SELECT anon_browser_key,count(DISTINCT visit_session_id)::int AS sessions FROM scoped GROUP BY anon_browser_key
       ), support_started AS (
-        SELECT DISTINCT donation_session_id FROM scoped WHERE event_type='BTC_SUPPORT_SESSION_STARTED' AND donation_session_id IS NOT NULL
+        SELECT DISTINCT e.donation_session_id
+        FROM scoped e
+        JOIN btc_donation_sessions s ON s.session_id=e.donation_session_id
+        WHERE e.event_type='BTC_SUPPORT_SESSION_STARTED' AND e.donation_session_id IS NOT NULL
       )
       SELECT
         (SELECT count(DISTINCT anon_browser_key)::int FROM scoped) AS anonymous_browsers,
@@ -78,15 +81,18 @@ export function createNeonBtcObservabilityStore(databaseUrl: string) {
 
   async function sourceSummary(since: Date, until: Date) {
     return sql`
-      SELECT traffic_source,
-        count(DISTINCT anon_browser_key)::int AS anonymous_browsers,
-        count(DISTINCT visit_session_id)::int AS visit_sessions,
-        count(DISTINCT chat_turn_id) FILTER (WHERE event_type='BTC_CHAT_QUESTION_SENT')::int AS chat_turns,
-        count(DISTINCT visit_session_id) FILTER (WHERE event_type='BTC_SUPPORT_GLYPH_CLICKED')::int AS support_clicks,
-        count(DISTINCT donation_session_id) FILTER (WHERE event_type='BTC_SUPPORT_SESSION_STARTED')::int AS support_sessions
-      FROM btc_observability_events
-      WHERE occurred_at >= ${since.toISOString()} AND occurred_at < ${until.toISOString()}
-      GROUP BY traffic_source ORDER BY anonymous_browsers DESC,traffic_source
+      SELECT e.traffic_source,
+        count(DISTINCT e.anon_browser_key)::int AS anonymous_browsers,
+        count(DISTINCT e.visit_session_id)::int AS visit_sessions,
+        count(DISTINCT e.chat_turn_id) FILTER (WHERE e.event_type='BTC_CHAT_QUESTION_SENT')::int AS chat_turns,
+        count(DISTINCT e.visit_session_id) FILTER (WHERE e.event_type='BTC_SUPPORT_GLYPH_CLICKED')::int AS support_clicks,
+        count(DISTINCT e.donation_session_id) FILTER (
+          WHERE e.event_type='BTC_SUPPORT_SESSION_STARTED'
+          AND EXISTS (SELECT 1 FROM btc_donation_sessions s WHERE s.session_id=e.donation_session_id)
+        )::int AS support_sessions
+      FROM btc_observability_events e
+      WHERE e.occurred_at >= ${since.toISOString()} AND e.occurred_at < ${until.toISOString()}
+      GROUP BY e.traffic_source ORDER BY anonymous_browsers DESC,e.traffic_source
     `;
   }
 

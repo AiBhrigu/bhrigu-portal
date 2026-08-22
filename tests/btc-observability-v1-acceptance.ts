@@ -64,6 +64,7 @@ async function run() {
   const api = await readFile("pages/api/btc/clean-chat-v1.ts", "utf8");
   const eventApi = await readFile("pages/api/btc/observability/v1/event.ts", "utf8");
   const client = await readFile("lib/btc-observability-client.ts", "utf8");
+  const neonStore = await readFile("lib/btc-observability-neon.ts", "utf8");
   const donationSessionApi = await readFile("pages/api/donation/session/index.ts", "utf8");
   assert(api.includes("BTC_CHAT_QUESTION_SENT") && api.includes("BTC_CHAT_ANSWER_COMPLETED") && api.includes("BTC_CHAT_ANSWER_FAILED"));
   assert(eventApi.includes("parseClientObservabilityEvent"));
@@ -72,6 +73,8 @@ async function run() {
   assert(donationSessionApi.includes("BTC_SUPPORT_SESSION_STARTED"));
   assert(donationSessionApi.includes("result.session.sessionId"));
   assert(donationSessionApi.includes('result.disposition === "issued"'));
+  assert(neonStore.includes("JOIN btc_donation_sessions s ON s.session_id=e.donation_session_id"));
+  assert(neonStore.includes("EXISTS (SELECT 1 FROM btc_donation_sessions s WHERE s.session_id=e.donation_session_id)"));
   console.log("BTC_OBSERVABILITY_V1_ACCEPTANCE=PASS");
   console.log("HUMANS_CLAIMED=NO");
   console.log("RAW_QUESTION_STORAGE=ZERO");
