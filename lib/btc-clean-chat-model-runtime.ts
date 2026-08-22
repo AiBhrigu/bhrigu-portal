@@ -10,6 +10,7 @@ import {
 import { loadBtcBinanceProductionGuarded } from "./btc-binance-production-guard";
 import {
   loadBtcPolymarketExpectationField,
+  type BtcPolymarketExpectationMarket,
   type BtcPolymarketExpectationResult,
 } from "./btc-polymarket-expectation";
 import {
@@ -430,10 +431,109 @@ function binanceDigest(result: BinancePublicMarketResult | null): Record<string,
   return { available: true, retrieved_at: result.snapshot.retrieved_at, derived: result.snapshot.derived, evidence: result.snapshot.evidence.slice(0, 8).map((row) => ({ endpoint: row.endpoint_or_stream, value: row.normalized_value, freshness: row.freshness })) };
 }
 
-function polymarketDigest(result: BtcPolymarketExpectationResult | null): Record<string, unknown> {
+const POLYMARKET_RELEVANCE_STOPWORDS = new Set([
+  "a", "about", "and", "are", "as", "at", "be", "before", "by", "current", "currently", "does", "for", "from", "how", "if", "in", "is", "it", "market", "of", "on", "or", "polymarket", "price", "probability", "the", "this", "to", "what", "will",
+  "биткоин", "вероятность", "для", "до", "как", "к", "на", "о", "по", "полимаркет", "рынок", "сейчас", "что", "это",
+]);
+
+function canonicalThreshold(value: string, rawNumber: string, suffix: string | undefined): string {
+  const parsed = Number(rawNumber.replace(/,/g, ""));
+  if (!Number.isFinite(parsed)) return value;
+  const factor = suffix?.toLowerCase() === "k" ? 1_000 : suffix?.toLowerCase() === "m" ? 1_000_000 : suffix?.toLowerCase() === "b" ? 1_000_000_000 : 1;
+  return ` usd${Math.round(parsed * factor)} `;
+}
+
+function normalizePolymarketProposition(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLowerCase()
+    .replace(/\$\s*(\d[\d,]*(?:\.\d+)?)(?:\s*([kmb])\b)?/gi, (match, number, suffix) => canonicalThreshold(match, number, suffix))
+    .replace(/\b(\d+(?:\.\d+)?)\s*([kmb])\b/gi, (match, number, suffix) => canonicalThreshold(match, number, suffix))
+    .replace(/\b(reaching|reaches|reached)\b/g, "reach")
+    .replace(/\b(hitting|hits)\b/g, "hit")
+    .replace(/(^|[^a-zа-яё0-9_])(?:достигнет|достигнуть|достичь|достигает|достиг|достижение|достижения|достижении|достижением|достижению)(?=$|[^a-zа-яё0-9_])/gi, "$1reach")
+    .replace(/(^|[^a-zа-яё0-9_])(?:коснется|коснётся|коснуться|касание|касания|касании|ударит)(?=$|[^a-zа-яё0-9_])/gi, "$1hit")
+    .replace(/\bbtc\b/g, "bitcoin")
+    .replace(/[^a-z0-9а-яё_]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function propositionTokens(value: string): Set<string> {
+  return new Set(normalizePolymarketProposition(value).split(" ").filter((token) => token.length > 1 && !POLYMARKET_RELEVANCE_STOPWORDS.has(token)));
+}
+
+function prefixedTokens(tokens: Set<string>, prefix: string): Set<string> {
+  return new Set(Array.from(tokens).filter((token) => token.startsWith(prefix)));
+}
+
+function intersects(left: Set<string>, right: Set<string>): boolean {
+  for (const value of Array.from(left)) if (right.has(value)) return true;
+  return false;
+}
+
+function polymarketPropositionScore(query: string, market: BtcPolymarketExpectationMarket): number {
+  const queryTokens = propositionTokens(query);
+  const marketTokens = propositionTokens(market.question);
+  const queryThresholds = prefixedTokens(queryTokens, "usd");
+  const marketThresholds = prefixedTokens(marketTokens, "usd");
+  if (queryThresholds.size && !intersects(queryThresholds, marketThresholds)) return -1;
+
+  const queryYears = new Set(Array.from(queryTokens).filter((token) => /^20\d{2}$/.test(token)));
+  const marketYears = new Set(Array.from(marketTokens).filter((token) => /^20\d{2}$/.test(token)));
+  if (queryYears.size && marketYears.size && !intersects(queryYears, marketYears)) return -1;
+
+  let score = 0;
+  if (queryThresholds.size && intersects(queryThresholds, marketThresholds)) score += 120;
+  if (queryYears.size && intersects(queryYears, marketYears)) score += 30;
+  if (queryTokens.has("reach") && marketTokens.has("reach")) score += 40;
+  if (queryTokens.has("hit") && marketTokens.has("hit")) score += 40;
+  for (const token of Array.from(queryTokens)) if (marketTokens.has(token)) score += 5;
+  const normalizedQuery = normalizePolymarketProposition(query);
+  const normalizedQuestion = normalizePolymarketProposition(market.question);
+  if (normalizedQuery.includes(normalizedQuestion)) score += 80;
+  return score;
+}
+
+export function selectBtcPolymarketEvidenceMarkets(query: string, result: BtcPolymarketExpectationResult | null, limit = 10): BtcPolymarketExpectationMarket[] {
+  if (!result || result.ok === false || limit <= 0) return [];
+  const usable = result.markets.filter((market) => market.quality === "Q3_STRONG" || market.quality === "Q2_USABLE");
+  const scored = usable.map((market, index) => ({ market, index, score: polymarketPropositionScore(query, market) }));
+  const relevant = scored.filter((row) => row.score > 0).sort((a, b) => b.score - a.score || a.index - b.index);
+  const ordered = [...relevant, ...scored.filter((row) => !relevant.includes(row))];
+  return Array.from(new Map(ordered.map((row) => [row.market.market_id, row.market])).values()).slice(0, limit);
+}
+
+const POLYMARKET_MONTH_TOKENS = new Set([
+  "january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december",
+  "январь", "января", "февраль", "февраля", "март", "марта", "апрель", "апреля", "май", "мая", "июнь", "июня", "июль", "июля", "август", "августа", "сентябрь", "сентября", "октябрь", "октября", "ноябрь", "ноября", "декабрь", "декабря",
+]);
+
+export function buildBtcPolymarketQueryContext(question: string, priorTurns: BtcCleanPriorTurn[]): string {
+  const current = propositionTokens(question);
+  const previousUser = priorTurns.at(-1)?.user ?? "";
+  const previous = propositionTokens(previousUser);
+  if (!previous.size) return question;
+
+  const inherited: string[] = [];
+  const inheritCategory = (currentCategory: string[], previousCategory: string[]) => {
+    if (!currentCategory.length && previousCategory.length) inherited.push(...previousCategory);
+  };
+  const values = (tokens: Set<string>, predicate: (token: string) => boolean) => Array.from(tokens).filter(predicate);
+
+  inheritCategory(values(current, (token) => token.startsWith("usd")), values(previous, (token) => token.startsWith("usd")));
+  inheritCategory(values(current, (token) => /^20\d{2}$/.test(token)), values(previous, (token) => /^20\d{2}$/.test(token)));
+  inheritCategory(values(current, (token) => POLYMARKET_MONTH_TOKENS.has(token)), values(previous, (token) => POLYMARKET_MONTH_TOKENS.has(token)));
+  inheritCategory(values(current, (token) => /^(?:[1-9]|[12]\d|3[01])$/.test(token)), values(previous, (token) => /^(?:[1-9]|[12]\d|3[01])$/.test(token)));
+  inheritCategory(values(current, (token) => token === "reach" || token === "hit"), values(previous, (token) => token === "reach" || token === "hit"));
+
+  return inherited.length ? `${question} ${inherited.join(" ")}` : question;
+}
+
+function polymarketDigest(query: string, result: BtcPolymarketExpectationResult | null): Record<string, unknown> {
   if (!result) return { available: false, code: "NOT_REQUESTED" };
   if (result.ok === false) return { available: false, code: result.code };
-  return { available: true, as_of: result.as_of, discovery_method: result.discovery_method, discovery_pages: result.discovery_pages, event_complete: result.event_complete, expectation_candidates: result.expectation_candidates, markets: result.markets.filter((market) => market.quality === "Q3_STRONG" || market.quality === "Q2_USABLE").slice(0, 10).map((market) => ({ event_id: market.event_id, market_id: market.market_id, condition_id: market.condition_id, question: market.question, semantic: market.semantic, expiry: market.expiry, resolution_source: market.resolution_source, resolution_rules: market.resolution_rules, probability: market.probability, best_bid: market.best_bid, best_ask: market.best_ask, spread: market.spread, depth_near_mid: market.depth_near_mid, liquidity: market.liquidity, volume: market.volume, open_interest: market.open_interest, quality: market.quality, delta_1h: market.delta_1h, delta_6h: market.delta_6h, delta_1d: market.delta_1d, delta_1w: market.delta_1w, event_url: market.event_url })), boundary: result.boundary };
+  return { available: true, as_of: result.as_of, discovery_method: result.discovery_method, discovery_pages: result.discovery_pages, event_complete: result.event_complete, expectation_candidates: result.expectation_candidates, markets: selectBtcPolymarketEvidenceMarkets(query, result, 10).map((market) => ({ event_id: market.event_id, market_id: market.market_id, condition_id: market.condition_id, question: market.question, semantic: market.semantic, expiry: market.expiry, resolution_source: market.resolution_source, resolution_rules: market.resolution_rules, probability: market.probability, best_bid: market.best_bid, best_ask: market.best_ask, spread: market.spread, depth_near_mid: market.depth_near_mid, liquidity: market.liquidity, volume: market.volume, open_interest: market.open_interest, quality: market.quality, delta_1h: market.delta_1h, delta_6h: market.delta_6h, delta_1d: market.delta_1d, delta_1w: market.delta_1w, event_url: market.event_url })), boundary: result.boundary };
 }
 
 function projectionDigest(value: BtcCosmographerAnswerProjection | null): unknown {
@@ -547,14 +647,14 @@ async function collectEvidence(locale: BtcCleanLocale, question: string, plan: P
   return { envelope, binance, polymarket, astronomy, astroBridge, protocol, web, unavailable };
 }
 
-function sourceRows(evidence: EvidenceBundle): BtcCleanSource[] {
+function sourceRows(query: string, evidence: EvidenceBundle): BtcCleanSource[] {
   const rows: BtcCleanSource[] = [];
   if (evidence.envelope?.ok) {
     const asOf = evidence.envelope.value.current.source_generated_at_utc;
     for (const [key, href] of Object.entries(BTC_MARKET_ENVELOPE_URLS).slice(0, 4)) rows.push({ id: `snapshot-${key}`, label: `Accepted Snapshot · ${key}`, href, as_of: asOf });
   }
   if (evidence.binance?.ok) rows.push({ id: "binance-btcusdt", label: "Binance BTCUSDT public market data", href: "https://data-api.binance.vision/api/v3/ticker/24hr?symbol=BTCUSDT", as_of: evidence.binance.snapshot.retrieved_at });
-  if (evidence.polymarket?.ok) for (const market of evidence.polymarket.markets.filter((item) => item.quality === "Q3_STRONG" || item.quality === "Q2_USABLE").slice(0, 4)) rows.push({ id: `polymarket-${market.market_id}`, label: `Polymarket · ${market.question.slice(0, 100)}`, href: market.event_url, as_of: evidence.polymarket.as_of });
+  if (evidence.polymarket?.ok) for (const market of selectBtcPolymarketEvidenceMarkets(query, evidence.polymarket, 4)) rows.push({ id: `polymarket-${market.market_id}`, label: `Polymarket · ${market.question.slice(0, 100)}`, href: market.event_url, as_of: evidence.polymarket.as_of });
   if (evidence.astronomy) {
     rows.push({ id: "astronomy-canonical", label: "BHRIGU canonical ephemeris · fresh computed Astro Field", href: "https://www.bhrigu.io/crypto-astro/btc", as_of: evidence.astronomy.requested_at_utc });
     if (evidence.astronomy.anchor) rows.push({ id: `btc-anchor-${evidence.astronomy.anchor.id}`, label: `${evidence.astronomy.anchor.label} · accepted UTC anchor`, href: evidence.astronomy.anchor.source, as_of: evidence.astronomy.anchor.timestamp_utc });
@@ -655,7 +755,7 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
     evidence: {
       accepted_snapshot_and_memory: snapshotDigest(evidence.envelope),
       binance_current_field: binanceDigest(evidence.binance),
-      polymarket_expectation_field: polymarketDigest(evidence.polymarket),
+      polymarket_expectation_field: polymarketDigest(buildBtcPolymarketQueryContext(question, priorTurns), evidence.polymarket),
       astronomy_field: astroDigest(evidence.astronomy),
       astro_btc_bridge: evidence.astroBridge ?? { available: false },
       bitcoin_protocol: projectionDigest(evidence.protocol),
@@ -698,7 +798,7 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
     topic: synthesis.topic,
     answer: synthesis.answer,
     as_of: new Date().toISOString(),
-    sources: sourceRows(evidence),
+    sources: sourceRows(buildBtcPolymarketQueryContext(input.question, priorTurns), evidence),
     semantic_visual: buildSemanticVisual(input.locale, planned.plan, evidence),
     evidence: {
       accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),
