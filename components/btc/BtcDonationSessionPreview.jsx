@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
+import { getBtcObservabilityContext, recordBtcClientEvent } from "../../lib/btc-observability-client";
 
 const SYNTHETIC_STATES = new Set(["awaiting_payment", "mempool_seen", "confirmed", "confirmation_lost", "retired"]);
 const RECEIPT_LOCKED_STATES = new Set(["mempool_seen", "confirmed", "confirmation_lost", "retired"]);
@@ -211,6 +212,8 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     if (session && hasReceiptEvidence(session)) setReceiptLocked(true);
   }, [session?.state, session?.observedSats]);
 
+
+
   useEffect(() => {
     let cancelled = false;
     setQrDataUrl("");
@@ -263,7 +266,7 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         method: "POST",
         cache: "no-store",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ sessionId }),
+        body: JSON.stringify({ sessionId, locale, observability: getBtcObservabilityContext() }),
       });
       const body = await response.json().catch(() => null);
       if (!response.ok || !body?.ok || !body.session) {

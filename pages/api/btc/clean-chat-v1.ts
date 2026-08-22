@@ -1,5 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
+import { createNeonBtcObservabilityStore } from "../../../lib/btc-observability-neon";
+import {
+  BTC_OBSERVABILITY_PRICE_POLICY,
+  ensureBtcObserver,
+  getBtcObservabilityConfig,
+  nominalOpenAiCostMicros,
+  parseChatObservability,
+  type BtcObservabilityRecord,
+} from "../../../lib/btc-observability-server";
 import type {
   BtcCleanLocale,
   BtcCleanPriorTurn,
@@ -30,6 +39,10 @@ function priorTurns(value: unknown): BtcCleanPriorTurn[] {
   });
 }
 
+async function safeRecord(databaseUrl: string, event: BtcObservabilityRecord) {
+  try { await createNeonBtcObservabilityStore(databaseUrl).recordEvent(event); } catch { /* Observability never blocks chat. */ }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   res.setHeader("Cache-Control", "private, no-store, max-age=0, must-revalidate");
   res.setHeader("X-Robots-Tag", "noindex, nofollow");
@@ -51,14 +64,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ ok: false, code: "QUESTION_INVALID" });
   }
 
+  const telemetryConfig = getBtcObservabilityConfig();
+  const telemetryContext = parseChatObservability(body);
+  const anonBrowserKey = telemetryConfig.enabled && telemetryContext ? ensureBtcObserver(req, res, telemetryConfig.secret) : null;
+  const telemetryBase = telemetryConfig.enabled && telemetryContext && anonBrowserKey ? {
+    anonBrowserKey, visitSessionId: telemetryContext.visitSessionId, locale: locale(body.locale), surface: "btc_clean_chat" as const,
+    chatTurnId: telemetryContext.chatTurnId, donationSessionId: null,
+    trafficSource: telemetryContext.source, trafficMedium: telemetryContext.medium, trafficCampaign: telemetryContext.campaign,
+  } : null;
+  if (telemetryConfig.enabled && telemetryBase) {
+    await safeRecord(telemetryConfig.databaseUrl, {
+      ...telemetryBase, eventType: "BTC_CHAT_QUESTION_SENT", model: null, inputTokens: null, outputTokens: null,
+      webSearchCalls: null, nominalCostMicros: null, pricePolicy: null, completionStatus: null, errorClass: null,
+    });
+  }
+
   try {
     const result = await runBtcCleanChatModel({
       locale: locale(body.locale),
       question,
       priorTurns: priorTurns(body.priorTurns),
     });
+    if (telemetryConfig.enabled && telemetryBase) {
+      await safeRecord(telemetryConfig.databaseUrl, {
+        ...telemetryBase, eventType: "BTC_CHAT_ANSWER_COMPLETED", model: result.usage.model,
+        inputTokens: result.usage.input_tokens, outputTokens: result.usage.output_tokens, webSearchCalls: result.usage.web_search_calls,
+        nominalCostMicros: nominalOpenAiCostMicros(result.usage.input_tokens, result.usage.output_tokens, result.usage.web_search_calls),
+        pricePolicy: BTC_OBSERVABILITY_PRICE_POLICY, completionStatus: "completed", errorClass: null,
+      });
+    }
     return res.status(200).json(result);
   } catch (error) {
+    if (telemetryConfig.enabled && telemetryBase) {
+      await safeRecord(telemetryConfig.databaseUrl, {
+        ...telemetryBase, eventType: "BTC_CHAT_ANSWER_FAILED", model: null, inputTokens: null, outputTokens: null,
+        webSearchCalls: null, nominalCostMicros: null, pricePolicy: null, completionStatus: "failed", errorClass: "model_runtime_failure",
+      });
+    }
     console.error("BTC_CLEAN_CHAT_MODEL_RUNTIME_FAILURE", error instanceof Error ? error.message : "unknown");
     return res.status(503).json({
       ok: false,

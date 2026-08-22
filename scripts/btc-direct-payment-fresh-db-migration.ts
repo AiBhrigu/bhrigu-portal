@@ -11,6 +11,7 @@ const EXPECTED_MIGRATIONS = [
   "20260815_btc_donation_session_v1.sql",
   "20260815_btc_donation_valuation_v1.sql",
   "20260819_btc_donation_session_admission_v1.sql",
+  "20260822_btc_observability_v1.sql",
 ];
 
 async function run() {
@@ -142,6 +143,17 @@ async function run() {
       SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname='btc_donation_sessions_state_expiry_idx'
     `);
     assert.match(sessionIndex.rows[0]?.indexdef ?? "", /btc_donation_sessions/);
+    const observabilityTables = await db.query<{ table_name: string }>(`
+      SELECT table_name FROM information_schema.tables
+      WHERE table_schema='public' AND table_name='btc_observability_events'
+    `);
+    assert.deepEqual(observabilityTables.rows.map((row) => row.table_name), ["btc_observability_events"]);
+    const observabilityColumns = await db.query<{ column_name: string }>(`
+      SELECT column_name FROM information_schema.columns WHERE table_name='btc_observability_events'
+    `);
+    for (const forbidden of ["question","answer","raw_ip","ip","user_agent","referrer_url","wallet_address","cookie_token"]) {
+      assert(!observabilityColumns.rows.some((row) => row.column_name === forbidden), `forbidden observability column: ${forbidden}`);
+    }
   } finally {
     await db.close();
   }
