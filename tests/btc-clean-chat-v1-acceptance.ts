@@ -14,7 +14,7 @@ import {
   buildBtcAstroWindows,
   validateBtcTemporalRange,
 } from "../lib/btc-astro-field-client";
-import { BTC_POLYMARKET_EXPECTATION_SCHEMA } from "../lib/btc-polymarket-expectation";
+import { BTC_POLYMARKET_EXPECTATION_SCHEMA, loadBtcPolymarketExpectationField } from "../lib/btc-polymarket-expectation";
 
 assert.equal(BTC_CLEAN_CHAT_SCHEMA, "bhrigu_btc_clean_chat_v1");
 assert.equal(BTC_CLEAN_CHAT_MODEL_ID, "gpt-5.6-sol");
@@ -166,15 +166,34 @@ assert.match(protocolEvidence, /2009-01-08/);
 assert.match(protocolEvidence, /2009-January\/014994\.html/);
 assert.doesNotMatch(protocolEvidence, /2009-01-10|2009-January\/015004\.html/);
 
-assert.match(polymarket, /\/tags\/slug\/bitcoin/);
+assert.match(polymarket, /\/events\/keyset\?/);
+assert.match(polymarket, /tag_slug: BITCOIN_TAG_SLUG/);
+assert.match(polymarket, /next_cursor/);
+assert.match(polymarket, /after_cursor/);
+assert.match(polymarket, /end_date_min/);
+assert.doesNotMatch(polymarket, /\/events\?\$\{params/);
+assert.doesNotMatch(polymarket, /offset: String\(offset\)/);
 assert.doesNotMatch(polymarket, /tag(?:_|\s*)id\s*=\s*["']?235/i);
-assert.match(polymarket, /endDate/);
+assert.match(polymarket, /resolutionRules = text\(market\.description\)/);
+assert.match(polymarket, /resolution_rules: candidate\.resolutionRules/);
+assert.match(polymarket, /resolution_source: candidate\.resolutionSource/);
+assert.match(polymarket, /marketExpiry\(market: JsonRecord\)/);
+assert.doesNotMatch(polymarket, /event\.endDate|event\.end_date/);
+assert.match(polymarket, /https:\/\/data-api\.polymarket\.com/);
+assert.match(polymarket, /\/oi\?\$\{params\.toString\(\)\}/);
+assert.doesNotMatch(polymarket, /event\.openInterest|event\.open_interest/);
+assert.match(polymarket, /MAX_USABLE_SPREAD/);
+assert.match(polymarket, /MIN_USABLE_DEPTH_NEAR_MID/);
+assert.match(polymarket, /Q0_REJECT/);
 assert.match(polymarket, /\/book\?token_id=/);
 assert.match(polymarket, /\/prices-history\?/);
 assert.match(polymarket, /event_complete: true/);
 assert.match(polymarket, /global_btc_probability: false/);
 assert.match(polymarket, /trading_signal: false/);
 assert.doesNotMatch(polymarket, /createOrder|postOrder|cancelOrder|private key|api key/i);
+assert.match(runtime, /event_id: market\.event_id, market_id: market\.market_id, condition_id: market\.condition_id/);
+assert.match(runtime, /resolution_rules: market\.resolution_rules/);
+assert.match(runtime, /market\.quality === "Q3_STRONG" \|\| market\.quality === "Q2_USABLE"/);
 
 console.log("PASS_BTC_CLEAN_CHAT_V1_DIRECT_OPENAI_ARCHITECTURE");
 console.log("PRIMARY_INTELLIGENCE=GPT_5_6_SOL_DIRECT_RESPONSES");
@@ -194,3 +213,161 @@ console.log("BTC_TEMPORAL_ORIGIN=GENESIS_BLOCK");
 console.log("BTC_TEMPORAL_GENESIS_TO_NOW_AUTO_CHUNK=PASS");
 console.log("BTC_TEMPORAL_2027_2028_PROSPECTIVE=PASS");
 console.log("BTC_TEMPORAL_FUTURE_AS_FACT=ZERO");
+
+
+async function verifyPolymarketKeysetRuntimeContract(): Promise<void> {
+  const originalFetch = globalThis.fetch;
+  const fixedNow = Date.UTC(2026, 7, 23, 0, 0, 0);
+  const goodCondition = `0x${"a".repeat(64)}`;
+  const weakCondition = `0x${"b".repeat(64)}`;
+  const invalidRulesCondition = `0x${"c".repeat(64)}`;
+  const missingExpiryCondition = `0x${"d".repeat(64)}`;
+  const goodToken = "good-yes-token";
+  const weakToken = "weak-yes-token";
+  const calls: string[] = [];
+
+  const market = (overrides: Record<string, unknown>) => ({
+    active: true,
+    closed: false,
+    archived: false,
+    acceptingOrders: true,
+    enableOrderBook: true,
+    endDate: "2026-12-31T23:59:59Z",
+    description: "Resolves Yes if a Binance BTC/USDT one-minute candle High reaches the stated threshold before expiry.",
+    outcomes: JSON.stringify(["Yes", "No"]),
+    clobTokenIds: JSON.stringify(["unused", "unused-no"]),
+    liquidityNum: 50000,
+    volumeNum: 100000,
+    ...overrides,
+  });
+
+  const event1 = {
+    id: "event-1",
+    slug: "bitcoin-test-event-1",
+    title: "Bitcoin test event 1",
+    openInterest: 999999999,
+    endDate: "2030-01-01T00:00:00Z",
+    tags: [{ id: "235", slug: "bitcoin" }],
+    markets: [
+      market({
+        id: "market-good",
+        conditionId: goodCondition,
+        question: "Will Bitcoin hit $150k by December 31, 2026?",
+        clobTokenIds: JSON.stringify([goodToken, "good-no-token"]),
+        resolutionSource: "https://example.com/binance-resolution",
+      }),
+      market({
+        id: "market-no-rules",
+        conditionId: invalidRulesCondition,
+        question: "Will Bitcoin hit $160k by December 31, 2026?",
+        description: "",
+        clobTokenIds: JSON.stringify(["no-rules-token", "no-rules-no"]),
+      }),
+    ],
+  };
+
+  const event2 = {
+    id: "event-2",
+    slug: "bitcoin-test-event-2",
+    title: "Bitcoin test event 2",
+    endDate: "2030-01-01T00:00:00Z",
+    tags: [{ id: "235", slug: "bitcoin" }],
+    markets: [
+      market({
+        id: "market-weak",
+        conditionId: weakCondition,
+        question: "Will Bitcoin hit $170k by December 31, 2026?",
+        clobTokenIds: JSON.stringify([weakToken, "weak-no-token"]),
+      }),
+      market({
+        id: "market-no-expiry",
+        conditionId: missingExpiryCondition,
+        question: "Will Bitcoin hit $180k by December 31, 2026?",
+        endDate: undefined,
+        clobTokenIds: JSON.stringify(["no-expiry-token", "no-expiry-no"]),
+      }),
+    ],
+  };
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url);
+    calls.push(url.toString());
+    const json = (value: unknown) => new Response(JSON.stringify(value), { status: 200, headers: { "content-type": "application/json" } });
+
+    if (url.hostname === "gamma-api.polymarket.com" && url.pathname === "/events/keyset") {
+      assert.equal(url.searchParams.get("tag_slug"), "bitcoin");
+      assert.equal(url.searchParams.has("offset"), false);
+      const cursor = url.searchParams.get("after_cursor");
+      if (!cursor) return json({ events: [event1], next_cursor: "cursor-2" });
+      assert.equal(cursor, "cursor-2");
+      return json({ events: [event2], next_cursor: "" });
+    }
+
+    if (url.hostname === "clob.polymarket.com" && url.pathname === "/book") {
+      const token = url.searchParams.get("token_id");
+      if (token === goodToken) return json({ bids: [{ price: "0.40", size: "1000" }], asks: [{ price: "0.42", size: "1200" }] });
+      if (token === weakToken) return json({ bids: [{ price: "0.10", size: "5000" }], asks: [{ price: "0.40", size: "5000" }] });
+      throw new Error(`unexpected book token ${token}`);
+    }
+
+    if (url.hostname === "data-api.polymarket.com" && url.pathname === "/oi") {
+      const ids = (url.searchParams.get("market") ?? "").split(",").filter(Boolean);
+      assert.deepEqual(new Set(ids), new Set([goodCondition, weakCondition]));
+      return json([
+        { market: goodCondition, value: 321.5 },
+        { market: weakCondition, value: 12.25 },
+      ]);
+    }
+
+    if (url.hostname === "clob.polymarket.com" && url.pathname === "/prices-history") {
+      assert.equal(url.searchParams.get("market"), goodToken);
+      return json({ history: [
+        { t: Math.floor((fixedNow - 2 * 3_600_000) / 1000), p: 0.39 },
+        { t: Math.floor((fixedNow - 30 * 60_000) / 1000), p: 0.405 },
+      ] });
+    }
+
+    throw new Error(`unexpected fetch ${url}`);
+  }) as typeof fetch;
+
+  try {
+    const result = await loadBtcPolymarketExpectationField({ includeHistory: true, now: () => fixedNow });
+    if (result.ok === false) throw new Error(result.message);
+    assert.equal(result.ok, true);
+    assert.equal(result.discovery_method, "GAMMA_EVENTS_KEYSET");
+    assert.equal(result.discovery_pages, 2);
+    assert.equal(result.event_complete, true);
+    assert.equal(result.discovered_events, 2);
+    assert.equal(result.discovered_markets, 4);
+    assert.equal(result.expectation_candidates, 2, "missing rules and missing market expiry must fail closed");
+    assert.equal(result.bitcoin_tag_id, "235");
+
+    const good = result.markets.find((row) => row.market_id === "market-good");
+    const weak = result.markets.find((row) => row.market_id === "market-weak");
+    assert.ok(good);
+    assert.ok(weak);
+    assert.equal(good.condition_id, goodCondition);
+    assert.equal(good.open_interest, 321.5, "OI must come from condition-specific Data API, not event aggregate");
+    assert.match(good.resolution_rules, /Binance BTC\/USDT/);
+    assert.equal(good.resolution_source, "https://example.com/binance-resolution");
+    assert.equal(good.quality, "Q3_STRONG");
+    assert.notEqual(good.delta_1h, null, "usable market must bind same-token history");
+    assert.equal(weak.open_interest, 12.25);
+    assert.equal(weak.quality, "Q0_REJECT", "absolute spread floor must override relative ranking");
+    assert.equal(weak.delta_1h, null, "Q0 market must not receive history authority");
+
+    assert.ok(calls.some((url) => url.includes("/events/keyset?") && url.includes("after_cursor=cursor-2")));
+    assert.equal(calls.some((url) => url.includes("gamma-api.polymarket.com/events?") && !url.includes("/events/keyset")), false);
+    assert.equal(calls.some((url) => url.includes("market=no-rules-token") || url.includes("token_id=no-rules-token")), false);
+    assert.equal(calls.some((url) => url.includes("market=no-expiry-token") || url.includes("token_id=no-expiry-token")), false);
+    assert.equal(calls.some((url) => url.includes(`prices-history?`) && url.includes(weakToken)), false);
+    console.log("PASS_BTC_POLYMARKET_KEYSET_RUNTIME_CONTRACT");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+verifyPolymarketKeysetRuntimeContract().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
