@@ -45,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     const telemetryConfig = getBtcObservabilityConfig();
     const telemetryContext = parseSupportObservability(req.body ?? {});
-    if (telemetryConfig.enabled && telemetryContext) {
+    if (result.disposition === "issued" && telemetryConfig.enabled && telemetryContext) {
       const anonBrowserKey = ensureBtcObserver(req, res, telemetryConfig.secret);
       try {
         await createNeonBtcObservabilityStore(telemetryConfig.databaseUrl).recordEvent({

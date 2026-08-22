@@ -71,6 +71,7 @@ async function run() {
   assert(!client.includes("canvas"));
   assert(donationSessionApi.includes("BTC_SUPPORT_SESSION_STARTED"));
   assert(donationSessionApi.includes("result.session.sessionId"));
+  assert(donationSessionApi.includes('result.disposition === "issued"'));
   console.log("BTC_OBSERVABILITY_V1_ACCEPTANCE=PASS");
   console.log("HUMANS_CLAIMED=NO");
   console.log("RAW_QUESTION_STORAGE=ZERO");
