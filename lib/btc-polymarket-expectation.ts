@@ -182,7 +182,6 @@ async function discoverAllEvents(asOfMs: number, signal?: AbortSignal): Promise<
     const params = new URLSearchParams({
       tag_slug: BITCOIN_TAG_SLUG,
       closed: "false",
-      end_date_min: new Date(asOfMs).toISOString(),
       limit: String(PAGE_LIMIT),
     });
     if (afterCursor) params.set("after_cursor", afterCursor);

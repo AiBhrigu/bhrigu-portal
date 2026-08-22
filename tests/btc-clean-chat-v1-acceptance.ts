@@ -170,7 +170,7 @@ assert.match(polymarket, /\/events\/keyset\?/);
 assert.match(polymarket, /tag_slug: BITCOIN_TAG_SLUG/);
 assert.match(polymarket, /next_cursor/);
 assert.match(polymarket, /after_cursor/);
-assert.match(polymarket, /end_date_min/);
+assert.doesNotMatch(polymarket, /end_date_min/);
 assert.doesNotMatch(polymarket, /\/events\?\$\{params/);
 assert.doesNotMatch(polymarket, /offset: String\(offset\)/);
 assert.doesNotMatch(polymarket, /tag(?:_|\s*)id\s*=\s*["']?235/i);
@@ -297,6 +297,7 @@ async function verifyPolymarketKeysetRuntimeContract(): Promise<void> {
     if (url.hostname === "gamma-api.polymarket.com" && url.pathname === "/events/keyset") {
       assert.equal(url.searchParams.get("tag_slug"), "bitcoin");
       assert.equal(url.searchParams.has("offset"), false);
+      assert.equal(url.searchParams.has("end_date_min"), false, "event discovery must remain complete before market-level expiry gating");
       const cursor = url.searchParams.get("after_cursor");
       if (!cursor) return json({ events: [event1], next_cursor: "cursor-2" });
       assert.equal(cursor, "cursor-2");
