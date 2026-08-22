@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { BTC_CLEAN_CHAT_SCHEMA } from "../lib/btc-clean-chat-v1";
-import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER } from "../lib/btc-clean-chat-model-runtime";
+import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
 import {
   BTC_ASTRO_CANONICAL_ENGINE,
   BTC_ASTRO_FIELD_SCHEMA,
@@ -14,7 +14,7 @@ import {
   buildBtcAstroWindows,
   validateBtcTemporalRange,
 } from "../lib/btc-astro-field-client";
-import { BTC_POLYMARKET_EXPECTATION_SCHEMA, loadBtcPolymarketExpectationField } from "../lib/btc-polymarket-expectation";
+import { BTC_POLYMARKET_EXPECTATION_SCHEMA, loadBtcPolymarketExpectationField, type BtcPolymarketExpectationField, type BtcPolymarketExpectationMarket } from "../lib/btc-polymarket-expectation";
 
 assert.equal(BTC_CLEAN_CHAT_SCHEMA, "bhrigu_btc_clean_chat_v1");
 assert.equal(BTC_CLEAN_CHAT_MODEL_ID, "gpt-5.6-sol");
@@ -190,6 +190,9 @@ assert.match(polymarket, /\/prices-history\?/);
 assert.match(polymarket, /event_complete: true/);
 assert.match(polymarket, /global_btc_probability: false/);
 assert.match(polymarket, /trading_signal: false/);
+assert.match(runtime, /selectBtcPolymarketEvidenceMarkets/);
+assert.match(runtime, /polymarketQueryContext/);
+assert.doesNotMatch(runtime, /evidence\.polymarket\.markets\.filter\(.*slice\(0, 4\)/);
 assert.doesNotMatch(polymarket, /createOrder|postOrder|cancelOrder|private key|api key/i);
 assert.match(runtime, /event_id: market\.event_id, market_id: market\.market_id, condition_id: market\.condition_id/);
 assert.match(runtime, /resolution_rules: market\.resolution_rules/);
@@ -213,6 +216,69 @@ console.log("BTC_TEMPORAL_ORIGIN=GENESIS_BLOCK");
 console.log("BTC_TEMPORAL_GENESIS_TO_NOW_AUTO_CHUNK=PASS");
 console.log("BTC_TEMPORAL_2027_2028_PROSPECTIVE=PASS");
 console.log("BTC_TEMPORAL_FUTURE_AS_FACT=ZERO");
+
+
+function verifyPolymarketExactPropositionSelection(): void {
+  const market = (marketId: string, question: string, quality: BtcPolymarketExpectationMarket["quality"] = "Q3_STRONG"): BtcPolymarketExpectationMarket => ({
+    event_id: `event-${marketId}`,
+    event_slug: "btc-thresholds-2026",
+    event_title: "Bitcoin thresholds 2026",
+    market_id: marketId,
+    condition_id: `0x${marketId.padEnd(64, "a").slice(0, 64)}`,
+    question,
+    semantic: "PATH_THRESHOLD",
+    expiry: "2027-01-01T05:00:00.000Z",
+    resolution_rules: "Resolves from the exact stated BTC threshold and expiry using Binance BTC/USDT one-minute candle High.",
+    resolution_source: null,
+    yes_token_id: `yes-${marketId}`,
+    probability: 0.05,
+    best_bid: 0.04,
+    best_ask: 0.06,
+    spread: 0.02,
+    depth_near_mid: 1_000,
+    liquidity: 10_000,
+    volume: 20_000,
+    open_interest: 5_000,
+    quality,
+    quality_score: quality === "Q3_STRONG" ? 90 : 70,
+    delta_1h: null,
+    delta_6h: null,
+    delta_1d: null,
+    delta_1w: null,
+    event_url: "https://polymarket.com/event/btc-thresholds-2026",
+  });
+
+  const hit150 = market("hit150", "Will Bitcoin hit $150k by December 31, 2026?");
+  const exactReach150 = market("reach150", "Will Bitcoin reach $150,000 by December 31, 2026?", "Q2_USABLE");
+  const distractors = Array.from({ length: 11 }, (_, index) => market(`d${index}`, `Will Bitcoin reach $${160 + index * 10}k by December 31, 2026?`));
+  const weakExact = market("weak150", "Will Bitcoin reach $150,000 by December 31, 2026?", "Q1_WEAK");
+  const result: BtcPolymarketExpectationField = {
+    schema_version: BTC_POLYMARKET_EXPECTATION_SCHEMA,
+    ok: true,
+    as_of: "2026-08-23T00:00:00.000Z",
+    bitcoin_tag_id: "235",
+    bitcoin_tag_slug: "bitcoin",
+    discovery_method: "GAMMA_EVENTS_KEYSET",
+    discovery_pages: 6,
+    event_complete: true,
+    discovered_events: 500,
+    discovered_markets: 800,
+    future_valid_markets: 700,
+    expectation_candidates: 180,
+    markets: [hit150, ...distractors, weakExact, exactReach150],
+    boundary: { expectation_evidence_only: true, global_btc_probability: false, prediction_claim: false, trading_signal: false, cross_expiry_aggregation: false },
+  };
+
+  const selected = selectBtcPolymarketEvidenceMarkets("What does Polymarket imply about Bitcoin reaching $150k by December 31, 2026?", result, 10);
+  assert.equal(selected[0]?.market_id, "reach150", "exact reach proposition must outrank a same-threshold hit contract and global quality distractors");
+  assert.equal(selected[1]?.market_id, "hit150", "same threshold/expiry alternate proposition may remain supporting evidence but cannot replace exact wording");
+  assert.ok(selected.some((row) => row.market_id === "reach150"), "exact usable proposition must survive global top-N truncation");
+  assert.equal(selected.some((row) => row.market_id === "weak150"), false, "Q1 exact-looking market must not gain authority through relevance");
+  assert.equal(selected.some((row) => /\$160k/.test(row.question)), true, "quality-ranked context may fill remaining slots after relevant exact evidence");
+  console.log("PASS_BTC_POLYMARKET_EXACT_PROPOSITION_RELEVANCE_FIRST_SELECTION");
+}
+
+verifyPolymarketExactPropositionSelection();
 
 
 async function verifyPolymarketKeysetRuntimeContract(): Promise<void> {
