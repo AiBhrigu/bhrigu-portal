@@ -47,11 +47,6 @@ export function createNeonBtcObservabilityStore(databaseUrl: string) {
         SELECT * FROM btc_observability_events WHERE occurred_at >= ${since.toISOString()} AND occurred_at < ${until.toISOString()}
       ), browser_sessions AS (
         SELECT anon_browser_key,count(DISTINCT visit_session_id)::int AS sessions FROM scoped GROUP BY anon_browser_key
-      ), support_started AS (
-        SELECT DISTINCT e.donation_session_id
-        FROM scoped e
-        JOIN btc_donation_sessions s ON s.session_id=e.donation_session_id
-        WHERE e.event_type='BTC_SUPPORT_SESSION_STARTED' AND e.donation_session_id IS NOT NULL
       )
       SELECT
         (SELECT count(DISTINCT anon_browser_key)::int FROM scoped) AS anonymous_browsers,
@@ -66,8 +61,8 @@ export function createNeonBtcObservabilityStore(databaseUrl: string) {
         (SELECT COALESCE(sum(nominal_cost_micros),0)::bigint FROM scoped WHERE event_type='BTC_CHAT_ANSWER_COMPLETED') AS nominal_cost_micros,
         (SELECT count(DISTINCT visit_session_id)::int FROM scoped WHERE event_type='BTC_SUPPORT_GLYPH_CLICKED') AS support_clicks,
         (SELECT count(DISTINCT visit_session_id)::int FROM scoped WHERE event_type='BTC_SUPPORT_PAGE_REACHED') AS support_reaches,
-        (SELECT count(*)::int FROM support_started) AS support_sessions,
-        (SELECT count(*)::int FROM support_started s WHERE EXISTS (SELECT 1 FROM btc_donation_receipts r WHERE r.session_id=s.donation_session_id)) AS receipt_sessions
+        (SELECT count(*)::int FROM btc_donation_sessions s WHERE s.created_at >= ${since.toISOString()} AND s.created_at < ${until.toISOString()}) AS support_sessions,
+        (SELECT count(DISTINCT r.session_id)::int FROM btc_donation_receipts r WHERE r.first_seen_at >= ${since.toISOString()} AND r.first_seen_at < ${until.toISOString()}) AS receipt_sessions
     `;
     const row = rows[0] as Record<string, unknown> | undefined;
     const n = (key: string) => Number(row?.[key] ?? 0);
@@ -89,7 +84,7 @@ export function createNeonBtcObservabilityStore(databaseUrl: string) {
         count(DISTINCT e.donation_session_id) FILTER (
           WHERE e.event_type='BTC_SUPPORT_SESSION_STARTED'
           AND EXISTS (SELECT 1 FROM btc_donation_sessions s WHERE s.session_id=e.donation_session_id)
-        )::int AS support_sessions
+        )::int AS attributed_support_sessions
       FROM btc_observability_events e
       WHERE e.occurred_at >= ${since.toISOString()} AND e.occurred_at < ${until.toISOString()}
       GROUP BY e.traffic_source ORDER BY anonymous_browsers DESC,e.traffic_source

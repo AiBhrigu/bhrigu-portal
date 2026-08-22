@@ -73,8 +73,11 @@ async function run() {
   assert(donationSessionApi.includes("BTC_SUPPORT_SESSION_STARTED"));
   assert(donationSessionApi.includes("result.session.sessionId"));
   assert(donationSessionApi.includes('result.disposition === "issued"'));
-  assert(neonStore.includes("JOIN btc_donation_sessions s ON s.session_id=e.donation_session_id"));
   assert(neonStore.includes("EXISTS (SELECT 1 FROM btc_donation_sessions s WHERE s.session_id=e.donation_session_id)"));
+  assert(neonStore.includes("FROM btc_donation_sessions s WHERE s.created_at >= ${since.toISOString()} AND s.created_at < ${until.toISOString()}"));
+  assert(neonStore.includes("FROM btc_donation_receipts r WHERE r.first_seen_at >= ${since.toISOString()} AND r.first_seen_at < ${until.toISOString()}"));
+  assert(neonStore.includes("AS attributed_support_sessions"));
+  assert(!neonStore.includes("FROM support_started"));
   console.log("BTC_OBSERVABILITY_V1_ACCEPTANCE=PASS");
   console.log("HUMANS_CLAIMED=NO");
   console.log("RAW_QUESTION_STORAGE=ZERO");

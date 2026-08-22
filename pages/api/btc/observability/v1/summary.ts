@@ -26,7 +26,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [summary, sources] = await Promise.all([store.summary(since, until), store.sourceSummary(since, until)]);
     return res.status(200).json({
       ok: true,
-      semantics: { humans: "NOT_CLAIMED", unique_unit: "ANONYMOUS_BROWSER", raw_question_storage: false, raw_answer_storage: false, raw_ip_storage: false },
+      semantics: { humans: "NOT_CLAIMED", unique_unit: "ANONYMOUS_BROWSER", raw_question_storage: false, raw_answer_storage: false, raw_ip_storage: false, support_sessions: "OPERATIONAL_BTC_DONATION_SESSIONS", receipt_sessions: "OPERATIONAL_BTC_DONATION_RECEIPTS", source_support_sessions: "ATTRIBUTED_OPERATIONAL_SESSIONS_ONLY" },
       window: { since: since.toISOString(), until: until.toISOString() },
       summary,
       sources,
