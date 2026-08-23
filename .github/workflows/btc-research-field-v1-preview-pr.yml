@@ -1,0 +1,36 @@
+name: BTC Research Field V1 Preview PR
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'lib/btc-clean-chat-model-runtime.ts'
+      - 'lib/btc-research-field-*.ts'
+      - 'migrations/20260823_btc_research_field_v1_preview.sql'
+      - 'pages/api/btc/research-field/**'
+      - 'pages/crypto-astro/btc/field/**'
+      - 'scripts/btc-research-field-preview-seed.ts'
+      - 'tests/btc-research-field-v1-acceptance.ts'
+      - 'package.json'
+      - '.github/workflows/btc-research-field-v1-preview-pr.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run verify:btc-research-field-v1-preview
+      - run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
+      - run: npm run verify:btc-routing
+      - run: git diff --check
+      - run: NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA="$GITHUB_SHA" npx next build
