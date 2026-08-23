@@ -40,6 +40,7 @@ const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: s
     { question: "What does the current BTC read use?", answer: "It uses the accepted Market Snapshot, verified derivations, and the latest compatible Snapshot Delta." },
     { question: "Does BTC Field provide price forecasts or trading signals?", answer: "Not in the current public corridor. It provides evidence-linked current state, accepted changes, sources, and explicit conditions; it does not provide price targets, trading signals, leverage instructions, or position sizing." },
     { question: "How are protocol and market answers separated?", answer: "Protocol answers use pinned Bitcoin sources; market answers use accepted market records. One evidence lane does not replace another." },
+    { question: "How does BTC Field use Polymarket?", answer: "As a bounded expectation-evidence layer for specific future propositions. Each market-implied value belongs only to the contract wording, expiry and resolution rules; it is not a global probability for Bitcoin, a BHRIGU price forecast or a trading signal." },
     { question: "How is astronomy compared with BTC?", answer: "Astronomical evidence and BTC state are checked independently. Temporal concurrence is not presented as causality." },
   ],
   ru: [
@@ -48,6 +49,7 @@ const BTC_ACCEPTED_PUBLIC_KNOWLEDGE: Record<BtcPublicLocale, Array<{ question: s
     { question: "На чём основано текущее чтение BTC?", answer: "Оно использует принятый Market Snapshot, проверенные производные и последнюю совместимую Snapshot Delta." },
     { question: "Даёт ли BTC Field прогноз цены или торговые сигналы?", answer: "Не в текущем публичном коридоре. Он даёт доказательно связанное текущее состояние, принятые изменения, источники и явные условия; он не выдаёт ценовые цели, торговые сигналы, инструкции по плечу или размеру позиции." },
     { question: "Как разделены ответы о протоколе и рынке?", answer: "Ответы о протоколе используют закреплённые источники Bitcoin; рыночные ответы используют принятые рыночные записи. Один доказательный слой не подменяет другой." },
+    { question: "Как BTC Field использует Polymarket?", answer: "Как ограниченный evidence layer для конкретных будущих условий. Каждая market-implied оценка относится только к точной формулировке контракта, его expiry и правилам разрешения; это не общая вероятность будущей цены Bitcoin, не прогноз BHRIGU и не торговый сигнал." },
     { question: "Как астрономия сопоставляется с BTC?", answer: "Астрономические данные и состояние BTC проверяются независимо. Временное совпадение не представляется как причинность." },
   ],
 };
@@ -349,6 +351,29 @@ export default function Page(p: Props) {
             <p>{item.answer}</p>
           </details>)}
         </div>
+      </section>
+
+      <section id="polymarket-expectations" className="readingZone polymarketExpectationZone" data-polymarket-public-reveal="bounded-expectation-layer" aria-labelledby="polymarket-expectations-title">
+        <header className="zoneHeading polymarketExpectationHead">
+          <div>
+            <p className="eyebrow">{ru ? "Доказательства ожиданий" : "Expectation evidence"}</p>
+            <h2 id="polymarket-expectations-title">{ru ? "Polymarket — отдельный слой ожиданий" : "Polymarket — a separate expectation layer"}</h2>
+          </div>
+          <p>{ru ? "Рыночная оценка читается только внутри точного условия контракта — со своим сроком и правилами разрешения." : "A market-implied value is read only inside the exact contract proposition, with its own expiry and resolution rules."}</p>
+        </header>
+        <div className="polymarketExpectationArc" aria-label={ru ? "Семантическая цепочка evidence Polymarket" : "Polymarket evidence semantic chain"}>
+          <article><span>01</span><strong>{ru ? "Конкретное условие" : "Specific proposition"}</strong><p>{ru ? "Не общий вопрос о направлении Bitcoin." : "Not a general claim about Bitcoin direction."}</p></article>
+          <i aria-hidden="true">→</i>
+          <article><span>02</span><strong>{ru ? "Expiry + правила" : "Expiry + rules"}</strong><p>{ru ? "Срок и условия разрешения сохраняют смысл рынка." : "Expiry and resolution conditions preserve market meaning."}</p></article>
+          <i aria-hidden="true">→</i>
+          <article><span>03</span><strong>{ru ? "Market-implied price" : "Market-implied price"}</strong><p>{ru ? "Текущая оценка конкретного контракта, а не вероятность BTC от BHRIGU." : "The current price of that contract, not a BHRIGU probability for BTC."}</p></article>
+        </div>
+        <div className="polymarketExpectationBoundary">
+          <span>{ru ? "Не глобальная вероятность BTC" : "Not a global BTC probability"}</span>
+          <span>{ru ? "Не прогноз BHRIGU" : "Not a BHRIGU forecast"}</span>
+          <span>{ru ? "Без торгового сигнала" : "No trading signal"}</span>
+        </div>
+        <a className="polymarketExpectationCta" href={`/crypto-astro/btc/clean-chat?lang=${p.locale}&q=${encodeURIComponent(ru ? "Что сейчас показывает Polymarket о Bitcoin? Используй только точные формулировки контрактов, сроки и правила разрешения." : "What is Polymarket currently implying about Bitcoin? Use only exact contract propositions, expiries and resolution rules.")}`}>{ru ? "Спросить Космографа о текущих ожиданиях" : "Ask Cosmographer about current expectations"} <span aria-hidden="true">→</span></a>
       </section>
 
       {p.binanceObservation&&<BtcBinanceFreeObservationPanel locale={p.locale} observation={p.binanceObservation}/>} 

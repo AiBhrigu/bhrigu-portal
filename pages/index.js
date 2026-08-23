@@ -46,6 +46,13 @@ const COPY = {
     btcDetail:
       "Open the current field, inspect its evidence boundary, then ask a bounded follow-up in the live dialogue.",
     btcStatus: "LIVE PUBLIC CORRIDOR",
+    polymarketEyebrow: "EXPECTATION EVIDENCE",
+    polymarketTitle: "Polymarket expectations",
+    polymarketBody:
+      "BTC Field can read selected Polymarket contracts as a bounded expectation layer. Each market-implied value belongs to a specific proposition, expiry and resolution rule.",
+    polymarketBoundary:
+      "Separate from the verified Snapshot · Not a BHRIGU price forecast · No trading signal",
+    polymarketCta: "See how expectation evidence is bounded",
     questionEyebrow: "QUESTION → KNOWLEDGE",
     questionTitle: "A question becomes a traceable read.",
     questionSteps: [
@@ -122,6 +129,13 @@ const COPY = {
     btcDetail:
       "Откройте текущее поле, проверьте границу доказательств и задайте ограниченный уточняющий вопрос в живом диалоге.",
     btcStatus: "ЖИВОЙ ПУБЛИЧНЫЙ КОРИДОР",
+    polymarketEyebrow: "ДОКАЗАТЕЛЬСТВА ОЖИДАНИЙ",
+    polymarketTitle: "Ожидания Polymarket",
+    polymarketBody:
+      "BTC Field может читать отдельные контракты Polymarket как ограниченный слой рыночных ожиданий. Каждая market-implied оценка относится к конкретному условию, сроку и правилам разрешения.",
+    polymarketBoundary:
+      "Отдельно от проверенного Snapshot · Не прогноз цены BHRIGU · Без торговых сигналов",
+    polymarketCta: "Как ограничены evidence ожиданий",
     questionEyebrow: "ВОПРОС → ЗНАНИЕ",
     questionTitle: "Вопрос становится проверяемым чтением.",
     questionSteps: [
@@ -230,7 +244,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       </section>
       <section id="product" className={styles.editorialSection}><SectionHeading eyebrow={copy.productEyebrow} title={copy.productTitle} body={copy.productIntro}/><EditorialList items={copy.productLayers}/></section>
       <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}><SectionHeading eyebrow={copy.outcomesEyebrow} title={copy.outcomesTitle} body={copy.outcomesIntro}/><EditorialList items={copy.outcomes}/></section>
-      <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
+      <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><aside className={styles.polymarketLane} data-polymarket-public-reveal="bounded-expectation-layer" aria-labelledby="home-polymarket-title"><div><p className={styles.expectationEyebrow}>{copy.polymarketEyebrow}</p><h3 id="home-polymarket-title">{copy.polymarketTitle}</h3><p>{copy.polymarketBody}</p><small>{copy.polymarketBoundary}</small><Link href={`${btcEntryHref}#polymarket-expectations`}>{copy.polymarketCta} <span aria-hidden="true">→</span></Link></div></aside><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
       <section id="question-to-knowledge" className={styles.editorialSection}><SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle}/><EditorialList items={copy.questionSteps} numbered/></section>
       <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></section>
       <PublicSupportRoute locale={locale} surface="home" />
