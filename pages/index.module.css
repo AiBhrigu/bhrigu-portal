@@ -95,6 +95,13 @@
 .btcSection { position: relative; align-items: center; }
 .btcSection::before { content: ""; position: absolute; inset: 12% -50vw 12% 38%; z-index: 0; background: radial-gradient(circle at 35% 50%, rgba(173, 111, 40, 0.13), transparent 48%); pointer-events: none; }
 .btcSection > * { position: relative; z-index: 1; }
+.polymarketLane { display: grid; grid-template-columns: 42px minmax(0, 1fr); gap: 18px; margin-top: 34px; padding: 22px 0; border-top: 1px solid rgba(98, 168, 216, 0.22); border-bottom: 1px solid rgba(98, 168, 216, 0.16); background: linear-gradient(90deg, rgba(98, 168, 216, 0.045), transparent 72%); }
+.expectationGlyph { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid rgba(98, 168, 216, 0.36); border-radius: 50%; color: var(--home-gold-bright); font-size: 18px; }
+.expectationEyebrow { margin: 0 0 7px; color: var(--home-blue); font-size: 9px !important; font-weight: 750; letter-spacing: 0.18em; }
+.polymarketLane h3 { margin: 0 0 8px; color: var(--home-ink); font-size: 18px; letter-spacing: -0.01em; }
+.polymarketLane p:not(.expectationEyebrow) { max-width: 650px; margin: 0; color: var(--home-muted); font-size: 13px !important; line-height: 1.65; }
+.polymarketLane small { display: block; margin-top: 10px; color: rgba(128, 188, 227, 0.68); font-size: 9px; letter-spacing: 0.055em; text-transform: uppercase; }
+.polymarketLane a { display: inline-flex; gap: 10px; margin-top: 12px; color: var(--home-blue) !important; font-size: 11px; font-weight: 650; letter-spacing: 0.035em; text-decoration: none !important; }
 .textCta { display: inline-flex; gap: 18px; margin-top: 30px; color: var(--home-gold-bright) !important; font-size: 14px; border-bottom: 1px solid rgba(200, 164, 90, 0.42); }
 .btcVisual { position: relative; min-height: 390px; display: flex; align-items: center; justify-content: center; }
 .btcOrbit { position: absolute; width: min(340px, 88%); aspect-ratio: 1; border: 1px solid rgba(200, 164, 90, 0.36); border-radius: 50%; }
@@ -164,6 +171,8 @@
   .editorialSection { gap: 48px; padding: 84px 0; }
   .sectionHeading h2 { font-size: clamp(36px, 10.5vw, 48px); }
   .roleMap > div { grid-template-columns: 1fr; gap: 6px; }
+  .polymarketLane { grid-template-columns: 34px minmax(0, 1fr); gap: 13px; padding: 18px 0; }
+  .expectationGlyph { width: 32px; height: 32px; font-size: 15px; }
   .btcVisual { min-height: 310px; }
   .siteFooter { min-height: 220px; padding: 58px 0 68px; }
   .siteFooter strong { font-size: 8px; letter-spacing: 0.18em; }
