@@ -351,6 +351,28 @@ BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE = {
     "pages/index.module.css",
 }
 
+BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    ".github/workflows/btc-research-field-v1-preview-pr.yml",
+    "lib/btc-clean-chat-model-runtime.ts",
+    "lib/btc-research-field-config.ts",
+    "lib/btc-research-field-neon.ts",
+    "lib/btc-research-field-v1.ts",
+    "migrations/20260823_btc_research_field_v1_preview.sql",
+    "package.json",
+    "pages/api/btc/research-field/v1/_auth.ts",
+    "pages/api/btc/research-field/v1/activate-preview.ts",
+    "pages/api/btc/research-field/v1/chat.ts",
+    "pages/api/btc/research-field/v1/checkpoint.ts",
+    "pages/api/btc/research-field/v1/create.ts",
+    "pages/api/btc/research-field/v1/session.ts",
+    "pages/api/btc/research-field/v1/state.ts",
+    "pages/crypto-astro/btc/field/[fieldId].tsx",
+    "scripts/btc-research-field-preview-seed.ts",
+    "tests/btc-research-field-v1-acceptance.ts",
+}
+
 BTC_OBSERVABILITY_V1_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-clean-chat-v1-pr.yml",
@@ -437,6 +459,7 @@ accepted_scopes = {
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
     "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
+    "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE": BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE,
     "PASS_BTC_POLYMARKET_PUBLIC_REVEAL_EXACT_5_FILE_SCOPE": BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE,
 }
 

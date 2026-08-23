@@ -117,6 +117,27 @@ jobs:
             "lib/btc-clean-chat-model-runtime.ts"
             "tests/btc-clean-chat-v1-acceptance.ts"
           )
+          research_field_preview_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            ".github/workflows/btc-research-field-v1-preview-pr.yml"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "lib/btc-research-field-config.ts"
+            "lib/btc-research-field-neon.ts"
+            "lib/btc-research-field-v1.ts"
+            "migrations/20260823_btc_research_field_v1_preview.sql"
+            "package.json"
+            "pages/api/btc/research-field/v1/_auth.ts"
+            "pages/api/btc/research-field/v1/activate-preview.ts"
+            "pages/api/btc/research-field/v1/chat.ts"
+            "pages/api/btc/research-field/v1/checkpoint.ts"
+            "pages/api/btc/research-field/v1/create.ts"
+            "pages/api/btc/research-field/v1/session.ts"
+            "pages/api/btc/research-field/v1/state.ts"
+            "pages/crypto-astro/btc/field/[fieldId].tsx"
+            "scripts/btc-research-field-preview-seed.ts"
+            "tests/btc-research-field-v1-acceptance.ts"
+          )
           observability_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -144,6 +165,7 @@ jobs:
           mapfile -t polymarket_recertification_expected_sorted < <(printf '%s\n' "${polymarket_recertification_expected[@]}" | sort)
           mapfile -t polymarket_query_binding_expected_sorted < <(printf '%s\n' "${polymarket_query_binding_expected[@]}" | sort)
           mapfile -t observability_expected_sorted < <(printf '%s\n' "${observability_expected[@]}" | sort)
+          mapfile -t research_field_preview_expected_sorted < <(printf '%s\n' "${research_field_preview_expected[@]}" | sort)
           if diff -q <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
@@ -165,6 +187,8 @@ jobs:
             fi
           elif diff -q <(printf '%s\n' "${observability_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${research_field_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE"
           else
             diff -u <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
             exit 1
