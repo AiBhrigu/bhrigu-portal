@@ -48,6 +48,20 @@ import type { BtcResearchFieldModelContext } from "./btc-research-field-v1";
 export const BTC_CLEAN_CHAT_MODEL_ID = "gpt-5.6-sol" as const;
 export const BTC_CLEAN_CHAT_PROVIDER = "DIRECT_OPENAI_API" as const;
 const OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses";
+
+export function resolveBtcCleanChatModelTransport(env: Readonly<Record<string, string | undefined>> = process.env) {
+  const researchPreview = env.VERCEL_ENV === "preview" && env.BTC_RESEARCH_FIELD_MODE === "preview_v1";
+  if (researchPreview) {
+    const endpoint = env.BTC_RESEARCH_FIELD_PREVIEW_RESPONSES_URL?.trim();
+    const model = env.BTC_RESEARCH_FIELD_PREVIEW_MODEL_ID?.trim();
+    const bearer = env.BTC_RESEARCH_FIELD_PREVIEW_BEARER?.trim();
+    if (!endpoint || !model || !bearer || !endpoint.startsWith("https://")) {
+      throw new Error("BTC_RESEARCH_FIELD_PREVIEW_PROVIDER_UNAVAILABLE");
+    }
+    return { endpoint, model, authEnv: "BTC_RESEARCH_FIELD_PREVIEW_BEARER" as const };
+  }
+  return { endpoint: OPENAI_RESPONSES_URL, model: BTC_CLEAN_CHAT_MODEL_ID, authEnv: "OPENAI_API_KEY" as const };
+}
 const MODEL_TIMEOUT_MS = 35_000;
 const MAX_PLAN_OUTPUT_TOKENS = 360;
 const MAX_FINAL_OUTPUT_TOKENS = 500;
@@ -198,19 +212,24 @@ class DirectOpenAiHttpError extends Error {
 }
 
 async function singleOpenAiResponse(body: Record<string, unknown>): Promise<ModelResult> {
+  const transport = resolveBtcCleanChatModelTransport();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
   try {
-    const response = await fetch(OPENAI_RESPONSES_URL, {
+    const auth = transport.authEnv === "OPENAI_API_KEY"
+      ? directOpenAiAuth()
+      : process.env.BTC_RESEARCH_FIELD_PREVIEW_BEARER;
+    if (!auth) throw new Error("BTC_RESEARCH_FIELD_PREVIEW_PROVIDER_UNAVAILABLE");
+    const response = await fetch(transport.endpoint, {
       method: "POST",
       headers: {
-        authorization: `Bearer ${directOpenAiAuth()}`,
+        authorization: `Bearer ${auth}`,
         "content-type": "application/json",
         accept: "application/json",
       },
       cache: "no-store",
       signal: controller.signal,
-      body: JSON.stringify({ model: BTC_CLEAN_CHAT_MODEL_ID, store: false, ...body }),
+      body: JSON.stringify({ model: transport.model, store: false, ...body }),
     });
     const payload = await response.json() as Record<string, unknown>;
     if (!response.ok) {
