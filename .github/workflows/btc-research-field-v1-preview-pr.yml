@@ -6,7 +6,7 @@ on:
     paths:
       - 'lib/btc-clean-chat-model-runtime.ts'
       - 'lib/btc-research-field-*.ts'
-      - 'migrations/20260823_btc_research_field_v1_preview.sql'
+      - 'tests/fixtures/btc-research-field-v1-preview-schema.sql'
       - 'pages/api/btc/research-field/**'
       - 'pages/crypto-astro/btc/field/**'
       - 'scripts/btc-research-field-preview-seed.ts'

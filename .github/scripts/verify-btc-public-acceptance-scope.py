@@ -359,7 +359,7 @@ BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE = {
     "lib/btc-research-field-config.ts",
     "lib/btc-research-field-neon.ts",
     "lib/btc-research-field-v1.ts",
-    "migrations/20260823_btc_research_field_v1_preview.sql",
+    "tests/fixtures/btc-research-field-v1-preview-schema.sql",
     "package.json",
     "pages/api/btc/research-field/v1/_auth.ts",
     "pages/api/btc/research-field/v1/activate-preview.ts",
