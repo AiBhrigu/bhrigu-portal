@@ -647,6 +647,19 @@ async function collectEvidence(locale: BtcCleanLocale, question: string, plan: P
   return { envelope, binance, polymarket, astronomy, astroBridge, protocol, web, unavailable };
 }
 
+export function dedupeBtcCleanSourcesFirstRanked(rows: BtcCleanSource[], limit = 12): BtcCleanSource[] {
+  if (limit <= 0) return [];
+  const unique: BtcCleanSource[] = [];
+  const seenHrefs = new Set<string>();
+  for (const row of rows) {
+    if (seenHrefs.has(row.href)) continue;
+    seenHrefs.add(row.href);
+    unique.push(row);
+    if (unique.length >= limit) break;
+  }
+  return unique;
+}
+
 function sourceRows(query: string, evidence: EvidenceBundle): BtcCleanSource[] {
   const rows: BtcCleanSource[] = [];
   if (evidence.envelope?.ok) {
@@ -673,7 +686,7 @@ function sourceRows(query: string, evidence: EvidenceBundle): BtcCleanSource[] {
     else rows.push({ id: "bitcoin-protocol", label: "Bitcoin protocol source of truth", href: "https://github.com/bitcoin/bitcoin", as_of: null });
   }
   if (evidence.web) rows.push(...evidence.web.sources);
-  return Array.from(new Map(rows.map((row) => [row.href, row])).values()).slice(0, 12);
+  return dedupeBtcCleanSourcesFirstRanked(rows, 12);
 }
 
 function compactMoney(value: number): string {

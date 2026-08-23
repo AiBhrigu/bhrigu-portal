@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { BTC_CLEAN_CHAT_SCHEMA } from "../lib/btc-clean-chat-v1";
-import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, buildBtcPolymarketQueryContext, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
+import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, buildBtcPolymarketQueryContext, dedupeBtcCleanSourcesFirstRanked, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
 import {
   BTC_ASTRO_CANONICAL_ENGINE,
   BTC_ASTRO_FIELD_SCHEMA,
@@ -284,6 +284,18 @@ function verifyPolymarketExactPropositionSelection(): void {
   assert.ok(selected.some((row) => row.market_id === "reach150"), "exact usable proposition must survive global top-N truncation");
   assert.equal(selected.some((row) => row.market_id === "weak150"), false, "Q1 exact-looking market must not gain authority through relevance");
   assert.ok(selected.length === 10, "quality-ranked context may fill remaining slots after relevant exact evidence");
+
+  const sharedEventUrl = "https://polymarket.com/event/what-price-will-bitcoin-hit-before-2027";
+  const visibleSources = dedupeBtcCleanSourcesFirstRanked([
+    { id: "polymarket-reach150", label: "Polymarket · Will Bitcoin reach $150,000 by December 31, 2026?", href: sharedEventUrl, as_of: result.as_of },
+    { id: "polymarket-reach200", label: "Polymarket · Will Bitcoin reach $200,000 by December 31, 2026?", href: sharedEventUrl, as_of: result.as_of },
+    { id: "polymarket-reach250", label: "Polymarket · Will Bitcoin reach $250,000 by December 31, 2026?", href: sharedEventUrl, as_of: result.as_of },
+    { id: "polymarket-hit150", label: "Polymarket · Will Bitcoin hit $150k by December 31, 2026?", href: "https://polymarket.com/event/when-will-bitcoin-hit-150k", as_of: result.as_of },
+  ]);
+  assert.equal(visibleSources.length, 2, "shared event URLs must dedupe without duplicating one Polymarket event");
+  assert.equal(visibleSources[0]?.id, "polymarket-reach150", "event URL dedupe must preserve the first relevance-ranked exact market identity");
+  assert.match(visibleSources[0]?.label ?? "", /reach \$150,000/, "visible source label must remain bound to the exact first-ranked proposition");
+  assert.equal(visibleSources[1]?.id, "polymarket-hit150", "distinct event URL must remain independently visible");
 
   const priorTurns = [{ user: "What does Polymarket imply about Bitcoin reaching $150k by December 31, 2026?" }];
   const explicitOverrideContext = buildBtcPolymarketQueryContext("What about $160k?", priorTurns);

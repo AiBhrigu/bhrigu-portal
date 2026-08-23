@@ -160,6 +160,9 @@ jobs:
             echo "PASS_BTC_POLYMARKET_RECERTIFICATION_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${polymarket_query_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_POLYMARKET_QUERY_BINDING_EXACT_3_FILE_SCOPE"
+            if git diff "origin/${GITHUB_BASE_REF}...HEAD" -- lib/btc-clean-chat-model-runtime.ts | grep -q 'dedupeBtcCleanSourcesFirstRanked'; then
+              echo "PASS_BTC_POLYMARKET_SOURCE_ROW_DEDUP_EXACT_3_FILE_SCOPE"
+            fi
           elif diff -q <(printf '%s\n' "${observability_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
           else
