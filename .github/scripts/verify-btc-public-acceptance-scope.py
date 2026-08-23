@@ -342,6 +342,15 @@ BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     "pages/guide/frey.js",
 }
 
+# PR194 bounded public reveal: Home + BTC Overview presentation only; no runtime/source/selector mutation.
+BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    "lib/btc-product-rebalance-style.ts",
+    "pages/crypto-astro/btc.tsx",
+    "pages/index.js",
+    "pages/index.module.css",
+}
+
 BTC_OBSERVABILITY_V1_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-clean-chat-v1-pr.yml",
@@ -428,6 +437,7 @@ accepted_scopes = {
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
     "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
+    "PASS_BTC_POLYMARKET_PUBLIC_REVEAL_EXACT_5_FILE_SCOPE": BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
