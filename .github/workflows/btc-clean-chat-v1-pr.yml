@@ -93,6 +93,15 @@ jobs:
             ".github/workflows/btc-clean-chat-v1-pr.yml"
             "ui/btc/BtcCleanChatV1.tsx"
           )
+          zero_waste_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "pages/api/btc/clean-chat-v1.ts"
+            "tests/btc-clean-chat-v1-acceptance.ts"
+            "tests/btc-clean-chat-pending-state-acceptance.ts"
+            "ui/btc/BtcCleanChatV1.tsx"
+          )
           support_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             "components/btc/BtcDonationSessionPreview.jsx"
@@ -160,6 +169,7 @@ jobs:
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
           mapfile -t traffic_expected_sorted < <(printf '%s\n' "${traffic_expected[@]}" | sort)
+          mapfile -t zero_waste_expected_sorted < <(printf '%s\n' "${zero_waste_expected[@]}" | sort)
           mapfile -t support_expected_sorted < <(printf '%s\n' "${support_expected[@]}" | sort)
           mapfile -t support_ci_authority_repair_expected_sorted < <(printf '%s\n' "${support_ci_authority_repair_expected[@]}" | sort)
           mapfile -t polymarket_recertification_expected_sorted < <(printf '%s\n' "${polymarket_recertification_expected[@]}" | sort)
@@ -174,6 +184,8 @@ jobs:
             echo "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${traffic_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${zero_waste_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${support_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${support_ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then

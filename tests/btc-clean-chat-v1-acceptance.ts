@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { BTC_CLEAN_CHAT_SCHEMA } from "../lib/btc-clean-chat-v1";
-import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_PROVIDER, buildBtcPolymarketQueryContext, dedupeBtcCleanSourcesFirstRanked, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
+import { BTC_CLEAN_CHAT_MODEL_ID, BTC_CLEAN_CHAT_NORMAL_PROVIDER_CALL_BOUND, BTC_CLEAN_CHAT_PROVIDER, BTC_CLEAN_CHAT_WEB_PROVIDER_CALL_BOUND, buildBtcPolymarketQueryContext, dedupeBtcCleanSourcesFirstRanked, selectBtcPolymarketEvidenceMarkets } from "../lib/btc-clean-chat-model-runtime";
 import {
   BTC_ASTRO_CANONICAL_ENGINE,
   BTC_ASTRO_FIELD_SCHEMA,
@@ -19,6 +19,8 @@ import { BTC_POLYMARKET_EXPECTATION_SCHEMA, loadBtcPolymarketExpectationField, t
 assert.equal(BTC_CLEAN_CHAT_SCHEMA, "bhrigu_btc_clean_chat_v1");
 assert.equal(BTC_CLEAN_CHAT_MODEL_ID, "gpt-5.6-sol");
 assert.equal(BTC_CLEAN_CHAT_PROVIDER, "DIRECT_OPENAI_API");
+assert.equal(BTC_CLEAN_CHAT_NORMAL_PROVIDER_CALL_BOUND, 2);
+assert.equal(BTC_CLEAN_CHAT_WEB_PROVIDER_CALL_BOUND, 3);
 assert.equal(BTC_ASTRO_FIELD_SCHEMA, "bhrigu_public_astro_field_v0_1");
 assert.equal(BTC_ASTRO_CANONICAL_ENGINE, "orion_native_swisseph_canonical_v0_1");
 assert.equal(BTC_TEMPORAL_ORIGIN_UTC, "2009-01-03T18:15:05Z");
@@ -94,18 +96,23 @@ for (const required of [
   "boundedModelValue",
   'type: "json_schema"',
   'type: "web_search"',
-  "MAX_MODEL_ATTEMPTS = 2",
-  "attemptBody",
-  "MAX_AUX_RETRY_OUTPUT_TOKENS = 720",
-  "MAX_FINAL_RETRY_OUTPUT_TOKENS = 2_000",
-  "currentCap === MAX_FINAL_OUTPUT_TOKENS",
+  "MAX_MODEL_ATTEMPTS = 1",
+  "BTC_CLEAN_CHAT_SINGLE_ATTEMPT_INVARIANT",
+  "BTC_CLEAN_CHAT_NORMAL_PROVIDER_CALL_BOUND = 2",
+  "BTC_CLEAN_CHAT_WEB_PROVIDER_CALL_BOUND = 3",
+  "MODEL_OUTPUT_LIMIT",
+  "MODEL_RESPONSE_INVALID",
+  "MODEL_CREDIT_UNAVAILABLE",
+  "MODEL_RATE_LIMITED",
+  "MODEL_PROVIDER_TRANSIENT",
+  "MODEL_TIMEOUT",
   "MAX_CONTEXT_TURNS = 12",
   "safeEvidence",
   "evidence_unavailable",
   "PRIMARY_PRODUCT_AXIS",
   "Public first-party BHRIGU project context",
   "product_runtime",
-  "MAX_FINAL_OUTPUT_TOKENS = 500",
+  "MAX_FINAL_OUTPUT_TOKENS = 1_200",
   'reasoning: { effort: "low" }',
   "BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE",
   "DIRECT_OPENAI_PRODUCTION_DISABLED",
@@ -131,6 +138,10 @@ for (const required of [
 ]) {
   assert.ok(runtime.includes(required), `direct model runtime missing ${required}`);
 }
+assert.doesNotMatch(runtime, /MAX_AUX_RETRY_OUTPUT_TOKENS|MAX_FINAL_RETRY_OUTPUT_TOKENS|retryableHttp|for \(let attempt/);
+assert.match(api, /classifyBtcCleanChatRuntimeError/);
+assert.match(api, /retryable: failure\.retryable/);
+assert.doesNotMatch(component, /попробуйте повторить вопрос|please try the question again/i);
 assert.doesNotMatch(runtime, /ai-gateway\.vercel\.sh|AI_GATEWAY_API_KEY|VERCEL_OIDC_TOKEN/);
 assert.doesNotMatch(runtime, /Current UTC date is 2026-08-20/);
 assert.match(runtime, /new Date\(\)\.toISOString\(\)\.slice\(0, 10\)/);
@@ -203,7 +214,7 @@ console.log("PRIMARY_INTELLIGENCE=GPT_5_6_SOL_DIRECT_RESPONSES");
 console.log("DETERMINISTIC_CHAT_ENGINE=REMOVED");
 console.log("ASTRONOMY_PRIMARY_RUNTIME=CANONICAL_ASTRO_FIELD");
 console.log("ASTRO_X_BTC_SAME_FIELD=PASS");
-console.log("MODEL_BOUNDED_RETRY=PASS");
+console.log("MODEL_SINGLE_ATTEMPT_ZERO_HIDDEN_RETRY=PASS");
 console.log("BITCOIN_PROTOCOL_EVIDENCE=PASS");
 console.log("NATIVE_WEB_SEARCH_BOUNDED=PASS");
 console.log("GENERAL_WEB_ASSISTANT=FORBIDDEN");

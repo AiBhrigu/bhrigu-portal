@@ -64,11 +64,11 @@ export function resolveBtcCleanChatModelTransport(env: Readonly<Record<string, s
 }
 const MODEL_TIMEOUT_MS = 35_000;
 const MAX_PLAN_OUTPUT_TOKENS = 360;
-const MAX_FINAL_OUTPUT_TOKENS = 500;
-const MAX_AUX_RETRY_OUTPUT_TOKENS = 720;
-const MAX_FINAL_RETRY_OUTPUT_TOKENS = 2_000;
+const MAX_FINAL_OUTPUT_TOKENS = 1_200;
 const MAX_WEB_OUTPUT_TOKENS = 360;
-const MAX_MODEL_ATTEMPTS = 2;
+const MAX_MODEL_ATTEMPTS = 1;
+export const BTC_CLEAN_CHAT_NORMAL_PROVIDER_CALL_BOUND = 2 as const;
+export const BTC_CLEAN_CHAT_WEB_PROVIDER_CALL_BOUND = 3 as const;
 const MAX_CONTEXT_TURNS = 12;
 
 type EvidenceTool =
@@ -205,10 +205,39 @@ function addUsage(target: Usage, next: Usage) {
   target.web_search_calls += next.web_search_calls;
 }
 
-class DirectOpenAiHttpError extends Error {
-  constructor(message: string, readonly status: number) {
-    super(message);
+class BtcCleanChatRuntimeError extends Error {
+  constructor(readonly code: BtcCleanChatFailureCode, readonly retryable: boolean) {
+    super(code);
+    this.name = "BtcCleanChatRuntimeError";
   }
+}
+
+export type BtcCleanChatFailureCode =
+  | "MODEL_OUTPUT_LIMIT"
+  | "MODEL_RESPONSE_INVALID"
+  | "MODEL_CREDIT_UNAVAILABLE"
+  | "MODEL_RATE_LIMITED"
+  | "MODEL_PROVIDER_TRANSIENT"
+  | "MODEL_TIMEOUT"
+  | "MODEL_RUNTIME_FAILURE";
+
+export type BtcCleanChatFailure = { code: BtcCleanChatFailureCode; retryable: boolean };
+
+function providerFailure(status: number, payload: Record<string, unknown>): BtcCleanChatRuntimeError {
+  const providerError = isRecord(payload.error) ? payload.error : {};
+  const providerCode = typeof providerError.code === "string" ? providerError.code.toLowerCase() : "";
+  const providerType = typeof providerError.type === "string" ? providerError.type.toLowerCase() : "";
+  const providerMessage = typeof providerError.message === "string" ? providerError.message.toLowerCase() : "";
+  const creditUnavailable = status === 429 && (
+    providerCode === "insufficient_quota"
+    || providerType === "insufficient_quota"
+    || providerMessage.includes("no credits remaining")
+    || providerMessage.includes("billing")
+  );
+  if (creditUnavailable) return new BtcCleanChatRuntimeError("MODEL_CREDIT_UNAVAILABLE", false);
+  if (status === 429) return new BtcCleanChatRuntimeError("MODEL_RATE_LIMITED", true);
+  if (status >= 500) return new BtcCleanChatRuntimeError("MODEL_PROVIDER_TRANSIENT", true);
+  return new BtcCleanChatRuntimeError("MODEL_RUNTIME_FAILURE", false);
 }
 
 async function singleOpenAiResponse(body: Record<string, unknown>): Promise<ModelResult> {
@@ -231,12 +260,14 @@ async function singleOpenAiResponse(body: Record<string, unknown>): Promise<Mode
       signal: controller.signal,
       body: JSON.stringify({ model: transport.model, store: false, ...body }),
     });
-    const payload = await response.json() as Record<string, unknown>;
-    if (!response.ok) {
-      const detail = isRecord(payload.error) && typeof payload.error.message === "string" ? payload.error.message : `HTTP_${response.status}`;
-      throw new DirectOpenAiHttpError(`DIRECT_OPENAI_${detail}`, response.status);
-    }
+    const parsed = await response.json().catch(() => ({}));
+    const payload = isRecord(parsed) ? parsed : {};
+    if (!response.ok) throw providerFailure(response.status, payload);
     return { text: extractText(payload), usage: usageFrom(payload), payload, httpStatus: response.status };
+  } catch (error) {
+    if (error instanceof BtcCleanChatRuntimeError) throw error;
+    if (error instanceof Error && error.name === "AbortError") throw new BtcCleanChatRuntimeError("MODEL_TIMEOUT", true);
+    throw new BtcCleanChatRuntimeError("MODEL_RUNTIME_FAILURE", false);
   } finally {
     clearTimeout(timer);
   }
@@ -251,51 +282,25 @@ function incompleteReason(result: ModelResult): string {
   return typeof detail.reason === "string" ? detail.reason : String(result.payload.status ?? "empty");
 }
 
-function retryableHttp(error: unknown): boolean {
-  return error instanceof DirectOpenAiHttpError && (error.status === 429 || error.status >= 500);
+export function classifyBtcCleanChatRuntimeError(error: unknown): BtcCleanChatFailure {
+  if (error instanceof BtcCleanChatRuntimeError) return { code: error.code, retryable: error.retryable };
+  return { code: "MODEL_RUNTIME_FAILURE", retryable: false };
 }
 
 async function boundedModelValue<T>(
   body: Record<string, unknown>,
   parse: (result: ModelResult) => T | null,
-  terminalCode: string,
+  _terminalCode: string,
 ): Promise<{ value: T; result: ModelResult; usage: Usage }> {
-  const total: Usage = { input_tokens: 0, output_tokens: 0, web_search_calls: 0 };
-  let lastReason = "unknown";
-  let attemptBody = body;
-  for (let attempt = 0; attempt < MAX_MODEL_ATTEMPTS; attempt += 1) {
-    try {
-      const result = await singleOpenAiResponse(attemptBody);
-      addUsage(total, result.usage);
-      if (responseIncomplete(result)) {
-        lastReason = incompleteReason(result);
-        if (attempt + 1 < MAX_MODEL_ATTEMPTS) {
-          if (lastReason === "max_output_tokens") {
-            const currentCap = Number(attemptBody.max_output_tokens);
-            if (Number.isFinite(currentCap) && currentCap > 0) {
-              const retryCap = currentCap === MAX_FINAL_OUTPUT_TOKENS
-                ? MAX_FINAL_RETRY_OUTPUT_TOKENS
-                : Math.min(currentCap * 2, MAX_AUX_RETRY_OUTPUT_TOKENS);
-              attemptBody = { ...attemptBody, max_output_tokens: retryCap };
-            }
-          }
-          continue;
-        }
-        throw new Error(`DIRECT_OPENAI_EMPTY_RESPONSE:${lastReason}`);
-      }
-      const value = parse(result);
-      if (value !== null) return { value, result, usage: total };
-      lastReason = terminalCode;
-      if (attempt + 1 < MAX_MODEL_ATTEMPTS) continue;
-      throw new Error(terminalCode);
-    } catch (error) {
-      if (attempt + 1 < MAX_MODEL_ATTEMPTS && retryableHttp(error)) continue;
-      if (error instanceof Error && (error.message.startsWith("DIRECT_OPENAI_EMPTY_RESPONSE") || error.message === terminalCode)) throw error;
-      if (attempt + 1 < MAX_MODEL_ATTEMPTS && !(error instanceof DirectOpenAiHttpError)) continue;
-      throw error;
-    }
+  if (MAX_MODEL_ATTEMPTS !== 1) throw new Error("BTC_CLEAN_CHAT_SINGLE_ATTEMPT_INVARIANT");
+  const result = await singleOpenAiResponse(body);
+  if (responseIncomplete(result)) {
+    if (incompleteReason(result) === "max_output_tokens") throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
+    throw new BtcCleanChatRuntimeError("MODEL_RESPONSE_INVALID", false);
   }
-  throw new Error(`${terminalCode}:${lastReason}`);
+  const value = parse(result);
+  if (value === null) throw new BtcCleanChatRuntimeError("MODEL_RESPONSE_INVALID", false);
+  return { value, result, usage: { ...result.usage } };
 }
 
 function parseJson(text: string): Record<string, unknown> | null {

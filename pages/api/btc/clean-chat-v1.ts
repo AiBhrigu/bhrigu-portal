@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
+import { classifyBtcCleanChatRuntimeError, runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
 import { createNeonBtcObservabilityStore } from "../../../lib/btc-observability-neon";
 import {
   BTC_OBSERVABILITY_PRICE_POLICY,
@@ -95,19 +95,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     return res.status(200).json(result);
   } catch (error) {
+    const failure = classifyBtcCleanChatRuntimeError(error);
     if (telemetryConfig.enabled && telemetryBase) {
       await safeRecord(telemetryConfig.databaseUrl, {
         ...telemetryBase, eventType: "BTC_CHAT_ANSWER_FAILED", model: null, inputTokens: null, outputTokens: null,
         webSearchCalls: null, nominalCostMicros: null, pricePolicy: null, completionStatus: "failed", errorClass: "model_runtime_failure",
       });
     }
-    console.error("BTC_CLEAN_CHAT_MODEL_RUNTIME_FAILURE", error instanceof Error ? error.message : "unknown");
+    console.error("BTC_CLEAN_CHAT_MODEL_RUNTIME_FAILURE", failure.code);
+    const ru = locale(body.locale) === "ru";
+    const message = failure.retryable
+      ? (ru ? "Сервис временно недоступен. Попробуйте позже." : "The service is temporarily unavailable. Please try later.")
+      : (ru ? "Модельный evidence runtime не завершил ответ. Повторять тот же вопрос не нужно." : "The model-backed evidence runtime did not complete the answer. Repeating the same question is not needed.");
     return res.status(503).json({
       ok: false,
-      code: "MODEL_EVIDENCE_RUNTIME_UNAVAILABLE",
-      message: locale(body.locale) === "ru"
-        ? "Модельный evidence runtime временно недоступен. Я не буду подменять его сохранённым ответом."
-        : "The model-backed evidence runtime is temporarily unavailable. I will not replace it with a stored answer.",
+      code: failure.code,
+      retryable: failure.retryable,
+      message,
     });
   }
 }
