@@ -31,6 +31,19 @@ type Props = {
   initialQuestion?: string;
 };
 
+type RuntimeFailurePayload = {
+  message?: string;
+  code?: string;
+  retryable?: boolean;
+};
+
+class CleanChatRuntimeError extends Error {
+  constructor(readonly code: string, readonly retryable: boolean) {
+    super(code);
+    this.name = "CleanChatRuntimeError";
+  }
+}
+
 function storageKey(locale: BtcCleanLocale): string {
   return `bhrigu:${SESSION_VERSION}:${locale}`;
 }
@@ -84,6 +97,23 @@ function formatAsOf(locale: BtcCleanLocale, value: string | null): string {
     timeZone: "UTC",
     timeZoneName: "short",
   }).format(date);
+}
+
+export function btcCleanChatRuntimeFailureCopy(locale: BtcCleanLocale, code: string, retryable: boolean): string {
+  const ru = locale === "ru";
+  if (retryable || code === "MODEL_TIMEOUT" || code === "MODEL_RATE_LIMITED" || code === "MODEL_PROVIDER_TRANSIENT") {
+    return ru ? "Сервис временно недоступен. Попробуйте позже." : "The service is temporarily unavailable. Please try later.";
+  }
+  if (code === "MODEL_OUTPUT_LIMIT") {
+    return ru ? "Ответ превысил допустимый объём. Повторять тот же вопрос не нужно." : "The answer exceeded the allowed output size. Repeating the same question is not needed.";
+  }
+  if (code === "MODEL_CREDIT_UNAVAILABLE") {
+    return ru ? "Модельная ёмкость бесплатного Cosmographer временно исчерпана. Повторять запрос не нужно." : "Free Cosmographer model capacity is temporarily exhausted. Repeating the request is not needed.";
+  }
+  if (code === "MODEL_RESPONSE_INVALID") {
+    return ru ? "Модельный ответ не прошёл проверку. Повторять тот же вопрос не нужно." : "The model response did not pass validation. Repeating the same question is not needed.";
+  }
+  return ru ? "Текущий evidence runtime не завершил ответ. Повторять тот же вопрос не нужно." : "The current evidence runtime did not complete the answer. Repeating the same question is not needed.";
 }
 
 async function copyVisibleText(text: string): Promise<boolean> {
@@ -225,9 +255,12 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
           })(),
         }),
       });
-      const payload = await response.json() as Partial<BtcCleanChatResponse> & { message?: string };
+      const payload = await response.json() as Partial<BtcCleanChatResponse> & RuntimeFailurePayload;
       if (!response.ok || payload.ok !== true || typeof payload.answer !== "string") {
-        throw new Error(payload.message || "runtime unavailable");
+        throw new CleanChatRuntimeError(
+          typeof payload.code === "string" ? payload.code : "MODEL_RUNTIME_FAILURE",
+          payload.retryable === true,
+        );
       }
       const completed: CleanTurn = {
         ...pending,
@@ -241,13 +274,9 @@ export default function BtcCleanChatV1({ locale, initialQuestion = "" }: Props) 
       setTurns((current) => current.map((turn) => turn.id === id ? completed : turn).slice(-MAX_TURNS));
     } catch (error) {
       const timedOut = error instanceof DOMException && error.name === "AbortError";
-      const fallback = timedOut
-        ? (ru
-          ? "Сбор evidence занял слишком много времени. Я не подменяю live-данные сохранённым шаблоном; попробуйте повторить вопрос."
-          : "Evidence gathering took too long. I will not replace live data with a stored template; please try the question again.")
-        : (ru
-          ? "Текущий evidence runtime не ответил полностью. Я не подменяю live-данные сохранённым шаблоном; попробуйте повторить вопрос."
-          : "The current evidence runtime did not complete. I will not replace live data with a stored template; please try the question again.");
+      const code = timedOut ? "MODEL_TIMEOUT" : error instanceof CleanChatRuntimeError ? error.code : "MODEL_RUNTIME_FAILURE";
+      const retryable = timedOut || (error instanceof CleanChatRuntimeError && error.retryable);
+      const fallback = btcCleanChatRuntimeFailureCopy(locale, code, retryable);
       setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, assistant: fallback, error: true } : turn).slice(-MAX_TURNS));
     } finally {
       window.clearTimeout(timeout);

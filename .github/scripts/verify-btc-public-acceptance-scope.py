@@ -335,6 +335,16 @@ BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE = {
     "ui/btc/BtcCleanChatV1.tsx",
 }
 
+BTC_CLEAN_CHAT_ZERO_WASTE_P0_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "lib/btc-clean-chat-model-runtime.ts",
+    "pages/api/btc/clean-chat-v1.ts",
+    "tests/btc-clean-chat-v1-acceptance.ts",
+    "tests/btc-clean-chat-pending-state-acceptance.ts",
+    "ui/btc/BtcCleanChatV1.tsx",
+}
+
 BTC_SUPPORT_PUBLIC_DISCOVERABILITY_D2_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     "components/btc/PublicSupportRoute.tsx",
@@ -435,6 +445,7 @@ accepted_scopes = {
     "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE": BTC_PUBLIC_LINK_CANONICALIZATION_SCOPE,
     "PASS_BTC_CLEAN_CHAT_PENDING_STATE_EXACT_4_FILE_SCOPE": BTC_CLEAN_CHAT_PENDING_STATE_SCOPE,
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
+    "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE": BTC_CLEAN_CHAT_ZERO_WASTE_P0_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
     "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
     "PASS_BTC_POLYMARKET_PUBLIC_REVEAL_EXACT_5_FILE_SCOPE": BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE,
