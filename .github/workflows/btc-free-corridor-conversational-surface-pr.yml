@@ -55,6 +55,8 @@ jobs:
             SYNCHRONOUS_EXPIRY_HELPER: adapter.includes('function freeSessionTimingNow()') && adapter.includes('remainingMs <= 0'),
             SUBMIT_CHECKS_NOW: adapter.includes('if (applyExactBoundary()) {') && adapter.includes('event.preventDefault()') && adapter.includes('event.stopPropagation()'),
             NAVIGATION_CHECKS_NOW: adapter.includes('const openQuestion = (question) => {\n    if (applyExactBoundary()) return;'),
+            QUICK_ENTRY_CLEAN_CHAT_TARGET: adapter.includes('const cleanChatHref = useMemo(() => `/crypto-astro/btc/clean-chat?lang=${locale}`, [locale]);') && adapter.includes('window.location.assign(`${cleanChatHref}&q=${encodeURIComponent(question)}`);'),
+            QUICK_ENTRY_LEGACY_TARGET_REMOVED: !adapter.includes('window.location.assign(`${liveHref}&q=${encodeURIComponent(question)}`);'),
             NEXT_STEP_CHECKS_NOW: adapter.includes('const execute = () => {\n            if (applyExactBoundary()) return;'),
             EXACT_VISIBLE_TIMER: adapter.includes('window.setTimeout(tick, Math.max(1, timing.remainingMs + 1))'),
             DISPLAY_INTERVAL_ONLY: adapter.includes('const displayTimer = window.setInterval(tick, 15000)'),
@@ -94,7 +96,7 @@ jobs:
         run: |
           python3 - <<'PY'
           import json
-          from urllib.parse import quote
+          from urllib.parse import parse_qs, quote, urlparse
           from selenium import webdriver
           from selenium.webdriver.common.by import By
           from selenium.webdriver.support.ui import WebDriverWait
@@ -108,11 +110,11 @@ jobs:
                   "structure": "Что сейчас со структурой рынка BTC?",
                   "expired_title": "Ответы остаются в этой вкладке",
                   "promoted": [
-                      ("Ситуация сейчас", "btc_market", "general_btc_field"),
-                      ("Что изменилось", "snapshot_memory", "change_memory"),
-                      ("Где расхождение", "btc_market", "general_btc_field"),
-                      ("Что дальше", "btc_market", "general_btc_field"),
-                      ("Проверить источники", "methodology", "source_and_method"),
+                      ("Ситуация сейчас", "Что происходит с BTC сейчас?"),
+                      ("Что изменилось", "Что изменилось с прошлого проверенного снимка?"),
+                      ("Где расхождение", "Что сейчас происходит с BTC и какие сигналы расходятся?"),
+                      ("Что дальше", "Поле BTC: какие данные нужно отслеживать дальше, чтобы подтвердить или пересмотреть текущий вывод?"),
+                      ("Проверить источники", "Какие источники использованы и где граница вывода?"),
                   ],
               },
               "en": {
@@ -122,11 +124,11 @@ jobs:
                   "structure": "What is the current BTC market structure?",
                   "expired_title": "Answers remain in this tab",
                   "promoted": [
-                      ("Current situation", "btc_market", "general_btc_field"),
-                      ("What changed", "snapshot_memory", "change_memory"),
-                      ("Where signals diverge", "btc_market", "general_btc_field"),
-                      ("What comes next", "btc_market", "general_btc_field"),
-                      ("Check sources", "methodology", "source_and_method"),
+                      ("Current situation", "What is happening with BTC now?"),
+                      ("What changed", "What changed since the previous verified snapshot?"),
+                      ("Where signals diverge", "What is happening with BTC now, and which signals diverge?"),
+                      ("What comes next", "BTC field: which data should be watched next to confirm or revise the current read?"),
+                      ("Check sources", "Which sources were used, and where is the inference boundary?"),
                   ],
               },
           }
@@ -191,26 +193,29 @@ jobs:
                   labels = [button.find_element(By.TAG_NAME, "span").text for button in buttons]
                   record(f"{prefix}_entry_labels", labels == case["entry_labels"], repr(labels))
 
-                  for promoted_index, (promoted_label, expected_domain, expected_subject) in enumerate(case["promoted"]):
-                      driver.get(f"{base}/crypto-astro/btc?lang={locale}")
-                      driver.execute_script("window.sessionStorage.clear()")
-                      driver.refresh()
-                      promoted_buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
-                      target_button = next(button for button in promoted_buttons if button.find_element(By.TAG_NAME, "span").text == promoted_label)
-                      driver.execute_script("arguments[0].click()", target_button)
-                      turn = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, "article[data-route-subject]")[-1])
-                      disposition = turn.get_attribute("data-route-disposition")
-                      domain = turn.get_attribute("data-route-domain")
-                      subject = turn.get_attribute("data-route-subject")
-                      clarification = turn.get_attribute("data-show-clarification")
-                      record(f"{prefix}_promoted_{promoted_index + 1}_continue", disposition == "CONTINUE", f"{promoted_label}: {disposition}")
-                      record(f"{prefix}_promoted_{promoted_index + 1}_domain", domain == expected_domain, f"{promoted_label}: {domain}")
-                      record(f"{prefix}_promoted_{promoted_index + 1}_subject", subject == expected_subject, f"{promoted_label}: {subject}")
-                      record(f"{prefix}_promoted_{promoted_index + 1}_no_clarification", clarification != "true", f"{promoted_label}: {clarification}")
-                      if promoted_index == 0:
-                          lead = turn.find_element(By.CSS_SELECTOR, "[data-answer-direct='true']").text
-                          expected_price_label = "Последняя принятая цена BTC" if locale == "ru" else "Latest accepted BTC price"
-                          record(f"{prefix}_promoted_current_native_price", expected_price_label in lead, lead[:240])
+                  for viewport, width, height in (("desktop", 1280, 1000), ("mobile", 390, 844)):
+                      driver.set_window_size(width, height)
+                      for promoted_index, (promoted_label, expected_question) in enumerate(case["promoted"]):
+                          driver.get(f"{base}/crypto-astro/btc?lang={locale}")
+                          driver.execute_script("window.sessionStorage.clear()")
+                          driver.refresh()
+                          promoted_buttons = wait.until(lambda d: d.find_elements(By.CSS_SELECTOR, ".btcPublicQuestionGrid button"))
+                          target_button = next(button for button in promoted_buttons if button.find_element(By.TAG_NAME, "span").text == promoted_label)
+                          driver.execute_script("arguments[0].click()", target_button)
+                          wait.until(lambda d: urlparse(d.current_url).path == "/crypto-astro/btc/clean-chat")
+                          parsed = urlparse(driver.current_url)
+                          query = parse_qs(parsed.query)
+                          record(f"{prefix}_{viewport}_quick_entry_{promoted_index + 1}_clean_chat_path", parsed.path == "/crypto-astro/btc/clean-chat", driver.current_url)
+                          record(f"{prefix}_{viewport}_quick_entry_{promoted_index + 1}_locale", query.get("lang") == [locale], repr(query))
+                          record(f"{prefix}_{viewport}_quick_entry_{promoted_index + 1}_question", query.get("q") == [expected_question], repr(query.get("q")))
+                          wait.until(lambda d: d.find_element(By.CSS_SELECTOR, "main[data-clean-chat='btc-v1']"))
+                          wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".cleanUser")) >= 1)
+                          user_turns = driver.find_elements(By.CSS_SELECTOR, ".cleanUser")
+                          record(f"{prefix}_{viewport}_quick_entry_{promoted_index + 1}_single_auto_send", len(user_turns) == 1, str(len(user_turns)))
+                          record(f"{prefix}_{viewport}_quick_entry_{promoted_index + 1}_visible_question", expected_question in user_turns[0].text, user_turns[0].text)
+                          driver.get_log("browser")
+
+                  driver.set_window_size(1280, 1000)
 
                   verify_boundary(locale, "liquidity", case["liquidity"], "liquidity", case["row_labels"])
                   verify_boundary(locale, "market_structure", case["structure"], "market_structure", case["row_labels"])

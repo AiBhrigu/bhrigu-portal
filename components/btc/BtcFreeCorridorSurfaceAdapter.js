@@ -384,6 +384,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
   const [previousSubject, setPreviousSubject] = useState(null);
 
   const liveHref = useMemo(() => `/crypto-astro/btc/live?lang=${locale}`, [locale]);
+  const cleanChatHref = useMemo(() => `/crypto-astro/btc/clean-chat?lang=${locale}`, [locale]);
 
   const applyExactBoundary = () => {
     const timing = freeSessionTimingNow();
@@ -560,7 +561,7 @@ export default function BtcFreeCorridorSurfaceAdapter() {
 
   const openQuestion = (question) => {
     if (applyExactBoundary()) return;
-    window.location.assign(`${liveHref}&q=${encodeURIComponent(question)}`);
+    window.location.assign(`${cleanChatHref}&q=${encodeURIComponent(question)}`);
   };
 
   const restart = () => {
