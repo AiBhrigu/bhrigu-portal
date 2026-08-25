@@ -147,6 +147,10 @@ jobs:
             "scripts/btc-research-field-preview-seed.ts"
             "tests/btc-research-field-v1-acceptance.ts"
           )
+          integration_expected=(
+            "${research_field_preview_expected[@]}"
+            "${zero_waste_expected[@]}"
+          )
           observability_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -176,6 +180,7 @@ jobs:
           mapfile -t polymarket_query_binding_expected_sorted < <(printf '%s\n' "${polymarket_query_binding_expected[@]}" | sort)
           mapfile -t observability_expected_sorted < <(printf '%s\n' "${observability_expected[@]}" | sort)
           mapfile -t research_field_preview_expected_sorted < <(printf '%s\n' "${research_field_preview_expected[@]}" | sort)
+          mapfile -t integration_expected_sorted < <(printf '%s\n' "${integration_expected[@]}" | sort -u)
           if diff -q <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
@@ -201,6 +206,8 @@ jobs:
             echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${research_field_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${integration_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_PR195_PR196_PREVIEW_INTEGRATION_EXACT_23_FILE_SCOPE"
           else
             diff -u <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}")
             exit 1
