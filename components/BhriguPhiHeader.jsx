@@ -1,54 +1,31 @@
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import {
-  normalizePublicLocale,
   resolvePublicLocale,
   switchPublicLocale,
   withPublicLocale,
 } from "../lib/public-locale-transport";
 
-function getBrowserRoute() {
-  if (typeof window === "undefined") return null;
-  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
-}
-
-export default function BhriguPhiHeader({ localeHint = null }) {
+export default function BhriguPhiHeader() {
   const router = useRouter();
-  const stablePath = String(router.pathname || "/");
-  const [clientRoute, setClientRoute] = useState(null);
-
-  useEffect(() => {
-    const sync = () => setClientRoute(getBrowserRoute());
-    sync();
-    window.addEventListener("popstate", sync);
-    window.addEventListener("hashchange", sync);
-    return () => {
-      window.removeEventListener("popstate", sync);
-      window.removeEventListener("hashchange", sync);
-    };
-  }, [router.asPath]);
-
-  const activeRoute = clientRoute || stablePath;
-  const path = activeRoute.split("?")[0].split("#")[0];
+  const asPath = String(router.asPath || "/").split("#")[0];
+  const path = asPath.split("?")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
-  const hintedLocale = localeHint === "ru" || localeHint === "en"
-    ? normalizePublicLocale(localeHint)
-    : "en";
-  const locale = clientRoute ? resolvePublicLocale(clientRoute) : hintedLocale;
+  const locale = resolvePublicLocale(asPath, router.query?.lang);
   const ru = locale === "ru";
   const targetLocale = ru ? "en" : "ru";
-  const languageHref = switchPublicLocale(activeRoute, targetLocale);
+  const languageHref = switchPublicLocale(asPath, targetLocale);
   const homeHref = withPublicLocale("/", locale);
   const freyHref = withPublicLocale("/frey", locale);
   const orionHref = withPublicLocale("/orion", locale);
   const btcHref = withPublicLocale("/crypto-astro/btc", locale);
 
   const handleLanguageSwitch = (event) => {
-    const currentBrowserRoute = getBrowserRoute();
-    if (!currentBrowserRoute) return;
+    if (typeof window === "undefined") return;
+    const currentBrowserRoute = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const target = switchPublicLocale(currentBrowserRoute, targetLocale);
     event.preventDefault();
-    window.location.assign(switchPublicLocale(currentBrowserRoute, targetLocale));
+    window.location.assign(target);
   };
 
   return (
