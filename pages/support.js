@@ -1,13 +1,16 @@
 import Head from "next/head";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import BtcDonationSessionPreview from "../components/btc/BtcDonationSessionPreview";
 import { recordBtcClientEvent } from "../lib/btc-observability-client";
 import {
   BTC_DONATION_SESSION_SAFETY_REPAIR_PREVIEW_BRANCH,
   getDonationSessionRuntimeConfig,
 } from "../lib/btc-donation-session";
+import {
+  normalizePublicLocale,
+  withPublicLocale,
+} from "../lib/public-locale-transport";
 
 const BTC_SUPPORT_CONVERSION_PREVIEW_BRANCHES = new Set([
   "feature/btc-support-conversion-atom1-v1",
@@ -57,17 +60,15 @@ const PAGE_COPY = {
   },
 };
 
-export default function Support({ donationSurface = null }) {
-  const router = useRouter();
-  const locale = (Array.isArray(router.query.lang) ? router.query.lang[0] : router.query.lang) === "ru" ? "ru" : "en";
+export default function Support({ donationSurface = null, locale = "en" }) {
   const copy = PAGE_COPY[locale];
   const donationEnabled = donationSurface === "preview" || donationSurface === "production";
   const reachedRef = useRef(false);
   useEffect(() => {
-    if (!router.isReady || reachedRef.current) return;
+    if (reachedRef.current) return;
     reachedRef.current = true;
     recordBtcClientEvent({ eventType: "BTC_SUPPORT_PAGE_REACHED", locale, surface: "btc_support" });
-  }, [router.isReady, locale]);
+  }, [locale]);
   return (
     <>
       <Head>
@@ -137,8 +138,8 @@ export default function Support({ donationSurface = null }) {
           <section className="supportingZone" data-phi-supporting-zone="safety-route-distinction">
             <p className="directAsk"><strong>{copy.ask}</strong></p>
             <div className="routes">
-              <p>{copy.access} <Link href="/access">/access</Link>.</p>
-              <p>{copy.investors} <Link href="/investors">/investors</Link>.</p>
+              <p>{copy.access} <Link href={withPublicLocale("/access", locale)}>/access</Link>.</p>
+              <p>{copy.investors} <Link href={withPublicLocale("/investors", locale)}>/investors</Link>.</p>
             </div>
             <p className="footer">{copy.footer}</p>
           </section>
@@ -270,7 +271,7 @@ export default function Support({ donationSurface = null }) {
   );
 }
 
-export async function getStaticProps() {
+export async function getServerSideProps({ query }) {
   const config = getDonationSessionRuntimeConfig();
   const syntheticPreviewBranch =
     process.env.VERCEL_ENV === "preview" &&
@@ -279,6 +280,7 @@ export async function getStaticProps() {
   return {
     props: {
       donationSurface: config.enabled ? config.surface : syntheticPreviewBranch ? "preview" : null,
+      locale: normalizePublicLocale(query?.lang),
     },
   };
 }

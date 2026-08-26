@@ -1,16 +1,48 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getPrevNextUp } from "../lib/routeTruth";
+import {
+  normalizePublicLocale,
+  resolvePublicLocale,
+  withPublicLocale,
+} from "../lib/public-locale-transport";
 
-export default function PrevNextBlock({ route }) {
-  const { prev, next, up } = getPrevNextUp(route || "");
+function getBrowserRoute() {
+  if (typeof window === "undefined") return null;
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+export default function PrevNextBlock({ route, localeHint = null }) {
+  const stableRoute = String(route || "").split("?")[0].split("#")[0];
+  const [clientRoute, setClientRoute] = useState(null);
+
+  useEffect(() => {
+    const sync = () => setClientRoute(getBrowserRoute());
+    sync();
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, [route]);
+
+  const graphRoute = clientRoute || stableRoute;
+  const { prev, next, up } = getPrevNextUp(graphRoute);
   if (!prev && !next && !up) return null;
+
+  const hintedLocale = localeHint === "ru" || localeHint === "en"
+    ? normalizePublicLocale(localeHint)
+    : "en";
+  const locale = clientRoute ? resolvePublicLocale(clientRoute) : hintedLocale;
+  const localize = (href) => withPublicLocale(href, locale);
 
   return (
     <nav data-prevnext="FREY_NAV_SINGLE_V0_4" className="pn" data-pn-root="PORTAL_PREVNEXT_V0_2" data-pn-optical="__FREY_C1_5_3_BOTTOM_NAV_OPTICAL_POLISH_V0_1__" aria-label="Portal navigation">
       <div className="pnInner">
-        {prev ? <Link className="pnLink" href={prev}>Prev</Link> : <span className="pnGhost">Prev</span>}
-        {up ? <Link className="pnLink pnUp" href={up}>Up</Link> : null}
-        {next ? <Link className="pnLink" href={next}>Next</Link> : <span className="pnGhost">Next</span>}
+        {prev ? <Link className="pnLink" href={localize(prev)}>Prev</Link> : <span className="pnGhost">Prev</span>}
+        {up ? <Link className="pnLink pnUp" href={localize(up)}>Up</Link> : null}
+        {next ? <Link className="pnLink" href={localize(next)}>Next</Link> : <span className="pnGhost">Next</span>}
       </div>
 
       <style jsx>{`
