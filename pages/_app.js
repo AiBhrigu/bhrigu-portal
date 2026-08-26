@@ -1,4 +1,5 @@
 import "../styles/globals.css";
+import "../styles/public-site-repair.css";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
@@ -44,7 +45,7 @@ const ROUTE_META = {
   },
   "/frey": {
     "title": "Frey · BHRIGU",
-    "desc": "Frey: a dialog interface for cosmography — query-first navigation across time, cycles, and scenarios (surface-only)."
+    "desc": "Frey: an active temporal reading and dialogue service across time, cycles, and scenarios, with protected research internals kept separate."
   },
   "/faq": {
     "title": "FAQ · BHRIGU",
@@ -77,6 +78,10 @@ const ROUTE_META = {
   "/crypto-astro/btc/live": {
     "title": "BTC Field Dialogue · Market Cosmographer | BHRIGU",
     "desc": "A bounded analytical dialogue about Bitcoin protocol, BTC market state, Snapshot memory, astronomical data, and evidence boundaries."
+  },
+  "/crypto-astro/btc/clean-chat": {
+    "title": "BTC Cosmographer · Dialogue",
+    "desc": "Live Bitcoin dialogue with current data, sources, and explicit limits."
   }
 };
 
@@ -106,7 +111,7 @@ export default function App({ Component, pageProps }) {
   const meta = getMeta(path);
   const rawLang = Array.isArray(router?.query?.lang) ? router.query.lang[0] : router?.query?.lang;
   const lang = rawLang === "ru" ? "ru" : "en";
-  const isBtc = path === "/crypto-astro/btc" || path === "/crypto-astro/btc/live";
+  const isBtc = path === "/crypto-astro/btc" || path === "/crypto-astro/btc/live" || path === "/crypto-astro/btc/clean-chat";
   const canonicalPath = path === "/crypto-astro/btc/live" ? "/crypto-astro/btc" : path;
   const canonical = 'https://www.bhrigu.io' + (canonicalPath === '/' ? '/' : canonicalPath) + (isBtc ? `?lang=${lang}` : "");
 
@@ -114,14 +119,14 @@ export default function App({ Component, pageProps }) {
     <>
       <Head>
         <link rel="canonical" href={canonical} key="canonical" />
-      {isBtc && <link rel="alternate" hrefLang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>}
-      {isBtc && <link rel="alternate" hrefLang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>}
-      {isBtc && <link rel="alternate" hrefLang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>}
-      {path === "/crypto-astro/btc/live" && <meta name="robots" content="noindex,follow"/>}
+      {isBtc && <link rel="alternate" hrefLang="en" href={`https://www.bhrigu.io${canonicalPath}?lang=en`}/>}
+      {isBtc && <link rel="alternate" hrefLang="ru" href={`https://www.bhrigu.io${canonicalPath}?lang=ru`}/>}
+      {isBtc && <link rel="alternate" hrefLang="x-default" href={`https://www.bhrigu.io${canonicalPath}?lang=en`}/>}
+      {(path === "/crypto-astro/btc/live" || path === "/crypto-astro/btc/clean-chat") && <meta name="robots" content="noindex,follow"/>}
 
       <title>{meta.title}</title>
         <meta name="description" content={meta.desc} />
-<meta property="og:type" content="website" />
+        <meta property="og:type" content="website" />
         <meta key="og:title" property="og:title" content={meta.title} />
         <meta key="og:description" property="og:description" content={meta.desc} />
         <meta key="og:url" property="og:url" content={canonical} />
