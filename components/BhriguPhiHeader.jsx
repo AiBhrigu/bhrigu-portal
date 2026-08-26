@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import {
   resolvePublicLocale,
@@ -13,7 +14,17 @@ export default function BhriguPhiHeader() {
   const btc = path.startsWith("/crypto-astro/btc");
   const locale = resolvePublicLocale(asPath, router.query?.lang);
   const ru = locale === "ru";
-  const languageHref = switchPublicLocale(asPath, ru ? "en" : "ru");
+  const [browserHash, setBrowserHash] = useState("");
+
+  useEffect(() => {
+    const syncHash = () => setBrowserHash(window.location.hash || "");
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
+  }, [asPath]);
+
+  const switchSource = asPath.includes("#") || !browserHash ? asPath : `${asPath}${browserHash}`;
+  const languageHref = switchPublicLocale(switchSource, ru ? "en" : "ru");
   const homeHref = withPublicLocale("/", locale);
   const freyHref = withPublicLocale("/frey", locale);
   const orionHref = withPublicLocale("/orion", locale);
