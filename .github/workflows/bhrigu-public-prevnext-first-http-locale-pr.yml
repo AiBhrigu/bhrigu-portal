@@ -193,7 +193,13 @@ jobs:
                       assert ok, (viewport, path, locale, hrefs, expected)
 
               logs = driver.get_log('browser')
-              severe = [x for x in logs if x.get('level') == 'SEVERE' and '/favicon.ico' not in x.get('message', '')]
+              known_local_non_scope = ('/api/btc/observability/v1/event',)
+              severe = [
+                  x for x in logs
+                  if x.get('level') == 'SEVERE'
+                  and '/favicon.ico' not in x.get('message', '')
+                  and not any(marker in x.get('message', '') for marker in known_local_non_scope)
+              ]
               assert not severe, json.dumps(severe)[:2000]
               print(json.dumps({'schema': 'bhrigu_prevnext_first_http_locale_v0_1', 'results': results, 'browser_severe': severe}, indent=2))
           finally:
