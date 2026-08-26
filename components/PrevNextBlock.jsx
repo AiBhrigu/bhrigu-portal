@@ -1,15 +1,40 @@
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getPrevNextUp } from "../lib/routeTruth";
 import {
+  normalizePublicLocale,
   resolvePublicLocale,
   withPublicLocale,
 } from "../lib/public-locale-transport";
 
-export default function PrevNextBlock({ route }) {
-  const { prev, next, up } = getPrevNextUp(route || "");
+function getBrowserRoute() {
+  if (typeof window === "undefined") return null;
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+export default function PrevNextBlock({ route, localeHint = null }) {
+  const stableRoute = String(route || "").split("?")[0].split("#")[0];
+  const [clientRoute, setClientRoute] = useState(null);
+
+  useEffect(() => {
+    const sync = () => setClientRoute(getBrowserRoute());
+    sync();
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, [route]);
+
+  const graphRoute = clientRoute || stableRoute;
+  const { prev, next, up } = getPrevNextUp(graphRoute);
   if (!prev && !next && !up) return null;
 
-  const locale = resolvePublicLocale(route || "");
+  const hintedLocale = localeHint === "ru" || localeHint === "en"
+    ? normalizePublicLocale(localeHint)
+    : "en";
+  const locale = clientRoute ? resolvePublicLocale(clientRoute) : hintedLocale;
   const localize = (href) => withPublicLocale(href, locale);
 
   return (
