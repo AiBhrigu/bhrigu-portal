@@ -46,6 +46,7 @@ assert.equal(BTC_POLYMARKET_EXPECTATION_SCHEMA, "bhrigu_btc_polymarket_expectati
 
 const root = path.resolve(process.cwd());
 const component = fs.readFileSync(path.join(root, "ui/btc/BtcCleanChatV1.tsx"), "utf8");
+const astroMatrix = fs.readFileSync(path.join(root, "ui/btc/BtcAstroCrossChartMatrix.tsx"), "utf8");
 const api = fs.readFileSync(path.join(root, "pages/api/btc/clean-chat-v1.ts"), "utf8");
 const protocolEvidence = fs.readFileSync(path.join(root, "lib/btc-protocol-evidence.ts"), "utf8");
 const shared = fs.readFileSync(path.join(root, "lib/btc-clean-chat-v1.ts"), "utf8");
@@ -62,6 +63,17 @@ assert.match(component, /cleanUser/);
 assert.match(component, /cleanAssistant/);
 assert.match(component, /FieldAnchorGlyph/);
 assert.match(component, /cleanSemanticVisual/);
+assert.match(component, /BtcAstroCrossChartMatrix/);
+assert.match(component, /continuityPayload/);
+assert.match(component, /primary_relation_signature/);
+assert.doesNotMatch(component, /continuity:\s*turn\.semanticVisual/);
+assert.match(astroMatrix, /CURRENT_TO_GENESIS_MATRIX/);
+assert.match(astroMatrix, /data-glyph-class="TEMPORAL_INTERVAL"/);
+assert.match(astroMatrix, /data-glyph-class="INSUFFICIENT_EVIDENCE"/);
+assert.match(astroMatrix, /FieldAnchorGlyph/);
+assert.match(astroMatrix, /RelationGlyph/);
+assert.match(astroMatrix, /SealedBoundaryGlyph/);
+assert.doesNotMatch(astroMatrix, /<svg|<path/);
 assert.match(component, /data-semantic-state/);
 assert.match(component, /cleanCopyAction/);
 assert.match(component, /navigator\.clipboard\.writeText/);
@@ -75,6 +87,8 @@ assert.match(api, /MAX_PRIOR_TURNS = 12/);
 assert.doesNotMatch(api, /classifyBtcCleanIntent|canonicalQuestion|runBtcCleanChat\(/);
 assert.doesNotMatch(shared, /classifyBtcCleanIntent|canonicalQuestion|function fieldChange|function expectationNow|runBtcCleanChat\(/);
 assert.match(shared, /semantic_visual/);
+assert.match(shared, /completion_state/);
+assert.match(shared, /CURRENT_TO_GENESIS_MATRIX/);
 
 for (const required of [
   "https://api.openai.com/v1/responses",
@@ -129,6 +143,15 @@ for (const required of [
   "if plan.request_type is out_of_scope",
   "buildSemanticVisual",
   "visual_focus",
+  "astro_relation",
+  "CURRENT_TO_GENESIS",
+  "temporal_request",
+  "ACTIVE_RELATION_WINDOW",
+  "answer_max_lines",
+  "MAX_SHORT_FINAL_OUTPUT_TOKENS",
+  "VISUAL_ONLY_MODEL_OUTPUT_LIMIT",
+  "crossChartNative",
+  "referenceTimestampUtc",
   "BTC_TEMPORAL_ORIGIN_DATE",
   "BTC_PROSPECTIVE_HORIZON_DATE",
   "Long ranges are valid",

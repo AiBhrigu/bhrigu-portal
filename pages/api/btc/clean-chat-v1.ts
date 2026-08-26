@@ -25,6 +25,28 @@ function locale(value: unknown): BtcCleanLocale {
   return value === "ru" ? "ru" : "en";
 }
 
+function boundedString(value: unknown, max: number): string | null {
+  return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
+}
+
+function continuity(value: unknown): BtcCleanPriorTurn["continuity"] | undefined {
+  if (!isRecord(value) || value.semantic_kind !== "ASTRO_BTC" || value.astro_relation !== "CURRENT_TO_GENESIS" || value.reference_event !== "genesis") return undefined;
+  const rawSignature = isRecord(value.primary_relation_signature) ? value.primary_relation_signature : null;
+  const transitBody = rawSignature ? boundedString(rawSignature.transit_body, 24) : null;
+  const genesisBody = rawSignature ? boundedString(rawSignature.genesis_body, 24) : null;
+  const aspect = rawSignature ? boundedString(rawSignature.aspect, 32) : null;
+  const rawWindow = isRecord(value.temporal_window) ? value.temporal_window : null;
+  const windowState = rawWindow && ["BOUNDED", "OPEN_START", "OPEN_END", "UNRESOLVED"].includes(String(rawWindow.state)) ? rawWindow.state as "BOUNDED" | "OPEN_START" | "OPEN_END" | "UNRESOLVED" : null;
+  return {
+    semantic_kind: "ASTRO_BTC",
+    astro_relation: "CURRENT_TO_GENESIS",
+    reference_event: "genesis",
+    primary_relation_id: boundedString(value.primary_relation_id, 160),
+    primary_relation_signature: transitBody && genesisBody && aspect ? { transit_body: transitBody, genesis_body: genesisBody, aspect } : null,
+    temporal_window: rawWindow && windowState ? { state: windowState, start_utc: boundedString(rawWindow.start_utc, 40), peak_utc: boundedString(rawWindow.peak_utc, 40), end_utc: boundedString(rawWindow.end_utc, 40) } : null,
+  };
+}
+
 function priorTurns(value: unknown): BtcCleanPriorTurn[] {
   if (!Array.isArray(value)) return [];
   return value.slice(-MAX_PRIOR_TURNS).flatMap((item) => {
@@ -35,6 +57,7 @@ function priorTurns(value: unknown): BtcCleanPriorTurn[] {
       user,
       assistant: typeof item.assistant === "string" ? item.assistant.trim().slice(0, 1600) : undefined,
       topic: typeof item.topic === "string" ? item.topic.trim().slice(0, 80) : undefined,
+      continuity: continuity(item.continuity),
     }];
   });
 }

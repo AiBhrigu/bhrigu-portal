@@ -13,6 +13,7 @@ export type BtcAstroEventId = "genesis" | "halving_1" | "halving_2" | "halving_3
 
 export type BtcAstroFieldRequest = {
   timestamp_utc?: string;
+  reference_timestamp_utc?: string;
   start_utc?: string;
   end_utc?: string;
   bodies?: string[];
@@ -243,6 +244,7 @@ function aggregateAstroPackets(
 
 export async function loadBtcAstroField(input: {
   timestampUtc?: string | null;
+  referenceTimestampUtc?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   bodies?: string[] | null;
@@ -252,7 +254,8 @@ export async function loadBtcAstroField(input: {
 }): Promise<BtcAstroFieldResult> {
   const explicitAnchor = input.bitcoinEvent ? BTC_ASTRO_EVENT_ANCHORS[input.bitcoinEvent] : null;
   const rangeAnchor = input.startDate === BTC_TEMPORAL_ORIGIN_DATE ? BTC_ASTRO_EVENT_ANCHORS.genesis : null;
-  const anchor = explicitAnchor ?? rangeAnchor;
+  const referenceAnchor = input.referenceTimestampUtc === BTC_TEMPORAL_ORIGIN_UTC ? BTC_ASTRO_EVENT_ANCHORS.genesis : null;
+  const anchor = explicitAnchor ?? rangeAnchor ?? referenceAnchor;
   const phenomena: BtcAstroPhenomenon[] = Array.from(
     new Set<BtcAstroPhenomenon>(input.phenomena?.length ? input.phenomena : ["positions", "aspects"]),
   );
@@ -260,6 +263,7 @@ export async function loadBtcAstroField(input: {
   const timeoutMs = input.timeoutMs ?? 20_000;
 
   if (input.startDate && input.endDate) {
+    if (input.referenceTimestampUtc) throw new Error("BTC_ASTRO_REFERENCE_INTERVAL_UNSUPPORTED");
     const windows = buildBtcAstroWindows(input.startDate, input.endDate);
     const packets = await mapWithConcurrency(windows, BTC_ASTRO_RANGE_CONCURRENCY, (window) => postAstroField({
       ...baseRequest,
@@ -274,6 +278,7 @@ export async function loadBtcAstroField(input: {
   if (explicitAnchor) request.timestamp_utc = explicitAnchor.timestamp_utc;
   else if (input.timestampUtc) request.timestamp_utc = input.timestampUtc;
   else request.timestamp_utc = new Date().toISOString();
+  if (input.referenceTimestampUtc) request.reference_timestamp_utc = input.referenceTimestampUtc;
   const packet = await postAstroField(request, timeoutMs);
   return { ok: true, packet, anchor, requested_at_utc: new Date().toISOString() };
 }

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { FieldAnchorGlyph } from "../../components/btc/BtcSurfaceGlyphs";
+import BtcAstroCrossChartMatrix from "./BtcAstroCrossChartMatrix";
 import { getBtcObservabilityContext, newBtcObservabilityTurnId, recordBtcClientEvent } from "../../lib/btc-observability-client";
 import type {
   BtcCleanChatResponse,
@@ -77,11 +78,26 @@ function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
+function continuityPayload(visual: BtcCleanSemanticVisual | null | undefined) {
+  const native = visual?.native;
+  if (!native || native.type !== "CURRENT_TO_GENESIS_MATRIX") return undefined;
+  const primary = native.rows[0] ?? null;
+  return {
+    semantic_kind: "ASTRO_BTC" as const,
+    astro_relation: "CURRENT_TO_GENESIS" as const,
+    reference_event: "genesis" as const,
+    primary_relation_id: primary?.relation_id ?? null,
+    primary_relation_signature: primary ? { transit_body: primary.transit_body, genesis_body: primary.genesis_body, aspect: primary.aspect } : null,
+    temporal_window: primary?.window ?? null,
+  };
+}
+
 function priorPayload(turns: CleanTurn[]) {
   return turns.filter((turn) => turn.assistant).slice(-MAX_CONTEXT_TURNS).map((turn) => ({
     user: turn.user,
     assistant: turn.assistant ?? undefined,
     topic: turn.topic ?? undefined,
+    continuity: continuityPayload(turn.semanticVisual),
   }));
 }
 
@@ -184,8 +200,11 @@ function AssistantMessage({ locale, turn, newest }: { locale: BtcCleanLocale; tu
             <span>{ru ? "Собираю evidence…" : "Gathering evidence…"}</span>
             <span className="cleanThinkingDots" aria-hidden="true"><i/><i/><i/></span>
           </div>
-        : <><p>{turn.assistant}</p><CopyAction locale={locale} text={turn.assistant} subject="assistant"/></>}
-      {turn.semanticVisual && turn.assistant !== null && <SemanticVisual locale={locale} visual={turn.semanticVisual}/>}
+        : <>
+            {turn.semanticVisual?.native?.type === "CURRENT_TO_GENESIS_MATRIX" && <BtcAstroCrossChartMatrix locale={locale} native={turn.semanticVisual.native}/>}
+            <p>{turn.assistant}</p><CopyAction locale={locale} text={turn.assistant} subject="assistant"/>
+          </>}
+      {turn.semanticVisual && !turn.semanticVisual.native && turn.assistant !== null && <SemanticVisual locale={locale} visual={turn.semanticVisual}/>}
       {turn.sources.length > 0 && turn.assistant !== null && <details className="cleanSources">
         <summary>{ru ? "Источники" : "Sources"}</summary>
         <div className="cleanSourceList">
