@@ -1,16 +1,34 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import {
   resolvePublicLocale,
   withPublicLocale,
 } from "../lib/public-locale-transport";
 
+function getBrowserRoute() {
+  if (typeof window === "undefined") return null;
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
 export default function PortalFooterNav({
   termsHref = "/faq",
   nextItems = [],
 }) {
   const router = useRouter();
-  const locale = resolvePublicLocale(router.asPath || "", router.query?.lang);
+  const [clientRoute, setClientRoute] = useState(null);
+
+  useEffect(() => {
+    const sync = () => setClientRoute(getBrowserRoute());
+    sync();
+    window.addEventListener("popstate", sync);
+    window.addEventListener("hashchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("hashchange", sync);
+    };
+  }, [router.asPath]);
+
+  const locale = clientRoute ? resolvePublicLocale(clientRoute) : "en";
   const items = Array.isArray(nextItems) ? nextItems.filter(Boolean) : [];
   const localize = (href) => withPublicLocale(href, locale);
   return (
