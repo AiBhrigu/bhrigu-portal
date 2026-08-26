@@ -21,6 +21,22 @@ const COPY = {
     viewProof: "View public proof",
     proofLine:
       "For self-directed Bitcoin investors · Verified sources · Explicit conditions · Evidence available",
+    systemMapLabel: "SYSTEM MAP",
+    systemMapRoot: "public home",
+    systemMapAria: "BHRIGU system map: BTC Cosmographer is the current Bitcoin product, with Frey, Cosmographer, and ORION as distinct related surfaces.",
+    btcSystemLanes: ["Market evidence", "Change / Snapshot", "Expectations", "Astro field", "Sources / Proof"],
+    freyVisual: "active temporal reading / dialogue",
+    cosmographerVisual: "interpretation / navigation",
+    orionVisual: "protected research depth",
+    proofObjectLabel: "BTC FIELD · ACCEPTED STATE",
+    currentStateLabel: "CURRENT STATE",
+    changeStateLabel: "WHAT CHANGED",
+    evidenceStateLabel: "EVIDENCE STATUS",
+    sourceProofLabel: "SOURCE / PROOF",
+    changedWord: "changed",
+    stableWord: "stable",
+    sourcesWord: "sources",
+    comparableWord: "comparable",
     productEyebrow: "THE PRODUCT",
     productTitle: "One read. Three connected layers.",
     productIntro:
@@ -104,6 +120,22 @@ const COPY = {
     viewProof: "Посмотреть публичные доказательства",
     proofLine:
       "Для самостоятельных Bitcoin-инвесторов · Проверенные источники · Явные условия · Доказательства доступны",
+    systemMapLabel: "КАРТА СИСТЕМЫ",
+    systemMapRoot: "публичный дом",
+    systemMapAria: "Карта системы BHRIGU: BTC Cosmographer — текущий Bitcoin-продукт; Frey, Космограф и ORION — отдельные связанные поверхности.",
+    btcSystemLanes: ["Рыночные данные", "Изменение / Snapshot", "Ожидания", "Астро-поле", "Источники / Proof"],
+    freyVisual: "действующее темпоральное чтение / диалог",
+    cosmographerVisual: "интерпретация / навигация",
+    orionVisual: "защищённая исследовательская глубина",
+    proofObjectLabel: "BTC FIELD · ПРИНЯТОЕ СОСТОЯНИЕ",
+    currentStateLabel: "ТЕКУЩЕЕ СОСТОЯНИЕ",
+    changeStateLabel: "ЧТО ИЗМЕНИЛОСЬ",
+    evidenceStateLabel: "СТАТУС ДОКАЗАТЕЛЬСТВ",
+    sourceProofLabel: "ИСТОЧНИКИ / PROOF",
+    changedWord: "изменено",
+    stableWord: "стабильно",
+    sourcesWord: "источников",
+    comparableWord: "сопоставимых",
     productEyebrow: "ПРОДУКТ",
     productTitle: "Одно чтение. Три связанных слоя.",
     productIntro:
@@ -237,9 +269,29 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
         <div className={styles.heroCopy}><p className={styles.product}>MARKET COSMOGRAPHER</p><p className={styles.category}>{copy.category}</p><h1 id="home-title"><span>{copy.h1Lead}</span><span>{copy.h1Close}</span></h1><p className={styles.subheadline}>{copy.subheadline}</p><div className={styles.heroActions}><Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">{copy.openBtc}<span aria-hidden="true">↗</span></Link><a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a></div><p className={styles.proofLine}>{copy.proofLine}</p></div>
-        <div className={styles.heroVisual} role="img" aria-label={acceptedState.aria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
-          <div className={styles.fieldCanvas} data-btc-field-canvas><img className={styles.fieldArtwork} src="/market-cosmographer-btc-field-hero-v0-2.svg" alt="" aria-hidden="true"/><span className={styles.phiGlyph} aria-hidden="true">Φ</span><span className={styles.statePulse} data-btc-state-pulse aria-hidden="true"/></div>
-          <div className={styles.acceptedStateBand} data-btc-accepted-state aria-hidden="true"><span className={styles.stateIdentity}><span className={styles.stateKicker} data-btc-state-kicker>{acceptedState.kicker}</span><strong>{acceptedState.synthesis}</strong></span><span className={styles.stateEvidence}><span data-btc-state-meta>{acceptedState.meta}</span><span data-btc-state-proof>{acceptedState.proof}</span></span></div>
+        <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
+          <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
+            <div className={styles.systemMapTopline}><span>{copy.systemMapLabel}</span></div>
+            <div className={styles.systemRoot}><strong>BHRIGU</strong><small>{copy.systemMapRoot}</small></div>
+            <div className={styles.systemBranches}>
+              <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc">
+                <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
+                <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
+              </Link>
+              <Link className={styles.systemNode} href={`/frey?lang=${locale}`} data-system-node="frey"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
+              <Link className={styles.systemNode} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
+              <Link className={styles.systemNode} href={`/orion?lang=${locale}`} data-system-node="orion"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
+            </div>
+          </nav>
+          <div className={styles.acceptedStateBand} data-btc-accepted-state data-home-btc-proof-object aria-label={acceptedState.aria}>
+            <div className={styles.proofObjectHeader}><span className={styles.stateKicker} data-btc-state-kicker>{copy.proofObjectLabel}</span><strong>{acceptedState.synthesis}</strong></div>
+            <div className={styles.proofStateGrid}>
+              <span><small>{copy.currentStateLabel}</small><strong>{acceptedState.synthesis}</strong><i data-btc-state-meta>{acceptedState.meta || "—"}</i></span>
+              <span><small>{copy.changeStateLabel}</small><strong>{acceptedState.delta}</strong><i>{btcAcceptedState.changed_metric_count} {copy.changedWord} · {btcAcceptedState.stable_metric_count} {copy.stableWord}</i></span>
+              <span><small>{copy.evidenceStateLabel}</small><strong>{acceptedState.freshness}</strong><i>{acceptedState.snapshot || "—"}</i></span>
+              <span><small>{copy.sourceProofLabel}</small><strong>{btcAcceptedState.evidence_source_count} {copy.sourcesWord}</strong><i data-btc-state-proof>{btcAcceptedState.comparable_metric_count} {copy.comparableWord} · {acceptedState.delta}</i></span>
+            </div>
+          </div>
         </div>
       </section>
       <section id="product" className={styles.editorialSection}><SectionHeading eyebrow={copy.productEyebrow} title={copy.productTitle} body={copy.productIntro}/><EditorialList items={copy.productLayers}/></section>
