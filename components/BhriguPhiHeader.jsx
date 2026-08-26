@@ -7,8 +7,8 @@ import {
 
 export default function BhriguPhiHeader() {
   const router = useRouter();
-  const asPath = String(router.asPath || "/");
-  const path = asPath.split("?")[0].split("#")[0];
+  const asPath = String(router.asPath || "/").split("#")[0];
+  const path = asPath.split("?")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
   const locale = resolvePublicLocale(asPath, router.query?.lang);
