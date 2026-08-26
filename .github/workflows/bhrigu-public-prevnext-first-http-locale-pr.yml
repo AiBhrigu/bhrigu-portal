@@ -1,0 +1,207 @@
+name: BHRIGU Public PrevNext First HTTP Locale
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml
+      - pages/_app.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-public-prevnext-first-http-locale-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact bounded scope
+        run: |
+          git fetch origin master
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+              '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+              'pages/_app.js',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
+          protected = [
+              'lib/routeTruth.js',
+              'components/PrevNextBlock.jsx',
+              'pages/frey.js',
+              'pages/reading.js',
+              'pages/support.js',
+              'components/btc',
+              'pages/crypto-astro/btc',
+              'pages/api',
+              'public/sitemap.xml',
+              'pages/sitemap.xml.js',
+          ]
+          drift = subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA'], '--', *protected],
+              text=True,
+          ).strip()
+          if drift:
+              raise SystemExit('PROTECTED_SURFACE_DIFF=' + drift)
+          print('EXACT_SCOPE_PASS', sorted(actual))
+          print('ROUTE_TRUTH_DIFF=ZERO')
+          print('FREY_READING_SUPPORT_BODY_DIFF=ZERO')
+          print('BTC_PAYMENT_RUNTIME_DIFF=ZERO')
+          PY
+
+      - name: Verify transport binding
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('pages/_app.js').read_text()
+          prevnext = Path('components/PrevNextBlock.jsx').read_text()
+          checks = {
+              'APP_REQUEST_LANG_EXISTS': 'const rawLang = Array.isArray(router?.query?.lang)' in app,
+              'APP_PASSES_LOCALE_HINT': '<PrevNextBlock route={router.asPath} localeHint={rawLang} />' in app,
+              'PREVNEXT_ACCEPTS_LOCALE_HINT': 'localeHint = null' in prevnext,
+              'PREVNEXT_SSR_HINT_PATH': 'const hintedLocale = localeHint === "ru" || localeHint === "en"' in prevnext,
+              'PREVNEXT_CLIENT_ROUTE_WINS_AFTER_HYDRATION': 'const locale = clientRoute ? resolvePublicLocale(clientRoute) : hintedLocale' in prevnext,
+          }
+          print(checks)
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('TRANSPORT_BIND_FAIL=' + ','.join(failed))
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/prevnext-first-http.log 2>&1 &
+          echo $! > /tmp/prevnext-first-http.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/frey?lang=en' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/prevnext-first-http.log
+          exit 1
+
+      - name: First HTTP RU EN matrix
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from urllib.request import urlopen
+
+          class NavParser(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.in_nav = False
+                  self.depth = 0
+                  self.hrefs = []
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if tag == 'nav' and attrs.get('data-prevnext'):
+                      self.in_nav = True
+                      self.depth = 1
+                      return
+                  if self.in_nav:
+                      self.depth += 1
+                      if tag == 'a' and attrs.get('href'):
+                          self.hrefs.append(attrs['href'])
+              def handle_endtag(self, tag):
+                  if self.in_nav:
+                      self.depth -= 1
+                      if self.depth == 0:
+                          self.in_nav = False
+
+          matrix = {
+              ('/frey', 'ru'): ['/start?lang=ru', '/start?lang=ru', '/reading?lang=ru'],
+              ('/frey', 'en'): ['/start?lang=en', '/start?lang=en', '/reading?lang=en'],
+              ('/reading', 'ru'): ['/frey?lang=ru', '/start?lang=ru', '/cosmographer?lang=ru'],
+              ('/reading', 'en'): ['/frey?lang=en', '/start?lang=en', '/cosmographer?lang=en'],
+              ('/support', 'ru'): ['/start?lang=ru'],
+              ('/support', 'en'): ['/start?lang=en'],
+          }
+
+          for (path, locale), expected in matrix.items():
+              html = urlopen(f'http://127.0.0.1:3000{path}?lang={locale}', timeout=30).read().decode('utf-8')
+              parser = NavParser()
+              parser.feed(html)
+              assert parser.hrefs == expected, (path, locale, parser.hrefs, expected)
+              print(f'FIRST_HTTP {path} {locale}=PASS {parser.hrefs}')
+          PY
+
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Hydration parity desktop mobile
+        run: |
+          python3 - <<'PY'
+          import json
+          from urllib.parse import urlsplit
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = 'http://127.0.0.1:3000'
+          matrix = {
+              ('/frey', 'ru'): ['/start?lang=ru', '/start?lang=ru', '/reading?lang=ru'],
+              ('/frey', 'en'): ['/start?lang=en', '/start?lang=en', '/reading?lang=en'],
+              ('/reading', 'ru'): ['/frey?lang=ru', '/start?lang=ru', '/cosmographer?lang=ru'],
+              ('/reading', 'en'): ['/frey?lang=en', '/start?lang=en', '/cosmographer?lang=en'],
+              ('/support', 'ru'): ['/start?lang=ru'],
+              ('/support', 'en'): ['/start?lang=en'],
+          }
+
+          options = webdriver.ChromeOptions()
+          for arg in ('--headless=new', '--no-sandbox', '--disable-dev-shm-usage'):
+              options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 30)
+          results = []
+          try:
+              for viewport, width, height in (('desktop', 1280, 900), ('mobile', 390, 844)):
+                  driver.set_window_size(width, height)
+                  for (path, locale), expected in matrix.items():
+                      driver.get(f'{base}{path}?lang={locale}')
+                      wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                      wait.until(lambda d: len(d.find_elements(By.CSS_SELECTOR, 'nav[data-prevnext] a')) == len(expected))
+                      hrefs = []
+                      for link in driver.find_elements(By.CSS_SELECTOR, 'nav[data-prevnext] a'):
+                          parsed = urlsplit(link.get_attribute('href'))
+                          hrefs.append(parsed.path + (('?' + parsed.query) if parsed.query else ''))
+                      ok = hrefs == expected
+                      results.append({'viewport': viewport, 'path': path, 'locale': locale, 'hrefs': hrefs, 'passed': ok})
+                      assert ok, (viewport, path, locale, hrefs, expected)
+
+              logs = driver.get_log('browser')
+              severe = [x for x in logs if x.get('level') == 'SEVERE' and '/favicon.ico' not in x.get('message', '')]
+              assert not severe, json.dumps(severe)[:2000]
+              print(json.dumps({'schema': 'bhrigu_prevnext_first_http_locale_v0_1', 'results': results, 'browser_severe': severe}, indent=2))
+          finally:
+              driver.quit()
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/prevnext-first-http.pid || kill "$(cat /tmp/prevnext-first-http.pid)" || true
+          test ! -f /tmp/prevnext-first-http.log || tail -n 100 /tmp/prevnext-first-http.log
