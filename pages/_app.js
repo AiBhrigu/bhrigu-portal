@@ -139,7 +139,7 @@ export default function App({ Component, pageProps }) {
       <BhriguPhiHeader />
       <Component {...pageProps} />
       <BtcFreeCorridorSurfaceAdapter />
-      {path !== "/" ? <PrevNextBlock route={router.asPath} /> : null}
+      {path !== "/" ? <PrevNextBlock route={router.asPath} localeHint={rawLang} /> : null}
     </>
   );
 }
