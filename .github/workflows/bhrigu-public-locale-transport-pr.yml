@@ -1,0 +1,245 @@
+name: BHRIGU Public Locale Transport
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/bhrigu-public-locale-transport-pr.yml
+      - components/BhriguPhiHeader.jsx
+      - components/PortalFooterNav.jsx
+      - components/PrevNextBlock.jsx
+      - lib/public-locale-transport.js
+      - pages/support.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-public-locale-transport-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact bounded scope and locked runtime
+        run: |
+          git fetch origin master
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+              '.github/workflows/bhrigu-public-locale-transport-pr.yml',
+              'components/BhriguPhiHeader.jsx',
+              'components/PortalFooterNav.jsx',
+              'components/PrevNextBlock.jsx',
+              'lib/public-locale-transport.js',
+              'pages/support.js',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
+          subprocess.check_call(['git', 'diff', '--exit-code', os.environ['BASE_SHA'], os.environ['HEAD_SHA'], '--', 'lib/routeTruth.js'])
+          protected = subprocess.check_output([
+              'git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA'], '--',
+              'components/btc', 'pages/crypto-astro/btc', 'lib/btc-donation-session.ts', 'lib/btc-donation-session.js',
+              'pages/api', 'public/sitemap.xml', 'pages/sitemap.xml.js'
+          ], text=True).strip()
+          if protected:
+              raise SystemExit('PROTECTED_SURFACE_DIFF=' + protected)
+          print('EXACT_SCOPE_PASS', sorted(actual))
+          print('ROUTE_TRUTH_DIFF=ZERO')
+          print('BTC_FREY_PAYMENT_RUNTIME_DIFF=ZERO_BY_SCOPE')
+          PY
+
+      - name: Verify locale transport static contract
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          helper = Path('lib/public-locale-transport.js').read_text()
+          header = Path('components/BhriguPhiHeader.jsx').read_text()
+          prevnext = Path('components/PrevNextBlock.jsx').read_text()
+          footer = Path('components/PortalFooterNav.jsx').read_text()
+          support = Path('pages/support.js').read_text()
+          route_truth = Path('lib/routeTruth.js').read_text()
+          checks = {
+              'HELPER_SWITCH_PRESERVES_ROUTE': 'switchPublicLocale' in helper and 'URLSearchParams' in helper,
+              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(asPath' in header,
+              'HEADER_HOME_LOCALE': 'homeHref = withPublicLocale("/", locale)' in header,
+              'HEADER_FREY_LOCALE': 'freyHref = withPublicLocale("/frey", locale)' in header,
+              'HEADER_ORION_LOCALE': 'orionHref = withPublicLocale("/orion", locale)' in header,
+              'PREVNEXT_TRANSPORT_ONLY': 'getPrevNextUp(route || "")' in prevnext and 'withPublicLocale(href, locale)' in prevnext,
+              'SHARED_FOOTER_TRANSPORT': 'withPublicLocale(href, locale)' in footer,
+              'SUPPORT_SSR': 'getServerSideProps' in support and 'getStaticProps' not in support,
+              'SUPPORT_EXISTING_COPY_PRESERVED': 'Помогите BHRIGU оставаться публичным.' in support and 'Help keep BHRIGU public.' in support,
+              'SUPPORT_VOLUNTARY_SEMANTICS_PRESERVED': 'BtcDonationSessionPreview' in support,
+              'ROUTE_TRUTH_LOCK_MARKER': 'ROUTE_TRUTH (locked)' in route_truth,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          print(checks)
+          if failed:
+              raise SystemExit('STATIC_CONTRACT_FAIL=' + ','.join(failed))
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/public-locale-transport.log 2>&1 &
+          echo $! > /tmp/public-locale-transport.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/?lang=en' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/public-locale-transport.log
+          exit 1
+
+      - name: Support first HTTP document RU EN proof
+        run: |
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          base = 'http://127.0.0.1:3000/support?lang='
+          cases = {
+              'ru': ('<html lang="ru"', 'Помогите BHRIGU оставаться публичным.', 'Help keep BHRIGU public.'),
+              'en': ('<html lang="en"', 'Help keep BHRIGU public.', 'Помогите BHRIGU оставаться публичным.'),
+          }
+          for locale, (lang_marker, expected, forbidden) in cases.items():
+              html = urlopen(base + locale, timeout=20).read().decode('utf-8')
+              assert lang_marker in html, (locale, 'HTML_LANG_FAIL')
+              assert expected in html, (locale, 'FIRST_DOCUMENT_COPY_FAIL')
+              assert forbidden not in html, (locale, 'HYDRATION_ONLY_LANGUAGE_FAIL')
+              print(f'SUPPORT_{locale.upper()}_FIRST_HTTP_DOCUMENT=PASS')
+          PY
+
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: RU EN desktop mobile navigation acceptance
+        run: |
+          python3 - <<'PY'
+          import json
+          from urllib.parse import urlsplit, parse_qs
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = 'http://127.0.0.1:3000'
+          options = webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-size=1280,900'):
+              options.add_argument(arg)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver = webdriver.Chrome(options=options)
+          wait = WebDriverWait(driver, 30)
+          results = []
+
+          def record(name, ok, detail=''):
+              results.append({'name': name, 'passed': bool(ok), 'detail': detail})
+              if not ok:
+                  raise AssertionError(f'{name}: {detail}')
+
+          def open_path(path):
+              driver.get(base + path)
+              wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+
+          def parsed_href(selector):
+              href = driver.find_element(By.CSS_SELECTOR, selector).get_attribute('href')
+              return urlsplit(href), href
+
+          def assert_locale_href(name, selector, path, locale):
+              parsed, href = parsed_href(selector)
+              record(name + '_path', parsed.path == path, href)
+              record(name + '_locale', parse_qs(parsed.query).get('lang') == [locale], href)
+
+          try:
+              for viewport, width, height in (('desktop',1280,900),('mobile',390,844)):
+                  driver.set_window_size(width, height)
+                  for locale in ('en','ru'):
+                      other = 'ru' if locale == 'en' else 'en'
+
+                      open_path(f'/frey?lang={locale}')
+                      record(f'FREY_{locale}_{viewport}_html_lang', driver.find_element(By.TAG_NAME,'html').get_attribute('lang') == locale)
+                      assert_locale_href(f'FREY_{locale}_{viewport}_switch', '.bh-language', '/frey', other)
+                      assert_locale_href(f'FREY_{locale}_{viewport}_next', 'nav[data-prevnext] a:not(.pnUp):last-of-type', '/reading', locale)
+                      assert_locale_href(f'FREY_{locale}_{viewport}_logo', '.bh-brand', '/', locale)
+                      assert_locale_href(f'FREY_{locale}_{viewport}_header_frey', 'a[data-bh="FREY_CTA_PRIMARY_V0_6"]', '/frey', locale)
+                      header_links = driver.find_elements(By.CSS_SELECTOR, '.bh-ctas a')
+                      orion = next((a for a in header_links if a.text.strip() == 'ORION'), None)
+                      record(f'FREY_{locale}_{viewport}_orion_present', orion is not None)
+                      orion_parsed = urlsplit(orion.get_attribute('href'))
+                      record(f'FREY_{locale}_{viewport}_orion_locale', orion_parsed.path == '/orion' and parse_qs(orion_parsed.query).get('lang') == [locale], orion.get_attribute('href'))
+
+                      open_path(f'/reading?lang={locale}')
+                      assert_locale_href(f'READING_{locale}_{viewport}_prev', 'nav[data-prevnext] a:first-of-type', '/frey', locale)
+                      assert_locale_href(f'READING_{locale}_{viewport}_up', 'nav[data-prevnext] .pnUp', '/start', locale)
+                      assert_locale_href(f'READING_{locale}_{viewport}_logo', '.bh-brand', '/', locale)
+
+                      open_path(f'/?lang={locale}')
+                      record(f'HOME_{locale}_{viewport}_html_lang', driver.find_element(By.TAG_NAME,'html').get_attribute('lang') == locale)
+                      assert_locale_href(f'HOME_{locale}_{viewport}_switch', '.bh-language', '/', other)
+
+                      open_path(f'/crypto-astro/btc?lang={locale}')
+                      record(f'BTC_{locale}_{viewport}_html_lang', driver.find_element(By.TAG_NAME,'html').get_attribute('lang') == locale)
+                      assert_locale_href(f'BTC_{locale}_{viewport}_switch', '.bh-language', '/crypto-astro/btc', other)
+
+                      open_path(f'/crypto-astro/btc/clean-chat?lang={locale}')
+                      record(f'CLEAN_{locale}_{viewport}_html_lang', driver.find_element(By.TAG_NAME,'html').get_attribute('lang') == locale)
+                      clean_switches = driver.find_elements(By.CSS_SELECTOR, '.cleanTopActions a')
+                      lang_link = next((a for a in clean_switches if a.text.strip() in ('RU','EN')), None)
+                      record(f'CLEAN_{locale}_{viewport}_switch_present', lang_link is not None)
+                      clean_href = urlsplit(lang_link.get_attribute('href'))
+                      record(f'CLEAN_{locale}_{viewport}_switch_same_route', clean_href.path == '/crypto-astro/btc/clean-chat' and parse_qs(clean_href.query).get('lang') == [other], lang_link.get_attribute('href'))
+
+                      open_path(f'/support?lang={locale}')
+                      expected_support = 'Помогите BHRIGU оставаться публичным.' if locale == 'ru' else 'Help keep BHRIGU public.'
+                      record(f'SUPPORT_{locale}_{viewport}_visible_copy', expected_support in driver.find_element(By.TAG_NAME,'body').text)
+                      record(f'SUPPORT_{locale}_{viewport}_html_lang', driver.find_element(By.TAG_NAME,'html').get_attribute('lang') == locale)
+                      assert_locale_href(f'SUPPORT_{locale}_{viewport}_switch', '.bh-language', '/support', other)
+
+                      overflow = driver.execute_script('return document.documentElement.scrollWidth - window.innerWidth')
+                      record(f'PUBLIC_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
+
+              open_path('/frey?lang=ru&probe=1#transport-proof')
+              parsed, href = parsed_href('.bh-language')
+              q = parse_qs(parsed.query)
+              record('SWITCH_PRESERVES_NON_LANGUAGE_QUERY', q.get('probe') == ['1'], href)
+              record('SWITCH_PRESERVES_HASH', parsed.fragment == 'transport-proof', href)
+              record('SWITCH_REPLACES_ONLY_LANGUAGE', q.get('lang') == ['en'], href)
+
+              open_path('/start?lang=ru')
+              footers = driver.find_elements(By.CSS_SELECTOR, '[data-portal-footernav] a')
+              if footers:
+                  for idx, link in enumerate(footers):
+                      parsed = urlsplit(link.get_attribute('href'))
+                      if parsed.netloc in ('127.0.0.1:3000', 'localhost:3000') or not parsed.netloc:
+                          record(f'SHARED_FOOTER_RU_{idx}', parse_qs(parsed.query).get('lang') == ['ru'], link.get_attribute('href'))
+
+              logs = driver.get_log('browser')
+              known_local_non_scope = ('/api/btc/observability/v1/event',)
+              severe = [x for x in logs if x.get('level') == 'SEVERE' and '/favicon.ico' not in x.get('message','') and not any(marker in x.get('message','') for marker in known_local_non_scope)]
+              record('BROWSER_SEVERE_ZERO_EXCEPT_KNOWN_LOCAL_OBSERVABILITY', not severe, json.dumps(severe)[:2000])
+              print(json.dumps({'schema':'bhrigu_public_locale_transport_acceptance_v0_1','results':results}, ensure_ascii=False, indent=2))
+          finally:
+              driver.quit()
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/public-locale-transport.pid || kill "$(cat /tmp/public-locale-transport.pid)" || true
+          test ! -f /tmp/public-locale-transport.log || tail -n 100 /tmp/public-locale-transport.log
