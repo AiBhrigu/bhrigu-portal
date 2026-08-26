@@ -237,6 +237,36 @@ export default function Page(p: Props) {
     ? "Кто такой Сатоши Накамото и когда он объявил Bitcoin v0.1?"
     : "Who is Satoshi Nakamoto and when was Bitcoin v0.1 announced?";
   const originsHref = `${cleanChatHref}&q=${encodeURIComponent(originsQuestion)}`;
+  const visualLayers = ru
+    ? [
+        ["01", "CURRENT", "ТЕКУЩЕЕ", truth.stateLabel],
+        ["02", "CHANGE", "ИЗМЕНЕНИЕ", "Принятый Snapshot + Snapshot Memory"],
+        ["03", "EXPECTATION", "ОЖИДАНИЯ", "Polymarket · точное условие · expiry · rules"],
+        ["04", "ASTRO", "АСТРО", "Независимый evidence layer · совпадение ≠ причинность"],
+        ["05", "SOURCES / PROOF", "ИСТОЧНИКИ / PROOF", truth.proofLine],
+      ]
+    : [
+        ["01", "CURRENT", "CURRENT", truth.stateLabel],
+        ["02", "CHANGE", "CHANGE", "Accepted Snapshot + Snapshot Memory"],
+        ["03", "EXPECTATION", "EXPECTATION", "Polymarket · exact proposition · expiry · rules"],
+        ["04", "ASTRO", "ASTRO", "Independent evidence lane · concurrence ≠ causality"],
+        ["05", "SOURCES / PROOF", "SOURCES / PROOF", truth.proofLine],
+      ];
+  const evidenceFlow = ru
+    ? [
+        ["01", "ВОПРОС", "Намерение пользователя"],
+        ["02", "ПЛАН ДОКАЗАТЕЛЬСТВ", "Только нужные evidence lanes"],
+        ["03", "ИСТОЧНИКИ", "Принятые · закреплённые · ограниченные"],
+        ["04", "СИНТЕЗ", "Согласие · расхождение · неопределённость"],
+        ["05", "ОТВЕТ", "Смысл · условия · границы"],
+      ]
+    : [
+        ["01", "QUESTION", "User intent"],
+        ["02", "EVIDENCE PLAN", "Only the required evidence lanes"],
+        ["03", "SOURCES", "Accepted · pinned · bounded"],
+        ["04", "SYNTHESIS", "Agreement · divergence · uncertainty"],
+        ["05", "ANSWER", "Meaning · conditions · limits"],
+      ];
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -313,6 +343,25 @@ export default function Page(p: Props) {
         : "Evidence-linked Bitcoin intelligence: what changed, why it matters, and which conditions would change the current read."}</p>
         </div>
         <BtcHeroQuestionLaunch locale={p.locale} initialDate={p.initialDate}/>
+      </section>
+
+      <section className="btcSystemCompression" data-btc-visual-hierarchy="current-change-expectation-astro-proof" aria-labelledby="btc-system-compression-title">
+        <header className="btcCompressionHead">
+          <p className="eyebrow">{ru ? "Карта чтения" : "Read map"}</p>
+          <h2 id="btc-system-compression-title">{ru ? "Сначала структура. Затем детали." : "Structure first. Detail second."}</h2>
+          <p>{ru ? "Пять доказательных слоёв показывают, из чего складывается текущий BTC read." : "Five evidence layers show what the current BTC read is made of."}</p>
+        </header>
+        <div className="btcLayerRail" role="list" aria-label={ru ? "Слои BTC Cosmographer" : "BTC Cosmographer layers"}>
+          {visualLayers.map(([index, axis, title, detail]) => <article key={index} role="listitem" data-btc-visual-layer={index}>
+            <span>{index}</span><small>{axis}</small><strong>{title}</strong><p>{detail}</p>
+          </article>)}
+        </div>
+        <div className="btcEvidenceFlow" data-btc-evidence-flow="question-plan-sources-synthesis-answer">
+          <p className="btcFlowLabel">{ru ? "КАК РАБОТАЕТ КОСМОГРАФ" : "HOW COSMOGRAPHER WORKS"}</p>
+          <div className="btcFlowRail" role="list" aria-label={ru ? "Вопрос к ответу" : "Question to answer"}>
+            {evidenceFlow.map(([index, title, detail]) => <article key={index} role="listitem"><span>{index}</span><strong>{title}</strong><small>{detail}</small></article>)}
+          </div>
+        </div>
       </section>
 
       <section

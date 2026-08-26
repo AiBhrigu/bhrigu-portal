@@ -1,0 +1,147 @@
+name: BHRIGU Public Home BTC Visual Selling
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "pages/index.js"
+      - "pages/index.module.css"
+      - "pages/crypto-astro/btc.tsx"
+      - "lib/btc-product-rebalance-style.ts"
+      - ".github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head-visual-acceptance:
+    runs-on: ubuntu-24.04
+    env:
+      BASE_SHA: 78a8582d00eac217772d5eb350264fec337e7889
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify bounded scope and zero model-call delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin master
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              'pages/index.js',
+              'pages/index.module.css',
+              'pages/crypto-astro/btc.tsx',
+              'lib/btc-product-rebalance-style.ts',
+          }
+          actual = set(subprocess.check_output(
+              ['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']], text=True
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
+          protected = [
+              'lib/routeTruth.js','components/PrevNextBlock.jsx','pages/_app.js',
+              'pages/frey.js','pages/reading.js','pages/support.js','pages/api',
+              'components/btc/BtcCleanChatV1.tsx','pages/crypto-astro/btc/clean-chat.tsx',
+              'public/sitemap.xml','pages/sitemap.xml.js',
+          ]
+          drift = subprocess.check_output(
+              ['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA'],'--',*protected], text=True
+          ).strip()
+          if drift:
+              raise SystemExit('PROTECTED_SURFACE_DIFF=' + drift)
+          added = subprocess.check_output(
+              ['git','diff','-U0',os.environ['BASE_SHA'],os.environ['HEAD_SHA'],'--',
+               'pages/index.js','pages/index.module.css','pages/crypto-astro/btc.tsx','lib/btc-product-rebalance-style.ts'], text=True
+          )
+          new_lines = '\n'.join(line[1:] for line in added.splitlines() if line.startswith('+') and not line.startswith('+++'))
+          forbidden = ('openai','anthropic','generateText','streamText','ai-gateway','chat.completions','responses.create')
+          hits = [token for token in forbidden if token.lower() in new_lines.lower()]
+          if hits:
+              raise SystemExit('MODEL_CALL_DELTA_FAIL=' + ','.join(hits))
+          print('EXACT_SCOPE=PASS')
+          print('PROTECTED_RUNTIME_DIFF=ZERO')
+          print('MODEL_CALL_DELTA=0')
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Verify existing Cosmographic Glyph Canon compatibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --import tsx tests/btc-bilingual-glyph-fixture.ts
+          python3 - <<'PY'
+          import os, subprocess
+          diff = subprocess.check_output([
+              'git','diff','-U0',os.environ['BASE_SHA'],os.environ['HEAD_SHA'],'--',
+              'pages/index.js','pages/index.module.css','pages/crypto-astro/btc.tsx','lib/btc-product-rebalance-style.ts'
+          ], text=True)
+          added = '\n'.join(line[1:] for line in diff.splitlines() if line.startswith('+') and not line.startswith('+++'))
+          forbidden = ('Φ','data-glyph-class','<svg','<path','RelationGlyph','SealedBoundaryGlyph','systemPhi')
+          hits = [token for token in forbidden if token in added]
+          if hits:
+              raise SystemExit('CONFLICTING_NEW_GLYPH_SEMANTICS=' + ','.join(hits))
+          home = open('pages/index.js', encoding='utf-8').read()
+          required_import = 'import { FieldAnchorGlyph } from \"../components/btc/BtcSurfaceGlyphs\";'
+          required_use = '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>'
+          if home.count(required_import) != 1 or home.count(required_use) != 1 or home.count('<FieldAnchorGlyph') != 1:
+              raise SystemExit('FIELD_ANCHOR_CANON_BIND=FAIL')
+          print('FIELD_ANCHOR_CANON_BIND=PASS')
+          print('GLYPH_CANON_GATE=PASS')
+          print('CONFLICTING_NEW_GLYPH_SEMANTICS=ZERO')
+          PY
+
+      - name: Verify visual contracts in source
+        run: |
+          grep -q 'data-home-system-map' pages/index.js
+          grep -q 'data-home-btc-proof-object' pages/index.js
+          grep -q 'data-btc-visual-hierarchy' pages/crypto-astro/btc.tsx
+          grep -q 'data-btc-evidence-flow' pages/crypto-astro/btc.tsx
+          grep -q 'btcSystemCompression' lib/btc-product-rebalance-style.ts
+          ! grep -q 'systemPhi' pages/index.js
+          test "$(grep -o '<FieldAnchorGlyph' pages/index.js | wc -l)" -eq 1
+          grep -Fq 'import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";' pages/index.js
+          grep -Fq '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>' pages/index.js
+
+      - name: Production build
+        run: npm run build
+      - name: Start exact-head server
+        shell: bash
+        run: |
+          nohup npm start -- -p 3311 >/tmp/bhrigu-visual-next.log 2>&1 &
+          echo $! >/tmp/bhrigu-visual-next.pid
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:3311/?lang=en >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/bhrigu-visual-next.log
+          exit 1
+
+      - name: Replay PR201 locale transport first HTTP
+        shell: bash
+        run: |
+          set -euo pipefail
+          check(){ url="$1"; shift; html="$(curl -fsS "http://127.0.0.1:3311${url}")"; for expected in "$@"; do grep -Fq "$expected" <<<"$html" || { echo "MISSING ${url} ${expected}"; exit 1; }; done; }
+          check '/frey?lang=ru' '/start?lang=ru' '/reading?lang=ru'
+          check '/reading?lang=ru' '/frey?lang=ru' '/start?lang=ru' '/cosmographer?lang=ru'
+          check '/support?lang=ru' '/start?lang=ru'
+          check '/frey?lang=en' '/start?lang=en' '/reading?lang=en'
+          check '/reading?lang=en' '/frey?lang=en' '/start?lang=en' '/cosmographer?lang=en'
+          check '/support?lang=en' '/start?lang=en'
+          echo 'PR201_LOCALE_TRANSPORT_REPLAY=PASS'
+
+      - name: Stop exact-head server
+        if: always()
+        shell: bash
+        run: |
+          if test -f /tmp/bhrigu-visual-next.pid; then kill "$(cat /tmp/bhrigu-visual-next.pid)" || true; fi
+          if test -f /tmp/bhrigu-visual-next.log; then tail -n 80 /tmp/bhrigu-visual-next.log; fi

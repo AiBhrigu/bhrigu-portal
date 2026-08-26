@@ -202,11 +202,13 @@ jobs:
                   """
                   const header = document.querySelector("header[data-hdr='BHRIGU_PUBLIC_HOME_HEADER_V0_1']");
                   const hero = document.querySelector("section[aria-labelledby='home-title']");
-                  const exactTextCount = (root, expected) => root
+                  const systemMap = hero ? hero.querySelector('[data-home-system-map]') : null;
+                  const exactTextNodes = (root, expected) => root
                     ? Array.from(root.querySelectorAll('*')).filter(
                         (node) => node.textContent.trim() === expected
-                      ).length
-                    : -1;
+                      )
+                    : [];
+                  const heroBhriguNodes = exactTextNodes(hero, 'BHRIGU');
                   return {
                     global_bhrigu_identity_count: header
                       ? header.querySelectorAll('.bh-word').length
@@ -214,7 +216,10 @@ jobs:
                     global_language_control_count: header
                       ? header.querySelectorAll('.bh-language').length
                       : -1,
-                    hero_bhrigu_duplicate: exactTextCount(hero, 'BHRIGU'),
+                    system_map_bhrigu_root_count: exactTextNodes(systemMap, 'BHRIGU').length,
+                    hero_unbound_bhrigu_duplicate: heroBhriguNodes.filter(
+                      (node) => !systemMap || !systemMap.contains(node)
+                    ).length,
                     hero_language_control_duplicate: hero
                       ? Array.from(hero.querySelectorAll('a')).filter((link) =>
                           ['RU', 'EN'].includes(link.textContent.trim())
@@ -297,7 +302,8 @@ jobs:
               check(f"{name}_no_competing_frey_header", not driver.find_elements(By.CSS_SELECTOR, "header [data-bh='FREY_CTA_PRIMARY_V0_6']"))
               check(f"{name}_global_bhrigu_identity_count", identity_counts["global_bhrigu_identity_count"] == 1, identity_counts)
               check(f"{name}_global_language_control_count", identity_counts["global_language_control_count"] == 1, identity_counts)
-              check(f"{name}_hero_bhrigu_duplicate", identity_counts["hero_bhrigu_duplicate"] == 0, identity_counts)
+              check(f"{name}_system_map_bhrigu_root_count", identity_counts["system_map_bhrigu_root_count"] == 1, identity_counts)
+              check(f"{name}_hero_unbound_bhrigu_duplicate", identity_counts["hero_unbound_bhrigu_duplicate"] == 0, identity_counts)
               check(f"{name}_hero_language_control_duplicate", identity_counts["hero_language_control_duplicate"] == 0, identity_counts)
               check(
                   f"{name}_hero_starts_with_product_identity",
@@ -308,10 +314,10 @@ jobs:
                   identity_counts["hero_first_children"],
               )
               check(f"{name}_role_contract", role_text == [
-                  "BHRIGU opens public access",
-                  "Frey holds the dialogue",
-                  "Cosmographer owns the reading and forward conditions",
-                  "ORION protects the research core",
+                  "BHRIGU is the public home for working services, research surfaces, and products",
+                  "Frey is an active temporal reading and dialogue service",
+                  "Cosmographer handles interpretation and navigation across bounded evidence",
+                  "ORION remains protected research depth",
               ], role_text)
               check(f"{name}_no_severe_browser_errors", not severe, severe)
               if name == "desktop":
