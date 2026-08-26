@@ -35,6 +35,7 @@ jobs:
           import os, subprocess
           expected = {
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
               'pages/index.js',
               'pages/index.module.css',
               'pages/crypto-astro/btc.tsx',
