@@ -1,25 +1,42 @@
 # BHRIGU
 
-BHRIGU is the public access and ecosystem surface.
+BHRIGU is the public home for working services, research surfaces, and products.
 
-## Primary market product surface
-- Market Cosmographer: evidence-linked market intelligence.
-- BTC Field: the first public corridor, designed for Bitcoin investors and researchers.
+## Current public structure
+- BTC Cosmographer / BTC Field: the current primary public product axis for evidence-linked Bitcoin intelligence.
+- Frey: an active and distinct temporal reading and dialogue service.
+- Cosmographer: a broader interpretation and navigation role; BTC Cosmographer is its Bitcoin-specific public application.
+- ORION: protected research depth, not a public API and not automatic product authority.
 
-BHRIGU provides the public access surface. ORION, Frey and Cosmographer remain distinct technology and brand contours.
+Bitcoin-first does not mean Bitcoin-only. Existing BHRIGU portal surfaces remain valid public routes unless explicitly retired.
 
 ## Canonical public pages
 - https://www.bhrigu.io/
+- https://www.bhrigu.io/frey
+- https://www.bhrigu.io/cosmographer
+- https://www.bhrigu.io/map
 - https://www.bhrigu.io/crypto-astro/btc?lang=en
 - https://www.bhrigu.io/crypto-astro/btc?lang=ru
+- https://www.bhrigu.io/support
+
+## Current BTC dialogue
+- https://www.bhrigu.io/crypto-astro/btc/clean-chat?lang=en
+- https://www.bhrigu.io/crypto-astro/btc/clean-chat?lang=ru
+
+The Clean Chat dialogue is session-local and noindex. It is not a canonical knowledge page.
+The older /crypto-astro/btc/live route remains a bounded legacy/public evidence route and is not the preferred dialogue entry.
 
 ## Index policy
+The BHRIGU home, Frey, Cosmographer, Map, Support, and BTC entry pages are public surfaces.
 The BTC entry page and its accepted public knowledge are indexable.
-Arbitrary live dialogue queries at /crypto-astro/btc/live are noindex and are not canonical knowledge pages.
+Session-specific or arbitrary dialogue pages are noindex and should not be treated as durable published knowledge.
 
 ## Evidence boundary
-Market answers use the accepted Market Snapshot and Delta.
+Market answers use accepted market evidence and explicit freshness boundaries.
 Bitcoin protocol answers use pinned protocol sources.
-Astronomical answers use the published ephemeris evidence index.
+Astronomical answers use published or explicitly authorized ephemeris evidence.
 Astronomy × BTC comparisons do not claim causality.
-The system does not provide guaranteed prices or trading instructions.
+BHRIGU does not provide guaranteed prices, trading instructions, leverage instructions, or position sizing.
+
+## Protected research boundary
+X4, private ORION internals, the Cosmography Dynamical Engine, and unpublished research assets are not public product claims merely because they exist in the broader research system.
