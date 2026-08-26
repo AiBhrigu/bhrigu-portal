@@ -1,21 +1,29 @@
 import React from "react";
+import { useRouter } from "next/router";
+import {
+  resolvePublicLocale,
+  withPublicLocale,
+} from "../lib/public-locale-transport";
 
 export default function PortalFooterNav({
   termsHref = "/faq",
   nextItems = [],
 }) {
+  const router = useRouter();
+  const locale = resolvePublicLocale(router.asPath || "", router.query?.lang);
   const items = Array.isArray(nextItems) ? nextItems.filter(Boolean) : [];
+  const localize = (href) => withPublicLocale(href, locale);
   return (
     <div data-portal-footernav="v0.1" className="portalFooterNav">
       <div className="line">
-        If you need terms: <a href={termsHref}>/faq</a>.
+        If you need terms: <a href={localize(termsHref)}>/faq</a>.
       </div>
       {items.length > 0 ? (
         <div className="line">
           Next:{" "}
           {items.map((it, idx) => (
             <React.Fragment key={(it && it.href) || idx}>
-              <a href={it.href}>{it.label || it.href}</a>
+              <a href={localize(it.href)}>{it.label || it.href}</a>
               {idx < items.length - 1 ? (idx === items.length - 2 ? " or " : ", ") : ""}
             </React.Fragment>
           ))}
