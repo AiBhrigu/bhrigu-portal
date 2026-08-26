@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import {
   resolvePublicLocale,
@@ -14,21 +13,20 @@ export default function BhriguPhiHeader() {
   const btc = path.startsWith("/crypto-astro/btc");
   const locale = resolvePublicLocale(asPath, router.query?.lang);
   const ru = locale === "ru";
-  const [browserHash, setBrowserHash] = useState("");
-
-  useEffect(() => {
-    const syncHash = () => setBrowserHash(window.location.hash || "");
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    return () => window.removeEventListener("hashchange", syncHash);
-  }, [asPath]);
-
-  const switchSource = asPath.includes("#") || !browserHash ? asPath : `${asPath}${browserHash}`;
-  const languageHref = switchPublicLocale(switchSource, ru ? "en" : "ru");
+  const targetLocale = ru ? "en" : "ru";
+  const languageHref = switchPublicLocale(asPath, targetLocale);
   const homeHref = withPublicLocale("/", locale);
   const freyHref = withPublicLocale("/frey", locale);
   const orionHref = withPublicLocale("/orion", locale);
   const btcHref = withPublicLocale("/crypto-astro/btc", locale);
+
+  const handleLanguageSwitch = (event) => {
+    if (typeof window === "undefined") return;
+    const currentBrowserRoute = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const target = switchPublicLocale(currentBrowserRoute, targetLocale);
+    event.preventDefault();
+    window.location.assign(target);
+  };
 
   return (
     <header
@@ -58,6 +56,7 @@ export default function BhriguPhiHeader() {
     <a
       className="bh-language"
       href={languageHref}
+      onClick={handleLanguageSwitch}
       aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
     >
       {ru ? "EN" : "RU"}
@@ -70,6 +69,7 @@ export default function BhriguPhiHeader() {
     <a
       className="bh-language"
       href={languageHref}
+      onClick={handleLanguageSwitch}
       aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
     >
       {ru ? "EN" : "RU"}
