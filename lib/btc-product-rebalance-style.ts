@@ -39,6 +39,10 @@ main[data-btc-static-proof="true"],.heroProductEntry,.questionPanel{font-family:
 .questionMembrane,.readingHeader,.executiveField,.phiPlane{grid-template-columns:minmax(0,61.803398875fr) minmax(280px,38.196601125fr)}
 .questionMembrane.proofRouteMembrane{grid-template-columns:minmax(0,38.196601125fr) minmax(0,61.803398875fr);border-top:1px solid var(--bl)}
 .exampleRoutes,.executiveContext,.supportBand{border-color:var(--bl)}
+.phiPlane>.supportBand{grid-template-columns:minmax(0,1fr)}
+.phiPlane>.supportBand>.supportModule,.phiPlane>.supportBand>.supportModule:last-child{grid-column:auto;min-width:0;border-right:0}
+.phiPlane>.supportBand>.supportModule h3,.phiPlane>.supportBand>.supportModule strong,.phiPlane>.supportBand>.supportModule p{max-width:100%;overflow-wrap:break-word;word-break:normal}
+
 textarea,input{border-color:rgba(106,168,255,.2);background:rgba(9,17,29,.88)}textarea:focus,input:focus{border-color:rgba(106,168,255,.66);box-shadow:0 0 0 3px rgba(106,168,255,.08);outline:0}button{border-color:rgba(210,164,95,.58)}
 .eyebrow{color:var(--b)}.fieldAnchorGlyph{border-color:rgba(106,168,255,.48);background:radial-gradient(circle,rgba(106,168,255,.1),transparent 68%)}.fieldAnchorGlyph:after{border-color:rgba(210,164,95,.16)}.fieldAnchorGlyph b{color:var(--bh)}
 
