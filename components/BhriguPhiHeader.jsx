@@ -1,14 +1,23 @@
 import { useRouter } from "next/router";
+import {
+  resolvePublicLocale,
+  switchPublicLocale,
+  withPublicLocale,
+} from "../lib/public-locale-transport";
 
 export default function BhriguPhiHeader() {
   const router = useRouter();
-  const path = String(router.asPath || "/").split("?")[0].split("#")[0];
+  const asPath = String(router.asPath || "/");
+  const path = asPath.split("?")[0].split("#")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
-  const ru = router.query?.lang === "ru" || /(?:\?|&)lang=ru(?:&|$)/.test(router.asPath || "");
-  const languageHref = home
-    ? (ru ? "/?lang=en" : "/?lang=ru")
-    : `${path}?lang=${ru ? "en" : "ru"}`;
+  const locale = resolvePublicLocale(asPath, router.query?.lang);
+  const ru = locale === "ru";
+  const languageHref = switchPublicLocale(asPath, ru ? "en" : "ru");
+  const homeHref = withPublicLocale("/", locale);
+  const freyHref = withPublicLocale("/frey", locale);
+  const orionHref = withPublicLocale("/orion", locale);
+  const btcHref = withPublicLocale("/crypto-astro/btc", locale);
 
   return (
     <header
@@ -21,7 +30,7 @@ export default function BhriguPhiHeader() {
       data-ops="OPS_MARKERS_DATA_ATTRS_V0_2"
     >
       <div className="bh-shell">
-        <a className="bh-brand" href="/" aria-label="BHRIGU home">
+        <a className="bh-brand" href={homeHref} aria-label="BHRIGU home">
 {home ? (
   <span className="bh-word">BHRIGU</span>
 ) : (
@@ -34,7 +43,7 @@ export default function BhriguPhiHeader() {
         <nav className="bh-ctas" aria-label="Primary navigation">
 {home || btc ? (
   <>
-    {btc && <a className="bh-btc-route" href={`/crypto-astro/btc?lang=${ru ? "ru" : "en"}`}>BTC Field</a>}
+    {btc && <a className="bh-btc-route" href={btcHref}>BTC Field</a>}
     <a
       className="bh-language"
       href={languageHref}
@@ -45,8 +54,15 @@ export default function BhriguPhiHeader() {
   </>
 ) : (
   <>
-    <a className="bh-btn bh-btn-primary" href="/frey" data-bh="FREY_CTA_PRIMARY_V0_6">Open Frey</a>
-    <a className="bh-btn" href="/orion">ORION</a>
+    <a className="bh-btn bh-btn-primary" href={freyHref} data-bh="FREY_CTA_PRIMARY_V0_6">Open Frey</a>
+    <a className="bh-btn" href={orionHref}>ORION</a>
+    <a
+      className="bh-language"
+      href={languageHref}
+      aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
+    >
+      {ru ? "EN" : "RU"}
+    </a>
   </>
 )}
         </nav>
