@@ -929,11 +929,38 @@ function visualOnlyOutputLimitNotice(locale: BtcCleanLocale): string {
     : "The text summary reached its output limit; the computed matrix and sources are preserved below.";
 }
 
+function hasMeaningfulCyrillicNarrative(value: string): boolean {
+  const letters = value.match(/[А-Яа-яЁё]/g) ?? [];
+  return letters.length >= 4;
+}
+
+function insufficientCrossChartNotice(locale: BtcCleanLocale): string {
+  return locale === "ru"
+    ? "Недостаточно канонических данных для расчёта отношений текущего неба к Bitcoin Genesis.\nМатрица не содержит вычисленных отношений; никакие отношения не подставляются."
+    : "Canonical evidence is insufficient to compute current-sky-to-Bitcoin-Genesis relations.\nThe matrix contains no computed relations; none are fabricated.";
+}
+
+function deterministicRuMatrixSummary(native: NonNullable<BtcCleanSemanticVisual["native"]>, maxLines: number | null): string {
+  const primary = native.rows[0];
+  if (!primary) return "Матрица содержит канонические астрономические данные без вычисленной основной строки; отношения не подставляются.";
+  const window = primary.window;
+  const windowText = window.start_utc || window.peak_utc || window.end_utc
+    ? ` Окно: ${window.start_utc ?? "…"} — ${window.end_utc ?? "…"} UTC${window.peak_utc ? `; пик ${window.peak_utc}` : ""}.`
+    : "";
+  const lines = [
+    `Астрономические отношения: текущее небо ${native.current_timestamp_utc ?? "текущий UTC"} × Bitcoin Genesis ${native.reference_timestamp_utc ?? BTC_TEMPORAL_ORIGIN_UTC}; всего ${native.total_relations}.`,
+    `Основная строка: ${primary.transit_body} ${primary.aspect} ${primary.genesis_body}, орб ${primary.orb_deg.toFixed(3)}°.${windowText}`,
+    "Нормализованная близость используется только для порядка отображения; это не причинность и не прогноз цены BTC.",
+  ];
+  if (maxLines !== null && maxLines < lines.length) return lines.join(" ");
+  return lines.join("\n");
+}
+
 async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorTurns: BtcCleanPriorTurn[], plan: Plan, evidence: EvidenceBundle, fieldContext?: BtcResearchFieldModelContext): Promise<SynthesisOutcome> {
   const lineRule = plan.answer_max_lines
     ? ` The user explicitly requested at most ${plan.answer_max_lines} visible lines. Return answer_lines with no more than that many items; each item is exactly one visible line.`
     : "";
-  const instructions = `You are BTC Cosmographer in BHRIGU Clean Chat V1. Synthesize a fresh answer to the actual user question from conversation and supplied evidence, never from prepared answer templates. PRIMARY_PRODUCT_AXIS is Bitcoin and remains persistent until the user explicitly leaves the BTC corridor. ACTIVE_SUBJECT may change without replacing that product axis. Bitcoin is the central analytical axis. Crypto-ecosystem evidence is supporting context only when it helps explain Bitcoin or the current crypto field. Continue natural research lines across short follow-ups; do not reset context or ask for clarification when prior turns make the intent clear. if plan.request_type is out_of_scope, state the Bitcoin Corridor boundary briefly rather than answering the unrelated subject. Direct answer first, facts before interpretation, brief by default.${lineRule} For CURRENT_TO_GENESIS, treat cross_chart as deterministic astronomical relation evidence only: normalized_closeness is display ordering, never influence strength, predictive power, BTC price effect, or causality. If temporal_request=ACTIVE_RELATION_WINDOW, answer from the primary relation's supplied window and do not invent a date. If no prior relation is established, ask one short clarification. Canonical Astro Field evidence is freshly computed from the BHRIGU geocentric tropical ephemeris. The Bitcoin temporal history starts at the Genesis block (${BTC_TEMPORAL_ORIGIN_UTC}). Prospective 2027-2028 astronomy is computable, while future BTC prices and market outcomes remain unknown. Astro×BTC is temporal comparison only, never causality. Never invent unavailable evidence. Never give buy/sell/long/short/entry/exit/leverage/position-sizing instructions. Do not expose internal routing, tool names, JSON, filesystem paths, private modules, CDE, Master Control correspondence or secrets. Return only the required structured object.`;
+  const instructions = `You are BTC Cosmographer in BHRIGU Clean Chat V1. Synthesize a fresh answer to the actual user question from conversation and supplied evidence, never from prepared answer templates. PRIMARY_PRODUCT_AXIS is Bitcoin and remains persistent until the user explicitly leaves the BTC corridor. ACTIVE_SUBJECT may change without replacing that product axis. Bitcoin is the central analytical axis. Crypto-ecosystem evidence is supporting context only when it helps explain Bitcoin or the current crypto field. Continue natural research lines across short follow-ups; do not reset context or ask for clarification when prior turns make the intent clear. if plan.request_type is out_of_scope, state the Bitcoin Corridor boundary briefly rather than answering the unrelated subject. Direct answer first, facts before interpretation, brief by default. VISIBLE_ANSWER_LANGUAGE must match LOCALE exactly: Russian narrative prose for locale=ru and English narrative prose for locale=en; canonical product names, proper nouns, symbols, and intentionally canonical body/aspect identifiers may remain unchanged.${lineRule} For CURRENT_TO_GENESIS, treat cross_chart as deterministic astronomical relation evidence only: normalized_closeness is display ordering, never influence strength, predictive power, BTC price effect, or causality. If temporal_request=ACTIVE_RELATION_WINDOW, answer from the primary relation's supplied window and do not invent a date. If no prior relation is established, ask one short clarification. Canonical Astro Field evidence is freshly computed from the BHRIGU geocentric tropical ephemeris. The Bitcoin temporal history starts at the Genesis block (${BTC_TEMPORAL_ORIGIN_UTC}). Prospective 2027-2028 astronomy is computable, while future BTC prices and market outcomes remain unknown. Astro×BTC is temporal comparison only, never causality. Never invent unavailable evidence. Never give buy/sell/long/short/entry/exit/leverage/position-sizing instructions. Do not expose internal routing, tool names, JSON, filesystem paths, private modules, CDE, Master Control correspondence or secrets. Return only the required structured object.`;
   const prompt = JSON.stringify({
     locale,
     question,
@@ -988,8 +1015,6 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
   if (evidence.web) addUsage(totalUsage, evidence.web.usage);
   const sources = sourceRows(buildBtcPolymarketQueryContext(input.question, priorTurns), evidence);
   const semanticVisual = buildSemanticVisual(input.locale, planned.plan, evidence);
-  const synthesis = await synthesizeAnswer(input.locale, input.question, priorTurns, planned.plan, evidence, input.fieldContext);
-  addUsage(totalUsage, synthesis.usage);
   const wants = (tool: EvidenceTool) => planned.plan.tools.includes(tool);
   const evidenceState = {
     accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),
@@ -1001,7 +1026,18 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
     bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
     web_research: state(wants("web"), Boolean(evidence.web?.text)),
   };
-  const visualOnly = synthesis.status === "OUTPUT_LIMIT" && semanticVisual?.native?.type === "CURRENT_TO_GENESIS_MATRIX";
+  const matrixNative = semanticVisual?.native?.type === "CURRENT_TO_GENESIS_MATRIX" ? semanticVisual.native : null;
+  if (matrixNative?.status === "INSUFFICIENT_EVIDENCE") {
+    return {
+      schema_version: BTC_CLEAN_CHAT_SCHEMA, ok: true, intent: "MODEL_ORCHESTRATED", completion_state: "COMPLETE",
+      topic: planned.plan.topic, answer: insufficientCrossChartNotice(input.locale), as_of: new Date().toISOString(), sources, semantic_visual: semanticVisual, evidence: evidenceState,
+      boundary: { no_fake_causality: true, no_trading_signal: true, future_not_established_fact: true, polymarket_not_bhrigu_prediction: true, astronomy_not_btc_causality: true, fact_inference_future_unknown_separated: true },
+      usage: { provider: BTC_CLEAN_CHAT_PROVIDER, model: BTC_CLEAN_CHAT_MODEL_ID, ...totalUsage },
+    };
+  }
+  const synthesis = await synthesizeAnswer(input.locale, input.question, priorTurns, planned.plan, evidence, input.fieldContext);
+  addUsage(totalUsage, synthesis.usage);
+  const visualOnly = synthesis.status === "OUTPUT_LIMIT" && matrixNative !== null;
   if (synthesis.status === "OUTPUT_LIMIT" && !visualOnly) throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
   return {
     schema_version: BTC_CLEAN_CHAT_SCHEMA,
@@ -1009,7 +1045,11 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
     intent: "MODEL_ORCHESTRATED",
     completion_state: visualOnly ? "VISUAL_ONLY_MODEL_OUTPUT_LIMIT" : "COMPLETE",
     topic: synthesis.status === "COMPLETE" ? synthesis.topic : planned.plan.topic,
-    answer: synthesis.status === "COMPLETE" ? synthesis.answer : visualOnlyOutputLimitNotice(input.locale),
+    answer: synthesis.status === "COMPLETE"
+      ? (input.locale === "ru" && matrixNative?.status === "COMPUTED" && !hasMeaningfulCyrillicNarrative(synthesis.answer)
+        ? deterministicRuMatrixSummary(matrixNative, planned.plan.answer_max_lines)
+        : synthesis.answer)
+      : visualOnlyOutputLimitNotice(input.locale),
     as_of: new Date().toISOString(),
     sources,
     semantic_visual: semanticVisual,

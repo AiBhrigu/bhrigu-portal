@@ -418,8 +418,9 @@ jobs:
                   driver.set_window_size(width, height)
                   driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
                   wait.until(EC.presence_of_element_located((By.ID,"btc-clean-question")))
+                  synthesis = "Краткий вывод после матрицы." if lang == "ru" else "Short synthesis after matrix."
                   turn = [{
-                      "id":"matrix-proof","user":"matrix","assistant":"Short synthesis after matrix.","topic":"Astro×BTC","asOf":"2026-08-26T12:00:00Z","sources":[],
+                      "id":"matrix-proof","user":"matrix","assistant":synthesis,"topic":"Astro×BTC","asOf":"2026-08-26T12:00:00Z","sources":[],
                       "semanticVisual":{"kind":"ASTRO_BTC","state":"TEMPORAL","axis_label":"BTC","context_label":"current sky × Genesis","metrics":[],"freshness":"FRESH","native":{"type":"CURRENT_TO_GENESIS_MATRIX","status":"COMPUTED","current_timestamp_utc":"2026-08-26T12:00:00Z","reference_timestamp_utc":"2009-01-03T18:15:05Z","reference_event":"genesis","total_relations":2,"displayed_relations":2,"primary_relation_id":rows[0]["relation_id"],"rows":rows,"boundary":{"normalized_closeness_display_order_only":True,"market_causality":False,"predictive_power":False,"btc_price_effect":False,"sealed_research_boundary":True}}}
                   }]
                   driver.execute_script("sessionStorage.setItem(arguments[0], arguments[1])", f"bhrigu:btc-clean-chat-v1:{lang}", json.dumps(turn))
@@ -438,6 +439,10 @@ jobs:
                   assert matrix_top < prose_top, "matrix must be primary delivery before prose"
                   assert matrix.get_attribute("data-glyph-canon") == "MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_v0_1"
                   assert matrix.get_attribute("data-glyph-canon-sha") == "4034ba35df2d738e7f2cbe1d266fd9a2188aa3972ab629b9cd49f4f05258eb04"
+                  prose = driver.find_element(By.CSS_SELECTOR,".cleanAssistant .cleanBubble > p").text
+                  if lang == "ru":
+                      assert "Краткий вывод после матрицы." in prose, prose
+                      assert "Short synthesis after matrix." not in prose, prose
                   driver.save_screenshot(f"/tmp/btc-clean-chat-matrix-{lang}-{width}.png")
               print("NATIVE_MATRIX_DESKTOP=PASS")
               print("NATIVE_MATRIX_MOBILE=PASS")

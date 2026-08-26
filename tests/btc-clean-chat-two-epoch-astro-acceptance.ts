@@ -106,10 +106,14 @@ async function runAcceptance() {
   assert.equal(a.calls.astro, 1); assert.equal(a.calls.model, 2); assert.equal(a.result.semantic_visual?.native?.primary_relation_id, rows[0].relation_id); assert.doesNotMatch(a.result.answer, /\?/); console.log("A_CONTEXTUAL_WINDOW=PASS");
 
   const b = await mockedRun("транзиты текущего неба к Genesis", { planned: plan() });
-  assert.equal(b.calls.astro, 1); assert.equal(b.calls.astroBodies[0].reference_timestamp_utc, BTC_TEMPORAL_ORIGIN_UTC); assert.equal(b.calls.astroBodies[0].timestamp_utc, CURRENT); assert.equal(b.result.semantic_visual?.native?.type, "CURRENT_TO_GENESIS_MATRIX"); console.log("B_CURRENT_TO_GENESIS=PASS");
+  assert.equal(b.calls.astro, 1); assert.equal(b.calls.astroBodies[0].reference_timestamp_utc, BTC_TEMPORAL_ORIGIN_UTC); assert.equal(b.calls.astroBodies[0].timestamp_utc, CURRENT); assert.equal(b.result.semantic_visual?.native?.type, "CURRENT_TO_GENESIS_MATRIX");
+  assert.match(b.result.answer, /[А-Яа-яЁё]{2,}/); assert.notEqual(b.result.answer, "Computed cross-chart relation.");
+  console.log("B_CURRENT_TO_GENESIS_RU_LANGUAGE=PASS");
 
   const c = await mockedRun("Покажи Astro×BTC как матрицу транзитов", { planned: plan() });
-  assert.equal(c.result.semantic_visual?.native?.rows.length, 2); assert.equal(c.result.semantic_visual?.native?.total_relations, 2); assert.equal(c.result.semantic_visual?.native?.boundary.normalized_closeness_display_order_only, true); console.log("C_NATIVE_MATRIX=PASS");
+  assert.equal(c.result.semantic_visual?.native?.rows.length, 2); assert.equal(c.result.semantic_visual?.native?.total_relations, 2); assert.equal(c.result.semantic_visual?.native?.boundary.normalized_closeness_display_order_only, true);
+  assert.match(c.result.answer, /[А-Яа-яЁё]{2,}/); assert.doesNotMatch(c.result.answer, /Computed cross-chart relation/);
+  console.log("C_NATIVE_MATRIX_RU_LANGUAGE=PASS");
 
   const d = await mockedRun("Что здесь самое важное?\nОтвет максимум в 5 строках.", { planned: plan({ context_relation: "follow_up", answer_max_lines: 5 }), synthesis: { answer_lines: ["1. Saturn square Sun — ближайшая строка.", "2. Orb 0.457°.", "3. Окно активно.", "4. Это не причинность.", "5. BTC-прогноз не следует."], topic: "Astro×BTC" } }, [{ user: "матрица", assistant: "готово", topic: "Astro×BTC", continuity }]);
   assert.ok(d.result.answer.split("\n").length <= 5); const synthBody = d.calls.modelBodies[1]; assert.equal(synthBody.max_output_tokens, 480); const format = (synthBody.text as any).format; assert.equal(format.schema.properties.answer_lines.maxItems, 5); console.log("D_FIVE_LINE_CONTRACT=PASS");
@@ -120,7 +124,11 @@ async function runAcceptance() {
   await assert.rejects(() => mockedRun("матрица", { planned: plan(), plannerLimit: true }), /MODEL_OUTPUT_LIMIT/); console.log("F_PLANNER_LIMIT_FAIL_CLOSED=PASS");
 
   const g = await mockedRun("матрица", { planned: plan(), astro: crossPacket("INSUFFICIENT_EVIDENCE") });
-  assert.equal(g.result.semantic_visual?.native?.status, "INSUFFICIENT_EVIDENCE"); assert.equal(g.result.semantic_visual?.native?.rows.length, 0); console.log("G_REFERENCE_UNAVAILABLE=PASS");
+  assert.equal(g.result.semantic_visual?.native?.status, "INSUFFICIENT_EVIDENCE"); assert.equal(g.result.semantic_visual?.native?.rows.length, 0);
+  assert.equal(g.calls.model, 1); assert.match(g.result.answer, /Недостаточно канонических данных/);
+  assert.doesNotMatch(g.result.answer, /Computed cross-chart relation|relation computed|matrix computed|отношени[ея] рассчитан|матриц[аы] рассчитан/i);
+  assert.equal(g.result.completion_state, "COMPLETE");
+  console.log("G_INSUFFICIENT_EVIDENCE_PROSE_BIND=PASS");
 
   const matrixSource = fs.readFileSync(path.join(process.cwd(), "ui/btc/BtcAstroCrossChartMatrix.tsx"), "utf8");
   assert.match(matrixSource, /FieldAnchorGlyph/); assert.match(matrixSource, /RelationGlyph/); assert.match(matrixSource, /SealedBoundaryGlyph/); assert.doesNotMatch(matrixSource, /<svg|<path/); console.log("H_GLYPH_CANON_REUSE=PASS");
