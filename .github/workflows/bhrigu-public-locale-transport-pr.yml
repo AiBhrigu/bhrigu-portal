@@ -76,7 +76,8 @@ jobs:
           route_truth = Path('lib/routeTruth.js').read_text()
           checks = {
               'HELPER_SWITCH_PRESERVES_ROUTE': 'switchPublicLocale' in helper and 'URLSearchParams' in helper,
-              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(asPath' in header,
+              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(switchSource' in header,
+              'HEADER_BROWSER_HASH_TRANSPORT': 'window.location.hash' in header and 'hashchange' in header,
               'HEADER_HOME_LOCALE': 'homeHref = withPublicLocale("/", locale)' in header,
               'HEADER_FREY_LOCALE': 'freyHref = withPublicLocale("/frey", locale)' in header,
               'HEADER_ORION_LOCALE': 'orionHref = withPublicLocale("/orion", locale)' in header,
@@ -215,6 +216,7 @@ jobs:
                       record(f'PUBLIC_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
 
               open_path('/frey?lang=ru&probe=1#transport-proof')
+              wait.until(lambda d: urlsplit(d.find_element(By.CSS_SELECTOR, '.bh-language').get_attribute('href')).fragment == 'transport-proof')
               parsed, href = parsed_href('.bh-language')
               q = parse_qs(parsed.query)
               record('SWITCH_PRESERVES_NON_LANGUAGE_QUERY', q.get('probe') == ['1'], href)
