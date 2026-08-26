@@ -111,6 +111,7 @@ export default function App({ Component, pageProps }) {
   const meta = getMeta(path);
   const rawLang = Array.isArray(router?.query?.lang) ? router.query.lang[0] : router?.query?.lang;
   const lang = rawLang === "ru" ? "ru" : "en";
+  const localeHint = pageProps?.locale === "ru" || pageProps?.locale === "en" ? pageProps.locale : null;
   const isBtc = path === "/crypto-astro/btc" || path === "/crypto-astro/btc/live" || path === "/crypto-astro/btc/clean-chat";
   const canonicalPath = path === "/crypto-astro/btc/live" ? "/crypto-astro/btc" : path;
   const canonical = 'https://www.bhrigu.io' + (canonicalPath === '/' ? '/' : canonicalPath) + (isBtc ? `?lang=${lang}` : "");
@@ -136,10 +137,10 @@ export default function App({ Component, pageProps }) {
         <meta key="twitter:description" name="twitter:description" content={meta.desc} />
       </Head>
 
-      <BhriguPhiHeader />
+      <BhriguPhiHeader localeHint={localeHint} />
       <Component {...pageProps} />
       <BtcFreeCorridorSurfaceAdapter />
-      {path !== "/" ? <PrevNextBlock route={router.asPath} /> : null}
+      {path !== "/" ? <PrevNextBlock route={router.asPath} localeHint={localeHint} /> : null}
     </>
   );
 }
