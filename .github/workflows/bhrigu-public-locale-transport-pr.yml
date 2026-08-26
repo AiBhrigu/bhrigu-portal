@@ -9,6 +9,7 @@ on:
       - components/PortalFooterNav.jsx
       - components/PrevNextBlock.jsx
       - lib/public-locale-transport.js
+      - pages/_app.js
       - pages/support.js
 
 permissions:
@@ -43,6 +44,7 @@ jobs:
               'components/PortalFooterNav.jsx',
               'components/PrevNextBlock.jsx',
               'lib/public-locale-transport.js',
+              'pages/_app.js',
               'pages/support.js',
           }
           actual = set(subprocess.check_output(
@@ -72,17 +74,22 @@ jobs:
           header = Path('components/BhriguPhiHeader.jsx').read_text()
           prevnext = Path('components/PrevNextBlock.jsx').read_text()
           footer = Path('components/PortalFooterNav.jsx').read_text()
+          app = Path('pages/_app.js').read_text()
           support = Path('pages/support.js').read_text()
           route_truth = Path('lib/routeTruth.js').read_text()
           checks = {
               'HELPER_SWITCH_PRESERVES_ROUTE': 'switchPublicLocale' in helper and 'URLSearchParams' in helper,
-              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(asPath' in header,
-              'HEADER_BROWSER_HASH_TRANSPORT': 'window.location.hash' in header and 'window.location.assign(target)' in header,
+              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(activeRoute' in header,
+              'HEADER_BROWSER_HASH_TRANSPORT': 'window.location.hash' in header and 'window.location.assign(switchPublicLocale(currentBrowserRoute' in header,
+              'HEADER_HYDRATION_SAFE': 'const [clientRoute, setClientRoute] = useState(null)' in header and 'stablePath' in header,
               'HEADER_HOME_LOCALE': 'homeHref = withPublicLocale("/", locale)' in header,
               'HEADER_FREY_LOCALE': 'freyHref = withPublicLocale("/frey", locale)' in header,
               'HEADER_ORION_LOCALE': 'orionHref = withPublicLocale("/orion", locale)' in header,
-              'PREVNEXT_TRANSPORT_ONLY': 'getPrevNextUp(route || "")' in prevnext and 'withPublicLocale(href, locale)' in prevnext,
+              'PREVNEXT_TRANSPORT_ONLY': 'getPrevNextUp(graphRoute)' in prevnext and 'withPublicLocale(href, locale)' in prevnext,
+              'PREVNEXT_HYDRATION_SAFE': 'const [clientRoute, setClientRoute] = useState(null)' in prevnext and 'stableRoute' in prevnext,
               'SHARED_FOOTER_TRANSPORT': 'withPublicLocale(href, locale)' in footer,
+              'SHARED_FOOTER_HYDRATION_SAFE': 'const [clientRoute, setClientRoute] = useState(null)' in footer,
+              'APP_SSR_LOCALE_HINT': 'localeHint={localeHint}' in app and 'pageProps?.locale' in app,
               'SUPPORT_SSR': 'getServerSideProps' in support and 'getStaticProps' not in support,
               'SUPPORT_EXISTING_COPY_PRESERVED': 'Помогите BHRIGU оставаться публичным.' in support and 'Help keep BHRIGU public.' in support,
               'SUPPORT_VOLUNTARY_SEMANTICS_PRESERVED': 'BtcDonationSessionPreview' in support,
@@ -117,14 +124,15 @@ jobs:
           from urllib.request import urlopen
           base = 'http://127.0.0.1:3000/support?lang='
           cases = {
-              'ru': ('<html lang="ru"', 'Помогите BHRIGU оставаться публичным.', 'Help keep BHRIGU public.'),
-              'en': ('<html lang="en"', 'Help keep BHRIGU public.', 'Помогите BHRIGU оставаться публичным.'),
+              'ru': ('<html lang="ru"', 'Помогите BHRIGU оставаться публичным.', 'Help keep BHRIGU public.', '>EN</a>'),
+              'en': ('<html lang="en"', 'Help keep BHRIGU public.', 'Помогите BHRIGU оставаться публичным.', '>RU</a>'),
           }
-          for locale, (lang_marker, expected, forbidden) in cases.items():
+          for locale, (lang_marker, expected, forbidden, switch_marker) in cases.items():
               html = urlopen(base + locale, timeout=20).read().decode('utf-8')
               assert lang_marker in html, (locale, 'HTML_LANG_FAIL')
               assert expected in html, (locale, 'FIRST_DOCUMENT_COPY_FAIL')
               assert forbidden not in html, (locale, 'HYDRATION_ONLY_LANGUAGE_FAIL')
+              assert switch_marker in html, (locale, 'FIRST_DOCUMENT_SWITCH_FAIL')
               print(f'SUPPORT_{locale.upper()}_FIRST_HTTP_DOCUMENT=PASS')
           PY
 
@@ -163,6 +171,7 @@ jobs:
               return urlsplit(href), href
 
           def assert_locale_href(name, selector, path, locale):
+              wait.until(lambda d: parse_qs(urlsplit(d.find_element(By.CSS_SELECTOR, selector).get_attribute('href')).query).get('lang') == [locale])
               parsed, href = parsed_href(selector)
               record(name + '_path', parsed.path == path, href)
               record(name + '_locale', parse_qs(parsed.query).get('lang') == [locale], href)
@@ -182,6 +191,7 @@ jobs:
                       header_links = driver.find_elements(By.CSS_SELECTOR, '.bh-ctas a')
                       orion = next((a for a in header_links if a.text.strip() == 'ORION'), None)
                       record(f'FREY_{locale}_{viewport}_orion_present', orion is not None)
+                      wait.until(lambda d: parse_qs(urlsplit(orion.get_attribute('href')).query).get('lang') == [locale])
                       orion_parsed = urlsplit(orion.get_attribute('href'))
                       record(f'FREY_{locale}_{viewport}_orion_locale', orion_parsed.path == '/orion' and parse_qs(orion_parsed.query).get('lang') == [locale], orion.get_attribute('href'))
 
@@ -218,6 +228,7 @@ jobs:
               open_path('/frey?lang=ru&probe=1#transport-proof')
               before = urlsplit(driver.current_url)
               record('SOURCE_HASH_PRESENT_BEFORE_SWITCH', before.fragment == 'transport-proof', driver.current_url)
+              wait.until(lambda d: parse_qs(urlsplit(d.find_element(By.CSS_SELECTOR, '.bh-language').get_attribute('href')).query).get('lang') == ['en'])
               driver.find_element(By.CSS_SELECTOR, '.bh-language').click()
               wait.until(lambda d: parse_qs(urlsplit(d.current_url).query).get('lang') == ['en'])
               switched = urlsplit(driver.current_url)
@@ -229,7 +240,8 @@ jobs:
               open_path('/start?lang=ru')
               footers = driver.find_elements(By.CSS_SELECTOR, '[data-portal-footernav] a')
               if footers:
-                  for idx, link in enumerate(footers):
+                  wait.until(lambda d: all(parse_qs(urlsplit(link.get_attribute('href')).query).get('lang') == ['ru'] for link in d.find_elements(By.CSS_SELECTOR, '[data-portal-footernav] a')))
+                  for idx, link in enumerate(driver.find_elements(By.CSS_SELECTOR, '[data-portal-footernav] a')):
                       parsed = urlsplit(link.get_attribute('href'))
                       if parsed.netloc in ('127.0.0.1:3000', 'localhost:3000') or not parsed.netloc:
                           record(f'SHARED_FOOTER_RU_{idx}', parse_qs(parsed.query).get('lang') == ['ru'], link.get_attribute('href'))
