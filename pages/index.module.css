@@ -82,6 +82,9 @@
 
 .fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto 1fr; gap: 14px; padding: 18px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
 .systemMapTopline { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: rgba(128, 188, 227, 0.78); font-size: 8px; font-weight: 750; letter-spacing: 0.18em; text-transform: uppercase; }
+.homeFieldAnchorGlyph { position: absolute !important; z-index: 3; left: 50%; top: 18px; width: 34px; height: 34px; display: grid; place-items: center; transform: translateX(-50%); border: 1px solid rgba(200, 164, 90, 0.52); border-radius: 50%; background: radial-gradient(circle, rgba(200, 164, 90, 0.08), transparent 68%); pointer-events: none; }
+.homeFieldAnchorGlyph::after { content: ""; position: absolute; inset: -4px; border: 1px solid rgba(200, 164, 90, 0.14); border-radius: 50%; }
+.homeFieldAnchorGlyph b { color: var(--home-gold-bright); font: 700 18px/1 Georgia, "Times New Roman", serif; }
 .systemRoot { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 13px 14px; border: 1px solid rgba(200, 164, 90, 0.34); background: rgba(200, 164, 90, 0.055); }
 .systemRoot strong { color: var(--home-ink); font-size: 15px; letter-spacing: 0.12em; }
 .systemRoot small { color: rgba(224, 196, 127, 0.7); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }

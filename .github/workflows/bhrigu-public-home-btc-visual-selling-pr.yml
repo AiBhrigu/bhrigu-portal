@@ -70,6 +70,9 @@ jobs:
           print('MODEL_CALL_DELTA=0')
           PY
 
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
       - name: Verify existing Cosmographic Glyph Canon compatibility
         shell: bash
         run: |
@@ -82,10 +85,16 @@ jobs:
               'pages/index.js','pages/index.module.css','pages/crypto-astro/btc.tsx','lib/btc-product-rebalance-style.ts'
           ], text=True)
           added = '\n'.join(line[1:] for line in diff.splitlines() if line.startswith('+') and not line.startswith('+++'))
-          forbidden = ('Φ','data-glyph-class','<svg','<path','FieldAnchorGlyph','RelationGlyph','SealedBoundaryGlyph','systemPhi')
+          forbidden = ('Φ','data-glyph-class','<svg','<path','RelationGlyph','SealedBoundaryGlyph','systemPhi')
           hits = [token for token in forbidden if token in added]
           if hits:
               raise SystemExit('CONFLICTING_NEW_GLYPH_SEMANTICS=' + ','.join(hits))
+          home = open('pages/index.js', encoding='utf-8').read()
+          required_import = 'import { FieldAnchorGlyph } from \"../components/btc/BtcSurfaceGlyphs\";'
+          required_use = '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>'
+          if home.count(required_import) != 1 or home.count(required_use) != 1 or home.count('<FieldAnchorGlyph') != 1:
+              raise SystemExit('FIELD_ANCHOR_CANON_BIND=FAIL')
+          print('FIELD_ANCHOR_CANON_BIND=PASS')
           print('GLYPH_CANON_GATE=PASS')
           print('CONFLICTING_NEW_GLYPH_SEMANTICS=ZERO')
           PY
@@ -98,9 +107,9 @@ jobs:
           grep -q 'data-btc-evidence-flow' pages/crypto-astro/btc.tsx
           grep -q 'btcSystemCompression' lib/btc-product-rebalance-style.ts
           ! grep -q 'systemPhi' pages/index.js
-
-      - name: Install locked dependencies
-        run: npm ci --ignore-scripts
+          test "$(grep -o '<FieldAnchorGlyph' pages/index.js | wc -l)" -eq 1
+          grep -Fq 'import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";' pages/index.js
+          grep -Fq '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>' pages/index.js
 
       - name: Production build
         run: npm run build
