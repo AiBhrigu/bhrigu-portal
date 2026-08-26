@@ -241,9 +241,9 @@ export default function Page(p: Props) {
     ? [
         ["01", "CURRENT", "ТЕКУЩЕЕ", truth.stateLabel],
         ["02", "CHANGE", "ИЗМЕНЕНИЕ", "Принятый Snapshot + Snapshot Memory"],
-        ["03", "EXPECTATION", "ОЖИДАНИЯ", "Polymarket · точное условие · expiry · rules"],
-        ["04", "ASTRO", "АСТРО", "Независимый evidence layer · совпадение ≠ причинность"],
-        ["05", "SOURCES / PROOF", "ИСТОЧНИКИ / PROOF", truth.proofLine],
+        ["03", "EXPECTATION", "ОЖИДАНИЯ", "Polymarket · точное условие · срок · правила"],
+        ["04", "ASTRO", "АСТРО", "Независимый слой доказательств · совпадение ≠ причинность"],
+        ["05", "SOURCES / PROOF", "ИСТОЧНИКИ / ДОКАЗАТЕЛЬСТВА", truth.proofLine],
       ]
     : [
         ["01", "CURRENT", "CURRENT", truth.stateLabel],
@@ -255,7 +255,7 @@ export default function Page(p: Props) {
   const evidenceFlow = ru
     ? [
         ["01", "ВОПРОС", "Намерение пользователя"],
-        ["02", "ПЛАН ДОКАЗАТЕЛЬСТВ", "Только нужные evidence lanes"],
+        ["02", "ПЛАН ДОКАЗАТЕЛЬСТВ", "Только нужные линии доказательств"],
         ["03", "ИСТОЧНИКИ", "Принятые · закреплённые · ограниченные"],
         ["04", "СИНТЕЗ", "Согласие · расхождение · неопределённость"],
         ["05", "ОТВЕТ", "Смысл · условия · границы"],
@@ -349,7 +349,7 @@ export default function Page(p: Props) {
         <header className="btcCompressionHead">
           <p className="eyebrow">{ru ? "Карта чтения" : "Read map"}</p>
           <h2 id="btc-system-compression-title">{ru ? "Сначала структура. Затем детали." : "Structure first. Detail second."}</h2>
-          <p>{ru ? "Пять доказательных слоёв показывают, из чего складывается текущий BTC read." : "Five evidence layers show what the current BTC read is made of."}</p>
+          <p>{ru ? "Пять доказательных слоёв показывают, из чего складывается текущее чтение BTC." : "Five evidence layers show what the current BTC read is made of."}</p>
         </header>
         <div className="btcLayerRail" role="list" aria-label={ru ? "Слои BTC Cosmographer" : "BTC Cosmographer layers"}>
           {visualLayers.map(([index, axis, title, detail]) => <article key={index} role="listitem" data-btc-visual-layer={index}>

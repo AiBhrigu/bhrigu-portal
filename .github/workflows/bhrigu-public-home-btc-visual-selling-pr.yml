@@ -112,6 +112,20 @@ jobs:
           grep -Fq 'import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";' pages/index.js
           grep -Fq '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>' pages/index.js
 
+      - name: Verify post-merge result-state presentation contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -Fq 'Polymarket · точное условие · срок · правила' pages/crypto-astro/btc.tsx
+          grep -Fq 'Независимый слой доказательств · совпадение ≠ причинность' pages/crypto-astro/btc.tsx
+          grep -Fq 'ИСТОЧНИКИ / ДОКАЗАТЕЛЬСТВА' pages/crypto-astro/btc.tsx
+          grep -Fq 'Только нужные линии доказательств' pages/crypto-astro/btc.tsx
+          grep -Fq 'Пять доказательных слоёв показывают, из чего складывается текущее чтение BTC.' pages/crypto-astro/btc.tsx
+          grep -Fq '.phiPlane>.supportBand{grid-template-columns:minmax(0,1fr)}' lib/btc-product-rebalance-style.ts
+          grep -Fq '.phiPlane>.supportBand>.supportModule,.phiPlane>.supportBand>.supportModule:last-child{grid-column:auto;min-width:0;border-right:0}' lib/btc-product-rebalance-style.ts
+          echo 'RU_NEW_VISUAL_COPY_PARITY=PASS'
+          echo 'BTC_POPULATED_RESULT_SUPPORT_GRID_CONTRACT=PASS'
+
       - name: Production build
         run: npm run build
       - name: Start exact-head server
