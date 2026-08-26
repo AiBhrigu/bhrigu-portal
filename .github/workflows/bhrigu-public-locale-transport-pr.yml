@@ -76,8 +76,8 @@ jobs:
           route_truth = Path('lib/routeTruth.js').read_text()
           checks = {
               'HELPER_SWITCH_PRESERVES_ROUTE': 'switchPublicLocale' in helper and 'URLSearchParams' in helper,
-              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(switchSource' in header,
-              'HEADER_BROWSER_HASH_TRANSPORT': 'window.location.hash' in header and 'hashchange' in header,
+              'HEADER_SAME_ROUTE_SWITCH': 'switchPublicLocale(asPath' in header,
+              'HEADER_BROWSER_HASH_TRANSPORT': 'window.location.hash' in header and 'window.location.assign(target)' in header,
               'HEADER_HOME_LOCALE': 'homeHref = withPublicLocale("/", locale)' in header,
               'HEADER_FREY_LOCALE': 'freyHref = withPublicLocale("/frey", locale)' in header,
               'HEADER_ORION_LOCALE': 'orionHref = withPublicLocale("/orion", locale)' in header,
@@ -216,12 +216,15 @@ jobs:
                       record(f'PUBLIC_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
 
               open_path('/frey?lang=ru&probe=1#transport-proof')
-              wait.until(lambda d: urlsplit(d.find_element(By.CSS_SELECTOR, '.bh-language').get_attribute('href')).fragment == 'transport-proof')
-              parsed, href = parsed_href('.bh-language')
-              q = parse_qs(parsed.query)
-              record('SWITCH_PRESERVES_NON_LANGUAGE_QUERY', q.get('probe') == ['1'], href)
-              record('SWITCH_PRESERVES_HASH', parsed.fragment == 'transport-proof', href)
-              record('SWITCH_REPLACES_ONLY_LANGUAGE', q.get('lang') == ['en'], href)
+              before = urlsplit(driver.current_url)
+              record('SOURCE_HASH_PRESENT_BEFORE_SWITCH', before.fragment == 'transport-proof', driver.current_url)
+              driver.find_element(By.CSS_SELECTOR, '.bh-language').click()
+              wait.until(lambda d: parse_qs(urlsplit(d.current_url).query).get('lang') == ['en'])
+              switched = urlsplit(driver.current_url)
+              record('SWITCH_PRESERVES_NON_LANGUAGE_QUERY', parse_qs(switched.query).get('probe') == ['1'], driver.current_url)
+              record('SWITCH_PRESERVES_HASH', switched.fragment == 'transport-proof', driver.current_url)
+              record('SWITCH_REPLACES_ONLY_LANGUAGE', parse_qs(switched.query).get('lang') == ['en'], driver.current_url)
+              record('SWITCH_PRESERVES_SEMANTIC_PATH', switched.path == '/frey', driver.current_url)
 
               open_path('/start?lang=ru')
               footers = driver.find_elements(By.CSS_SELECTOR, '[data-portal-footernav] a')
