@@ -1,0 +1,209 @@
+name: BHRIGU Public Site Human Copy Repair
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/bhrigu-public-site-human-copy-pr.yml
+      - pages/_app.js
+      - pages/cosmographer.js
+      - pages/crypto-astro/btc.tsx
+      - pages/crypto-astro/btc/clean-chat.tsx
+      - pages/index.js
+      - public/llms.txt
+      - public/robots.txt
+      - styles/public-site-repair.css
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bhrigu-public-site-human-copy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact bounded nine-file scope
+        run: |
+          git fetch origin master
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              'pages/_app.js',
+              'pages/cosmographer.js',
+              'pages/crypto-astro/btc.tsx',
+              'pages/crypto-astro/btc/clean-chat.tsx',
+              'pages/index.js',
+              'public/llms.txt',
+              'public/robots.txt',
+              'styles/public-site-repair.css',
+          }
+          actual = set(subprocess.check_output(
+              ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
+              text=True,
+          ).splitlines())
+          if actual != expected:
+              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
+          print('EXACT_SCOPE_PASS', sorted(actual))
+          PY
+
+      - name: Verify copy, boundary, SEO and agent truth
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('pages/_app.js').read_text()
+          home = Path('pages/index.js').read_text()
+          cosmo = Path('pages/cosmographer.js').read_text()
+          btc = Path('pages/crypto-astro/btc.tsx').read_text()
+          clean = Path('pages/crypto-astro/btc/clean-chat.tsx').read_text()
+          adapter = Path('components/btc/BtcFreeCorridorSurfaceAdapter.js').read_text()
+          css = Path('styles/public-site-repair.css').read_text()
+          robots = Path('public/robots.txt').read_text()
+          llms = Path('public/llms.txt').read_text()
+          checks = {
+              'HOME_MULTI_SURFACE_EN': 'Several public surfaces. Distinct roles.' in home,
+              'HOME_MULTI_SURFACE_RU': 'Несколько публичных поверхностей. Разные роли.' in home,
+              'HOME_FREY_ACTIVE': 'active temporal reading and dialogue service' in home,
+              'COSMOGRAPHER_BRIDGE': 'BTC Cosmographer is the Bitcoin-specific public application' in cosmo,
+              'COSMOGRAPHER_NOT_BITCOIN_ONLY': 'not the limit of BHRIGU' in cosmo,
+              'FREY_PRESERVED': 'Frey is an active temporal reading and dialogue service' in cosmo,
+              'BTC_FOOTER_HUMAN': 'Helps explain what is happening with Bitcoin using verifiable data and sources.' in btc,
+              'BTC_SUPPORT_EN_RU': '/support?lang=${p.locale}' in btc and 'Support BHRIGU' in btc and 'Поддержать BHRIGU' in btc,
+              'BTC_LIMITS_HUMAN': 'No buy or sell signals' in btc and 'Без сигналов купить или продать' in btc,
+              'CLEAN_CHAT_NO_PREVIEW': 'Clean Chat Preview' not in clean and 'BTC Cosmographer · Dialogue' in clean,
+              'CLEAN_CHAT_HUMAN_DESC': 'Live Bitcoin dialogue with current data, sources, and explicit limits.' in clean,
+              'SESSION_BOUNDARY_PRESERVED': 'const FREE_SESSION_DURATION_MS = 60 * 60 * 1000' in adapter,
+              'EXPIRY_GATE_PRESERVED': 'function FreeContract' in adapter and 'if (expired)' in adapter,
+              'VISIBLE_TIMER_HIDDEN': '.btcFreeContract' in css and 'display: none !important' in css,
+              'FOOTER_READABLE': 'font-size: 14px !important' in css and 'font-size: 11px !important' in css,
+              'ROBOTS_REAL_LINES': robots == 'User-agent: *\nAllow: /\n\nSitemap: https://www.bhrigu.io/sitemap.xml\n',
+              'LLMS_CLEAN_CHAT': '/crypto-astro/btc/clean-chat?lang=en' in llms,
+              'LLMS_DUAL_CONTOUR': 'Bitcoin-first does not mean Bitcoin-only.' in llms and 'Frey: an active and distinct temporal reading and dialogue service.' in llms,
+              'LLMS_PROTECTED_RESEARCH': 'X4, private ORION internals, the Cosmography Dynamical Engine' in llms,
+              'APP_CLEAN_CHAT_META': '"/crypto-astro/btc/clean-chat"' in app and 'noindex,follow' in app,
+          }
+          failed = [k for k,v in checks.items() if not v]
+          print(checks)
+          if failed:
+              raise SystemExit('STATIC_ACCEPTANCE_FAIL=' + ','.join(failed))
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/public-site-repair.log 2>&1 &
+          echo $! > /tmp/public-site-repair.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/public-site-repair.log
+          exit 1
+
+      - name: Install browser client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: RU EN desktop mobile browser acceptance
+        run: |
+          python3 - <<'PY'
+          import json
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base='http://127.0.0.1:3000'
+          options=webdriver.ChromeOptions()
+          for a in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-size=1280,900'):
+              options.add_argument(a)
+          options.set_capability('goog:loggingPrefs', {'browser':'ALL'})
+          driver=webdriver.Chrome(options=options)
+          wait=WebDriverWait(driver,30)
+          results=[]
+          def record(name, ok, detail=''):
+              results.append({'name':name,'passed':bool(ok),'detail':detail})
+              if not ok: raise AssertionError(f'{name}: {detail}')
+          def open_path(path):
+              driver.get(base+path)
+              wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+          try:
+              for viewport,w,h in (('desktop',1280,900),('mobile',390,844)):
+                  driver.set_window_size(w,h)
+                  for locale in ('en','ru'):
+                      open_path('/?lang='+locale)
+                      body=driver.find_element(By.TAG_NAME,'body').text
+                      expected='Several public surfaces. Distinct roles.' if locale=='en' else 'Несколько публичных поверхностей. Разные роли.'
+                      record(f'HOME_{locale}_{viewport}_roles', expected in body, body[-1200:])
+                      overflow=driver.execute_script('return document.documentElement.scrollWidth - window.innerWidth')
+                      record(f'HOME_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
+
+                      open_path('/crypto-astro/btc?lang='+locale)
+                      body=driver.find_element(By.TAG_NAME,'body').text
+                      support='Support BHRIGU' if locale=='en' else 'Поддержать BHRIGU'
+                      record(f'BTC_{locale}_{viewport}_support', support in body, body[-1800:])
+                      hrefs=[a.get_attribute('href') for a in driver.find_elements(By.CSS_SELECTOR,'.btcAuthorityFooter a')]
+                      record(f'BTC_{locale}_{viewport}_support_href', any('/support?lang='+locale in (x or '') for x in hrefs), repr(hrefs))
+                      contract=driver.find_elements(By.CSS_SELECTOR,'.btcFreeContract')
+                      if contract:
+                          record(f'BTC_{locale}_{viewport}_timer_hidden', contract[0].value_of_css_property('display')=='none', contract[0].value_of_css_property('display'))
+                      link=driver.find_element(By.CSS_SELECTOR,'.btcAuthorityFooterNav a')
+                      size=float(link.value_of_css_property('font-size').replace('px',''))
+                      record(f'BTC_{locale}_{viewport}_footer_link_size', size >= 14, str(size))
+                      overflow=driver.execute_script('return document.documentElement.scrollWidth - window.innerWidth')
+                      record(f'BTC_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
+
+                      open_path('/crypto-astro/btc/clean-chat?lang='+locale)
+                      expected_title='BTC Cosmographer · Dialogue' if locale=='en' else 'BTC Космограф · Диалог'
+                      record(f'CLEAN_{locale}_{viewport}_title', driver.title==expected_title, driver.title)
+                      record(f'CLEAN_{locale}_{viewport}_no_preview', 'Preview' not in driver.title, driver.title)
+                      desc=driver.find_element(By.CSS_SELECTOR,'meta[name="description"]').get_attribute('content')
+                      record(f'CLEAN_{locale}_{viewport}_human_desc', ('current data' in desc) if locale=='en' else ('текущими данными' in desc), desc)
+                      overflow=driver.execute_script('return document.documentElement.scrollWidth - window.innerWidth')
+                      record(f'CLEAN_{locale}_{viewport}_no_horizontal_overflow', overflow <= 1, str(overflow))
+
+              open_path('/cosmographer')
+              body=driver.find_element(By.TAG_NAME,'body').text
+              record('COSMOGRAPHER_BRIDGE_VISIBLE', 'BTC Cosmographer is the Bitcoin-specific public application' in body, body)
+              record('COSMOGRAPHER_FREY_VISIBLE', 'Frey is an active temporal reading and dialogue service' in body, body)
+
+              for route in ('/frey','/reading','/start','/map'):
+                  open_path(route)
+                  record('LEGACY_ROUTE_'+route[1:].upper(), len(driver.find_elements(By.TAG_NAME,'body'))==1 and '404' not in driver.title, driver.title)
+
+              open_path('/robots.txt')
+              record('ROBOTS_HTTP_RENDER', 'Sitemap: https://www.bhrigu.io/sitemap.xml' in driver.find_element(By.TAG_NAME,'body').text, driver.find_element(By.TAG_NAME,'body').text)
+              open_path('/llms.txt')
+              llms=driver.find_element(By.TAG_NAME,'body').text
+              record('LLMS_AGENT_TRUTH_RENDER', 'Bitcoin-first does not mean Bitcoin-only.' in llms and '/crypto-astro/btc/clean-chat?lang=en' in llms, llms[:2000])
+
+              logs=driver.get_log('browser')
+              known_local_non_scope=('/api/btc/observability/v1/event',)
+              severe=[x for x in logs if x.get('level')=='SEVERE' and '/favicon.ico' not in x.get('message','') and not any(marker in x.get('message','') for marker in known_local_non_scope)]
+              record('BROWSER_SEVERE_ZERO_EXCEPT_KNOWN_LOCAL_OBSERVABILITY', not severe, json.dumps(severe)[:2000])
+              print(json.dumps({'schema':'bhrigu_public_site_human_copy_acceptance_v0_1','results':results},ensure_ascii=False,indent=2))
+          finally:
+              driver.quit()
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/public-site-repair.pid || kill "$(cat /tmp/public-site-repair.pid)" || true
+          test ! -f /tmp/public-site-repair.log || tail -n 80 /tmp/public-site-repair.log

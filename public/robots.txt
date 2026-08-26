@@ -1,1 +1,4 @@
-User-agent: *\nAllow: /\n\nSitemap: https://www.bhrigu.io/sitemap.xml\n
+User-agent: *
+Allow: /
+
+Sitemap: https://www.bhrigu.io/sitemap.xml

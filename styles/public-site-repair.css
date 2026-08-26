@@ -1,0 +1,39 @@
+/* BHRIGU_PUBLIC_SITE_HUMAN_COPY_COHERENCE_v0_1 */
+
+/* Keep the free-session runtime boundary, but remove the visible countdown/status noise. */
+.btcFreeContract {
+  display: none !important;
+}
+
+/* Human-readable BTC footer scale without changing the product visual system. */
+.btcAuthorityFooterNav h3 {
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+}
+
+.btcAuthorityFooterNav a,
+.btcAuthorityFooterNav .btcBoundaryStatement {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.btcFooterTrustStrip {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+.btcFooterBottom {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+}
+
+@media (max-width: 680px) {
+  .btcAuthorityFooterNav h3 {
+    font-size: 11px !important;
+  }
+
+  .btcAuthorityFooterNav a,
+  .btcAuthorityFooterNav .btcBoundaryStatement {
+    font-size: 14px !important;
+  }
+}

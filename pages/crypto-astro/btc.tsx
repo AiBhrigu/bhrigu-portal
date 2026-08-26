@@ -394,42 +394,43 @@ export default function Page(p: Props) {
           : <BoundedFallback locale={p.locale} result={p.result} envelopeFailure={p.envelopeFailure}/>} 
       </section>}
       <PublicSupportRoute locale={p.locale} surface="btc" />
-      <footer className="btcAuthorityFooter" aria-label={ru ? "Закрытие BTC Cosmographer" : "BTC Cosmographer closure"}>
+      <footer className="btcAuthorityFooter" aria-label={ru ? "BTC Cosmographer — навигация и границы" : "BTC Cosmographer — navigation and limits"}>
         <div className="btcAuthorityFooterIntro">
           <div className="btcAuthorityFooterIdentity">
             <strong>BTC COSMOGRAPHER</strong>
-            <p>{ru ? "Доказательный контекст Bitcoin с явными границами вывода." : "Evidence-grounded Bitcoin context with explicit boundaries."}</p>
+            <p>{ru ? "Помогает понять, что происходит с Bitcoin, на основе проверяемых данных и источников." : "Helps explain what is happening with Bitcoin using verifiable data and sources."}</p>
           </div>
           <p className="btcAuthorityFooterStatement">{ru
-            ? "Этот продукт не требует веры. Он показывает, что наблюдается, что является выводом и где заканчивается метод."
-            : "This product does not ask for belief. It shows what is observed, what is inferred, and where the method stops."}</p>
+            ? "Наблюдаемые данные отделены от интерпретации, а ограничения показаны прямо в чтении."
+            : "Observed data is kept separate from interpretation, and the limits are shown directly in the read."}</p>
         </div>
 
-        <nav className="btcAuthorityFooterNav" aria-label={ru ? "Навигация закрытия BTC" : "BTC closure navigation"}>
+        <nav className="btcAuthorityFooterNav" aria-label={ru ? "Навигация BTC" : "BTC navigation"}>
           <section>
             <h3>{ru ? "ПРОДУКТ" : "PRODUCT"}</h3>
             <a href={`/crypto-astro/btc?lang=${p.locale}`}>BTC Field</a>
-            <a href={cleanChatHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
-            <a href={routedHref(memoryRoute.question, "snapshot-memory")}>Snapshot Memory</a>
+            <a href={cleanChatHref}>{ru ? "Задать вопрос" : "Ask a question"}</a>
+            <a href={routedHref(memoryRoute.question, "snapshot-memory")}>{ru ? "История изменений" : "Change history"}</a>
             <a href={originsHref}>{ru ? "Происхождение Bitcoin / Сатоши" : "Bitcoin Origins / Satoshi"}</a>
           </section>
           <section>
-            <h3>{ru ? "ДОКАЗАТЕЛЬСТВА" : "EVIDENCE"}</h3>
-            <a href="#snapshot-authority">{ru ? "Текущий Snapshot" : "Current Snapshot"}</a>
-            <a href={routedHref(generalRoute.question, "evidence")}>{ru ? "Источники / доказательство" : "Sources / Proof"}</a>
-            <a href="#btc-accepted-knowledge">{ru ? "Граница метода" : "Method boundary"}</a>
+            <h3>{ru ? "ПРОВЕРКА" : "VERIFY"}</h3>
+            <a href="#snapshot-authority">{ru ? "Текущие данные" : "Current data"}</a>
+            <a href={routedHref(generalRoute.question, "evidence")}>{ru ? "Источники" : "Sources"}</a>
+            <a href="#btc-accepted-knowledge">{ru ? "Что данные не доказывают" : "What the data does not prove"}</a>
           </section>
           <section data-footer-boundaries="declarative">
-            <h3>{ru ? "ГРАНИЦЫ" : "BOUNDARIES"}</h3>
-            <span className="btcBoundaryStatement">{ru ? "Без ценовых целей" : "No price targets"}</span>
-            <span className="btcBoundaryStatement">{ru ? "Без торговых сигналов" : "No trading signals"}</span>
-            <span className="btcBoundaryStatement">{ru ? "Без причинного Astro → BTC утверждения" : "No causal Astro → BTC claim"}</span>
+            <h3>{ru ? "ГРАНИЦЫ" : "LIMITS"}</h3>
+            <span className="btcBoundaryStatement">{ru ? "Без прогнозов цены" : "No price forecasts"}</span>
+            <span className="btcBoundaryStatement">{ru ? "Без сигналов купить или продать" : "No buy or sell signals"}</span>
+            <span className="btcBoundaryStatement">{ru ? "Астрономические совпадения не выдаются за причину движения Bitcoin" : "Astronomical concurrence is not presented as a cause of Bitcoin movement"}</span>
           </section>
           <section>
-            <h3>{ru ? "ДОСТУП" : "ACCESS"}</h3>
-            <a href={cleanChatHref}>{ru ? "Спросить Космографа" : "Ask Cosmographer"}</a>
-            <a href={`/access?lang=${p.locale}&intent=btc-continuity-status`}>{ru ? "Private BTC Field Review" : "Private BTC Field Review"}</a>
-            <a href="/">BHRIGU</a>
+            <h3>{ru ? "ДАЛЬШЕ" : "NEXT"}</h3>
+            <a href={cleanChatHref}>{ru ? "Задать вопрос" : "Ask a question"}</a>
+            <a href={`/access?lang=${p.locale}&intent=btc-continuity-status`}>{ru ? "Исследовательский доступ" : "Research access"}</a>
+            <a href={`/support?lang=${p.locale}`}>{ru ? "Поддержать BHRIGU" : "Support BHRIGU"}</a>
+            <a href="/">{ru ? "О BHRIGU" : "About BHRIGU"}</a>
           </section>
         </nav>
 
@@ -440,7 +441,7 @@ export default function Page(p: Props) {
         </div>
         <div className="btcFooterBottom">
           <strong>BHRIGU × COSMOGRAPHER</strong>
-          <span>{ru ? "Источник → наблюдение → вывод → граница" : "Source → observation → interpretation → boundary"}</span>
+          <span>{ru ? "Источник → наблюдение → интерпретация → граница" : "Source → observation → interpretation → boundary"}</span>
         </div>
       </footer>
     </main>
