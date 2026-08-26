@@ -45,10 +45,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
 };
 
 export default function BtcCleanChatPage({ locale, initialQuestion, deploymentSourceSha }: Props) {
-  const title = locale === "ru" ? "BTC Космограф · Clean Chat Preview" : "BTC Cosmographer · Clean Chat Preview";
+  const title = locale === "ru" ? "BTC Космограф · Диалог" : "BTC Cosmographer · Dialogue";
   const description = locale === "ru"
-    ? "Живой read-only диалог о текущем поле BTC, памяти Snapshot, Binance и ожиданиях Polymarket."
-    : "Live read-only dialogue across the BTC field, Snapshot Memory, Binance, and Polymarket expectations.";
+    ? "Живой диалог о Bitcoin с текущими данными, источниками и явными границами вывода."
+    : "Live Bitcoin dialogue with current data, sources, and explicit limits.";
   return <>
     <Head>
       <title>{title}</title>
