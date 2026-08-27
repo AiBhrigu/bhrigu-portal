@@ -440,9 +440,18 @@ jobs:
                   assert matrix.get_attribute("data-glyph-canon") == "MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_v0_1"
                   assert matrix.get_attribute("data-glyph-canon-sha") == "4034ba35df2d738e7f2cbe1d266fd9a2188aa3972ab629b9cd49f4f05258eb04"
                   prose = driver.find_element(By.CSS_SELECTOR,".cleanAssistant .cleanBubble > p").text
+                  matrix_text = matrix.text
+                  for canonical in ("Saturn", "Sun", "square", "Mercury", "Pluto", "trine"):
+                      assert canonical in matrix_text, (lang, canonical, matrix_text)
                   if lang == "ru":
                       assert "Краткий вывод после матрицы." in prose, prose
                       assert "Short synthesis after matrix." not in prose, prose
+                      for localized in ("Текущее небо × Bitcoin Genesis", "сейчас", "орб", "порядок", "окно", "пик", "Близость задаёт только порядок отображения"):
+                          assert localized in matrix_text, (localized, matrix_text)
+                      assert sum(1 for ch in matrix_text if "А" <= ch <= "я" or ch in "Ёё") >= 20, matrix_text
+                  else:
+                      for localized in ("Current sky × Bitcoin Genesis", "current", "orb", "order", "window", "peak", "Closeness controls display order only"):
+                          assert localized in matrix_text, (localized, matrix_text)
                   driver.save_screenshot(f"/tmp/btc-clean-chat-matrix-{lang}-{width}.png")
               print("NATIVE_MATRIX_DESKTOP=PASS")
               print("NATIVE_MATRIX_MOBILE=PASS")

@@ -27,13 +27,13 @@ export default function BtcAstroCrossChartMatrix({ locale, native }: { locale: B
     <header className="matrixHead">
       <FieldAnchorGlyph className="matrixAnchor"/>
       <div><b>{ru ? "Текущее небо × Bitcoin Genesis" : "Current sky × Bitcoin Genesis"}</b><span>{shortUtc(native.current_timestamp_utc, locale)} · Genesis {shortUtc(native.reference_timestamp_utc, locale)}</span></div>
-      <small>{computed ? `${native.displayed_relations}/${native.total_relations}` : (ru ? "недостаточно evidence" : "insufficient evidence")}</small>
+      <small>{computed ? `${native.displayed_relations}/${native.total_relations}` : (ru ? "недостаточно данных" : "insufficient evidence")}</small>
     </header>
     {computed ? <div className="matrixRows">
       {native.rows.map((row, index) => <article className="matrixRow" data-matrix-relation={row.relation_id} data-route-role={index === 0 ? "PRIMARY_ROUTE" : "SUPPORT_ROUTE"} key={row.relation_id}>
         <span className={index === 0 ? "matrixRoute matrixRoutePrimary" : "matrixRoute matrixRouteSupport"}><RelationGlyph/></span>
         <span className="matrixBody"><small>{ru ? "сейчас" : "current"}</small><b>{row.transit_body}</b></span>
-        <span className="matrixAspect"><b>{row.aspect}</b><small>orb {row.orb_deg.toFixed(3)}° / {row.orb_limit_deg.toFixed(1)}°</small></span>
+        <span className="matrixAspect"><b>{row.aspect}</b><small>{ru ? "орб" : "orb"} {row.orb_deg.toFixed(3)}° / {row.orb_limit_deg.toFixed(1)}°</small></span>
         <span className="matrixBody"><small>Genesis</small><b>{row.genesis_body}</b></span>
         <span className="matrixCloseness"><small>{ru ? "порядок" : "order"}</small><b>{row.normalized_closeness.toFixed(3)}</b></span>
         <span className="matrixWindow" data-glyph-class="TEMPORAL_INTERVAL"><small>{ru ? "окно" : "window"}</small><b>{shortUtc(row.window.start_utc, locale)} → {shortUtc(row.window.end_utc, locale)}</b><em>{ru ? "пик" : "peak"} {shortUtc(row.window.peak_utc, locale)}</em></span>
