@@ -7,6 +7,7 @@ on:
       - '.github/scripts/verify-btc-public-acceptance-scope.py'
       - '.github/workflows/btc-clean-chat-v1-pr.yml'
       - 'ui/btc/BtcCleanChatV1.tsx'
+      - 'ui/btc/BtcAstroCrossChartMatrix.tsx'
       - 'lib/btc-clean-chat-v1.ts'
       - 'lib/btc-clean-chat-model-runtime.ts'
       - 'lib/btc-astro-field-client.ts'
@@ -27,6 +28,7 @@ on:
       - 'pages/support.js'
       - 'pages/crypto-astro/btc/clean-chat.tsx'
       - 'tests/btc-clean-chat-v1-acceptance.ts'
+      - 'tests/btc-clean-chat-two-epoch-astro-acceptance.ts'
       - 'tests/btc-clean-chat-pending-state-acceptance.ts'
   workflow_dispatch:
 
@@ -100,6 +102,17 @@ jobs:
             "pages/api/btc/clean-chat-v1.ts"
             "tests/btc-clean-chat-v1-acceptance.ts"
             "tests/btc-clean-chat-pending-state-acceptance.ts"
+            "ui/btc/BtcCleanChatV1.tsx"
+          )
+          two_epoch_astro_expected=(
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-astro-field-client.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "lib/btc-clean-chat-v1.ts"
+            "pages/api/btc/clean-chat-v1.ts"
+            "tests/btc-clean-chat-two-epoch-astro-acceptance.ts"
+            "tests/btc-clean-chat-v1-acceptance.ts"
+            "ui/btc/BtcAstroCrossChartMatrix.tsx"
             "ui/btc/BtcCleanChatV1.tsx"
           )
           support_expected=(
@@ -180,6 +193,7 @@ jobs:
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
           mapfile -t traffic_expected_sorted < <(printf '%s\n' "${traffic_expected[@]}" | sort)
           mapfile -t zero_waste_expected_sorted < <(printf '%s\n' "${zero_waste_expected[@]}" | sort)
+          mapfile -t two_epoch_astro_expected_sorted < <(printf '%s\n' "${two_epoch_astro_expected[@]}" | sort)
           mapfile -t support_expected_sorted < <(printf '%s\n' "${support_expected[@]}" | sort)
           mapfile -t support_ci_authority_repair_expected_sorted < <(printf '%s\n' "${support_ci_authority_repair_expected[@]}" | sort)
           mapfile -t polymarket_recertification_expected_sorted < <(printf '%s\n' "${polymarket_recertification_expected[@]}" | sort)
@@ -198,6 +212,11 @@ jobs:
             echo "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${zero_waste_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${two_epoch_astro_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CURRENT_TO_GENESIS_NATIVE_MATRIX_EXACT_9_FILE_SCOPE"
+            test -z "$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" -- lib/btc-existing-glyph-canon.ts components/btc/BtcSurfaceGlyphs.tsx lib/routeTruth.js pages/index.js pages/crypto-astro/btc.tsx)"
+            echo "GLYPH_CANON_DIFF_ZERO=PASS"
+            echo "FROZEN_PUBLIC_SURFACES_DIFF_ZERO=PASS"
           elif diff -q <(printf '%s\n' "${support_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${support_ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
@@ -224,6 +243,11 @@ jobs:
       - run: npm ci
       - name: Direct OpenAI architecture acceptance
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
+      - name: Two-epoch Astro static and mocked acceptance
+        env:
+          OPENAI_API_KEY: static-mock-only
+          VERCEL_ENV: preview
+        run: node --import tsx tests/btc-clean-chat-two-epoch-astro-acceptance.ts
       - name: Pending-state and client-timeout acceptance
         run: node --import tsx tests/btc-clean-chat-pending-state-acceptance.ts
       - name: Privacy-safe observability acceptance
@@ -364,6 +388,67 @@ jobs:
               print("CLEAN_SHELL_RU_EN=PASS")
               print("CLEAN_SHELL_DESKTOP_MOBILE=PASS")
               print("PREPARED_QUESTION_UI=ZERO")
+          finally:
+              driver.quit()
+          PY
+      - name: Current-to-Genesis native matrix desktop mobile proof
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          base = os.environ["BTC_CLEAN_CHAT_PREVIEW_BASE"].rstrip("/")
+          opts = webdriver.ChromeOptions()
+          for arg in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"):
+              opts.add_argument(arg)
+          driver = webdriver.Chrome(options=opts)
+          wait = WebDriverWait(driver, 30)
+          window = {"state":"BOUNDED","start_utc":"2026-05-13T15:23:51Z","peak_utc":"2026-09-03T20:53:33Z","end_utc":"2026-10-14T14:57:06Z"}
+          rows = [
+              {"relation_id":"current:Saturn|genesis:Sun|square","transit_body":"Saturn","genesis_body":"Sun","aspect":"square","target_deg":90,"separation_deg":90.4565,"orb_deg":0.4565,"orb_limit_deg":3,"normalized_closeness":0.1521,"window":window},
+              {"relation_id":"current:Mercury|genesis:Pluto|trine","transit_body":"Mercury","genesis_body":"Pluto","aspect":"trine","target_deg":120,"separation_deg":119.2927,"orb_deg":0.7073,"orb_limit_deg":3,"normalized_closeness":0.2357,"window":window},
+          ]
+          try:
+              for lang, width, height in (("en",1440,1000),("ru",1440,1000),("en",390,844),("ru",390,844)):
+                  driver.set_window_size(width, height)
+                  driver.get(f"{base}/crypto-astro/btc/clean-chat?lang={lang}")
+                  wait.until(EC.presence_of_element_located((By.ID,"btc-clean-question")))
+                  synthesis = "Краткий вывод после матрицы." if lang == "ru" else "Short synthesis after matrix."
+                  turn = [{
+                      "id":"matrix-proof","user":"matrix","assistant":synthesis,"topic":"Astro×BTC","asOf":"2026-08-26T12:00:00Z","sources":[],
+                      "semanticVisual":{"kind":"ASTRO_BTC","state":"TEMPORAL","axis_label":"BTC","context_label":"current sky × Genesis","metrics":[],"freshness":"FRESH","native":{"type":"CURRENT_TO_GENESIS_MATRIX","status":"COMPUTED","current_timestamp_utc":"2026-08-26T12:00:00Z","reference_timestamp_utc":"2009-01-03T18:15:05Z","reference_event":"genesis","total_relations":2,"displayed_relations":2,"primary_relation_id":rows[0]["relation_id"],"rows":rows,"boundary":{"normalized_closeness_display_order_only":True,"market_causality":False,"predictive_power":False,"btc_price_effect":False,"sealed_research_boundary":True}}}
+                  }]
+                  driver.execute_script("sessionStorage.setItem(arguments[0], arguments[1])", f"bhrigu:btc-clean-chat-v1:{lang}", json.dumps(turn))
+                  driver.refresh()
+                  matrix = wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR,'[data-astro-cross-chart-matrix="CURRENT_TO_GENESIS_MATRIX"]')))
+                  relation_rows = driver.find_elements(By.CSS_SELECTOR,"[data-matrix-relation]")
+                  assert len(relation_rows) == 2, len(relation_rows)
+                  assert driver.find_element(By.CSS_SELECTOR,'[data-route-role="PRIMARY_ROUTE"]')
+                  assert driver.find_element(By.CSS_SELECTOR,'[data-route-role="SUPPORT_ROUTE"]')
+                  assert driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 2"), "matrix page overflow"
+                  assert driver.execute_script("return arguments[0].scrollWidth <= arguments[0].clientWidth + 2", matrix), "matrix overflow"
+                  for row in relation_rows:
+                      assert driver.execute_script("return arguments[0].scrollWidth <= arguments[0].clientWidth + 2", row), "relation row collision/overflow"
+                  matrix_top = matrix.rect["y"]
+                  prose_top = driver.find_element(By.CSS_SELECTOR,".cleanAssistant .cleanBubble > p").rect["y"]
+                  assert matrix_top < prose_top, "matrix must be primary delivery before prose"
+                  assert matrix.get_attribute("data-glyph-canon") == "MARKET_COSMOGRAPHER_EXISTING_GLYPH_CANON_v0_1"
+                  assert matrix.get_attribute("data-glyph-canon-sha") == "4034ba35df2d738e7f2cbe1d266fd9a2188aa3972ab629b9cd49f4f05258eb04"
+                  prose = driver.find_element(By.CSS_SELECTOR,".cleanAssistant .cleanBubble > p").text
+                  if lang == "ru":
+                      assert "Краткий вывод после матрицы." in prose, prose
+                      assert "Short synthesis after matrix." not in prose, prose
+                  driver.save_screenshot(f"/tmp/btc-clean-chat-matrix-{lang}-{width}.png")
+              print("NATIVE_MATRIX_DESKTOP=PASS")
+              print("NATIVE_MATRIX_MOBILE=PASS")
+              print("NATIVE_MATRIX_NO_OVERFLOW=PASS")
+              print("NATIVE_MATRIX_NO_TEXT_COLLISION=PASS")
+              print("MATRIX_PRIMARY_DELIVERY=PASS")
           finally:
               driver.quit()
           PY
