@@ -35,21 +35,16 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - name: Verify exact bounded nine-file scope
+      - name: Verify exact bounded Home hero scope
         run: |
           git fetch origin master
           python3 - <<'PY'
           import os, subprocess
           expected = {
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
-              'pages/_app.js',
-              'pages/cosmographer.js',
-              'pages/crypto-astro/btc.tsx',
-              'pages/crypto-astro/btc/clean-chat.tsx',
               'pages/index.js',
-              'public/llms.txt',
-              'public/robots.txt',
-              'styles/public-site-repair.css',
+              'pages/index.module.css',
           }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],

@@ -17,7 +17,7 @@ jobs:
   exact-head-visual-acceptance:
     runs-on: ubuntu-24.04
     env:
-      BASE_SHA: 78a8582d00eac217772d5eb350264fec337e7889
+      BASE_SHA: 5a5724a37b36538410da4c85b7a2c1999e9190f1
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - name: Checkout exact PR head
@@ -35,11 +35,9 @@ jobs:
           import os, subprocess
           expected = {
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
-              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
               'pages/index.js',
               'pages/index.module.css',
-              'pages/crypto-astro/btc.tsx',
-              'lib/btc-product-rebalance-style.ts',
           }
           actual = set(subprocess.check_output(
               ['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']], text=True
