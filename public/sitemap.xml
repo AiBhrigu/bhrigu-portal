@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  <url>
-    <loc>https://www.bhrigu.io/</loc>
-  </url>
-  <url>
-    <loc>https://www.bhrigu.io/crypto-astro/btc?lang=en</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
-  </url>
-  <url>
-    <loc>https://www.bhrigu.io/crypto-astro/btc?lang=ru</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/>
-  </url>
+  <url><loc>https://www.bhrigu.io/?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/?lang=ru"/><xhtml:link rel="alternate" hreflang="x-default" href="https://www.bhrigu.io/?lang=en"/></url>
+  <url><loc>https://www.bhrigu.io/?lang=ru</loc></url>
+  <url><loc>https://www.bhrigu.io/frey?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/frey?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/frey?lang=ru"/></url>
+  <url><loc>https://www.bhrigu.io/frey?lang=ru</loc></url>
+  <url><loc>https://www.bhrigu.io/cosmographer?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/cosmographer?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/cosmographer?lang=ru"/></url>
+  <url><loc>https://www.bhrigu.io/cosmographer?lang=ru</loc></url>
+  <url><loc>https://www.bhrigu.io/map?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/map?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/map?lang=ru"/></url>
+  <url><loc>https://www.bhrigu.io/map?lang=ru</loc></url>
+  <url><loc>https://www.bhrigu.io/support?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/support?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/support?lang=ru"/></url>
+  <url><loc>https://www.bhrigu.io/support?lang=ru</loc></url>
+  <url><loc>https://www.bhrigu.io/crypto-astro/btc?lang=en</loc><xhtml:link rel="alternate" hreflang="en" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/><xhtml:link rel="alternate" hreflang="ru" href="https://www.bhrigu.io/crypto-astro/btc?lang=ru"/><xhtml:link rel="alternate" hreflang="x-default" href="https://www.bhrigu.io/crypto-astro/btc?lang=en"/></url>
+  <url><loc>https://www.bhrigu.io/crypto-astro/btc?lang=ru</loc></url>
 </urlset>

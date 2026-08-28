@@ -1,0 +1,69 @@
+name: BHRIGU Public Surface Integrity
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'pages/**'
+      - 'components/BhriguPhiHeader.jsx'
+      - 'components/PrevNextBlock.jsx'
+      - 'components/PortalFooterNav.jsx'
+      - 'public/sitemap.xml'
+      - '.github/workflows/bhrigu-public-surface-integrity-pr.yml'
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Protected diff gate
+        run: |
+          git fetch origin master
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/llms.txt public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
+          test -z "$protected" || { echo "$protected"; exit 1; }
+      - name: Static truth gates
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          checks={
+            'INVESTORS_NO_CAPITAL_LAYER':'Capital Alignment Layer' not in Path('pages/investors.js').read_text(),
+            'INVESTORS_NO_PAID_CONTRACT_CLAIM':'paid service contracts' not in Path('pages/investors.js').read_text(),
+            'ACCESS_CLOSED':'temporarily closed' in Path('pages/access.tsx').read_text(),
+            'SIGNAL_ARCHIVE':'HISTORICAL SIGNAL' in Path('pages/signal.js').read_text(),
+            'CHRONICLE_DATED':'JANUARY 2026 SNAPSHOT' in Path('pages/chronicle.js').read_text(),
+            'SITEMAP_RU':'?lang=ru' in Path('public/sitemap.xml').read_text(),
+            'SITEMAP_EN':'?lang=en' in Path('public/sitemap.xml').read_text(),
+          }
+          bad=[k for k,v in checks.items() if not v]
+          print(checks)
+          assert not bad,bad
+          PY
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Start exact-head server
+        run: |
+          npm start >/tmp/public-surface.log 2>&1 & echo $! >/tmp/public-surface.pid
+          for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/start?lang=ru' >/dev/null && exit 0; sleep 1; done
+          cat /tmp/public-surface.log; exit 1
+      - name: First HTTP RU EN matrix
+        run: |
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey']
+          for route in routes:
+            for lang in ('en','ru'):
+              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=20).read().decode()
+              assert f'<html lang="{lang}"' in html,(route,lang,'html-lang')
+              assert f'?lang={lang}' in html,(route,lang,'localized-link')
+              assert 'hreflang="en"' in html and 'hreflang="ru"' in html,(route,lang,'hreflang')
+              print('PASS',route,lang)
+          PY
+      - name: Stop server
+        if: always()
+        run: test ! -f /tmp/public-surface.pid || kill "$(cat /tmp/public-surface.pid)" || true
