@@ -56,13 +56,17 @@ jobs:
           python3 - <<'PY'
           from urllib.request import urlopen
           routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey']
+          noindex={'dao'}
           for route in routes:
             for lang in ('en','ru'):
               html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=20).read().decode()
               lower=html.lower()
               assert f'<html lang="{lang}"' in lower,(route,lang,'html-lang')
               assert f'?lang={lang}' in html,(route,lang,'localized-link')
-              assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
+              if route in noindex:
+                assert 'name="robots" content="noindex,follow"' in lower,(route,lang,'noindex')
+              else:
+                assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
               print('PASS',route,lang)
           PY
       - name: Stop server
