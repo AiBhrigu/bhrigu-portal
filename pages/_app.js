@@ -35,24 +35,37 @@ const LOCALIZED = new Set(Object.keys(META));
 const NOINDEX = new Set(["/dao","/crypto-astro/btc/live","/crypto-astro/btc/clean-chat"]);
 function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
 export default function App({ Component, pageProps }) {
-  const router=useRouter(); const path=pathOnly(router.asPath||router.pathname); const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang; const lang=raw==="ru"?"ru":"en";
+  const router=useRouter();
+  const path=pathOnly(router.asPath||router.pathname);
+  const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
+  const lang=raw==="ru"?"ru":"en";
   const pair=META[path]?.[lang]||META[path]?.en||["BHRIGU","BHRIGU public product and research surfaces."];
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
-  const localized=LOCALIZED.has(path); const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
+  const localized=LOCALIZED.has(path);
+  const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
   return <>
+    <Head>
+      <link rel="canonical" href={canonical} key="canonical" />
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
+      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" />}
+    </Head>
     <BhriguPhiHeader />
     <Component {...pageProps} />
     <Head>
       <title>{pair[0]}</title><meta name="description" content={pair[1]} />
-      <link rel="canonical" href={canonical} key="canonical" />
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} />}
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} />}
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} />}
-      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" />}
       <meta property="og:type" content="website"/><meta property="og:title" content={pair[0]}/><meta property="og:description" content={pair[1]}/><meta property="og:url" content={canonical}/>
       <meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content={pair[0]}/><meta name="twitter:description" content={pair[1]}/>
     </Head>
     <BtcFreeCorridorSurfaceAdapter />
     {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
+    <style jsx global>{`
+      @media (max-width: 620px) {
+        [data-home-btc-proof-object] small { font-size: 11px !important; line-height: 1.3 !important; }
+        [data-home-btc-proof-object] strong { font-size: 12px !important; line-height: 1.3 !important; }
+        [data-home-btc-proof-object] i { font-size: 10.5px !important; line-height: 1.35 !important; white-space: normal !important; }
+      }
+    `}</style>
   </>;
 }
