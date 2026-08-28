@@ -59,9 +59,10 @@ jobs:
           for route in routes:
             for lang in ('en','ru'):
               html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=20).read().decode()
-              assert f'<html lang="{lang}"' in html,(route,lang,'html-lang')
+              lower=html.lower()
+              assert f'<html lang="{lang}"' in lower,(route,lang,'html-lang')
               assert f'?lang={lang}' in html,(route,lang,'localized-link')
-              assert 'hreflang="en"' in html and 'hreflang="ru"' in html,(route,lang,'hreflang')
+              assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
               print('PASS',route,lang)
           PY
       - name: Stop server
