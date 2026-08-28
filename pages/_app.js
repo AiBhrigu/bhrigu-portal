@@ -36,7 +36,7 @@ const NOINDEX = new Set(["/dao","/crypto-astro/btc/live","/crypto-astro/btc/clea
 function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
 export default function App({ Component, pageProps }) {
   const router=useRouter();
-  const path=pathOnly(router.asPath||router.pathname);
+  const path=pathOnly(router.pathname || router.asPath || "/");
   const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
   const lang=raw==="ru"?"ru":"en";
   const pair=META[path]?.[lang]||META[path]?.en||["BHRIGU","BHRIGU public product and research surfaces."];
@@ -45,19 +45,17 @@ export default function App({ Component, pageProps }) {
   const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
   return <>
     <Head>
+      <title>{pair[0]}</title><meta name="description" content={pair[1]} key="description" />
       <link rel="canonical" href={canonical} key="canonical" />
       {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
       {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
       {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
-      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" />}
+      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
+      <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
+      <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
     </Head>
     <BhriguPhiHeader />
     <Component {...pageProps} />
-    <Head>
-      <title>{pair[0]}</title><meta name="description" content={pair[1]} />
-      <meta property="og:type" content="website"/><meta property="og:title" content={pair[0]}/><meta property="og:description" content={pair[1]}/><meta property="og:url" content={canonical}/>
-      <meta name="twitter:card" content="summary_large_image"/><meta name="twitter:title" content={pair[0]}/><meta name="twitter:description" content={pair[1]}/>
-    </Head>
     <BtcFreeCorridorSurfaceAdapter />
     {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
     <style jsx global>{`
