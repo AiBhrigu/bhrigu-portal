@@ -85,18 +85,23 @@ jobs:
           driver = webdriver.Chrome(options=options)
           def rect(selector):
               return driver.execute_script("const e=document.querySelector(arguments[0]);if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};", selector)
+          def font_sizes(selector):
+              return driver.execute_script("return Array.from(document.querySelectorAll(arguments[0])).map(e=>({text:e.textContent.trim(),px:parseFloat(getComputedStyle(e).fontSize)}));", selector)
           def run_view(name, width, height):
               driver.set_window_size(width, height); driver.get(f"{base}/?lang=en")
               WebDriverWait(driver, 30).until(lambda d: d.find_element(By.ID, "home-title").is_displayed())
               viewport = driver.execute_script("return {width:innerWidth,height:innerHeight}")
               cta=rect("[data-primary-cta='btc-current-change-question']"); visual=rect("section[aria-labelledby='home-title'] > div:last-child"); canvas=rect("[data-btc-field-canvas]"); band=rect("[data-btc-accepted-state]"); phi=rect("section[aria-labelledby='home-title'] > div:last-child span")
               page_bg=driver.execute_script("return getComputedStyle(document.querySelector('main[data-primary-product=\"market-cosmographer\"]')).backgroundImage")
-              sizes=driver.execute_script("const b=document.querySelector('[data-btc-accepted-state]');return Array.from(b.querySelectorAll('span,strong')).map(e=>({text:e.textContent.trim(),px:parseFloat(getComputedStyle(e).fontSize)}));")
+              sizes=font_sizes("[data-btc-accepted-state] span,[data-btc-accepted-state] strong")
+              kicker=font_sizes("[data-btc-state-kicker]")
+              labels=font_sizes("[data-btc-accepted-state] small")
+              values=font_sizes("[data-btc-accepted-state] strong")
               footer=driver.execute_script("const f=document.getElementById('open-btc-field');return f?{tag:f.tagName,visible:!!(f.offsetWidth||f.offsetHeight||f.getClientRects().length),childText:Array.from(f.children).map(e=>e.textContent.trim())}:null;")
               no_overflow=driver.execute_script("return document.documentElement.scrollWidth <= window.innerWidth + 1")
               phi_count=driver.find_element(By.TAG_NAME,"body").text.count("Φ")
               driver.save_screenshot(str(artifacts/f"home-canonical-geometry-{name}.png"))
-              report["views"][name]={"viewport":viewport,"cta":cta,"visual":visual,"canvas":canvas,"band":band,"phi":phi,"state_font_sizes":sizes,"footer":footer}
+              report["views"][name]={"viewport":viewport,"cta":cta,"visual":visual,"canvas":canvas,"band":band,"phi":phi,"state_font_sizes":sizes,"kicker_font_sizes":kicker,"label_font_sizes":labels,"value_font_sizes":values,"footer":footer}
               check(f"{name}_no_horizontal_overflow", no_overflow, report["views"][name])
               check(f"{name}_one_visible_phi", phi_count==1, phi_count)
               check(f"{name}_state_band_outside_canvas", canvas and band and band["top"] >= canvas["bottom"]-1, {"canvas":canvas,"band":band})
@@ -107,6 +112,10 @@ jobs:
               if name=="desktop":
                   check("desktop_primary_cta_first_fold_900", cta and cta["top"]>=0 and cta["bottom"]<=viewport["height"], {"cta":cta,"viewport":viewport})
                   check("desktop_visual_not_clipped_by_fold", visual and visual["top"]>=0 and visual["bottom"]<=viewport["height"]+8, {"visual":visual,"viewport":viewport})
+              if name=="mobile":
+                  check("mobile_state_kicker_phi_floor", kicker and min(x["px"] for x in kicker)>=10.5, kicker)
+                  check("mobile_state_labels_phi_floor", labels and min(x["px"] for x in labels)>=10.5, labels)
+                  check("mobile_state_values_phi_floor", values and min(x["px"] for x in values)>=12.0, values)
           try:
               run_view("desktop",1440,900); run_view("mobile",390,844)
           finally: driver.quit()

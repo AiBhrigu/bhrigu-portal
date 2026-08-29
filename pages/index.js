@@ -225,11 +225,16 @@ function SectionHeading({ eyebrow, title, body }) {
   return <div className={styles.sectionHeading}><p className={styles.eyebrow}>{eyebrow}</p><h2>{title}</h2>{body ? <p className={styles.sectionLead}>{body}</p> : null}</div>;
 }
 
-function buildJsonLd() {
-  const home = "https://www.bhrigu.io/";
+function buildJsonLd(locale) {
+  const ru = locale === "ru";
+  const home = `https://www.bhrigu.io/?lang=${locale}`;
   const product = `${home}#market-cosmographer`;
-  const btc = "https://www.bhrigu.io/crypto-astro/btc";
-  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":`${home}#organization`,name:"BHRIGU",url:home},{"@type":"WebSite","@id":`${home}#website`,name:"BHRIGU",url:home,publisher:{"@id":`${home}#organization`}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:"Market Cosmographer · AI Market Intelligence | BHRIGU",isPartOf:{"@id":`${home}#website`},about:{"@id":product}},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description:"An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read."},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
+  const btc = `https://www.bhrigu.io/crypto-astro/btc?lang=${locale}`;
+  const pageName = ru ? "Market Cosmographer · AI-анализ рынков | BHRIGU" : "Market Cosmographer · AI Market Intelligence | BHRIGU";
+  const description = ru
+    ? "Система AI-аналитики рынков, объединяющая проверенные рыночные данные, контекст поля и явные условия в чтении со связанными доказательствами."
+    : "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.";
+  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/"},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":product},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
 }
 
 function formatAcceptedSnapshotTime(value) { if (!value) return null; const date = new Date(value); if (!Number.isFinite(date.getTime())) return null; return `${date.toISOString().slice(0,16).replace("T"," ")} UTC`; }
@@ -259,9 +264,9 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
   const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
   const btcQuestionHref = `/crypto-astro/btc/clean-chat?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
-  const jsonLd = buildJsonLd();
+  const jsonLd = buildJsonLd(locale);
   return <>
-    <Head><title>Market Cosmographer · AI Market Intelligence | BHRIGU</title><meta name="description" content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."/><meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta property="og:description" content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."/><meta property="og:url" content="https://www.bhrigu.io/"/><meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta name="twitter:description" content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."/><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>
+    <Head><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
@@ -299,10 +304,10 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></section>
       <PublicSupportRoute locale={locale} surface="home" />
       <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}><SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle}/><EditorialList items={copy.methodItems}/></section>
-      <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label="BHRIGU system routes"><Link href="/frey">Frey</Link><Link href="/cosmographer">Cosmographer</Link><Link href="/orion">ORION</Link></nav></section>
+      <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav></section>
       <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}><SectionHeading eyebrow={copy.continuityEyebrow} title={copy.continuityTitle} body={copy.continuityBody}/><p className={styles.boundaryNote}>{copy.continuityBoundary}</p></section>
       <section id="markets" className={styles.editorialSection}><SectionHeading eyebrow={copy.marketsEyebrow} title={copy.marketsTitle} body={copy.marketsBody}/><div className={styles.marketState}><span>01</span><strong>BTC FIELD</strong><small>{copy.btcStatus}</small></div></section>
-      <footer id="open-btc-field" className={styles.siteFooter}><strong>{copy.footerIdentity}</strong><a href="https://www.bhrigu.io/">www.bhrigu.io</a></footer>
+      <footer id="open-btc-field" className={styles.siteFooter}><strong>{copy.footerIdentity}</strong><a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a></footer>
     </main>
   </>;
 }

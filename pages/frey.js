@@ -16,6 +16,20 @@ const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";
 const ANCHOR_STORAGE_KEY = "frey.anchor.v1";
 const ANCHOR_STORAGE_SCHEMA_VERSION = "v1";
 
+const FREY_RU_TEXT = new Map([["Cosmographer · Relation Lens", "Космограф · Линза связей"], ["Compare reads structural difference; anchor stays quiet.", "Сравнение читает структурную разницу; якорь остаётся неизменным."], ["Loading personal axis", "Загрузка личной оси"], ["Anchor mirrors Active Date", "Якорь повторяет активную дату"], ["Active Date matches Anchor", "Активная дата совпадает с якорем"], ["Quiet personal axis", "Тихая личная ось"], ["success", "готово"], ["error", "ошибка"], ["loading", "выполняется"], ["idle", "ожидание"], ["high", "высокая"], ["medium", "средняя"], ["mid", "средняя"], ["low", "низкая"], ["supported", "поддержана"], ["sensitive", "чувствительна"], ["fragile", "хрупкая"], ["Outer stability is weakening faster than the core can compensate.", "Внешняя стабильность ослабевает быстрее, чем ядро успевает компенсировать."], ["Pressure is accumulating faster than release inside the active frame.", "Давление накапливается внутри активной рамки быстрее, чем происходит разрядка."], ["Signal alignment still holds, but only inside a narrower stable corridor.", "Согласование сигнала сохраняется, но только внутри более узкого устойчивого коридора."], ["The field keeps its core line, but edge behavior now needs tighter pacing.", "Поле сохраняет основную линию, но поведение на краях требует более точного темпа."], ["Stabilized dense core", "Стабилизированное плотное ядро"], ["The dense regime stays internally settled, with strong formation continuity and very low structural agitation.", "Плотный режим остаётся внутренне устойчивым: непрерывность формы высока, структурное возмущение очень низкое."], ["Compressed dense regime", "Сжатый плотный режим"], ["The dense regime stays structurally compact, while internal compression rises and reduces the ease of structural pacing.", "Плотный режим остаётся структурно компактным, но внутреннее сжатие растёт и усложняет структурный темп."], ["Structured dense formation", "Структурированная плотная форма"], ["The dense regime remains well-formed, while internal movement stays contained within a stable structural arrangement.", "Плотный режим сохраняет форму, а внутреннее движение остаётся в пределах устойчивой структуры."], ["Eclipse-sensitive transition band", "Переходная зона, чувствительная к затмению"], ["The field remains transitional, with enough structural density to retain a defined but shifting regime contour.", "Поле остаётся переходным; плотности достаточно, чтобы сохранять определённый, но меняющийся контур режима."], ["The regime moves through a looser transition layer, where structural definition shifts more readily across nearby dates.", "Режим проходит через более свободный переходный слой, где структурная определённость быстрее меняется между соседними датами."], ["Open structural dispersion", "Открытая структурная дисперсия"], ["The field stays open and diffuse, with weaker formation density and low structural containment.", "Поле остаётся открытым и рассеянным, с меньшей плотностью формы и слабым структурным удержанием."], ["Elevated internal load", "Повышенная внутренняя нагрузка"], ["Pressure accumulates faster than release, raising distortion risk under acceleration.", "Давление накапливается быстрее разрядки, повышая риск искажения при ускорении."], ["Medium load with acceleration risk", "Средняя нагрузка с риском ускорения"], ["Baseline pressure stays moderate, yet distortion rises fast when motion exceeds structural pacing.", "Базовое давление остаётся умеренным, но искажение быстро растёт, когда движение опережает структурный темп."], ["Low pressure band", "Зона низкого давления"], ["Friction stays reduced, allowing motion without heavy internal compression.", "Трение остаётся сниженным, позволяя двигаться без сильного внутреннего сжатия."], ["High internal coherence", "Высокая внутренняя согласованность"], ["Signal coupling holds across the field and supports sustained harmonic continuity.", "Связность сигнала удерживается по всему полю и поддерживает устойчивую гармоническую непрерывность."], ["Moderate coherence under fluctuation", "Умеренная согласованность при колебаниях"], ["Signal aligns in short stable bands, but resonance breaks when the field is forced beyond its internal rhythm.", "Сигнал согласуется в коротких устойчивых зонах, но резонанс нарушается, если поле принуждают выйти за внутренний ритм."], ["Weak harmonic lock", "Слабая гармоническая фиксация"], ["Coupling remains partial and coherence fragments under unstable movement.", "Связность остаётся частичной, а согласованность фрагментируется при нестабильном движении."], ["Supported core frame", "Поддержанная рамка ядра"], ["Structure remains well-supported and can hold motion without immediate edge-loss.", "Структура хорошо поддержана и может удерживать движение без немедленной потери краёв."], ["Medium support with sensitive edges", "Средняя поддержка с чувствительными краями"], ["Core structure holds, while outer balance becomes vulnerable during amplified or fast-turning phases.", "Структура ядра удерживается, но внешний баланс становится уязвимым в усиленных или быстро меняющихся фазах."], ["Fragile outer balance", "Хрупкий внешний баланс"], ["Support remains limited and weak edges lose alignment under excess push.", "Поддержка ограничена, а слабые края теряют согласование при избыточном давлении."], ["Mode: Hold structure", "Режим: удерживать структуру"], ["Mode: Advance through the stable line", "Режим: двигаться по устойчивой линии"], ["Mode: Reduce expansion at unstable edges", "Режим: уменьшить расширение на нестабильных краях"], ["Mode: Controlled advance", "Режим: контролируемое продвижение"], ["Structural State", "Структурное состояние"], ["Tension Profile", "Профиль напряжения"], ["Resonance Profile", "Профиль резонанса"], ["Deterministic reading becomes visible after the run.", "Детерминированное чтение становится видимым после запуска."], ["Stabilized density", "Стабилизированная плотность"], ["The pattern is concentrated and held in a stable frame.", "Паттерн сконцентрирован и удерживается в устойчивой рамке."], ["Advance through one clean step without adding noise.", "Продвигайтесь одним чистым шагом, не добавляя шума."], ["Structured density", "Структурированная плотность"], ["Pressure is organized enough to support deliberate movement.", "Давление достаточно организовано для осознанного движения."], ["Keep the sequence ordered and move through the next defined node.", "Сохраняйте порядок последовательности и переходите к следующему определённому узлу."], ["Compressed density", "Сжатая плотность"], ["The field is concentrated but carrying compression and drag.", "Поле сконцентрировано, но несёт сжатие и сопротивление."], ["Reduce parallel motion and release one bottleneck first.", "Сократите параллельное движение и сначала освободите одно узкое место."], ["Open regime", "Открытый режим"], ["The pattern is loose and less materially bound.", "Паттерн свободный и менее материально связан."], ["Anchor the next move in one concrete signal before scaling.", "Привяжите следующий ход к одному конкретному сигналу до масштабирования."], ["Edge instability", "Нестабильность края"], ["The current pattern is vulnerable to rupture or misfire.", "Текущий паттерн уязвим к разрыву или ошибочному срабатыванию."], ["Do not escalate. Stabilize structure before any expansion.", "Не усиливайте. Стабилизируйте структуру до любого расширения."], ["Transitional structure", "Переходная структура"], ["The field is holding form but still reorganizing under load.", "Поле удерживает форму, но продолжает перестраиваться под нагрузкой."], ["Stay precise and let the next step confirm direction.", "Сохраняйте точность и дайте следующему шагу подтвердить направление."], ["Balanced temporal shift", "Сбалансированный временной сдвиг"], ["The compared dates remain within a moderate structural reconfiguration band.", "Сравниваемые даты остаются в умеренной зоне структурной перенастройки."], ["Acceleration of structural resonance", "Ускорение структурного резонанса"], ["The field moves from a more constrained configuration toward a clearer expansion window.", "Поле движется от более ограниченной конфигурации к более ясному окну расширения."], ["Collapse of harmonic tension", "Снижение гармонического напряжения"], ["The field descends toward a more stable basin with lower internal strain.", "Поле смещается к более устойчивому бассейну с меньшим внутренним напряжением."], ["Escalation into unstable load", "Рост нестабильной нагрузки"], ["The compared dates show rising pressure with weaker structural support.", "Сравниваемые даты показывают рост давления при более слабой структурной поддержке."], ["Hold structure", "Удерживать структуру"], ["Stable line", "Устойчивая линия"], ["Dense phase", "Плотная фаза"], ["Controlled advance", "Контролируемое продвижение"], ["Phase Density", "Плотность фазы"], ["Harmonic Tension", "Гармоническое напряжение"], ["Resonance Level", "Уровень резонанса"], ["Structural Stability", "Структурная стабильность"], ["phase_density = concentration of temporal pattern", "phase_density = концентрация временного паттерна"], ["harmonic_tension = pressure / friction in the field", "harmonic_tension = давление / трение в поле"], ["resonance_level = alignment with the dominant pattern", "resonance_level = согласование с доминирующим паттерном"], ["eclipse_proximity = closeness to eclipse-driven amplification", "eclipse_proximity = близость к усилению, связанному с затмением"], ["structural_stability = capacity to hold form under pressure", "structural_stability = способность удерживать форму под давлением"], ["Use Meaning/Direction as interpretive layer, not as raw engine data.", "Используйте Значение/Направление как интерпретационный слой, а не как сырые данные движка."], ["UP", "ВВЕРХ"], ["DOWN", "ВНИЗ"], ["FLAT", "БЕЗ ИЗМЕНЕНИЙ"], ["Stability", "Стабильность"], ["Copy snapshot", "Скопировать snapshot"], ["Copy compare snapshot", "Скопировать snapshot сравнения"], ["Copied", "Скопировано"], ["Single-date export is ready for direct AI handoff.", "Экспорт для одной даты готов к прямой передаче в ИИ."], ["Compare export includes both dates and the active delta.", "Экспорт сравнения включает обе даты и активную дельту."]]);
+function freyText(value, ru) {
+  if (!ru || typeof value !== "string") return value;
+  const exact = FREY_RU_TEXT.get(value);
+  if (exact) return exact;
+  if (value.includes(" · ")) {
+    return value
+      .split(" · ")
+      .map((segment) => FREY_RU_TEXT.get(segment) || segment)
+      .join(" · ");
+  }
+  return value;
+}
+
 function formatMetricLabel(label) {
   return label
     .replaceAll("_", " ")
@@ -199,6 +213,8 @@ function buildResponseSurface(result, activeDate, uiState, errorMessage) {
 
 
 export async function getServerSideProps({ query }) {
+  const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang;
+  const initialLocale = rawLang === "ru" ? "ru" : "en";
   const rawDate = Array.isArray(query?.d) ? query.d[0] : query?.d;
   const initialDate =
     typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
@@ -373,6 +389,7 @@ export async function getServerSideProps({ query }) {
       initialSignalBind,
       initialAccessCtx,
       initialAccessHref,
+      initialLocale,
     },
   };
 }
@@ -435,7 +452,8 @@ function buildTimelineVector(result) {
   return "Controlled advance";
 }
 
-export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref }) {
+export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref, initialLocale = "en" }) {
+  const ru = initialLocale === "ru";
   const [query, setQuery] = useState(initialSignalBind?.raw_query || "");
   const [date, setDate] = useState(initialDate);
   const [result, setResult] = useState(initialResult);
@@ -527,6 +545,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function buildFreyUrl(next) {
     const params = new URLSearchParams();
+    params.set("lang", initialLocale);
     const nextQuery = typeof next?.query === "string" ? next.query.trim() : "";
     const nextDate = typeof next?.date === "string" ? next.date : "";
     const nextCompareDate = typeof next?.compareDate === "string" ? next.compareDate : "";
@@ -550,7 +569,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   function runSignal() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery && !date) {
-      setUiError("Mark a signal trace or select a date.");
+      setUiError(ru ? "Отметьте сигнальный след или выберите дату." : "Mark a signal trace or select a date.");
       return;
     }
     const resolvedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate();
@@ -565,7 +584,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function runCompare() {
     if (!date || !compareDate) {
-      setUiError("Set both dates for compare mode.");
+      setUiError(ru ? "Укажите обе даты для режима сравнения." : "Set both dates for compare mode.");
       return;
     }
     setUiError("");
@@ -579,7 +598,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function runTemporal() {
     if (!date) {
-      setUiError("Select an active date.");
+      setUiError(ru ? "Выберите активную дату." : "Select an active date.");
       return;
     }
     setUiError("");
@@ -607,7 +626,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function applyActiveDateDirectEdit() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(activeDateDraft)) {
-      setUiError("Select a valid active date.");
+      setUiError(ru ? "Выберите корректную активную дату." : "Select a valid active date.");
       return;
     }
     if (activeDateDraft === date) {
@@ -701,7 +720,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 <button
                   className="freyThresholdButton"
                   type="button"
-                  aria-label="Activate Frey signal gate"
+                  aria-label={ru ? "Активировать сигнальный порог Frey" : "Activate Frey signal gate"}
                   onClick={() => {
                     if (!query.trim()) setQuery(entryTraceSeed);
                     setEntryOpen(true);
@@ -719,9 +738,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               ) : (
                 <div className="freySignalSurface">
                   <div className="freySignalHeader">
-                    <div className="freySignalEyebrow">Signal Trace</div>
+                    <div className="freySignalEyebrow">{ru ? "Сигнальный след" : "Signal Trace"}</div>
                     <button className="freyGhostButton" type="button" onClick={() => setEntryOpen(false)}>
-                      RESEAL
+                      {ru ? "ЗАКРЫТЬ" : "RESEAL"}
                     </button>
                   </div>
 
@@ -729,12 +748,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     className="freySignalTextarea"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Mark signal trace..."
+                    placeholder={ru ? "Отметьте сигнальный след..." : "Mark signal trace..."}
                   />
 
                   <div className="freySignalActions">
                     <button className="freyButton freyButtonPrimary" type="button" onClick={runSignal}>
-                      {loading ? "Running..." : "Run Frey"}
+                      {loading ? (ru ? "Выполняется..." : "Running...") : (ru ? "Запустить Frey" : "Run Frey")}
                     </button>
                   </div>
                 </div>
@@ -757,13 +776,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               >
                 <div className="freyConversationHeader">
                   <div className="freyConversationHeaderText">
-                    <div className="freyConversationEyebrow">⌬ Cosmographer · Relation Lens</div>
-                    <div className="freyConversationTitle">{conversationalResponse.title}</div>
+                    <div className="freyConversationEyebrow">⌬ {ru ? "Космограф · Линза связей" : "Cosmographer · Relation Lens"}</div>
+                    <div className="freyConversationTitle">{freyText(conversationalResponse.title, ru)}</div>
                   </div>
-                  <div className="freyResponseState">{responseSurface.ui_state}</div>
+                  <div className="freyResponseState">{freyText(responseSurface.ui_state, ru)}</div>
                 </div>
 
-                <div className="freyConversationLead">{conversationalResponse.lead}</div>
+                <div className="freyConversationLead">{freyText(conversationalResponse.lead, ru)}</div>
 
                 <div
                   className="freyConversationMetaBand"
@@ -774,7 +793,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       className="freyConversationMetaBandCell freyConversationMetaBandCellActive"
                       data-frey-compare-primary-edit-restore="__FREY_COMPARE_PRIMARY_EDIT_RESTORE_V0_1__"
                     >
-                      <div className="freyConversationMetaLabel">◉ Active Date · Reading Point</div>
+                      <div className="freyConversationMetaLabel">◉ {ru ? "Активная дата · Точка чтения" : "Active Date · Reading Point"}</div>
                       {!activeDateEditOpen ? (
                         <button
                           className="freyConversationMetaTrigger"
@@ -785,7 +804,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                           <span className="freyConversationMetaValue">
                             {responseSurface.active_date ? formatHumanDate(responseSurface.active_date) : "n/a"}
                           </span>
-                          <span className="freyConversationMetaHint">Click to edit</span>
+                          <span className="freyConversationMetaHint">{ru ? "Нажмите, чтобы изменить" : "Click to edit"}</span>
                         </button>
                       ) : (
                         <div className="freyConversationMetaInline">
@@ -800,21 +819,21 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                             className="freyInput freyConversationMetaInlineInput"
                             autoFocus
                           />
-                          <div className="freyConversationMetaHint">Edit the date, then apply to reload the deterministic result.</div>
+                          <div className="freyConversationMetaHint">{ru ? "Измените дату и примените её, чтобы перезагрузить детерминированный результат." : "Edit the date, then apply to reload the deterministic result."}</div>
                           <div className="freyConversationMetaActionRow">
                             <button
                               className="freyGhostButton freyConversationMetaClose"
                               type="button"
                               onClick={closeActiveDateEditor}
                             >
-                              Cancel
+                              {ru ? "Отмена" : "Cancel"}
                             </button>
                             <button
                               className="freyButton freyConversationMetaApply"
                               type="button"
                               onClick={applyActiveDateDirectEdit}
                             >
-                              Apply
+                              {ru ? "Применить" : "Apply"}
                             </button>
                           </div>
                         </div>
@@ -826,11 +845,11 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       data-frey-anchor-a1="__FREY_ANCHOR_A1_V0_1__"
                       data-frey-anchor-a2="__FREY_ANCHOR_A2_SINGLE_STORAGE_V0_1__"
                     >
-                      <div className="freyConversationMetaLabel">⌖ Anchor · Personal Axis</div>
+                      <div className="freyConversationMetaLabel">⌖ {ru ? "Якорь · Личная ось" : "Anchor · Personal Axis"}</div>
                       <div className="freyConversationMetaValue">
                         {anchorDisplayDate ? formatHumanDate(anchorDisplayDate) : "n/a"}
                       </div>
-                      <div className="freyConversationMetaHint">{anchorStatusLine}</div>
+                      <div className="freyConversationMetaHint">{freyText(anchorStatusLine, ru)}</div>
                       {(showSetCurrent || showReset) && (
                         <div
                           className="freyConversationMetaActionRow"
@@ -842,7 +861,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               type="button"
                               onClick={setCurrentDateAsAnchor}
                             >
-                              Set current
+                              {ru ? "Установить текущую" : "Set current"}
                             </button>
                           )}
                           {showReset && (
@@ -851,7 +870,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               type="button"
                               onClick={resetAnchorPersistence}
                             >
-                              Reset
+                              {ru ? "Сбросить" : "Reset"}
                             </button>
                           )}
                         </div>
@@ -861,34 +880,34 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 
                   <div className="freyConversationMetaBandSecondary">
                     <div className="freyConversationMetaBandCell freyConversationMetaBandCellEngine">
-                      <div className="freyConversationMetaLabel">Engine</div>
+                      <div className="freyConversationMetaLabel">{ru ? "Движок" : "Engine"}</div>
                       <div className="freyConversationMetaValue">{responseSurface.engine_version || responseSurface.engine || "n/a"}</div>
                     </div>
                   </div>
                 </div>
 
                 {conversationalResponse.summary && (
-                  <div className="freyConversationBand">{conversationalResponse.summary}</div>
+                  <div className="freyConversationBand">{freyText(conversationalResponse.summary, ru)}</div>
                 )}
 
                 {responseSurface.ui_state === "error" && (
-                  <div className="freyResponseError">{responseSurface.error || "Unable to run Frey."}</div>
+                  <div className="freyResponseError">{responseSurface.error || (ru ? "Не удалось запустить Frey." : "Unable to run Frey.")}</div>
                 )}
 
                 {responseSurface.ui_state === "success" && responseSurface.metrics && (
                   <>
                     <div className="freyConversationMetricRow">
                       <div className="freyConversationMetric">
-                        <div className="freyConversationMetricLabel">Intensity</div>
-                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.intensity_band || "n/a"}</div>
+                        <div className="freyConversationMetricLabel">{ru ? "Интенсивность" : "Intensity"}</div>
+                        <div className="freyConversationMetricValue">{freyText(responseSurface.compact_summary?.intensity_band || "n/a", ru)}</div>
                       </div>
                       <div className="freyConversationMetric">
-                        <div className="freyConversationMetricLabel">Stability</div>
-                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.stability_band || "n/a"}</div>
+                        <div className="freyConversationMetricLabel">{ru ? "Стабильность" : "Stability"}</div>
+                        <div className="freyConversationMetricValue">{freyText(responseSurface.compact_summary?.stability_band || "n/a", ru)}</div>
                       </div>
                       <div className="freyConversationMetric">
-                        <div className="freyConversationMetricLabel">Resonance</div>
-                        <div className="freyConversationMetricValue">{responseSurface.compact_summary?.resonance_band || "n/a"}</div>
+                        <div className="freyConversationMetricLabel">{ru ? "Резонанс" : "Resonance"}</div>
+                        <div className="freyConversationMetricValue">{freyText(responseSurface.compact_summary?.resonance_band || "n/a", ru)}</div>
                       </div>
                     </div>
 
@@ -906,17 +925,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                           data-frey-voice-stability={minimalVoice.contract.stabilityBand}
                         >
                           <div className="freyVoiceMinimalHalo" aria-hidden="true" />
-                          <div className="freyVoiceMinimalEyebrow">Frey Interpretation</div>
-                          <div className="freyVoiceMinimalState">{minimalVoice.state}</div>
-                          <div className="freyVoiceMinimalBridge">{minimalVoiceBridge}</div>
+                          <div className="freyVoiceMinimalEyebrow">{ru ? "Интерпретация Frey" : "Frey Interpretation"}</div>
+                          <div className="freyVoiceMinimalState">{freyText(minimalVoice.state, ru)}</div>
+                          <div className="freyVoiceMinimalBridge">{freyText(minimalVoiceBridge, ru)}</div>
                           <div className="freyVoiceMinimalBody">
                             <div className="freyVoiceMinimalRow">
-                              <div className="freyVoiceMinimalLabel">Meaning</div>
-                              <div className="freyVoiceMinimalValue">{minimalVoice.meaning}</div>
+                              <div className="freyVoiceMinimalLabel">{ru ? "Значение" : "Meaning"}</div>
+                              <div className="freyVoiceMinimalValue">{freyText(minimalVoice.meaning, ru)}</div>
                             </div>
                             <div className="freyVoiceMinimalRow">
-                              <div className="freyVoiceMinimalLabel">Direction</div>
-                              <div className="freyVoiceMinimalValue freyVoiceMinimalValueStrong">{minimalVoice.direction}</div>
+                              <div className="freyVoiceMinimalLabel">{ru ? "Направление" : "Direction"}</div>
+                              <div className="freyVoiceMinimalValue freyVoiceMinimalValueStrong">{freyText(minimalVoice.direction, ru)}</div>
                             </div>
                           </div>
                         </section>
@@ -924,38 +943,38 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     })()}
 
                     <details className="freyInlineExpandBlock" data-frey-primary-reading="__FREY_C1_PRIMARY_READING_V0_2__" data-frey-primary-reading-state="open" open>
-                      <summary className="freyInlineExpandSummary">Primary reading</summary>
+                      <summary className="freyInlineExpandSummary">{ru ? "Основное чтение" : "Primary reading"}</summary>
                       <div className="freyConversationOperatorNote freyConversationOperatorNoteCompact">
-                        <div className="freyConversationOperatorText">{conversationalResponse.operator_note}</div>
+                        <div className="freyConversationOperatorText">{freyText(conversationalResponse.operator_note, ru)}</div>
                       </div>
                     </details>
 
                     <div className="freyConversationResultTail">
                       <details className="freyInlineExpandBlock" data-frey-interpretation={MARKER} data-frey-interpretation-clean={C1_3_INTERPRETATION_SPACING_MARKER}>
-                        <summary className="freyInlineExpandSummary">Interpretation layers</summary>
+                        <summary className="freyInlineExpandSummary">{ru ? "Слои интерпретации" : "Interpretation layers"}</summary>
                         <div className="freyInterpretation freyInterpretationResult">
 
                           <div className="freyInterpretationGridV14">
                             {interpretation.zones.map((zone) => (
-                              <div key={zone.label} className="freyInterpretationZone">
-                                <div className="freyInterpretationZoneLabel">{zone.label}</div>
+                              <div key={freyText(zone.label, ru)} className="freyInterpretationZone">
+                                <div className="freyInterpretationZoneLabel">{freyText(zone.label, ru)}</div>
                                 <div className="freyInterpretationZoneBody">
-                                  <div className="freyInterpretationState">{zone.state}</div>
-                                  <div className="freyInterpretationEffect">{zone.effect}</div>
+                                  <div className="freyInterpretationState">{freyText(zone.state, ru)}</div>
+                                  <div className="freyInterpretationEffect">{freyText(zone.effect, ru)}</div>
                                 </div>
                               </div>
                             ))}
                           </div>
 
                           <div className="freyOperationalVector">
-                            <div className="freyOperationalVectorTag">Operational Vector</div>
-                            <div className="freyOperationalVectorMode">{interpretation.vector}</div>
+                            <div className="freyOperationalVectorTag">{ru ? "Операционный вектор" : "Operational Vector"}</div>
+                            <div className="freyOperationalVectorMode">{freyText(interpretation.vector, ru)}</div>
                           </div>
                         </div>
                       </details>
 
                       <details className="freyInlineExpandBlock freyMetricsExpand" data-frey-raw-metrics="__FREY_RAW_METRICS_RESULT_ONLY_V0_1__">
-                        <summary className="freyInlineExpandSummary">Raw metrics</summary>
+                        <summary className="freyInlineExpandSummary">{ru ? "Исходные метрики" : "Raw metrics"}</summary>
                         <pre className="freyJson">{JSON.stringify(result, null, 2)}</pre>
                       </details>
                     </div>
@@ -964,19 +983,19 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </section>
 
               <div className="freyResultControls">
-                <div className="freyResultControlsLabel">Navigation Layer</div>
+                <div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>
                 <div
                   className="freyResultControlsHint"
                   data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__"
                   data-frey-compare-state={hasCompare ? "active" : "ready"}
                 >
                   {hasCompare
-                    ? "Compare active · Review both dates below."
-                    : "Open Compare to enter any date and compute Δ Structural Difference."}
+                    ? (ru ? "Сравнение активно · Проверьте обе даты ниже." : "Compare active · Review both dates below.")
+                    : (ru ? "Откройте сравнение, укажите дату и вычислите Δ структурной разницы." : "Open Compare to enter any date and compute Δ Structural Difference.")}
                 </div>
                 <div className="freyExpandStack">
                   <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
-                    <summary className="freyExpandSummary">Δ Compare · Structural Difference</summary>
+                    <summary className="freyExpandSummary">{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}</summary>
 
                     <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
                       <div className="freyCompareRow">
@@ -988,7 +1007,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         />
 
                         <button onClick={runCompare} className="freyButton freyTemporalButton" type="button">
-                          Compare
+                          {ru ? "Сравнить" : "Compare"}
                         </button>
                       </div>
 
@@ -996,12 +1015,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         <>
                           <div className="freyCompareGrid">
                             <div className="freyCompareCard">
-                              <div className="freyCompareLabel">◉ Active Date · {initialDate}</div>
-                              <div className="freyCompareMode">{interpretation.vector}</div>
+                              <div className="freyCompareLabel">◉ {ru ? "Активная дата" : "Active Date"} · {initialDate}</div>
+                              <div className="freyCompareMode">{freyText(interpretation.vector, ru)}</div>
                             </div>
                             <div className="freyCompareCard">
-                              <div className="freyCompareLabel">Δ Compare Date · {initialCompareDate}</div>
-                              <div className="freyCompareMode">{compareInterpretation.vector}</div>
+                              <div className="freyCompareLabel">Δ {ru ? "Дата сравнения" : "Compare Date"} · {initialCompareDate}</div>
+                              <div className="freyCompareMode">{freyText(compareInterpretation.vector, ru)}</div>
                             </div>
                           </div>
 
@@ -1012,21 +1031,21 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               data-frey-delta-primary={initialDate || ""}
                               data-frey-delta-secondary={initialCompareDate || ""}
                             >
-                              <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">Δ Structural Difference</div>
+                              <div className="freyDeltaTitle" data-frey-demo-flow="__FREY_DEMO_FLOW_POLISH_V0_1__">{ru ? "Δ Структурная разница" : "Δ Structural Difference"}</div>
 
                               <div className="freyDeltaGrid">
                                 {deltaBlock.rows.map((row) => (
                                   <div key={row.label} className="freyDeltaRow">
-                                    <div className="freyDeltaMetric">{formatMetricLabel(row.label)}</div>
-                                    <div className="freyDeltaValue">{row.arrow} {row.value}</div>
+                                    <div className="freyDeltaMetric">{freyText(formatMetricLabel(row.label), ru)}</div>
+                                    <div className="freyDeltaValue">{freyText(row.arrow, ru)} {row.value}</div>
                                   </div>
                                 ))}
                               </div>
 
                               <div className="freyDeltaRelation">
-                                <div className="freyDeltaRelationTag">⌬ Relation mode</div>
-                                <div className="freyDeltaRelationMode">{deltaBlock.mode}</div>
-                                <div className="freyDeltaRelationText">{deltaBlock.description}</div>
+                                <div className="freyDeltaRelationTag">⌬ {ru ? "Режим связи" : "Relation mode"}</div>
+                                <div className="freyDeltaRelationMode">{freyText(deltaBlock.mode, ru)}</div>
+                                <div className="freyDeltaRelationText">{freyText(deltaBlock.description, ru)}</div>
                               </div>
                             </div>
                           )}
@@ -1036,7 +1055,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
 
                   <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" data-frey-expand-state={hasTimeline ? "active" : "empty"}>
-                    <summary className="freyExpandSummary">↔ Timeline · Nearby Movement</summary>
+                    <summary className="freyExpandSummary">↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}</summary>
                     {hasTimeline ? (
                       <div className="freyTimelineBlock">
                         <div className="freyTimelineRow">
@@ -1046,13 +1065,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                               className={`freyTimelineChip${entry.date === initialDate ? " isActive" : ""}`}
                             >
                               <div className="freyTimelineDate">{entry.date}</div>
-                              <div className="freyTimelineVector">{entry.vector}</div>
+                              <div className="freyTimelineVector">{freyText(entry.vector, ru)}</div>
                             </div>
                           ))}
                         </div>
                       </div>
                     ) : (
-                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">Nearby movement appears after date-based runs.</div>
+                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}</div>
                     )}
                   </details>
                 </div>
@@ -1081,12 +1100,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   : "Single-date export is ready for direct AI handoff.";
                 return (
                   <details className="freyExportBlock freyResultBlock" data-frey-export="__FREY_EXPORT_LAYER_V0_2__" data-frey-export-mode={hasCompare ? "compare" : "single"}>
-                    <summary className="freyExportSummary">AI Export</summary>
+                    <summary className="freyExportSummary">{ru ? "AI-экспорт" : "AI Export"}</summary>
                     <div className="freyExportInner">
                       <div className="freyExportTop">
                         <div className="freyExportMeta">
-                          <div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">Portable snapshot</div>
-                          <div className="freyExportHelp">{exportHelpText}</div>
+                          <div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">{ru ? "Переносимый snapshot" : "Portable snapshot"}</div>
+                          <div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>
                         </div>
                         <button
                           type="button"
@@ -1100,13 +1119,13 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                             }
                           }}
                         >
-                          {copyFeedbackLabel}
+                          {freyText(copyFeedbackLabel, ru)}
                         </button>
                       </div>
                       <pre className="freyExportPre">{copyText}</pre>
                       <div className="freyExportGuide">
                         {EXPORT_GUIDE_LINES.map((line) => (
-                          <div key={line} className="freyExportGuideLine">{line}</div>
+                          <div key={line} className="freyExportGuideLine">{freyText(line, ru)}</div>
                         ))}
                       </div>
                     </div>
@@ -1115,7 +1134,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               })()}
 
               {responseSurface.ui_state === "success" && (
-                <PublicSupportRoute locale="en" surface="frey" />
+                <PublicSupportRoute locale={initialLocale} surface="frey" />
               )}
 
               {initialAccessCtx && (
@@ -1126,16 +1145,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   data-frey-access-signal={initialAccessCtx.signal_class || ""}
                   data-frey-access-vector={initialAccessCtx.operational_vector || ""}
                 >
-                  <div className="freyEscalationLabel">Escalation</div>
+                  <div className="freyEscalationLabel">{ru ? "Углубление" : "Escalation"}</div>
                   <div className="freyEscalationText">
-                    Request deep analysis when the current result needs operator review.
+                    {ru ? "Запросите глубокий анализ, когда текущему результату нужен операторский разбор." : "Request deep analysis when the current result needs operator review."}
                   </div>
                   <Link
-                    href={initialAccessHref}
+                    href={`${initialAccessHref}${initialAccessHref.includes("?") ? "&" : "?"}lang=${initialLocale}`}
                     className="freyButton freyTemporalButton"
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
                   >
-                    Request deep analysis
+                    {ru ? "Запросить глубокий анализ" : "Request deep analysis"}
                   </Link>
                 </div>
                 <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} data-frey-bottom-nav-trim="__FREY_C1_5_BOTTOM_NAV_TRIM_V0_2__" data-frey-bottom-nav-dynamic="__FREY_C1_5_1_DYNAMIC_BOTTOM_CLEARANCE_V0_1__" aria-hidden="true" />

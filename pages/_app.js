@@ -3,143 +3,89 @@ import "../styles/public-site-repair.css";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import PrevNextBlock from "../components/PrevNextBlock";
-
-import BhriguPhiHeader from "../components/BhriguPhiHeader"; // ATOM_BHRIGU_PORTAL_UX_UNIFY_V1
+import BhriguPhiHeader from "../components/BhriguPhiHeader";
 import BtcFreeCorridorSurfaceAdapter from "../components/btc/BtcFreeCorridorSurfaceAdapter";
 
-// ATOM_BHRIGU_PORTAL_SEO_SURFACE_V4
-const BASE_URL = "https://www.bhrigu.io";
-
-const ROUTE_META = {
-  "/": {
-    "title": "Market Cosmographer · AI Market Intelligence | BHRIGU",
-    "desc": "Verified market data, field context and explicit forward conditions combined into one evidence-linked read — starting with Bitcoin."
-  },
-  "/start": {
-    "title": "Start · BHRIGU",
-    "desc": "Start here: what to read first, how Frey is constrained, and what support unlocks the next layer."
-  },
-  "/services": {
-    "title": "Services · BHRIGU",
-    "desc": "What exists today: a stable portal surface, Frey-facing interfaces, and structured research presentation."
-  },
-  "/reading": {
-    "title": "Reading · BHRIGU",
-    "desc": "Reading layer: curated pages, definitions, and entry points to understand the surface without noise."
-  },
-  "/signal": {
-    "title": "Signal · BHRIGU",
-    "desc": "Signal layer: how we talk about observations without hype — constraints, proof, and clean language."
-  },
-  "/map": {
-    "title": "Map · BHRIGU",
-    "desc": "Map layer: navigation across the public surface outputs — routes, layers, and structure."
-  },
-  "/cosmography": {
-    "title": "Cosmography · BHRIGU",
-    "desc": "Cosmography: boundaries, terms, and what we mean by structure — surface-first, internals sealed."
-  },
-  "/orion": {
-    "title": "ORION · BHRIGU",
-    "desc": "ORION engine overview: scope, boundaries, and the public-facing surface layer."
-  },
-  "/frey": {
-    "title": "Frey · BHRIGU",
-    "desc": "Frey: an active temporal reading and dialogue service across time, cycles, and scenarios, with protected research internals kept separate."
-  },
-  "/faq": {
-    "title": "FAQ · BHRIGU",
-    "desc": "FAQ: what this is, what it is not, and why constraints and boundaries matter."
-  },
-  "/dao": {
-    "title": "DAO · BHRIGU",
-    "desc": "DAO layer: access, support, and public governance surface (high-level)."
-  },
-  "/access": {
-    "title": "Access · BHRIGU",
-    "desc": "Access: how to enter the surface safely, where API is disabled, and what is intentionally restricted."
-  },
-  "/chronicle": {
-    "title": "Chronicle · BHRIGU",
-    "desc": "Chronicle: evolution of the system — milestones, releases, and surface changes over time."
-  },
-  "/github": {
-    "title": "GitHub · BHRIGU",
-    "desc": "Open repositories and public artifacts — links, status, and surface documentation."
-  },
-  "/archive": {
-    "title": "Archive · BHRIGU",
-    "desc": "Archive: preserved snapshots, milestone references, and stable surface artifacts."
-  },
-  "/crypto-astro/btc": {
-    "title": "BTC Field · Evidence-Linked Bitcoin Intelligence | BHRIGU",
-    "desc": "Market Cosmographer's first public corridor for Bitcoin investors and researchers: current BTC state, accepted change memory, sources, and explicit conditions."
-  },
-  "/crypto-astro/btc/live": {
-    "title": "BTC Field Dialogue · Market Cosmographer | BHRIGU",
-    "desc": "A bounded analytical dialogue about Bitcoin protocol, BTC market state, Snapshot memory, astronomical data, and evidence boundaries."
-  },
-  "/crypto-astro/btc/clean-chat": {
-    "title": "BTC Cosmographer · Dialogue",
-    "desc": "Live Bitcoin dialogue with current data, sources, and explicit limits."
-  }
+const BASE = "https://www.bhrigu.io";
+const META = {
+  "/": { en:["Market Cosmographer · AI Market Intelligence | BHRIGU","Evidence-linked Bitcoin intelligence: verified change, why it matters, and explicit conditions."], ru:["Market Cosmographer · AI-анализ рынков | BHRIGU","Bitcoin-аналитика со связанными доказательствами: проверенное изменение, его значение и явные условия."] },
+  "/start": { en:["Start · BHRIGU","Start with the working BHRIGU system: BTC Field, Frey, public proof and clear boundaries."], ru:["Старт · BHRIGU","Начните с работающей системы BHRIGU: BTC Field, Frey, публичные доказательства и ясные границы."] },
+  "/frey": { en:["Frey · Temporal Reading | BHRIGU","Frey is BHRIGU's active temporal reading and dialogue service."], ru:["Frey · Темпоральное чтение | BHRIGU","Frey — действующий сервис темпорального чтения и диалога BHRIGU."] },
+  "/reading": { en:["Reading · BHRIGU","Temporal reading surface with explicit structural context and boundaries."], ru:["Чтение · BHRIGU","Поверхность темпорального чтения с явным структурным контекстом и границами."] },
+  "/cosmographer": { en:["Cosmographer · BHRIGU","Interpretation and navigation across bounded evidence, with BTC Cosmographer as the current Bitcoin application."], ru:["Космограф · BHRIGU","Интерпретация и навигация в пределах доказательств; BTC Cosmographer — текущее Bitcoin-приложение."] },
+  "/investors": { en:["System Context · BHRIGU","Factual orientation to BHRIGU's current product, evidence architecture and research surfaces."], ru:["Контекст системы · BHRIGU","Фактическая ориентация по текущему продукту BHRIGU, архитектуре доказательств и исследовательским поверхностям."] },
+  "/map": { en:["System Map · BHRIGU","Public relationship map across Market Cosmographer, BTC Field, Frey, Cosmographer and ORION."], ru:["Карта системы · BHRIGU","Публичная карта связей Market Cosmographer, BTC Field, Frey, Космографа и ORION."] },
+  "/faq": { en:["FAQ · BHRIGU","Current public answers about BHRIGU, BTC Field, Frey, proof, access and boundaries."], ru:["FAQ · BHRIGU","Актуальные ответы о BHRIGU, BTC Field, Frey, доказательствах, доступе и границах."] },
+  "/services": { en:["Public Capabilities · BHRIGU","Current public capabilities: Bitcoin research intelligence, Frey temporal reading and public evidence surfaces."], ru:["Публичные возможности · BHRIGU","Текущие публичные возможности: Bitcoin research intelligence, Frey и поверхности доказательств."] },
+  "/dao": { en:["DAO · Future Boundary | BHRIGU","A future peripheral economic coordination layer; not current product authority."], ru:["DAO · Будущая граница | BHRIGU","Будущий периферийный слой экономической координации; не текущая продуктовая authority."] },
+  "/orion": { en:["ORION · Protected Research Depth | BHRIGU","Public boundary for BHRIGU's protected research depth."], ru:["ORION · Защищённая исследовательская глубина | BHRIGU","Публичная граница защищённой исследовательской глубины BHRIGU."] },
+  "/signal": { en:["Signal · Historical Artifact | BHRIGU","Historical signal artifact preserved as archive, not a current runtime state."], ru:["Signal · Исторический артефакт | BHRIGU","Исторический signal-артефакт: архив, а не текущее состояние runtime."] },
+  "/archive": { en:["Archive · BHRIGU","Historical public artifacts and preserved snapshots."], ru:["Архив · BHRIGU","Исторические публичные артефакты и сохранённые снимки."] },
+  "/chronicle": { en:["Chronicle · Historical Ledger | BHRIGU","Dated historical milestones; not a statement of current system state."], ru:["Хроника · Исторический реестр | BHRIGU","Датированные исторические вехи; не описание текущего состояния системы."] },
+  "/cosmography": { en:["Cosmography · BHRIGU","Research language for structure, cycles and relations, with protected mechanism boundaries."], ru:["Космография · BHRIGU","Исследовательский язык структуры, циклов и связей с защищёнными границами механизма."] },
+  "/access": { en:["Access · BHRIGU","Reviewed private intake is temporarily closed; public orientation remains available."], ru:["Доступ · BHRIGU","Reviewed private intake временно закрыт; публичная ориентация остаётся доступной."] },
+  "/support": { en:["Support · BHRIGU","Voluntary Bitcoin support for public research continuity; no access, priority or ownership rights."], ru:["Поддержка · BHRIGU","Добровольная Bitcoin-поддержка публичных исследований без прав доступа, приоритета или владения."] },
+  "/github": { en:["GitHub · BHRIGU","Public code, research artifacts and evidence references."], ru:["GitHub · BHRIGU","Публичный код, исследовательские артефакты и ссылки на доказательства."] },
+  "/guide/frey": { en:["Frey Guide · BHRIGU","Guide to Frey, Reading and the currently closed reviewed-access boundary."], ru:["Гид Frey · BHRIGU","Гид по Frey, Reading и текущей закрытой границе reviewed access."] },
+  "/crypto-astro/btc": { en:["BTC Field · Evidence-Linked Bitcoin Intelligence | BHRIGU","Current Bitcoin state, change memory, sources and explicit conditions."], ru:["BTC Field · Bitcoin intelligence с доказательствами | BHRIGU","Текущее состояние Bitcoin, память изменений, источники и явные условия."] },
+  "/crypto-astro/btc/live": { en:["BTC Field Dialogue · BHRIGU","Bounded legacy public evidence dialogue."], ru:["Диалог BTC Field · BHRIGU","Ограниченный legacy-маршрут публичных доказательств."] },
+  "/crypto-astro/btc/clean-chat": { en:["BTC Cosmographer · Dialogue","Live Bitcoin dialogue with current data, sources and explicit limits."], ru:["BTC Cosmographer · Диалог","Живой Bitcoin-диалог с текущими данными, источниками и явными границами."] },
 };
-
-function normalizePath(asPath) {
-  if (!asPath) return "/";
-  const noHash = asPath.split("#")[0];
-  const noQuery = noHash.split("?")[0];
-  return noQuery || "/";
-}
-
-function buildCanonical(pathname) {
-  const p = pathname === "/" ? "/" : pathname;
-  return `${BASE_URL}${p}`;
-}
-
-function getMeta(pathname) {
-  const hit = ROUTE_META[pathname] || null;
-  const title = (hit && hit.title) ? hit.title : "BHRIGU";
-  const desc  = (hit && hit.desc)  ? hit.desc  : "BHRIGU public product and research surfaces.";
-  const canonical = buildCanonical(pathname);
-  return { title, desc, canonical };
-}
-
+const LOCALIZED = new Set(Object.keys(META));
+const NOINDEX = new Set(["/dao","/crypto-astro/btc/live","/crypto-astro/btc/clean-chat"]);
+function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
 export default function App({ Component, pageProps }) {
-  const router = useRouter();
-  const path = normalizePath(router?.asPath || router?.pathname || '/');
-  const meta = getMeta(path);
-  const rawLang = Array.isArray(router?.query?.lang) ? router.query.lang[0] : router?.query?.lang;
-  const lang = rawLang === "ru" ? "ru" : "en";
-  const isBtc = path === "/crypto-astro/btc" || path === "/crypto-astro/btc/live" || path === "/crypto-astro/btc/clean-chat";
-  const canonicalPath = path === "/crypto-astro/btc/live" ? "/crypto-astro/btc" : path;
-  const canonical = 'https://www.bhrigu.io' + (canonicalPath === '/' ? '/' : canonicalPath) + (isBtc ? `?lang=${lang}` : "");
-
-  return (
-    <>
-      <Head>
-        <link rel="canonical" href={canonical} key="canonical" />
-      {isBtc && <link rel="alternate" hrefLang="en" href={`https://www.bhrigu.io${canonicalPath}?lang=en`}/>}
-      {isBtc && <link rel="alternate" hrefLang="ru" href={`https://www.bhrigu.io${canonicalPath}?lang=ru`}/>}
-      {isBtc && <link rel="alternate" hrefLang="x-default" href={`https://www.bhrigu.io${canonicalPath}?lang=en`}/>}
-      {(path === "/crypto-astro/btc/live" || path === "/crypto-astro/btc/clean-chat") && <meta name="robots" content="noindex,follow"/>}
-
-      <title>{meta.title}</title>
-        <meta name="description" content={meta.desc} />
-        <meta property="og:type" content="website" />
-        <meta key="og:title" property="og:title" content={meta.title} />
-        <meta key="og:description" property="og:description" content={meta.desc} />
-        <meta key="og:url" property="og:url" content={canonical} />
-
-        <meta key="twitter:card" name="twitter:card" content="summary_large_image" />
-        <meta key="twitter:title" name="twitter:title" content={meta.title} />
-        <meta key="twitter:description" name="twitter:description" content={meta.desc} />
-      </Head>
-
-      <BhriguPhiHeader />
-      <Component {...pageProps} />
-      <BtcFreeCorridorSurfaceAdapter />
-      {path !== "/" ? <PrevNextBlock route={router.asPath} localeHint={rawLang} /> : null}
-    </>
-  );
+  const router=useRouter();
+  const path=pathOnly(router.pathname || router.asPath || "/");
+  const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
+  const lang=raw==="ru"?"ru":"en";
+  const pair=META[path]?.[lang]||META[path]?.en||["BHRIGU","BHRIGU public product and research surfaces."];
+  const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
+  const localized=LOCALIZED.has(path);
+  const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
+  return <>
+    <Head>
+      <title>{pair[0]}</title><meta name="description" content={pair[1]} key="description" />
+      <link rel="canonical" href={canonical} key="canonical" />
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
+      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
+      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
+      <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
+      <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
+    </Head>
+    <BhriguPhiHeader />
+    <Component {...pageProps} />
+    <BtcFreeCorridorSurfaceAdapter />
+    {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
+    <style jsx global>{`
+      @media (min-width: 841px) {
+        main[data-primary-product="market-cosmographer"] [data-btc-field-canvas][data-home-system-map] {
+          min-height: 368px !important;
+        }
+      }
+      @media (max-width: 620px) {
+        [data-btc-state-kicker] {
+          font-size: 10.5px !important;
+          line-height: 1.3 !important;
+        }
+        [data-btc-accepted-state] small,
+        [data-home-btc-proof-object] small {
+          font-size: 10.5px !important;
+          line-height: 1.3 !important;
+        }
+        [data-btc-accepted-state] strong,
+        [data-home-btc-proof-object] strong {
+          font-size: 12px !important;
+          line-height: 1.3 !important;
+        }
+        [data-btc-accepted-state] i,
+        [data-home-btc-proof-object] i {
+          font-size: 10.5px !important;
+          line-height: 1.35 !important;
+          white-space: normal !important;
+        }
+      }
+    `}</style>
+  </>;
 }

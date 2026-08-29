@@ -8,9 +8,24 @@ import {
 
 const REQUEST_LOCALE_ROUTES = new Set([
   "/",
+  "/start",
   "/frey",
   "/reading",
+  "/cosmographer",
+  "/investors",
+  "/map",
+  "/faq",
+  "/services",
+  "/dao",
+  "/orion",
+  "/signal",
+  "/archive",
+  "/chronicle",
+  "/cosmography",
+  "/access",
   "/support",
+  "/github",
+  "/guide/frey",
   "/crypto-astro/btc",
   "/crypto-astro/btc/live",
   "/crypto-astro/btc/clean-chat",
@@ -41,8 +56,9 @@ export default function BhriguPhiHeader() {
   const path = activeRoute.split("?")[0].split("#")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
+  const rawLang = Array.isArray(router.query?.lang) ? router.query.lang[0] : router.query?.lang;
   const requestLocale = REQUEST_LOCALE_ROUTES.has(stablePath)
-    ? resolvePublicLocale("", router.query?.lang)
+    ? resolvePublicLocale("", rawLang)
     : "en";
   const locale = clientRoute ? resolvePublicLocale(clientRoute) : requestLocale;
   const ru = locale === "ru";
@@ -71,7 +87,7 @@ export default function BhriguPhiHeader() {
       data-ops="OPS_MARKERS_DATA_ATTRS_V0_2"
     >
       <div className="bh-shell">
-        <a className="bh-brand" href={homeHref} aria-label="BHRIGU home">
+        <a className="bh-brand" href={homeHref} aria-label={ru ? "Главная BHRIGU" : "BHRIGU home"}>
 {home ? (
   <span className="bh-word">BHRIGU</span>
 ) : (
@@ -81,7 +97,7 @@ export default function BhriguPhiHeader() {
   </span>
 )}
         </a>
-        <nav className="bh-ctas" aria-label="Primary navigation">
+        <nav className="bh-ctas" aria-label={ru ? "Основная навигация" : "Primary navigation"}>
 {home || btc ? (
   <>
     {btc && <a className="bh-btc-route" href={btcHref}>BTC Field</a>}
@@ -96,7 +112,7 @@ export default function BhriguPhiHeader() {
   </>
 ) : (
   <>
-    <a className="bh-btn bh-btn-primary" href={freyHref} data-bh="FREY_CTA_PRIMARY_V0_6">Open Frey</a>
+    <a className="bh-btn bh-btn-primary" href={freyHref} data-bh="FREY_CTA_PRIMARY_V0_6">{ru ? "Открыть Frey" : "Open Frey"}</a>
     <a className="bh-btn" href={orionHref}>ORION</a>
     <a
       className="bh-language"
