@@ -52,8 +52,8 @@ jobs:
           assert.equal(p.schema_version,'frey-ai-reading-packet-v1');
           assert.equal(p.protocol_version,'frey-external-ai-reading-protocol-v1');
           assert.equal(p.language,'ru');
-          assert(p.prompt_for_external_ai.includes('Две даты'));
-          assert(p.prompt_for_external_ai.includes('не рейтинг «лучше / хуже»'));
+          assert(p.prompt_for_external_ai.includes('Здесь две даты.'));
+          assert(p.prompt_for_external_ai.includes('не как рейтинг «лучше / хуже»'));
           assert(p.prompt_for_external_ai.includes('СМЫСЛ МЕТРИК'));
           assert(p.prompt_for_external_ai.includes('ФОРМАТ ОТВЕТА'));
           assert(p.metric_semantics.structural_stability);
