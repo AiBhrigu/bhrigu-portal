@@ -97,7 +97,7 @@ export default function MapPage({ locale }) {
           display: grid;
           gap: 8px;
         }
-        .mapRow {
+        :global(.mapRow) {
           display: grid;
           grid-template-columns: minmax(210px, 280px) minmax(0, 1fr);
           column-gap: 28px;
@@ -118,7 +118,7 @@ export default function MapPage({ locale }) {
           line-height: 1.45;
         }
         @media (max-width: 600px) {
-          .mapRow {
+          :global(.mapRow) {
             grid-template-columns: 1fr;
             row-gap: 5px;
           }
