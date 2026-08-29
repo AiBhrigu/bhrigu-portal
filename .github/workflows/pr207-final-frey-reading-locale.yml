@@ -1,0 +1,224 @@
+name: PR207 Final Frey Reading Locale
+on:
+  push:
+    branches: [public-surface-ru-en-phi-v0-2]
+    paths: ['.github/workflows/pr207-final-frey-reading-locale.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: public-surface-ru-en-phi-v0-2
+          fetch-depth: 0
+      - name: Localize presentation only
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def rep(s, old, new, label, required=True):
+              if old not in s:
+                  if required: raise SystemExit(f'MISSING_ANCHOR:{label}')
+                  return s
+              return s.replace(old, new)
+
+          # Reading: close remaining literal shell strings only.
+          p=Path('pages/reading.js'); s=p.read_text()
+          pairs={
+            '            Guide\n': '            {ru ? "Гид" : "Guide"}\n',
+            '            Learn how to read a Frey response.\n': '            {ru ? "Как читать ответ Frey" : "Learn how to read a Frey response."}\n',
+            '        Frey Temporal Reading\n': '        {ru ? "Темпоральное чтение Frey" : "Frey Temporal Reading"}\n',
+            '            Continuity linked\n': '            {ru ? "Непрерывность связана" : "Continuity linked"}\n',
+            '            Unfold\n': '            {ru ? "Раскрыть" : "Unfold"}\n',
+            '                Structural condition\n': '                {ru ? "Структурное условие" : "Structural condition"}\n',
+            '                Tension pattern\n': '                {ru ? "Паттерн напряжения" : "Tension pattern"}\n',
+            '                Resonance quality\n': '                {ru ? "Качество резонанса" : "Resonance quality"}\n',
+            '                Direction vector\n': '                {ru ? "Вектор направления" : "Direction vector"}\n',
+          }
+          for old,new in pairs.items(): s=rep(s,old,new,'reading:'+old.strip(),required=False)
+          p.write_text(s)
+
+          # Frey: localized view dictionary. No computation/API/data schema changes.
+          p=Path('pages/frey.js'); s=p.read_text()
+          anchor='const ANCHOR_STORAGE_SCHEMA_VERSION = "v1";\n'
+          dictionary=r'''
+
+const FREY_RU_TEXT = new Map([
+  ["Cosmographer · Relation Lens", "Космограф · Линза связей"],
+  ["Active Date · Reading Point", "Активная дата · Точка чтения"],
+  ["Click to edit", "Нажмите, чтобы изменить"],
+  ["Edit the date, then apply to reload the deterministic result.", "Измените дату и примените её, чтобы перезагрузить детерминированный результат."],
+  ["Cancel", "Отмена"], ["Apply", "Применить"],
+  ["Anchor · Personal Axis", "Якорь · Личная ось"],
+  ["Compare reads structural difference; anchor stays quiet.", "Сравнение читает структурную разницу; якорь остаётся неизменным."],
+  ["Loading personal axis", "Загрузка личной оси"],
+  ["Anchor mirrors Active Date", "Якорь повторяет активную дату"],
+  ["Active Date matches Anchor", "Активная дата совпадает с якорем"],
+  ["Quiet personal axis", "Тихая личная ось"],
+  ["Set current", "Установить текущую"], ["Reset", "Сбросить"],
+  ["Unable to run Frey.", "Не удалось запустить Frey."],
+  ["Intensity", "Интенсивность"], ["Stability", "Стабильность"], ["Resonance", "Резонанс"],
+  ["Frey Interpretation", "Интерпретация Frey"], ["Meaning", "Значение"], ["Direction", "Направление"],
+  ["Primary reading", "Основное чтение"], ["Interpretation layers", "Слои интерпретации"],
+  ["Operational Vector", "Операционный вектор"], ["Raw metrics", "Исходные метрики"],
+  ["Navigation Layer", "Навигационный слой"],
+  ["Compare active · Review both dates below.", "Сравнение активно · Проверьте обе даты ниже."],
+  ["Open Compare to enter any date and compute Δ Structural Difference.", "Откройте сравнение, укажите дату и вычислите Δ структурной разницы."],
+  ["Δ Compare · Structural Difference", "Δ Сравнение · Структурная разница"], ["Compare", "Сравнить"],
+  ["Active Date", "Активная дата"], ["Compare Date", "Дата сравнения"],
+  ["Δ Structural Difference", "Δ Структурная разница"], ["Relation mode", "Режим связи"],
+  ["Timeline · Nearby Movement", "Таймлайн · Ближайшее движение"],
+  ["Nearby movement appears after date-based runs.", "Ближайшее движение появится после запусков по датам."],
+  ["AI Export", "AI-экспорт"], ["Portable snapshot", "Переносимый snapshot"],
+  ["Copy compare snapshot", "Копировать snapshot сравнения"], ["Copy snapshot", "Копировать snapshot"], ["Copied", "Скопировано"],
+  ["Compare export includes both dates and the active delta.", "Экспорт сравнения включает обе даты и активную дельту."],
+  ["Single-date export is ready for direct AI handoff.", "Экспорт одной даты готов для прямой передачи AI."],
+  ["Escalation", "Углубление"],
+  ["Request deep analysis when the current result needs operator review.", "Запросите глубокий анализ, когда текущему результату нужен операторский разбор."],
+  ["Request deep analysis", "Запросить глубокий анализ"],
+  ["success", "готово"], ["error", "ошибка"], ["loading", "выполняется"], ["idle", "ожидание"],
+  ["high", "высокая"], ["medium", "средняя"], ["mid", "средняя"], ["low", "низкая"],
+  ["supported", "поддержана"], ["sensitive", "чувствительна"], ["fragile", "хрупкая"],
+  ["Outer stability is weakening faster than the core can compensate.", "Внешняя стабильность ослабевает быстрее, чем ядро успевает компенсировать."],
+  ["Pressure is accumulating faster than release inside the active frame.", "Давление накапливается внутри активной рамки быстрее, чем происходит разрядка."],
+  ["Signal alignment still holds, but only inside a narrower stable corridor.", "Согласование сигнала сохраняется, но только внутри более узкого устойчивого коридора."],
+  ["The field keeps its core line, but edge behavior now needs tighter pacing.", "Поле сохраняет основную линию, но поведение на краях требует более точного темпа."],
+  ["Stabilized dense core", "Стабилизированное плотное ядро"],
+  ["The dense regime stays internally settled, with strong formation continuity and very low structural agitation.", "Плотный режим остаётся внутренне устойчивым: непрерывность формы высока, структурное возмущение очень низкое."],
+  ["Compressed dense regime", "Сжатый плотный режим"],
+  ["The dense regime stays structurally compact, while internal compression rises and reduces the ease of structural pacing.", "Плотный режим остаётся структурно компактным, но внутреннее сжатие растёт и усложняет структурный темп."],
+  ["Structured dense formation", "Структурированная плотная форма"],
+  ["The dense regime remains well-formed, while internal movement stays contained within a stable structural arrangement.", "Плотный режим сохраняет форму, а внутреннее движение остаётся в пределах устойчивой структуры."],
+  ["Eclipse-sensitive transition band", "Переходная зона, чувствительная к затмению"],
+  ["The field remains transitional, with enough structural density to retain a defined but shifting regime contour.", "Поле остаётся переходным; плотности достаточно, чтобы сохранять определённый, но меняющийся контур режима."],
+  ["The regime moves through a looser transition layer, where structural definition shifts more readily across nearby dates.", "Режим проходит через более свободный переходный слой, где структурная определённость быстрее меняется между соседними датами."],
+  ["Open structural dispersion", "Открытая структурная дисперсия"],
+  ["The field stays open and diffuse, with weaker formation density and low structural containment.", "Поле остаётся открытым и рассеянным, с меньшей плотностью формы и слабым структурным удержанием."],
+  ["Elevated internal load", "Повышенная внутренняя нагрузка"],
+  ["Pressure accumulates faster than release, raising distortion risk under acceleration.", "Давление накапливается быстрее разрядки, повышая риск искажения при ускорении."],
+  ["Medium load with acceleration risk", "Средняя нагрузка с риском ускорения"],
+  ["Baseline pressure stays moderate, yet distortion rises fast when motion exceeds structural pacing.", "Базовое давление остаётся умеренным, но искажение быстро растёт, когда движение опережает структурный темп."],
+  ["Low pressure band", "Зона низкого давления"],
+  ["Friction stays reduced, allowing motion without heavy internal compression.", "Трение остаётся сниженным, позволяя двигаться без сильного внутреннего сжатия."],
+  ["High internal coherence", "Высокая внутренняя согласованность"],
+  ["Signal coupling holds across the field and supports sustained harmonic continuity.", "Связность сигнала удерживается по всему полю и поддерживает устойчивую гармоническую непрерывность."],
+  ["Moderate coherence under fluctuation", "Умеренная согласованность при колебаниях"],
+  ["Signal aligns in short stable bands, but resonance breaks when the field is forced beyond its internal rhythm.", "Сигнал согласуется в коротких устойчивых зонах, но резонанс нарушается, если поле принуждают выйти за внутренний ритм."],
+  ["Weak harmonic lock", "Слабая гармоническая фиксация"],
+  ["Coupling remains partial and coherence fragments under unstable movement.", "Связность остаётся частичной, а согласованность фрагментируется при нестабильном движении."],
+  ["Supported core frame", "Поддержанная рамка ядра"],
+  ["Structure remains well-supported and can hold motion without immediate edge-loss.", "Структура хорошо поддержана и может удерживать движение без немедленной потери краёв."],
+  ["Medium support with sensitive edges", "Средняя поддержка с чувствительными краями"],
+  ["Core structure holds, while outer balance becomes vulnerable during amplified or fast-turning phases.", "Структура ядра удерживается, но внешний баланс становится уязвимым в усиленных или быстро меняющихся фазах."],
+  ["Fragile outer balance", "Хрупкий внешний баланс"],
+  ["Support remains limited and weak edges lose alignment under excess push.", "Поддержка ограничена, а слабые края теряют согласование при избыточном давлении."],
+  ["Mode: Hold structure", "Режим: удерживать структуру"],
+  ["Mode: Advance through the stable line", "Режим: двигаться по устойчивой линии"],
+  ["Mode: Reduce expansion at unstable edges", "Режим: уменьшить расширение на нестабильных краях"],
+  ["Mode: Controlled advance", "Режим: контролируемое продвижение"],
+  ["Structural State", "Структурное состояние"], ["Tension Profile", "Профиль напряжения"], ["Resonance Profile", "Профиль резонанса"],
+  ["Deterministic reading becomes visible after the run.", "Детерминированное чтение становится видимым после запуска."],
+  ["Stabilized density", "Стабилизированная плотность"], ["The pattern is concentrated and held in a stable frame.", "Паттерн сконцентрирован и удерживается в устойчивой рамке."], ["Advance through one clean step without adding noise.", "Продвигайтесь одним чистым шагом, не добавляя шума."],
+  ["Structured density", "Структурированная плотность"], ["Pressure is organized enough to support deliberate movement.", "Давление достаточно организовано для осознанного движения."], ["Keep the sequence ordered and move through the next defined node.", "Сохраняйте порядок последовательности и переходите к следующему определённому узлу."],
+  ["Compressed density", "Сжатая плотность"], ["The field is concentrated but carrying compression and drag.", "Поле сконцентрировано, но несёт сжатие и сопротивление."], ["Reduce parallel motion and release one bottleneck first.", "Сократите параллельное движение и сначала освободите одно узкое место."],
+  ["Open regime", "Открытый режим"], ["The pattern is loose and less materially bound.", "Паттерн свободный и менее материально связан."], ["Anchor the next move in one concrete signal before scaling.", "Привяжите следующий ход к одному конкретному сигналу до масштабирования."],
+  ["Edge instability", "Нестабильность края"], ["The current pattern is vulnerable to rupture or misfire.", "Текущий паттерн уязвим к разрыву или ошибочному срабатыванию."], ["Do not escalate. Stabilize structure before any expansion.", "Не усиливайте. Стабилизируйте структуру до любого расширения."],
+  ["Transitional structure", "Переходная структура"], ["The field is holding form but still reorganizing under load.", "Поле удерживает форму, но продолжает перестраиваться под нагрузкой."], ["Stay precise and let the next step confirm direction.", "Сохраняйте точность и дайте следующему шагу подтвердить направление."],
+  ["Balanced temporal shift", "Сбалансированный временной сдвиг"], ["The compared dates remain within a moderate structural reconfiguration band.", "Сравниваемые даты остаются в умеренной зоне структурной перенастройки."],
+  ["Acceleration of structural resonance", "Ускорение структурного резонанса"], ["The field moves from a more constrained configuration toward a clearer expansion window.", "Поле движется от более ограниченной конфигурации к более ясному окну расширения."],
+  ["Collapse of harmonic tension", "Снижение гармонического напряжения"], ["The field descends toward a more stable basin with lower internal strain.", "Поле смещается к более устойчивому бассейну с меньшим внутренним напряжением."],
+  ["Escalation into unstable load", "Рост нестабильной нагрузки"], ["The compared dates show rising pressure with weaker structural support.", "Сравниваемые даты показывают рост давления при более слабой структурной поддержке."],
+  ["Hold structure", "Удерживать структуру"], ["Stable line", "Устойчивая линия"], ["Dense phase", "Плотная фаза"], ["Controlled advance", "Контролируемое продвижение"],
+  ["Phase Density", "Плотность фазы"], ["Harmonic Tension", "Гармоническое напряжение"], ["Resonance Level", "Уровень резонанса"], ["Structural Stability", "Структурная стабильность"],
+  ["phase_density = concentration of temporal pattern", "phase_density = концентрация временного паттерна"],
+  ["harmonic_tension = pressure / friction in the field", "harmonic_tension = давление / трение в поле"],
+  ["resonance_level = alignment with the dominant pattern", "resonance_level = согласование с доминирующим паттерном"],
+  ["eclipse_proximity = closeness to eclipse-driven amplification", "eclipse_proximity = близость к усилению, связанному с затмением"],
+  ["structural_stability = capacity to hold form under pressure", "structural_stability = способность удерживать форму под давлением"],
+  ["Use Meaning/Direction as interpretive layer, not as raw engine data.", "Используйте Значение/Направление как интерпретационный слой, а не как сырые данные движка."],
+]);
+function freyText(value, ru) {
+  if (!ru || typeof value !== "string") return value;
+  let out=value;
+  for (const [en, translated] of FREY_RU_TEXT) out=out.split(en).join(translated);
+  return out;
+}
+'''
+          s=rep(s,anchor,anchor+dictionary,'frey-dictionary')
+
+          # Dynamic user-visible result fields.
+          dynamic={
+            '{conversationalResponse.title}':'{freyText(conversationalResponse.title, ru)}',
+            '{responseSurface.ui_state}':'{freyText(responseSurface.ui_state, ru)}',
+            '{conversationalResponse.lead}':'{freyText(conversationalResponse.lead, ru)}',
+            '{anchorStatusLine}':'{freyText(anchorStatusLine, ru)}',
+            '{conversationalResponse.summary}':'{freyText(conversationalResponse.summary, ru)}',
+            '{responseSurface.compact_summary?.intensity_band || "n/a"}':'{freyText(responseSurface.compact_summary?.intensity_band || "n/a", ru)}',
+            '{responseSurface.compact_summary?.stability_band || "n/a"}':'{freyText(responseSurface.compact_summary?.stability_band || "n/a", ru)}',
+            '{responseSurface.compact_summary?.resonance_band || "n/a"}':'{freyText(responseSurface.compact_summary?.resonance_band || "n/a", ru)}',
+            '{minimalVoice.state}':'{freyText(minimalVoice.state, ru)}',
+            '{minimalVoiceBridge}':'{freyText(minimalVoiceBridge, ru)}',
+            '{minimalVoice.meaning}':'{freyText(minimalVoice.meaning, ru)}',
+            '{minimalVoice.direction}':'{freyText(minimalVoice.direction, ru)}',
+            '{conversationalResponse.operator_note}':'{freyText(conversationalResponse.operator_note, ru)}',
+            '{zone.label}':'{freyText(zone.label, ru)}',
+            '{zone.state}':'{freyText(zone.state, ru)}',
+            '{zone.effect}':'{freyText(zone.effect, ru)}',
+            '{interpretation.vector}':'{freyText(interpretation.vector, ru)}',
+            '{compareInterpretation.vector}':'{freyText(compareInterpretation.vector, ru)}',
+            '{formatMetricLabel(row.label)}':'{freyText(formatMetricLabel(row.label), ru)}',
+            '{deltaBlock.mode}':'{freyText(deltaBlock.mode, ru)}',
+            '{deltaBlock.description}':'{freyText(deltaBlock.description, ru)}',
+            '{entry.vector}':'{freyText(entry.vector, ru)}',
+            '{copyFeedbackLabel}':'{freyText(copyFeedbackLabel, ru)}',
+            '{exportHelpText}':'{freyText(exportHelpText, ru)}',
+            '{line}':'{freyText(line, ru)}',
+          }
+          for old,new in dynamic.items(): s=s.replace(old,new)
+
+          static_pairs={
+            '⌬ Cosmographer · Relation Lens':'⌬ {ru ? "Космограф · Линза связей" : "Cosmographer · Relation Lens"}',
+            '◉ Active Date · Reading Point':'◉ {ru ? "Активная дата · Точка чтения" : "Active Date · Reading Point"}',
+            '>Click to edit<': '>{ru ? "Нажмите, чтобы изменить" : "Click to edit"}<',
+            '>Edit the date, then apply to reload the deterministic result.<': '>{ru ? "Измените дату и примените её, чтобы перезагрузить детерминированный результат." : "Edit the date, then apply to reload the deterministic result."}<',
+            '>Cancel<': '>{ru ? "Отмена" : "Cancel"}<', '>Apply<': '>{ru ? "Применить" : "Apply"}<',
+            '⌖ Anchor · Personal Axis':'⌖ {ru ? "Якорь · Личная ось" : "Anchor · Personal Axis"}',
+            '>Set current<': '>{ru ? "Установить текущую" : "Set current"}<', '>Reset<': '>{ru ? "Сбросить" : "Reset"}<',
+            '{responseSurface.error || "Unable to run Frey."}':'{responseSurface.error || (ru ? "Не удалось запустить Frey." : "Unable to run Frey.")}',
+            '>Intensity<': '>{ru ? "Интенсивность" : "Intensity"}<', '>Stability<': '>{ru ? "Стабильность" : "Stability"}<', '>Resonance<': '>{ru ? "Резонанс" : "Resonance"}<',
+            '>Frey Interpretation<': '>{ru ? "Интерпретация Frey" : "Frey Interpretation"}<', '>Meaning<': '>{ru ? "Значение" : "Meaning"}<', '>Direction<': '>{ru ? "Направление" : "Direction"}<',
+            '>Primary reading<': '>{ru ? "Основное чтение" : "Primary reading"}<', '>Interpretation layers<': '>{ru ? "Слои интерпретации" : "Interpretation layers"}<',
+            '>Operational Vector<': '>{ru ? "Операционный вектор" : "Operational Vector"}<', '>Raw metrics<': '>{ru ? "Исходные метрики" : "Raw metrics"}<',
+            '>Navigation Layer<': '>{ru ? "Навигационный слой" : "Navigation Layer"}<',
+            '>Δ Compare · Structural Difference<': '>{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}<',
+            '>Compare<': '>{ru ? "Сравнить" : "Compare"}<',
+            '◉ Active Date · {initialDate}':'◉ {ru ? "Активная дата" : "Active Date"} · {initialDate}',
+            'Δ Compare Date · {initialCompareDate}':'Δ {ru ? "Дата сравнения" : "Compare Date"} · {initialCompareDate}',
+            '>Δ Structural Difference<': '>{ru ? "Δ Структурная разница" : "Δ Structural Difference"}<',
+            '⌬ Relation mode':'⌬ {ru ? "Режим связи" : "Relation mode"}',
+            '>↔ Timeline · Nearby Movement<': '>↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}<',
+            '>Nearby movement appears after date-based runs.<': '>{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}<',
+            '>AI Export<': '>{ru ? "AI-экспорт" : "AI Export"}<', '>Portable snapshot<': '>{ru ? "Переносимый snapshot" : "Portable snapshot"}<',
+            '>Escalation<': '>{ru ? "Углубление" : "Escalation"}<',
+            '>Request deep analysis when the current result needs operator review.<': '>{ru ? "Запросите глубокий анализ, когда текущему результату нужен операторский разбор." : "Request deep analysis when the current result needs operator review."}<',
+            '>Request deep analysis<': '>{ru ? "Запросить глубокий анализ" : "Request deep analysis"}<',
+          }
+          for old,new in static_pairs.items(): s=s.replace(old,new)
+
+          # Conditional strings and locale-sensitive linked surfaces.
+          s=s.replace('? "Compare active · Review both dates below."\n                    : "Open Compare to enter any date and compute Δ Structural Difference."', '? (ru ? "Сравнение активно · Проверьте обе даты ниже." : "Compare active · Review both dates below.")\n                    : (ru ? "Откройте сравнение, укажите дату и вычислите Δ структурной разницы." : "Open Compare to enter any date and compute Δ Structural Difference.")')
+          s=s.replace('<PublicSupportRoute locale="en" surface="frey" />','<PublicSupportRoute locale={initialLocale} surface="frey" />')
+          s=s.replace('href={initialAccessHref}', 'href={`${initialAccessHref}${initialAccessHref.includes("?") ? "&" : "?"}lang=${initialLocale}`}')
+          p.write_text(s)
+
+          Path('.github/workflows/pr207-final-frey-reading-locale.yml').unlink()
+          PY
+          git diff --check
+          git config user.name 'BHRIGU Guarded Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git add pages/frey.js pages/reading.js .github/workflows/pr207-final-frey-reading-locale.yml
+          git commit -m 'Complete Frey and Reading RU presentation parity'
+          git push origin HEAD:public-surface-ru-en-phi-v0-2
