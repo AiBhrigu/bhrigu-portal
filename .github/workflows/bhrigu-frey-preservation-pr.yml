@@ -1,0 +1,101 @@
+name: BHRIGU Frey Preservation Gate
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'pages/frey.js'
+      - 'pages/guide/frey.js'
+      - 'lib/frey-export-minimal.js'
+      - '.github/workflows/bhrigu-frey-preservation-pr.yml'
+permissions:
+  contents: read
+jobs:
+  frey-preservation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Protected runtime diff
+        run: |
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          test -z "$(git diff --name-only "$base" "$head" -- pages/api lib/frey-access-bridge.js components/btc ui/btc 'lib/btc-*')"
+      - name: Guide information preservation
+        run: |
+          grep -q 'FREY_GUIDE_INFORMATION_PRESERVATION_V0_1' pages/guide/frey.js
+          grep -q 'bhrigu-frey-en-brief-v4.pdf' pages/guide/frey.js
+          grep -q 'bhrigu-frey-en-full-article-v4.pdf' pages/guide/frey.js
+          grep -q 'bhrigu-frey-ru-v2-aligned.pdf' pages/guide/frey.js
+          grep -q 'bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf' pages/guide/frey.js
+          grep -q 'bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf' pages/guide/frey.js
+          grep -q 'reviewed private intake is temporarily closed' pages/guide/frey.js
+          grep -q 'Одна дата открывает состояние. Две даты открывают переход.' pages/guide/frey.js
+      - name: Frey human-layer contract
+        run: |
+          grep -q 'FREY_AI_READING_PACKET_HUMAN_V0_1' pages/frey.js
+          grep -q 'Compare with a second date · Δ change' pages/frey.js
+          grep -q 'For another AI · Reading Packet' pages/frey.js
+          grep -q 'Сравнить со второй датой · Δ изменения' pages/frey.js
+          grep -q 'Для другого ИИ · Пакет чтения' pages/frey.js
+          grep -q 'data-frey-response-state={responseSurface.ui_state}' pages/frey.js
+      - name: AI packet contract
+        run: |
+          node <<'NODE'
+          const assert=require('assert');
+          const {buildFreyExportPayload,buildFreyExportText}=require('./lib/frey-export-minimal');
+          const a={date:'2026-08-28',phase_density:.62,harmonic_tension:.55,resonance_level:.71,eclipse_proximity:.25,structural_stability:.66,analysis:{}};
+          const b={date:'2026-09-02',phase_density:.70,harmonic_tension:.40,resonance_level:.79,eclipse_proximity:.31,structural_stability:.73,analysis:{}};
+          const p=buildFreyExportPayload({mode:'compare',locale:'ru',primaryResult:a,compareResult:b,deltaBlock:{mode:'test'},timelineResults:[{date:'2026-08-29',vector:'Stable line'}]});
+          assert.equal(p.schema_version,'frey-ai-reading-packet-v1');
+          assert.equal(p.protocol_version,'frey-external-ai-reading-protocol-v1');
+          assert.equal(p.language,'ru');
+          assert(p.prompt_for_external_ai.includes('Здесь две даты.'));
+          assert(p.prompt_for_external_ai.includes('не как рейтинг «лучше / хуже»'));
+          assert(p.prompt_for_external_ai.includes('СМЫСЛ МЕТРИК'));
+          assert(p.prompt_for_external_ai.includes('ФОРМАТ ОТВЕТА'));
+          assert(p.metric_semantics.structural_stability);
+          assert(p.delta);
+          assert(Array.isArray(p.timeline));
+          assert(p.reference_materials.some(x=>x.includes('bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf')));
+          const text=buildFreyExportText(p);
+          assert(text.includes('INSTRUCTION FOR THE RECEIVING AI'));
+          assert(text.includes('FREY DATA PACKET'));
+          console.log('AI_PACKET_CONTRACT=PASS');
+          NODE
+      - name: Approved materials exist
+        run: |
+          test -f public/publications/frey/bhrigu-frey-en-brief-v4.pdf
+          test -f public/publications/frey/bhrigu-frey-en-full-article-v4.pdf
+          test -f public/publications/frey/bhrigu-frey-ru-v2-aligned.pdf
+          test -f public/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf
+          test -f public/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: First HTTP human-layer acceptance
+        run: |
+          npm start >/tmp/frey.log 2>&1 & echo $! >/tmp/frey.pid
+          for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28' >/dev/null && break; sleep 1; done
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          assets=['bhrigu-frey-en-brief-v4.pdf','bhrigu-frey-en-full-article-v4.pdf','bhrigu-frey-ru-v2-aligned.pdf','bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf','bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf']
+          for lang in ('en','ru'):
+            guide=urlopen(f'http://127.0.0.1:3000/guide/frey?lang={lang}',timeout=30).read().decode()
+            assert f'<html lang="{lang}"' in guide.lower(),lang
+            for asset in assets: assert asset in guide,(lang,asset)
+          ru=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
+          en=urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28',timeout=30).read().decode()
+          for x in ['Продолжить чтение','Сравнить со второй датой · Δ изменения','Для другого ИИ · Пакет чтения','Промт + данные Frey']:
+            assert x in ru,x
+          for x in ['Continue the reading','Compare with a second date · Δ change','For another AI · Reading Packet','Prompt + Frey data']:
+            assert x in en,x
+          for leak in ['Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']:
+            assert leak not in ru,leak
+          assert 'data-frey-response-state="success"' in ru
+          print('FREY_HUMAN_LAYER=PASS')
+          PY
+      - name: Stop server
+        if: always()
+        run: test ! -f /tmp/frey.pid || kill "$(cat /tmp/frey.pid)" || true
