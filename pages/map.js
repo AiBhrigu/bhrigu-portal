@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+const MARKET_COSMOGRAPHER_URL = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index#surface";
+
 const COPY = {
   en: {
     ey: "SYSTEM MAP",
@@ -7,7 +9,7 @@ const COPY = {
     groups: [
       ["Market path", [
         ["BHRIGU", "Public home", "/"],
-        ["Market Cosmographer", "Primary current product", "/"],
+        ["Market Cosmographer", "Primary current product", MARKET_COSMOGRAPHER_URL],
         ["BTC Field", "First proven Bitcoin corridor", "/crypto-astro/btc"],
       ]],
       ["Temporal path", [
@@ -33,7 +35,7 @@ const COPY = {
     groups: [
       ["Рыночный путь", [
         ["BHRIGU", "Публичный дом", "/"],
-        ["Market Cosmographer", "Основной текущий продукт", "/"],
+        ["Market Cosmographer", "Основной текущий продукт", MARKET_COSMOGRAPHER_URL],
         ["BTC Field", "Первый доказанный Bitcoin-коридор", "/crypto-astro/btc"],
       ]],
       ["Темпоральный путь", [
@@ -75,12 +77,15 @@ export default function MapPage({ locale }) {
             <h2>{group}</h2>
           </div>
           <div className="mapRows">
-            {items.map(([name, description, href]) => (
-              <Link className="mapRow" key={name} href={`${href}?lang=${locale}`}>
-                <strong className="mapName">{name}</strong>
-                <span className="mapDescription">{description}</span>
-              </Link>
-            ))}
+            {items.map(([name, description, href]) => {
+              const target = /^https?:\/\//.test(href) ? href : `${href}?lang=${locale}`;
+              return (
+                <Link className="mapRow" key={name} href={target}>
+                  <strong className="mapName">{name}</strong>
+                  <span className="mapDescription">{description}</span>
+                </Link>
+              );
+            })}
           </div>
         </section>
       ))}
