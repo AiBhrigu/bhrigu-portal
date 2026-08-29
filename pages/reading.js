@@ -211,7 +211,7 @@ export default function Reading({ temporal, locale = "en" }) {
               textTransform: 'uppercase',
             }}
           >
-            Guide
+            {ru ? "Гид" : "Guide"}
           </p>
           <a
             href={ru ? "/guide/frey?lang=ru" : "/guide/frey?lang=en"}
@@ -221,7 +221,7 @@ export default function Reading({ temporal, locale = "en" }) {
               textDecoration: 'none',
             }}
           >
-            Learn how to read a Frey response.
+            {ru ? "Как читать ответ Frey" : "Learn how to read a Frey response."}
           </a>
         </section>
 
@@ -489,7 +489,7 @@ export default function Reading({ temporal, locale = "en" }) {
               textTransform: 'uppercase',
             }}
           >
-            Guide
+            {ru ? "Гид" : "Guide"}
           </p>
           <a
             href={ru ? "/guide/frey?lang=ru" : "/guide/frey?lang=en"}
@@ -499,12 +499,12 @@ export default function Reading({ temporal, locale = "en" }) {
               textDecoration: 'none',
             }}
           >
-            Learn how to read a Frey response.
+            {ru ? "Как читать ответ Frey" : "Learn how to read a Frey response."}
           </a>
         </section>
 
       <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
-        Frey Temporal Reading
+        {ru ? "Темпоральное чтение Frey" : "Frey Temporal Reading"}
       </h1>
 
       <section style={{ marginTop: 42 }}>
@@ -538,7 +538,7 @@ export default function Reading({ temporal, locale = "en" }) {
             data-reading-personal-continuity-cue="A5_READING_PERSONAL_VISIBLE_CUE_V0_1"
             style={continuityCue}
           >
-            Continuity linked
+            {ru ? "Непрерывность связана" : "Continuity linked"}
           </span>
         )}
         <div style={formulaWrap}>
@@ -592,7 +592,7 @@ export default function Reading({ temporal, locale = "en" }) {
       <section style={unfoldWrap}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <button type="button" onClick={() => setCosmoActive(v => !v)} style={gate}>
-            Unfold
+            {ru ? "Раскрыть" : "Unfold"}
           </button>
         </div>
       </section>
@@ -635,16 +635,16 @@ export default function Reading({ temporal, locale = "en" }) {
 
             <div style={intentGrid}>
               <button type="button" onClick={() => setSelectedIntent("structure")} style={intentButton(selectedIntent === "structure")}>
-                Structural condition
+                {ru ? "Структурное условие" : "Structural condition"}
               </button>
               <button type="button" onClick={() => setSelectedIntent("tension")} style={intentButton(selectedIntent === "tension")}>
-                Tension pattern
+                {ru ? "Паттерн напряжения" : "Tension pattern"}
               </button>
               <button type="button" onClick={() => setSelectedIntent("resonance")} style={intentButton(selectedIntent === "resonance")}>
-                Resonance quality
+                {ru ? "Качество резонанса" : "Resonance quality"}
               </button>
               <button type="button" onClick={() => setSelectedIntent("direction")} style={intentButton(selectedIntent === "direction")}>
-                Direction vector
+                {ru ? "Вектор направления" : "Direction vector"}
               </button>
             </div>
 
