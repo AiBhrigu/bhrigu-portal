@@ -1,0 +1,184 @@
+name: PR207 Guarded Locale Completion
+
+on:
+  push:
+    branches:
+      - public-surface-ru-en-phi-v0-2
+    paths:
+      - .github/workflows/pr207-guarded-locale-completion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: public-surface-ru-en-phi-v0-2
+          fetch-depth: 0
+      - name: Apply runtime-preserving locale patch
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def must_replace(text, old, new, label):
+              if old not in text:
+                  raise SystemExit(f"MISSING_ANCHOR:{label}")
+              return text.replace(old, new)
+
+          # Reading: locale only affects presentation strings; temporal computation stays unchanged.
+          p = Path('pages/reading.js')
+          s = p.read_text()
+          s = must_replace(s, 'function mapCosmographer(temporal) {', 'function mapCosmographer(temporal, ru = false) {', 'reading-map-cosmo')
+          s = must_replace(s, 'function mapNavigator(temporal) {', 'function mapNavigator(temporal, ru = false) {', 'reading-map-nav')
+
+          replacements = {
+            'let structural = "Balanced. Forming."': 'let structural = ru ? "Сбалансировано. Формируется." : "Balanced. Forming."',
+            'structural = "Stable. Coherent."': 'structural = ru ? "Стабильно. Согласованно." : "Stable. Coherent."',
+            'structural = "Stable. Centered."': 'structural = ru ? "Стабильно. Центрировано." : "Stable. Centered."',
+            'structural = "Unstable. Fragile."': 'structural = ru ? "Нестабильно. Хрупко." : "Unstable. Fragile."',
+            'let tension = "Moderate tension. Balanced field."': 'let tension = ru ? "Умеренное напряжение. Сбалансированное поле." : "Moderate tension. Balanced field."',
+            'tension = "High tension. Unstable field."': 'tension = ru ? "Высокое напряжение. Нестабильное поле." : "High tension. Unstable field."',
+            'tension = "High tension. Contained field."': 'tension = ru ? "Высокое напряжение. Поле удерживается." : "High tension. Contained field."',
+            'tension = "Low tension. Quiet field."': 'tension = ru ? "Низкое напряжение. Тихое поле." : "Low tension. Quiet field."',
+            'let resonance = "Moderate alignment. Dense structure."': 'let resonance = ru ? "Умеренное согласование. Плотная структура." : "Moderate alignment. Dense structure."',
+            'resonance = "Aligned. Dense structure."': 'resonance = ru ? "Согласовано. Плотная структура." : "Aligned. Dense structure."',
+            'resonance = "Aligned. Thin support."': 'resonance = ru ? "Согласовано. Поддержка тонкая." : "Aligned. Thin support."',
+            'resonance = "Weak alignment. Sparse support."': 'resonance = ru ? "Слабое согласование. Разреженная поддержка." : "Weak alignment. Sparse support."',
+            'let direction = "Move"': 'let direction = ru ? "Двигаться" : "Move"',
+            'direction = "Stabilize"': 'direction = ru ? "Стабилизировать" : "Stabilize"',
+            'direction = "Hold"': 'direction = ru ? "Удерживать" : "Hold"',
+            'direction = "Expand"': 'direction = ru ? "Расширять" : "Expand"',
+            'formula: "Align first, then move"': 'formula: ru ? "Сначала согласовать, затем двигаться" : "Align first, then move"',
+            'origin: "This day continues a field that is still asking for better internal agreement."': 'origin: ru ? "Этот день продолжает поле, которому всё ещё требуется лучшее внутреннее согласование." : "This day continues a field that is still asking for better internal agreement."',
+            'gate: "Today\'s pivot is alignment before acceleration."': 'gate: ru ? "Ключ дня — согласование до ускорения." : "Today\'s pivot is alignment before acceleration."',
+            'vector: "If the line is brought into order now, the near arc tends toward clearer direction and less inner resistance."': 'vector: ru ? "Если сейчас привести линию в порядок, ближайшая дуга склоняется к более ясному направлению и меньшему внутреннему сопротивлению." : "If the line is brought into order now, the near arc tends toward clearer direction and less inner resistance."',
+            'action: "Bring the main line into order."': 'action: ru ? "Приведите главную линию в порядок." : "Bring the main line into order."',
+            'boundary: "Do not move before alignment."': 'boundary: ru ? "Не двигайтесь до согласования." : "Do not move before alignment."',
+            'payload.formula = "Hold the quiet line"': 'payload.formula = ru ? "Удерживать тихую линию" : "Hold the quiet line"',
+            'payload.origin = "This day carries a quieter field, where pressure is low and meaning does not need force."': 'payload.origin = ru ? "Этот день несёт более тихое поле: давление низкое, смысл не требует усилия." : "This day carries a quieter field, where pressure is low and meaning does not need force."',
+            'payload.gate = "Today\'s pivot is not expansion but clean attention to what already stands."': 'payload.gate = ru ? "Ключ дня — не расширение, а чистое внимание к тому, что уже стоит." : "Today\'s pivot is not expansion but clean attention to what already stands."',
+            'payload.vector = "If the line stays simple, the near arc tends toward steadier clarity without extra strain."': 'payload.vector = ru ? "Если линия остаётся простой, ближайшая дуга склоняется к более устойчивой ясности без лишнего напряжения." : "If the line stays simple, the near arc tends toward steadier clarity without extra strain."',
+            'payload.action = "Keep one light steady line."': 'payload.action = ru ? "Сохраняйте одну лёгкую устойчивую линию." : "Keep one light steady line."',
+            'payload.boundary = "Do not force a turning point."': 'payload.boundary = ru ? "Не форсируйте точку разворота." : "Do not force a turning point."',
+            'payload.formula = "Stabilize before extension"': 'payload.formula = ru ? "Стабилизировать до расширения" : "Stabilize before extension"',
+            'payload.origin = "This day arrives through a thinner support layer, where structure asks for protection before movement."': 'payload.origin = ru ? "Этот день приходит через более тонкий слой поддержки, где структура требует защиты до движения." : "This day arrives through a thinner support layer, where structure asks for protection before movement."',
+            'payload.gate = "Today\'s pivot is keeping the base coherent instead of asking it to carry more weight."': 'payload.gate = ru ? "Ключ дня — сохранить целостность основы, а не нагружать её сильнее." : "Today\'s pivot is keeping the base coherent instead of asking it to carry more weight."',
+            'payload.vector = "If the base is reinforced now, the near arc tends toward firmer support and less internal scatter."': 'payload.vector = ru ? "Если сейчас укрепить основу, ближайшая дуга склоняется к более прочной поддержке и меньшему внутреннему рассеянию." : "If the base is reinforced now, the near arc tends toward firmer support and less internal scatter."',
+            'payload.action = "Reinforce the main base."': 'payload.action = ru ? "Укрепите главную основу." : "Reinforce the main base."',
+            'payload.boundary = "Do not widen the field yet."': 'payload.boundary = ru ? "Пока не расширяйте поле." : "Do not widen the field yet."',
+            'payload.formula = "Hold the line, reduce pressure"': 'payload.formula = ru ? "Удерживать линию, снижать давление" : "Hold the line, reduce pressure"',
+            'payload.origin = "This day continues a hotter field, where pressure rises faster than support."': 'payload.origin = ru ? "Этот день продолжает более горячее поле, где давление растёт быстрее поддержки." : "This day continues a hotter field, where pressure rises faster than support."',
+            'payload.gate = "Today\'s pivot is containment, not scale."': 'payload.gate = ru ? "Ключ дня — удержание, а не масштабирование." : "Today\'s pivot is containment, not scale."',
+            'payload.vector = "If pressure is held instead of amplified, the near arc tends toward steadier control."': 'payload.vector = ru ? "Если удерживать давление, а не усиливать его, ближайшая дуга склоняется к более устойчивому контролю." : "If pressure is held instead of amplified, the near arc tends toward steadier control."',
+            'payload.action = "Reduce load on the main line."': 'payload.action = ru ? "Снизьте нагрузку на главную линию." : "Reduce load on the main line."',
+            'payload.boundary = "Do not turn pressure into speed."': 'payload.boundary = ru ? "Не превращайте давление в скорость." : "Do not turn pressure into speed."',
+            'payload.formula = "One line, less noise"': 'payload.formula = ru ? "Одна линия, меньше шума" : "One line, less noise"',
+            'payload.origin = "This day enters through a dense signal field, where too many fronts quickly blur the center."': 'payload.origin = ru ? "Этот день входит через плотное сигнальное поле, где избыток фронтов быстро размывает центр." : "This day enters through a dense signal field, where too many fronts quickly blur the center."',
+            'payload.gate = "Today\'s pivot is choosing the one line that can actually carry the day."': 'payload.gate = ru ? "Ключ дня — выбрать одну линию, которая действительно может нести день." : "Today\'s pivot is choosing the one line that can actually carry the day."',
+            'payload.vector = "If the field is narrowed now, the near arc tends toward clearer movement and less wasted friction."': 'payload.vector = ru ? "Если сейчас сузить поле, ближайшая дуга склоняется к более ясному движению и меньшим потерям на трение." : "If the field is narrowed now, the near arc tends toward clearer movement and less wasted friction."',
+            'payload.action = "Choose one leading line."': 'payload.action = ru ? "Выберите одну ведущую линию." : "Choose one leading line."',
+            'payload.boundary = "Do not open new fronts."': 'payload.boundary = ru ? "Не открывайте новые фронты." : "Do not open new fronts."',
+            'payload.formula = "Open from stable ground"': 'payload.formula = ru ? "Раскрываться из устойчивой основы" : "Open from stable ground"',
+            'payload.origin = "This day arrives with strong coherence and enough support for measured outward motion."': 'payload.origin = ru ? "Этот день приходит с сильной согласованностью и достаточной поддержкой для измеренного движения наружу." : "This day arrives with strong coherence and enough support for measured outward motion."',
+            'payload.gate = "Today\'s pivot is controlled opening, not raw push."': 'payload.gate = ru ? "Ключ дня — контролируемое раскрытие, а не грубый толчок." : "Today\'s pivot is controlled opening, not raw push."',
+            'payload.vector = "If the base stays visible, the near arc tends toward cleaner expansion with less drag."': 'payload.vector = ru ? "Если основа остаётся видимой, ближайшая дуга склоняется к более чистому расширению с меньшим сопротивлением." : "If the base stays visible, the near arc tends toward cleaner expansion with less drag."',
+            'payload.action = "Extend one prepared line."': 'payload.action = ru ? "Продлите одну подготовленную линию." : "Extend one prepared line."',
+            'payload.boundary = "Do not outrun the base."': 'payload.boundary = ru ? "Не обгоняйте основу." : "Do not outrun the base."',
+          }
+          for old,new in replacements.items():
+              s = must_replace(s, old, new, 'reading:'+old[:32])
+
+          s = must_replace(s, 'export async function getServerSideProps({ query }) {', 'export async function getServerSideProps({ query }) {\n  const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang\n  const locale = rawLang === "ru" ? "ru" : "en"', 'reading-ssr-locale')
+          s = must_replace(s, 'return { props: { temporal: data } }', 'return { props: { temporal: data, locale } }', 'reading-return-locale')
+          s = must_replace(s, 'export default function Reading({ temporal }) {', 'export default function Reading({ temporal, locale = "en" }) {\n  const ru = locale === "ru"', 'reading-signature')
+          s = must_replace(s, 'const cosmo = mapCosmographer(temporal)\n  const navigator = mapNavigator(temporal)', 'const cosmo = mapCosmographer(temporal, ru)\n  const navigator = mapNavigator(temporal, ru)', 'reading-map-calls')
+
+          static_pairs = {
+            '"Daily Navigator · Personal"': '(ru ? "Ежедневный навигатор · Личный" : "Daily Navigator · Personal")',
+            '"Daily Navigator"': '(ru ? "Ежедневный навигатор" : "Daily Navigator")',
+            '"Choose one lens below to continue this continuity-bound reading."': '(ru ? "Выберите одну линзу ниже, чтобы продолжить это чтение с сохранением непрерывности." : "Choose one lens below to continue this continuity-bound reading.")',
+            '"Choose one lens below to continue this reading."': '(ru ? "Выберите одну линзу ниже, чтобы продолжить это чтение." : "Choose one lens below to continue this reading.")',
+            '"Interpret this signal in continuity"': '(ru ? "Интерпретировать сигнал в непрерывности" : "Interpret this signal in continuity")',
+            '"Interpret this signal"': '(ru ? "Интерпретировать этот сигнал" : "Interpret this signal")',
+            '"Cosmographer · Personal"': '(ru ? "Космограф · Личный" : "Cosmographer · Personal")',
+            '"Cosmographer"': '(ru ? "Космограф" : "Cosmographer")',
+            '"Select one bounded direction to continue the present signal in personal mode."': '(ru ? "Выберите одно ограниченное направление, чтобы продолжить текущий сигнал в личном режиме." : "Select one bounded direction to continue the present signal in personal mode.")',
+            '"Select one bounded direction to read the present signal."': '(ru ? "Выберите одно ограниченное направление для чтения текущего сигнала." : "Select one bounded direction to read the present signal.")',
+          }
+          for old,new in static_pairs.items():
+              s = s.replace(old,new)
+
+          jsx_pairs = {
+            '>Guide<': '>{ru ? "Гид" : "Guide"}<',
+            '>Learn how to read a Frey response.<': '>{ru ? "Как читать ответ Frey" : "Learn how to read a Frey response."}<',
+            '>Frey Temporal Reading<': '>{ru ? "Темпоральное чтение Frey" : "Frey Temporal Reading"}<',
+            '>Temporal engine unavailable.<': '>{ru ? "Темпоральный движок недоступен." : "Temporal engine unavailable."}<',
+            '>Date Anchor<': '>{ru ? "Временной якорь" : "Date Anchor"}<',
+            '>Structural State<': '>{ru ? "Структурное состояние" : "Structural State"}<',
+            '>Tension Field<': '>{ru ? "Поле напряжения" : "Tension Field"}<',
+            '>Resonance Field<': '>{ru ? "Поле резонанса" : "Resonance Field"}<',
+            '>Navigator Line<': '>{ru ? "Линия навигатора" : "Navigator Line"}<',
+            '>Continuity linked<': '>{ru ? "Непрерывность связана" : "Continuity linked"}<',
+            '>Origin<': '>{ru ? "Источник" : "Origin"}<',
+            '>Current Gate<': '>{ru ? "Текущий порог" : "Current Gate"}<',
+            '>Vector<': '>{ru ? "Вектор" : "Vector"}<',
+            '>Right Action<': '>{ru ? "Верное действие" : "Right Action"}<',
+            '>Boundary<': '>{ru ? "Граница" : "Boundary"}<',
+            '>Next step<': '>{ru ? "Следующий шаг" : "Next step"}<',
+            '>Unfold<': '>{ru ? "Раскрыть" : "Unfold"}<',
+            '>Direction Vector<': '>{ru ? "Вектор направления" : "Direction Vector"}<',
+            '>Structural condition<': '>{ru ? "Структурное условие" : "Structural condition"}<',
+            '>Tension pattern<': '>{ru ? "Паттерн напряжения" : "Tension pattern"}<',
+            '>Resonance quality<': '>{ru ? "Качество резонанса" : "Resonance quality"}<',
+            '>Direction vector<': '>{ru ? "Вектор направления" : "Direction vector"}<',
+          }
+          for old,new in jsx_pairs.items():
+              s = s.replace(old,new)
+
+          s = s.replace('href="/guide/frey"', 'href={ru ? "/guide/frey?lang=ru" : "/guide/frey?lang=en"}')
+          s = s.replace('label: "Structural condition",', 'label: ru ? "Структурное условие" : "Structural condition",')
+          s = s.replace('label: "Tension pattern",', 'label: ru ? "Паттерн напряжения" : "Tension pattern",')
+          s = s.replace('label: "Resonance quality",', 'label: ru ? "Качество резонанса" : "Resonance quality",')
+          s = s.replace('label: "Direction vector",', 'label: ru ? "Вектор направления" : "Direction vector",')
+          s = s.replace('`Anchor: Structural State ${fmt(temporal.structural_stability, 3)}.`', '`${ru ? "Якорь: структурное состояние" : "Anchor: Structural State"} ${fmt(temporal.structural_stability, 3)}.`')
+          s = s.replace('`Anchor: Tension Field ${fmt(temporal.harmonic_tension, 4)}.`', '`${ru ? "Якорь: поле напряжения" : "Anchor: Tension Field"} ${fmt(temporal.harmonic_tension, 4)}.`')
+          s = s.replace('`Anchor: Resonance Field ${fmt(temporal.resonance_level, 4)}.`', '`${ru ? "Якорь: поле резонанса" : "Anchor: Resonance Field"} ${fmt(temporal.resonance_level, 4)}.`')
+          s = s.replace('implication: "Read this signal through form integrity, not through expansion."', 'implication: ru ? "Читайте этот сигнал через целостность формы, а не через расширение." : "Read this signal through form integrity, not through expansion."')
+          s = s.replace('implication: "Read this signal through pressure behavior, not through narrative projection."', 'implication: ru ? "Читайте этот сигнал через поведение давления, а не через проекцию нарратива." : "Read this signal through pressure behavior, not through narrative projection."')
+          s = s.replace('implication: "Read this signal through alignment strength, not through emotional amplification."', 'implication: ru ? "Читайте этот сигнал через силу согласования, а не через эмоциональное усиление." : "Read this signal through alignment strength, not through emotional amplification."')
+          s = s.replace('anchor: "Anchor: current reading remains single-state."', 'anchor: ru ? "Якорь: текущее чтение остаётся одно-состоянием." : "Anchor: current reading remains single-state."')
+          s = s.replace('implication: "Treat this as the bounded next move inside the present field."', 'implication: ru ? "Рассматривайте это как ограниченный следующий ход внутри текущего поля." : "Treat this as the bounded next move inside the present field."')
+          p.write_text(s)
+
+          # Frey: preserve runtime; bind locale into SSR and internal navigation, localize idle entry surface.
+          p = Path('pages/frey.js')
+          s = p.read_text()
+          s = must_replace(s, 'export async function getServerSideProps({ query }) {', 'export async function getServerSideProps({ query }) {\n  const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang;\n  const initialLocale = rawLang === "ru" ? "ru" : "en";', 'frey-ssr-locale')
+          s = must_replace(s, '      initialAccessHref,\n    },', '      initialAccessHref,\n      initialLocale,\n    },', 'frey-prop-locale')
+          s = must_replace(s, 'export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref }) {', 'export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref, initialLocale = "en" }) {\n  const ru = initialLocale === "ru";', 'frey-signature')
+          s = must_replace(s, '  function buildFreyUrl(next) {\n    const params = new URLSearchParams();', '  function buildFreyUrl(next) {\n    const params = new URLSearchParams();\n    params.set("lang", initialLocale);', 'frey-url-locale')
+          s = s.replace('setUiError("Mark a signal trace or select a date.");', 'setUiError(ru ? "Отметьте сигнальный след или выберите дату." : "Mark a signal trace or select a date.");')
+          s = s.replace('setUiError("Set both dates for compare mode.");', 'setUiError(ru ? "Укажите обе даты для режима сравнения." : "Set both dates for compare mode.");')
+          s = s.replace('setUiError("Select an active date.");', 'setUiError(ru ? "Выберите активную дату." : "Select an active date.");')
+          s = s.replace('setUiError("Select a valid active date.");', 'setUiError(ru ? "Выберите корректную активную дату." : "Select a valid active date.");')
+          s = s.replace('aria-label="Activate Frey signal gate"', 'aria-label={ru ? "Активировать сигнальный порог Frey" : "Activate Frey signal gate"}')
+          s = s.replace('<div className="freySignalEyebrow">Signal Trace</div>', '<div className="freySignalEyebrow">{ru ? "Сигнальный след" : "Signal Trace"}</div>')
+          s = s.replace('                      RESEAL', '                      {ru ? "ЗАКРЫТЬ" : "RESEAL"}')
+          s = s.replace('placeholder="Mark signal trace..."', 'placeholder={ru ? "Отметьте сигнальный след..." : "Mark signal trace..."}')
+          s = s.replace('{loading ? "Running..." : "Run Frey"}', '{loading ? (ru ? "Выполняется..." : "Running...") : (ru ? "Запустить Frey" : "Run Frey")}')
+          p.write_text(s)
+
+          # One-shot worker removes itself before committing.
+          Path('.github/workflows/pr207-guarded-locale-completion.yml').unlink()
+          PY
+          git diff --check
+          git diff -- pages/reading.js pages/frey.js
+          git config user.name "BHRIGU Guarded Worker"
+          git config user.email "actions@users.noreply.github.com"
+          git add pages/reading.js pages/frey.js .github/workflows/pr207-guarded-locale-completion.yml
+          git commit -m "Complete guarded Frey and Reading RU locale presentation"
+          git push origin HEAD:public-surface-ru-en-phi-v0-2
