@@ -88,12 +88,13 @@ function buildMachineGraph(path, lang){
     mainEntity:{
       "@type":"ItemList",
       itemListElement:[
-        {"@type":"ListItem",position:1,name:"BTC Field",url:localizedUrl("/crypto-astro/btc",lang)},
-        {"@type":"ListItem",position:2,name:"Frey",url:freyUrl},
-        {"@type":"ListItem",position:3,name:"Reading",url:readingUrl},
-        {"@type":"ListItem",position:4,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
-        {"@type":"ListItem",position:5,name:ru?"Космограф":"Cosmographer",url:localizedUrl("/cosmographer",lang)},
-        {"@type":"ListItem",position:6,name:"ORION",url:localizedUrl("/orion",lang)},
+        {"@type":"ListItem",position:1,name:"Market Cosmographer",url:"https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index#surface"},
+        {"@type":"ListItem",position:2,name:"BTC Field",url:localizedUrl("/crypto-astro/btc",lang)},
+        {"@type":"ListItem",position:3,name:"Frey",url:freyUrl},
+        {"@type":"ListItem",position:4,name:"Reading",url:readingUrl},
+        {"@type":"ListItem",position:5,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
+        {"@type":"ListItem",position:6,name:ru?"Космограф":"Cosmographer",url:localizedUrl("/cosmographer",lang)},
+        {"@type":"ListItem",position:7,name:"ORION",url:localizedUrl("/orion",lang)},
       ],
     },
   };
