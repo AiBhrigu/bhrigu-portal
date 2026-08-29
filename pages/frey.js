@@ -199,6 +199,8 @@ function buildResponseSurface(result, activeDate, uiState, errorMessage) {
 
 
 export async function getServerSideProps({ query }) {
+  const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang;
+  const initialLocale = rawLang === "ru" ? "ru" : "en";
   const rawDate = Array.isArray(query?.d) ? query.d[0] : query?.d;
   const initialDate =
     typeof rawDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(rawDate)
@@ -373,6 +375,7 @@ export async function getServerSideProps({ query }) {
       initialSignalBind,
       initialAccessCtx,
       initialAccessHref,
+      initialLocale,
     },
   };
 }
@@ -435,7 +438,8 @@ function buildTimelineVector(result) {
   return "Controlled advance";
 }
 
-export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref }) {
+export default function Frey({ initialDate, initialResult, initialCompareDate, initialCompareResult, initialTimelineDates, initialTimelineResults, initialQueryMarker, initialSignalBind, initialAccessCtx, initialAccessHref, initialLocale = "en" }) {
+  const ru = initialLocale === "ru";
   const [query, setQuery] = useState(initialSignalBind?.raw_query || "");
   const [date, setDate] = useState(initialDate);
   const [result, setResult] = useState(initialResult);
@@ -527,6 +531,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function buildFreyUrl(next) {
     const params = new URLSearchParams();
+    params.set("lang", initialLocale);
     const nextQuery = typeof next?.query === "string" ? next.query.trim() : "";
     const nextDate = typeof next?.date === "string" ? next.date : "";
     const nextCompareDate = typeof next?.compareDate === "string" ? next.compareDate : "";
@@ -550,7 +555,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   function runSignal() {
     const trimmedQuery = query.trim();
     if (!trimmedQuery && !date) {
-      setUiError("Mark a signal trace or select a date.");
+      setUiError(ru ? "Отметьте сигнальный след или выберите дату." : "Mark a signal trace or select a date.");
       return;
     }
     const resolvedDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : getTodayIsoDate();
@@ -565,7 +570,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function runCompare() {
     if (!date || !compareDate) {
-      setUiError("Set both dates for compare mode.");
+      setUiError(ru ? "Укажите обе даты для режима сравнения." : "Set both dates for compare mode.");
       return;
     }
     setUiError("");
@@ -579,7 +584,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function runTemporal() {
     if (!date) {
-      setUiError("Select an active date.");
+      setUiError(ru ? "Выберите активную дату." : "Select an active date.");
       return;
     }
     setUiError("");
@@ -607,7 +612,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
   function applyActiveDateDirectEdit() {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(activeDateDraft)) {
-      setUiError("Select a valid active date.");
+      setUiError(ru ? "Выберите корректную активную дату." : "Select a valid active date.");
       return;
     }
     if (activeDateDraft === date) {
@@ -701,7 +706,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 <button
                   className="freyThresholdButton"
                   type="button"
-                  aria-label="Activate Frey signal gate"
+                  aria-label={ru ? "Активировать сигнальный порог Frey" : "Activate Frey signal gate"}
                   onClick={() => {
                     if (!query.trim()) setQuery(entryTraceSeed);
                     setEntryOpen(true);
@@ -719,9 +724,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               ) : (
                 <div className="freySignalSurface">
                   <div className="freySignalHeader">
-                    <div className="freySignalEyebrow">Signal Trace</div>
+                    <div className="freySignalEyebrow">{ru ? "Сигнальный след" : "Signal Trace"}</div>
                     <button className="freyGhostButton" type="button" onClick={() => setEntryOpen(false)}>
-                      RESEAL
+                      {ru ? "ЗАКРЫТЬ" : "RESEAL"}
                     </button>
                   </div>
 
@@ -729,12 +734,12 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                     className="freySignalTextarea"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Mark signal trace..."
+                    placeholder={ru ? "Отметьте сигнальный след..." : "Mark signal trace..."}
                   />
 
                   <div className="freySignalActions">
                     <button className="freyButton freyButtonPrimary" type="button" onClick={runSignal}>
-                      {loading ? "Running..." : "Run Frey"}
+                      {loading ? (ru ? "Выполняется..." : "Running...") : (ru ? "Запустить Frey" : "Run Frey")}
                     </button>
                   </div>
                 </div>
