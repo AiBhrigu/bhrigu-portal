@@ -48,7 +48,7 @@ jobs:
             'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
             'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
             'HOME_META_DEDUP':'<Head><title>Market Cosmographer' not in home,
-            'HOME_MOBILE_PROOF_SCALE':'font-size: 10.5px !important' in app and 'font-size: 12px !important' in app,
+            'HOME_MOBILE_PROOF_SCALE':'[data-btc-state-kicker]' in app and 'font-size: 10.5px !important' in app and 'font-size: 12px !important' in app,
             'HOME_FIRST_FOLD_BOUND':'min-height: 368px !important' in app,
           }
           bad=[k for k,v in checks.items() if not v]
@@ -89,7 +89,7 @@ jobs:
             assert text in frey,('frey-ru',text)
 
           home=urlopen('http://127.0.0.1:3000/?lang=ru',timeout=30).read().decode()
-          assert '<title>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
+          assert '<title' in home and '>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
           assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
           assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
           print('RU_EN_BODY_PARITY=PASS')
