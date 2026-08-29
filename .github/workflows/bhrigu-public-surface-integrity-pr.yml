@@ -31,14 +31,25 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
+          header=Path('components/BhriguPhiHeader.jsx').read_text()
+          home=Path('pages/index.js').read_text()
+          reading=Path('pages/reading.js').read_text()
+          frey=Path('pages/frey.js').read_text()
+          app=Path('pages/_app.js').read_text()
           checks={
-            'INVESTORS_NO_CAPITAL_LAYER':'Capital Alignment Layer' not in Path('pages/investors.js').read_text(),
-            'INVESTORS_NO_PAID_CONTRACT_CLAIM':'paid service contracts' not in Path('pages/investors.js').read_text(),
+            'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
             'ACCESS_CLOSED':'temporarily closed' in Path('pages/access.tsx').read_text(),
             'SIGNAL_ARCHIVE':'HISTORICAL SIGNAL' in Path('pages/signal.js').read_text(),
             'CHRONICLE_DATED':'JANUARY 2026 SNAPSHOT' in Path('pages/chronicle.js').read_text(),
-            'SITEMAP_RU':'?lang=ru' in Path('public/sitemap.xml').read_text(),
-            'SITEMAP_EN':'?lang=en' in Path('public/sitemap.xml').read_text(),
+            'SITEMAP_BILINGUAL':'?lang=ru' in Path('public/sitemap.xml').read_text() and '?lang=en' in Path('public/sitemap.xml').read_text(),
+            'HEADER_CANON_PRESERVED':'BHRIGU_PUBLIC_HOME_HEADER_V0_1' in header and 'bh-plaque' in header and 'bh-word' in header,
+            'READING_RU_BOUND':'locale === "ru"' in reading and 'Темпоральное чтение Frey' in reading and 'Временной якорь' in reading,
+            'FREY_RU_BOUND':'initialLocale === "ru"' in frey and 'FREY_RU_TEXT' in frey and 'PublicSupportRoute locale={initialLocale}' in frey,
+            'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
+            'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
+            'HOME_META_DEDUP':'<Head><title>Market Cosmographer' not in home,
+            'HOME_MOBILE_PROOF_SCALE':'font-size: 10.5px !important' in app and 'font-size: 12px !important' in app,
+            'HOME_FIRST_FOLD_BOUND':'min-height: 368px !important' in app,
           }
           bad=[k for k,v in checks.items() if not v]
           print(checks)
@@ -55,11 +66,11 @@ jobs:
         run: |
           python3 - <<'PY'
           from urllib.request import urlopen
-          routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey']
+          routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey','frey','reading','support']
           noindex={'dao'}
           for route in routes:
             for lang in ('en','ru'):
-              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=20).read().decode()
+              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=30).read().decode()
               lower=html.lower()
               assert f'<html lang="{lang}"' in lower,(route,lang,'html-lang')
               assert f'?lang={lang}' in html,(route,lang,'localized-link')
@@ -68,6 +79,20 @@ jobs:
               else:
                 assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
               print('PASS',route,lang)
+
+          reading=urlopen('http://127.0.0.1:3000/reading?lang=ru',timeout=30).read().decode()
+          for text in ['Темпоральное чтение Frey','Временной якорь','Структурное состояние','Поле напряжения','Поле резонанса','Линия навигатора','Следующий шаг']:
+            assert text in reading,('reading-ru',text)
+
+          frey=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
+          for text in ['Космограф · Линза связей','Активная дата · Точка чтения','Интенсивность','Интерпретация Frey','Основное чтение','Слои интерпретации','Навигационный слой']:
+            assert text in frey,('frey-ru',text)
+
+          home=urlopen('http://127.0.0.1:3000/?lang=ru',timeout=30).read().decode()
+          assert '<title>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
+          assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
+          assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
+          print('RU_EN_BODY_PARITY=PASS')
           PY
       - name: Stop server
         if: always()
