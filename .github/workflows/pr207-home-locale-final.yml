@@ -1,0 +1,59 @@
+name: PR207 Home Locale Completion
+on:
+  push:
+    branches: [public-surface-ru-en-phi-v0-2]
+    paths: ['.github/workflows/pr207-home-locale-final.yml']
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: public-surface-ru-en-phi-v0-2
+          fetch-depth: 0
+      - name: Close Home locale metadata and routing residue
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          p=Path('pages/index.js')
+          s=p.read_text()
+          pattern=r'function buildJsonLd\(\) \{.*?\n\}\n\nfunction formatAcceptedSnapshotTime'
+          replacement='''function buildJsonLd(locale) {
+            const ru = locale === "ru";
+            const home = `https://www.bhrigu.io/?lang=${locale}`;
+            const product = `${home}#market-cosmographer`;
+            const btc = `https://www.bhrigu.io/crypto-astro/btc?lang=${locale}`;
+            const pageName = ru ? "Market Cosmographer · AI-анализ рынков | BHRIGU" : "Market Cosmographer · AI Market Intelligence | BHRIGU";
+            const description = ru
+              ? "Система AI-аналитики рынков, объединяющая проверенные рыночные данные, контекст поля и явные условия в чтении со связанными доказательствами."
+              : "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.";
+            return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/"},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":product},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
+          }
+
+          function formatAcceptedSnapshotTime'''
+          s2,n=re.subn(pattern,replacement,s,flags=re.S)
+          if n!=1: raise SystemExit(f'HOME_JSONLD_REPLACE_COUNT={n}')
+          s=s2
+          s=s.replace('const jsonLd = buildJsonLd();','const jsonLd = buildJsonLd(locale);')
+          old='<Head><title>Market Cosmographer · AI Market Intelligence | BHRIGU</title><meta name="description" content="Evidence-linked Bitcoin intelligence for self-directed investors: verified change, why it matters, and explicit conditions."/><meta property="og:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta property="og:description" content="See what changed in Bitcoin, why it matters, and which conditions would change the current read."/><meta property="og:url" content="https://www.bhrigu.io/"/><meta name="twitter:title" content="Market Cosmographer · AI Market Intelligence | BHRIGU"/><meta name="twitter:description" content="Know what changed — and what conditions matter next. Open the evidence-linked BTC Field on BHRIGU."/><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>'
+          new='<Head><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>'
+          if old not in s: raise SystemExit('HOME_HEAD_ANCHOR_MISSING')
+          s=s.replace(old,new)
+          old='<nav className={styles.quietRoutes} aria-label="BHRIGU system routes"><Link href="/frey">Frey</Link><Link href="/cosmographer">Cosmographer</Link><Link href="/orion">ORION</Link></nav>'
+          new='<nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav>'
+          if old not in s: raise SystemExit('HOME_QUIET_ROUTE_ANCHOR_MISSING')
+          s=s.replace(old,new)
+          s=s.replace('<a href="https://www.bhrigu.io/">www.bhrigu.io</a>','<a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a>')
+          p.write_text(s)
+          Path('.github/workflows/pr207-home-locale-final.yml').unlink()
+          PY
+          git diff --check
+          git config user.name 'BHRIGU Guarded Worker'
+          git config user.email 'actions@users.noreply.github.com'
+          git add pages/index.js .github/workflows/pr207-home-locale-final.yml
+          git commit -m 'Close Home locale metadata and routing residue'
+          git push origin HEAD:public-surface-ru-en-phi-v0-2
