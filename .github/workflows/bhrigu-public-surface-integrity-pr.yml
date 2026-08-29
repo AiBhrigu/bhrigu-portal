@@ -8,6 +8,7 @@ on:
       - 'components/PrevNextBlock.jsx'
       - 'components/PortalFooterNav.jsx'
       - 'public/sitemap.xml'
+      - 'public/llms.txt'
       - '.github/workflows/bhrigu-public-surface-integrity-pr.yml'
 permissions:
   contents: read
@@ -25,7 +26,7 @@ jobs:
           git fetch origin master
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
-          protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/llms.txt public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
+          protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
           test -z "$protected" || { echo "$protected"; exit 1; }
       - name: Static truth gates
         run: |
@@ -36,18 +37,25 @@ jobs:
           reading=Path('pages/reading.js').read_text()
           frey=Path('pages/frey.js').read_text()
           app=Path('pages/_app.js').read_text()
+          sitemap=Path('public/sitemap.xml').read_text()
+          llms=Path('public/llms.txt').read_text()
           checks={
             'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
             'ACCESS_CLOSED':'temporarily closed' in Path('pages/access.tsx').read_text(),
             'SIGNAL_ARCHIVE':'HISTORICAL SIGNAL' in Path('pages/signal.js').read_text(),
             'CHRONICLE_DATED':'JANUARY 2026 SNAPSHOT' in Path('pages/chronicle.js').read_text(),
-            'SITEMAP_BILINGUAL':'?lang=ru' in Path('public/sitemap.xml').read_text() and '?lang=en' in Path('public/sitemap.xml').read_text(),
+            'SITEMAP_BILINGUAL':'?lang=ru' in sitemap and '?lang=en' in sitemap,
+            'SITEMAP_CURRENT_GRAPH':all(route in sitemap for route in ['/start?lang=ru','/reading?lang=ru','/guide/frey?lang=ru','/faq?lang=ru','/cosmography?lang=ru','/access?lang=ru']),
+            'SITEMAP_HREFLANG_SYMMETRY':sitemap.count('hreflang="x-default"') == sitemap.count('<url>') and sitemap.count('hreflang="en"') == sitemap.count('<url>') and sitemap.count('hreflang="ru"') == sitemap.count('<url>'),
+            'LLMS_CURRENT_GRAPH':all(token in llms for token in ['## Machine-readable public graph','## Frey public method and reading surfaces','### Frey AI Reading Packet','## Machine-reading boundary','/guide/frey?lang=ru','/reading?lang=ru']),
             'HEADER_CANON_PRESERVED':'BHRIGU_PUBLIC_HOME_HEADER_V0_1' in header and 'bh-plaque' in header and 'bh-word' in header,
             'READING_RU_BOUND':'locale === "ru"' in reading and 'Темпоральное чтение Frey' in reading and 'Временной якорь' in reading,
             'FREY_RU_BOUND':'initialLocale === "ru"' in frey and 'FREY_RU_TEXT' in frey and 'PublicSupportRoute locale={initialLocale}' in frey,
             'FREY_EXACT_TRANSLATOR':'out.split(en).join(translated)' not in frey and 'const exact = FREY_RU_TEXT.get(value);' in frey and '.map((segment) => FREY_RU_TEXT.get(segment) || segment)' in frey,
             'FREY_RAW_STATE':'data-frey-response-state={responseSurface.ui_state}' in frey,
             'FREY_HUMAN_NAV':'Продолжить чтение' in frey and 'Сравнить со второй датой · Δ изменения' in frey and 'Для другого ИИ · Пакет чтения' in frey,
+            'MACHINE_GRAPH_BOUND':'OSI_PHI_PUBLIC_RELATIONS_V0_1' in app and 'buildMachineGraph(path,lang)' in app and 'Frey AI Reading Packet' in app,
+            'MACHINE_METADATA_UNIQUENESS':'PAGE_OWNS_METADATA' in app and '"/crypto-astro/btc","/crypto-astro/btc/clean-chat"' in app,
             'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
             'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
             'HOME_META_DEDUP':'<Head><title>Market Cosmographer' not in home,
@@ -98,7 +106,29 @@ jobs:
           assert '<title' in home and '>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
           assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
           assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
+
+          for route in ['start','map','frey','reading','guide/frey']:
+            for lang in ('en','ru'):
+              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=30).read().decode()
+              assert 'data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1"' in html,(route,lang,'machine-graph')
+              assert 'application/ld+json' in html,(route,lang,'jsonld')
+          assert 'Frey AI Reading Packet' in urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28',timeout=30).read().decode(), 'frey-ai-packet-jsonld'
+
+          btc=urlopen('http://127.0.0.1:3000/crypto-astro/btc?lang=en',timeout=30).read().decode()
+          assert btc.count('name="description"') == 1,('btc-description-authority',btc.count('name="description"'))
+          assert btc.count('rel="canonical"') == 1,('btc-canonical-authority',btc.count('rel="canonical"'))
+
+          clean=urlopen('http://127.0.0.1:3000/crypto-astro/btc/clean-chat?lang=en',timeout=30).read().decode().lower()
+          assert clean.count('name="robots"') == 1,('clean-chat-robots-authority',clean.count('name="robots"'))
+          assert 'name="robots" content="noindex,nofollow"' in clean,'clean-chat-noindex-nofollow'
+
+          llms=urlopen('http://127.0.0.1:3000/llms.txt',timeout=30).read().decode()
+          assert '### Frey AI Reading Packet' in llms and '## Machine-reading boundary' in llms,'llms-current'
+          sitemap=urlopen('http://127.0.0.1:3000/sitemap.xml',timeout=30).read().decode()
+          for route in ['/start?lang=ru','/reading?lang=ru','/guide/frey?lang=ru','/faq?lang=ru','/cosmography?lang=ru','/access?lang=ru']:
+            assert route in sitemap,('sitemap-route',route)
           print('RU_EN_BODY_PARITY=PASS')
+          print('OSI_PHI_MACHINE_READING=PASS')
           PY
       - name: Stop server
         if: always()
