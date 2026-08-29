@@ -702,7 +702,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }, [hasCompare, initialCompareDate]);
 
   return (
-    <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`} data-frey-ui-refresh="__FREY_PUBLIC_BOUNDARY_VISUAL_LIFT_V0_1__">
+    <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`} data-frey-ui-refresh="__FREY_PUBLIC_BOUNDARY_VISUAL_LIFT_V0_1__" data-frey-mobile-repair="__FREY_MOBILE_RESULT_CONTAINMENT_AND_ACTION_ANCHOR_V0_1__">
 
       {!hasResult && !entryOpen ? <div className="freyAxis" style={{ opacity: 0.18 }} /> : null}
       <div
@@ -3512,14 +3512,44 @@ line-height: 1.58;
         }
 
         .freyResultControls {
-margin-top: 2px;
-padding: 24px;
+position: relative;
+margin-top: 30px;
+padding: 30px 24px 24px;
 border: 1px solid rgba(154, 137, 209, 0.22);
 border-radius: 24px;
 background:
   radial-gradient(circle at 100% 0%, rgba(154,137,209,0.085), transparent 32%),
   radial-gradient(circle at 0% 100%, rgba(98,168,216,0.055), transparent 36%),
   rgba(10, 13, 22, 0.72);
+        }
+
+        .freyResultControls::before {
+content: "Φ";
+position: absolute;
+top: -21px;
+left: 24px;
+width: 42px;
+height: 42px;
+display: grid;
+place-items: center;
+border-radius: 50%;
+border: 1px solid rgba(200,164,90,0.34);
+background: #080b12;
+color: rgba(200,164,90,0.9);
+font: 400 24px/1 Georgia, serif;
+box-shadow: 0 10px 28px rgba(0,0,0,0.3), 0 0 24px rgba(154,137,209,0.08);
+pointer-events: none;
+        }
+
+        .freyResultControls::after {
+content: "";
+position: absolute;
+top: 0;
+left: 74px;
+right: 24px;
+height: 1px;
+background: linear-gradient(90deg, rgba(98,168,216,0.42), rgba(154,137,209,0.35), rgba(200,164,90,0.18), transparent);
+pointer-events: none;
         }
 
         .freyResultControlsLabel {
@@ -3664,13 +3694,22 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 
         @media (max-width: 760px) {
 .freyRootResult {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding-top: 70px;
+  padding-left: 14px;
+  padding-right: 14px;
+  overflow-x: clip;
 }
 
 .freyMembrane.isResult {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   padding: 16px;
   border-radius: 22px;
+  overflow-x: clip;
 }
 
 .freyConversationBlock {
@@ -3697,6 +3736,8 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 }
 
 .freyVoiceMinimal {
+  min-width: 0;
+  max-width: 100%;
   padding: 24px 18px;
 }
 
@@ -3706,7 +3747,11 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 }
 
 .freyVoiceMinimalState {
-  font-size: clamp(28px, 9vw, 38px);
+  max-width: 100%;
+  font-size: clamp(25px, 8vw, 36px);
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
 .freyInterpretationZone {
@@ -3737,13 +3782,57 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
   border-radius: 20px !important;
 }
 
+.freyResultFlow,
+.freyVoiceMinimal,
+.freyVoiceMinimalBody,
+.freyVoiceMinimalRow,
+.freyVoiceMinimalBridge,
+.freyVoiceMinimalValue,
+.freyInterpretationZone,
+.freyResultControls,
+.freyGuideRoute,
+.freyResultControlsHint {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.freyVoiceMinimalBridge,
+.freyVoiceMinimalValue,
+.freyResultControlsHint {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.freyResultControls {
+  padding: 28px 16px 18px;
+}
+
+.freyResultControls::before {
+  left: 16px;
+  width: 38px;
+  height: 38px;
+  top: -19px;
+  font-size: 22px;
+}
+
+.freyResultControls::after {
+  left: 64px;
+  right: 16px;
+}
+
 :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]) {
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 10px !important;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
   width: 100% !important;
-  opacity: 0.9;
+  max-width: 100% !important;
+  margin: 28px 0 20px !important;
+  padding: 0 14px calc(12px + env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box !important;
+  opacity: 0.94;
   transform: none;
+  z-index: auto !important;
 }
         }
 
