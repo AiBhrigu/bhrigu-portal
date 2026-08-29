@@ -59,10 +59,28 @@ export default function App({ Component, pageProps }) {
     <BtcFreeCorridorSurfaceAdapter />
     {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
     <style jsx global>{`
+      @media (min-width: 841px) {
+        main[data-primary-product="market-cosmographer"] [data-btc-field-canvas][data-home-system-map] {
+          min-height: 368px !important;
+        }
+      }
       @media (max-width: 620px) {
-        [data-home-btc-proof-object] small { font-size: 11px !important; line-height: 1.3 !important; }
-        [data-home-btc-proof-object] strong { font-size: 12px !important; line-height: 1.3 !important; }
-        [data-home-btc-proof-object] i { font-size: 10.5px !important; line-height: 1.35 !important; white-space: normal !important; }
+        [data-btc-accepted-state] small,
+        [data-home-btc-proof-object] small {
+          font-size: 10.5px !important;
+          line-height: 1.3 !important;
+        }
+        [data-btc-accepted-state] strong,
+        [data-home-btc-proof-object] strong {
+          font-size: 12px !important;
+          line-height: 1.3 !important;
+        }
+        [data-btc-accepted-state] i,
+        [data-home-btc-proof-object] i {
+          font-size: 10.5px !important;
+          line-height: 1.35 !important;
+          white-space: normal !important;
+        }
       }
     `}</style>
   </>;
