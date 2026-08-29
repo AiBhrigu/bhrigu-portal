@@ -3670,22 +3670,6 @@ border-color: rgba(200,164,90,0.4) !important;
 background: rgba(200,164,90,0.05) !important;
         }
 
-        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]) {
-left: auto !important;
-right: 22px !important;
-bottom: 22px !important;
-width: auto !important;
-opacity: 0.78;
-transition: opacity 160ms ease, transform 160ms ease;
-transform: scale(0.94);
-        }
-
-        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]:hover),
-        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]:focus-within) {
-opacity: 1;
-transform: scale(1);
-        }
-
         :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"] .pnInner) {
 border-color: rgba(200,164,90,0.18) !important;
 background: rgba(7,9,14,0.84) !important;
@@ -3818,21 +3802,6 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 .freyResultControls::after {
   left: 64px;
   right: 16px;
-}
-
-:global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]) {
-  position: static !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 28px 0 20px !important;
-  padding: 0 14px calc(12px + env(safe-area-inset-bottom)) !important;
-  box-sizing: border-box !important;
-  opacity: 0.94;
-  transform: none;
-  z-index: auto !important;
 }
         }
 

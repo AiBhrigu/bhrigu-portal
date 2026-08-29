@@ -241,7 +241,6 @@ export default function Support({ donationSurface = null, locale = "en" }) {
           border-left: 1px solid rgba(222,194,125,.4);
           color: rgba(222,194,125,.82);
         }
-        :global(main[data-support-surface] ~ nav[data-prevnext]) { position: static !important; margin: 18px auto 8px; }
         @media (max-width: 959px) {
           .wrap { padding: 24px 14px 68px; }
           .phiPrimary { grid-template-columns: 1fr; }

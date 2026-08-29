@@ -1,5 +1,5 @@
 export const BTC_LIVE_DIALOGUE_CSS = String.raw`
-body:has(.liveDialoguePage) nav[aria-label="Portal navigation"],.liveDialoguePage~nav[aria-label="Portal navigation"]{display:none}
+body:has(.liveDialoguePage) nav[data-prevnext],.liveDialoguePage~nav[data-prevnext]{display:none}
 .liveDialoguePage{--phi-major:61.803398875%;--phi-minor:38.196601125%;width:min(1240px,100%);padding:0 clamp(16px,3vw,42px) 96px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .liveDialogueTopbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;min-height:64px;margin-top:12px;border-bottom:1px solid var(--bl);color:var(--t2);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
 .liveBackLink,.liveLocaleLink{text-decoration:none}.liveBackLink:hover,.liveLocaleLink:hover{color:var(--t)}
