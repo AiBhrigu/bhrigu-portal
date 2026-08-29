@@ -7,7 +7,6 @@ export const BTC_PRODUCT_REBALANCE_CSS = String.raw`
 }
 html,body{background:radial-gradient(circle at 78% 12%,rgba(106,168,255,.07),transparent 31%),radial-gradient(circle at 16% 86%,rgba(143,124,244,.04),transparent 34%),var(--f)}
 main{width:min(1360px,100%);padding-inline:clamp(18px,3.2vw,42px)}
-body:has(main[data-btc-static-proof="true"]) nav[aria-label="Portal navigation"]{display:none!important}
 main[data-btc-static-proof="true"],.heroProductEntry,.questionPanel{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .heroProductEntry{display:grid;grid-template-columns:minmax(0,.94fr) minmax(430px,1.06fr);gap:clamp(34px,4.8vw,72px);align-items:center;min-height:min(610px,calc(100svh - 96px));padding:clamp(30px,4vw,50px) 0;border-bottom:1px solid var(--bl)}
 .heroProductCopy{align-self:center;max-width:39rem}.heroProductIdentity{display:grid;gap:7px;margin:0}.heroProductIdentity>span{color:var(--b);font-size:clamp(11px,.82vw,13px);font-weight:750;letter-spacing:.12em;text-transform:uppercase}.heroProductIdentity>small{color:var(--blue);font-size:clamp(9px,.68vw,11px);font-weight:750;letter-spacing:.13em;text-transform:uppercase}
