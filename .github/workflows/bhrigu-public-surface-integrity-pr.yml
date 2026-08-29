@@ -77,6 +77,10 @@ jobs:
         run: |
           python3 - <<'PY'
           from urllib.request import urlopen
+          import html as html_lib
+          import json
+          import re
+
           routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey','frey','reading','support']
           noindex={'dao'}
           for route in routes:
@@ -107,20 +111,51 @@ jobs:
           assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
           assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
 
+          graphs={}
           for route in ['start','map','frey','reading','guide/frey']:
             for lang in ('en','ru'):
-              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=30).read().decode()
-              assert 'data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1"' in html,(route,lang,'machine-graph')
-              assert 'application/ld+json' in html,(route,lang,'jsonld')
-          assert 'Frey AI Reading Packet' in urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28',timeout=30).read().decode(), 'frey-ai-packet-jsonld'
+              page=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=30).read().decode()
+              assert 'data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1"' in page,(route,lang,'machine-graph')
+              match=re.search(r'<script[^>]*data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1"[^>]*>(.*?)</script>',page,re.S)
+              assert match,(route,lang,'machine-graph-script')
+              graph=json.loads(html_lib.unescape(match.group(1)))
+              assert graph.get('@context') == 'https://schema.org',(route,lang,'schema-context')
+              assert graph.get('inLanguage') == lang,(route,lang,'schema-language')
+              graphs[(route,lang)]=graph
+
+          frey_graph=graphs[('frey','en')]
+          assert frey_graph['about']['name'] == 'Frey'
+          assert frey_graph['subjectOf']['url'].endswith('/guide/frey?lang=en')
+          assert frey_graph['hasPart']['name'] == 'Frey AI Reading Packet'
+
+          reading_graph=graphs[('reading','ru')]
+          assert any(x.endswith('/guide/frey?lang=ru') for x in reading_graph['relatedLink'])
+
+          map_graph=graphs[('map','ru')]
+          map_urls=[item['url'] for item in map_graph['mainEntity']['itemListElement']]
+          assert any(x.endswith('/guide/frey?lang=ru') for x in map_urls)
+
+          guide_graph=graphs[('guide/frey','ru')]
+          docs=[part.get('contentUrl','') for part in guide_graph['hasPart']]
+          assert any('bhrigu-frey-ru-v2-aligned.pdf' in x for x in docs)
+          assert any('bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf' in x for x in docs)
+          assert guide_graph['mentions']['name'] == 'Frey AI Reading Packet'
+
+          start_graph=graphs[('start','en')]
+          start_urls=[item['url'] for item in start_graph['mainEntity']['itemListElement']]
+          assert any('/crypto-astro/btc?lang=en' in x for x in start_urls)
+          assert any('/frey?lang=en' in x for x in start_urls)
+          assert any('/map?lang=en' in x for x in start_urls)
 
           btc=urlopen('http://127.0.0.1:3000/crypto-astro/btc?lang=en',timeout=30).read().decode()
           assert btc.count('name="description"') == 1,('btc-description-authority',btc.count('name="description"'))
           assert btc.count('rel="canonical"') == 1,('btc-canonical-authority',btc.count('rel="canonical"'))
+          assert 'hrefLang="x-default"' in btc or 'hreflang="x-default"' in btc.lower(),'btc-hreflang-default'
 
           clean=urlopen('http://127.0.0.1:3000/crypto-astro/btc/clean-chat?lang=en',timeout=30).read().decode().lower()
           assert clean.count('name="robots"') == 1,('clean-chat-robots-authority',clean.count('name="robots"'))
           assert 'name="robots" content="noindex,nofollow"' in clean,'clean-chat-noindex-nofollow'
+          assert 'rel="canonical"' not in clean,'clean-chat-no-durable-canonical'
 
           llms=urlopen('http://127.0.0.1:3000/llms.txt',timeout=30).read().decode()
           assert '### Frey AI Reading Packet' in llms and '## Machine-reading boundary' in llms,'llms-current'
@@ -128,7 +163,7 @@ jobs:
           for route in ['/start?lang=ru','/reading?lang=ru','/guide/frey?lang=ru','/faq?lang=ru','/cosmography?lang=ru','/access?lang=ru']:
             assert route in sitemap,('sitemap-route',route)
           print('RU_EN_BODY_PARITY=PASS')
-          print('OSI_PHI_MACHINE_READING=PASS')
+          print('OSI_PHI_MACHINE_READING_GRAPH=PASS')
           PY
       - name: Stop server
         if: always()
