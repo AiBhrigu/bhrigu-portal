@@ -702,7 +702,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
   }, [hasCompare, initialCompareDate]);
 
   return (
-    <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`}>
+    <div className={`freyRoot${hasResult ? " freyRootResult" : ""}`} data-frey-ui-refresh="__FREY_PUBLIC_BOUNDARY_VISUAL_LIFT_V0_1__">
 
       {!hasResult && !entryOpen ? <div className="freyAxis" style={{ opacity: 0.18 }} /> : null}
       <div
@@ -3266,6 +3266,487 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           gap: 12px;
           padding-bottom: clamp(20px, 3vh, 28px);
         }
+
+
+        /* __FREY_PUBLIC_BOUNDARY_VISUAL_LIFT_V0_1__ */
+        .freyRootResult {
+--frey-gold: #c8a45a;
+--frey-blue: #62a8d8;
+--frey-violet: #9a89d1;
+background:
+  radial-gradient(circle at 10% 8%, rgba(98, 168, 216, 0.075), transparent 28%),
+  radial-gradient(circle at 90% 26%, rgba(154, 137, 209, 0.075), transparent 30%),
+  linear-gradient(180deg, #060911 0%, #05070c 100%);
+padding-top: clamp(34px, 5vh, 54px);
+        }
+
+        .freyMembrane.isResult {
+width: min(100%, 980px);
+padding: clamp(22px, 3vw, 34px);
+border-radius: 30px;
+border-color: rgba(200, 164, 90, 0.22);
+background:
+  linear-gradient(90deg, rgba(98, 168, 216, 0.035), transparent 20%, transparent 78%, rgba(154, 137, 209, 0.04)),
+  rgba(6, 9, 16, 0.93);
+box-shadow: 0 30px 110px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .freyResultFlow {
+gap: 20px;
+margin-top: 0;
+margin-bottom: 54px;
+padding-bottom: 24px;
+        }
+
+        .freyConversationBlock {
+position: relative;
+overflow: hidden;
+padding: clamp(22px, 3vw, 32px);
+border: 1px solid rgba(154, 137, 209, 0.19);
+border-radius: 24px;
+background:
+  radial-gradient(circle at 100% 0%, rgba(154, 137, 209, 0.085), transparent 32%),
+  radial-gradient(circle at 0% 100%, rgba(98, 168, 216, 0.055), transparent 34%),
+  rgba(12, 15, 25, 0.82);
+box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        }
+
+        .freyConversationBlock::before {
+content: "";
+position: absolute;
+inset: 0 0 auto;
+height: 2px;
+background: linear-gradient(90deg, var(--frey-blue), var(--frey-violet) 58%, var(--frey-gold));
+opacity: 0.68;
+        }
+
+        .freyConversationHeader {
+padding-bottom: 18px;
+border-bottom: 1px solid rgba(255, 255, 255, 0.065);
+        }
+
+        .freyConversationEyebrow {
+color: rgba(161, 204, 232, 0.82);
+        }
+
+        .freyConversationTitle {
+font-size: clamp(28px, 3.2vw, 36px);
+letter-spacing: -0.025em;
+        }
+
+        .freyResponseState {
+display: inline-flex;
+align-items: center;
+min-height: 30px;
+padding: 0 10px;
+border: 1px solid rgba(200, 164, 90, 0.28);
+border-radius: 999px;
+background: rgba(200, 164, 90, 0.055);
+color: rgba(232, 202, 137, 0.92);
+        }
+
+        .freyConversationLead {
+max-width: 68ch;
+font-size: 17px;
+line-height: 1.72;
+color: rgba(226, 232, 244, 0.86);
+        }
+
+        .freyConversationMetaBand {
+padding: 16px;
+border-color: rgba(121, 151, 210, 0.22);
+background:
+  linear-gradient(90deg, rgba(98, 168, 216, 0.05), rgba(154, 137, 209, 0.035)),
+  rgba(7, 10, 19, 0.88);
+        }
+
+        .freyConversationMetaBandCellActive,
+        .freyConversationMetaBandCellAnchor {
+padding: 13px 14px;
+border-radius: 16px;
+border: 1px solid rgba(255, 255, 255, 0.055);
+        }
+
+        .freyConversationMetaBandCellActive {
+background: rgba(98, 168, 216, 0.045);
+border-color: rgba(98, 168, 216, 0.14);
+        }
+
+        .freyConversationMetaBandCellAnchor {
+background: rgba(154, 137, 209, 0.04);
+border-color: rgba(154, 137, 209, 0.14);
+        }
+
+        .freyConversationMetaBandSecondary {
+margin-top: 4px;
+        }
+
+        .freyConversationBand {
+border-radius: 16px;
+border-color: rgba(200, 164, 90, 0.24);
+background: linear-gradient(90deg, rgba(200, 164, 90, 0.09), rgba(154, 137, 209, 0.035));
+padding: 12px 15px;
+line-height: 1.52;
+        }
+
+        .freyConversationMetricRow {
+gap: 12px;
+        }
+
+        .freyConversationMetric {
+min-height: 94px;
+padding: 15px 16px;
+border-radius: 16px;
+background: rgba(255, 255, 255, 0.018);
+        }
+
+        .freyConversationMetric:nth-child(1) { border-color: rgba(98, 168, 216, 0.22); }
+        .freyConversationMetric:nth-child(2) { border-color: rgba(154, 137, 209, 0.24); }
+        .freyConversationMetric:nth-child(3) { border-color: rgba(200, 164, 90, 0.22); }
+
+        .freyConversationMetricLabel {
+margin-bottom: 12px;
+color: rgba(184, 192, 214, 0.62);
+        }
+
+        .freyConversationMetricValue {
+font-size: 18px;
+        }
+
+        .freyVoiceMinimal {
+margin: 8px 0 4px;
+padding: clamp(26px, 3vw, 38px);
+border-radius: 24px;
+border-color: rgba(154, 137, 209, 0.26);
+background:
+  radial-gradient(circle at 50% 0%, rgba(200, 164, 90, 0.115), transparent 34%),
+  radial-gradient(circle at 100% 100%, rgba(98, 168, 216, 0.065), transparent 34%),
+  rgba(16, 18, 28, 0.86);
+box-shadow: inset 0 1px 0 rgba(255,255,255,0.035), 0 20px 54px rgba(0,0,0,0.17);
+        }
+
+        .freyVoiceMinimal::after {
+content: "Φ";
+position: absolute;
+top: 12px;
+right: 22px;
+font: 400 88px/1 Georgia, serif;
+color: rgba(98, 168, 216, 0.055);
+pointer-events: none;
+        }
+
+        .freyVoiceMinimalState {
+max-width: 20ch;
+font-size: clamp(30px, 4vw, 44px);
+letter-spacing: 0.01em;
+        }
+
+        .freyVoiceMinimalBridge {
+max-width: 62ch;
+font-size: 16px;
+        }
+
+        .freyVoiceMinimalBody {
+gap: 14px;
+padding-top: 4px;
+        }
+
+        .freyVoiceMinimalRow {
+padding: 14px 0 16px;
+        }
+
+        .freyConversationResultTail {
+gap: 14px;
+padding-bottom: 18px;
+        }
+
+        .freyInlineExpandBlock {
+border-radius: 18px;
+border-color: rgba(121, 151, 210, 0.15);
+background: rgba(255, 255, 255, 0.016);
+        }
+
+        .freyInlineExpandBlock[open] {
+background: linear-gradient(180deg, rgba(98,168,216,0.025), rgba(154,137,209,0.018));
+        }
+
+        .freyInlineExpandSummary {
+padding: 16px 18px;
+color: rgba(226, 214, 188, 0.82);
+        }
+
+        .freyInterpretationZone {
+grid-template-columns: 165px minmax(0, 1fr);
+gap: 20px;
+padding: 17px 0;
+        }
+
+        .freyInterpretationZoneLabel {
+color: rgba(161, 177, 211, 0.62);
+        }
+
+        .freyInterpretationState {
+font-size: 18px;
+        }
+
+        .freyInterpretationEffect {
+color: rgba(198, 206, 225, 0.82);
+        }
+
+        .freyOperationalVector {
+margin-top: 18px;
+border-color: rgba(200, 164, 90, 0.3);
+background: linear-gradient(90deg, rgba(200,164,90,0.115), rgba(154,137,209,0.04));
+padding: 18px 20px;
+        }
+
+        .freyOperationalVectorMode {
+font-size: 19px;
+        }
+
+        .freyJson {
+max-height: 340px;
+overflow: auto;
+padding: 4px 18px 18px;
+line-height: 1.58;
+        }
+
+        .freyResultControls {
+margin-top: 2px;
+padding: 24px;
+border: 1px solid rgba(154, 137, 209, 0.22);
+border-radius: 24px;
+background:
+  radial-gradient(circle at 100% 0%, rgba(154,137,209,0.085), transparent 32%),
+  radial-gradient(circle at 0% 100%, rgba(98,168,216,0.055), transparent 36%),
+  rgba(10, 13, 22, 0.72);
+        }
+
+        .freyResultControlsLabel {
+margin: 8px 0 0;
+color: rgba(224, 214, 191, 0.8);
+font-size: 11px;
+        }
+
+        .freyResultControlsHint {
+margin: 0 0 8px;
+max-width: 68ch;
+font-size: 15px;
+color: rgba(222, 190, 125, 0.92);
+        }
+
+        .freyGuideRoute {
+margin-bottom: 4px;
+padding: 18px 20px;
+border-radius: 20px;
+border-color: rgba(154, 137, 209, 0.36);
+background:
+  radial-gradient(circle at 100% 0%, rgba(154,137,209,0.15), transparent 38%),
+  linear-gradient(90deg, rgba(98,168,216,0.07), rgba(154,137,209,0.055));
+        }
+
+        .freyExpandStack {
+gap: 12px;
+        }
+
+        .freyExpandBlock {
+border-radius: 18px;
+border-color: rgba(255,255,255,0.09);
+background: rgba(255,255,255,0.02);
+        }
+
+        .freyExpandBlock[data-frey-compare] { border-color: rgba(98, 168, 216, 0.25); }
+        .freyExpandBlock[data-frey-timeline] { border-color: rgba(154, 137, 209, 0.25); }
+
+        .freyExpandBlock[open] {
+background: linear-gradient(180deg, rgba(98,168,216,0.035), rgba(154,137,209,0.025));
+        }
+
+        .freyExpandSummary {
+padding: 17px 18px;
+color: rgba(235, 226, 207, 0.86);
+        }
+
+        .freyCompareBlockSecondary {
+padding: 2px 18px 18px;
+        }
+
+        .freyTimelineBlock {
+margin: 0;
+border: 0;
+background: transparent;
+padding: 2px 18px 18px;
+        }
+
+        .freyExportBlock {
+margin: 0;
+border-radius: 24px;
+border-color: rgba(98, 168, 216, 0.24);
+background:
+  radial-gradient(circle at 100% 0%, rgba(98,168,216,0.09), transparent 34%),
+  radial-gradient(circle at 0% 100%, rgba(154,137,209,0.065), transparent 38%),
+  rgba(8, 11, 19, 0.76);
+box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
+        }
+
+        .freyExportSummary {
+padding: 17px 18px;
+font-size: 11px;
+color: rgba(164, 205, 232, 0.9);
+        }
+
+        .freyExportInner {
+gap: 14px;
+padding: 0 18px 18px;
+        }
+
+        .freyExportCopyButton {
+min-height: 40px;
+padding: 0 14px;
+border-radius: 999px;
+border-color: rgba(98,168,216,0.32);
+background: rgba(98,168,216,0.04);
+        }
+
+        .freyExportPre {
+max-height: 330px;
+overflow: auto;
+border-radius: 14px;
+background: rgba(3, 6, 12, 0.78);
+        }
+
+        .freyEscalationBlock {
+padding: 20px 22px;
+margin-bottom: 8px;
+border-radius: 22px;
+border-color: rgba(154,137,209,0.22);
+background:
+  radial-gradient(circle at 100% 0%, rgba(154,137,209,0.09), transparent 36%),
+  linear-gradient(90deg, rgba(154,137,209,0.035), rgba(200,164,90,0.04));
+        }
+
+        :global([data-public-support-route="frey"]) {
+margin-top: 4px !important;
+padding: 30px !important;
+border: 1px solid rgba(200,164,90,0.22) !important;
+border-radius: 24px !important;
+background:
+  radial-gradient(circle at 100% 0%, rgba(200,164,90,0.085), transparent 36%),
+  linear-gradient(90deg, rgba(98,168,216,0.025), rgba(154,137,209,0.025)) !important;
+        }
+
+        :global([data-public-support-route="frey"] .publicSupportCta) {
+border-color: rgba(200,164,90,0.4) !important;
+background: rgba(200,164,90,0.05) !important;
+        }
+
+        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]) {
+left: auto !important;
+right: 22px !important;
+bottom: 22px !important;
+width: auto !important;
+opacity: 0.78;
+transition: opacity 160ms ease, transform 160ms ease;
+transform: scale(0.94);
+        }
+
+        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]:hover),
+        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]:focus-within) {
+opacity: 1;
+transform: scale(1);
+        }
+
+        :global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"] .pnInner) {
+border-color: rgba(200,164,90,0.18) !important;
+background: rgba(7,9,14,0.84) !important;
+box-shadow: 0 12px 38px rgba(0,0,0,0.28);
+        }
+
+        @media (max-width: 760px) {
+.freyRootResult {
+  padding-top: 70px;
+}
+
+.freyMembrane.isResult {
+  width: 100%;
+  padding: 16px;
+  border-radius: 22px;
+}
+
+.freyConversationBlock {
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.freyConversationHeader {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.freyResponseState {
+  align-self: flex-start;
+}
+
+.freyConversationMetaBand {
+  padding: 12px;
+}
+
+.freyConversationMetaBandCellActive,
+.freyConversationMetaBandCellAnchor {
+  padding: 12px;
+}
+
+.freyVoiceMinimal {
+  padding: 24px 18px;
+}
+
+.freyVoiceMinimal::after {
+  right: 10px;
+  font-size: 68px;
+}
+
+.freyVoiceMinimalState {
+  font-size: clamp(28px, 9vw, 38px);
+}
+
+.freyInterpretationZone {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  padding: 16px 0;
+}
+
+.freyResultControls {
+  padding: 18px;
+  border-radius: 20px;
+}
+
+.freyGuideRoute {
+  padding: 16px;
+}
+
+.freyExportTop {
+  flex-direction: column;
+}
+
+.freyExportCopyButton {
+  width: fit-content;
+}
+
+:global([data-public-support-route="frey"]) {
+  padding: 22px 20px !important;
+  border-radius: 20px !important;
+}
+
+:global(nav[data-prevnext="FREY_NAV_SINGLE_V0_4"]) {
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 10px !important;
+  width: 100% !important;
+  opacity: 0.9;
+  transform: none;
+}
+        }
+
 
         /* __FREY_C1_5_2_RESULT_TAIL_SPACE_REDUCTION_V0_3__ */
         .freyBottomNavClearance {
