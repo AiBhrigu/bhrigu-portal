@@ -47,6 +47,7 @@ jobs:
             'FREY_RU_BOUND':'initialLocale === "ru"' in frey and 'FREY_RU_TEXT' in frey and 'PublicSupportRoute locale={initialLocale}' in frey,
             'FREY_EXACT_TRANSLATOR':'out.split(en).join(translated)' not in frey and 'const exact = FREY_RU_TEXT.get(value);' in frey and '.map((segment) => FREY_RU_TEXT.get(segment) || segment)' in frey,
             'FREY_RAW_STATE':'data-frey-response-state={responseSurface.ui_state}' in frey,
+            'FREY_HUMAN_NAV':'Продолжить чтение' in frey and 'Сравнить со второй датой · Δ изменения' in frey and 'Для другого ИИ · Пакет чтения' in frey,
             'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
             'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
             'HOME_META_DEDUP':'<Head><title>Market Cosmographer' not in home,
@@ -87,9 +88,9 @@ jobs:
             assert text in reading,('reading-ru',text)
 
           frey=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
-          for text in ['Космограф · Линза связей','Активная дата · Точка чтения','Интенсивность','Интерпретация Frey','Основное чтение','Слои интерпретации','Навигационный слой','Средняя поддержка с чувствительными краями','Переходная зона, чувствительная к затмению','Стабильность','Экспорт для одной даты готов к прямой передаче в ИИ.','Скопировать snapshot']:
+          for text in ['Космограф · Линза связей','Активная дата · Точка чтения','Интенсивность','Интерпретация Frey','Основное чтение','Слои интерпретации','Продолжить чтение','Средняя поддержка с чувствительными краями','Переходная зона, чувствительная к затмению','Стабильность','Сравнить со второй датой · Δ изменения','Для другого ИИ · Пакет чтения','Промт + данные Frey','Скопировать пакет для другого ИИ']:
             assert text in frey,('frey-ru',text)
-          for bad in ['Medium support with чувствительна edges','Eclipse-чувствительна transition band']:
+          for bad in ['Medium support with чувствительна edges','Eclipse-чувствительна transition band','Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']:
             assert bad not in frey,('frey-mixed-language',bad)
           assert 'data-frey-response-state="success"' in frey, 'frey-raw-state'
 
