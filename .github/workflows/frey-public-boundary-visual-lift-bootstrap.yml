@@ -1,0 +1,45 @@
+name: Frey Public Boundary Visual Lift Bootstrap
+
+on:
+  push:
+    branches: [frey-public-boundary-visual-lift-v0-1]
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: frey-public-boundary-visual-lift-v0-1
+          fetch-depth: 0
+      - name: Execute staged bounded patch
+        shell: bash
+        run: |
+          python3 - <<'BOOT'
+          from pathlib import Path
+          import textwrap
+          staged = Path('.github/workflows/frey-public-boundary-visual-lift-one-shot.yml').read_text()
+          start = staged.index("          python3 - <<'PY'\n") + len("          python3 - <<'PY'\n")
+          end = staged.index("\n          PY", start)
+          script = textwrap.dedent(staged[start:end])
+          exec(compile(script, '<frey-visual-lift>', 'exec'))
+          BOOT
+      - name: Containment proof
+        shell: bash
+        run: |
+          git diff --check
+          git diff -- pages/frey.js | grep -q '__FREY_PUBLIC_BOUNDARY_VISUAL_LIFT_V0_1__'
+          test "$(git diff --name-only | tr '\n' ' ')" = "pages/frey.js "
+      - name: Remove workers, commit and push
+        shell: bash
+        run: |
+          rm .github/workflows/frey-public-boundary-visual-lift-one-shot.yml
+          rm .github/workflows/frey-public-boundary-visual-lift-bootstrap.yml
+          git config user.name "BHRIGU bounded worker"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/frey.js .github/workflows/frey-public-boundary-visual-lift-one-shot.yml .github/workflows/frey-public-boundary-visual-lift-bootstrap.yml
+          git commit -m "Frey: lift public boundary visual hierarchy"
+          git push origin HEAD:frey-public-boundary-visual-lift-v0-1
