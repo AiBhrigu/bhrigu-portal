@@ -65,6 +65,10 @@ export default function App({ Component, pageProps }) {
         }
       }
       @media (max-width: 620px) {
+        [data-btc-state-kicker] {
+          font-size: 10.5px !important;
+          line-height: 1.3 !important;
+        }
         [data-btc-accepted-state] small,
         [data-home-btc-proof-object] small {
           font-size: 10.5px !important;
