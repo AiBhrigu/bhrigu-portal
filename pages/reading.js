@@ -503,7 +503,7 @@ export default function Reading({ temporal, locale = "en" }) {
           </a>
         </section>
 
-      <h1 style={{ fontSize: 80, lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em" }}>
+      <h1 style={{ fontSize: "clamp(40px, 10vw, 80px)", lineHeight: 0.96, margin: 0, fontWeight: 700, letterSpacing: "-0.04em", maxWidth: "100%", overflowWrap: "anywhere" }}>
         {ru ? "Темпоральное чтение Frey" : "Frey Temporal Reading"}
       </h1>
 
