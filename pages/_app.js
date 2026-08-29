@@ -33,7 +33,121 @@ const META = {
 };
 const LOCALIZED = new Set(Object.keys(META));
 const NOINDEX = new Set(["/dao","/crypto-astro/btc/live","/crypto-astro/btc/clean-chat"]);
+const PAGE_OWNS_METADATA = new Set(["/crypto-astro/btc","/crypto-astro/btc/clean-chat"]);
+
 function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
+function localizedUrl(path, lang){return `${BASE}${path}?lang=${lang}`;}
+function siteNode(){return {"@type":"WebSite","@id":`${BASE}/#website`,name:"BHRIGU",url:`${BASE}/`};}
+function freyNode(lang){
+  return {
+    "@type":"SoftwareApplication",
+    "@id":`${BASE}/frey#frey`,
+    name:"Frey",
+    applicationCategory:"ResearchApplication",
+    operatingSystem:"Web",
+    url:localizedUrl("/frey",lang),
+    description:lang==="ru"?"Детерминированный сервис темпорального чтения BHRIGU.":"BHRIGU deterministic temporal reading service.",
+  };
+}
+function buildMachineGraph(path, lang){
+  const ru=lang==="ru";
+  const pageUrl=localizedUrl(path,lang);
+  const guideUrl=localizedUrl("/guide/frey",lang);
+  const readingUrl=localizedUrl("/reading",lang);
+  const freyUrl=localizedUrl("/frey",lang);
+  const site=siteNode();
+  const frey=freyNode(lang);
+  if(path==="/start") return {
+    "@context":"https://schema.org",
+    "@type":"CollectionPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Старт BHRIGU":"BHRIGU Start",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"ItemList",
+      name:ru?"Основные публичные входы BHRIGU":"Primary BHRIGU public entry surfaces",
+      itemListElement:[
+        {"@type":"ListItem",position:1,name:"BTC Field",url:localizedUrl("/crypto-astro/btc",lang)},
+        {"@type":"ListItem",position:2,name:"Frey",url:freyUrl},
+        {"@type":"ListItem",position:3,name:ru?"Публичные доказательства":"Public proof",url:"https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html"},
+        {"@type":"ListItem",position:4,name:ru?"Карта системы":"System Map",url:localizedUrl("/map",lang)},
+      ],
+    },
+  };
+  if(path==="/map") return {
+    "@context":"https://schema.org",
+    "@type":"CollectionPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Карта системы BHRIGU":"BHRIGU System Map",
+    description:ru?"Карта отношений между основными публичными ролями и поверхностями BHRIGU.":"Relationship map across BHRIGU public roles and surfaces.",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"ItemList",
+      itemListElement:[
+        {"@type":"ListItem",position:1,name:"BTC Field",url:localizedUrl("/crypto-astro/btc",lang)},
+        {"@type":"ListItem",position:2,name:"Frey",url:freyUrl},
+        {"@type":"ListItem",position:3,name:"Reading",url:readingUrl},
+        {"@type":"ListItem",position:4,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
+        {"@type":"ListItem",position:5,name:ru?"Космограф":"Cosmographer",url:localizedUrl("/cosmographer",lang)},
+        {"@type":"ListItem",position:6,name:"ORION",url:localizedUrl("/orion",lang)},
+      ],
+    },
+  };
+  if(path==="/frey") return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Frey · Темпоральное чтение":"Frey · Temporal Reading",
+    inLanguage:lang,
+    isPartOf:site,
+    about:frey,
+    subjectOf:{"@type":"TechArticle","@id":`${guideUrl}#guide`,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
+    hasPart:{
+      "@type":"CreativeWork",
+      "@id":`${pageUrl}#ai-reading-packet`,
+      name:"Frey AI Reading Packet",
+      description:ru?"Переносимый prompt-contract с исходными метриками, интерпретацией Frey и явными границами для стороннего ИИ.":"Portable prompt-contract with raw metrics, Frey interpretation and explicit boundaries for an external AI.",
+      isPartOf:{"@id":`${pageUrl}#page`},
+    },
+  };
+  if(path==="/reading") return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Темпоральное чтение Frey":"Frey Temporal Reading",
+    inLanguage:lang,
+    isPartOf:site,
+    about:frey,
+    subjectOf:{"@type":"TechArticle","@id":`${guideUrl}#guide`,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
+    relatedLink:[freyUrl,guideUrl],
+  };
+  if(path==="/guide/frey") return {
+    "@context":"https://schema.org",
+    "@type":"TechArticle",
+    "@id":`${pageUrl}#guide`,
+    url:pageUrl,
+    name:ru?"Гид Frey · Чтение, сравнение и AI Export":"Frey Guide · Read, Compare & AI Export",
+    description:ru?"Методический слой Frey для чтения одной даты, сравнения двух дат, Δ, Timeline и AI Reading Packet.":"Frey method layer for one-date reading, two-date comparison, Delta, Timeline and the AI Reading Packet.",
+    inLanguage:lang,
+    isPartOf:site,
+    about:frey,
+    hasPart:[
+      {"@type":"DigitalDocument",name:"Frey RU v2 Aligned Text",contentUrl:`${BASE}/publications/frey/bhrigu-frey-ru-v2-aligned.pdf`},
+      {"@type":"DigitalDocument",name:"Frey EN Full Article v4",contentUrl:`${BASE}/publications/frey/bhrigu-frey-en-full-article-v4.pdf`},
+      {"@type":"DigitalDocument",name:"Frey EN Approved Poster Pack v5",contentUrl:`${BASE}/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf`},
+      {"@type":"DigitalDocument",name:"Frey RU Approved Poster Pack v1",contentUrl:`${BASE}/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf`},
+    ],
+    mentions:{"@type":"CreativeWork",name:"Frey AI Reading Packet",url:`${freyUrl}#ai-reading-packet`},
+  };
+  return null;
+}
+
 export default function App({ Component, pageProps }) {
   const router=useRouter();
   const path=pathOnly(router.pathname || router.asPath || "/");
@@ -43,16 +157,21 @@ export default function App({ Component, pageProps }) {
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
   const localized=LOCALIZED.has(path);
   const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
+  const pageOwnsMetadata=PAGE_OWNS_METADATA.has(path);
+  const machineGraph=buildMachineGraph(path,lang);
   return <>
     <Head>
-      <title>{pair[0]}</title><meta name="description" content={pair[1]} key="description" />
-      <link rel="canonical" href={canonical} key="canonical" />
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
-      {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
-      {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
-      <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
-      <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
+      {!pageOwnsMetadata&&<>
+        <title>{pair[0]}</title><meta name="description" content={pair[1]} key="description" />
+        <link rel="canonical" href={canonical} key="canonical" />
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
+        {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
+        <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
+        <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
+      </>}
+      {machineGraph&&<script type="application/ld+json" data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1" dangerouslySetInnerHTML={{__html:JSON.stringify(machineGraph).replace(/</g,"\\u003c")}} />}
     </Head>
     <BhriguPhiHeader />
     <Component {...pageProps} />
