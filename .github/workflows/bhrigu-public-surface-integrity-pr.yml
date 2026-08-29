@@ -10,7 +10,7 @@ on:
       - 'public/sitemap.xml'
       - '.github/workflows/bhrigu-public-surface-integrity-pr.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
   integrity:
     runs-on: ubuntu-24.04
@@ -20,58 +20,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: One-shot exact Frey RU localization repair
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'public-surface-ru-en-phi-v0-2'
-        env:
-          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('pages/frey.js')
-          s=p.read_text()
-          old='''function freyText(value, ru) {
-            if (!ru || typeof value !== "string") return value;
-            let out = value;
-            for (const [en, translated] of FREY_RU_TEXT) out = out.split(en).join(translated);
-            return out;
-          }'''
-          new='''function freyText(value, ru) {
-            if (!ru || typeof value !== "string") return value;
-            const exact = FREY_RU_TEXT.get(value);
-            if (exact) return exact;
-            if (value.includes(" · ")) {
-              return value
-                .split(" · ")
-                .map((segment) => FREY_RU_TEXT.get(segment) || segment)
-                .join(" · ");
-            }
-            return value;
-          }'''
-          if old in s:
-            s=s.replace(old,new,1)
-          elif new not in s:
-            raise SystemExit('FREY_TRANSLATOR_SHAPE_UNEXPECTED')
-
-          marker='["FLAT", "БЕЗ ИЗМЕНЕНИЙ"]]);'
-          extra='''["FLAT", "БЕЗ ИЗМЕНЕНИЙ"], ["Stability", "Стабильность"], ["Copy snapshot", "Скопировать snapshot"], ["Copy compare snapshot", "Скопировать snapshot сравнения"], ["Copied", "Скопировано"], ["Single-date export is ready for direct AI handoff.", "Экспорт для одной даты готов к прямой передаче в ИИ."], ["Compare export includes both dates and the active delta.", "Экспорт сравнения включает обе даты и активную дельту."]]);'''
-          if marker in s:
-            s=s.replace(marker,extra,1)
-          elif extra not in s:
-            raise SystemExit('FREY_MAP_TAIL_UNEXPECTED')
-
-          s=s.replace('data-frey-response-state={freyText(responseSurface.ui_state, ru)}','data-frey-response-state={responseSurface.ui_state}',1)
-          s=s.replace('<div className="freyConversationMetaLabel">Engine</div>','<div className="freyConversationMetaLabel">{ru ? "Движок" : "Engine"}</div>',1)
-          p.write_text(s)
-          PY
-          if git diff --quiet -- pages/frey.js; then
-            echo 'FREY_RU_EXACT_REPAIR=ALREADY_APPLIED'
-            exit 0
-          fi
-          git config user.name 'BHRIGU Guarded Worker'
-          git config user.email 'actions@users.noreply.github.com'
-          git add pages/frey.js
-          git commit -m 'Fix Frey RU exact localization and preserve raw state'
-          git push origin HEAD:${HEAD_BRANCH}
       - name: Protected diff gate
         run: |
           git fetch origin master
@@ -97,7 +45,7 @@ jobs:
             'HEADER_CANON_PRESERVED':'BHRIGU_PUBLIC_HOME_HEADER_V0_1' in header and 'bh-plaque' in header and 'bh-word' in header,
             'READING_RU_BOUND':'locale === "ru"' in reading and 'Темпоральное чтение Frey' in reading and 'Временной якорь' in reading,
             'FREY_RU_BOUND':'initialLocale === "ru"' in frey and 'FREY_RU_TEXT' in frey and 'PublicSupportRoute locale={initialLocale}' in frey,
-            'FREY_EXACT_TRANSLATOR':'out.split(en).join(translated)' not in frey and 'const exact = FREY_RU_TEXT.get(value);' in frey,
+            'FREY_EXACT_TRANSLATOR':'out.split(en).join(translated)' not in frey and 'const exact = FREY_RU_TEXT.get(value);' in frey and '.map((segment) => FREY_RU_TEXT.get(segment) || segment)' in frey,
             'FREY_RAW_STATE':'data-frey-response-state={responseSurface.ui_state}' in frey,
             'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
             'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
