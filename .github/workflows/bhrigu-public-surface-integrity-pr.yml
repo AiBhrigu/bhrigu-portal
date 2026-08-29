@@ -15,30 +15,22 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
       - name: Guard exact base
-        run: |
-          test '${{ github.event.pull_request.base.sha }}' = '84e20132277afc72bca010679474ad716827191a'
+        run: test '${{ github.event.pull_request.base.sha }}' = '84e20132277afc72bca010679474ad716827191a'
       - name: Patch Frey human navigation and AI handoff
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
-          path=Path('pages/frey.js')
-          s=path.read_text()
-
-          def once(old,new,label):
+          p=Path('pages/frey.js')
+          s=p.read_text()
+          def one(old,new,label):
               global s
-              count=s.count(old)
-              if count != 1:
-                  raise SystemExit(f'{label}: expected 1 match, got {count}')
+              n=s.count(old)
+              if n != 1: raise SystemExit(f'{label}: expected 1 got {n}')
               s=s.replace(old,new,1)
 
-          once(
-          'const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";\n',
-          'const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";\nconst AI_READING_PACKET_MARKER = "__FREY_AI_READING_PACKET_HUMAN_V0_1__";\n',
-          'marker')
+          one('const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";', 'const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";\nconst AI_READING_PACKET_MARKER = "__FREY_AI_READING_PACKET_HUMAN_V0_1__";', 'marker')
 
-          once(
-          '''function freyText(value, ru) {
+          old='''function freyText(value, ru) {
             if (!ru || typeof value !== "string") return value;
             const exact = FREY_RU_TEXT.get(value);
             if (exact) return exact;
@@ -49,8 +41,8 @@ jobs:
                 .join(" · ");
             }
             return value;
-          }''',
-          '''function freyText(value, ru) {
+          }'''
+          new='''function freyText(value, ru) {
             if (!ru || typeof value !== "string") return value;
             const exact = FREY_RU_TEXT.get(value);
             if (exact) return exact;
@@ -72,107 +64,45 @@ jobs:
               if (translatedAny) return translated.join(" ");
             }
             return value;
-          }''',
-          'freyText')
+          }'''
+          one(old,new,'freyText')
 
-          once(
-          '<div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>',
-          '<div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>',
-          'nav label')
+          one('<div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>', '<div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>', 'nav-label')
+          for old,new,label in [
+            ('"Сравнение активно · Проверьте обе даты ниже."','"Сравнение со второй датой активно. Ниже показано, что изменилось между двумя датами."','active-ru'),
+            ('"Compare active · Review both dates below."','"A second-date comparison is active. Below you can see what changed between the two dates."','active-en'),
+            ('"Откройте сравнение, укажите дату и вычислите Δ структурной разницы."','"Добавьте вторую дату, чтобы увидеть Δ — что изменилось между текущей и выбранной датой."','ready-ru'),
+            ('"Open Compare to enter any date and compute Δ Structural Difference."','"Add a second date to see Δ — what changed between the current date and the date you choose."','ready-en'),
+          ]: one(old,new,label)
+          one('{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}', '{ru ? "Сравнить со второй датой · Δ изменения" : "Compare with a second date · Δ change"}', 'compare-title')
+          one('<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>', '<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>\n                      <div className="freyResultControlsHint">{ru ? "Выберите любую вторую дату. Frey рассчитает обе даты и покажет структурный переход между ними — не рейтинг «лучше / хуже»." : "Choose any second date. Frey calculates both dates and shows the structural transition between them — not a better/worse ranking."}</div>', 'compare-explain')
+          one('↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}', '↔ {ru ? "Ближайшие даты · Таймлайн" : "Nearby dates · Timeline"}', 'timeline-title')
+          one('{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}', '{ru ? "Здесь появится движение вокруг выбранной даты после расчёта соседних дат. Это карта ближайшего движения, а не гарантированный прогноз." : "Nearby date runs appear here as a local movement map around the selected date, not a guaranteed forecast."}', 'timeline-empty')
 
-          once(
-          '''{hasCompare
-                    ? (ru ? "Сравнение активно · Проверьте обе даты ниже." : "Compare active · Review both dates below.")
-                    : (ru ? "Откройте сравнение, укажите дату и вычислите Δ структурной разницы." : "Open Compare to enter any date and compute Δ Structural Difference.")}''',
-          '''{hasCompare
-                    ? (ru ? "Сравнение со второй датой активно. Ниже показано, что изменилось между двумя датами." : "A second-date comparison is active. Below you can see what changed between the two dates.")
-                    : (ru ? "Добавьте вторую дату, чтобы увидеть Δ — что изменилось между текущей и выбранной датой." : "Add a second date to see Δ — what changed between the current date and the date you choose.")}''',
-          'nav hint')
+          one('mode: hasCompare ? "compare" : "single",\n                  url:', 'mode: hasCompare ? "compare" : "single",\n                  locale: initialLocale,\n                  url:', 'export-locale')
+          one('freyVoice: minimalVoice,\n                });', 'freyVoice: minimalVoice,\n                  deltaBlock,\n                  timelineResults: initialTimelineResults,\n                });', 'export-context')
 
-          once(
-          '<summary className="freyExpandSummary">{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}</summary>',
-          '<summary className="freyExpandSummary">{ru ? "Сравнить со второй датой · Δ изменения" : "Compare with a second date · Δ change"}</summary>',
-          'compare summary')
-
-          once(
-          '<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>',
-          '<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>\n                      <div className="freyResultControlsHint">{ru ? "Выберите любую вторую дату. Frey рассчитает обе даты и покажет структурный переход между ними — не рейтинг «лучше / хуже»." : "Choose any second date. Frey calculates both dates and shows the structural transition between them — not a better/worse ranking."}</div>',
-          'compare explanation')
-
-          once(
-          '<summary className="freyExpandSummary">↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}</summary>',
-          '<summary className="freyExpandSummary">↔ {ru ? "Ближайшие даты · Таймлайн" : "Nearby dates · Timeline"}</summary>',
-          'timeline summary')
-
-          once(
-          '{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}',
-          '{ru ? "Здесь появится движение вокруг выбранной даты после расчёта соседних дат. Это карта ближайшего движения, а не гарантированный прогноз." : "Nearby date runs appear here as a local movement map around the selected date, not a guaranteed forecast."}',
-          'timeline empty')
-
-          once(
-          '''const exportPayload = buildFreyExportPayload({
-                  mode: hasCompare ? "compare" : "single",
-                  url: typeof window !== "undefined" ? window.location.href : "",
-                  primaryDate: primaryDateValue,
-                  compareDate: compareDateValue,
-                  primaryResult: result,
-                  compareResult: compareResultValue,
-                  freyVoice: minimalVoice,
-                });''',
-          '''const exportPayload = buildFreyExportPayload({
-                  mode: hasCompare ? "compare" : "single",
-                  locale: initialLocale,
-                  url: typeof window !== "undefined" ? window.location.href : "",
-                  primaryDate: primaryDateValue,
-                  compareDate: compareDateValue,
-                  primaryResult: result,
-                  compareResult: compareResultValue,
-                  freyVoice: minimalVoice,
-                  deltaBlock,
-                  timelineResults: initialTimelineResults,
-                });''',
-          'export args')
-
-          once(
-          '''const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
+          old='''const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
                 const copyFeedbackLabel = exportCopied ? "Copied" : copyLabel;
                 const exportHelpText = hasCompare
                   ? "Compare export includes both dates and the active delta."
-                  : "Single-date export is ready for direct AI handoff.";''',
-          '''const copyLabel = hasCompare
+                  : "Single-date export is ready for direct AI handoff.";'''
+          new='''const copyLabel = hasCompare
                   ? (ru ? "Скопировать пакет сравнения для ИИ" : "Copy compare packet for AI")
                   : (ru ? "Скопировать пакет для другого ИИ" : "Copy packet for another AI");
                 const copyFeedbackLabel = exportCopied ? (ru ? "Скопировано" : "Copied") : copyLabel;
                 const exportHelpText = hasCompare
                   ? (ru ? "Полноценный промт + обе даты + Δ структурного изменения. Вставьте пакет в сторонний ИИ и добавьте свой вопрос." : "A full prompt + both dates + structural Δ. Paste the packet into another AI and add your question.")
-                  : (ru ? "Полноценный промт + данные Frey одной даты. Сторонний ИИ получает правила трактовки вместе с самим чтением." : "A full prompt + one-date Frey data. The receiving AI gets the interpretation rules together with the reading itself.");''',
-          'export labels')
+                  : (ru ? "Полноценный промт + данные Frey одной даты. Сторонний ИИ получает правила трактовки вместе с самим чтением." : "A full prompt + one-date Frey data. The receiving AI gets the interpretation rules together with the reading itself.");'''
+          one(old,new,'export-copy')
+          one('{ru ? "AI-экспорт" : "AI Export"}', '{ru ? "Для другого ИИ · Пакет чтения" : "For another AI · Reading Packet"}', 'export-title')
+          one('data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">{ru ? "Переносимый snapshot" : "Portable snapshot"}', 'data-frey-export-help="__FREY_EXPORT_HELP_V0_2__">{ru ? "Промт + данные Frey" : "Prompt + Frey data"}', 'export-eyebrow')
+          one('<div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>', '<div className="freyExportHelp">{exportHelpText}</div>\n                          <Link href={`/guide/frey?lang=${initialLocale}`} style={{ color: "rgba(231,191,126,.92)", fontSize: "12px", textDecoration: "none" }}>{ru ? "Как правильно читать Frey и AI-пакет →" : "How to read Frey and the AI packet →"}</Link>', 'export-guide-link')
 
-          once(
-          '<summary className="freyExportSummary">{ru ? "AI-экспорт" : "AI Export"}</summary>',
-          '<summary className="freyExportSummary">{ru ? "Для другого ИИ · Пакет чтения" : "For another AI · Reading Packet"}</summary>',
-          'export summary')
-
-          once(
-          '<div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">{ru ? "Переносимый snapshot" : "Portable snapshot"}</div>',
-          '<div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_2__">{ru ? "Промт + данные Frey" : "Prompt + Frey data"}</div>',
-          'export eyebrow')
-
-          once(
-          '''<div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>
-                        </div>''',
-          '''<div className="freyExportHelp">{exportHelpText}</div>
-                          <Link href={`/guide/frey?lang=${initialLocale}`} style={{ color: "rgba(231,191,126,.92)", fontSize: "12px", textDecoration: "none" }}>
-                            {ru ? "Как правильно читать Frey и AI-пакет →" : "How to read Frey and the AI packet →"}
-                          </Link>
-                        </div>''',
-          'guide link')
-
-          once(
-          '''{EXPORT_GUIDE_LINES.map((line) => (
+          old='''{EXPORT_GUIDE_LINES.map((line) => (
                           <div key={line} className="freyExportGuideLine">{freyText(line, ru)}</div>
-                        ))}''',
-          '''{(ru ? [
+                        ))}'''
+          new='''{(ru ? [
                           "Одна дата = состояние. Две даты = переход. Δ = структурное изменение, а не рейтинг лучше/хуже.",
                           "Сначала читайте исходные метрики, затем Значение/Направление Frey как ограниченный слой интерпретации.",
                           "Связывайте метрики между собой; не трактуйте одну цифру изолированно.",
@@ -181,12 +111,11 @@ jobs:
                           "Всегда отделяйте наблюдение, интерпретацию, неопределённость и границу."
                         ] : EXPORT_GUIDE_LINES).map((line) => (
                           <div key={line} className="freyExportGuideLine">{line}</div>
-                        ))}''',
-          'guide lines')
-
-          path.write_text(s)
+                        ))}'''
+          one(old,new,'guide-lines')
+          p.write_text(s)
           PY
-      - name: Restore read-only public gate and add Frey preservation gate
+      - name: Restore public gate and install permanent Frey gate
         run: |
           git fetch origin master
           git show origin/master:.github/workflows/bhrigu-public-surface-integrity-pr.yml > .github/workflows/bhrigu-public-surface-integrity-pr.yml
@@ -211,12 +140,10 @@ jobs:
                   with:
                     ref: ${{ github.event.pull_request.head.sha }}
                     fetch-depth: 0
-                - name: Scope and preservation gates
+                - name: Scope and information preservation
                   run: |
-                    base='${{ github.event.pull_request.base.sha }}'
-                    head='${{ github.event.pull_request.head.sha }}'
-                    changed=$(git diff --name-only "$base" "$head")
-                    bad=$(printf '%s\n' "$changed" | grep -Ev '^(pages/frey\.js|pages/guide/frey\.js|lib/frey-export-minimal\.js|\.github/workflows/bhrigu-frey-preservation-pr\.yml)$' || true)
+                    base='${{ github.event.pull_request.base.sha }}'; head='${{ github.event.pull_request.head.sha }}'
+                    bad=$(git diff --name-only "$base" "$head" | grep -Ev '^(pages/frey\.js|pages/guide/frey\.js|lib/frey-export-minimal\.js|\.github/workflows/bhrigu-frey-preservation-pr\.yml)$' || true)
                     test -z "$bad" || { echo "$bad"; exit 1; }
                     test -z "$(git diff --name-only "$base" "$head" -- pages/api lib/frey-access-bridge.js components/btc ui/btc 'lib/btc-*')"
                     grep -q 'FREY_GUIDE_INFORMATION_PRESERVATION_V0_1' pages/guide/frey.js
@@ -240,15 +167,10 @@ jobs:
                     const a={date:'2026-08-28',phase_density:.62,harmonic_tension:.55,resonance_level:.71,eclipse_proximity:.25,structural_stability:.66,analysis:{}};
                     const b={date:'2026-09-02',phase_density:.70,harmonic_tension:.40,resonance_level:.79,eclipse_proximity:.31,structural_stability:.73,analysis:{}};
                     const p=buildFreyExportPayload({mode:'compare',locale:'ru',primaryResult:a,compareResult:b,deltaBlock:{mode:'test'},timelineResults:[{date:'2026-08-29',vector:'Stable line'}]});
-                    assert.equal(p.schema_version,'frey-ai-reading-packet-v1');
-                    assert.equal(p.language,'ru');
-                    assert(p.prompt_for_external_ai.includes('Две даты'));
-                    assert(p.prompt_for_external_ai.includes('не рейтинг «лучше / хуже»'));
-                    assert(p.metric_semantics.structural_stability);
-                    assert(Array.isArray(p.reference_materials));
-                    const text=buildFreyExportText(p);
-                    assert(text.includes('INSTRUCTION FOR THE RECEIVING AI'));
-                    assert(text.includes('FREY DATA PACKET'));
+                    assert.equal(p.schema_version,'frey-ai-reading-packet-v1'); assert.equal(p.language,'ru');
+                    assert(p.prompt_for_external_ai.includes('Две даты')); assert(p.prompt_for_external_ai.includes('не рейтинг «лучше / хуже»'));
+                    assert(p.metric_semantics.structural_stability); assert(Array.isArray(p.reference_materials));
+                    const text=buildFreyExportText(p); assert(text.includes('INSTRUCTION FOR THE RECEIVING AI')); assert(text.includes('FREY DATA PACKET'));
                     console.log('AI_PACKET_CONTRACT=PASS');
                     NODE
                 - run: npm ci --ignore-scripts
@@ -259,21 +181,16 @@ jobs:
                     for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28' >/dev/null && break; sleep 1; done
                     python3 - <<'PY'
                     from urllib.request import urlopen
+                    assets=['bhrigu-frey-en-brief-v4.pdf','bhrigu-frey-en-full-article-v4.pdf','bhrigu-frey-ru-v2-aligned.pdf','bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf','bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf']
                     for lang in ('en','ru'):
                       guide=urlopen(f'http://127.0.0.1:3000/guide/frey?lang={lang}',timeout=30).read().decode()
                       assert f'<html lang="{lang}"' in guide.lower()
-                      for asset in ['bhrigu-frey-en-brief-v4.pdf','bhrigu-frey-en-full-article-v4.pdf','bhrigu-frey-ru-v2-aligned.pdf','bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf','bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf']:
-                        assert asset in guide,(lang,asset)
+                      for asset in assets: assert asset in guide,(lang,asset)
                     ru=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
                     en=urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28',timeout=30).read().decode()
-                    assert 'Продолжить чтение' in ru
-                    assert 'Сравнить со второй датой · Δ изменения' in ru
-                    assert 'Для другого ИИ · Пакет чтения' in ru
-                    assert 'Compare with a second date · Δ change' in en
-                    assert 'For another AI · Reading Packet' in en
-                    assert 'Baseline pressure stays moderate, yet distortion rises fast' not in ru
-                    assert 'Signal aligns in short stable bands, but resonance breaks' not in ru
-                    assert 'Core structure holds, while outer balance becomes vulnerable' not in ru
+                    assert 'Продолжить чтение' in ru; assert 'Сравнить со второй датой · Δ изменения' in ru; assert 'Для другого ИИ · Пакет чтения' in ru
+                    assert 'Compare with a second date · Δ change' in en; assert 'For another AI · Reading Packet' in en
+                    for leak in ['Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']: assert leak not in ru,leak
                     assert 'data-frey-response-state="success"' in ru
                     print('FREY_HUMAN_LAYER=PASS')
                     PY
