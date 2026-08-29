@@ -20,11 +20,11 @@ jobs:
         run: |
           python3 - <<'BOOT'
           from pathlib import Path
-          import textwrap
           staged = Path('.github/workflows/frey-public-boundary-visual-lift-one-shot.yml').read_text()
           start = staged.index("          python3 - <<'PY'\n") + len("          python3 - <<'PY'\n")
           end = staged.index("\n          PY", start)
-          script = textwrap.dedent(staged[start:end])
+          raw = staged[start:end]
+          script = "\n".join(line[10:] if line.startswith("          ") else line for line in raw.splitlines())
           exec(compile(script, '<frey-visual-lift>', 'exec'))
           BOOT
       - name: Containment proof
