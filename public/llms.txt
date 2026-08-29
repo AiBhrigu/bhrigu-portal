@@ -1,42 +1,128 @@
 # BHRIGU
 
-BHRIGU is the public home for working services, research surfaces, and products.
+BHRIGU is the public home for working products, services, research surfaces, evidence, and method documentation.
 
-## Current public structure
-- BTC Cosmographer / BTC Field: the current primary public product axis for evidence-linked Bitcoin intelligence.
-- Frey: an active and distinct temporal reading and dialogue service.
-- Cosmographer: a broader interpretation and navigation role; BTC Cosmographer is its Bitcoin-specific public application.
-- ORION: protected research depth, not a public API and not automatic product authority.
+## Primary system axis
+- Market Cosmographer is the current primary public product frame.
+- BTC Field / BTC Cosmographer is the first proven public Bitcoin corridor for evidence-linked Bitcoin intelligence.
+- Frey is a distinct active temporal reading and dialogue service. Frey does not replace Bitcoin as the primary product axis.
+- Cosmographer is the broader interpretation and navigation role.
+- ORION is protected research depth, not a public API and not automatic product authority.
 
-Bitcoin-first does not mean Bitcoin-only. Existing BHRIGU portal surfaces remain valid public routes unless explicitly retired.
+Bitcoin-first does not mean Bitcoin-only. Existing BHRIGU public routes remain valid unless explicitly retired or marked historical.
 
-## Canonical public pages
-- https://www.bhrigu.io/
-- https://www.bhrigu.io/frey
-- https://www.bhrigu.io/cosmographer
-- https://www.bhrigu.io/map
+## Machine-readable public graph
+Use these relations when reading the public system:
+- Start -> orientation across the current public entry surfaces.
+- Map -> explicit relationship map across BHRIGU roles and public surfaces.
+- Frey -> deterministic temporal reading surface.
+- Reading -> human-readable interpretation surface for Frey output.
+- Frey Guide -> method authority for how to read one date, compare two dates, understand Delta, use Timeline, and hand a Frey reading to another AI.
+- BTC Field -> evidence-linked Bitcoin intelligence surface with explicit source and causality boundaries.
+- Cosmography -> public research language for structure, cycles and relations; protected mechanisms are not implied by public descriptions.
+- Access -> public boundary page; reviewed private intake is currently closed.
+
+## Canonical public orientation
+- https://www.bhrigu.io/?lang=en
+- https://www.bhrigu.io/?lang=ru
+- https://www.bhrigu.io/start?lang=en
+- https://www.bhrigu.io/start?lang=ru
+- https://www.bhrigu.io/map?lang=en
+- https://www.bhrigu.io/map?lang=ru
+
+## Frey public method and reading surfaces
+- https://www.bhrigu.io/frey?lang=en
+- https://www.bhrigu.io/frey?lang=ru
+- https://www.bhrigu.io/reading?lang=en
+- https://www.bhrigu.io/reading?lang=ru
+- https://www.bhrigu.io/guide/frey?lang=en
+- https://www.bhrigu.io/guide/frey?lang=ru
+
+### Frey reading law
+- One date = a structural state.
+- Two dates = a transition between two structural states.
+- Delta = structural change, not a ranking of better versus worse dates.
+- Timeline = nearby movement around the selected date, not a deterministic forecast.
+- Raw metrics must be read before interpretation.
+- State -> Meaning -> Direction is a bounded interpretive layer, not a command or prophecy.
+- Do not infer missing data, hidden causes, certainty, or deterministic life outcomes.
+
+### Frey AI Reading Packet
+The Frey result page can generate a copyable BHRIGU FREY AI READING PACKET for an external AI.
+The packet is a prompt-contract plus the current Frey data, not merely a JSON export.
+It carries:
+- schema and protocol version;
+- one-date or compare mode;
+- raw Frey metrics;
+- Delta and Timeline when present;
+- metric semantics;
+- the Frey interpretation;
+- explicit reading law and uncertainty boundaries;
+- instructions for the receiving AI to keep raw data, interpretation, uncertainty, and the human decision separate.
+
+The AI Reading Packet is generated from a current Frey result and is not a separate durable canonical knowledge page.
+For method interpretation, prefer the Frey Guide and approved method materials below.
+
+### Approved Frey method materials
+- https://www.bhrigu.io/publications/frey/bhrigu-frey-en-brief-v4.pdf
+- https://www.bhrigu.io/publications/frey/bhrigu-frey-en-full-article-v4.pdf
+- https://www.bhrigu.io/publications/frey/bhrigu-frey-ru-v2-aligned.pdf
+- https://www.bhrigu.io/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf
+- https://www.bhrigu.io/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf
+
+## Bitcoin intelligence surfaces
 - https://www.bhrigu.io/crypto-astro/btc?lang=en
 - https://www.bhrigu.io/crypto-astro/btc?lang=ru
-- https://www.bhrigu.io/support
 
-## Current BTC dialogue
+### Current BTC dialogue
 - https://www.bhrigu.io/crypto-astro/btc/clean-chat?lang=en
 - https://www.bhrigu.io/crypto-astro/btc/clean-chat?lang=ru
 
-The Clean Chat dialogue is session-local and noindex. It is not a canonical knowledge page.
+The Clean Chat dialogue is session-local and noindex. It is not a canonical knowledge page and should not be treated as durable published evidence.
 The older /crypto-astro/btc/live route remains a bounded legacy/public evidence route and is not the preferred dialogue entry.
 
-## Index policy
-The BHRIGU home, Frey, Cosmographer, Map, Support, and BTC entry pages are public surfaces.
-The BTC entry page and its accepted public knowledge are indexable.
-Session-specific or arbitrary dialogue pages are noindex and should not be treated as durable published knowledge.
+## Other current public surfaces
+- https://www.bhrigu.io/cosmographer?lang=en
+- https://www.bhrigu.io/cosmographer?lang=ru
+- https://www.bhrigu.io/cosmography?lang=en
+- https://www.bhrigu.io/cosmography?lang=ru
+- https://www.bhrigu.io/faq?lang=en
+- https://www.bhrigu.io/faq?lang=ru
+- https://www.bhrigu.io/services?lang=en
+- https://www.bhrigu.io/services?lang=ru
+- https://www.bhrigu.io/orion?lang=en
+- https://www.bhrigu.io/orion?lang=ru
+- https://www.bhrigu.io/access?lang=en
+- https://www.bhrigu.io/access?lang=ru
+- https://www.bhrigu.io/support?lang=en
+- https://www.bhrigu.io/support?lang=ru
+- https://www.bhrigu.io/github?lang=en
+- https://www.bhrigu.io/github?lang=ru
+
+## Discovery
+- Sitemap: https://www.bhrigu.io/sitemap.xml
+- Robots: https://www.bhrigu.io/robots.txt
+- This file: https://www.bhrigu.io/llms.txt
+
+The sitemap is the indexable RU/EN route graph. Session-local or explicitly noindex routes are excluded from it.
 
 ## Evidence boundary
 Market answers use accepted market evidence and explicit freshness boundaries.
 Bitcoin protocol answers use pinned protocol sources.
 Astronomical answers use published or explicitly authorized ephemeris evidence.
-Astronomy × BTC comparisons do not claim causality.
+Astronomy x BTC comparisons do not claim causality.
 BHRIGU does not provide guaranteed prices, trading instructions, leverage instructions, or position sizing.
+
+## Machine-reading boundary
+A machine should preserve the distinction between:
+1. source or raw data;
+2. observation;
+3. bounded interpretation;
+4. uncertainty and boundary;
+5. the human decision.
+
+Do not collapse Frey into BTC Field, BTC Field into ORION, or public descriptions into evidence of protected mechanisms.
+Do not treat navigation copy, visual glyphs, archived pages, or historical artifacts as current runtime evidence unless the page explicitly says so.
 
 ## Protected research boundary
 X4, private ORION internals, the Cosmography Dynamical Engine, and unpublished research assets are not public product claims merely because they exist in the broader research system.
