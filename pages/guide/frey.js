@@ -1,4 +1,3 @@
-import Head from 'next/head';
 import PublicSupportRoute from '../../components/btc/PublicSupportRoute';
 
 const coreDownloads = [
@@ -137,19 +136,7 @@ export default function FreyGuidePage({ locale }) {
 
   return (
     <>
-      <Head>
-        <title>{c.title}</title>
-        <meta name="description" content={c.description} />
-        <link rel="canonical" href={canonical} />
-        <link rel="alternate" hrefLang="en" href="https://www.bhrigu.io/guide/frey?lang=en" />
-        <link rel="alternate" hrefLang="ru" href="https://www.bhrigu.io/guide/frey?lang=ru" />
-        <link rel="alternate" hrefLang="x-default" href="https://www.bhrigu.io/guide/frey?lang=en" />
-        <meta property="og:title" content={c.title} />
-        <meta property="og:description" content={c.description} />
-        <meta property="og:url" content={canonical} />
-      </Head>
-
-      <main
+<main
         className="freyGuide"
         data-frey-guide="FREY_GUIDE_PUBLIC_ROUTE_V0_2"
         data-frey-guide-preservation="FREY_GUIDE_INFORMATION_PRESERVATION_V0_1"

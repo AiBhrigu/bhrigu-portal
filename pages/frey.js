@@ -990,6 +990,15 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </section>
 
               <div className="freyResultControls">
+                  <div data-frey-guide-discoverability="__FREY_GUIDE_DISCOVERABILITY_V0_1__" className="freyGuideRoute">
+                    <div className="freyGuideRouteCopy">
+                      <span className="freyGuideRouteEyebrow">{initialLocale === "ru" ? "ГИД FREY" : "FREY GUIDE"}</span>
+                      <span className="freyGuideRouteText">{initialLocale === "ru" ? "Как читать одну дату, сравнивать две даты, понимать Δ и передавать чтение стороннему ИИ." : "How to read one date, compare two dates, understand Δ and carry a Frey reading into another AI."}</span>
+                    </div>
+                    <Link className="freyGuideRouteLink" href={`/guide/frey?lang=${initialLocale}`}>
+                      {initialLocale === "ru" ? "Открыть полный Guide →" : "Open the full Guide →"}
+                    </Link>
+                  </div>
                 <div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>
                 <div
                   className="freyResultControlsHint"
@@ -3233,6 +3242,24 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           padding: 2px 16px 16px;
           border-top: 0;
         }
+
+        .freyGuideRoute {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) auto;
+          gap: 18px;
+          align-items: center;
+          margin-bottom: 14px;
+          padding: 16px 18px;
+          border: 1px solid rgba(154, 137, 209, 0.28);
+          border-radius: 18px;
+          background: radial-gradient(circle at 100% 0%, rgba(154, 137, 209, 0.12), transparent 42%), linear-gradient(90deg, rgba(98, 168, 216, 0.055), rgba(154, 137, 209, 0.045));
+        }
+        .freyGuideRouteCopy { display: grid; gap: 6px; }
+        .freyGuideRouteEyebrow { color: rgba(176, 160, 225, 0.92); font-size: 10px; font-weight: 750; letter-spacing: 0.16em; text-transform: uppercase; }
+        .freyGuideRouteText { max-width: 560px; color: rgba(220, 226, 240, 0.82); font-size: 13px; line-height: 1.55; }
+        :global(.freyGuideRouteLink) { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid rgba(98, 168, 216, 0.34); border-radius: 999px; color: rgba(161, 204, 232, 0.96) !important; background: rgba(98, 168, 216, 0.045); text-decoration: none !important; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+        :global(.freyGuideRouteLink:hover), :global(.freyGuideRouteLink:focus-visible) { border-color: rgba(154, 137, 209, 0.58); background: rgba(154, 137, 209, 0.08); outline: none; }
+        @media (max-width: 760px) { .freyGuideRoute { grid-template-columns: 1fr; gap: 12px; } :global(.freyGuideRouteLink) { width: fit-content; max-width: 100%; white-space: normal; text-align: center; } }
 
         .freyResultControls {
           display: grid;
