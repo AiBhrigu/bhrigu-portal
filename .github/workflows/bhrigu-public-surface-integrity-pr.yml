@@ -1,105 +1,104 @@
-name: BHRIGU Frey Preservation One-Shot Worker
+name: BHRIGU Public Surface Integrity
 on:
   pull_request:
     branches: [master]
+    paths:
+      - 'pages/**'
+      - 'components/BhriguPhiHeader.jsx'
+      - 'components/PrevNextBlock.jsx'
+      - 'components/PortalFooterNav.jsx'
+      - 'public/sitemap.xml'
+      - '.github/workflows/bhrigu-public-surface-integrity-pr.yml'
 permissions:
-  contents: write
+  contents: read
 jobs:
-  repair:
-    if: github.head_ref == 'frey-preservation-ai-export-v0-1'
+  integrity:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-      - name: Guard exact base
-        run: test '${{ github.event.pull_request.base.sha }}' = '84e20132277afc72bca010679474ad716827191a'
-      - name: Patch Frey human layer once
+      - name: Protected diff gate
         run: |
-          if grep -q '__FREY_AI_READING_PACKET_HUMAN_V0_1__' pages/frey.js; then
-            echo 'FREY_PATCH_ALREADY_APPLIED=YES'
-            exit 0
-          fi
+          git fetch origin master
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/llms.txt public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
+          test -z "$protected" || { echo "$protected"; exit 1; }
+      - name: Static truth gates
+        run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
-          p=Path('pages/frey.js'); s=p.read_text()
-          def one(old,new,label):
-            global s
-            n=s.count(old)
-            if n != 1: raise SystemExit(f'{label}: expected 1 got {n}')
-            s=s.replace(old,new,1)
-          def sub(pattern,new,label):
-            global s
-            s,n=re.subn(pattern,new,s,count=1,flags=re.S)
-            if n != 1: raise SystemExit(f'{label}: expected 1 got {n}')
-          one('const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";', 'const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";\nconst AI_READING_PACKET_MARKER = "__FREY_AI_READING_PACKET_HUMAN_V0_1__";', 'marker')
-          sub(r'''function freyText\(value, ru\) \{.*?\n\}''', '''function freyText(value, ru) {
-            if (!ru || typeof value !== "string") return value;
-            const exact = FREY_RU_TEXT.get(value);
-            if (exact) return exact;
-            if (value.includes(" · ")) return value.split(" · ").map((segment) => FREY_RU_TEXT.get(segment) || segment).join(" · ");
-            if (value.includes(". ")) {
-              const parts = value.split(". ");
-              let translatedAny = false;
-              const translated = parts.map((segment, index) => {
-                const sentence = index < parts.length - 1 ? `${segment}.` : segment;
-                const mapped = FREY_RU_TEXT.get(sentence);
-                if (mapped) translatedAny = true;
-                return mapped || sentence;
-              });
-              if (translatedAny) return translated.join(" ");
-            }
-            return value;
-          }''','freyText')
-          replacements=[
-            ('<div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>','<div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>','nav-label'),
-            ('"Сравнение активно · Проверьте обе даты ниже."','"Сравнение со второй датой активно. Ниже показано, что изменилось между двумя датами."','active-ru'),
-            ('"Compare active · Review both dates below."','"A second-date comparison is active. Below you can see what changed between the two dates."','active-en'),
-            ('"Откройте сравнение, укажите дату и вычислите Δ структурной разницы."','"Добавьте вторую дату, чтобы увидеть Δ — что изменилось между текущей и выбранной датой."','ready-ru'),
-            ('"Open Compare to enter any date and compute Δ Structural Difference."','"Add a second date to see Δ — what changed between the current date and the date you choose."','ready-en'),
-            ('{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}','{ru ? "Сравнить со второй датой · Δ изменения" : "Compare with a second date · Δ change"}','compare-title'),
-            ('↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}','↔ {ru ? "Ближайшие даты · Таймлайн" : "Nearby dates · Timeline"}','timeline-title'),
-            ('{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}','{ru ? "Здесь появится движение вокруг выбранной даты после расчёта соседних дат. Это карта ближайшего движения, а не гарантированный прогноз." : "Nearby date runs appear here as a local movement map around the selected date, not a guaranteed forecast."}','timeline-empty'),
-            ('const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";','const copyLabel = hasCompare ? (ru ? "Скопировать пакет сравнения для ИИ" : "Copy compare packet for AI") : (ru ? "Скопировать пакет для другого ИИ" : "Copy packet for another AI");','copy-label'),
-            ('const copyFeedbackLabel = exportCopied ? "Copied" : copyLabel;','const copyFeedbackLabel = exportCopied ? (ru ? "Скопировано" : "Copied") : copyLabel;','copy-feedback'),
-            ('? "Compare export includes both dates and the active delta."','? (ru ? "Полноценный промт + обе даты + Δ структурного изменения. Вставьте пакет в сторонний ИИ и добавьте свой вопрос." : "A full prompt + both dates + structural Δ. Paste the packet into another AI and add your question.")','help-compare'),
-            (': "Single-date export is ready for direct AI handoff.";',': (ru ? "Полноценный промт + данные Frey одной даты. Сторонний ИИ получает правила трактовки вместе с самим чтением." : "A full prompt + one-date Frey data. The receiving AI gets the interpretation rules together with the reading itself.");','help-single'),
-            ('{ru ? "AI-экспорт" : "AI Export"}','{ru ? "Для другого ИИ · Пакет чтения" : "For another AI · Reading Packet"}','export-title'),
-            ('data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">{ru ? "Переносимый snapshot" : "Portable snapshot"}','data-frey-export-help="__FREY_EXPORT_HELP_V0_2__">{ru ? "Промт + данные Frey" : "Prompt + Frey data"}','export-eyebrow'),
-            ('<div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>','<div className="freyExportHelp">{exportHelpText}</div>\n                          <Link href={`/guide/frey?lang=${initialLocale}`} style={{ color: "rgba(231,191,126,.92)", fontSize: "12px", textDecoration: "none" }}>{ru ? "Как правильно читать Frey и AI-пакет →" : "How to read Frey and the AI packet →"}</Link>','guide-link'),
-          ]
-          for old,new,label in replacements: one(old,new,label)
-          one('<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>','<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>\n                      <div className="freyResultControlsHint">{ru ? "Выберите любую вторую дату. Frey рассчитает обе даты и покажет структурный переход между ними — не рейтинг «лучше / хуже»." : "Choose any second date. Frey calculates both dates and shows the structural transition between them — not a better/worse ranking."}</div>','compare-explain')
-          sub(r'''mode: hasCompare \? "compare" : "single",\s+url:''','''mode: hasCompare ? "compare" : "single",
-                  locale: initialLocale,
-                  url:''','export-locale')
-          sub(r'''freyVoice: minimalVoice,\s+\}\);''','''freyVoice: minimalVoice,
-                  deltaBlock,
-                  timelineResults: initialTimelineResults,
-                });''','export-context')
-          sub(r'''\{EXPORT_GUIDE_LINES\.map\(\(line\) => \(\s*<div key=\{line\} className="freyExportGuideLine">\{freyText\(line, ru\)\}</div>\s*\)\)\}''','''{(ru ? [
-                          "Одна дата = состояние. Две даты = переход. Δ = структурное изменение, а не рейтинг лучше/хуже.",
-                          "Сначала читайте исходные метрики, затем Значение/Направление Frey как ограниченный слой интерпретации.",
-                          "Связывайте метрики между собой; не трактуйте одну цифру изолированно.",
-                          "Таймлайн показывает ближайшее движение вокруг выбранной даты, а не гарантированный прогноз.",
-                          "Не придумывайте отсутствующие данные, причинность, пророчество или автоматические жизненные инструкции.",
-                          "Всегда отделяйте наблюдение, интерпретацию, неопределённость и границу."
-                        ] : EXPORT_GUIDE_LINES).map((line) => (
-                          <div key={line} className="freyExportGuideLine">{line}</div>
-                        ))}''','guide-lines')
-          p.write_text(s)
+          header=Path('components/BhriguPhiHeader.jsx').read_text()
+          home=Path('pages/index.js').read_text()
+          reading=Path('pages/reading.js').read_text()
+          frey=Path('pages/frey.js').read_text()
+          app=Path('pages/_app.js').read_text()
+          checks={
+            'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
+            'ACCESS_CLOSED':'temporarily closed' in Path('pages/access.tsx').read_text(),
+            'SIGNAL_ARCHIVE':'HISTORICAL SIGNAL' in Path('pages/signal.js').read_text(),
+            'CHRONICLE_DATED':'JANUARY 2026 SNAPSHOT' in Path('pages/chronicle.js').read_text(),
+            'SITEMAP_BILINGUAL':'?lang=ru' in Path('public/sitemap.xml').read_text() and '?lang=en' in Path('public/sitemap.xml').read_text(),
+            'HEADER_CANON_PRESERVED':'BHRIGU_PUBLIC_HOME_HEADER_V0_1' in header and 'bh-plaque' in header and 'bh-word' in header,
+            'READING_RU_BOUND':'locale === "ru"' in reading and 'Темпоральное чтение Frey' in reading and 'Временной якорь' in reading,
+            'FREY_RU_BOUND':'initialLocale === "ru"' in frey and 'FREY_RU_TEXT' in frey and 'PublicSupportRoute locale={initialLocale}' in frey,
+            'FREY_EXACT_TRANSLATOR':'out.split(en).join(translated)' not in frey and 'const exact = FREY_RU_TEXT.get(value);' in frey and '.map((segment) => FREY_RU_TEXT.get(segment) || segment)' in frey,
+            'FREY_RAW_STATE':'data-frey-response-state={responseSurface.ui_state}' in frey,
+            'HOME_LOCALE_LINKS':'/frey?lang=${locale}' in home and '/cosmographer?lang=${locale}' in home and '/orion?lang=${locale}' in home,
+            'HOME_JSONLD_LOCALE':'inLanguage:locale' in home and 'buildJsonLd(locale)' in home,
+            'HOME_META_DEDUP':'<Head><title>Market Cosmographer' not in home,
+            'HOME_MOBILE_PROOF_SCALE':'[data-btc-state-kicker]' in app and 'font-size: 10.5px !important' in app and 'font-size: 12px !important' in app,
+            'HOME_FIRST_FOLD_BOUND':'min-height: 368px !important' in app,
+          }
+          bad=[k for k,v in checks.items() if not v]
+          print(checks)
+          assert not bad,bad
           PY
-      - name: Commit product patch only
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: Start exact-head server
         run: |
-          if git diff --quiet -- pages/frey.js; then
-            echo 'NO_PRODUCT_PATCH_NEEDED=YES'
-            exit 0
-          fi
-          git config user.name 'BHRIGU bounded worker'
-          git config user.email '154300034+AiBhrigu@users.noreply.github.com'
-          git add pages/frey.js
-          git commit -m 'Frey: humanize compare timeline and AI reading packet'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          npm start >/tmp/public-surface.log 2>&1 & echo $! >/tmp/public-surface.pid
+          for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/start?lang=ru' >/dev/null && exit 0; sleep 1; done
+          cat /tmp/public-surface.log; exit 1
+      - name: First HTTP RU EN matrix
+        run: |
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          routes=['start','cosmographer','investors','map','faq','services','dao','orion','signal','archive','chronicle','cosmography','access','github','guide/frey','frey','reading','support']
+          noindex={'dao'}
+          for route in routes:
+            for lang in ('en','ru'):
+              html=urlopen(f'http://127.0.0.1:3000/{route}?lang={lang}',timeout=30).read().decode()
+              lower=html.lower()
+              assert f'<html lang="{lang}"' in lower,(route,lang,'html-lang')
+              assert f'?lang={lang}' in html,(route,lang,'localized-link')
+              if route in noindex:
+                assert 'name="robots" content="noindex,follow"' in lower,(route,lang,'noindex')
+              else:
+                assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
+              print('PASS',route,lang)
+
+          reading=urlopen('http://127.0.0.1:3000/reading?lang=ru',timeout=30).read().decode()
+          for text in ['Темпоральное чтение Frey','Временной якорь','Структурное состояние','Поле напряжения','Поле резонанса','Линия навигатора','Следующий шаг']:
+            assert text in reading,('reading-ru',text)
+
+          frey=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
+          for text in ['Космограф · Линза связей','Активная дата · Точка чтения','Интенсивность','Интерпретация Frey','Основное чтение','Слои интерпретации','Навигационный слой','Средняя поддержка с чувствительными краями','Переходная зона, чувствительная к затмению','Стабильность','Экспорт для одной даты готов к прямой передаче в ИИ.','Скопировать snapshot']:
+            assert text in frey,('frey-ru',text)
+          for bad in ['Medium support with чувствительна edges','Eclipse-чувствительна transition band']:
+            assert bad not in frey,('frey-mixed-language',bad)
+          assert 'data-frey-response-state="success"' in frey, 'frey-raw-state'
+
+          home=urlopen('http://127.0.0.1:3000/?lang=ru',timeout=30).read().decode()
+          assert '<title' in home and '>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
+          assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
+          assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
+          print('RU_EN_BODY_PARITY=PASS')
+          PY
+      - name: Stop server
+        if: always()
+        run: test ! -f /tmp/public-surface.pid || kill "$(cat /tmp/public-surface.pid)" || true
