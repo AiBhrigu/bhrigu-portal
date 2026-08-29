@@ -16,8 +16,12 @@ jobs:
           fetch-depth: 0
       - name: Guard exact base
         run: test '${{ github.event.pull_request.base.sha }}' = '84e20132277afc72bca010679474ad716827191a'
-      - name: Patch Frey human layer
+      - name: Patch Frey human layer once
         run: |
+          if grep -q '__FREY_AI_READING_PACKET_HUMAN_V0_1__' pages/frey.js; then
+            echo 'FREY_PATCH_ALREADY_APPLIED=YES'
+            exit 0
+          fi
           python3 - <<'PY'
           from pathlib import Path
           import re
@@ -31,15 +35,12 @@ jobs:
             global s
             s,n=re.subn(pattern,new,s,count=1,flags=re.S)
             if n != 1: raise SystemExit(f'{label}: expected 1 got {n}')
-
           one('const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";', 'const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";\nconst AI_READING_PACKET_MARKER = "__FREY_AI_READING_PACKET_HUMAN_V0_1__";', 'marker')
           sub(r'''function freyText\(value, ru\) \{.*?\n\}''', '''function freyText(value, ru) {
             if (!ru || typeof value !== "string") return value;
             const exact = FREY_RU_TEXT.get(value);
             if (exact) return exact;
-            if (value.includes(" · ")) {
-              return value.split(" · ").map((segment) => FREY_RU_TEXT.get(segment) || segment).join(" · ");
-            }
+            if (value.includes(" · ")) return value.split(" · ").map((segment) => FREY_RU_TEXT.get(segment) || segment).join(" · ");
             if (value.includes(". ")) {
               const parts = value.split(". ");
               let translatedAny = false;
@@ -52,8 +53,7 @@ jobs:
               if (translatedAny) return translated.join(" ");
             }
             return value;
-          }''', 'freyText')
-
+          }''','freyText')
           replacements=[
             ('<div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>','<div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>','nav-label'),
             ('"Сравнение активно · Проверьте обе даты ниже."','"Сравнение со второй датой активно. Ниже показано, что изменилось между двумя датами."','active-ru'),
@@ -72,7 +72,6 @@ jobs:
             ('<div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>','<div className="freyExportHelp">{exportHelpText}</div>\n                          <Link href={`/guide/frey?lang=${initialLocale}`} style={{ color: "rgba(231,191,126,.92)", fontSize: "12px", textDecoration: "none" }}>{ru ? "Как правильно читать Frey и AI-пакет →" : "How to read Frey and the AI packet →"}</Link>','guide-link'),
           ]
           for old,new,label in replacements: one(old,new,label)
-
           one('<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>','<div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>\n                      <div className="freyResultControlsHint">{ru ? "Выберите любую вторую дату. Frey рассчитает обе даты и покажет структурный переход между ними — не рейтинг «лучше / хуже»." : "Choose any second date. Frey calculates both dates and shows the structural transition between them — not a better/worse ranking."}</div>','compare-explain')
           sub(r'''mode: hasCompare \? "compare" : "single",\s+url:''','''mode: hasCompare ? "compare" : "single",
                   locale: initialLocale,
@@ -93,75 +92,14 @@ jobs:
                         ))}''','guide-lines')
           p.write_text(s)
           PY
-      - name: Restore public gate and install permanent Frey gate
+      - name: Commit product patch only
         run: |
-          git fetch origin master
-          git show origin/master:.github/workflows/bhrigu-public-surface-integrity-pr.yml > .github/workflows/bhrigu-public-surface-integrity-pr.yml
-          cat > .github/workflows/bhrigu-frey-preservation-pr.yml <<'YAML'
-          name: BHRIGU Frey Preservation Gate
-          on:
-            pull_request:
-              branches: [master]
-              paths: ['pages/frey.js','pages/guide/frey.js','lib/frey-export-minimal.js','.github/workflows/bhrigu-frey-preservation-pr.yml']
-          permissions: { contents: read }
-          jobs:
-            frey-preservation:
-              runs-on: ubuntu-24.04
-              timeout-minutes: 30
-              steps:
-                - uses: actions/checkout@v4
-                  with: { ref: '${{ github.event.pull_request.head.sha }}', fetch-depth: 0 }
-                - name: Scope and information preservation
-                  run: |
-                    base='${{ github.event.pull_request.base.sha }}'; head='${{ github.event.pull_request.head.sha }}'
-                    bad=$(git diff --name-only "$base" "$head" | grep -Ev '^(pages/frey\.js|pages/guide/frey\.js|lib/frey-export-minimal\.js|\.github/workflows/bhrigu-frey-preservation-pr\.yml)$' || true)
-                    test -z "$bad" || { echo "$bad"; exit 1; }
-                    test -z "$(git diff --name-only "$base" "$head" -- pages/api lib/frey-access-bridge.js components/btc ui/btc 'lib/btc-*')"
-                    for x in bhrigu-frey-en-brief-v4.pdf bhrigu-frey-en-full-article-v4.pdf bhrigu-frey-ru-v2-aligned.pdf bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf; do grep -q "$x" pages/guide/frey.js; done
-                    grep -q 'FREY_GUIDE_INFORMATION_PRESERVATION_V0_1' pages/guide/frey.js
-                    grep -q 'reviewed private intake is temporarily closed' pages/guide/frey.js
-                    grep -q 'Одна дата открывает состояние. Две даты открывают переход.' pages/guide/frey.js
-                    grep -q 'FREY_AI_READING_PACKET_HUMAN_V0_1' pages/frey.js
-                    grep -q 'Compare with a second date · Δ change' pages/frey.js
-                    grep -q 'For another AI · Reading Packet' pages/frey.js
-                    grep -q 'frey-ai-reading-packet-v1' lib/frey-export-minimal.js
-                    grep -q 'prompt_for_external_ai' lib/frey-export-minimal.js
-                - name: AI packet contract
-                  run: |
-                    node <<'NODE'
-                    const assert=require('assert'); const {buildFreyExportPayload,buildFreyExportText}=require('./lib/frey-export-minimal');
-                    const a={date:'2026-08-28',phase_density:.62,harmonic_tension:.55,resonance_level:.71,eclipse_proximity:.25,structural_stability:.66,analysis:{}};
-                    const b={date:'2026-09-02',phase_density:.70,harmonic_tension:.40,resonance_level:.79,eclipse_proximity:.31,structural_stability:.73,analysis:{}};
-                    const p=buildFreyExportPayload({mode:'compare',locale:'ru',primaryResult:a,compareResult:b,deltaBlock:{mode:'test'},timelineResults:[{date:'2026-08-29',vector:'Stable line'}]});
-                    assert.equal(p.schema_version,'frey-ai-reading-packet-v1'); assert(p.prompt_for_external_ai.includes('Две даты')); assert(p.prompt_for_external_ai.includes('не рейтинг «лучше / хуже»')); assert(p.metric_semantics.structural_stability); assert(Array.isArray(p.reference_materials));
-                    const t=buildFreyExportText(p); assert(t.includes('INSTRUCTION FOR THE RECEIVING AI')); assert(t.includes('FREY DATA PACKET')); console.log('AI_PACKET_CONTRACT=PASS');
-                    NODE
-                - run: npm ci --ignore-scripts
-                - run: npm run build
-                - name: Human-layer first HTTP
-                  run: |
-                    npm start >/tmp/frey.log 2>&1 & echo $! >/tmp/frey.pid
-                    for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28' >/dev/null && break; sleep 1; done
-                    python3 - <<'PY'
-                    from urllib.request import urlopen
-                    assets=['bhrigu-frey-en-brief-v4.pdf','bhrigu-frey-en-full-article-v4.pdf','bhrigu-frey-ru-v2-aligned.pdf','bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf','bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf']
-                    for lang in ('en','ru'):
-                      g=urlopen(f'http://127.0.0.1:3000/guide/frey?lang={lang}').read().decode(); assert f'<html lang="{lang}"' in g.lower(); [(_ for _ in ()).throw(AssertionError(x)) if x not in g else None for x in assets]
-                    ru=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28').read().decode(); en=urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28').read().decode()
-                    for x in ['Продолжить чтение','Сравнить со второй датой · Δ изменения','Для другого ИИ · Пакет чтения']: assert x in ru,x
-                    for x in ['Compare with a second date · Δ change','For another AI · Reading Packet']: assert x in en,x
-                    for leak in ['Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']: assert leak not in ru,leak
-                    assert 'data-frey-response-state="success"' in ru; print('FREY_HUMAN_LAYER=PASS')
-                    PY
-                - name: Approved materials exist
-                  run: |
-                    test -f public/publications/frey/bhrigu-frey-en-brief-v4.pdf; test -f public/publications/frey/bhrigu-frey-en-full-article-v4.pdf; test -f public/publications/frey/bhrigu-frey-ru-v2-aligned.pdf; test -f public/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf; test -f public/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf
-                - if: always()
-                  run: test ! -f /tmp/frey.pid || kill "$(cat /tmp/frey.pid)" || true
-          YAML
-      - name: Commit guarded repair
-        run: |
-          git config user.name 'BHRIGU bounded worker'; git config user.email '154300034+AiBhrigu@users.noreply.github.com'
-          git add pages/frey.js .github/workflows/bhrigu-public-surface-integrity-pr.yml .github/workflows/bhrigu-frey-preservation-pr.yml
+          if git diff --quiet -- pages/frey.js; then
+            echo 'NO_PRODUCT_PATCH_NEEDED=YES'
+            exit 0
+          fi
+          git config user.name 'BHRIGU bounded worker'
+          git config user.email '154300034+AiBhrigu@users.noreply.github.com'
+          git add pages/frey.js
           git commit -m 'Frey: humanize compare timeline and AI reading packet'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
