@@ -5,6 +5,9 @@ on:
     paths:
       - 'pages/frey.js'
       - 'pages/guide/frey.js'
+      - 'pages/_app.js'
+      - 'pages/start.js'
+      - 'pages/map.js'
       - 'lib/frey-export-minimal.js'
       - '.github/workflows/bhrigu-frey-preservation-pr.yml'
 permissions:
@@ -33,6 +36,28 @@ jobs:
           grep -q 'bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf' pages/guide/frey.js
           grep -q 'reviewed private intake is temporarily closed' pages/guide/frey.js
           grep -q 'Одна дата открывает состояние. Две даты открывают переход.' pages/guide/frey.js
+      - name: Single Guide metadata authority
+        run: |
+          ! grep -q 'next/head' pages/guide/frey.js
+          ! grep -q '<Head>' pages/guide/frey.js
+          grep -q 'Frey Guide · Read, Compare & AI Export | BHRIGU' pages/_app.js
+          grep -q 'Гид Frey · Чтение, сравнение и AI Export | BHRIGU' pages/_app.js
+      - name: Guide discoverability and Phi visual contract
+        run: |
+          grep -q '__FREY_GUIDE_DISCOVERABILITY_V0_1__' pages/frey.js
+          grep -q 'Открыть полный Guide →' pages/frey.js
+          grep -q 'Open the full Guide →' pages/frey.js
+          grep -q '/guide/frey?lang=' pages/frey.js
+          grep -q 'Frey Guide' pages/map.js
+          grep -q 'Гид Frey' pages/map.js
+          grep -q '/guide/frey' pages/map.js
+          grep -q '#62a8d8' pages/start.js
+          grep -q '#9a89d1' pages/start.js
+          grep -q '#62a8d8' pages/map.js
+          grep -q '#9a89d1' pages/map.js
+          grep -q 'FieldAnchorGlyph' pages/start.js
+          grep -q 'startFieldGlyph' pages/start.js
+          grep -q 'column-gap:28px' <(tr -d ' ' < pages/map.js)
       - name: Frey human-layer contract
         run: |
           grep -q 'FREY_AI_READING_PACKET_HUMAN_V0_1' pages/frey.js
@@ -80,21 +105,40 @@ jobs:
           for i in $(seq 1 60); do curl -fsS 'http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28' >/dev/null && break; sleep 1; done
           python3 - <<'PY'
           from urllib.request import urlopen
+          import re
           assets=['bhrigu-frey-en-brief-v4.pdf','bhrigu-frey-en-full-article-v4.pdf','bhrigu-frey-ru-v2-aligned.pdf','bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf','bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf']
           for lang in ('en','ru'):
             guide=urlopen(f'http://127.0.0.1:3000/guide/frey?lang={lang}',timeout=30).read().decode()
             assert f'<html lang="{lang}"' in guide.lower(),lang
+            assert guide.count('rel="canonical"') == 1,(lang,'canonical',guide.count('rel="canonical"'))
+            assert guide.count('name="description"') == 1,(lang,'description',guide.count('name="description"'))
             for asset in assets: assert asset in guide,(lang,asset)
           ru=urlopen('http://127.0.0.1:3000/frey?lang=ru&d=2026-08-28',timeout=30).read().decode()
           en=urlopen('http://127.0.0.1:3000/frey?lang=en&d=2026-08-28',timeout=30).read().decode()
-          for x in ['Продолжить чтение','Сравнить со второй датой · Δ изменения','Для другого ИИ · Пакет чтения','Промт + данные Frey']:
+          for x in ['Продолжить чтение','Сравнить со второй датой · Δ изменения','Для другого ИИ · Пакет чтения','Промт + данные Frey','Открыть полный Guide →','/guide/frey?lang=ru']:
             assert x in ru,x
-          for x in ['Continue the reading','Compare with a second date · Δ change','For another AI · Reading Packet','Prompt + Frey data']:
+          for x in ['Continue the reading','Compare with a second date · Δ change','For another AI · Reading Packet','Prompt + Frey data','Open the full Guide →','/guide/frey?lang=en']:
             assert x in en,x
+          reading_ru=urlopen('http://127.0.0.1:3000/reading?lang=ru',timeout=30).read().decode()
+          reading_en=urlopen('http://127.0.0.1:3000/reading?lang=en',timeout=30).read().decode()
+          assert '/guide/frey?lang=ru' in reading_ru
+          assert '/guide/frey?lang=en' in reading_en
+          map_ru=urlopen('http://127.0.0.1:3000/map?lang=ru',timeout=30).read().decode()
+          map_en=urlopen('http://127.0.0.1:3000/map?lang=en',timeout=30).read().decode()
+          assert 'Гид Frey' in map_ru and '/guide/frey?lang=ru' in map_ru
+          assert 'Frey Guide' in map_en and '/guide/frey?lang=en' in map_en
+          start_ru=urlopen('http://127.0.0.1:3000/start?lang=ru',timeout=30).read().decode()
+          start_en=urlopen('http://127.0.0.1:3000/start?lang=en',timeout=30).read().decode()
+          for html in (start_ru,start_en):
+            assert 'data-glyph-class="FIELD_ANCHOR"' in html
+            assert '#62a8d8' in html and '#9a89d1' in html
+          for html in (map_ru,map_en):
+            assert '#62a8d8' in html and '#9a89d1' in html
+            assert 'column-gap:28px' in html.replace(' ','')
           for leak in ['Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']:
             assert leak not in ru,leak
           assert 'data-frey-response-state="success"' in ru
-          print('FREY_HUMAN_LAYER=PASS')
+          print('FREY_GUIDE_DISCOVERABILITY_PHI=PASS')
           PY
       - name: Stop server
         if: always()
