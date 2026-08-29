@@ -13,6 +13,7 @@ const C1_3_COMPARE_AUTO_OPEN_MARKER = "__FREY_C1_3_COMPARE_AUTO_OPEN_V0_1__";
 const C1_3_INTERPRETATION_SPACING_MARKER = "__FREY_C1_3_INTERPRETATION_SPACING_V0_1__";
 const C1_4_BOTTOM_NAV_DETACH_MARKER = "__FREY_C1_4_BOTTOM_NAV_DETACH_V0_1__";
 const C1_5_BOTTOM_NAV_SPACING_MARKER = "__FREY_C1_5_BOTTOM_NAV_SPACING_V0_1__";
+const AI_READING_PACKET_MARKER = "__FREY_AI_READING_PACKET_HUMAN_V0_1__";
 const ANCHOR_STORAGE_KEY = "frey.anchor.v1";
 const ANCHOR_STORAGE_SCHEMA_VERSION = "v1";
 
@@ -21,11 +22,17 @@ function freyText(value, ru) {
   if (!ru || typeof value !== "string") return value;
   const exact = FREY_RU_TEXT.get(value);
   if (exact) return exact;
-  if (value.includes(" · ")) {
-    return value
-      .split(" · ")
-      .map((segment) => FREY_RU_TEXT.get(segment) || segment)
-      .join(" · ");
+  if (value.includes(" · ")) return value.split(" · ").map((segment) => FREY_RU_TEXT.get(segment) || segment).join(" · ");
+  if (value.includes(". ")) {
+    const parts = value.split(". ");
+    let translatedAny = false;
+    const translated = parts.map((segment, index) => {
+      const sentence = index < parts.length - 1 ? `${segment}.` : segment;
+      const mapped = FREY_RU_TEXT.get(sentence);
+      if (mapped) translatedAny = true;
+      return mapped || sentence;
+    });
+    if (translatedAny) return translated.join(" ");
   }
   return value;
 }
@@ -983,21 +990,22 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
               </section>
 
               <div className="freyResultControls">
-                <div className="freyResultControlsLabel">{ru ? "Навигационный слой" : "Navigation Layer"}</div>
+                <div className="freyResultControlsLabel" data-frey-human-navigation={AI_READING_PACKET_MARKER}>{ru ? "Продолжить чтение" : "Continue the reading"}</div>
                 <div
                   className="freyResultControlsHint"
                   data-frey-compare-discoverability="__FREY_COMPARE_DISCOVERABILITY_V0_27__"
                   data-frey-compare-state={hasCompare ? "active" : "ready"}
                 >
                   {hasCompare
-                    ? (ru ? "Сравнение активно · Проверьте обе даты ниже." : "Compare active · Review both dates below.")
-                    : (ru ? "Откройте сравнение, укажите дату и вычислите Δ структурной разницы." : "Open Compare to enter any date and compute Δ Structural Difference.")}
+                    ? (ru ? "Сравнение со второй датой активно. Ниже показано, что изменилось между двумя датами." : "A second-date comparison is active. Below you can see what changed between the two dates.")
+                    : (ru ? "Добавьте вторую дату, чтобы увидеть Δ — что изменилось между текущей и выбранной датой." : "Add a second date to see Δ — what changed between the current date and the date you choose.")}
                 </div>
                 <div className="freyExpandStack">
                   <details ref={compareExpandRef} className="freyExpandBlock" data-frey-compare="__FREY_COMPARE_MODE_V0_1__" data-frey-compare-auto-open={C1_3_COMPARE_AUTO_OPEN_MARKER} data-frey-expand-state={hasCompare ? "active" : "ready"} open={hasCompare}>
-                    <summary className="freyExpandSummary">{ru ? "Δ Сравнение · Структурная разница" : "Δ Compare · Structural Difference"}</summary>
+                    <summary className="freyExpandSummary">{ru ? "Сравнить со второй датой · Δ изменения" : "Compare with a second date · Δ change"}</summary>
 
                     <div className="freyCompareBlock freyCompareBlockSecondary" data-frey-compare-primary={initialDate || ""} data-frey-compare-secondary={initialCompareDate || ""}>
+                      <div className="freyResultControlsHint">{ru ? "Выберите любую вторую дату. Frey рассчитает обе даты и покажет структурный переход между ними — не рейтинг «лучше / хуже»." : "Choose any second date. Frey calculates both dates and shows the structural transition between them — not a better/worse ranking."}</div>
                       <div className="freyCompareRow">
                         <input
                           type="date"
@@ -1055,7 +1063,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   </details>
 
                   <details className="freyExpandBlock" data-frey-timeline="__FREY_TIMELINE_RESULT_ONLY_V0_1__" data-frey-expand-state={hasTimeline ? "active" : "empty"}>
-                    <summary className="freyExpandSummary">↔ {ru ? "Таймлайн · Ближайшее движение" : "Timeline · Nearby Movement"}</summary>
+                    <summary className="freyExpandSummary">↔ {ru ? "Ближайшие даты · Таймлайн" : "Nearby dates · Timeline"}</summary>
                     {hasTimeline ? (
                       <div className="freyTimelineBlock">
                         <div className="freyTimelineRow">
@@ -1071,7 +1079,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                         </div>
                       </div>
                     ) : (
-                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">{ru ? "Ближайшее движение появится после запусков по датам." : "Nearby movement appears after date-based runs."}</div>
+                      <div className="freyExpandEmpty" data-frey-timeline-state="pending">{ru ? "Здесь появится движение вокруг выбранной даты после расчёта соседних дат. Это карта ближайшего движения, а не гарантированный прогноз." : "Nearby date runs appear here as a local movement map around the selected date, not a guaranteed forecast."}</div>
                     )}
                   </details>
                 </div>
@@ -1085,27 +1093,31 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                 const minimalVoice = mapResultToMinimalVoice(result);
                 const exportPayload = buildFreyExportPayload({
                   mode: hasCompare ? "compare" : "single",
-                  url: typeof window !== "undefined" ? window.location.href : "",
+        locale: initialLocale,
+        url: typeof window !== "undefined" ? window.location.href : "",
                   primaryDate: primaryDateValue,
                   compareDate: compareDateValue,
                   primaryResult: result,
                   compareResult: compareResultValue,
                   freyVoice: minimalVoice,
-                });
+        deltaBlock,
+        timelineResults: initialTimelineResults,
+      });
                 const copyText = buildFreyExportText(exportPayload);
-                const copyLabel = hasCompare ? "Copy compare snapshot" : "Copy snapshot";
-                const copyFeedbackLabel = exportCopied ? "Copied" : copyLabel;
+                const copyLabel = hasCompare ? (ru ? "Скопировать пакет сравнения для ИИ" : "Copy compare packet for AI") : (ru ? "Скопировать пакет для другого ИИ" : "Copy packet for another AI");
+                const copyFeedbackLabel = exportCopied ? (ru ? "Скопировано" : "Copied") : copyLabel;
                 const exportHelpText = hasCompare
-                  ? "Compare export includes both dates and the active delta."
-                  : "Single-date export is ready for direct AI handoff.";
+                  ? (ru ? "Полноценный промт + обе даты + Δ структурного изменения. Вставьте пакет в сторонний ИИ и добавьте свой вопрос." : "A full prompt + both dates + structural Δ. Paste the packet into another AI and add your question.")
+                  : (ru ? "Полноценный промт + данные Frey одной даты. Сторонний ИИ получает правила трактовки вместе с самим чтением." : "A full prompt + one-date Frey data. The receiving AI gets the interpretation rules together with the reading itself.");
                 return (
                   <details className="freyExportBlock freyResultBlock" data-frey-export="__FREY_EXPORT_LAYER_V0_2__" data-frey-export-mode={hasCompare ? "compare" : "single"}>
-                    <summary className="freyExportSummary">{ru ? "AI-экспорт" : "AI Export"}</summary>
+                    <summary className="freyExportSummary">{ru ? "Для другого ИИ · Пакет чтения" : "For another AI · Reading Packet"}</summary>
                     <div className="freyExportInner">
                       <div className="freyExportTop">
                         <div className="freyExportMeta">
-                          <div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_1__">{ru ? "Переносимый snapshot" : "Portable snapshot"}</div>
-                          <div className="freyExportHelp">{freyText(exportHelpText, ru)}</div>
+                          <div className="freyExportEyebrow" data-frey-export-help="__FREY_EXPORT_HELP_V0_2__">{ru ? "Промт + данные Frey" : "Prompt + Frey data"}</div>
+                          <div className="freyExportHelp">{exportHelpText}</div>
+                          <Link href={`/guide/frey?lang=${initialLocale}`} style={{ color: "rgba(231,191,126,.92)", fontSize: "12px", textDecoration: "none" }}>{ru ? "Как правильно читать Frey и AI-пакет →" : "How to read Frey and the AI packet →"}</Link>
                         </div>
                         <button
                           type="button"
@@ -1124,9 +1136,16 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                       </div>
                       <pre className="freyExportPre">{copyText}</pre>
                       <div className="freyExportGuide">
-                        {EXPORT_GUIDE_LINES.map((line) => (
-                          <div key={line} className="freyExportGuideLine">{freyText(line, ru)}</div>
-                        ))}
+                        {(ru ? [
+                "Одна дата = состояние. Две даты = переход. Δ = структурное изменение, а не рейтинг лучше/хуже.",
+                "Сначала читайте исходные метрики, затем Значение/Направление Frey как ограниченный слой интерпретации.",
+                "Связывайте метрики между собой; не трактуйте одну цифру изолированно.",
+                "Таймлайн показывает ближайшее движение вокруг выбранной даты, а не гарантированный прогноз.",
+                "Не придумывайте отсутствующие данные, причинность, пророчество или автоматические жизненные инструкции.",
+                "Всегда отделяйте наблюдение, интерпретацию, неопределённость и границу."
+              ] : EXPORT_GUIDE_LINES).map((line) => (
+                <div key={line} className="freyExportGuideLine">{line}</div>
+              ))}
                       </div>
                     </div>
                   </details>
