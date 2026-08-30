@@ -71,6 +71,10 @@ const MAX_FINAL_OUTPUT_TOKENS = 1_200;
 export const MAX_SHORT_FINAL_OUTPUT_TOKENS = 480 as const;
 const MAX_WEB_OUTPUT_TOKENS = 360;
 const MAX_MODEL_ATTEMPTS = 1;
+const COST_GUARD_INPUT_MICROS_PER_TOKEN = 5;
+const COST_GUARD_OUTPUT_MICROS_PER_TOKEN = 30;
+const COST_GUARD_WEB_CALL_MICROS = 10_000;
+const COST_GUARD_PROVIDER_INPUT_OVERHEAD_TOKENS = 2_048;
 export const BTC_CLEAN_CHAT_NORMAL_PROVIDER_CALL_BOUND = 2 as const;
 export const BTC_CLEAN_CHAT_WEB_PROVIDER_CALL_BOUND = 3 as const;
 const MAX_CONTEXT_TURNS = 12;
@@ -266,8 +270,26 @@ function providerFailure(status: number, payload: Record<string, unknown>): BtcC
   return new BtcCleanChatRuntimeError("MODEL_RUNTIME_FAILURE", false);
 }
 
-async function singleOpenAiResponse(body: Record<string, unknown>): Promise<ModelResult> {
+export function btcCleanChatProviderCallHardCostMicros(requestBody: Record<string, unknown>): number {
+  const serialized = JSON.stringify(requestBody);
+  const inputTokenUpperBound = Buffer.byteLength(serialized, "utf8") + COST_GUARD_PROVIDER_INPUT_OVERHEAD_TOKENS;
+  const maxOutputTokens = Number(requestBody.max_output_tokens);
+  if (!Number.isSafeInteger(maxOutputTokens) || maxOutputTokens <= 0) throw new Error("BTC_CLEAN_CHAT_PROVIDER_OUTPUT_BOUND_INVALID");
+  const tools = Array.isArray(requestBody.tools) ? requestBody.tools : [];
+  const maxToolCalls = Number(requestBody.max_tool_calls ?? 0);
+  if (!Number.isSafeInteger(maxToolCalls) || maxToolCalls < 0 || maxToolCalls > 1) throw new Error("BTC_CLEAN_CHAT_PROVIDER_TOOL_BOUND_INVALID");
+  if ((tools.length > 0 && maxToolCalls !== 1) || (tools.length === 0 && maxToolCalls !== 0)) {
+    throw new Error("BTC_CLEAN_CHAT_PROVIDER_TOOL_BOUND_REQUIRED");
+  }
+  return inputTokenUpperBound * COST_GUARD_INPUT_MICROS_PER_TOKEN
+    + maxOutputTokens * COST_GUARD_OUTPUT_MICROS_PER_TOKEN
+    + maxToolCalls * COST_GUARD_WEB_CALL_MICROS;
+}
+
+async function singleOpenAiResponse(body: Record<string, unknown>, guard?: BtcCleanChatRuntimeGuard): Promise<ModelResult> {
   const transport = resolveBtcCleanChatModelTransport();
+  const requestBody = { model: transport.model, store: false, ...body };
+  await guard?.beforeProviderCall?.(btcCleanChatProviderCallHardCostMicros(requestBody));
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
   try {
@@ -284,7 +306,7 @@ async function singleOpenAiResponse(body: Record<string, unknown>): Promise<Mode
       },
       cache: "no-store",
       signal: controller.signal,
-      body: JSON.stringify({ model: transport.model, store: false, ...body }),
+      body: JSON.stringify(requestBody),
     });
     const parsed = await response.json().catch(() => ({}));
     const payload = isRecord(parsed) ? parsed : {};
@@ -317,9 +339,10 @@ async function boundedModelValue<T>(
   body: Record<string, unknown>,
   parse: (result: ModelResult) => T | null,
   _terminalCode: string,
+  guard?: BtcCleanChatRuntimeGuard,
 ): Promise<{ value: T; result: ModelResult; usage: Usage }> {
   if (MAX_MODEL_ATTEMPTS !== 1) throw new Error("BTC_CLEAN_CHAT_SINGLE_ATTEMPT_INVARIANT");
-  const result = await singleOpenAiResponse(body);
+  const result = await singleOpenAiResponse(body, guard);
   if (responseIncomplete(result)) {
     if (incompleteReason(result) === "max_output_tokens") throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
     throw new BtcCleanChatRuntimeError("MODEL_RESPONSE_INVALID", false);
@@ -428,7 +451,7 @@ function priorContext(priorTurns: BtcCleanPriorTurn[]): string {
   }).join("\n\n");
 }
 
-async function buildEvidencePlan(input: { locale: BtcCleanLocale; question: string; priorTurns: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext }): Promise<{ plan: Plan; usage: Usage }> {
+async function buildEvidencePlan(input: { locale: BtcCleanLocale; question: string; priorTurns: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<{ plan: Plan; usage: Usage }> {
   const currentUtcDate = new Date().toISOString().slice(0, 10);
   const instructions = `You are the semantic evidence planner for BHRIGU BTC Clean Chat V1. Reason from the user's meaning and the whole conversation, never from keyword or prepared-question routing. PRIMARY_PRODUCT_AXIS is Bitcoin and remains persistent across the conversation until the user explicitly leaves the BTC corridor. ACTIVE_SUBJECT may change to Semenko, Phi-field, BHRIGU, Frey, astronomy, GitHub, a person or another supporting topic, but that must not be described as replacing or losing the Bitcoin product context. Bitcoin remains the primary axis. The crypto ecosystem is supporting context, not a second product and not a general crypto assistant. ETH/Ethereum, TRX/TRON, stablecoins, DeFi TVL, BTC dominance, alt breadth, liquidity, capital rotation and market structure are in scope when they clarify Bitcoin or the current crypto field around Bitcoin. A one-token follow-up like ETH or TRX after an established DeFi/liquidity/ecosystem discussion is a continuation: resolve it from conversation, do not reset context and do not force clarification. A return such as 'вернись к ETH' restores that earlier research line. Prefer the accepted BHRIGU snapshot and Snapshot Memory for ecosystem field evidence; they already carry BTC dominance, stablecoin share/cap, DeFi TVL, DEX volume, alt breadth, ETH rotation anchor, market regime and field state. Use bounded web only when a material current ecosystem fact needed for the Bitcoin relation is missing from the accepted snapshot, for example current TRON-specific evidence; web must remain source-bound and must not become general crypto browsing. Public first-party BHRIGU project context is also in scope as supporting context when the user asks about bhrigu.io, github.com/AiBhrigu, Cosmographer, Frey, ORION public material, or a supplied public BHRIGU document/PDF. A generic request such as 'check GitHub' after BHRIGU context resolves to the AiBhrigu public GitHub surface; do not infer private repositories or internals. Product method, source, privacy and data-handling questions about this BTC Cosmographer are in scope and do not require market evidence unless the question itself needs it. If an altcoin request has no research relation to Bitcoin/current crypto field and conversation does not establish one, set request_type=out_of_scope, tools=[], web_reason=null and topic=Bitcoin Corridor. Weather, travel and unrelated general knowledge are always out of scope. Ephemerides and planetary windows remain in scope even when asked directly. Available read-only evidence: snapshot (accepted BTC structural snapshot + Snapshot Memory + crypto field context), binance (current/realized BTCUSDT field), polymarket (market-priced future BTC propositions and same-contract history), astronomy (fresh canonical geocentric tropical ephemeris for arbitrary bounded UTC timestamps/intervals), astro_btc_bridge (comparison using that SAME computed astronomy packet plus independent BTC evidence), bitcoin_protocol (pinned Bitcoin mechanism/history), web (selective source-bound research inside this corridor). Choose visual_focus only when a compact data-bound visual would improve meaning: market_structure, dominance, liquidity, rotation, expectation, astro or bridge; otherwise none. Set astro_relation=CURRENT_TO_GENESIS only when the user asks to relate the current sky to the Bitcoin Genesis epoch or when a prior compact continuity packet already establishes that relation. Set temporal_request=ACTIVE_RELATION_WINDOW only for a semantic follow-up asking for the active primary relation window; do not infer a window without an established relation. Set answer_max_lines to an integer 1..12 only when the user explicitly imposes a visible line limit; otherwise null. Astronomy supports Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune and Pluto as peers; positions, velocity/retrograde, major aspects with orb and applying/separating, stations, ingresses and lunar phases. There is no 2026-only astronomy limit. The Bitcoin temporal product domain begins at the Genesis block on ${BTC_TEMPORAL_ORIGIN_DATE} and V1 prospective analysis extends through ${BTC_PROSPECTIVE_HORIZON_DATE}. For a date/month/range set time_start and time_end as YYYY-MM-DD. For a range beginning at Genesis, set time_start=${BTC_TEMPORAL_ORIGIN_DATE} and the requested end date; reserve bitcoin_event=genesis for a single-anchor Genesis chart. Long ranges are valid: runtime deterministically splits them into bounded canonical Astro windows, so never truncate a Genesis-to-now or 2027-2028 request to one year. For an explicit timestamp set astro_timestamp_utc. For 'now', leave all astro time fields null so runtime current UTC is used. Do not request web research merely to verify a canonical ephemeris calculation. Historical reconstruction is not retroactive BHRIGU point-in-time memory. Future astronomy can be computed through ${BTC_PROSPECTIVE_HORIZON_DATE}, but future BTC prices, market outcomes and causal effects are unknown and must never be represented as established facts. Select only the bodies and phenomena needed; an empty body list means all bodies. Bitcoin astronomical chart/canonical launch anchor means Genesis block; set bitcoin_event=genesis. Accepted exact event IDs are genesis, halving_1, halving_2, halving_3, halving_4. Accepted protocol_subject values are overview, supply, halving, subsidy, fees, difficulty, mining, utxo, genesis, consensus, blocks, satoshi_history, bitcoin_origin, genesis_history. Questions about Satoshi Nakamoto, his documented record, Bitcoin v0.1 announcement, or his departure use protocol_subject=satoshi_history; origin/white-paper-to-launch history uses bitcoin_origin; Genesis first-days/history uses genesis_history. When a previous turn established an event and the user says 'at that moment' or equivalent, resolve bitcoin_event from conversation rather than asking again. Never silently combine different Bitcoin anchors. Astro×BTC is temporal comparison only: convergence/divergence/insufficient evidence, never causality. Binance is present/realized. Polymarket is exact-proposition market-implied expectation, never a BHRIGU prediction/global BTC probability. Trading requests remain informational only. Persisted Research Field context, when supplied, is user-owned historical framing only: it may help resolve continuity and preferences but must never override current evidence, source authority, expiry, resolution rules, Bitcoin primary-axis law, or safety boundaries. Evidence preferences are hints, not authority. Current UTC date is ${currentUtcDate}. Return only the required structured object.`;
   const structured = await boundedModelValue(
@@ -444,6 +467,7 @@ async function buildEvidencePlan(input: { locale: BtcCleanLocale; question: stri
       return parsed ? normalizePlan(parsed) : null;
     },
     "DIRECT_OPENAI_PLAN_INVALID",
+    input.guard,
   );
   return { plan: structured.value, usage: structured.usage };
 }
@@ -653,18 +677,20 @@ function extractWebSources(payload: Record<string, unknown>): BtcCleanSource[] {
   return Array.from(sources.values()).slice(0, 8);
 }
 
-async function runBoundedWebResearch(locale: BtcCleanLocale, question: string, plan: Plan): Promise<WebEvidence> {
+async function runBoundedWebResearch(locale: BtcCleanLocale, question: string, plan: Plan, guard?: BtcCleanChatRuntimeGuard): Promise<WebEvidence> {
   const structured = await boundedModelValue(
     {
       instructions: `You are a bounded research tool for the BHRIGU Bitcoin Corridor. Research only material Bitcoin/BTC questions, in-scope ephemeris/Astro×BTC verification, or a current crypto-ecosystem fact that is necessary to understand Bitcoin/current crypto field context. Bitcoin remains the axis; do not expand into general altcoin coverage. Prefer the accepted BHRIGU snapshot when it already answers the field question, and use web only for a missing material fact. Prefer primary or authoritative sources. Never answer unrelated general-assistant questions such as weather or travel. Separate verified facts from uncertainty. Do not produce trading instructions. Return a concise source-bound research note in ${locale === "ru" ? "Russian" : "English"}.`,
       input: `QUESTION=${question}\nRESEARCH_REASON=${plan.web_reason ?? "Independent current verification required."}`,
       tools: [{ type: "web_search", search_context_size: "low" }],
       tool_choice: "auto",
+      max_tool_calls: 1,
       max_output_tokens: MAX_WEB_OUTPUT_TOKENS,
       reasoning: { effort: "low" },
     },
     (result) => result.text.trim() || null,
     "DIRECT_OPENAI_WEB_EMPTY",
+    guard,
   );
   return { text: structured.value, sources: extractWebSources(structured.result.payload), usage: structured.usage };
 }
@@ -685,7 +711,7 @@ async function safeEvidence<T>(
   }
 }
 
-async function collectEvidence(locale: BtcCleanLocale, question: string, plan: Plan): Promise<EvidenceBundle> {
+async function collectEvidence(locale: BtcCleanLocale, question: string, plan: Plan, guard?: BtcCleanChatRuntimeGuard): Promise<EvidenceBundle> {
   const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
   const unavailable: EvidenceUnavailable = {};
   const envelopePromise = safeEvidence("snapshot", wants("snapshot"), unavailable, () => loadBtcMarketEnvelope(question, { timeoutMs: 5_000 }));
@@ -701,7 +727,7 @@ async function collectEvidence(locale: BtcCleanLocale, question: string, plan: P
     bitcoinEvent: plan.astro_relation === "CURRENT_TO_GENESIS" ? null : plan.bitcoin_event,
     timeoutMs: 20_000,
   }));
-  const webPromise = safeEvidence("web", wants("web"), unavailable, () => runBoundedWebResearch(locale, question, plan));
+  const webPromise = safeEvidence("web", wants("web"), unavailable, () => runBoundedWebResearch(locale, question, plan, guard));
   const [envelope, binance, polymarket, astronomy, web] = await Promise.all([envelopePromise, binancePromise, polymarketPromise, astronomyPromise, webPromise]);
 
   let protocol: BtcCosmographerAnswerProjection | null = null;
@@ -956,7 +982,7 @@ function deterministicRuMatrixSummary(native: NonNullable<BtcCleanSemanticVisual
   return lines.join("\n");
 }
 
-async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorTurns: BtcCleanPriorTurn[], plan: Plan, evidence: EvidenceBundle, fieldContext?: BtcResearchFieldModelContext): Promise<SynthesisOutcome> {
+async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorTurns: BtcCleanPriorTurn[], plan: Plan, evidence: EvidenceBundle, fieldContext?: BtcResearchFieldModelContext, guard?: BtcCleanChatRuntimeGuard): Promise<SynthesisOutcome> {
   const lineRule = plan.answer_max_lines
     ? ` The user explicitly requested at most ${plan.answer_max_lines} visible lines. Return answer_lines with no more than that many items; each item is exactly one visible line.`
     : "";
@@ -986,7 +1012,7 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
     max_output_tokens: short ? MAX_SHORT_FINAL_OUTPUT_TOKENS : MAX_FINAL_OUTPUT_TOKENS,
     reasoning: { effort: "low" },
     text: { format: { type: "json_schema", name: short ? "btc_clean_short_answer" : "btc_clean_answer", strict: true, schema: short ? shortSynthesisSchema(plan.answer_max_lines as number) : SYNTHESIS_SCHEMA } },
-  });
+  }, guard);
   if (responseIncomplete(result)) {
     if (incompleteReason(result) === "max_output_tokens") return { status: "OUTPUT_LIMIT", usage: result.usage };
     throw new BtcCleanChatRuntimeError("MODEL_RESPONSE_INVALID", false);
@@ -1006,12 +1032,14 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
   return { status: "COMPLETE", answer, topic, usage: result.usage };
 }
 
-export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext }): Promise<BtcCleanChatResponse> {
+export type BtcCleanChatRuntimeGuard = { beforeProviderCall?: (hardCostMicros: number) => Promise<void> };
+
+export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<BtcCleanChatResponse> {
   const priorTurns = input.priorTurns ?? [];
   const totalUsage: Usage = { input_tokens: 0, output_tokens: 0, web_search_calls: 0 };
-  const planned = await buildEvidencePlan({ locale: input.locale, question: input.question, priorTurns, fieldContext: input.fieldContext });
+  const planned = await buildEvidencePlan({ locale: input.locale, question: input.question, priorTurns, fieldContext: input.fieldContext, guard: input.guard });
   addUsage(totalUsage, planned.usage);
-  const evidence = await collectEvidence(input.locale, input.question, planned.plan);
+  const evidence = await collectEvidence(input.locale, input.question, planned.plan, input.guard);
   if (evidence.web) addUsage(totalUsage, evidence.web.usage);
   const sources = sourceRows(buildBtcPolymarketQueryContext(input.question, priorTurns), evidence);
   const semanticVisual = buildSemanticVisual(input.locale, planned.plan, evidence);
@@ -1035,7 +1063,7 @@ export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; ques
       usage: { provider: BTC_CLEAN_CHAT_PROVIDER, model: BTC_CLEAN_CHAT_MODEL_ID, ...totalUsage },
     };
   }
-  const synthesis = await synthesizeAnswer(input.locale, input.question, priorTurns, planned.plan, evidence, input.fieldContext);
+  const synthesis = await synthesizeAnswer(input.locale, input.question, priorTurns, planned.plan, evidence, input.fieldContext, input.guard);
   addUsage(totalUsage, synthesis.usage);
   const visualOnly = synthesis.status === "OUTPUT_LIMIT" && matrixNative !== null;
   if (synthesis.status === "OUTPUT_LIMIT" && !visualOnly) throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);

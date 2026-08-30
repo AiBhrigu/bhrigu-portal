@@ -10,6 +10,11 @@ on:
       - 'ui/btc/BtcAstroCrossChartMatrix.tsx'
       - 'lib/btc-clean-chat-v1.ts'
       - 'lib/btc-clean-chat-model-runtime.ts'
+      - 'lib/btc-clean-chat-cost-guard.ts'
+      - 'lib/btc-clean-chat-cost-guard-neon.ts'
+      - 'migrations/20260830_btc_clean_chat_cost_guard_v1.sql'
+      - 'tests/btc-clean-chat-cost-guard-acceptance.ts'
+      - 'package.json'
       - 'lib/btc-astro-field-client.ts'
       - 'lib/btc-polymarket-expectation.ts'
       - 'lib/btc-protocol-evidence.ts'
@@ -174,6 +179,18 @@ jobs:
             ".github/workflows/btc-free-corridor-conversational-surface-pr.yml"
             "components/btc/BtcFreeCorridorSurfaceAdapter.js"
           )
+          cost_guard_expected=(
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-clean-chat-cost-guard-neon.ts"
+            "lib/btc-clean-chat-cost-guard.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "migrations/20260830_btc_clean_chat_cost_guard_v1.sql"
+            "package.json"
+            "pages/api/btc/clean-chat-v1.ts"
+            "scripts/btc-direct-payment-fresh-db-migration.ts"
+            "tests/btc-clean-chat-cost-guard-acceptance.ts"
+          )
           observability_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -204,6 +221,7 @@ jobs:
           mapfile -t polymarket_recertification_expected_sorted < <(printf '%s\n' "${polymarket_recertification_expected[@]}" | sort)
           mapfile -t polymarket_query_binding_expected_sorted < <(printf '%s\n' "${polymarket_query_binding_expected[@]}" | sort)
           mapfile -t observability_expected_sorted < <(printf '%s\n' "${observability_expected[@]}" | sort)
+          mapfile -t cost_guard_expected_sorted < <(printf '%s\n' "${cost_guard_expected[@]}" | sort)
           mapfile -t research_field_preview_expected_sorted < <(printf '%s\n' "${research_field_preview_expected[@]}" | sort)
           mapfile -t integration_expected_sorted < <(printf '%s\n' "${integration_expected[@]}" | sort -u)
           mapfile -t quick_entry_routing_expected_sorted < <(printf '%s\n' "${quick_entry_routing_expected[@]}" | sort)
@@ -218,7 +236,7 @@ jobs:
           elif diff -q <(printf '%s\n' "${zero_waste_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${two_epoch_astro_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
-            echo "PASS_BTC_CURRENT_TO_GENESIS_NATIVE_MATRIX_EXACT_9_FILE_SCOPE"
+            echo "PASS_BTC_CURRENT_TO_GENESIS_NATIVE_MATRIX_EXACT_10_FILE_SCOPE"
             test -z "$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" -- lib/btc-existing-glyph-canon.ts components/btc/BtcSurfaceGlyphs.tsx lib/routeTruth.js pages/index.js pages/crypto-astro/btc.tsx)"
             echo "GLYPH_CANON_DIFF_ZERO=PASS"
             echo "FROZEN_PUBLIC_SURFACES_DIFF_ZERO=PASS"
@@ -240,6 +258,8 @@ jobs:
             fi
           elif diff -q <(printf '%s\n' "${observability_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${cost_guard_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CLEAN_CHAT_COST_GUARD_EXACT_10_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${research_field_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${integration_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
@@ -253,6 +273,8 @@ jobs:
       - run: npm ci
       - name: Direct OpenAI architecture acceptance
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
+      - name: Public cost-abuse guard acceptance
+        run: npm run verify:btc-clean-chat-cost-guard
       - name: Two-epoch Astro static and mocked acceptance
         env:
           OPENAI_API_KEY: static-mock-only
