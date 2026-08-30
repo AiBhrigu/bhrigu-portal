@@ -7,8 +7,11 @@ export const BTC_CLEAN_CHAT_GUARD_COOKIE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export const BTC_CLEAN_CHAT_GUARD_SECRET_ENV = "BTC_CLEAN_CHAT_ADMISSION_SECRET";
 export const BTC_CLEAN_CHAT_GUARD_DATABASE_ENV = "BTC_CLEAN_CHAT_GUARD_DATABASE_URL";
 export const BTC_CLEAN_CHAT_GUARD_MODE_ENV = "BHRIGU_BTC_CLEAN_CHAT_GUARD_MODE";
+export const BTC_CLEAN_CHAT_CAPACITY_MODE_ENV = "BHRIGU_BTC_CLEAN_CHAT_CAPACITY_MODE";
 
+// Legacy V1 reserve remains accepted during zero-downtime rollout. V2 admission starts at zero cost.
 export const BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS = 120_000 as const;
+export const BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS = 0 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS = 250_000 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS = 750_000 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS = 4_000_000 as const;
@@ -22,6 +25,13 @@ export type BtcCleanChatGuardConfig =
 
 function envValue(env: Partial<NodeJS.ProcessEnv>, key: string): string {
   return env[key]?.trim() ?? "";
+}
+
+export type BtcCleanChatCapacityMode = "open" | "hold";
+
+export function getBtcCleanChatCapacityMode(env: Partial<NodeJS.ProcessEnv> = process.env): BtcCleanChatCapacityMode {
+  const mode = envValue(env, BTC_CLEAN_CHAT_CAPACITY_MODE_ENV).toLowerCase();
+  return !mode || mode === "open" ? "open" : "hold";
 }
 
 export function getBtcCleanChatGuardConfig(env: Partial<NodeJS.ProcessEnv> = process.env): BtcCleanChatGuardConfig {

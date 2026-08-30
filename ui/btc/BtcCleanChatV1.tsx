@@ -117,6 +117,24 @@ function formatAsOf(locale: BtcCleanLocale, value: string | null): string {
 
 export function btcCleanChatRuntimeFailureCopy(locale: BtcCleanLocale, code: string, retryable: boolean): string {
   const ru = locale === "ru";
+  if (code === "MODEL_CAPACITY_HOLD") {
+    return ru ? "Модельная ёмкость Cosmographer временно приостановлена. Повторять запрос сейчас не нужно." : "Cosmographer model capacity is temporarily paused. Repeating the request now is not needed.";
+  }
+  if (code === "COST_GUARD_RATE_LIMITED") {
+    return ru ? "Слишком много запросов за короткий период. Дождитесь защитного интервала." : "Too many requests in a short period. Wait for the protective interval.";
+  }
+  if (code === "COST_GUARD_CONCURRENCY_LIMITED") {
+    return ru ? "Предыдущий запрос ещё обрабатывается. Дождитесь его завершения." : "A previous request is still being processed. Wait for it to finish.";
+  }
+  if (code === "COST_GUARD_BUDGET_LIMITED") {
+    return ru ? "Временный бюджетный предел Cosmographer достигнут. Попробуйте позже." : "The temporary Cosmographer budget limit has been reached. Please try later.";
+  }
+  if (code === "COST_GUARD_REPLAY") {
+    return ru ? "Этот ход уже был принят. Отправьте новый вопрос только при необходимости." : "This turn was already admitted. Send a new question only if needed.";
+  }
+  if (code === "COST_GUARD_UNAVAILABLE") {
+    return ru ? "Защитный контур временно недоступен. Попробуйте позже." : "The protective access layer is temporarily unavailable. Please try later.";
+  }
   if (retryable || code === "MODEL_TIMEOUT" || code === "MODEL_RATE_LIMITED" || code === "MODEL_PROVIDER_TRANSIENT") {
     return ru ? "Сервис временно недоступен. Попробуйте позже." : "The service is temporarily unavailable. Please try later.";
   }

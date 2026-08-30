@@ -311,7 +311,9 @@ async function singleOpenAiResponse(body: Record<string, unknown>, guard?: BtcCl
     const parsed = await response.json().catch(() => ({}));
     const payload = isRecord(parsed) ? parsed : {};
     if (!response.ok) throw providerFailure(response.status, payload);
-    return { text: extractText(payload), usage: usageFrom(payload), payload, httpStatus: response.status };
+    const result = { text: extractText(payload), usage: usageFrom(payload), payload, httpStatus: response.status };
+    await guard?.afterProviderCall?.(result.usage);
+    return result;
   } catch (error) {
     if (error instanceof BtcCleanChatRuntimeError) throw error;
     if (error instanceof Error && error.name === "AbortError") throw new BtcCleanChatRuntimeError("MODEL_TIMEOUT", true);
@@ -1032,7 +1034,10 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
   return { status: "COMPLETE", answer, topic, usage: result.usage };
 }
 
-export type BtcCleanChatRuntimeGuard = { beforeProviderCall?: (hardCostMicros: number) => Promise<void> };
+export type BtcCleanChatRuntimeGuard = {
+  beforeProviderCall?: (hardCostMicros: number) => Promise<void>;
+  afterProviderCall?: (usage: Usage) => Promise<void>;
+};
 
 export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<BtcCleanChatResponse> {
   const priorTurns = input.priorTurns ?? [];

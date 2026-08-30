@@ -13,6 +13,7 @@ on:
       - 'lib/btc-clean-chat-cost-guard.ts'
       - 'lib/btc-clean-chat-cost-guard-neon.ts'
       - 'migrations/20260830_btc_clean_chat_cost_guard_v1.sql'
+      - 'migrations/20260830_btc_clean_chat_cost_guard_v2.sql'
       - 'tests/btc-clean-chat-cost-guard-acceptance.ts'
       - 'package.json'
       - 'lib/btc-astro-field-client.ts'
@@ -185,11 +186,11 @@ jobs:
             "lib/btc-clean-chat-cost-guard-neon.ts"
             "lib/btc-clean-chat-cost-guard.ts"
             "lib/btc-clean-chat-model-runtime.ts"
-            "migrations/20260830_btc_clean_chat_cost_guard_v1.sql"
-            "package.json"
+            "migrations/20260830_btc_clean_chat_cost_guard_v2.sql"
             "pages/api/btc/clean-chat-v1.ts"
             "scripts/btc-direct-payment-fresh-db-migration.ts"
             "tests/btc-clean-chat-cost-guard-acceptance.ts"
+            "ui/btc/BtcCleanChatV1.tsx"
           )
           observability_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
