@@ -188,6 +188,7 @@ jobs:
             "migrations/20260830_btc_clean_chat_cost_guard_v1.sql"
             "package.json"
             "pages/api/btc/clean-chat-v1.ts"
+            "scripts/btc-direct-payment-fresh-db-migration.ts"
             "tests/btc-clean-chat-cost-guard-acceptance.ts"
           )
           observability_expected=(
@@ -235,7 +236,7 @@ jobs:
           elif diff -q <(printf '%s\n' "${zero_waste_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${two_epoch_astro_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
-            echo "PASS_BTC_CURRENT_TO_GENESIS_NATIVE_MATRIX_EXACT_9_FILE_SCOPE"
+            echo "PASS_BTC_CURRENT_TO_GENESIS_NATIVE_MATRIX_EXACT_10_FILE_SCOPE"
             test -z "$(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" -- lib/btc-existing-glyph-canon.ts components/btc/BtcSurfaceGlyphs.tsx lib/routeTruth.js pages/index.js pages/crypto-astro/btc.tsx)"
             echo "GLYPH_CANON_DIFF_ZERO=PASS"
             echo "FROZEN_PUBLIC_SURFACES_DIFF_ZERO=PASS"
@@ -258,7 +259,7 @@ jobs:
           elif diff -q <(printf '%s\n' "${observability_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${cost_guard_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
-            echo "PASS_BTC_CLEAN_CHAT_COST_GUARD_EXACT_9_FILE_SCOPE"
+            echo "PASS_BTC_CLEAN_CHAT_COST_GUARD_EXACT_10_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${research_field_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${integration_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
