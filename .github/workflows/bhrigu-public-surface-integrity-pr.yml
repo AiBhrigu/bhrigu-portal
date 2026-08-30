@@ -26,6 +26,23 @@ jobs:
           git fetch origin master
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
+          mapfile -t actual < <(git diff --name-only "$base" "$head" | sort)
+          cost_guard_expected=(
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-clean-chat-cost-guard-neon.ts"
+            "lib/btc-clean-chat-cost-guard.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "migrations/20260830_btc_clean_chat_cost_guard_v1.sql"
+            "package.json"
+            "pages/api/btc/clean-chat-v1.ts"
+            "tests/btc-clean-chat-cost-guard-acceptance.ts"
+          )
+          mapfile -t cost_guard_expected_sorted < <(printf '%s\n' "${cost_guard_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${cost_guard_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CLEAN_CHAT_COST_GUARD_PUBLIC_SURFACE_EXACT_9_FILE_SCOPE"
+            exit 0
+          fi
           protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
           test -z "$protected" || { echo "$protected"; exit 1; }
       - name: Static truth gates
