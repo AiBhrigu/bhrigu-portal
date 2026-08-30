@@ -7,12 +7,12 @@ import {
   BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS,
   BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS,
   BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS,
-  BTC_CLEAN_CHAT_WEB_RESERVATION_MICROS,
   btcCleanChatGuardKeys,
   getBtcCleanChatGuardConfig,
   newBtcCleanChatGuardClientToken,
   normalizeBtcCleanChatClientIp,
 } from "../lib/btc-clean-chat-cost-guard";
+import { btcCleanChatProviderCallHardCostMicros } from "../lib/btc-clean-chat-model-runtime";
 
 const MIGRATION = "migrations/20260830_btc_clean_chat_cost_guard_v1.sql";
 const BASE_MS = Date.parse("2026-08-30T00:00:00Z");
@@ -38,28 +38,47 @@ async function settle(db: PGlite, n: number, atMs: number, actualMicros: number 
   await db.exec(`SELECT btc_clean_chat_guard_settle('${key(`turn-${n}`)}','${iso(atMs)}',${actual},'${state}')`);
 }
 
-async function upgrade(db: PGlite, n: number, atMs: number) {
+async function upgrade(db: PGlite, n: number, atMs: number, targetMicros = 200_000) {
   const rows = await db.query<{ disposition: string; retry_after_seconds: number }>(
-    `SELECT * FROM btc_clean_chat_guard_upgrade('${key(`turn-${n}`)}','${iso(atMs)}',200000)`
+    `SELECT * FROM btc_clean_chat_guard_upgrade('${key(`turn-${n}`)}','${iso(atMs)}',${targetMicros})`
   );
   return rows.rows[0]!;
 }
 
 async function run() {
   assert.equal(BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS, 120_000);
-  assert.equal(BTC_CLEAN_CHAT_WEB_RESERVATION_MICROS, 200_000);
   assert.equal(BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS, 250_000);
   assert.equal(BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS, 750_000);
   assert.equal(BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS, 4_000_000);
 
   assert.deepEqual(getBtcCleanChatGuardConfig({ VERCEL_ENV: "development" }), { required: false, enabled: false });
-  assert.deepEqual(getBtcCleanChatGuardConfig({ VERCEL_ENV: "production", BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE: "1" }), { required: true, enabled: false });
+  assert.deepEqual(
+    getBtcCleanChatGuardConfig({ VERCEL_ENV: "production", BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE: "1" }),
+    { required: false, enabled: false },
+  );
+  assert.deepEqual(
+    getBtcCleanChatGuardConfig({
+      VERCEL_ENV: "production", BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE: "1", BHRIGU_BTC_CLEAN_CHAT_GUARD_MODE: "production",
+    }),
+    { required: true, enabled: false },
+  );
   const enabled = getBtcCleanChatGuardConfig({
     VERCEL_ENV: "production", BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE: "1", BHRIGU_BTC_CLEAN_CHAT_GUARD_MODE: "production",
     BTC_CLEAN_CHAT_ADMISSION_SECRET: "s".repeat(32), BTC_CLEAN_CHAT_GUARD_DATABASE_URL: "postgres://guard",
   });
   assert.equal(enabled.enabled, true);
   assert.equal(enabled.required, true);
+
+  const normalBound = btcCleanChatProviderCallHardCostMicros({
+    model: "gpt-5.6-sol", store: false, instructions: "x".repeat(8_000), input: "y".repeat(16_000), max_output_tokens: 1_200,
+  });
+  const webBound = btcCleanChatProviderCallHardCostMicros({
+    model: "gpt-5.6-sol", store: false, instructions: "x", input: "y", tools: [{ type: "web_search" }], max_tool_calls: 1, max_output_tokens: 360,
+  });
+  assert(normalBound > 120_000);
+  assert(webBound > 10_000);
+  assert.throws(() => btcCleanChatProviderCallHardCostMicros({ model: "gpt-5.6-sol", store: false, input: "x", max_output_tokens: 360, max_tool_calls: 2 }), /TOOL_BOUND_INVALID/);
+  assert.throws(() => btcCleanChatProviderCallHardCostMicros({ model: "gpt-5.6-sol", store: false, input: "x", tools: [{ type: "web_search" }], max_output_tokens: 360 }), /TOOL_BOUND_REQUIRED/);
 
   const token = newBtcCleanChatGuardClientToken();
   const keys = btcCleanChatGuardKeys("s".repeat(32), token, "203.0.113.9", "turn:12345678");
@@ -81,6 +100,8 @@ async function run() {
     /v_cost\+p_reservation_micros > 750000/,
     /v_cost\+p_reservation_micros > 4000000/,
     /LOCK TABLE btc_clean_chat_cost_admissions IN SHARE ROW EXCLUSIVE MODE/,
+    /settled_micros <= reservation_micros/,
+    /settlement_exceeds_reservation/,
   ]) assert.match(migration, expected);
   assert.doesNotMatch(migration, /raw_ip|raw_user_agent/i);
 
@@ -137,25 +158,38 @@ async function run() {
   const upgradeDb = await setup();
   try {
     assert.equal((await reserve(upgradeDb, 500, "web-a", "web-ip-a", BASE_MS)).disposition, "admitted");
-    assert.equal((await upgrade(upgradeDb, 500, BASE_MS + 500)).disposition, "admitted");
+    assert.equal((await upgrade(upgradeDb, 500, BASE_MS + 500, 145_000)).disposition, "admitted");
+    assert.equal((await upgrade(upgradeDb, 500, BASE_MS + 700, 200_000)).disposition, "admitted");
+    assert.equal((await upgrade(upgradeDb, 500, BASE_MS + 900, 260_000)).disposition, "budget_limited");
     assert.equal((await reserve(upgradeDb, 501, "web-b", "web-ip-b", BASE_MS + 1_000)).disposition, "budget_limited");
     await settle(upgradeDb, 500, BASE_MS + 2_000, 40_000);
     assert.equal((await reserve(upgradeDb, 501, "web-b", "web-ip-b", BASE_MS + 3_000)).disposition, "admitted");
   } finally { await upgradeDb.close(); }
 
+  const settlementBoundDb = await setup();
+  try {
+    assert.equal((await reserve(settlementBoundDb, 600, "settle-a", "settle-ip-a", BASE_MS)).disposition, "admitted");
+    await assert.rejects(() => settle(settlementBoundDb, 600, BASE_MS + 1_000, 120_001), /settlement_exceeds_reservation/);
+    await settle(settlementBoundDb, 600, BASE_MS + 2_000, 120_000);
+  } finally { await settlementBoundDb.close(); }
+
   const api = await readFile("pages/api/btc/clean-chat-v1.ts", "utf8");
   const runtime = await readFile("lib/btc-clean-chat-model-runtime.ts", "utf8");
   assert.match(api, /getBtcCleanChatGuardConfig/);
   assert.match(api, /guardStore\.reserve/);
-  assert.match(api, /beforeWebResearch/);
+  assert.match(api, /beforeProviderCall/);
+  assert.match(api, /guardProviderHardBoundMicros/);
   assert.match(api, /guardStore!\.upgrade/);
+  assert.match(api, /BTC_CLEAN_CHAT_COST_GUARD_HARD_BOUND_BREACH/);
   assert.match(api, /guardStore\.settle/);
   assert.match(api, /Retry-After/);
   assert.match(api, /COST_GUARD_UNAVAILABLE/);
   assert.match(api, /COST_GUARD_LIMITED/);
   assert.doesNotMatch(api, /clientKey.*res\.status|ipKey.*res\.status|admissionKey.*res\.status/);
-  assert(runtime.indexOf('beforeWebResearch') >= 0);
-  assert(runtime.indexOf('beforeWebResearch') < runtime.indexOf('collectEvidence(input.locale'));
+  assert(runtime.indexOf('beforeProviderCall') >= 0);
+  assert(runtime.indexOf('beforeProviderCall') < runtime.indexOf('fetch(transport.endpoint'));
+  assert.match(runtime, /max_tool_calls: 1/);
+  assert.match(runtime, /Buffer\.byteLength\(serialized, \"utf8\"\)/);
 
   console.log("BTC_CLEAN_CHAT_COST_GUARD_ACCEPTANCE=PASS");
   console.log("PRODUCTION_FAIL_CLOSED_CONFIG=PASS");
@@ -165,7 +199,10 @@ async function run() {
   console.log("GLOBAL_RATE_LIMIT=PASS");
   console.log("CONCURRENCY_LIMIT=PASS");
   console.log("BASE_COST_RESERVATION=PASS");
-  console.log("WEB_COST_UPGRADE_BEFORE_EVIDENCE=PASS");
+  console.log("DYNAMIC_PROVIDER_HARD_COST_RESERVATION=PASS");
+  console.log("WEB_MAX_TOOL_CALLS_ONE=PASS");
+  console.log("SETTLEMENT_LE_RESERVATION=PASS");
+  console.log("MERGE_SAFE_ACTIVATION_ORDER=PASS");
   console.log("GLOBAL_HOUR_DAY_MONTH_BUDGET_CAPS=PASS");
   console.log("REAL_OPENAI_CALLS=ZERO");
 }

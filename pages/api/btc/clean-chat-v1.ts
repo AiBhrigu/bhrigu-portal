@@ -3,7 +3,7 @@ import { classifyBtcCleanChatRuntimeError, runBtcCleanChatModel } from "../../..
 import { createNeonBtcCleanChatCostGuardStore } from "../../../lib/btc-clean-chat-cost-guard-neon";
 import {
   BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS,
-  BTC_CLEAN_CHAT_WEB_RESERVATION_MICROS,
+  BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS,
   btcCleanChatGuardKeys,
   ensureBtcCleanChatGuardClient,
   getBtcCleanChatGuardConfig,
@@ -126,6 +126,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let guardStore: ReturnType<typeof createNeonBtcCleanChatCostGuardStore> | null = null;
   let guardAdmissionKey: string | null = null;
+  let guardReservedMicros = 0;
+  let guardProviderHardBoundMicros = 0;
   if (guardConfig.enabled) {
     try {
       const identity = ensureBtcCleanChatGuardClient(req, res, guardConfig.secret);
@@ -141,6 +143,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
       if (decision.disposition !== "admitted") return guardLimited(res, ru, decision.disposition, decision.retryAfterSeconds);
       guardAdmissionKey = keys.admissionKey;
+      guardReservedMicros = BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS;
     } catch (error) {
       console.error("BTC_CLEAN_CHAT_COST_GUARD_ADMISSION_FAILURE", error instanceof Error ? error.message : "unknown");
       return guardUnavailable(res, ru);
@@ -166,17 +169,29 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       question,
       priorTurns: priorTurns(body.priorTurns),
       guard: guardStore && guardAdmissionKey ? {
-        beforeWebResearch: async () => {
+        beforeProviderCall: async (hardCostMicros: number) => {
+          if (!Number.isSafeInteger(hardCostMicros) || hardCostMicros <= 0) throw new Error("btc_clean_chat_guard_provider_bound_invalid");
+          guardProviderHardBoundMicros += hardCostMicros;
+          if (guardProviderHardBoundMicros > BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS) {
+            throw new BtcCleanChatGuardBlocked("budget_limited", 3600);
+          }
+          const targetReservationMicros = Math.max(BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS, guardProviderHardBoundMicros);
+          if (targetReservationMicros <= guardReservedMicros) return;
           const decision = await guardStore!.upgrade({
-            admissionKey: guardAdmissionKey!, now: new Date(), reservationMicros: BTC_CLEAN_CHAT_WEB_RESERVATION_MICROS,
+            admissionKey: guardAdmissionKey!, now: new Date(), reservationMicros: targetReservationMicros,
           });
           if (decision.disposition !== "admitted") throw new BtcCleanChatGuardBlocked(decision.disposition, decision.retryAfterSeconds);
+          guardReservedMicros = targetReservationMicros;
         },
       } : undefined,
     });
 
     const actualCostMicros = nominalOpenAiCostMicros(result.usage.input_tokens, result.usage.output_tokens, result.usage.web_search_calls);
     if (guardStore && guardAdmissionKey) {
+      if (actualCostMicros > guardReservedMicros) {
+        console.error("BTC_CLEAN_CHAT_COST_GUARD_HARD_BOUND_BREACH", { actualCostMicros, guardReservedMicros });
+        return guardUnavailable(res, ru);
+      }
       try {
         await guardStore.settle({ admissionKey: guardAdmissionKey, now: new Date(), actualMicros: actualCostMicros, state: "completed" });
       } catch (error) {

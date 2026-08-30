@@ -9,7 +9,6 @@ export const BTC_CLEAN_CHAT_GUARD_DATABASE_ENV = "BTC_CLEAN_CHAT_GUARD_DATABASE_
 export const BTC_CLEAN_CHAT_GUARD_MODE_ENV = "BHRIGU_BTC_CLEAN_CHAT_GUARD_MODE";
 
 export const BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS = 120_000 as const;
-export const BTC_CLEAN_CHAT_WEB_RESERVATION_MICROS = 200_000 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS = 250_000 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS = 750_000 as const;
 export const BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS = 4_000_000 as const;
@@ -26,11 +25,13 @@ function envValue(env: Partial<NodeJS.ProcessEnv>, key: string): string {
 }
 
 export function getBtcCleanChatGuardConfig(env: Partial<NodeJS.ProcessEnv> = process.env): BtcCleanChatGuardConfig {
-  const productionRuntime = env.VERCEL_ENV === "production" && env.BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE === "1";
-  const previewRequested = env.VERCEL_ENV === "preview" && envValue(env, BTC_CLEAN_CHAT_GUARD_MODE_ENV) === "preview";
-  const required = productionRuntime;
-  const expectedMode = productionRuntime ? "production" : previewRequested ? "preview" : null;
-  if (!expectedMode || envValue(env, BTC_CLEAN_CHAT_GUARD_MODE_ENV) !== expectedMode) return { required, enabled: false };
+  const mode = envValue(env, BTC_CLEAN_CHAT_GUARD_MODE_ENV);
+  const productionRequested = env.VERCEL_ENV === "production"
+    && env.BHRIGU_BTC_CLEAN_CHAT_PRODUCTION_ENABLE === "1"
+    && mode === "production";
+  const previewRequested = env.VERCEL_ENV === "preview" && mode === "preview";
+  const required = productionRequested;
+  if (!productionRequested && !previewRequested) return { required: false, enabled: false };
 
   const secret = envValue(env, BTC_CLEAN_CHAT_GUARD_SECRET_ENV);
   const databaseUrl = envValue(env, BTC_CLEAN_CHAT_GUARD_DATABASE_ENV) || envValue(env, "BTC_OBSERVABILITY_DATABASE_URL");

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS btc_clean_chat_cost_admissions (
   updated_at TIMESTAMPTZ NOT NULL,
   state TEXT NOT NULL CHECK (state IN ('in_flight','completed','failed')),
   reservation_micros BIGINT NOT NULL CHECK (reservation_micros >= 0),
-  settled_micros BIGINT CHECK (settled_micros IS NULL OR settled_micros >= 0)
+  settled_micros BIGINT CHECK (settled_micros IS NULL OR (settled_micros >= 0 AND settled_micros <= reservation_micros))
 );
 
 CREATE INDEX IF NOT EXISTS btc_clean_chat_cost_admissions_client_time_idx
@@ -161,7 +161,10 @@ DECLARE
   v_retry INTEGER := 0;
   v_budget_limited BOOLEAN := FALSE;
 BEGIN
-  IF p_admission_key !~ '^[a-f0-9]{64}$' OR p_now IS NULL OR p_reservation_micros <> 200000 THEN
+  IF p_admission_key !~ '^[a-f0-9]{64}$'
+     OR p_now IS NULL
+     OR p_reservation_micros < 120000
+     OR p_reservation_micros > 2000000 THEN
     RAISE EXCEPTION 'btc_clean_chat_guard_upgrade_invalid';
   END IF;
 
@@ -209,6 +212,12 @@ BEGIN
   END IF;
 
   LOCK TABLE btc_clean_chat_cost_admissions IN SHARE ROW EXCLUSIVE MODE;
+  IF p_actual_micros IS NOT NULL AND EXISTS (
+    SELECT 1 FROM btc_clean_chat_cost_admissions
+    WHERE admission_key=p_admission_key AND state='in_flight' AND p_actual_micros > reservation_micros
+  ) THEN
+    RAISE EXCEPTION 'btc_clean_chat_guard_settlement_exceeds_reservation';
+  END IF;
   UPDATE btc_clean_chat_cost_admissions
     SET state=p_state,
         settled_micros=COALESCE(p_actual_micros,reservation_micros),
