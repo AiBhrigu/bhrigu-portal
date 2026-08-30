@@ -1006,11 +1006,14 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
   return { status: "COMPLETE", answer, topic, usage: result.usage };
 }
 
-export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext }): Promise<BtcCleanChatResponse> {
+export type BtcCleanChatRuntimeGuard = { beforeWebResearch?: () => Promise<void> };
+
+export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<BtcCleanChatResponse> {
   const priorTurns = input.priorTurns ?? [];
   const totalUsage: Usage = { input_tokens: 0, output_tokens: 0, web_search_calls: 0 };
   const planned = await buildEvidencePlan({ locale: input.locale, question: input.question, priorTurns, fieldContext: input.fieldContext });
   addUsage(totalUsage, planned.usage);
+  if (planned.plan.tools.includes("web")) await input.guard?.beforeWebResearch?.();
   const evidence = await collectEvidence(input.locale, input.question, planned.plan);
   if (evidence.web) addUsage(totalUsage, evidence.web.usage);
   const sources = sourceRows(buildBtcPolymarketQueryContext(input.question, priorTurns), evidence);
