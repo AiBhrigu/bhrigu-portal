@@ -164,7 +164,7 @@ function buildMachineGraph(path, lang, pageMode=null, liveAvailable=false){
     ]},
   };
   if(path==="/ephemerides"&&pageMode==="today"&&liveAvailable) return {
-    "@context":"https://schema.org","@type":"WebPage","@id":`${pageUrl}#page`,url:pageUrl,name:ru?"Планетные эфемериды сегодня BHRIGU":"BHRIGU Planetary Ephemerides Today",inLanguage:lang,isPartOf:site,mainEntity:{"@type":"Dataset",name:"BHRIGU Canonical Public-Safe Astro Field · Today",variableMeasured:["planetary longitude","longitude speed","retrograde/direct state","major aspect orb","applying/separating phase","Sun-Moon elongation"],isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`}}};
+    "@context":"https://schema.org","@type":"WebPage","@id":`${pageUrl}#page`,url:pageUrl,name:ru?"Планетные эфемериды сегодня BHRIGU":"BHRIGU Planetary Ephemerides Today",inLanguage:lang,isPartOf:site,mainEntity:{"@type":"Dataset",name:"BHRIGU Canonical Public-Safe Daily Export · Today",variableMeasured:["planetary longitude","longitude speed","retrograde/direct state","major aspect orb","applying/separating phase","Sun-Moon elongation"],isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`}}};
   if(path==="/ephemerides"||path.startsWith("/ephemerides/")) return {
     "@context":"https://schema.org",
     "@type":"WebPage",

@@ -79,11 +79,11 @@ For method interpretation, prefer the Frey Guide and approved method materials b
 - https://www.bhrigu.io/ephemerides/2026?lang=ru
 
 ### Public ephemerides law
-- `/ephemerides` is the Today surface: fresh canonical public-safe planetary positions, longitude speed, direct/retrograde state and current major aspects with applying/separating phase.
+- `/ephemerides` is the Today surface: the source-bound canonical 12:00 UTC daily row for the current UTC date, including planetary longitude, speed, direct/retrograde state and major aspects with applying/separating phase.
 - The current lunar-phase label is derived only from canonical Sun-Moon elongation and is shown with the numeric elongation.
 - Previous/next eclipse context is explicitly REFERENCE_CORPUS data; it is not presented as public activation of the protected canonical eclipse adapter.
 - `/ephemerides/2026` and month routes remain source-bound monthly archive anchors at 12:00 UTC, with published aspect windows, stations and ingresses.
-- If the canonical Today source is unavailable, the page fails visibly to the latest published monthly anchor and does not infer live values.
+- The Today row is served from a deterministic 2026 public-safe daily export bound to ORION main `0b9998c669b9b50e926b1891604b1969c642e046`; no provider, secret or model call is required. If the row is unavailable, the page fails visibly to the latest published monthly anchor and does not infer values.
 - Ephemerides are astronomical/research evidence, not a trading signal or causal market claim.
 
 ## Bitcoin intelligence surfaces
