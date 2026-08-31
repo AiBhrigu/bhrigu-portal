@@ -2,10 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { classifyBtcCleanChatRuntimeError, runBtcCleanChatModel } from "../../../lib/btc-clean-chat-model-runtime";
 import { createNeonBtcCleanChatCostGuardStore } from "../../../lib/btc-clean-chat-cost-guard-neon";
 import {
-  BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS,
   BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS,
+  BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS,
   btcCleanChatGuardKeys,
   ensureBtcCleanChatGuardClient,
+  getBtcCleanChatCapacityMode,
   getBtcCleanChatGuardConfig,
   newBtcCleanChatGuardTurnId,
   normalizeBtcCleanChatGuardTurnId,
@@ -88,6 +89,7 @@ function guardUnavailable(res: NextApiResponse, ru: boolean) {
 }
 
 function guardLimited(res: NextApiResponse, ru: boolean, disposition: string, retryAfterSeconds: number) {
+  console.info("BTC_CLEAN_CHAT_COST_GUARD_LIMIT_DECISION", { disposition, retryAfterSeconds });
   if (retryAfterSeconds > 0) res.setHeader("Retry-After", String(Math.max(1, Math.ceil(retryAfterSeconds))));
   if (disposition === "replay") {
     return res.status(409).json({
@@ -95,9 +97,27 @@ function guardLimited(res: NextApiResponse, ru: boolean, disposition: string, re
       message: ru ? "Этот ход уже был принят. Отправьте новый вопрос только при необходимости." : "This turn was already admitted. Send a new question only if needed.",
     });
   }
-  return res.status(429).json({
-    ok: false, code: "COST_GUARD_LIMITED", retryable: true,
-    message: ru ? "Публичный доступ временно ограничен защитным контуром. Попробуйте позже." : "Public access is temporarily limited by the protective guard. Please try later.",
+  const code = disposition === "rate_limited"
+    ? "COST_GUARD_RATE_LIMITED"
+    : disposition === "concurrency_limited"
+      ? "COST_GUARD_CONCURRENCY_LIMITED"
+      : "COST_GUARD_BUDGET_LIMITED";
+  const message = disposition === "rate_limited"
+    ? (ru ? "Слишком много запросов за короткий период. Дождитесь защитного интервала." : "Too many requests in a short period. Wait for the protective interval.")
+    : disposition === "concurrency_limited"
+      ? (ru ? "Предыдущий запрос ещё обрабатывается. Дождитесь его завершения." : "A previous request is still being processed. Wait for it to finish.")
+      : (ru ? "Временный бюджетный предел Cosmographer достигнут. Попробуйте позже." : "The temporary Cosmographer budget limit has been reached. Please try later.");
+  return res.status(429).json({ ok: false, code, retryable: true, retryAfterSeconds, message });
+}
+
+function capacityHold(res: NextApiResponse, ru: boolean) {
+  return res.status(503).json({
+    ok: false,
+    code: "MODEL_CAPACITY_HOLD",
+    retryable: false,
+    message: ru
+      ? "Модельная ёмкость Cosmographer временно приостановлена. Повторять запрос сейчас не нужно."
+      : "Cosmographer model capacity is temporarily paused. Repeating the request now is not needed.",
   });
 }
 
@@ -119,6 +139,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (question.length < 2 || question.length > 500) return res.status(400).json({ ok: false, code: "QUESTION_INVALID" });
 
   const ru = locale(body.locale) === "ru";
+  if (getBtcCleanChatCapacityMode() === "hold") return capacityHold(res, ru);
+
   const telemetryConfig = getBtcObservabilityConfig();
   const telemetryContext = parseChatObservability(body);
   const guardConfig = getBtcCleanChatGuardConfig();
@@ -127,23 +149,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let guardStore: ReturnType<typeof createNeonBtcCleanChatCostGuardStore> | null = null;
   let guardAdmissionKey: string | null = null;
   let guardReservedMicros = 0;
-  let guardProviderHardBoundMicros = 0;
+  let guardActualSpentMicros = 0;
   if (guardConfig.enabled) {
     try {
       const identity = ensureBtcCleanChatGuardClient(req, res, guardConfig.secret);
       const turnId = normalizeBtcCleanChatGuardTurnId(telemetryContext?.chatTurnId) ?? newBtcCleanChatGuardTurnId();
       const keys = btcCleanChatGuardKeys(guardConfig.secret, identity.token, identity.clientIp, turnId);
       guardStore = createNeonBtcCleanChatCostGuardStore(guardConfig.databaseUrl);
-      const decision = await guardStore.reserve({
+      const decision = await guardStore.reserveV2({
         admissionKey: keys.admissionKey,
         clientKey: keys.clientKey,
         ipKey: keys.ipKey,
         now: new Date(),
-        reservationMicros: BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS,
+        reservationMicros: BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS,
       });
       if (decision.disposition !== "admitted") return guardLimited(res, ru, decision.disposition, decision.retryAfterSeconds);
       guardAdmissionKey = keys.admissionKey;
-      guardReservedMicros = BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS;
+      guardReservedMicros = BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS;
     } catch (error) {
       console.error("BTC_CLEAN_CHAT_COST_GUARD_ADMISSION_FAILURE", error instanceof Error ? error.message : "unknown");
       return guardUnavailable(res, ru);
@@ -171,26 +193,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       guard: guardStore && guardAdmissionKey ? {
         beforeProviderCall: async (hardCostMicros: number) => {
           if (!Number.isSafeInteger(hardCostMicros) || hardCostMicros <= 0) throw new Error("btc_clean_chat_guard_provider_bound_invalid");
-          guardProviderHardBoundMicros += hardCostMicros;
-          if (guardProviderHardBoundMicros > BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS) {
+          const targetReservationMicros = guardActualSpentMicros + hardCostMicros;
+          if (targetReservationMicros > BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS) {
             throw new BtcCleanChatGuardBlocked("budget_limited", 3600);
           }
-          const targetReservationMicros = Math.max(BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS, guardProviderHardBoundMicros);
-          if (targetReservationMicros <= guardReservedMicros) return;
-          const decision = await guardStore!.upgrade({
+          if (targetReservationMicros === guardReservedMicros) return;
+          const decision = await guardStore!.adjust({
             admissionKey: guardAdmissionKey!, now: new Date(), reservationMicros: targetReservationMicros,
           });
           if (decision.disposition !== "admitted") throw new BtcCleanChatGuardBlocked(decision.disposition, decision.retryAfterSeconds);
           guardReservedMicros = targetReservationMicros;
+        },
+        afterProviderCall: async (usage) => {
+          const stageActualMicros = nominalOpenAiCostMicros(usage.input_tokens, usage.output_tokens, usage.web_search_calls);
+          const nextActualSpentMicros = guardActualSpentMicros + stageActualMicros;
+          if (nextActualSpentMicros > guardReservedMicros) throw new Error("btc_clean_chat_guard_provider_hard_bound_breach");
+          guardActualSpentMicros = nextActualSpentMicros;
+          if (guardReservedMicros === guardActualSpentMicros) return;
+          const decision = await guardStore!.adjust({
+            admissionKey: guardAdmissionKey!, now: new Date(), reservationMicros: guardActualSpentMicros,
+          });
+          if (decision.disposition !== "admitted") throw new BtcCleanChatGuardBlocked(decision.disposition, decision.retryAfterSeconds);
+          guardReservedMicros = guardActualSpentMicros;
         },
       } : undefined,
     });
 
     const actualCostMicros = nominalOpenAiCostMicros(result.usage.input_tokens, result.usage.output_tokens, result.usage.web_search_calls);
     if (guardStore && guardAdmissionKey) {
-      if (actualCostMicros > guardReservedMicros) {
-        console.error("BTC_CLEAN_CHAT_COST_GUARD_HARD_BOUND_BREACH", { actualCostMicros, guardReservedMicros });
-        return guardUnavailable(res, ru);
+      if (actualCostMicros !== guardActualSpentMicros || actualCostMicros > guardReservedMicros) {
+        console.error("BTC_CLEAN_CHAT_COST_GUARD_USAGE_ACCOUNTING_MISMATCH", { actualCostMicros, guardActualSpentMicros, guardReservedMicros });
+        throw new Error("btc_clean_chat_guard_usage_accounting_mismatch");
       }
       try {
         await guardStore.settle({ admissionKey: guardAdmissionKey, now: new Date(), actualMicros: actualCostMicros, state: "completed" });

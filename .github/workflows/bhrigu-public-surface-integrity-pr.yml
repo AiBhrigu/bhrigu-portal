@@ -33,11 +33,11 @@ jobs:
             "lib/btc-clean-chat-cost-guard-neon.ts"
             "lib/btc-clean-chat-cost-guard.ts"
             "lib/btc-clean-chat-model-runtime.ts"
-            "migrations/20260830_btc_clean_chat_cost_guard_v1.sql"
-            "package.json"
+            "migrations/20260830_btc_clean_chat_cost_guard_v2.sql"
             "pages/api/btc/clean-chat-v1.ts"
             "scripts/btc-direct-payment-fresh-db-migration.ts"
             "tests/btc-clean-chat-cost-guard-acceptance.ts"
+            "ui/btc/BtcCleanChatV1.tsx"
           )
           mapfile -t cost_guard_expected_sorted < <(printf '%s\n' "${cost_guard_expected[@]}" | sort)
           if diff -q <(printf '%s\n' "${cost_guard_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then

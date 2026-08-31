@@ -35,9 +35,27 @@ export function createNeonBtcCleanChatCostGuardStore(databaseUrl: string) {
     return decision(rows[0] as Record<string, unknown> | undefined);
   }
 
+  async function reserveV2(input: { admissionKey: string; clientKey: string; ipKey: string; now: Date; reservationMicros: number }) {
+    const rows = await sql`
+      SELECT * FROM btc_clean_chat_guard_reserve_v2(
+        ${input.admissionKey},${input.clientKey},${input.ipKey},${input.now.toISOString()},${input.reservationMicros}
+      )
+    `;
+    return decision(rows[0] as Record<string, unknown> | undefined);
+  }
+
   async function upgrade(input: { admissionKey: string; now: Date; reservationMicros: number }) {
     const rows = await sql`
       SELECT * FROM btc_clean_chat_guard_upgrade(
+        ${input.admissionKey},${input.now.toISOString()},${input.reservationMicros}
+      )
+    `;
+    return decision(rows[0] as Record<string, unknown> | undefined);
+  }
+
+  async function adjust(input: { admissionKey: string; now: Date; reservationMicros: number }) {
+    const rows = await sql`
+      SELECT * FROM btc_clean_chat_guard_adjust(
         ${input.admissionKey},${input.now.toISOString()},${input.reservationMicros}
       )
     `;
@@ -52,5 +70,5 @@ export function createNeonBtcCleanChatCostGuardStore(databaseUrl: string) {
     `;
   }
 
-  return { reserve, upgrade, settle };
+  return { reserve, reserveV2, upgrade, adjust, settle };
 }

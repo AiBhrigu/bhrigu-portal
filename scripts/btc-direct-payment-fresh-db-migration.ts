@@ -13,6 +13,7 @@ const EXPECTED_MIGRATIONS = [
   "20260819_btc_donation_session_admission_v1.sql",
   "20260822_btc_observability_v1.sql",
   "20260830_btc_clean_chat_cost_guard_v1.sql",
+  "20260830_btc_clean_chat_cost_guard_v2.sql",
 ];
 
 async function run() {
