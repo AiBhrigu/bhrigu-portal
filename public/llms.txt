@@ -70,6 +70,23 @@ For method interpretation, prefer the Frey Guide and approved method materials b
 - https://www.bhrigu.io/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf
 - https://www.bhrigu.io/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf
 
+## Astro research and ephemerides
+- https://www.bhrigu.io/astro?lang=en
+- https://www.bhrigu.io/astro?lang=ru
+- https://www.bhrigu.io/ephemerides?lang=en
+- https://www.bhrigu.io/ephemerides?lang=ru
+- https://www.bhrigu.io/ephemerides/2026?lang=en
+- https://www.bhrigu.io/ephemerides/2026?lang=ru
+
+### Public ephemerides law
+- The current public Ephemerides V1 is source-bound to BHRIGU's published 2026 Astro evidence.
+- Planetary positions are monthly anchors at 12:00 UTC, not a simulated live sky.
+- Longitude speed determines the displayed direct/retrograde state.
+- Aspect rows are published event windows with explicit peak dates; they are not silently re-labelled as canonical daily applying/separating phase.
+- Stations and ingresses are shown only when present in the published dataset.
+- Canonical eclipse geometry and daily applying/separating research semantics exist in the broader research authority but are not inferred on the public page without a source-bound public export.
+- Ephemerides are astronomical/research evidence, not a trading signal or causal market claim.
+
 ## Bitcoin intelligence surfaces
 - https://www.bhrigu.io/crypto-astro/btc?lang=en
 - https://www.bhrigu.io/crypto-astro/btc?lang=ru

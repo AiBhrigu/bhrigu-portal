@@ -36,7 +36,7 @@ function getBrowserRoute() {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-export default function BhriguPhiHeader() {
+export default function BhriguPhiHeader({ routeOverride = null }) {
   const router = useRouter();
   const stablePath = String(router.pathname || "/");
   const [clientRoute, setClientRoute] = useState(null);
@@ -52,7 +52,7 @@ export default function BhriguPhiHeader() {
     };
   }, [router.asPath]);
 
-  const activeRoute = clientRoute || stablePath;
+  const activeRoute = clientRoute || routeOverride || stablePath;
   const path = activeRoute.split("?")[0].split("#")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
@@ -60,7 +60,7 @@ export default function BhriguPhiHeader() {
   const requestLocale = REQUEST_LOCALE_ROUTES.has(stablePath)
     ? resolvePublicLocale("", rawLang)
     : "en";
-  const locale = clientRoute ? resolvePublicLocale(clientRoute) : requestLocale;
+  const locale = clientRoute || routeOverride ? resolvePublicLocale(activeRoute) : requestLocale;
   const ru = locale === "ru";
   const targetLocale = ru ? "en" : "ru";
   const languageHref = switchPublicLocale(activeRoute, targetLocale);

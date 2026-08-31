@@ -20,6 +20,8 @@ const COPY = {
       ["Interpretation & depth", [
         ["Cosmographer", "Interpretation/navigation role", "/cosmographer"],
         ["Cosmography", "Research language and boundary", "/cosmography"],
+        ["Astro Research Atlas", "Ephemerides and research-module map", "/astro"],
+        ["Ephemerides", "Source-bound 2026 planetary research data", "/ephemerides"],
         ["ORION", "Protected research depth", "/orion"],
       ]],
       ["Public boundary", [
@@ -46,6 +48,8 @@ const COPY = {
       ["Интерпретация и глубина", [
         ["Космограф", "Роль интерпретации/навигации", "/cosmographer"],
         ["Космография", "Исследовательский язык и граница", "/cosmography"],
+        ["Атлас астро-исследований", "Эфемериды и карта исследовательских модулей", "/astro"],
+        ["Эфемериды", "Source-bound планетные данные 2026", "/ephemerides"],
         ["ORION", "Защищённая исследовательская глубина", "/orion"],
       ]],
       ["Публичная граница", [
