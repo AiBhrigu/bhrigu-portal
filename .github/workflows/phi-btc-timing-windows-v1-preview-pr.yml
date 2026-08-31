@@ -1,0 +1,33 @@
+name: Φ BTC Timing Windows V1 Preview PR
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'lib/phi-btc-timing-windows-*.ts'
+      - 'pages/api/btc/timing-windows/**'
+      - 'pages/crypto-astro/btc/timing-windows-preview*'
+      - 'pages/crypto-astro/btc/timing-windows-preview/**'
+      - 'tests/phi-btc-timing-windows-v1-acceptance.ts'
+      - 'package.json'
+      - '.github/workflows/phi-btc-timing-windows-v1-preview-pr.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run verify:phi-btc-timing-windows-v1
+      - run: npm run verify:btc-direct-payment
+      - run: git diff --check
+      - run: NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA="$GITHUB_SHA" npx next build
