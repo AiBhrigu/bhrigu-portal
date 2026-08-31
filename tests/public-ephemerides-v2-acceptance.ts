@@ -1,0 +1,13 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import { buildPublicEphemeridesTodayFromPacket } from "../lib/public-ephemerides-live";
+const now=new Date("2026-09-01T00:00:00Z");
+const packet:any={schema_version:"bhrigu_public_astro_field_v0_1",snapshot:{observation_time_utc:now.toISOString(),bodies:{Sun:{longitude_deg:159,longitude_speed_deg_per_day:0.97,retrograde:false},Moon:{longitude_deg:32,longitude_speed_deg_per_day:13.7,retrograde:false},Jupiter:{longitude_deg:133.8,longitude_speed_deg_per_day:0.2,retrograde:false},Saturn:{longitude_deg:13.65,longitude_speed_deg_per_day:-0.05,retrograde:true}},aspects:[{body_a:"Jupiter",body_b:"Saturn",aspect:"trine",orb_deg:0.05,phase:"APPLYING"}]},provenance:{engine_id:"orion_native_swisseph_canonical_v0_1"}};
+const en=buildPublicEphemeridesTodayFromPacket("en",packet,now);
+const ru=buildPublicEphemeridesTodayFromPacket("ru",packet,now);
+assert.equal(en.live,true);assert.equal(en.aspects[0].phaseLabel,"Applying");assert.equal(ru.aspects[0].phaseLabel,"Сходящийся");
+assert.ok(en.lunarPhase);assert.equal(en.eclipses.previous?.maximum_time_utc,"2026-08-28T04:12:58.339036Z");assert.equal(en.eclipses.next?.maximum_time_utc,"2027-02-06T15:59:40.318661Z");
+assert.equal(en.eclipses.source.authority,"REFERENCE_CORPUS");assert.match(en.eclipses.source.boundary,/NOT_CANONICAL_ECLIPSE_ADAPTER/);
+const nav=fs.readFileSync("components/PrevNextBlock.jsx","utf8");assert.match(nav,/naturalFlow/);assert.match(nav,/pnFlow/);assert.match(nav,/startsWith\("\/ephemerides\/"\)/);
+const app=fs.readFileSync("pages/_app.js","utf8");assert.match(app,/Canonical Public-Safe Astro Field · Today/);assert.match(app,/pageProps\?\.mode/);
+console.log("PUBLIC_EPHEMERIDES_V2_ACCEPTANCE=PASS");console.log("LIVE_OPENAI_CALLS=ZERO");console.log("FINANCIAL_MUTATION=ZERO");

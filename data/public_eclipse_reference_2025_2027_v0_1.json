@@ -1,0 +1,78 @@
+{
+  "schema": "bhrigu_public_eclipse_reference_v0_1",
+  "source": {
+    "repository": "AiBhrigu/orion_ai",
+    "commit": "0b9998c669b9b50e926b1891604b1969c642e046",
+    "solar_corpus": "eclipses_solar_1950_2050.csv",
+    "lunar_corpus": "eclipses_lunar_1950_2050.csv",
+    "authority": "REFERENCE_CORPUS",
+    "boundary": "NOT_CANONICAL_ECLIPSE_ADAPTER_PUBLIC_ACTIVATION"
+  },
+  "events": [
+    {
+      "maximum_time_utc": "2025-03-14T06:58:47.421382Z",
+      "event_type": "lunar",
+      "kind": "total"
+    },
+    {
+      "maximum_time_utc": "2025-03-29T10:47:26.613394Z",
+      "event_type": "solar",
+      "kind": "partial"
+    },
+    {
+      "maximum_time_utc": "2025-09-07T18:11:48.617198Z",
+      "event_type": "lunar",
+      "kind": "total"
+    },
+    {
+      "maximum_time_utc": "2025-09-21T19:42:00.411301Z",
+      "event_type": "solar",
+      "kind": "partial"
+    },
+    {
+      "maximum_time_utc": "2026-02-17T12:11:53.987477Z",
+      "event_type": "solar",
+      "kind": "annular"
+    },
+    {
+      "maximum_time_utc": "2026-03-03T11:33:42.715536Z",
+      "event_type": "lunar",
+      "kind": "total"
+    },
+    {
+      "maximum_time_utc": "2026-08-12T17:45:57.440056Z",
+      "event_type": "solar",
+      "kind": "total"
+    },
+    {
+      "maximum_time_utc": "2026-08-28T04:12:58.339036Z",
+      "event_type": "lunar",
+      "kind": "partial"
+    },
+    {
+      "maximum_time_utc": "2027-02-06T15:59:40.318661Z",
+      "event_type": "solar",
+      "kind": "annular"
+    },
+    {
+      "maximum_time_utc": "2027-02-20T23:12:51.308403Z",
+      "event_type": "lunar",
+      "kind": "penumbral"
+    },
+    {
+      "maximum_time_utc": "2027-07-18T16:03:00.929683Z",
+      "event_type": "lunar",
+      "kind": "penumbral"
+    },
+    {
+      "maximum_time_utc": "2027-08-02T10:06:39.846862Z",
+      "event_type": "solar",
+      "kind": "total"
+    },
+    {
+      "maximum_time_utc": "2027-08-17T07:13:51.656912Z",
+      "event_type": "lunar",
+      "kind": "penumbral"
+    }
+  ]
+}
