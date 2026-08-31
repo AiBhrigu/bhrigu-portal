@@ -23,6 +23,8 @@ const META = {
   "/archive": { en:["Archive · BHRIGU","Historical public artifacts and preserved snapshots."], ru:["Архив · BHRIGU","Исторические публичные артефакты и сохранённые снимки."] },
   "/chronicle": { en:["Chronicle · Historical Ledger | BHRIGU","Dated historical milestones; not a statement of current system state."], ru:["Хроника · Исторический реестр | BHRIGU","Датированные исторические вехи; не описание текущего состояния системы."] },
   "/cosmography": { en:["Cosmography · BHRIGU","Research language for structure, cycles and relations, with protected mechanism boundaries."], ru:["Космография · BHRIGU","Исследовательский язык структуры, циклов и связей с защищёнными границами механизма."] },
+  "/astro": { en:["Astro Research Atlas · BHRIGU","Public map of BHRIGU ephemerides, aspects, stations, eclipses, Semenko, cosmography and Bitcoin research layers."], ru:["Атлас астро-исследований · BHRIGU","Публичная карта эфемерид, аспектов, станций, затмений, Семенко, космографии и Bitcoin-исследований BHRIGU."] },
+  "/ephemerides": { en:["2026 Planetary Ephemerides · BHRIGU","Source-bound 2026 planetary positions, motion, aspect windows, stations and ingresses from BHRIGU public Astro evidence."], ru:["Планетные эфемериды 2026 · BHRIGU","Source-bound положения планет, движение, окна аспектов, станции и ингрессии из публичного Astro evidence BHRIGU за 2026 год."] },
   "/access": { en:["Access · BHRIGU","Reviewed private intake is temporarily closed; public orientation remains available."], ru:["Доступ · BHRIGU","Reviewed private intake временно закрыт; публичная ориентация остаётся доступной."] },
   "/support": { en:["Support · BHRIGU","Voluntary Bitcoin support for public research continuity; no access, priority or ownership rights."], ru:["Поддержка · BHRIGU","Добровольная Bitcoin-поддержка публичных исследований без прав доступа, приоритета или владения."] },
   "/github": { en:["GitHub · BHRIGU","Public code, research artifacts and evidence references."], ru:["GitHub · BHRIGU","Публичный код, исследовательские артефакты и ссылки на доказательства."] },
@@ -146,6 +148,37 @@ function buildMachineGraph(path, lang){
     ],
     mentions:{"@type":"CreativeWork",name:"Frey AI Reading Packet",url:`${freyUrl}#ai-reading-packet`},
   };
+  if(path==="/astro") return {
+    "@context":"https://schema.org",
+    "@type":"CollectionPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Атлас астро-исследований BHRIGU":"BHRIGU Astro Research Atlas",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{"@type":"ItemList",itemListElement:[
+      {"@type":"ListItem",position:1,name:ru?"Эфемериды":"Ephemerides",url:localizedUrl("/ephemerides",lang)},
+      {"@type":"ListItem",position:2,name:ru?"Космография":"Cosmography",url:localizedUrl("/cosmography",lang)},
+      {"@type":"ListItem",position:3,name:"BTC × Astro",url:localizedUrl("/crypto-astro/btc",lang)},
+      {"@type":"ListItem",position:4,name:"ORION",url:localizedUrl("/orion",lang)},
+    ]},
+  };
+  if(path==="/ephemerides"||path.startsWith("/ephemerides/")) return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Планетные эфемериды BHRIGU":"BHRIGU Planetary Ephemerides",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"Dataset",
+      name:"BHRIGU Public Astro Evidence 2026",
+      temporalCoverage:"2026-01-01/2026-12-31",
+      variableMeasured:["planetary longitude","longitude speed","major aspect windows","stations","ingresses"],
+      isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`},
+    },
+  };
   return null;
 }
 
@@ -154,9 +187,10 @@ export default function App({ Component, pageProps }) {
   const path=pathOnly(router.pathname || router.asPath || "/");
   const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
   const lang=raw==="ru"?"ru":"en";
-  const pair=META[path]?.[lang]||META[path]?.en||["BHRIGU","BHRIGU public product and research surfaces."];
+  const ephemeridesPath=path==="/ephemerides"||path.startsWith("/ephemerides/");
+  const pair=META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."];
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
-  const localized=LOCALIZED.has(path);
+  const localized=LOCALIZED.has(path)||ephemeridesPath;
   const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
   const pageOwnsMetadata=PAGE_OWNS_METADATA.has(path);
   const machineGraph=buildMachineGraph(path,lang);
