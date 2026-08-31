@@ -5,10 +5,10 @@ type Module={name:string;role:string;state:string;href:string;tone:"live"|"accep
 const COPY={
   en:{ey:"ASTRO RESEARCH ATLAS",title:"One sky. Distinct research modules.",lead:"A public map of BHRIGU's astronomical and astrological research surfaces. It exposes authority, status and use without exposing protected ORION internals.",groups:[
     ["Sky & time",[
-      {name:"Ephemerides",role:"2026 source-bound planetary positions, motion and event windows",state:"PUBLIC V1",href:"/ephemerides",tone:"live"},
+      {name:"Ephemerides",role:"Today canonical sky + source-bound 2026 archive",state:"PUBLIC V2",href:"/ephemerides",tone:"live"},
       {name:"Aspect phases",role:"Canonical major-aspect geometry and applying/separating research semantics",state:"ACCEPTED ENGINE",href:"/cosmography",tone:"accepted"},
       {name:"Stations & ingresses",role:"Turning points carried by the published 2026 Astro evidence",state:"PUBLIC IN EPHEMERIDES",href:"/ephemerides",tone:"live"},
-      {name:"Eclipses",role:"Canonical solar/lunar event geometry; public event table not inferred from incomplete exports",state:"ACCEPTED / PARTIAL PUBLIC",href:"/cosmography",tone:"accepted"},
+      {name:"Eclipses",role:"Reference previous/next eclipse context is public in Ephemerides; canonical event geometry remains separately bounded",state:"ACCEPTED / PARTIAL PUBLIC",href:"/cosmography",tone:"accepted"},
     ]],
     ["Research engines",[
       {name:"Semenko",role:"Weighted planetary geometry used as research ordering, not intrinsic bullish/bearish polarity",state:"RESEARCH",href:"/cosmography",tone:"research"},
@@ -24,10 +24,10 @@ const COPY={
   ]},
   ru:{ey:"АТЛАС АСТРО-ИССЛЕДОВАНИЙ",title:"Одно небо. Разные исследовательские модули.",lead:"Публичная карта астрономических и астрологических поверхностей BHRIGU. Показывает authority, статус и применение, не раскрывая защищённые механизмы ORION.",groups:[
     ["Небо и время",[
-      {name:"Эфемериды",role:"Source-bound положения планет, движение и event windows за 2026",state:"PUBLIC V1",href:"/ephemerides",tone:"live"},
+      {name:"Эфемериды",role:"Canonical небо сегодня + source-bound архив 2026",state:"PUBLIC V2",href:"/ephemerides",tone:"live"},
       {name:"Фазы аспектов",role:"Canonical геометрия главных аспектов и applying/separating research semantics",state:"ACCEPTED ENGINE",href:"/cosmography",tone:"accepted"},
       {name:"Станции и ингрессии",role:"Поворотные точки из опубликованного Astro evidence 2026",state:"PUBLIC IN EPHEMERIDES",href:"/ephemerides",tone:"live"},
-      {name:"Затмения",role:"Canonical геометрия солнечных/лунных событий; public event table не симулируется из неполного export",state:"ACCEPTED / PARTIAL PUBLIC",href:"/cosmography",tone:"accepted"},
+      {name:"Затмения",role:"Reference previous/next контекст затмений публичен в Эфемеридах; canonical геометрия остаётся отдельно ограниченной",state:"ACCEPTED / PARTIAL PUBLIC",href:"/cosmography",tone:"accepted"},
     ]],
     ["Исследовательские движки",[
       {name:"Семенко",role:"Взвешенная планетарная геометрия как research ordering, без встроенной bullish/bearish полярности",state:"RESEARCH",href:"/cosmography",tone:"research"},

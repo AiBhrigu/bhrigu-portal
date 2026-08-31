@@ -24,7 +24,7 @@ const META = {
   "/chronicle": { en:["Chronicle · Historical Ledger | BHRIGU","Dated historical milestones; not a statement of current system state."], ru:["Хроника · Исторический реестр | BHRIGU","Датированные исторические вехи; не описание текущего состояния системы."] },
   "/cosmography": { en:["Cosmography · BHRIGU","Research language for structure, cycles and relations, with protected mechanism boundaries."], ru:["Космография · BHRIGU","Исследовательский язык структуры, циклов и связей с защищёнными границами механизма."] },
   "/astro": { en:["Astro Research Atlas · BHRIGU","Public map of BHRIGU ephemerides, aspects, stations, eclipses, Semenko, cosmography and Bitcoin research layers."], ru:["Атлас астро-исследований · BHRIGU","Публичная карта эфемерид, аспектов, станций, затмений, Семенко, космографии и Bitcoin-исследований BHRIGU."] },
-  "/ephemerides": { en:["2026 Planetary Ephemerides · BHRIGU","Source-bound 2026 planetary positions, motion, aspect windows, stations and ingresses from BHRIGU public Astro evidence."], ru:["Планетные эфемериды 2026 · BHRIGU","Source-bound положения планет, движение, окна аспектов, станции и ингрессии из публичного Astro evidence BHRIGU за 2026 год."] },
+  "/ephemerides": { en:["Planetary Ephemerides Today · BHRIGU","Fresh canonical planetary positions, aspect phase and lunar context, with source-bound 2026 archive pages."], ru:["Планетные эфемериды сегодня · BHRIGU","Свежие canonical положения планет, фазы аспектов и лунный контекст с source-bound архивом 2026."] },
   "/access": { en:["Access · BHRIGU","Reviewed private intake is temporarily closed; public orientation remains available."], ru:["Доступ · BHRIGU","Reviewed private intake временно закрыт; публичная ориентация остаётся доступной."] },
   "/support": { en:["Support · BHRIGU","Voluntary Bitcoin support for public research continuity; no access, priority or ownership rights."], ru:["Поддержка · BHRIGU","Добровольная Bitcoin-поддержка публичных исследований без прав доступа, приоритета или владения."] },
   "/github": { en:["GitHub · BHRIGU","Public code, research artifacts and evidence references."], ru:["GitHub · BHRIGU","Публичный код, исследовательские артефакты и ссылки на доказательства."] },
@@ -163,6 +163,8 @@ function buildMachineGraph(path, lang){
       {"@type":"ListItem",position:4,name:"ORION",url:localizedUrl("/orion",lang)},
     ]},
   };
+  if(path==="/ephemerides") return {
+    "@context":"https://schema.org","@type":"WebPage","@id":`${pageUrl}#page`,url:pageUrl,name:ru?"Планетные эфемериды сегодня BHRIGU":"BHRIGU Planetary Ephemerides Today",inLanguage:lang,isPartOf:site,mainEntity:{"@type":"Dataset",name:"BHRIGU Canonical Public-Safe Daily Export · Today",variableMeasured:["planetary longitude","longitude speed","retrograde/direct state","major aspect orb","applying/separating phase","Sun-Moon elongation"],isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`}}};
   if(path==="/ephemerides"||path.startsWith("/ephemerides/")) return {
     "@context":"https://schema.org",
     "@type":"WebPage",
