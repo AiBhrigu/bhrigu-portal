@@ -22,7 +22,8 @@
     "verify:btc-binance-production-activation-readiness": "node --import tsx tests/btc-binance-production-activation-readiness-acceptance.ts",
     "verify:btc-cosmographer-canonical-140-replay-selftests": "python3 -m pytest tests/btc-cosmographer-canonical-replay-harness-selftest.py -v --tb=short",
     "verify:btc-research-field-v1-preview": "node --import tsx tests/btc-research-field-v1-acceptance.ts",
-    "verify:btc-clean-chat-cost-guard": "node --import tsx tests/btc-clean-chat-cost-guard-acceptance.ts"
+    "verify:btc-clean-chat-cost-guard": "node --import tsx tests/btc-clean-chat-cost-guard-acceptance.ts",
+    "verify:phi-btc-timing-windows-v1": "node --import tsx tests/phi-btc-timing-windows-v1-acceptance.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",
