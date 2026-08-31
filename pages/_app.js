@@ -184,9 +184,11 @@ function buildMachineGraph(path, lang){
 
 export default function App({ Component, pageProps }) {
   const router=useRouter();
-  const path=pathOnly(router.pathname || router.asPath || "/");
+  const routePath=pathOnly(router.pathname || router.asPath || "/");
   const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
   const lang=raw==="ru"?"ru":"en";
+  const ephemeridesRoute=routePath==="/ephemerides"||routePath.startsWith("/ephemerides/");
+  const path=ephemeridesRoute&&typeof pageProps?.canonicalPath==="string"?pageProps.canonicalPath:routePath;
   const ephemeridesPath=path==="/ephemerides"||path.startsWith("/ephemerides/");
   const pair=META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."];
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
@@ -208,7 +210,7 @@ export default function App({ Component, pageProps }) {
       </>}
       {machineGraph&&<script type="application/ld+json" data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1" dangerouslySetInnerHTML={{__html:JSON.stringify(machineGraph).replace(/</g,"\\u003c")}} />}
     </Head>
-    <BhriguPhiHeader />
+    <BhriguPhiHeader routeOverride={ephemeridesPath?`${path}?lang=${lang}`:null} />
     <Component {...pageProps} />
     <BtcFreeCorridorSurfaceAdapter />
     {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
