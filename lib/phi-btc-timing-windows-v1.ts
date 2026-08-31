@@ -9,6 +9,7 @@ export const PHI_BTC_TIMING_WINDOWS_SERVICE_MS = 30 * 24 * 60 * 60 * 1000;
 export const PHI_BTC_TIMING_WINDOWS_MAX_RUNS = 6 as const;
 export const PHI_BTC_TIMING_WINDOWS_MAX_RUN_COST_MICROS = 800_000 as const;
 export const PHI_BTC_TIMING_WINDOWS_MAX_TOTAL_COST_MICROS = 4_800_000 as const;
+export const PHI_BTC_TIMING_WINDOWS_CLOSEOUT_GRACE_MS = 24 * 60 * 60 * 1000;
 export const PHI_BTC_TIMING_WINDOWS_COOKIE = "bhrigu_phi_btc_timing_windows_v1";
 
 export const PHI_BTC_TIMING_WINDOWS_RUNS = [
@@ -106,8 +107,8 @@ export function activatePhiBtcTimingWindowsRecord(
 
 export function phiBtcTimingWindowsCookie(researchObjectId: string, secret: string, serviceEnd?: string | null): string {
   const defaultAge = 60 * 60;
-  const serviceAge = serviceEnd ? Math.floor((new Date(serviceEnd).getTime() - Date.now()) / 1000) : defaultAge;
-  const maxAge = Math.max(0, Math.min(30 * 24 * 60 * 60, serviceAge));
+  const serviceAge = serviceEnd ? Math.floor((new Date(serviceEnd).getTime() + PHI_BTC_TIMING_WINDOWS_CLOSEOUT_GRACE_MS - Date.now()) / 1000) : defaultAge;
+  const maxAge = Math.max(0, Math.min(31 * 24 * 60 * 60, serviceAge));
   return `${PHI_BTC_TIMING_WINDOWS_COOKIE}=${researchObjectId}.${secret}; Path=/api/btc/timing-windows/v1; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`;
 }
 
@@ -147,5 +148,6 @@ export const PHI_BTC_TIMING_WINDOWS_CONTRACT = {
   maxTotalCostMicros: PHI_BTC_TIMING_WINDOWS_MAX_TOTAL_COST_MICROS,
   runSlots: PHI_BTC_TIMING_WINDOWS_RUNS,
   paymentRail: "BTC_DIRECT_PAYMENT_V1",
+  closeoutGraceHours: 24,
   productionActivation: false,
 } as const;
