@@ -51,7 +51,7 @@ function freyNode(lang){
     description:lang==="ru"?"Детерминированный сервис темпорального чтения BHRIGU.":"BHRIGU deterministic temporal reading service.",
   };
 }
-function buildMachineGraph(path, lang, pageMode=null, liveAvailable=false){
+function buildMachineGraph(path, lang){
   const ru=lang==="ru";
   const pageUrl=localizedUrl(path,lang);
   const guideUrl=localizedUrl("/guide/frey",lang);
@@ -163,7 +163,7 @@ function buildMachineGraph(path, lang, pageMode=null, liveAvailable=false){
       {"@type":"ListItem",position:4,name:"ORION",url:localizedUrl("/orion",lang)},
     ]},
   };
-  if(path==="/ephemerides"&&pageMode==="today"&&liveAvailable) return {
+  if(path==="/ephemerides") return {
     "@context":"https://schema.org","@type":"WebPage","@id":`${pageUrl}#page`,url:pageUrl,name:ru?"Планетные эфемериды сегодня BHRIGU":"BHRIGU Planetary Ephemerides Today",inLanguage:lang,isPartOf:site,mainEntity:{"@type":"Dataset",name:"BHRIGU Canonical Public-Safe Daily Export · Today",variableMeasured:["planetary longitude","longitude speed","retrograde/direct state","major aspect orb","applying/separating phase","Sun-Moon elongation"],isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`}}};
   if(path==="/ephemerides"||path.startsWith("/ephemerides/")) return {
     "@context":"https://schema.org",
@@ -197,7 +197,7 @@ export default function App({ Component, pageProps }) {
   const localized=LOCALIZED.has(path)||ephemeridesPath;
   const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
   const pageOwnsMetadata=PAGE_OWNS_METADATA.has(path);
-  const machineGraph=buildMachineGraph(path,lang,pageProps?.mode??null,pageProps?.data?.live===true);
+  const machineGraph=buildMachineGraph(path,lang);
   return <>
     <Head>
       {!pageOwnsMetadata&&<>

@@ -31,7 +31,7 @@ assert.equal(en.eclipses.source.authority,"REFERENCE_CORPUS");assert.match(en.ec
 const liveSource=fs.readFileSync("lib/public-ephemerides-live.ts","utf8");
 assert.doesNotMatch(liveSource,/loadBtcAstroField|BHRIGU_ASTRO_FIELD_URL|process\.env|fetch\(/);
 const nav=fs.readFileSync("components/PrevNextBlock.jsx","utf8");assert.match(nav,/naturalFlow/);assert.match(nav,/pnFlow/);assert.match(nav,/startsWith\("\/ephemerides\/"\)/);
-const app=fs.readFileSync("pages/_app.js","utf8");assert.match(app,/Canonical Public-Safe Daily Export · Today/);assert.match(app,/pageProps\?\.mode/);
+const app=fs.readFileSync("pages/_app.js","utf8");assert.match(app,/Canonical Public-Safe Daily Export · Today/);assert.match(app,/buildMachineGraph\(path,lang\)/);
 console.log("PUBLIC_EPHEMERIDES_V2_ACCEPTANCE=PASS");
 console.log("DAILY_DATASET_ROWS=365");console.log(`DAILY_DATASET_SHA256=${dataset_sha256}`);
 console.log("TODAY_RUNTIME_SECRET_DEPENDENCY=ZERO");console.log("LIVE_OPENAI_CALLS=ZERO");console.log("FINANCIAL_MUTATION=ZERO");
