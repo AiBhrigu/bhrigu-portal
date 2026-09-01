@@ -96,8 +96,8 @@ export default function PhiBtcTimingWindowsFounding({
     sourceTitle: "Source & Proof",
     sourceText: "NOW использует accepted BTC market evidence corridor. В активном Timing Windows object каждый run хранит sources, evidence и boundary; integrity chain не выдаётся за внешнюю notarization.",
     request: "REQUEST A FOUNDING SLOT",
-    requestText: "Founding intake остаётся ручным. На этой Preview-странице нет цены, checkout, кошелька или платёжной активации.",
-    preview: "VERCEL PREVIEW · OPERATOR REVIEW",
+    requestText: "Founding intake остаётся ручным. На этой странице нет цены, checkout, кошелька или платёжной активации.",
+    preview: "FOUNDING · RESEARCH OBJECT",
   } : {
     eyebrow: "BHRIGU · FOUNDING RESEARCH OBJECT",
     title: "Φ BTC Timing Windows · Founding",
@@ -149,8 +149,8 @@ export default function PhiBtcTimingWindowsFounding({
     sourceTitle: "Source & Proof",
     sourceText: "NOW uses the accepted BTC market evidence corridor. In an active Timing Windows object every run stores sources, evidence, and boundary; integrity chaining is not presented as external notarization.",
     request: "REQUEST A FOUNDING SLOT",
-    requestText: "Founding intake remains manual. This Preview contains no public price, checkout, wallet, or payment activation.",
-    preview: "VERCEL PREVIEW · OPERATOR REVIEW",
+    requestText: "Founding intake remains manual. This page contains no public price, checkout, wallet, or payment activation.",
+    preview: "FOUNDING · RESEARCH OBJECT",
   };
 
   const currentTime = currentState.snapshot_time_utc ?? generatedAtUtc;
@@ -165,7 +165,7 @@ export default function PhiBtcTimingWindowsFounding({
     </Head>
 
     <main>
-      <nav className="topbar" aria-label="Preview controls">
+      <nav className="topbar" aria-label="Founding controls">
         <span className="brand">BHRIGU</span>
         <span className="preview">{t.preview}</span>
         <span className="lang"><a href="?lang=en">EN</a><span>/</span><a href="?lang=ru">RU</a></span>
