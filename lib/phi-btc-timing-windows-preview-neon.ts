@@ -107,7 +107,6 @@ export async function activatePreviewPhiBtcTimingWindowsEntitlement(
   );
 }
 
-
 function parseRun(value: unknown): PhiBtcTimingWindowsRunResult | null {
   const candidate = typeof value === "string" ? safeJson(value) : value;
   return isPhiTimingWindowsRunResult(candidate) ? candidate : null;
@@ -138,8 +137,8 @@ export async function claimPreviewPhiBtcTimingWindowsRun(
     UPDATE access_intake_requests
     SET record=jsonb_set(
       record,'{execution_claim}',
-      jsonb_build_object('claim_id',${claimId},'slot',${slot},'claimed_at',${at}),true
-    ),updated_at=${at}
+      jsonb_build_object('claim_id',${claimId}::text,'slot',${slot}::text,'claimed_at',${at}::text),true
+    ),updated_at=${at}::timestamptz
     WHERE request_id=${productOrderId}
       AND record->>'kind'='PHI_BTC_TIMING_WINDOWS_PRODUCT_ORDER'
       AND record->>'entitlement_state'='ACTIVE'
@@ -160,7 +159,6 @@ export async function claimPreviewPhiBtcTimingWindowsRun(
   `;
   return rows[0] ? parseRecord(rows[0].record) : null;
 }
-
 
 export async function reservePreviewPhiBtcTimingWindowsRunCost(
   databaseUrl: string,

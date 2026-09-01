@@ -93,6 +93,7 @@ async function main(){
   assert.match(preview,/VERCEL_ENV\s*!==\s*"preview"/); assert.match(preview,/NO REAL BTC/); assert.match(preview,/\$4\.80/);
   assert.match(privatePage,/SIX-RUN EXECUTION/); assert.match(privatePage,/APPEND-ONLY MEMORY/); assert.match(privatePage,/run-preview/);
   assert.match(storeSource,/PHI_BTC_TIMING_WINDOWS_RUN_RESULT/); assert.match(storeSource,/INSERT INTO access_intake_requests/); assert.match(storeSource,/record=record-'execution_claim'/); assert.match(storeSource,/reserved_cost_micros/); assert.match(storeSource,/persistent_cost_reservation_rejected/);
+  assert.match(storeSource,/claim_id',\$\{claimId\}::text/); assert.match(storeSource,/slot',\$\{slot\}::text/); assert.match(storeSource,/claimed_at',\$\{at\}::text/); assert.match(storeSource,/updated_at=\$\{at\}::timestamptz/);
   assert.match(runApi,/PREVIEW_EXECUTION_NOT_CONFIGURED/); assert.ok(runApi.indexOf("PREVIEW_EXECUTION_NOT_CONFIGURED") < runApi.indexOf("claimPreviewPhiBtcTimingWindowsRun("));
   assert.match(runApi,/runBtcCleanChatModel/); assert.match(runApi,/createPhiTimingWindowsRunCostGuard/); assert.match(runApi,/reservePreviewPhiBtcTimingWindowsRunCost/); assert.match(runApi,/settlePreviewPhiBtcTimingWindowsRunCost/); assert.doesNotMatch(runApi,/previewNow|preview_now|time.?travel/i);
   const productionObserver=await readFile("pages/api/btc-payment/observe.ts","utf8"); assert.doesNotMatch(productionObserver,/phi-btc-timing-windows|PHI_BTC_TIMING_WINDOWS/);
