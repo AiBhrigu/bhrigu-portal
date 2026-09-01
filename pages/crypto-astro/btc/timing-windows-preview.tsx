@@ -33,7 +33,7 @@ export default function TimingWindowsPreview({ locale }: { locale: "en" | "ru" }
         <p>What are the most important Bitcoin timing windows, structural conditions, and invalidation points over the next 30 days?</p></section>
       <section className="panel"><h2>{ru?"Шесть допустимых research runs":"Six allowed research runs"}</h2>
         <div className="runs">{RUNS.map(run=><span key={run}>{run}</span>)}</div>
-        <p className="muted">{ru?"Model execution в этом Preview отсутствует: здесь проверяются только order, private object и entitlement.":"Model execution is absent from this Preview: only order, private object and entitlement are under review."}</p>
+        <p className="muted">{ru?"Six-run execution доступен только внутри активированного private Preview object; каждый run ограничен $0.80, весь 30-дневный объект — $4.80.":"Six-run execution exists only inside an activated private Preview object; each run is capped at $0.80 and the full 30-day object at $4.80."}</p>
       </section>
       {!order&&<section className="panel action"><h2>Preview order</h2><p>{ru?"Создаёт synthetic PRODUCT_ORDER_ID и private RESEARCH_OBJECT_ID. Bitcoin quote, адрес и транзакция не создаются.":"Creates synthetic PRODUCT_ORDER_ID and private RESEARCH_OBJECT_ID. No Bitcoin quote, address or transaction is created."}</p>
         <button disabled={busy} onClick={createOrder}>{busy?"…":(ru?"Создать Preview order":"Create Preview order")}</button></section>}
