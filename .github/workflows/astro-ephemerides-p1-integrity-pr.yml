@@ -1,0 +1,103 @@
+name: BHRIGU Astro Ephemerides P1 Integrity
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - pages/_app.js
+      - components/astro/PublicEphemeridesV1.tsx
+      - components/astro/PublicEphemeridesToday.tsx
+      - tests/astro-ephemerides-p1-integrity-acceptance.ts
+      - .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+
+permissions:
+  contents: read
+
+jobs:
+  exact-head-acceptance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verify exact bounded scope
+        run: |
+          git fetch origin master
+          python3 - <<'PY'
+          import os, subprocess
+          expected={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            'pages/_app.js',
+            'components/astro/PublicEphemeridesV1.tsx',
+            'components/astro/PublicEphemeridesToday.tsx',
+            'tests/astro-ephemerides-p1-integrity-acceptance.ts',
+          }
+          actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
+          if actual!=expected: raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
+          print('EXACT_SCOPE_PASS',sorted(actual))
+          PY
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Static P1 contract
+        run: npx tsx tests/astro-ephemerides-p1-integrity-acceptance.ts
+
+      - name: Production build
+        run: npm run build
+
+      - name: Start exact-head server
+        run: |
+          npm start > /tmp/astro-p1.log 2>&1 &
+          echo $! > /tmp/astro-p1.pid
+          for attempt in $(seq 1 60); do
+            curl -fsS 'http://127.0.0.1:3000/astro?lang=ru' >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/astro-p1.log
+          exit 1
+
+      - name: First HTTP semantic integrity
+        run: |
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          def get(path): return urlopen('http://127.0.0.1:3000'+path,timeout=20).read().decode('utf-8')
+          ru=get('/astro?lang=ru'); en=get('/astro?lang=en')
+          for html,lang,other in ((ru,'ru','en'),(en,'en','ru')):
+            assert f'<html lang="{lang}"' in html
+            assert f'href="/?lang={lang}"' in html
+            assert f'href="/frey?lang={lang}"' in html
+            assert f'href="/orion?lang={lang}"' in html
+            assert f'href="/astro?lang={other}"' in html
+          ru_m=get('/ephemerides/2026/09?lang=ru'); en_m=get('/ephemerides/2026/09?lang=en')
+          assert 'Планетные эфемериды · сентябрь 2026' in ru_m
+          assert 'Planetary ephemerides · September 2026' in en_m
+          assert 'property="og:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
+          assert 'property="og:title" content="September 2026 ephemerides · BHRIGU"' in en_m
+          assert 'name="twitter:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
+          assert 'name="twitter:title" content="September 2026 ephemerides · BHRIGU"' in en_m
+          for html in (ru_m,en_m):
+            assert html.count('"temporalCoverage":"2026-09-01/2026-09-30"') >= 2
+            assert '"temporalCoverage":"2026-01-01/2026-12-31"' not in html
+          today_ru=get('/ephemerides?lang=ru'); today_en=get('/ephemerides?lang=en')
+          for html,label in ((today_ru,'Источник и проверяемость'),(today_en,'Source &amp; proof')):
+            assert label in html
+            assert 'AiBhrigu/orion_ai' in html
+            assert '0b9998c669b9b50e926b1891604b1969c642e046' in html
+            assert 'CANONICAL_PUBLIC_SAFE_DAILY_EXPORT' in html
+            assert '28bfad7e2d12617757e4f742e1722f2965b6a2f6369b50973e4890f1f8f6781a' in html
+          print('ASTRO_EPHEMERIDES_P1_FIRST_HTTP=PASS')
+          PY
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/astro-p1.pid || kill "$(cat /tmp/astro-p1.pid)" || true
+          test ! -f /tmp/astro-p1.log || tail -n 80 /tmp/astro-p1.log

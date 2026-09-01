@@ -39,6 +39,23 @@ const PAGE_OWNS_METADATA = new Set(["/crypto-astro/btc","/crypto-astro/btc/clean
 
 function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
 function localizedUrl(path, lang){return `${BASE}${path}?lang=${lang}`;}
+const EPHEMERIDES_MONTHS={
+  en:["January","February","March","April","May","June","July","August","September","October","November","December"],
+  ru:["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"],
+};
+function ephemeridesMonthIdentity(path,lang){
+  const match=String(path||"").match(/^\/ephemerides\/2026\/(0[1-9]|1[0-2])$/);
+  if(!match)return null;
+  const month=Number(match[1]);
+  const label=(EPHEMERIDES_MONTHS[lang]||EPHEMERIDES_MONTHS.en)[month-1];
+  const mm=String(month).padStart(2,"0");
+  const lastDay=String(new Date(Date.UTC(2026,month,0)).getUTCDate()).padStart(2,"0");
+  const start=`2026-${mm}-01`;
+  const end=`2026-${mm}-${lastDay}`;
+  const title=lang==="ru"?`Эфемериды · ${label} 2026 | BHRIGU`:`${label} 2026 ephemerides · BHRIGU`;
+  const description=lang==="ru"?`${label.charAt(0).toUpperCase()+label.slice(1)} 2026: положения планет, движение, окна аспектов, станции и ингрессии из публичных эфемерид BHRIGU.`:`${label} 2026: planetary positions, motion, aspect windows, stations and ingresses from BHRIGU public ephemerides.`;
+  return {month,label,start,end,title,description};
+}
 function siteNode(){return {"@type":"WebSite","@id":`${BASE}/#website`,name:"BHRIGU",url:`${BASE}/`};}
 function freyNode(lang){
   return {
@@ -163,6 +180,23 @@ function buildMachineGraph(path, lang){
       {"@type":"ListItem",position:4,name:"ORION",url:localizedUrl("/orion",lang)},
     ]},
   };
+  const monthIdentity=ephemeridesMonthIdentity(path,lang);
+  if(monthIdentity) return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:monthIdentity.title,
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"Dataset",
+      name:monthIdentity.title,
+      temporalCoverage:`${monthIdentity.start}/${monthIdentity.end}`,
+      variableMeasured:["planetary longitude","longitude speed","major aspect windows","stations","ingresses"],
+      isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`},
+    },
+  };
   if(path==="/ephemerides") return {
     "@context":"https://schema.org","@type":"WebPage","@id":`${pageUrl}#page`,url:pageUrl,name:ru?"Планетные эфемериды сегодня BHRIGU":"BHRIGU Planetary Ephemerides Today",inLanguage:lang,isPartOf:site,mainEntity:{"@type":"Dataset",name:"BHRIGU Canonical Public-Safe Daily Export · Today",variableMeasured:["planetary longitude","longitude speed","retrograde/direct state","major aspect orb","applying/separating phase","Sun-Moon elongation"],isPartOf:{"@id":`${localizedUrl("/astro",lang)}#page`}}};
   if(path==="/ephemerides"||path.startsWith("/ephemerides/")) return {
@@ -192,7 +226,8 @@ export default function App({ Component, pageProps }) {
   const ephemeridesRoute=routePath==="/ephemerides"||routePath.startsWith("/ephemerides/");
   const path=ephemeridesRoute&&typeof pageProps?.canonicalPath==="string"?pageProps.canonicalPath:routePath;
   const ephemeridesPath=path==="/ephemerides"||path.startsWith("/ephemerides/");
-  const pair=META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."];
+  const monthIdentity=ephemeridesMonthIdentity(path,lang);
+  const pair=monthIdentity?[monthIdentity.title,monthIdentity.description]:META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."];
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
   const localized=LOCALIZED.has(path)||ephemeridesPath;
   const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
@@ -212,7 +247,7 @@ export default function App({ Component, pageProps }) {
       </>}
       {machineGraph&&<script type="application/ld+json" data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1" dangerouslySetInnerHTML={{__html:JSON.stringify(machineGraph).replace(/</g,"\\u003c")}} />}
     </Head>
-    <BhriguPhiHeader routeOverride={ephemeridesPath?`${path}?lang=${lang}`:null} />
+    <BhriguPhiHeader routeOverride={ephemeridesPath||path==="/astro"?`${path}?lang=${lang}`:null} />
     <Component {...pageProps} />
     <BtcFreeCorridorSurfaceAdapter />
     {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
