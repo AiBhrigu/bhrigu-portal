@@ -136,8 +136,16 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
     windows: "Prospective timing windows",
     windowsNote: "TIMING WINDOWS = что отслеживается. Реальный BASELINE run фиксирует 2–4 prospective windows; checkpoints затем возвращаются к ним и проверяют, что подтвердилось, ослабло или осталось unresolved. Карточка ниже — демонстрация структуры, а не новый accepted forecast.",
     windowTitle: "Structural confirmation window",
-    astro: "Independent Astro / Ephemerides context",
-    astroNote: "Astro / Ephemerides — независимый supporting temporal context внутри sample window. Он не определяет BTC outcome и не превращается в причинный сигнал.",
+    astro: "Astro / Ephemerides context",
+    astroNote: "На публичной offer-странице показывается аналитическая роль Astro / Ephemerides, а не конкретные transit или lunar values. Точная evidence остаётся доступной внутри глубокого research object / Ephemerides view.",
+    astroPublicLabel: "Independent temporal context",
+    astroPublicStatus: "Available from canonical Ephemerides",
+    astroPublicRole: "Supporting only",
+    astroPublicCue: "View underlying ephemeris evidence",
+    astroPossible: "Возможный contextual evidence: aspect phase · stations / ingresses · lunar context · eclipse context, когда релевантно",
+    astroSource: "Canonical Ephemerides",
+    astroSourceNote: "Exact transit and lunar evidence belongs in the deep research object / expert Ephemerides view.",
+    astroBoundary: "No Bitcoin causality · No trading signal",
     changed: "What Changed · append-only memory",
     changedLead: "ENTRY 00 · BASELINE LOCKED",
     changedText: "DAY_7 → DAY_30 добавляют reassessment уже зафиксированных timing windows, новые evidence deltas и причины изменения чтения. Сам checkpoint schedule не создаёт timing windows.",
@@ -193,8 +201,16 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
     windows: "Prospective timing windows",
     windowsNote: "TIMING WINDOWS = what is being tracked. A real BASELINE run locks 2–4 prospective windows; checkpoints return to those windows and test what strengthened, weakened, failed, or remains unresolved. The card below demonstrates the structure and is not a new accepted forecast.",
     windowTitle: "Structural confirmation window",
-    astro: "Independent Astro / Ephemerides context",
-    astroNote: "Astro / Ephemerides is independent supporting temporal context inside the sample window. It does not determine a BTC outcome and is not a causal signal.",
+    astro: "Astro / Ephemerides context",
+    astroNote: "The public offer shows the analytical role of Astro / Ephemerides rather than specific transit or lunar values. Exact evidence remains available inside the deep research object / Ephemerides view.",
+    astroPublicLabel: "Independent temporal context",
+    astroPublicStatus: "Available from canonical Ephemerides",
+    astroPublicRole: "Supporting only",
+    astroPublicCue: "View underlying ephemeris evidence",
+    astroPossible: "Possible contextual evidence: aspect phase · stations / ingresses · lunar context · eclipse context when relevant",
+    astroSource: "Canonical Ephemerides",
+    astroSourceNote: "Exact transit and lunar evidence belongs in the deep research object / expert Ephemerides view.",
+    astroBoundary: "No Bitcoin causality · No trading signal",
     changed: "What Changed · append-only memory",
     changedLead: "ENTRY 00 · BASELINE LOCKED",
     changedText: "DAY_7 → DAY_30 append reassessment of the already locked timing windows, new evidence deltas, and why the read changed. The checkpoint schedule itself does not create timing windows.",
@@ -311,7 +327,7 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
             <p className="sampleCell btcCell"><b>{ru ? "BTC-структура" : "BTC structure"}</b>{sampleWindow.btcStructure}</p>
             <p className="sampleCell conditionCell"><b>{ru ? "Условие" : "Condition"}</b>{sampleWindow.condition}</p>
             <p className="sampleCell invalidationCell"><b>{ru ? "Инвалидация" : "Invalidation"}</b>{sampleWindow.invalidation}</p>
-            <p className="sampleCell astroCell"><b>Astro context</b>{sampleWindow.astroContext}<small>{sampleWindow.lunarContext}</small><em>{ru ? "Независимый контекст" : "Independent context"}</em></p>
+            <p className="sampleCell astroCell"><b>{t.astroPublicLabel}</b>{t.astroPublicStatus}<small>{t.astroPublicRole}</small><em>{t.astroPublicCue}</em></p>
             <p className="proofBoundary"><b>Source / proof boundary</b>{sampleWindow.proofBoundary}</p>
           </div>
         </article>
@@ -322,8 +338,9 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
           <div className="sectionHead"><p>03</p><h2>{t.astro}</h2></div>
           <p>{t.astroNote}</p>
           <div className="astroList">
-            <div><span>{sampleWindow.dateRange}</span><strong>{sampleWindow.astroContext}</strong><small>{sampleWindow.lunarContext}</small></div>
-            <div><span>BOUNDARY</span><strong>Supporting temporal context only</strong><small>{ru ? "Не причинность Bitcoin · не торговый сигнал" : "No Bitcoin causality · no trading signal"}</small></div>
+            <div><span>CONTEXT</span><strong>{t.astroPublicLabel}</strong><small>{t.astroPossible}</small></div>
+            <div><span>SOURCE</span><strong>{t.astroSource}</strong><small>{t.astroSourceNote}</small></div>
+            <div><span>BOUNDARY</span><strong>{t.astroPublicRole}</strong><small>{t.astroBoundary}</small></div>
           </div>
         </article>
         <article className="card">
