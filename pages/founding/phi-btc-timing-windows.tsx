@@ -104,133 +104,95 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
   const t = ru ? {
     eyebrow: "BHRIGU · FOUNDING RESEARCH OBJECT",
     title: "Φ BTC Timing Windows · Founding",
-    lead: "30-дневный частный Bitcoin research object: зафиксированный baseline, выбранные prospective timing windows, явные условия и invalidation, append-only reassessment и шесть сервисных checkpoints.",
+    lead: "30-дневный частный Bitcoin research object: фиксируем сегодняшнее состояние, отслеживаем prospective timing windows и сохраняем исходную запись через весь период.",
     question: "Какие окна времени, структурные условия и точки инвалидации наиболее важны для Bitcoin в следующие 30 дней?",
     privateLabel: "30 ДНЕЙ · BTC ONLY · 6 CHECKPOINTS",
-    compositionTitle: "Из чего состоит этот анализ",
-    compositionLead: "Bitcoin-данные формируют основной market read. Astro / Ephemerides добавляют только независимый временной контекст. Контрольный слой фиксирует исходную гипотезу, изменения и границы доказательности.",
-    compositionPrimary: "Bitcoin market / technical evidence",
-    compositionPrimaryText: "Основной аналитический слой: текущая BTC market structure, изменение accepted state и подтверждение или ослабление отслеживаемого сценария.",
-    compositionSupporting: "Astro / Ephemerides temporal context",
-    compositionSupportingText: "Независимый временной контекст вокруг уже отслеживаемых окон. Он не объясняет движение Bitcoin, не переопределяет market evidence и не создаёт торговый сигнал.",
-    compositionControl: "Research control layer",
-    compositionControlText: "Фиксирует, что было принято в baseline, что изменилось позже, когда гипотеза ослабляется или инвалидируется, и на каких источниках основан вывод.",
-    compositionControlItems: ["Locked baseline", "Forecast memory", "Invalidation", "What Changed", "Source & Proof"],
-    compositionNote: "PRIMARY / SUPPORTING / CONTROL обозначают аналитическую роль, а не фиксированные процентные веса.",
-    howTitle: "Как работает объект",
-    howLead: "Одна исследовательская линия проходит через весь 30-дневный период. Исходный baseline и ранее принятые claims не переписываются.",
-    howSteps: [
-      ["LOCK", "Locked baseline", "Фиксируем accepted BTC state"],
-      ["TRACK", "Selected windows", "Выбираем 2–4 prospective windows"],
-      ["CHECK", "Checkpoint rhythm", "Возвращаемся к ним по расписанию"],
-      ["APPEND", "Reassessment", "Добавляем только новые evidence deltas"],
-      ["CLOSE", "Day 30 closeout", "Отмечаем held / failed / unresolved"],
-    ],
-    baseline: "Locked baseline",
-    baselineNote: "Стартовое состояние фиксируется один раз. Следующие записи добавляются, но исходная точка и ранее принятые claims не переписываются.",
-    status: "State",
-    timestamp: "Accepted timestamp",
-    evidence: "Proof sources",
-    change: "Current delta",
-    synthesis: "Synthesis",
-    windows: "Prospective timing windows",
-    windowsNote: "TIMING WINDOWS = что отслеживается. Реальный BASELINE run фиксирует 2–4 prospective windows; checkpoints затем возвращаются к ним и проверяют, что подтвердилось, ослабло или осталось unresolved. Карточка ниже — демонстрация структуры, а не новый accepted forecast.",
-    windowTitle: "Structural confirmation window",
-    astro: "Astro / Ephemerides context",
-    astroNote: "На публичной offer-странице показывается аналитическая роль Astro / Ephemerides, а не конкретные transit или lunar values. Точная evidence остаётся доступной внутри глубокого research object / Ephemerides view.",
-    astroPublicLabel: "Independent temporal context",
-    astroPublicStatus: "Available from canonical Ephemerides",
-    astroPublicRole: "Supporting only",
-    astroPublicCue: "View underlying ephemeris evidence",
-    astroPossible: "Возможный contextual evidence: aspect phase · stations / ingresses · lunar context · eclipse context, когда релевантно",
-    astroSource: "Canonical Ephemerides",
-    astroSourceNote: "Exact transit and lunar evidence belongs in the deep research object / expert Ephemerides view.",
+    cosmographTitle: "The 30-Day Bitcoin Cosmograph",
+    cosmographLead: "Один исследовательский объект связывает зафиксированное знание, текущее accepted BTC field, будущие окна, условия проверки, invalidation и итоговый closeout.",
+    past: "PAST",
+    now: "NOW",
+    future: "FUTURE",
+    pastLead: "Что было зафиксировано",
+    nowLead: "Что принято сейчас",
+    futureLead: "Что мы отслеживаем",
+    lockedRecord: "Locked baseline",
+    acceptedField: "Current accepted BTC field",
+    prospective: "Prospective window",
+    confirm: "What would confirm it",
+    break: "What would break it",
+    closeout: "What actually happened",
+    memory: "Append-only memory",
+    proof: "Source-bound proof",
+    astroField: "Independent temporal field",
+    astroStatus: "Canonical Ephemerides available · supporting only",
     astroBoundary: "No Bitcoin causality · No trading signal",
-    changed: "What Changed · append-only memory",
-    changedLead: "ENTRY 00 · BASELINE LOCKED",
-    changedText: "DAY_7 → DAY_30 добавляют reassessment уже зафиксированных timing windows, новые evidence deltas и причины изменения чтения. Сам checkpoint schedule не создаёт timing windows.",
-    rhythm: "30-day checkpoint rhythm",
-    rhythmNote: "CHECKPOINTS = когда research object переоценивается. Это service delivery cadence, а не список timing windows.",
-    trackedLane: "TRACKED CONTENT",
-    trackedText: "Locked BTC baseline + prospective windows + conditions + invalidation",
-    cadenceLane: "REASSESSMENT CADENCE",
-    cadenceText: "Six scheduled returns to the same research object",
-    difference: "Почему это другой продукт",
-    differenceLead: "Покупатель получает не поток ответов, а ограниченный во времени research object с памятью, проверяемыми условиями и явной границей доказательности.",
+    checkpoint: "REASSESS",
+    closeoutShort: "DAY 30 CLOSEOUT",
+    categoryKicker: "AFTER THE OBJECT IS UNDERSTOOD",
+    categoryTitle: "THIS IS A COSMOGRAPHER RESEARCH OBJECT",
+    categoryLead: "Не чат с последовательностью ответов, а временная карта одного исследования: claims фиксируются, будущие окна наблюдаются, условия проверяются, изменения дописываются, а исходная запись не переписывается.",
+    compositionTitle: "Analytical axes",
+    compositionPrimary: "PRIMARY · Bitcoin market / technical evidence",
+    compositionSupporting: "SUPPORTING · Astro / Ephemerides temporal field",
+    compositionControl: "CONTROL · Locked claims / memory / invalidation / proof",
+    compositionNote: "PRIMARY / SUPPORTING / CONTROL — роли в исследовании, не фиксированные процентные веса.",
+    astroTitle: "Astro / Ephemerides field",
+    astroText: "На offer-уровне видны присутствие, временная связь, исследовательская роль и источник. Exact transit / lunar evidence остаётся ниже, в deep research / Ephemerides view.",
+    astroPossible: "Possible context · aspect phase · stations / ingresses · lunar context · eclipse context when relevant",
+    sourceTitle: "Source & Proof",
+    sourceText: "BTC state использует accepted market evidence corridor. Temporal field использует canonical public-safe Ephemerides. Выводы ограничены freshness, provenance, uncertainty и explicit invalidation.",
+    difference: "Why this is different",
     notItems: ["Generic AI chat", "Trading signal", "Astrology prediction"],
-    yesItems: ["30-day BTC research object", "Locked baseline", "Explicit invalidation", "Append-only continuity", "Independent Astro context", "Source & proof"],
-    proof: "Source & Proof",
-    proofText: "BTC state использует существующий accepted BHRIGU market evidence corridor. Astro field использует canonical public-safe daily ephemerides export. Timing-window semantics следуют существующему Φ BTC Timing Windows runtime contract; каждый вывод ограничен freshness, provenance и explicit uncertainty.",
-    sample: "Sample research object · value preview",
+    yesItems: ["Locked research identity", "Prospective windows", "Explicit invalidation", "Append-only continuity", "Independent temporal field", "Day 30 closeout"],
     request: "REQUEST A FOUNDING SLOT",
-    requestText: "Founding intake остаётся ручным. На этой preview-странице нет цены, checkout, кошелька или платёжной активации.",
+    requestText: "Founding intake остаётся ручным. На этой Preview-странице нет цены, checkout, кошелька или платёжной активации.",
     preview: "VERCEL PREVIEW · OPERATOR REVIEW",
-    closeout: "DAY 30 CLOSEOUT",
   } : {
     eyebrow: "BHRIGU · FOUNDING RESEARCH OBJECT",
     title: "Φ BTC Timing Windows · Founding",
-    lead: "A 30-day private Bitcoin research object: locked baseline, selected prospective timing windows, explicit conditions and invalidation, append-only reassessment, and six service checkpoints.",
+    lead: "A 30-day private Bitcoin research object: lock today's state, track prospective timing windows, and preserve the original record through the full period.",
     question: "What are the most important Bitcoin timing windows, structural conditions, and invalidation points over the next 30 days?",
     privateLabel: "30 DAYS · BTC ONLY · 6 CHECKPOINTS",
-    compositionTitle: "What this analysis is made of",
-    compositionLead: "Bitcoin evidence forms the market read. Astro / Ephemerides adds independent temporal context only. A control layer preserves the original hypothesis, later changes, and the proof boundary.",
-    compositionPrimary: "Bitcoin market / technical evidence",
-    compositionPrimaryText: "Primary analytical layer: current BTC market structure, accepted-state changes, and evidence that strengthens or weakens the tracked scenario.",
-    compositionSupporting: "Astro / Ephemerides temporal context",
-    compositionSupportingText: "Independent time context around already tracked windows. It does not explain Bitcoin moves, override market evidence, or create a trading signal.",
-    compositionControl: "Research control layer",
-    compositionControlText: "Records what was accepted at baseline, what changed later, when a hypothesis weakens or invalidates, and which sources support the read.",
-    compositionControlItems: ["Locked baseline", "Forecast memory", "Invalidation", "What Changed", "Source & Proof"],
-    compositionNote: "PRIMARY / SUPPORTING / CONTROL describe analytical roles, not fixed percentage weights.",
-    howTitle: "How the object works",
-    howLead: "One research line runs through the full 30-day period. The locked baseline and earlier accepted claims are never rewritten.",
-    howSteps: [
-      ["LOCK", "Locked baseline", "Fix the accepted BTC state"],
-      ["TRACK", "Selected windows", "Lock 2–4 prospective windows"],
-      ["CHECK", "Checkpoint rhythm", "Return to them on schedule"],
-      ["APPEND", "Reassessment", "Append only new evidence deltas"],
-      ["CLOSE", "Day 30 closeout", "Mark held / failed / unresolved"],
-    ],
-    baseline: "Locked baseline",
-    baselineNote: "The starting state is locked once. Later entries are appended; the original reference point and earlier accepted claims are never rewritten.",
-    status: "State",
-    timestamp: "Accepted timestamp",
-    evidence: "Proof sources",
-    change: "Current delta",
-    synthesis: "Synthesis",
-    windows: "Prospective timing windows",
-    windowsNote: "TIMING WINDOWS = what is being tracked. A real BASELINE run locks 2–4 prospective windows; checkpoints return to those windows and test what strengthened, weakened, failed, or remains unresolved. The card below demonstrates the structure and is not a new accepted forecast.",
-    windowTitle: "Structural confirmation window",
-    astro: "Astro / Ephemerides context",
-    astroNote: "The public offer shows the analytical role of Astro / Ephemerides rather than specific transit or lunar values. Exact evidence remains available inside the deep research object / Ephemerides view.",
-    astroPublicLabel: "Independent temporal context",
-    astroPublicStatus: "Available from canonical Ephemerides",
-    astroPublicRole: "Supporting only",
-    astroPublicCue: "View underlying ephemeris evidence",
-    astroPossible: "Possible contextual evidence: aspect phase · stations / ingresses · lunar context · eclipse context when relevant",
-    astroSource: "Canonical Ephemerides",
-    astroSourceNote: "Exact transit and lunar evidence belongs in the deep research object / expert Ephemerides view.",
+    cosmographTitle: "The 30-Day Bitcoin Cosmograph",
+    cosmographLead: "One research object connects the locked record, the current accepted BTC field, future windows, test conditions, invalidation, and the final closeout.",
+    past: "PAST",
+    now: "NOW",
+    future: "FUTURE",
+    pastLead: "What was fixed",
+    nowLead: "What is accepted now",
+    futureLead: "What we are watching",
+    lockedRecord: "Locked baseline",
+    acceptedField: "Current accepted BTC field",
+    prospective: "Prospective window",
+    confirm: "What would confirm it",
+    break: "What would break it",
+    closeout: "What actually happened",
+    memory: "Append-only memory",
+    proof: "Source-bound proof",
+    astroField: "Independent temporal field",
+    astroStatus: "Canonical Ephemerides available · supporting only",
     astroBoundary: "No Bitcoin causality · No trading signal",
-    changed: "What Changed · append-only memory",
-    changedLead: "ENTRY 00 · BASELINE LOCKED",
-    changedText: "DAY_7 → DAY_30 append reassessment of the already locked timing windows, new evidence deltas, and why the read changed. The checkpoint schedule itself does not create timing windows.",
-    rhythm: "30-day checkpoint rhythm",
-    rhythmNote: "CHECKPOINTS = when the research object is reassessed. This is service delivery cadence, not a list of timing windows.",
-    trackedLane: "TRACKED CONTENT",
-    trackedText: "Locked BTC baseline + prospective windows + conditions + invalidation",
-    cadenceLane: "REASSESSMENT CADENCE",
-    cadenceText: "Six scheduled returns to the same research object",
+    checkpoint: "REASSESS",
+    closeoutShort: "DAY 30 CLOSEOUT",
+    categoryKicker: "AFTER THE OBJECT IS UNDERSTOOD",
+    categoryTitle: "THIS IS A COSMOGRAPHER RESEARCH OBJECT",
+    categoryLead: "Not a chat stream, but a time-bound map of one investigation: claims are locked, future windows are watched, conditions are tested, changes are appended, and the original record is preserved.",
+    compositionTitle: "Analytical axes",
+    compositionPrimary: "PRIMARY · Bitcoin market / technical evidence",
+    compositionSupporting: "SUPPORTING · Astro / Ephemerides temporal field",
+    compositionControl: "CONTROL · Locked claims / memory / invalidation / proof",
+    compositionNote: "PRIMARY / SUPPORTING / CONTROL are research roles, not fixed percentage weights.",
+    astroTitle: "Astro / Ephemerides field",
+    astroText: "At offer level, the product shows presence, temporal relation, research role, and source. Exact transit / lunar evidence remains below, in the deep research / Ephemerides view.",
+    astroPossible: "Possible context · aspect phase · stations / ingresses · lunar context · eclipse context when relevant",
+    sourceTitle: "Source & Proof",
+    sourceText: "BTC state uses the accepted market evidence corridor. The temporal field uses canonical public-safe Ephemerides. Conclusions are bounded by freshness, provenance, uncertainty, and explicit invalidation.",
     difference: "Why this is different",
-    differenceLead: "The buyer receives a bounded research object, not a stream of answers: persistent memory, testable conditions, and an explicit proof boundary.",
     notItems: ["Generic AI chat", "Trading signal", "Astrology prediction"],
-    yesItems: ["30-day BTC research object", "Locked baseline", "Explicit invalidation", "Append-only continuity", "Independent Astro context", "Source & proof"],
-    proof: "Source & Proof",
-    proofText: "BTC state uses the existing accepted BHRIGU market evidence corridor. Astro field uses the canonical public-safe daily ephemerides export. Timing-window semantics follow the existing Φ BTC Timing Windows runtime contract; every conclusion is bounded by freshness, provenance, and explicit uncertainty.",
-    sample: "Sample research object · value preview",
+    yesItems: ["Locked research identity", "Prospective windows", "Explicit invalidation", "Append-only continuity", "Independent temporal field", "Day 30 closeout"],
     request: "REQUEST A FOUNDING SLOT",
-    requestText: "Founding intake remains manual. This preview contains no public price, checkout, wallet, or payment activation.",
+    requestText: "Founding intake remains manual. This Preview contains no public price, checkout, wallet, or payment activation.",
     preview: "VERCEL PREVIEW · OPERATOR REVIEW",
-    closeout: "DAY 30 CLOSEOUT",
   };
 
   const baselineTime = baseline.snapshot_time_utc ?? generatedAtUtc;
@@ -259,133 +221,144 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
         </div>
       </header>
 
-      <section className="compositionPanel" aria-label={t.compositionTitle}>
-        <div className="compositionHead">
-          <div><span className="compositionMark">ANALYSIS COMPOSITION</span><h2>{t.compositionTitle}</h2></div>
-          <p>{t.compositionLead}</p>
-        </div>
-        <div className="compositionMap">
-          <article className="compositionLayer primaryLayer">
-            <div className="layerRole"><span>PRIMARY</span><small>MARKET READ</small></div>
-            <div className="layerBody"><strong>{t.compositionPrimary}</strong><p>{t.compositionPrimaryText}</p></div>
-            <div className="marketGlyph" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
-          </article>
-          <article className="compositionLayer supportingLayer">
-            <div className="layerRole"><span>SUPPORTING</span><small>TIME CONTEXT</small></div>
-            <div className="layerBody"><strong>{t.compositionSupporting}</strong><p>{t.compositionSupportingText}</p></div>
-            <div className="timeGlyph" aria-hidden="true"><i></i><i></i><i></i></div>
-          </article>
-          <article className="compositionLayer controlLayer">
-            <div className="layerRole"><span>CONTROL</span><small>RESEARCH INTEGRITY</small></div>
-            <div className="layerBody"><strong>{t.compositionControl}</strong><p>{t.compositionControlText}</p></div>
-            <div className="controlItems">{t.compositionControlItems.map(item => <span key={item}>{item}</span>)}</div>
-          </article>
-        </div>
-        <p className="compositionNote">{t.compositionNote}</p>
-      </section>
-
-      <section className="meaningPanel" aria-label={t.howTitle}>
-        <div className="meaningHeader">
-          <div><span className="moduleMark">VISUAL 01</span><h2>{t.howTitle}</h2></div>
-          <p>{t.howLead}</p>
-        </div>
-        <div className="processFlow">
-          {t.howSteps.map((step, index) => <div className="processCell" key={step[0]}>
-            <div className="processIndex">0{index + 1}</div>
-            <div className="processNode"><span>{step[0]}</span><strong>{step[1]}</strong><small>{step[2]}</small></div>
-            {index < t.howSteps.length - 1 && <div className="processArrow" aria-hidden="true">→</div>}
-          </div>)}
-        </div>
-      </section>
-
-      <section className="baseline card">
-        <div className="sectionHead"><p>01</p><h2>{t.baseline}</h2></div>
-        <p className="muted">{t.baselineNote}</p>
-        <div className="metrics">
-          <div><span>{t.status}</span><strong>{baseline.status}</strong></div>
-          <div><span>{t.timestamp}</span><strong>{baselineTime.replace("T", " ").slice(0, 16)} UTC</strong></div>
-          <div><span>{t.evidence}</span><strong>{baseline.evidence_source_count}</strong></div>
-          <div><span>{t.change}</span><strong>{baseline.delta_direction}</strong></div>
-          <div><span>{t.synthesis}</span><strong>{baseline.synthesis_state}</strong></div>
-          <div><span>Freshness</span><strong>{baseline.freshness}</strong></div>
-        </div>
-      </section>
-
-      <section className="card">
-        <div className="sectionHead"><p>02</p><h2>{t.windows}</h2></div>
-        <p className="muted">{t.windowsNote}</p>
-        <article className="window sampleWindow">
-          <div className="windowRail">
-            <span className="windowType">TRACKED CONTENT</span>
-            <span className="windowStatus">DEMONSTRATION · NOT ACCEPTED FORECAST</span>
+      <section className="cosmograph" aria-label={t.cosmographTitle}>
+        <div className="cosmographHead">
+          <div>
+            <span className="objectMark">SIGNATURE OBJECT · 01</span>
+            <h2>{t.cosmographTitle}</h2>
           </div>
-          <div className="windowHero">
-            <div><small>WINDOW</small><strong>{sampleWindow.dateRange}</strong></div>
-            <div><small>OBJECT</small><strong>{t.windowTitle}</strong></div>
+          <p>{t.cosmographLead}</p>
+        </div>
+
+        <div className="cosmographBody">
+          <div className="timeField">
+            <div className="timeLabels" aria-hidden="true">
+              <span>{t.past}</span><span>{t.now}</span><span>{t.future}</span>
+            </div>
+
+            <div className="astroBand">
+              <span>SUPPORTING · TEMPORAL FIELD</span>
+              <strong>{t.astroField}</strong>
+              <small>{t.astroStatus}</small>
+              <em>{t.astroBoundary}</em>
+            </div>
+
+            <div className="timeAxis" aria-hidden="true">
+              <span className="pastSegment"></span>
+              <i className="nowNeedle"></i>
+              <span className="futureSegment"></span>
+            </div>
+
+            <div className="temporalGrid">
+              <article className="pastNode">
+                <span className="nodeRole">{t.pastLead}</span>
+                <strong>{t.lockedRecord}</strong>
+                <b>{baselineTime.replace("T", " ").slice(0, 16)} UTC</b>
+                <small>{baseline.evidence_source_count} {ru ? "proof sources" : "proof sources"} · {baseline.freshness}</small>
+              </article>
+
+              <article className="nowNode">
+                <span className="nodeRole">{t.nowLead}</span>
+                <strong>{t.acceptedField}</strong>
+                <div className="stateTriplet">
+                  <span><small>STATE</small><b>{baseline.status}</b></span>
+                  <span><small>DELTA</small><b>{baseline.delta_direction}</b></span>
+                  <span><small>SYNTHESIS</small><b>{baseline.synthesis_state}</b></span>
+                </div>
+              </article>
+
+              <article className="futureNode">
+                <div className="futureWindowHead">
+                  <span className="nodeRole">{t.futureLead}</span>
+                  <small>DEMONSTRATION · NOT ACCEPTED FORECAST</small>
+                </div>
+                <strong>{t.prospective}</strong>
+                <b className="windowDate">{sampleWindow.dateRange}</b>
+                <p>{sampleWindow.btcStructure}</p>
+                <div className="futureConditions">
+                  <div className="confirm"><span>{t.confirm}</span><p>{sampleWindow.condition}</p></div>
+                  <div className="invalidate"><span>{t.break}</span><p>{sampleWindow.invalidation}</p></div>
+                </div>
+              </article>
+            </div>
+
+            <div className="checkpointRail" aria-label="30-day reassessment rhythm">
+              {checkpoints.map((checkpoint, index) => <div className={index === 0 ? "checkpoint active" : "checkpoint"} key={checkpoint.id}>
+                <i aria-hidden="true"></i>
+                <span>{index === 0 ? "LOCK" : index === checkpoints.length - 1 ? "CLOSE" : t.checkpoint}</span>
+                <strong>{checkpoint.id}</strong>
+                <small>{checkpoint.date}</small>
+              </div>)}
+            </div>
           </div>
-          <div className="sampleGrid">
-            <p className="sampleCell btcCell"><b>{ru ? "BTC-структура" : "BTC structure"}</b>{sampleWindow.btcStructure}</p>
-            <p className="sampleCell conditionCell"><b>{ru ? "Условие" : "Condition"}</b>{sampleWindow.condition}</p>
-            <p className="sampleCell invalidationCell"><b>{ru ? "Инвалидация" : "Invalidation"}</b>{sampleWindow.invalidation}</p>
-            <p className="sampleCell astroCell"><b>{t.astroPublicLabel}</b>{t.astroPublicStatus}<small>{t.astroPublicRole}</small><em>{t.astroPublicCue}</em></p>
-            <p className="proofBoundary"><b>Source / proof boundary</b>{sampleWindow.proofBoundary}</p>
+
+          <aside className="controlField">
+            <div className="controlHead"><span>CONTROL · RESEARCH INTEGRITY</span><strong>LOCK → APPEND → CLOSE</strong></div>
+            <div className="controlSpine" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+            <div className="controlStack">
+              <div><span>01</span><strong>LOCKED CLAIMS</strong><small>{baselineTime.slice(0, 10)}</small></div>
+              <div><span>02</span><strong>FORECAST MEMORY</strong><small>{t.memory}</small></div>
+              <div><span>03</span><strong>INVALIDATION</strong><small>{ru ? "Explicit break condition" : "Explicit break condition"}</small></div>
+              <div><span>04</span><strong>WHAT CHANGED</strong><small>ENTRY 00 → DAY 30</small></div>
+              <div><span>05</span><strong>SOURCE & PROOF</strong><small>{t.proof}</small></div>
+            </div>
+            <div className="closeoutSeal"><span>{t.closeout}</span><strong>{t.closeoutShort}</strong><small>HELD / FAILED / UNRESOLVED</small></div>
+          </aside>
+        </div>
+
+        <div className="cosmographLegend">
+          <span><b>PRIMARY</b> Bitcoin market / technical evidence</span>
+          <span><b>SUPPORTING</b> Astro / Ephemerides temporal field</span>
+          <span><b>CONTROL</b> Memory · invalidation · proof</span>
+        </div>
+      </section>
+
+      <section className="categoryReveal">
+        <span>{t.categoryKicker}</span>
+        <h2>{t.categoryTitle}</h2>
+        <p>{t.categoryLead}</p>
+      </section>
+
+      <section className="axesSection">
+        <div className="axesLead"><span>FIELD RELATION</span><h2>{t.compositionTitle}</h2><p>{t.compositionNote}</p></div>
+        <div className="axesMap">
+          <div className="axisPrimary"><span>PRIMARY</span><strong>{t.compositionPrimary}</strong></div>
+          <div className="axisSupporting"><span>SUPPORTING</span><strong>{t.compositionSupporting}</strong></div>
+          <div className="axisControl"><span>CONTROL</span><strong>{t.compositionControl}</strong></div>
+        </div>
+      </section>
+
+      <section className="supportGrid">
+        <article className="supportPanel astroPanel">
+          <span className="supportMark">TEMPORAL FIELD</span>
+          <h2>{t.astroTitle}</h2>
+          <p>{t.astroText}</p>
+          <div className="astroAvailability">
+            <strong>Canonical Ephemerides</strong>
+            <span>AVAILABLE</span>
+          </div>
+          <small>{t.astroPossible}</small>
+          <em>{t.astroBoundary}</em>
+        </article>
+        <article className="supportPanel proofPanel">
+          <span className="supportMark">CONTROL FIELD</span>
+          <h2>{t.sourceTitle}</h2>
+          <p>{t.sourceText}</p>
+          <div className="proofLines">
+            <span>BTC accepted Snapshot / change memory</span>
+            <span>Canonical public-safe daily Ephemerides</span>
+            <span>Freshness + provenance + uncertainty</span>
+            <span>No causal claim · no trading instruction</span>
           </div>
         </article>
       </section>
 
-      <section className="split">
-        <article className="card dark">
-          <div className="sectionHead"><p>03</p><h2>{t.astro}</h2></div>
-          <p>{t.astroNote}</p>
-          <div className="astroList">
-            <div><span>CONTEXT</span><strong>{t.astroPublicLabel}</strong><small>{t.astroPossible}</small></div>
-            <div><span>SOURCE</span><strong>{t.astroSource}</strong><small>{t.astroSourceNote}</small></div>
-            <div><span>BOUNDARY</span><strong>{t.astroPublicRole}</strong><small>{t.astroBoundary}</small></div>
-          </div>
-        </article>
-        <article className="card">
-          <div className="sectionHead"><p>04</p><h2>{t.changed}</h2></div>
-          <p className="memoryTag">{t.changedLead}</p>
-          <p>{t.changedText}</p>
-          <div className="memoryVisual">
-            <div className="memoryOrigin"><span>LOCKED</span><strong>{baselineTime.slice(0,10)}</strong><small>{baseline.delta_direction} · {baseline.synthesis_state}</small></div>
-            <div className="memorySpine" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-            <div className="memoryFuture"><span>APPEND ONLY</span><strong>DAY_7 → DAY_30</strong><small>{ru ? "Новые evidence deltas, без rewrite" : "New evidence deltas, no rewrite"}</small></div>
-          </div>
-        </article>
-      </section>
-
-      <section className="card rhythmCard">
-        <div className="sectionHead"><p>05</p><h2>{t.rhythm}</h2></div>
-        <p className="muted">{t.rhythmNote}</p>
-        <div className="laneMap">
-          <div className="lane trackedLane"><span>{t.trackedLane}</span><strong>{t.trackedText}</strong><div className="trackBar"><i></i><i></i><i></i></div></div>
-          <div className="lane cadenceLane"><span>{t.cadenceLane}</span><strong>{t.cadenceText}</strong></div>
-        </div>
-        <div className="rhythm">{checkpoints.map((checkpoint, i) => <div key={checkpoint.id} className={i === 0 ? "active" : ""}><span>{String(i + 1).padStart(2,"0")}</span><strong>{checkpoint.id}</strong><small>{checkpoint.date}</small><i aria-hidden="true"></i></div>)}</div>
-      </section>
-
-      <section className="meaningPanel differencePanel" aria-label={t.difference}>
-        <div className="meaningHeader">
-          <div><span className="moduleMark">VISUAL 03</span><h2>{t.difference}</h2></div>
-          <p>{t.differenceLead}</p>
-        </div>
+      <section className="differenceSection">
+        <div className="differenceHead"><span>PRODUCT BOUNDARY</span><h2>{t.difference}</h2></div>
         <div className="differenceGrid">
-          <div className="notColumn"><span className="comparisonLabel">NOT THIS</span>{t.notItems.map(item => <div className="compareRow" key={item}><b>×</b><span>{item}</span></div>)}</div>
-          <div className="yesColumn"><span className="comparisonLabel">THIS</span>{t.yesItems.map(item => <div className="compareRow" key={item}><b>✓</b><span>{item}</span></div>)}</div>
+          <div className="notColumn"><span>NOT THIS</span>{t.notItems.map(item => <p key={item}><b>×</b>{item}</p>)}</div>
+          <div className="yesColumn"><span>THIS</span>{t.yesItems.map(item => <p key={item}><b>+</b>{item}</p>)}</div>
         </div>
-      </section>
-
-      <section className="split">
-        <article className="card">
-          <div className="sectionHead"><p>06</p><h2>{t.proof}</h2></div>
-          <p>{t.proofText}</p>
-          <ul className="proofList"><li>BTC accepted Snapshot / change memory</li><li>Canonical public-safe daily ephemerides</li><li>Existing Φ BTC Timing Windows baseline/checkpoint runtime semantics</li><li>Timing windows = tracked content · checkpoints = reassessment cadence</li><li>Freshness + source count + uncertainty boundary</li><li>No causal claim · no trading instruction</li></ul>
-        </article>
-        <article className="card sample">
-          <div className="sectionHead"><p>07</p><h2>{t.sample}</h2></div>
-          <div className="sampleRead"><span>READ / 00 · DEMONSTRATION FORMAT</span><p>{ru ? `Baseline ${baseline.status}: ${baseline.delta_direction}/${baseline.synthesis_state}. Research object фиксирует prospective window ${sampleWindow.dateRange}, но считает его значимым только при подтверждённом изменении BTC structure. DAY_7 → DAY_30 возвращаются к этому же locked window, не переписывая исходный baseline; Astro остаётся независимым supporting context.` : `Baseline ${baseline.status}: ${baseline.delta_direction}/${baseline.synthesis_state}. The research object locks a prospective window for ${sampleWindow.dateRange}, but treats it as meaningful only if BTC structure confirms a change. DAY_7 → DAY_30 return to that same locked window without rewriting the baseline; Astro remains independent supporting context.`}</p></div>
-        </article>
       </section>
 
       <section id="request" className="cta">
@@ -393,23 +366,40 @@ export default function PhiBtcTimingWindowsFounding({ locale, baseline, generate
         <h2>{t.request}</h2>
         <p>{t.requestText}</p>
         <button type="button" aria-label={t.request}>{t.request}</button>
-        <small>{t.closeout} · LOCKED BASELINE → TRACKED WINDOWS → APPEND-ONLY REASSESSMENT → CLOSEOUT</small>
+        <small>LOCKED BASELINE → PROSPECTIVE WINDOWS → APPEND-ONLY REASSESSMENT → DAY 30 CLOSEOUT</small>
       </section>
     </main>
+
     <style jsx>{`
-      :global(html){background:#f1efe9;color:#111;scroll-behavior:smooth} :global(body){margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1efe9;color:#111}
-      :global(*){box-sizing:border-box} a{color:inherit;text-decoration:none} main{max-width:1180px;margin:0 auto;padding:0 28px 70px}.topbar{height:74px;display:flex;align-items:center;border-bottom:1px solid #c9c5bb;gap:24px;font-size:12px;letter-spacing:.13em}.brand{font-size:15px;font-weight:800}.preview{color:#6c685f}.lang{margin-left:auto;display:flex;gap:7px}.hero{padding:84px 0 62px;max-width:980px}.eyebrow{font-size:11px;letter-spacing:.19em;font-weight:800;margin:0 0 18px;color:#6b675f}.hero h1{font-family:Georgia,serif;font-size:clamp(48px,7vw,92px);line-height:.94;letter-spacing:-.045em;margin:0 0 28px;font-weight:500}.lead{font-size:clamp(20px,2.4vw,31px);line-height:1.28;max-width:900px;margin:0 0 28px}.question{font-family:Georgia,serif;font-style:italic;font-size:20px;line-height:1.5;max-width:820px;color:#39362f}.identityRow{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}.identityRow>*{border:1px solid #aaa59a;padding:9px 12px;font-size:10px;letter-spacing:.1em}.card{background:#fbfaf6;border:1px solid #d4d0c6;border-radius:2px;padding:30px;margin-bottom:18px}.sectionHead{display:flex;align-items:baseline;gap:14px;margin-bottom:18px}.sectionHead p{font-size:11px;letter-spacing:.15em;color:#817b70;margin:0}.sectionHead h2,.meaningHeader h2,.compositionHead h2{font-family:Georgia,serif;font-size:31px;font-weight:500;letter-spacing:-.02em;margin:0}.muted{color:#625e56;max-width:880px;line-height:1.55}
-      .compositionPanel{background:#fbfaf6;border:1px solid #bdb8ac;padding:30px;margin-bottom:18px}.compositionHead{display:grid;grid-template-columns:minmax(260px,.8fr) 1.2fr;gap:30px;align-items:end;border-bottom:1px solid #d4d0c6;padding-bottom:24px}.compositionHead p{margin:0;color:#625e56;line-height:1.6;max-width:680px}.compositionMark{display:block;font-size:9px;letter-spacing:.16em;color:#6d685f;font-weight:800;margin-bottom:8px}.compositionMap{display:grid;grid-template-columns:1.35fr .85fr;margin-top:24px;border:1px solid #bbb6ab}.compositionLayer{position:relative;display:grid;grid-template-columns:128px 1fr;min-height:180px}.compositionLayer+.compositionLayer{border-top:1px solid #bbb6ab}.primaryLayer{grid-column:1;background:#111;color:#f4f1e9;border-right:1px solid #3b3935}.supportingLayer{grid-column:2;grid-row:1;background:#292722;color:#f4f1e9}.controlLayer{grid-column:1/-1;min-height:150px;background:#ece9e1}.layerRole{padding:20px 14px;border-right:1px solid currentColor;display:flex;flex-direction:column;justify-content:space-between;opacity:.72}.primaryLayer .layerRole,.supportingLayer .layerRole{border-color:#49463f}.controlLayer .layerRole{border-color:#c7c2b7}.layerRole span{font-size:10px;letter-spacing:.15em;font-weight:800}.primaryLayer .layerRole span{color:#d8ff72}.supportingLayer .layerRole span{color:#d5d1c8}.controlLayer .layerRole span{color:#111}.layerRole small{font-size:8px;letter-spacing:.12em;line-height:1.45}.layerBody{padding:24px 26px 22px}.layerBody strong{display:block;font-family:Georgia,serif;font-size:24px;font-weight:500;line-height:1.15;margin-bottom:12px}.layerBody p{font-size:12px;line-height:1.6;margin:0;max-width:650px}.primaryLayer .layerBody p,.supportingLayer .layerBody p{color:#c4c0b7}.controlLayer .layerBody p{color:#5f5a52}.marketGlyph{position:absolute;right:22px;bottom:18px;width:112px;height:36px;display:flex;align-items:flex-end;gap:6px;opacity:.55}.marketGlyph i{display:block;width:16px;border:1px solid #d8ff72;border-bottom:0}.marketGlyph i:nth-child(1){height:12px}.marketGlyph i:nth-child(2){height:24px}.marketGlyph i:nth-child(3){height:18px}.marketGlyph i:nth-child(4){height:32px}.marketGlyph i:nth-child(5){height:26px}.timeGlyph{position:absolute;right:22px;bottom:20px;width:72px;height:28px;border-bottom:1px solid #858078;display:flex;align-items:flex-end;justify-content:space-between;opacity:.7}.timeGlyph i{width:7px;height:7px;border:1px solid #c8c3b8;border-radius:50%;transform:translateY(4px)}.timeGlyph i:nth-child(2){width:11px;height:11px}.controlItems{grid-column:2;padding:0 26px 22px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}.controlItems span{border:1px solid #bbb6aa;background:#f8f6f0;padding:8px 10px;font-size:9px;letter-spacing:.08em}.compositionNote{margin:14px 0 0;font-size:10px;color:#777168;letter-spacing:.03em}
-      .meaningPanel{border:1px solid #1a1916;background:#1a1916;color:#f4f1e9;padding:30px;margin-bottom:18px}.meaningHeader{display:grid;grid-template-columns:minmax(240px,.8fr) 1.2fr;gap:30px;align-items:end;border-bottom:1px solid #3a3832;padding-bottom:24px}.meaningHeader p{margin:0;color:#bbb6aa;line-height:1.6;max-width:660px}.moduleMark{display:block;font-size:9px;letter-spacing:.16em;color:#d8ff72;margin-bottom:8px}.processFlow{display:grid;grid-template-columns:repeat(5,1fr);margin-top:24px;border:1px solid #3a3832}.processCell{position:relative;min-width:0}.processNode{min-height:156px;padding:18px;border-right:1px solid #3a3832;display:flex;flex-direction:column}.processCell:last-child .processNode{border-right:0}.processIndex{position:absolute;right:10px;top:10px;color:#666158;font-size:10px}.processNode span{color:#d8ff72;font-size:9px;letter-spacing:.15em}.processNode strong{font-family:Georgia,serif;font-size:19px;font-weight:500;margin:34px 0 8px}.processNode small{color:#aaa59b;line-height:1.45}.processArrow{position:absolute;right:-11px;top:67px;width:22px;height:22px;border:1px solid #5d594f;background:#1a1916;color:#d8ff72;display:grid;place-items:center;border-radius:50%;z-index:2;font-size:12px}
-      .metrics{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #d9d5cb;margin-top:28px}.metrics div{padding:22px 16px 8px 0;border-right:1px solid #e0ddd5}.metrics div:nth-child(3n){border-right:0}.metrics span,.metrics strong{display:block}.metrics span{font-size:10px;letter-spacing:.12em;color:#7b766d;text-transform:uppercase;margin-bottom:8px}.metrics strong{font-size:16px}
-      .window{background:#111;color:#f4f1e9;margin-top:28px;border:1px solid #111}.windowRail{display:flex;justify-content:space-between;gap:20px;padding:11px 16px;border-bottom:1px solid #34322e;font-size:9px;letter-spacing:.14em}.windowType{color:#d8ff72}.windowStatus{color:#9b968d}.windowHero{display:grid;grid-template-columns:.65fr 1.35fr;border-bottom:1px solid #34322e}.windowHero>div{padding:22px}.windowHero>div+div{border-left:1px solid #34322e}.windowHero small,.windowHero strong{display:block}.windowHero small{color:#858077;font-size:9px;letter-spacing:.14em;margin-bottom:8px}.windowHero strong{font-family:Georgia,serif;font-size:25px;font-weight:500}.sampleGrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#34322e}.sampleGrid p{background:#111;padding:20px;margin:0;font-size:12px;line-height:1.58;color:#d5d1c8}.sampleGrid b{display:block;color:#fff;text-transform:uppercase;letter-spacing:.1em;font-size:9px;margin-bottom:8px}.sampleGrid small{display:block;color:#aaa69d;margin-top:8px}.sampleGrid em{display:inline-block;color:#111;background:#d8ff72;font-size:8px;font-style:normal;letter-spacing:.1em;margin-top:12px;padding:5px 7px}.sampleGrid .proofBoundary{grid-column:1/-1;background:#24221e;color:#bdb8ae}.btcCell{border-left:3px solid #d8ff72}.conditionCell{border-left:3px solid #c4c0b7}.invalidationCell{border-left:3px solid #8f897f}.astroCell{border-left:3px solid #6a675f}
-      .split{display:grid;grid-template-columns:1fr 1fr;gap:18px}.dark{background:#24221e;color:#f4f1e9;border-color:#24221e}.astroList{margin-top:25px;border-top:1px solid #4b4841}.astroList div{padding:15px 0;border-bottom:1px solid #4b4841}.astroList span,.astroList strong,.astroList small{display:block}.astroList span{font-size:10px;color:#9f9a90}.astroList strong{font-family:Georgia,serif;font-weight:500;margin:5px 0}.astroList small{color:#aaa59b}.memoryTag{display:inline-block;padding:8px 10px;background:#111;color:#fff;font-size:10px;letter-spacing:.1em}.memoryVisual{margin-top:26px;border-top:1px solid #d9d5cb;padding-top:20px;display:grid;grid-template-columns:1fr 140px 1fr;align-items:center}.memoryOrigin,.memoryFuture{display:grid;gap:5px}.memoryOrigin span,.memoryFuture span{font-size:9px;letter-spacing:.13em;color:#817b70}.memoryOrigin strong,.memoryFuture strong{font-family:Georgia,serif;font-size:20px;font-weight:500}.memoryOrigin small,.memoryFuture small{color:#777168}.memorySpine{height:2px;background:#aaa59a;display:flex;justify-content:space-around;align-items:center}.memorySpine i{width:8px;height:8px;border:1px solid #111;background:#fbfaf6;border-radius:50%}
-      .laneMap{margin-top:25px;border:1px solid #d8d4ca}.lane{display:grid;grid-template-columns:190px 1fr;align-items:center;min-height:64px;padding:0 18px;position:relative}.lane+.lane{border-top:1px solid #d8d4ca}.lane span{font-size:9px;letter-spacing:.13em;font-weight:800}.lane strong{font-size:12px;font-weight:500}.trackedLane{background:#111;color:#f5f2e9}.trackedLane span{color:#d8ff72}.trackBar{position:absolute;right:18px;bottom:8px;width:34%;height:3px;background:#4e4b44;display:flex;justify-content:space-around}.trackBar i{width:18%;height:3px;background:#d8ff72}.cadenceLane{background:#f5f2ec}.rhythm{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid #d8d4ca;border-left:1px solid #d8d4ca;margin-top:18px}.rhythm div{padding:18px 12px;border-right:1px solid #d8d4ca;border-bottom:1px solid #d8d4ca;min-height:112px;position:relative}.rhythm span,.rhythm strong,.rhythm small{display:block}.rhythm span{font-size:10px;color:#817b70}.rhythm strong{font-size:11px;margin:20px 0 4px}.rhythm small{font-size:10px;color:#817b70}.rhythm i{position:absolute;bottom:0;left:50%;width:1px;height:14px;background:#aaa59a}.rhythm .active{background:#111;color:#fff}.rhythm .active i{background:#d8ff72}
-      .differencePanel{margin-top:0}.differenceGrid{display:grid;grid-template-columns:.8fr 1.2fr;margin-top:24px;border:1px solid #3a3832}.notColumn,.yesColumn{padding:20px}.yesColumn{border-left:1px solid #3a3832;background:#20231b}.comparisonLabel{display:block;font-size:9px;letter-spacing:.14em;color:#817c72;margin-bottom:12px}.yesColumn .comparisonLabel{color:#d8ff72}.compareRow{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #34322e}.compareRow b{width:25px;height:25px;border:1px solid #5b574f;border-radius:50%;display:grid;place-items:center;font-size:11px;color:#8f897f}.yesColumn .compareRow b{color:#111;background:#d8ff72;border-color:#d8ff72}.compareRow span{font-family:Georgia,serif;font-size:17px}
-      .proofList{padding-left:18px;line-height:1.8;color:#524e47}.sample{background:#d8ff72;border-color:#c8ed6d}.sampleRead{border-top:1px solid #a9c95d;padding-top:25px}.sampleRead span{font-size:10px;letter-spacing:.12em}.sampleRead p{font-family:Georgia,serif;font-size:22px;line-height:1.45;margin-bottom:0}.cta{margin-top:18px;background:#111;color:#f5f2e9;padding:58px 32px;text-align:center}.cta .eyebrow{color:#aaa69d}.cta h2{font-family:Georgia,serif;font-size:clamp(36px,5vw,60px);font-weight:500;margin:0 0 18px}.cta p{max-width:650px;margin:0 auto 26px;color:#c9c5bd;line-height:1.55}.cta button{background:#d8ff72;color:#111;border:0;padding:15px 24px;font-weight:800;letter-spacing:.08em;font-size:11px;cursor:default}.cta small{display:block;color:#77736c;margin-top:22px;letter-spacing:.08em;font-size:9px}
-      @media(max-width:900px){.compositionMap{grid-template-columns:1fr}.primaryLayer,.supportingLayer,.controlLayer{grid-column:1;grid-row:auto;border-right:0}.compositionLayer{grid-template-columns:116px 1fr}.supportingLayer,.controlLayer{border-top:1px solid #bbb6ab}.marketGlyph,.timeGlyph{display:none}.controlItems{grid-column:2}.processFlow{grid-template-columns:1fr}.processNode{min-height:auto;border-right:0;border-bottom:1px solid #3a3832;padding:18px 50px 18px 18px}.processCell:last-child .processNode{border-bottom:0}.processNode strong{margin:14px 0 5px}.processArrow{right:auto;left:20px;top:auto;bottom:-11px;transform:rotate(90deg)}.memoryVisual{grid-template-columns:1fr;gap:16px}.memorySpine{height:54px;width:2px;margin-left:12px;flex-direction:column}.lane{grid-template-columns:1fr;gap:6px;padding:14px 18px}.trackBar{display:none}}
-      @media(max-width:760px){main{padding:0 16px 40px}.topbar{height:62px}.preview{display:none}.hero{padding:58px 0 40px}.hero h1{font-size:52px}.lead{font-size:20px}.card,.meaningPanel,.compositionPanel{padding:22px}.sectionHead h2,.meaningHeader h2,.compositionHead h2{font-size:26px}.meaningHeader,.compositionHead{grid-template-columns:1fr;gap:12px}.compositionLayer{grid-template-columns:1fr;min-height:0}.layerRole{border-right:0;border-bottom:1px solid #49463f;flex-direction:row;gap:16px}.controlLayer .layerRole{border-color:#c7c2b7}.layerBody{padding:20px}.controlItems{grid-column:1;padding:0 20px 20px}.metrics{grid-template-columns:1fr 1fr}.metrics div:nth-child(3n){border-right:1px solid #e0ddd5}.metrics div:nth-child(2n){border-right:0}.split{grid-template-columns:1fr}.windowHero,.sampleGrid{grid-template-columns:1fr}.windowHero>div+div{border-left:0;border-top:1px solid #34322e}.sampleGrid .proofBoundary{grid-column:auto}.windowRail{display:grid}.differenceGrid{grid-template-columns:1fr}.yesColumn{border-left:0;border-top:1px solid #3a3832}.rhythm{grid-template-columns:repeat(2,1fr)}.cta{padding:44px 22px}.identityRow>*{font-size:9px}}
-      @media(max-width:440px){.hero h1{font-size:43px}.metrics{grid-template-columns:1fr}.metrics div,.metrics div:nth-child(3n),.metrics div:nth-child(2n){border-right:0}.rhythm{grid-template-columns:1fr 1fr}.windowHero strong{font-size:21px}}
+      :global(html){background:#efede6;color:#111;scroll-behavior:smooth}
+      :global(body){margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#efede6;color:#111}
+      :global(*){box-sizing:border-box} a{color:inherit;text-decoration:none}
+      main{max-width:1220px;margin:0 auto;padding:0 28px 76px}
+      .topbar{height:70px;display:flex;align-items:center;border-bottom:1px solid #c7c2b7;gap:24px;font-size:11px;letter-spacing:.14em}.brand{font-size:15px;font-weight:900}.preview{color:#6d685f}.lang{margin-left:auto;display:flex;gap:7px}
+      .hero{padding:58px 0 48px;max-width:960px}.eyebrow{font-size:10px;letter-spacing:.2em;font-weight:800;margin:0 0 16px;color:#6b675f}.hero h1{font-family:Georgia,serif;font-size:clamp(46px,6.5vw,82px);line-height:.94;letter-spacing:-.045em;margin:0 0 22px;font-weight:500}.lead{font-size:clamp(18px,2vw,27px);line-height:1.32;max-width:860px;margin:0 0 18px}.question{font-family:Georgia,serif;font-style:italic;font-size:18px;line-height:1.5;max-width:800px;color:#39362f}.identityRow{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.identityRow>*{border:1px solid #aaa59a;padding:8px 11px;font-size:9px;letter-spacing:.11em}
+
+      .cosmograph{background:#11110f;color:#f5f2e9;border:1px solid #11110f;margin-bottom:22px;overflow:hidden}.cosmographHead{display:grid;grid-template-columns:1.618fr 1fr;gap:38px;align-items:end;padding:30px 32px 26px;border-bottom:1px solid #393730}.objectMark{display:block;color:#d8ff72;font-size:9px;letter-spacing:.18em;margin-bottom:10px}.cosmographHead h2{font-family:Georgia,serif;font-size:clamp(34px,4.5vw,57px);line-height:1;letter-spacing:-.035em;font-weight:500;margin:0}.cosmographHead p{margin:0;color:#b9b4aa;line-height:1.62;font-size:13px}
+      .cosmographBody{display:grid;grid-template-columns:minmax(0,1.618fr) minmax(260px,1fr);min-height:690px}.timeField{position:relative;padding:28px 30px 24px;border-right:1px solid #393730;overflow:hidden;background:radial-gradient(circle at 38.2% 43%,rgba(216,255,114,.07),transparent 26%),#11110f}.timeLabels{display:grid;grid-template-columns:38.2% 12% 49.8%;font-size:9px;letter-spacing:.18em;color:#777269;margin-bottom:14px}.timeLabels span:nth-child(2){color:#d8ff72;text-align:center}.timeLabels span:last-child{text-align:right}
+      .astroBand{position:relative;margin:0 0 38px 38.2%;width:61.8%;min-height:70px;border-top:1px solid #69655d;border-bottom:1px solid #393730;padding:11px 14px 10px}.astroBand:before{content:"";position:absolute;left:0;top:-5px;width:9px;height:9px;border:1px solid #c8c3b9;border-radius:50%;background:#11110f}.astroBand span,.astroBand strong,.astroBand small,.astroBand em{display:block}.astroBand span{font-size:8px;letter-spacing:.14em;color:#918c82}.astroBand strong{font-family:Georgia,serif;font-size:16px;font-weight:500;margin:5px 0}.astroBand small{color:#aaa59b;font-size:10px}.astroBand em{font-size:9px;color:#777269;font-style:normal;margin-top:5px}
+      .timeAxis{position:relative;height:38px;margin:0 2px 6px}.timeAxis:before{content:"";position:absolute;left:0;right:0;top:18px;height:1px;background:#656158}.pastSegment{position:absolute;left:0;top:15px;width:38.2%;height:7px;border-top:1px solid #8b867b;border-bottom:1px solid #393730}.futureSegment{position:absolute;left:38.2%;right:0;top:15px;height:7px;border-top:1px solid #d8ff72;border-bottom:1px solid #4d4a43}.nowNeedle{position:absolute;left:38.2%;top:0;width:1px;height:38px;background:#d8ff72;box-shadow:0 0 0 4px rgba(216,255,114,.08)}.nowNeedle:after{content:"";position:absolute;left:-4px;top:14px;width:9px;height:9px;border-radius:50%;background:#d8ff72}
+      .temporalGrid{display:grid;grid-template-columns:38.2% 23.6% 38.2%;min-height:330px}.temporalGrid article{padding:20px 18px 18px;position:relative}.pastNode{border-right:1px solid #393730;color:#b5b0a6}.nowNode{border-right:1px solid #393730;background:#181813}.futureNode{background:#151511}.nodeRole{display:block;font-size:8px;letter-spacing:.14em;color:#817c72;text-transform:uppercase;margin-bottom:18px}.temporalGrid strong{display:block;font-family:Georgia,serif;font-size:20px;line-height:1.15;font-weight:500;margin-bottom:12px}.pastNode b,.windowDate{display:block;font-size:11px;letter-spacing:.04em;color:#f5f2e9;margin-bottom:8px}.pastNode small{font-size:10px;color:#777269;line-height:1.45}.stateTriplet{display:grid;gap:11px;margin-top:22px}.stateTriplet span{border-top:1px solid #3f3d36;padding-top:9px}.stateTriplet small,.stateTriplet b{display:block}.stateTriplet small{font-size:7px;letter-spacing:.13em;color:#817c72}.stateTriplet b{font-size:11px;margin-top:4px;color:#d8ff72;overflow-wrap:anywhere}.futureWindowHead{display:flex;justify-content:space-between;gap:10px;align-items:start}.futureWindowHead>small{font-size:7px;letter-spacing:.08em;color:#706c64;text-align:right;max-width:150px}.futureNode>p{font-size:10px;line-height:1.5;color:#a9a49a;margin:12px 0 16px}.futureConditions{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#34322d;border:1px solid #34322d}.futureConditions>div{background:#11110f;padding:12px}.futureConditions span{display:block;font-size:8px;letter-spacing:.1em;margin-bottom:7px}.futureConditions p{font-size:9px;line-height:1.45;color:#aaa59b;margin:0}.confirm span{color:#d8ff72}.invalidate span{color:#c6c0b4}
+      .checkpointRail{display:grid;grid-template-columns:repeat(6,1fr);margin-top:26px;border-top:1px solid #393730}.checkpoint{position:relative;padding:18px 7px 8px;border-right:1px solid #2d2b27;min-height:78px}.checkpoint:last-child{border-right:0}.checkpoint i{position:absolute;top:-5px;left:50%;width:9px;height:9px;border:1px solid #777269;border-radius:50%;background:#11110f}.checkpoint.active i{background:#d8ff72;border-color:#d8ff72}.checkpoint span,.checkpoint strong,.checkpoint small{display:block}.checkpoint span{font-size:7px;letter-spacing:.1em;color:#777269}.checkpoint strong{font-size:8px;margin:9px 0 3px;overflow-wrap:anywhere}.checkpoint small{font-size:8px;color:#656158}.checkpoint:last-child strong{color:#d8ff72}
+      .controlField{position:relative;padding:28px 25px 24px;background:#e9e6dd;color:#151512}.controlHead{border-bottom:1px solid #bbb6aa;padding-bottom:17px}.controlHead span,.controlHead strong{display:block}.controlHead span{font-size:8px;letter-spacing:.15em;color:#777168}.controlHead strong{font-family:Georgia,serif;font-size:21px;font-weight:500;margin-top:8px}.controlSpine{position:absolute;left:39px;top:105px;bottom:155px;width:1px;background:#aaa499;display:flex;flex-direction:column;justify-content:space-around}.controlSpine i{width:7px;height:7px;border:1px solid #11110f;border-radius:50%;background:#e9e6dd;transform:translateX(-3px)}.controlStack{padding:14px 0 8px 30px}.controlStack>div{min-height:78px;padding:15px 0;border-bottom:1px solid #ccc7bc}.controlStack span,.controlStack strong,.controlStack small{display:block}.controlStack span{font-size:8px;color:#8a8479}.controlStack strong{font-size:10px;letter-spacing:.1em;margin:7px 0}.controlStack small{font-family:Georgia,serif;font-size:14px;color:#5f5a52}.closeoutSeal{margin:18px 0 0 30px;border:1px solid #11110f;padding:15px}.closeoutSeal span,.closeoutSeal strong,.closeoutSeal small{display:block}.closeoutSeal span{font-size:8px;letter-spacing:.1em;color:#777168}.closeoutSeal strong{font-family:Georgia,serif;font-size:18px;font-weight:500;margin:8px 0}.closeoutSeal small{font-size:8px;letter-spacing:.08em}
+      .cosmographLegend{display:grid;grid-template-columns:1.618fr 1fr 1fr;border-top:1px solid #393730}.cosmographLegend span{padding:13px 18px;border-right:1px solid #393730;font-size:9px;color:#aaa59b}.cosmographLegend span:last-child{border-right:0}.cosmographLegend b{color:#f5f2e9;margin-right:7px;font-size:8px;letter-spacing:.1em}.cosmographLegend span:first-child b{color:#d8ff72}
+
+      .categoryReveal{padding:76px 0 72px;display:grid;grid-template-columns:38.2% 61.8%;border-bottom:1px solid #c7c2b7}.categoryReveal>span{font-size:9px;letter-spacing:.16em;color:#7c766d;padding-top:10px}.categoryReveal h2{grid-column:2;font-family:Georgia,serif;font-size:clamp(38px,5.3vw,70px);line-height:.96;letter-spacing:-.04em;font-weight:500;margin:0 0 24px}.categoryReveal p{grid-column:2;font-size:16px;line-height:1.6;max-width:720px;margin:0;color:#514d46}
+      .axesSection{padding:34px 0 42px;display:grid;grid-template-columns:38.2% 61.8%;border-bottom:1px solid #c7c2b7}.axesLead{padding-right:32px}.axesLead>span,.supportMark,.differenceHead>span{font-size:8px;letter-spacing:.15em;color:#777168}.axesLead h2,.supportPanel h2,.differenceHead h2{font-family:Georgia,serif;font-size:29px;font-weight:500;margin:9px 0 12px}.axesLead p{font-size:10px;line-height:1.5;color:#777168}.axesMap{border-left:1px solid #c7c2b7}.axesMap>div{display:grid;grid-template-columns:125px 1fr;padding:18px 22px;border-bottom:1px solid #c7c2b7}.axesMap>div:last-child{border-bottom:0}.axesMap span{font-size:8px;letter-spacing:.13em;font-weight:800}.axesMap strong{font-size:12px;font-weight:500}.axisPrimary{background:#11110f;color:#f5f2e9}.axisPrimary span{color:#d8ff72}.axisSupporting{background:#2a2823;color:#f5f2e9}.axisControl{background:#e1ddd3}
+      .supportGrid{display:grid;grid-template-columns:1.618fr 1fr;margin-top:22px;border:1px solid #c7c2b7}.supportPanel{padding:30px;min-height:310px}.supportPanel+ .supportPanel{border-left:1px solid #c7c2b7}.supportPanel p{font-size:13px;line-height:1.65;color:#5c574f;max-width:650px}.astroPanel{background:#24221e;color:#f5f2e9}.astroPanel .supportMark{color:#9d988e}.astroPanel p{color:#b9b4aa}.astroAvailability{display:flex;justify-content:space-between;gap:20px;border-top:1px solid #4b4841;border-bottom:1px solid #4b4841;padding:15px 0;margin:24px 0 13px}.astroAvailability strong{font-family:Georgia,serif;font-weight:500}.astroAvailability span{font-size:8px;letter-spacing:.12em;color:#d8ff72}.astroPanel>small{display:block;color:#aaa59b;line-height:1.5}.astroPanel>em{display:block;font-style:normal;color:#777269;font-size:9px;margin-top:18px}.proofPanel{background:#f9f7f1}.proofLines{margin-top:24px;border-top:1px solid #d3cfc5}.proofLines span{display:block;padding:12px 0;border-bottom:1px solid #d3cfc5;font-size:10px;color:#5d5850}
+      .differenceSection{margin-top:22px;background:#11110f;color:#f5f2e9;display:grid;grid-template-columns:38.2% 61.8%;padding:30px}.differenceHead{padding-right:28px}.differenceHead>span{color:#8f8a80}.differenceGrid{display:grid;grid-template-columns:1fr 1.618fr;border-left:1px solid #393730}.notColumn,.yesColumn{padding:5px 22px}.yesColumn{border-left:1px solid #393730}.notColumn>span,.yesColumn>span{font-size:8px;letter-spacing:.14em;color:#817c72}.yesColumn>span{color:#d8ff72}.differenceGrid p{display:flex;gap:11px;align-items:center;padding:11px 0;margin:0;border-bottom:1px solid #2f2d28;font-family:Georgia,serif;font-size:15px}.differenceGrid b{font-family:Inter,sans-serif;font-size:10px;width:20px;height:20px;border:1px solid #5a564e;border-radius:50%;display:grid;place-items:center;color:#827d74}.yesColumn b{background:#d8ff72;border-color:#d8ff72;color:#11110f}
+      .cta{margin-top:22px;background:#11110f;color:#f5f2e9;padding:58px 32px;text-align:center}.cta .eyebrow{color:#aaa69d}.cta h2{font-family:Georgia,serif;font-size:clamp(36px,5vw,60px);font-weight:500;margin:0 0 18px}.cta p{max-width:650px;margin:0 auto 26px;color:#c9c5bd;line-height:1.55}.cta button{background:#d8ff72;color:#111;border:0;padding:15px 24px;font-weight:800;letter-spacing:.08em;font-size:11px;cursor:default}.cta small{display:block;color:#77736c;margin-top:22px;letter-spacing:.08em;font-size:9px}
+
+      @media(max-width:900px){
+        .cosmographHead{grid-template-columns:1fr;gap:14px}.cosmographBody{grid-template-columns:1fr}.timeField{border-right:0;border-bottom:1px solid #393730}.controlField{min-height:520px}.cosmographLegend{grid-template-columns:1fr}.cosmographLegend span{border-right:0;border-bottom:1px solid #393730}.cosmographLegend span:last-child{border-bottom:0}.supportGrid{grid-template-columns:1fr}.supportPanel+.supportPanel{border-left:0;border-top:1px solid #c7c2b7}.differenceSection{grid-template-columns:1fr;gap:22px}.differenceGrid{border-left:0}.categoryReveal,.axesSection{grid-template-columns:1fr}.categoryReveal h2,.categoryReveal p{grid-column:1}.categoryReveal>span{margin-bottom:18px}.axesLead{padding-right:0}.axesMap{border-left:0;border-top:1px solid #c7c2b7;margin-top:18px}
+      }
+      @media(max-width:720px){
+        main{padding:0 15px 42px}.topbar{height:60px}.preview{display:none}.hero{padding:46px 0 36px}.hero h1{font-size:48px}.lead{font-size:19px}.cosmographHead{padding:24px 20px 20px}.cosmographBody{min-height:0}.timeField{padding:24px 20px}.timeLabels{grid-template-columns:1fr 1fr 1fr}.astroBand{margin-left:0;width:100%;margin-bottom:24px}.timeAxis{display:none}.temporalGrid{grid-template-columns:1fr;gap:0;border-left:1px solid #393730;margin-left:8px}.temporalGrid article{margin-left:16px;border-right:0;border-bottom:1px solid #393730;padding:18px 12px 22px}.temporalGrid article:before{content:"";position:absolute;left:-21px;top:25px;width:9px;height:9px;border-radius:50%;border:1px solid #777269;background:#11110f}.nowNode:before{background:#d8ff72!important;border-color:#d8ff72!important}.futureConditions{grid-template-columns:1fr}.checkpointRail{grid-template-columns:repeat(2,1fr);margin-top:24px;border-left:1px solid #393730}.checkpoint{border-bottom:1px solid #2d2b27}.checkpoint i{left:15px}.controlField{padding:24px 20px}.controlSpine{left:34px}.controlStack{padding-left:28px}.closeoutSeal{margin-left:28px}.categoryReveal{padding:54px 0}.categoryReveal h2{font-size:43px}.axesMap>div{grid-template-columns:1fr;gap:6px;padding:16px}.supportPanel{padding:24px}.differenceSection{padding:24px 20px}.differenceGrid{grid-template-columns:1fr}.yesColumn{border-left:0;border-top:1px solid #393730;margin-top:16px;padding-top:18px}.identityRow>*{font-size:8px}
+      }
+      @media(max-width:440px){.hero h1{font-size:40px}.cosmographHead h2{font-size:34px}.categoryReveal h2{font-size:37px}.stateTriplet b{font-size:10px}.futureWindowHead{display:block}.futureWindowHead>small{display:block;text-align:left;margin-bottom:12px}.axesMap strong{line-height:1.4}}
     `}</style>
   </>;
 }
