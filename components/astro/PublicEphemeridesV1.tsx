@@ -12,14 +12,17 @@ const COPY={
 type Props={locale:PublicAstroLocale; canonicalPath:string; mode:"root"|"year"|"month"; data:any};
 function localized(path:string,locale:PublicAstroLocale){return `${path}?lang=${locale}`;}
 function prettySign(sign:string,deg:number){return `${sign} ${deg.toFixed(2)}°`;}
+function monthCoverage(month:number){const mm=String(month).padStart(2,"0");const last=String(new Date(Date.UTC(PUBLIC_EPHEMERIDES_YEAR,month,0)).getUTCDate()).padStart(2,"0");return{start:`${PUBLIC_EPHEMERIDES_YEAR}-${mm}-01`,end:`${PUBLIC_EPHEMERIDES_YEAR}-${mm}-${last}`};}
 
 export default function PublicEphemeridesV1({locale,canonicalPath,mode,data}:Props){
   const c=COPY[locale]; const months=publicEphemeridesMonths(locale);
   const monthLabel=months.find(x=>x.month===data.month)?.label ?? "";
   const title=mode==="month"?(locale==="ru"?`Эфемериды · ${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR} | BHRIGU`:`${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR} ephemerides · BHRIGU`):c.title;
+  const h1=mode==="month"?(locale==="ru"?`Планетные эфемериды · ${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR}`:`Planetary ephemerides · ${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR}`):c.title;
   const desc=mode==="month"?(locale==="ru"?`${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR}: source-bound положения планет, движение, окна аспектов, станции и ингрессии из публичного Astro evidence BHRIGU.`:`${monthLabel} ${PUBLIC_EPHEMERIDES_YEAR}: source-bound planetary positions, motion, aspect windows, stations and ingresses from BHRIGU public Astro evidence.`):c.lead;
   const canonical=`${BASE}${canonicalPath}?lang=${locale}`;
-  const jsonLd={"@context":"https://schema.org","@type":"Dataset",name:title,url:canonical,inLanguage:locale,temporalCoverage:`${data.range.start}/${data.range.end}`,description:desc,creator:{"@type":"Organization",name:"BHRIGU",url:BASE},variableMeasured:["geocentric tropical ecliptic longitude","longitude speed","retrograde/direct state","major aspect windows","stations","ingresses"]};
+  const coverage=mode==="month"?monthCoverage(data.month):data.range;
+  const jsonLd={"@context":"https://schema.org","@type":"Dataset",name:title,url:canonical,inLanguage:locale,temporalCoverage:`${coverage.start}/${coverage.end}`,description:desc,creator:{"@type":"Organization",name:"BHRIGU",url:BASE},variableMeasured:["geocentric tropical ecliptic longitude","longitude speed","retrograde/direct state","major aspect windows","stations","ingresses"]};
   return <>
     <Head>
       <title>{title}</title><meta name="description" content={desc} key="description" />
@@ -30,7 +33,7 @@ export default function PublicEphemeridesV1({locale,canonicalPath,mode,data}:Pro
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd).replace(/</g,"\\u003c")}} />
     </Head>
     <main className="wrap" lang={locale} data-public-ephemerides="BHRIGU_PUBLIC_EPHEMERIDES_V1">
-      <p className="ey">{c.ey}</p><h1>{c.title}</h1><p className="lead">{c.lead}</p>
+      <p className="ey">{c.ey}</p><h1>{h1}</h1><p className="lead">{c.lead}</p>
       <div className="anchor"><span>{c.anchor}</span><strong>{data.anchorDate} · 12:00 UTC</strong><code>{data.source.engine} {data.source.version} · {data.source.mode}</code></div>
       <section><div className="head"><h2>{c.positions}</h2><span>{data.source.coordinate}</span></div><div className="planetGrid">{data.bodies.map((b:any)=><article key={b.key}><div><strong>{b.name}</strong><small>{prettySign(b.sign,b.degree)}</small></div><div className="nums"><span>{b.longitude.toFixed(4)}°</span><span>{b.speed>0?"+":""}{b.speed.toFixed(5)}°/d</span><em data-motion={b.retrograde?"retro":"direct"}>{b.retrograde?c.retro:c.direct}</em></div></article>)}</div></section>
       <section><div className="head"><h2>{c.aspects}</h2><span>orb ≤ {data.source.research_orb_deg}° research surface</span></div>{data.aspects.length?<div className="eventList">{data.aspects.map((a:any)=><article key={`${a.a}-${a.b}-${a.peak}`}><strong>{a.aName} · {a.aspectName} · {a.bName}</strong><span>{a.start} → <b>{a.peak}</b> → {a.end}</span><small>peak orb {Number(a.orb).toFixed(3)}°</small></article>)}</div>:<p className="empty">{c.none}</p>}</section>
