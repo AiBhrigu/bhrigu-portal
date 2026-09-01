@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, errorCode: "method_not_allowed" });
   }
-  if (process.env.VERCEL_ENV !== "preview") {
+  if (!['preview', 'production'].includes(process.env.VERCEL_ENV ?? '')) {
     return res.status(404).json({ ok: false, errorCode: "preview_only" });
   }
 
