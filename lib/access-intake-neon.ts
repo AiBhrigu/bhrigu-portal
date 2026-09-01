@@ -186,6 +186,7 @@ export function createNeonAccessIntakeStore(
           ) AS deliveries
         FROM access_intake_requests r
         LEFT JOIN access_intake_deliveries d ON d.request_id = r.request_id
+        WHERE r.record ? 'requestId'
         GROUP BY r.request_id, r.created_at
         ORDER BY r.created_at DESC
         LIMIT ${boundedLimit}
