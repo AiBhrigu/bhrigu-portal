@@ -6,15 +6,36 @@ import type {
   AccessIntakeStore,
 } from "./access-intake-runtime";
 
+const FOUNDING_REQUEST_KIND = "PHI_BTC_TIMING_WINDOWS_FOUNDING_REQUEST";
+
+export interface AccessReviewDelivery {
+  kind: AccessDeliveryKind;
+  state: string;
+  attempts: number;
+  providerMessageId: string | null;
+  lastErrorCode: string | null;
+}
+
+export interface FoundingAccessReviewRecord {
+  requestId: string;
+  createdAt: string;
+  status: string;
+  locale: string;
+  nameOrHandle: string;
+  contact: string;
+  primaryInterest: string;
+  trackingQuestion: string;
+  currentBitcoinContext: string | null;
+  willingToPayAfterScopeAcceptance: boolean;
+}
+
+export type AccessReviewRecord =
+  | { schema: "access_v1"; data: StoredAccessSubmissionV1 }
+  | { schema: "founding_v0_1"; data: FoundingAccessReviewRecord };
+
 export interface AccessReviewRequest {
-  record: StoredAccessSubmissionV1;
-  deliveries: Array<{
-    kind: AccessDeliveryKind;
-    state: string;
-    attempts: number;
-    providerMessageId: string | null;
-    lastErrorCode: string | null;
-  }>;
+  record: AccessReviewRecord;
+  deliveries: AccessReviewDelivery[];
 }
 
 export function createNeonAccessIntakeStore(
@@ -186,16 +207,22 @@ export function createNeonAccessIntakeStore(
           ) AS deliveries
         FROM access_intake_requests r
         LEFT JOIN access_intake_deliveries d ON d.request_id = r.request_id
-        WHERE r.record ? 'requestId'
+        WHERE
+          r.record ? 'requestId'
+          OR r.record->>'kind' = ${FOUNDING_REQUEST_KIND}
         GROUP BY r.request_id, r.created_at
         ORDER BY r.created_at DESC
         LIMIT ${boundedLimit}
       `;
 
-      return rows.map((row) => ({
-        record: parseRecord(row.record),
-        deliveries: parseJson(row.deliveries) as AccessReviewRequest["deliveries"],
-      }));
+      return rows.flatMap((row) => {
+        const record = normalizeAccessReviewRecord(row.record);
+        if (!record) return [];
+        return [{
+          record,
+          deliveries: parseJson(row.deliveries) as AccessReviewDelivery[],
+        }];
+      });
     },
   };
 }
@@ -208,6 +235,55 @@ function firstRow(rows: unknown): Record<string, any> | null {
 
 function parseRecord(value: unknown): StoredAccessSubmissionV1 {
   return parseJson(value) as StoredAccessSubmissionV1;
+}
+
+export function normalizeAccessReviewRecord(
+  value: unknown
+): AccessReviewRecord | null {
+  const parsed = parseJson(value);
+  if (!parsed || typeof parsed !== "object") return null;
+  const record = parsed as Record<string, unknown>;
+
+  if (record.kind === FOUNDING_REQUEST_KIND) {
+    if (
+      typeof record.request_id !== "string" ||
+      typeof record.created_at !== "string" ||
+      typeof record.name_or_handle !== "string" ||
+      typeof record.contact !== "string" ||
+      typeof record.tracking_question !== "string"
+    ) {
+      return null;
+    }
+    return {
+      schema: "founding_v0_1",
+      data: {
+        requestId: record.request_id,
+        createdAt: record.created_at,
+        status:
+          typeof record.status === "string" ? record.status : "pending_manual_review",
+        locale: typeof record.locale === "string" ? record.locale : "en",
+        nameOrHandle: record.name_or_handle,
+        contact: record.contact,
+        primaryInterest:
+          typeof record.primary_interest === "string"
+            ? record.primary_interest
+            : "BITCOIN_RESEARCH",
+        trackingQuestion: record.tracking_question,
+        currentBitcoinContext:
+          typeof record.current_bitcoin_context === "string"
+            ? record.current_bitcoin_context
+            : null,
+        willingToPayAfterScopeAcceptance:
+          record.willingness_to_pay_after_scope_acceptance === true,
+      },
+    };
+  }
+
+  if (typeof record.requestId === "string") {
+    return { schema: "access_v1", data: parsed as StoredAccessSubmissionV1 };
+  }
+
+  return null;
 }
 
 function parseJson(value: unknown): unknown {
