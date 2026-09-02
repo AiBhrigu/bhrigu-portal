@@ -288,6 +288,10 @@
 }
 
 @media (min-width: 841px) {
+  .heroVisual {
+    align-self: start;
+  }
+
   .proofStateGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
