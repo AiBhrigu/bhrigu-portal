@@ -3950,18 +3950,9 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
       }
 
       .freyRootResult .freyInterpretationZoneLabel,
-      .freyRootResult .freyInterpretationState,
-      .freyRootResult .freyInterpretationEffect,
-      .freyRootResult .freyResponseState,
       .freyRootResult .freyResponseLabel,
-      .freyRootResult .freyResponseValue,
-      .freyRootResult .freyResponseSummary,
       .freyRootResult .freyTemporalLabel,
-      .freyRootResult .freyTemporalValue,
-      .freyRootResult .freyOperationalVector,
-      .freyRootResult .freyOperationalVectorMode,
       .freyRootResult .freyConversationMetaLabel,
-      .freyRootResult .freyConversationMetaValue,
       .freyRootResult .freyConversationMetaHint,
       .freyRootResult .freyResultControlsHint,
       .freyRootResult .freyExportMeta,
@@ -3971,49 +3962,13 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
       .freyRootResult .freyResponseLabel,
       .freyRootResult .freyTemporalLabel,
       .freyRootResult .freyConversationMetaLabel,
+      .freyRootResult .freyConversationMetaHint,
       .freyRootResult .freyResultControlsHint,
       .freyRootResult .freyExportMeta,
       .freyRootResult .freyGuideRoute { color: rgba(188, 197, 220, .9); }
-      .freyRootResult .freyInterpretationState,
-      .freyRootResult .freyInterpretationEffect,
-      .freyRootResult .freyResponseState,
-      .freyRootResult .freyResponseValue,
-      .freyRootResult .freyResponseSummary,
-      .freyRootResult .freyTemporalValue,
-      .freyRootResult .freyOperationalVector,
-      .freyRootResult .freyOperationalVectorMode,
-      .freyRootResult .freyConversationMetaValue,
-      .freyRootResult .freyConversationMetaHint,
-      .freyRootResult .freyExpandEmpty { color: rgba(238, 241, 248, .9); }
       .freyRootResult input::placeholder,
       .freyRootResult textarea::placeholder { color: rgba(188, 197, 220, .82); opacity: 1; }
-      .freyRootResult :where(p, span, small, strong, b, em, i, dt, dd, th, td, a, button, label, time, summary) {
-        font-size: max(12px, 1em);
-      }
-      @media (max-width: 980px) {
-        .freyRootResult .freyInterpretationZoneLabel,
-        .freyRootResult .freyInterpretationState,
-        .freyRootResult .freyInterpretationEffect,
-        .freyRootResult .freyResponseState,
-        .freyRootResult .freyResponseLabel,
-        .freyRootResult .freyResponseValue,
-        .freyRootResult .freyResponseSummary,
-        .freyRootResult .freyTemporalLabel,
-        .freyRootResult .freyTemporalValue,
-        .freyRootResult .freyOperationalVector,
-        .freyRootResult .freyOperationalVectorMode,
-        .freyRootResult .freyConversationMetaLabel,
-        .freyRootResult .freyConversationMetaValue,
-        .freyRootResult .freyConversationMetaHint,
-        .freyRootResult .freyResultControlsHint,
-        .freyRootResult .freyExportMeta,
-        .freyRootResult .freyGuideRoute,
-        .freyRootResult .freyExpandEmpty { font-size: 12px; }
-      }
       `}</style>
     </div>
   );
 }
-
-
-

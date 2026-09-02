@@ -261,17 +261,23 @@
 .page .stateKicker,
 .page .stateEvidence,
 .page .systemMapTopline,
-.page .systemRoot small,
 .page .systemNodeTitle small,
-.page .systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
 .page .btcSystemLanes i,
 .page .proofStateGrid small,
-.page .proofStateGrid i,
 .page .expectationEyebrow,
 .page .polymarketLane small,
 .page .marketState small,
 .page .siteFooter a {
   color: #a9d5f2;
+}
+
+.page .systemRoot small {
+  color: #e0c47f;
+}
+
+.page .systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
+.page .proofStateGrid i {
+  color: var(--home-ink);
 }
 
 .page .proofStateGrid strong,
