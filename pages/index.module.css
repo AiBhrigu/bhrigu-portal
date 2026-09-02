@@ -290,6 +290,7 @@
 @media (min-width: 841px) {
   .heroVisual {
     align-self: start;
+    transform: translateY(-24px);
   }
 
   .proofStateGrid {
