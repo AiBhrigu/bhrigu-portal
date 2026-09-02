@@ -3983,12 +3983,8 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 .freySnapshotChip,
 .freyExpandEmpty { font-size: 12px; }
 
-.freySignalEyebrow,
-.freyConversationEyebrow,
-.freyGuideRouteEyebrow,
-.freyVoiceMinimalEyebrow,
-.freyTimelineVector { color: rgba(161, 204, 232, .96); }
-
+.freySignalEyebrow { color: rgba(161, 204, 232, .96); }
+.freyConversationEyebrow { color: rgba(188, 197, 220, .92); }
 .freyConversationMetaLabel,
 .freyConversationMetricLabel,
 .freyConversationOperatorLabel,
@@ -3996,27 +3992,28 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 .freyCompareLabel,
 .freyDeltaRelationTag,
 .freyTimelineTitle,
-.freyTimelineDate,
 .freyResponseLabel,
 .freyInterpretationZoneLabel,
 .freyMetricsSummary,
 .freyExpandSummary,
 .freyInlineExpandSummary,
 .freyResultControlsLabel,
-.freyExportSummary,
-.freyExportEyebrow,
 .freyEscalationLabel,
 .freySnapshotChip,
-.freyExpandEmpty { color: rgba(214, 221, 240, .9); }
-
-.freyResponseState,
-.freyResponseSummaryTitle,
-.freyInterpretationTitle,
-.freyOperationalVectorTag,
+.freyExpandEmpty { color: rgba(184, 192, 214, .94); }
+.freyTimelineDate { color: rgba(248, 244, 236, .98); }
+.freyTimelineVector { color: rgba(220, 224, 236, .94); }
+.freyResponseState { color: rgba(215, 182, 111, .98); }
+.freyResponseSummaryTitle { color: rgba(184, 192, 214, .94); }
+.freyInterpretationTitle { color: rgba(188, 197, 220, .92); }
+.freyOperationalVectorTag { color: rgba(239, 222, 185, .94); }
 .freyConversationBand,
 .freyVoiceMinimalLabel,
-.freyGuideRouteLink,
-.freyExportCopyButton { color: rgba(232, 202, 137, .96); }
+.freyExportSummary,
+.freyExportEyebrow,
+.freyExportCopyButton { color: rgba(255, 244, 222, .95); }
+.freyGuideRouteEyebrow { color: rgba(176, 160, 225, .98); }
+.freyGuideRouteLink { color: rgba(161, 204, 232, .98); }
 
 .freyConversationMetaValue,
 .freyConversationMetricValue,
@@ -4029,15 +4026,6 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
 .freyMetricsSummary,
 .freyExportCopyButton { line-height: 1.4; }
 
-.freyTimelineDate,
-.freyVoiceMinimalLabel,
-.freyConversationBand,
-.freyExportSummary,
-.freyExportCopyButton { color: rgba(255, 244, 222, .95); }
-
-.freyGuideRouteLink { color: rgba(161, 204, 232, .98); }
-.freyInterpretationTitle { color: rgba(188, 197, 220, .9); }
-.freyInterpretationZoneLabel { color: rgba(151, 160, 185, .9); }
 
       `}</style>
     </div>

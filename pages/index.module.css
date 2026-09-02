@@ -260,11 +260,14 @@
 
 .systemNodeTitle small,
 .siteFooter a,
-.expectationEyebrow,
 .polymarketLane a,
 .btcStatus,
 .marketState small {
   color: #8ccaff !important;
+}
+
+.expectationEyebrow {
+  color: #c0aee8 !important;
 }
 
 .proofStateGrid i,
@@ -277,4 +280,9 @@
 .index,
 .marketState span {
   color: #e0c47f;
+}
+
+.eyebrow,
+.category {
+  font-size: 12px !important;
 }
