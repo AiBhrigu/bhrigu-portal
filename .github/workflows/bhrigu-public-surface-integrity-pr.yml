@@ -44,6 +44,18 @@ jobs:
             echo "PASS_BTC_CLEAN_CHAT_COST_GUARD_PUBLIC_SURFACE_EXACT_10_FILE_SCOPE"
             exit 0
           fi
+          founder_expected=(
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            "lib/access-intake-neon.ts"
+            "pages/api/founding/phi-btc-timing-windows/request.ts"
+            "pages/founding/phi-btc-timing-windows.tsx"
+            "pages/founding/phi-btc-timing-windows/request.tsx"
+          )
+          mapfile -t founder_expected_sorted < <(printf '%s\n' "${founder_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${founder_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_PHI_BTC_TIMING_WINDOWS_FOUNDING_PUBLIC_SURFACE_EXACT_5_FILE_SCOPE"
+            exit 0
+          fi
           protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
           test -z "$protected" || { echo "$protected"; exit 1; }
       - name: Static truth gates
