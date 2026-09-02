@@ -233,3 +233,54 @@
   .page *, .page *::before, .page *::after { scroll-behavior: auto !important; }
   .statePulse { animation: none; }
 }
+
+.page .stateKicker,
+.page .stateEvidence,
+.page .systemMapTopline,
+.page .systemRoot small,
+.page .systemNodeTitle small,
+.page .systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
+.page .btcSystemLanes i,
+.page .proofStateGrid small,
+.page .proofStateGrid strong,
+.page .proofStateGrid i,
+.page .eyebrow,
+.page .index,
+.page .expectationEyebrow,
+.page .polymarketLane small,
+.page .polymarketLane a,
+.page .btcStatus,
+.page .quietRoutes a,
+.page .marketState span,
+.page .marketState small,
+.page .siteFooter strong,
+.page .siteFooter a {
+  font-size: 12px !important;
+}
+
+.page .stateKicker,
+.page .stateEvidence,
+.page .systemMapTopline,
+.page .systemNodeTitle small,
+.page .btcSystemLanes i,
+.page .proofStateGrid small,
+.page .expectationEyebrow,
+.page .polymarketLane small,
+.page .marketState small,
+.page .siteFooter a {
+  color: #a9d5f2;
+}
+
+.page .systemRoot small {
+  color: #e0c47f;
+}
+
+.page .systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
+.page .proofStateGrid i {
+  color: var(--home-ink);
+}
+
+.page .proofStateGrid strong,
+.page .siteFooter strong {
+  color: var(--home-ink);
+}

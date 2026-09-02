@@ -3949,11 +3949,26 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
         }
       }
 
+      .freyRootResult .freyInterpretationZoneLabel,
+      .freyRootResult .freyResponseLabel,
+      .freyRootResult .freyTemporalLabel,
+      .freyRootResult .freyConversationMetaLabel,
+      .freyRootResult .freyConversationMetaHint,
+      .freyRootResult .freyResultControlsHint,
+      .freyRootResult .freyExportMeta,
+      .freyRootResult .freyGuideRoute,
+      .freyRootResult .freyExpandEmpty { font-size: 12px; }
+      .freyRootResult .freyInterpretationZoneLabel,
+      .freyRootResult .freyResponseLabel,
+      .freyRootResult .freyTemporalLabel,
+      .freyRootResult .freyConversationMetaLabel,
+      .freyRootResult .freyConversationMetaHint,
+      .freyRootResult .freyResultControlsHint,
+      .freyRootResult .freyExportMeta,
+      .freyRootResult .freyGuideRoute { color: rgba(188, 197, 220, .9); }
+      .freyRootResult input::placeholder,
+      .freyRootResult textarea::placeholder { color: rgba(188, 197, 220, .82); opacity: 1; }
       `}</style>
     </div>
   );
 }
-
-
-
-
