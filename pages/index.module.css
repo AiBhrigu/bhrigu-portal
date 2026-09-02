@@ -286,3 +286,15 @@
 .category {
   font-size: 12px !important;
 }
+
+@media (min-width: 841px) {
+  .proofStateGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .proofStateGrid > span {
+    min-height: 48px;
+    padding: 5px 7px;
+  }
+}
