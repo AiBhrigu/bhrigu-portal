@@ -233,3 +233,48 @@
   .page *, .page *::before, .page *::after { scroll-behavior: auto !important; }
   .statePulse { animation: none; }
 }
+
+/* Accessible semantic and metadata text remains in its original role families. */
+.stateKicker,
+.stateEvidence,
+.systemMapTopline,
+.systemRoot small,
+.systemNodeTitle small,
+.systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
+.btcSystemLanes i,
+.proofStateGrid small,
+.proofStateGrid strong,
+.proofStateGrid i,
+.index,
+.expectationEyebrow,
+.polymarketLane small,
+.polymarketLane a,
+.btcStatus,
+.quietRoutes a,
+.marketState span,
+.marketState small,
+.siteFooter strong,
+.siteFooter a {
+  font-size: 12px !important;
+}
+
+.systemNodeTitle small,
+.siteFooter a,
+.expectationEyebrow,
+.polymarketLane a,
+.btcStatus,
+.marketState small {
+  color: #8ccaff !important;
+}
+
+.proofStateGrid i,
+.systemNode > span:last-child:not(.systemNodeTitle):not(.btcSystemLanes),
+.siteFooter strong {
+  color: #d8d6cf;
+}
+
+.systemRoot small,
+.index,
+.marketState span {
+  color: #e0c47f;
+}

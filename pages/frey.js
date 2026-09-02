@@ -3949,11 +3949,100 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
         }
       }
 
+/* Preserve each semantic role while lifting visible metadata above the minimum reading size. */
+.freySignalEyebrow,
+.freyConversationEyebrow,
+.freyConversationMetaLabel,
+.freyConversationMetricLabel,
+.freyConversationOperatorLabel,
+.freyConversationMetaHint,
+.freyCompareLabel,
+.freyDeltaRelationTag,
+.freyTimelineTitle,
+.freyTimelineDate,
+.freyTimelineVector,
+.freyResponseLabel,
+.freyResponseState,
+.freyResponseSummaryTitle,
+.freyInterpretationTitle,
+.freyInterpretationZoneLabel,
+.freyOperationalVectorTag,
+.freyMetricsSummary,
+.freyExpandSummary,
+.freyInlineExpandSummary,
+.freyConversationBand,
+.freyVoiceMinimalLabel,
+.freyVoiceMinimalEyebrow,
+.freyGuideRouteEyebrow,
+.freyGuideRouteLink,
+.freyResultControlsLabel,
+.freyExportSummary,
+.freyExportEyebrow,
+.freyExportCopyButton,
+.freyEscalationLabel,
+.freySnapshotChip,
+.freyExpandEmpty { font-size: 12px; }
+
+.freySignalEyebrow,
+.freyConversationEyebrow,
+.freyGuideRouteEyebrow,
+.freyVoiceMinimalEyebrow,
+.freyTimelineVector { color: rgba(161, 204, 232, .96); }
+
+.freyConversationMetaLabel,
+.freyConversationMetricLabel,
+.freyConversationOperatorLabel,
+.freyConversationMetaHint,
+.freyCompareLabel,
+.freyDeltaRelationTag,
+.freyTimelineTitle,
+.freyTimelineDate,
+.freyResponseLabel,
+.freyInterpretationZoneLabel,
+.freyMetricsSummary,
+.freyExpandSummary,
+.freyInlineExpandSummary,
+.freyResultControlsLabel,
+.freyExportSummary,
+.freyExportEyebrow,
+.freyEscalationLabel,
+.freySnapshotChip,
+.freyExpandEmpty { color: rgba(214, 221, 240, .9); }
+
+.freyResponseState,
+.freyResponseSummaryTitle,
+.freyInterpretationTitle,
+.freyOperationalVectorTag,
+.freyConversationBand,
+.freyVoiceMinimalLabel,
+.freyGuideRouteLink,
+.freyExportCopyButton { color: rgba(232, 202, 137, .96); }
+
+.freyConversationMetaValue,
+.freyConversationMetricValue,
+.freyConversationOperatorText,
+.freyResponseState,
+.freyResponseSummaryTitle,
+.freyInterpretationTitle,
+.freyInterpretationZoneLabel,
+.freyOperationalVectorTag,
+.freyMetricsSummary,
+.freyExportCopyButton { line-height: 1.4; }
+
+.freyTimelineDate,
+.freyVoiceMinimalLabel,
+.freyConversationBand,
+.freyExportSummary,
+.freyExportCopyButton { color: rgba(255, 244, 222, .95); }
+
+.freyGuideRouteLink { color: rgba(161, 204, 232, .98); }
+.freyInterpretationTitle { color: rgba(188, 197, 220, .9); }
+.freyInterpretationZoneLabel { color: rgba(151, 160, 185, .9); }
+
       `}</style>
     </div>
   );
 }
-
 
 
 
