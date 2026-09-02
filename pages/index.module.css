@@ -306,12 +306,12 @@
 
 @media (min-width: 1600px) {
   .heroVisual {
-    transform: translateY(-72px);
+    transform: translateY(-96px);
   }
 }
 
 @media (min-width: 1800px) {
   .heroVisual {
-    transform: translateY(-108px);
+    transform: translateY(-120px);
   }
 }
