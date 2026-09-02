@@ -1401,7 +1401,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freySignalEyebrow {
-          font-size: 11px;
+          font-size: 12px;
           letter-spacing: 0.32em;
           text-transform: uppercase;
           color: rgba(255, 245, 226, 0.72);
@@ -1554,7 +1554,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyGrantDemoTitle {
-          font-size: 10px;
+          font-size: 12px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: rgba(255, 240, 220, 0.84);
@@ -1591,7 +1591,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyTemporalTitle {
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -1613,7 +1613,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           background: rgba(255, 255, 255, 0.03);
           color: rgba(245, 247, 252, 0.88);
           padding: 0 12px;
-          font-size: 11px;
+          font-size: 12px;
           letter-spacing: 0.08em;
           text-transform: uppercase;
           cursor: pointer;
@@ -1658,7 +1658,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyCompareLabel {
-          font-size: 10px;
+          font-size: 12px;
           letter-spacing: 0.12em;
           text-transform: uppercase;
           color: rgba(188, 197, 220, 0.58);
@@ -1679,7 +1679,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyDeltaTitle {
-          font-size: 10px;
+          font-size: 12px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: rgba(188, 197, 220, 0.58);
@@ -1721,7 +1721,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyDeltaRelationTag {
-          font-size: 10px;
+          font-size: 12px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: rgba(188, 197, 220, 0.58);
@@ -1749,7 +1749,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyTimelineTitle {
-          font-size: 10px;
+          font-size: 12px;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: rgba(188, 197, 220, 0.58);
@@ -1784,14 +1784,14 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
 
         .freyTimelineDate {
           display: block;
-          font-size: 11px;
+          font-size: 12px;
           color: rgba(248, 244, 236, 0.94);
           margin-bottom: 6px;
         }
 
         .freyTimelineVector {
           display: block;
-          font-size: 11px;
+          font-size: 12px;
           color: rgba(220, 224, 236, 0.78);
         }
 
@@ -1827,7 +1827,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseState {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(215, 182, 111, 0.9);
@@ -1848,7 +1848,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseLabel {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -1868,7 +1868,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseSummaryTitle {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -1900,7 +1900,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationTitle {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           text-transform: uppercase;
           letter-spacing: 0.18em;
@@ -1932,7 +1932,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationZoneLabel {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.25;
           letter-spacing: 0.16em;
           text-transform: uppercase;
@@ -1972,7 +1972,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyOperationalVectorTag {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(239, 222, 185, 0.68);
@@ -1998,7 +1998,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           padding: 14px 16px;
           list-style: none;
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2076,7 +2076,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           list-style: none;
           padding: 14px 16px;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -2109,7 +2109,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           list-style: none;
           cursor: pointer;
           padding: 12px 14px;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -2157,7 +2157,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           border: 1px solid rgba(255, 244, 222, 0.16);
           background: transparent;
           color: rgba(255, 244, 222, 0.9);
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -2191,7 +2191,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           filter: none;
           opacity: 1;
           pointer-events: auto;
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -2294,7 +2294,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyVoiceMinimalLabel {
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.14em;
           text-transform: uppercase;
@@ -2332,7 +2332,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseState {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(215, 182, 111, 0.9);
@@ -2353,7 +2353,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseLabel {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2373,7 +2373,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseSummaryTitle {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2405,7 +2405,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationTitle {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           text-transform: uppercase;
           letter-spacing: 0.18em;
@@ -2437,7 +2437,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationZoneLabel {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.25;
           letter-spacing: 0.16em;
           text-transform: uppercase;
@@ -2477,7 +2477,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyOperationalVectorTag {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(239, 222, 185, 0.68);
@@ -2503,7 +2503,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           padding: 14px 16px;
           list-style: none;
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2581,7 +2581,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           list-style: none;
           padding: 14px 16px;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -2609,7 +2609,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyVoiceMinimalEyebrow {
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -2621,7 +2621,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           border: 1px solid rgba(255, 244, 222, 0.16);
           background: transparent;
           color: rgba(255, 244, 222, 0.9);
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -2711,7 +2711,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyVoiceMinimalLabel {
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.14em;
           text-transform: uppercase;
@@ -2749,7 +2749,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseState {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(215, 182, 111, 0.9);
@@ -2770,7 +2770,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseLabel {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2790,7 +2790,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyResponseSummaryTitle {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2822,7 +2822,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationTitle {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           text-transform: uppercase;
           letter-spacing: 0.18em;
@@ -2854,7 +2854,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyInterpretationZoneLabel {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1.25;
           letter-spacing: 0.16em;
           text-transform: uppercase;
@@ -2894,7 +2894,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyOperationalVectorTag {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(239, 222, 185, 0.68);
@@ -2920,7 +2920,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           padding: 14px 16px;
           list-style: none;
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -2998,7 +2998,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           list-style: none;
           padding: 14px 16px;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -3034,7 +3034,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyEscalationLabel {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -3066,7 +3066,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         }
 
         .freyConversationEyebrow {
-          font-size: 10px;
+          font-size: 12px;
           line-height: 1;
           text-transform: uppercase;
           letter-spacing: 0.18em;
@@ -3105,7 +3105,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
         .freyConversationMetricLabel,
         .freyConversationOperatorLabel,
         .freyResultControlsLabel {
-          font-size: 10px;
+          font-size: 12px;
           text-transform: uppercase;
           letter-spacing: 0.16em;
           color: rgba(184, 192, 214, 0.72);
@@ -3176,7 +3176,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           border: 1px solid rgba(255, 200, 120, 0.16);
           background: rgba(255, 200, 120, 0.08);
           padding: 10px 14px;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1.4;
           letter-spacing: 0.08em;
           text-transform: uppercase;
@@ -3206,7 +3206,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           cursor: pointer;
           list-style: none;
           padding: 14px 16px;
-          font-size: 11px;
+          font-size: 12px;
           line-height: 1;
           letter-spacing: 0.18em;
           text-transform: uppercase;
@@ -3255,9 +3255,9 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
           background: radial-gradient(circle at 100% 0%, rgba(154, 137, 209, 0.12), transparent 42%), linear-gradient(90deg, rgba(98, 168, 216, 0.055), rgba(154, 137, 209, 0.045));
         }
         .freyGuideRouteCopy { display: grid; gap: 6px; }
-        .freyGuideRouteEyebrow { color: rgba(176, 160, 225, 0.92); font-size: 10px; font-weight: 750; letter-spacing: 0.16em; text-transform: uppercase; }
+        .freyGuideRouteEyebrow { color: rgba(176, 160, 225, 0.92); font-size: 12px; font-weight: 750; letter-spacing: 0.16em; text-transform: uppercase; }
         .freyGuideRouteText { max-width: 560px; color: rgba(220, 226, 240, 0.82); font-size: 13px; line-height: 1.55; }
-        :global(.freyGuideRouteLink) { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid rgba(98, 168, 216, 0.34); border-radius: 999px; color: rgba(161, 204, 232, 0.96) !important; background: rgba(98, 168, 216, 0.045); text-decoration: none !important; white-space: nowrap; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+        :global(.freyGuideRouteLink) { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border: 1px solid rgba(98, 168, 216, 0.34); border-radius: 999px; color: rgba(161, 204, 232, 0.96) !important; background: rgba(98, 168, 216, 0.045); text-decoration: none !important; white-space: nowrap; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; }
         :global(.freyGuideRouteLink:hover), :global(.freyGuideRouteLink:focus-visible) { border-color: rgba(154, 137, 209, 0.58); background: rgba(154, 137, 209, 0.08); outline: none; }
         @media (max-width: 760px) { .freyGuideRoute { grid-template-columns: 1fr; gap: 12px; } :global(.freyGuideRouteLink) { width: fit-content; max-width: 100%; white-space: normal; text-align: center; } }
 
@@ -3555,7 +3555,7 @@ pointer-events: none;
         .freyResultControlsLabel {
 margin: 8px 0 0;
 color: rgba(224, 214, 191, 0.8);
-font-size: 11px;
+font-size: 12px;
         }
 
         .freyResultControlsHint {
@@ -3621,7 +3621,7 @@ box-shadow: inset 0 1px 0 rgba(255,255,255,0.025);
 
         .freyExportSummary {
 padding: 17px 18px;
-font-size: 11px;
+font-size: 12px;
 color: rgba(164, 205, 232, 0.9);
         }
 
@@ -3932,7 +3932,7 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
       }
       .freyConversationMetaBand .freyConversationMetaHint {
         margin-top: 0;
-        font-size: 11px;
+        font-size: 12px;
       }
       .freyConversationMetaBand .freyConversationMetaInline {
         display: flex;
