@@ -257,3 +257,7 @@
 .page .marketState small,
 .page .siteFooter strong,
 .page .siteFooter a { font-size: 12px !important; }
+
+.page .systemNodeTitle small,
+.page .proofStateGrid i { color: rgba(241, 239, 233, 0.78); }
+.page .siteFooter a { color: rgba(161, 204, 232, 0.96) !important; }

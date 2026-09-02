@@ -3949,6 +3949,9 @@ box-shadow: 0 12px 38px rgba(0,0,0,0.28);
         }
       }
 
+        .freyRootResult :where(.freySignalEyebrow,.freyGhostButton,.freyGrantDemoTitle,.freyTemporalTitle,.freySnapshotChip,.freyCompareLabel,.freyDeltaTitle,.freyDeltaRelationTag,.freyTimelineTitle,.freyTimelineDate,.freyTimelineVector,.freyResponseState,.freyResponseLabel,.freyResponseSummaryTitle,.freyResultControlsLabel,.freyExportSummary,.freyGuideRouteEyebrow,.freyGuideRouteLink,.freyConversationMetricLabel){font-size:12px!important;color:rgba(220,224,236,.9)}
+        .freyRootResult :where(.freyInterpretationZoneLabel,.freyConversationMetaBand .freyConversationMetaHint){color:rgba(198,206,225,.9)}
+        .freyRootResult :where(.freySignalTextarea::placeholder,.freyInput::placeholder){color:rgba(184,192,214,.9)}
       `}</style>
     </div>
   );
