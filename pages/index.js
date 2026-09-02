@@ -275,15 +275,15 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
             <FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>
             <div className={styles.systemMapTopline}><span>{copy.systemMapLabel}</span></div>
-            <div className={styles.systemRoot}><strong>BHRIGU</strong><small>{copy.systemMapRoot}</small></div>
-            <div className={styles.systemBranches}>
-              <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc">
+            <div className={styles.systemRoot} data-system-role="boundary"><strong>BHRIGU</strong><small>{copy.systemMapRoot}</small></div>
+            <div className={styles.systemBranches} data-system-relations="true">
+              <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc" data-system-role="primary">
                 <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
                 <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
               </Link>
-              <Link className={styles.systemNode} href={`/frey?lang=${locale}`} data-system-node="frey"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
-              <Link className={styles.systemNode} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
-              <Link className={styles.systemNode} href={`/orion?lang=${locale}`} data-system-node="orion"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
+              <Link className={`${styles.systemNode} ${styles.systemNodeFrey}`} href={`/frey?lang=${locale}`} data-system-node="frey" data-system-role="temporal"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
+              <Link className={`${styles.systemNode} ${styles.systemNodeCosmographer}`} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer" data-system-role="membrane"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
+              <Link className={`${styles.systemNode} ${styles.systemNodeOrion}`} href={`/orion?lang=${locale}`} data-system-node="orion" data-system-role="depth"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
             </div>
           </nav>
           <div className={styles.acceptedStateBand} data-btc-accepted-state data-home-btc-proof-object aria-label={acceptedState.aria}>
