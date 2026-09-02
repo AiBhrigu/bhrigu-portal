@@ -11,6 +11,14 @@ main[data-primary-product="market-cosmographer"] {
     radial-gradient(circle at 78% 8%, rgba(73, 110, 137, 0.12), transparent 27rem);
 }
 
+/* RU copy wraps one line deeper in the Cosmographer membrane on desktop.
+   Keep the ORION depth anchor inside its own region instead of the preceding label. */
+@media (min-width: 841px) {
+  main[data-primary-product="market-cosmographer"][lang="ru"] [data-system-node="orion"]::before {
+    top: 17px !important;
+  }
+}
+
 @media (max-width: 620px) {
   main[data-primary-product="market-cosmographer"] {
     background-image:
