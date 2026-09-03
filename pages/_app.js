@@ -250,7 +250,7 @@ export default function App({ Component, pageProps }) {
     <BhriguPhiHeader routeOverride={ephemeridesPath||path==="/astro"?`${path}?lang=${lang}`:null} />
     <Component {...pageProps} />
     <BtcFreeCorridorSurfaceAdapter />
-    {path!=="/"?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
+    {!["/","/founding/phi-btc-timing-windows","/founding/phi-btc-timing-windows/request"].includes(path)?<PrevNextBlock route={router.asPath} localeHint={raw}/>:null}
     <style jsx global>{`
       @media (min-width: 841px) {
         main[data-primary-product="market-cosmographer"] [data-btc-field-canvas][data-home-system-map] {
