@@ -13,6 +13,7 @@ import {
   getAccessReviewRuntimeConfig,
 } from "../lib/access-intake-config";
 import { isAuthorizedAccessOperator } from "../lib/access-review-auth0";
+import { normalizeAccessReviewRecord } from "../lib/access-intake-neon";
 import {
   clearAccessIdempotencyKeyFromLocalStorage,
   createAccessIdempotencyKey,
@@ -263,6 +264,32 @@ async function run() {
     ),
     false
   );
+
+  const foundingReviewRecord = normalizeAccessReviewRecord({
+    kind: "PHI_BTC_TIMING_WINDOWS_FOUNDING_REQUEST",
+    version: "v0_1",
+    request_id: "FND-20260902-TEST",
+    created_at: "2026-09-02T21:26:40.601Z",
+    status: "pending_manual_review",
+    locale: "en",
+    name_or_handle: "Founding Acceptance",
+    contact: "founding@example.com",
+    primary_interest: "BITCOIN_RESEARCH",
+    tracking_question: "Track the first real founding request end to end.",
+    current_bitcoin_context: "Controlled acceptance fixture.",
+    willingness_to_pay_after_scope_acceptance: true,
+  });
+  assert.equal(foundingReviewRecord?.schema, "founding_v0_1");
+  if (foundingReviewRecord?.schema === "founding_v0_1") {
+    assert.equal(foundingReviewRecord.data.requestId, "FND-20260902-TEST");
+    assert.equal(foundingReviewRecord.data.primaryInterest, "BITCOIN_RESEARCH");
+    assert.equal(foundingReviewRecord.data.willingToPayAfterScopeAcceptance, true);
+  }
+  assert.equal(
+    normalizeAccessReviewRecord({ requestId: "BRG-20260902-LEGACY" })?.schema,
+    "access_v1"
+  );
+  assert.equal(normalizeAccessReviewRecord({ kind: "UNKNOWN" }), null);
 
   assert.equal(
     hashCanonicalPayload({ b: 2, a: 1 }),

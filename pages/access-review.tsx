@@ -61,45 +61,102 @@ export default function AccessReviewPage({ requests }: AccessReviewProps) {
           {requests.length === 0 ? (
             <p style={styles.empty}>No durable requests.</p>
           ) : (
-            requests.map(({ record, deliveries }) => (
-              <article key={record.requestId} style={styles.card}>
-                <div style={styles.metaRow}>
-                  <strong>{record.requestId}</strong>
-                  <span>{record.createdAt}</span>
-                </div>
-                <h2 style={styles.question}>{record.request.mainQuestion}</h2>
-                <p style={styles.copy}>{record.request.shortDescription}</p>
-                <dl style={styles.grid}>
-                  <div>
-                    <dt style={styles.label}>Name</dt>
-                    <dd style={styles.value}>{record.request.name}</dd>
+            requests.map(({ record, deliveries }) => {
+              if (record.schema === "founding_v0_1") {
+                const founding = record.data;
+                return (
+                  <article key={founding.requestId} style={styles.card}>
+                    <div style={styles.metaRow}>
+                      <strong>{founding.requestId}</strong>
+                      <span>{founding.createdAt}</span>
+                    </div>
+                    <h2 style={styles.question}>{founding.trackingQuestion}</h2>
+                    <p style={styles.copy}>
+                      {founding.currentBitcoinContext ??
+                        "No current Bitcoin context supplied."}
+                    </p>
+                    <dl style={styles.grid}>
+                      <div>
+                        <dt style={styles.label}>Name / handle</dt>
+                        <dd style={styles.value}>{founding.nameOrHandle}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Contact</dt>
+                        <dd style={styles.value}>{founding.contact}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Primary interest</dt>
+                        <dd style={styles.value}>{founding.primaryInterest}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Status</dt>
+                        <dd style={styles.value}>{founding.status}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Locale</dt>
+                        <dd style={styles.value}>{founding.locale}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Open to paying after scope</dt>
+                        <dd style={styles.value}>
+                          {founding.willingToPayAfterScopeAcceptance ? "YES" : "NO / NOT STATED"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <DeliveryBadges deliveries={deliveries} />
+                  </article>
+                );
+              }
+
+              const access = record.data;
+              return (
+                <article key={access.requestId} style={styles.card}>
+                  <div style={styles.metaRow}>
+                    <strong>{access.requestId}</strong>
+                    <span>{access.createdAt}</span>
                   </div>
-                  <div>
-                    <dt style={styles.label}>Email</dt>
-                    <dd style={styles.value}>{record.request.email}</dd>
-                  </div>
-                  <div>
-                    <dt style={styles.label}>Subject</dt>
-                    <dd style={styles.value}>{record.request.subjectType}</dd>
-                  </div>
-                  <div>
-                    <dt style={styles.label}>Likely level</dt>
-                    <dd style={styles.value}>{record.derived.likelyLevel}</dd>
-                  </div>
-                </dl>
-                <div style={styles.deliveryRow}>
-                  {deliveries.map((delivery) => (
-                    <span key={delivery.kind} style={styles.badge}>
-                      {delivery.kind}: {delivery.state} ({delivery.attempts})
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))
+                  <h2 style={styles.question}>{access.request.mainQuestion}</h2>
+                  <p style={styles.copy}>{access.request.shortDescription}</p>
+                  <dl style={styles.grid}>
+                    <div>
+                      <dt style={styles.label}>Name</dt>
+                      <dd style={styles.value}>{access.request.name}</dd>
+                    </div>
+                    <div>
+                      <dt style={styles.label}>Email</dt>
+                      <dd style={styles.value}>{access.request.email}</dd>
+                    </div>
+                    <div>
+                      <dt style={styles.label}>Subject</dt>
+                      <dd style={styles.value}>{access.request.subjectType}</dd>
+                    </div>
+                    <div>
+                      <dt style={styles.label}>Likely level</dt>
+                      <dd style={styles.value}>{access.derived.likelyLevel}</dd>
+                    </div>
+                  </dl>
+                  <DeliveryBadges deliveries={deliveries} />
+                </article>
+              );
+            })
           )}
         </div>
       </main>
     </>
+  );
+}
+
+function DeliveryBadges({
+  deliveries,
+}: Pick<AccessReviewRequest, "deliveries">) {
+  return (
+    <div style={styles.deliveryRow}>
+      {deliveries.map((delivery) => (
+        <span key={delivery.kind} style={styles.badge}>
+          {delivery.kind}: {delivery.state} ({delivery.attempts})
+        </span>
+      ))}
+    </div>
   );
 }
 

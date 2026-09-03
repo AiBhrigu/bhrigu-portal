@@ -18,6 +18,18 @@ jobs:
     timeout-minutes: 35
     env:
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      VERCEL_ENV: preview
+      ACCESS_PRIVATE_INTAKE_MODE: neon_auth0_resend_v1
+      ACCESS_RESEND_DOMAIN_VERIFIED: 'true'
+      DATABASE_URL: postgresql://bhrigu_ci:bhrigu_ci@127.0.0.1:1/bhrigu_ci
+      RESEND_API_KEY: re_ci_invalid_post_guard_only
+      ACCESS_PRIVATE_REVIEW_MODE: auth0_neon_v1
+      AUTH0_DOMAIN: ci.invalid
+      AUTH0_CLIENT_ID: ci
+      AUTH0_CLIENT_SECRET: ci
+      AUTH0_SECRET: ci
+      APP_BASE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
         with:
@@ -223,7 +235,7 @@ jobs:
           persistence = source.index('const sql = neon(runtime.databaseUrl)')
           assert guard < invalid_return < persistence, 'INVALID_POST_PRE_PERSISTENCE_GUARD=FAIL'
 
-          preview_base = 'https://bhrigu-portal-git-preview-phi-btc-tim-7f675e-aibhrigus-projects.vercel.app'
+          preview_base = 'http://127.0.0.1:3000'
           cookie_jar = http.cookiejar.CookieJar()
           opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
           common_headers = {
