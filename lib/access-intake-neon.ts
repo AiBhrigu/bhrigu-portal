@@ -27,6 +27,9 @@ export interface FoundingAccessReviewRecord {
   trackingQuestion: string;
   currentBitcoinContext: string | null;
   willingToPayAfterScopeAcceptance: boolean;
+  distributionSource: string | null;
+  distributionCampaign: string | null;
+  distributionContent: string | null;
 }
 
 export type AccessReviewRecord =
@@ -245,6 +248,10 @@ export function normalizeAccessReviewRecord(
   const record = parsed as Record<string, unknown>;
 
   if (record.kind === FOUNDING_REQUEST_KIND) {
+    const distribution =
+      record.distribution && typeof record.distribution === "object"
+        ? (record.distribution as Record<string, unknown>)
+        : null;
     if (
       typeof record.request_id !== "string" ||
       typeof record.created_at !== "string" ||
@@ -275,6 +282,18 @@ export function normalizeAccessReviewRecord(
             : null,
         willingToPayAfterScopeAcceptance:
           record.willingness_to_pay_after_scope_acceptance === true,
+        distributionSource:
+          distribution && typeof distribution.source === "string"
+            ? distribution.source
+            : null,
+        distributionCampaign:
+          distribution && typeof distribution.campaign === "string"
+            ? distribution.campaign
+            : null,
+        distributionContent:
+          distribution && typeof distribution.content === "string"
+            ? distribution.content
+            : null,
       },
     };
   }

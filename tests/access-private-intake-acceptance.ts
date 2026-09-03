@@ -278,12 +278,20 @@ async function run() {
     tracking_question: "Track the first real founding request end to end.",
     current_bitcoin_context: "Controlled acceptance fixture.",
     willingness_to_pay_after_scope_acceptance: true,
+    distribution: {
+      source: "binance_square",
+      campaign: "founding_01",
+      content: "what_changed_btc_01",
+    },
   });
   assert.equal(foundingReviewRecord?.schema, "founding_v0_1");
   if (foundingReviewRecord?.schema === "founding_v0_1") {
     assert.equal(foundingReviewRecord.data.requestId, "FND-20260902-TEST");
     assert.equal(foundingReviewRecord.data.primaryInterest, "BITCOIN_RESEARCH");
     assert.equal(foundingReviewRecord.data.willingToPayAfterScopeAcceptance, true);
+    assert.equal(foundingReviewRecord.data.distributionSource, "binance_square");
+    assert.equal(foundingReviewRecord.data.distributionCampaign, "founding_01");
+    assert.equal(foundingReviewRecord.data.distributionContent, "what_changed_btc_01");
   }
   assert.equal(
     normalizeAccessReviewRecord({ requestId: "BRG-20260902-LEGACY" })?.schema,
@@ -463,6 +471,29 @@ async function run() {
   });
   assert.deepEqual(reviewResult, { notFound: true });
 
+  const offerSource = await readFile(
+    path.join(process.cwd(), "pages/founding/phi-btc-timing-windows.tsx"),
+    "utf8"
+  );
+  const requestSource = await readFile(
+    path.join(process.cwd(), "pages/founding/phi-btc-timing-windows/request.tsx"),
+    "utf8"
+  );
+  const foundingApiSource = await readFile(
+    path.join(process.cwd(), "pages/api/founding/phi-btc-timing-windows/request.ts"),
+    "utf8"
+  );
+  const accessReviewSource = await readFile(
+    path.join(process.cwd(), "pages/access-review.tsx"),
+    "utf8"
+  );
+  assert.match(offerSource, /name="source" value=\{attribution\.source\}/);
+  assert.match(offerSource, /query\.utm_source/);
+  assert.match(requestSource, /distributionSource: attribution\.source/);
+  assert.match(foundingApiSource, /distribution: \{/);
+  assert.match(foundingApiSource, /Distribution source:/);
+  assert.match(accessReviewSource, /Distribution source/);
+
   const migration = await readFile(
     path.join(process.cwd(), "migrations/20260809_access_private_intake_v1.sql"),
     "utf8"
@@ -472,7 +503,7 @@ async function run() {
 
   console.log("ACCESS_PRIVATE_INTAKE_LOCAL_ACCEPTANCE=PASS");
   console.log(
-    "assertions=coupled_activation,verified_email,storage_first,reload_idempotency,busy_delivery,replay,retry,closed_routes,migration"
+    "assertions=coupled_activation,verified_email,storage_first,reload_idempotency,busy_delivery,replay,retry,closed_routes,founder_distribution_attribution,migration"
   );
 }
 

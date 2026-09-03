@@ -6,6 +6,7 @@ import { Resend } from "resend";
 import { getAccessIntakeRuntimeConfig } from "../../../../lib/access-intake-config";
 
 type Locale = "en" | "ru";
+type DistributionSource = "binance_square" | "x" | "bitcointalk" | "direct" | "other";
 type FoundingPayload = {
   locale: Locale;
   nameOrHandle: string;
@@ -13,6 +14,9 @@ type FoundingPayload = {
   trackingQuestion: string;
   currentBitcoinContext: string | null;
   willingToPayAfterScopeAcceptance: boolean;
+  distributionSource?: DistributionSource;
+  distributionCampaign?: string;
+  distributionContent?: string;
 };
 
 const KIND = "PHI_BTC_TIMING_WINDOWS_FOUNDING_REQUEST";
@@ -65,6 +69,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     current_bitcoin_context: payload.currentBitcoinContext,
     willingness_to_pay_after_scope_acceptance:
       payload.willingToPayAfterScopeAcceptance,
+    distribution: {
+      source: payload.distributionSource ?? "direct",
+      campaign: payload.distributionCampaign ?? null,
+      content: payload.distributionContent ?? null,
+    },
     boundaries: {
       request_is_payment: false,
       guaranteed_access: false,
@@ -197,6 +206,9 @@ function validatePayload(input: unknown): FoundingPayload | null {
   const contact = text(value.contact, 240);
   const trackingQuestion = text(value.trackingQuestion, 1200);
   const context = text(value.currentBitcoinContext, 1200);
+  const distributionSource = normalizeDistributionSource(value.distributionSource);
+  const distributionCampaign = normalizeDistributionId(value.distributionCampaign);
+  const distributionContent = normalizeDistributionId(value.distributionContent);
   if (
     nameOrHandle.length < 2 ||
     contact.length < 3 ||
@@ -212,6 +224,9 @@ function validatePayload(input: unknown): FoundingPayload | null {
     currentBitcoinContext: context || null,
     willingToPayAfterScopeAcceptance:
       value.willingToPayAfterScopeAcceptance === true,
+    ...(distributionSource ? { distributionSource } : {}),
+    ...(distributionCampaign ? { distributionCampaign } : {}),
+    ...(distributionContent ? { distributionContent } : {}),
   };
 }
 
@@ -219,6 +234,22 @@ function text(value: unknown, max: number) {
   return typeof value === "string"
     ? value.trim().replace(/\s+/g, " ").slice(0, max)
     : "";
+}
+
+function normalizeDistributionSource(value: unknown): DistributionSource | undefined {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (["binance_square", "binance-square", "binance"].includes(normalized)) return "binance_square";
+  if (["x", "twitter"].includes(normalized)) return "x";
+  if (normalized === "bitcointalk") return "bitcointalk";
+  if (normalized === "direct") return "direct";
+  return "other";
+}
+
+function normalizeDistributionId(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim();
+  return /^[A-Za-z0-9._:-]{1,80}$/.test(normalized) ? normalized : undefined;
 }
 
 function normalizeIdempotencyKey(value: string | string[] | undefined) {
@@ -245,6 +276,9 @@ function buildOperatorText(
     `Willing to pay after scope acceptance: ${
       payload.willingToPayAfterScopeAcceptance ? "YES" : "NO / NOT STATED"
     }`,
+    `Distribution source: ${payload.distributionSource ?? "direct"}`,
+    `Distribution campaign: ${payload.distributionCampaign ?? "—"}`,
+    `Distribution content: ${payload.distributionContent ?? "—"}`,
     "Boundary: NON-PAYMENT · NO GUARANTEED ACCESS · NO TRADING SIGNAL · NO AUTOMATED TRADING · MANUAL REVIEW",
   ].join("\n");
 }

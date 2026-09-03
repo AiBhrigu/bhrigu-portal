@@ -4,9 +4,12 @@ import { loadBtcHomeAcceptedState, type BtcHomeAcceptedState } from "../../lib/b
 import { loadPublicEphemeridesToday } from "../../lib/public-ephemerides-live";
 
 type Locale = "en" | "ru";
+type DistributionSource = "binance_square" | "x" | "bitcointalk" | "direct" | "other";
+type DistributionAttribution = { source: DistributionSource; campaign: string | null; content: string | null };
 type CheckpointRow = { id: string; day: number };
 type Props = {
   locale: Locale;
+  attribution: DistributionAttribution;
   currentState: BtcHomeAcceptedState;
   generatedAtUtc: string;
   checkpoints: CheckpointRow[];
@@ -19,6 +22,7 @@ const IDS = ["BASELINE", "DAY_7", "DAY_14", "DAY_21", "DAY_28", "DAY_30_CLOSEOUT
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => {
   const locale: Locale = query.lang === "ru" ? "ru" : "en";
+  const attribution = readDistributionAttribution(query);
   const currentState = await loadBtcHomeAcceptedState();
   const now = new Date();
   const ephemerides = loadPublicEphemeridesToday(locale, now) as any;
@@ -27,6 +31,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
   return {
     props: {
       locale,
+      attribution,
       currentState,
       generatedAtUtc: now.toISOString(),
       checkpoints,
@@ -38,6 +43,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) =
 
 export default function PhiBtcTimingWindowsFounding({
   locale,
+  attribution,
   currentState,
   generatedAtUtc,
   checkpoints,
@@ -154,6 +160,7 @@ export default function PhiBtcTimingWindowsFounding({
   };
 
   const currentTime = currentState.snapshot_time_utc ?? generatedAtUtc;
+  const attributionSuffix = buildAttributionSuffix(attribution);
   const astroStatus = astroAvailable ? t.astroAvailable : t.astroUnavailable;
   const astroTime = astroObservationTime ? astroObservationTime.replace("T", " ").slice(0, 16) + " UTC" : null;
 
@@ -168,7 +175,7 @@ export default function PhiBtcTimingWindowsFounding({
       <nav className="topbar" aria-label="Founding controls">
         <span className="brand">BHRIGU</span>
         <span className="preview">{t.preview}</span>
-        <span className="lang"><a href="?lang=en">EN</a><span>/</span><a href="?lang=ru">RU</a></span>
+        <span className="lang"><a href={`?lang=en${attributionSuffix}`}>EN</a><span>/</span><a href={`?lang=ru${attributionSuffix}`}>RU</a></span>
       </nav>
 
       <header className="hero">
@@ -339,6 +346,9 @@ export default function PhiBtcTimingWindowsFounding({
         <p>{t.requestText}</p>
         <form action="/founding/phi-btc-timing-windows/request" method="get">
           <input type="hidden" name="lang" value={locale} />
+          <input type="hidden" name="source" value={attribution.source} />
+          {attribution.campaign ? <input type="hidden" name="campaign" value={attribution.campaign} /> : null}
+          {attribution.content ? <input type="hidden" name="content" value={attribution.content} /> : null}
           <button type="submit" aria-label={t.request}>{t.request}</button>
         </form>
         <small>BASELINE → BTC-DERIVED WINDOWS → APPEND-ONLY REASSESSMENT → DAY 30 CLOSEOUT</small>
@@ -376,4 +386,44 @@ export default function PhiBtcTimingWindowsFounding({
       @media(max-width:440px){.hero h1{font-size:39px}.cosmographHead h2{font-size:34px}.categoryReveal h2{font-size:36px}.windowField>.humanLabel{font-size:20px}}
     `}</style>
   </>;
+}
+
+
+function readDistributionAttribution(query: Record<string, unknown>): DistributionAttribution {
+  const rawSource = queryScalar(query.source) ?? queryScalar(query.utm_source);
+  const rawCampaign = queryScalar(query.campaign) ?? queryScalar(query.utm_campaign);
+  const rawContent = queryScalar(query.content) ?? queryScalar(query.utm_content);
+  return {
+    source: normalizeDistributionSource(rawSource),
+    campaign: normalizeDistributionId(rawCampaign),
+    content: normalizeDistributionId(rawContent),
+  };
+}
+
+function queryScalar(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return null;
+}
+
+function normalizeDistributionSource(value: string | null): DistributionSource {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (!normalized) return "direct";
+  if (["binance_square", "binance-square", "binance"].includes(normalized)) return "binance_square";
+  if (["x", "twitter"].includes(normalized)) return "x";
+  if (normalized === "bitcointalk") return "bitcointalk";
+  if (normalized === "direct") return "direct";
+  return "other";
+}
+
+function normalizeDistributionId(value: string | null): string | null {
+  const normalized = (value ?? "").trim();
+  return /^[A-Za-z0-9._:-]{1,80}$/.test(normalized) ? normalized : null;
+}
+
+function buildAttributionSuffix(attribution: DistributionAttribution): string {
+  const params = new URLSearchParams({ source: attribution.source });
+  if (attribution.campaign) params.set("campaign", attribution.campaign);
+  if (attribution.content) params.set("content", attribution.content);
+  return `&${params.toString()}`;
 }
