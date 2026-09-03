@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 35
     env:
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -223,7 +224,7 @@ jobs:
           persistence = source.index('const sql = neon(runtime.databaseUrl)')
           assert guard < invalid_return < persistence, 'INVALID_POST_PRE_PERSISTENCE_GUARD=FAIL'
 
-          preview_base = 'https://bhrigu-portal-git-preview-phi-btc-tim-7f675e-aibhrigus-projects.vercel.app'
+          preview_base = 'http://127.0.0.1:3000'
           cookie_jar = http.cookiejar.CookieJar()
           opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookie_jar))
           common_headers = {
