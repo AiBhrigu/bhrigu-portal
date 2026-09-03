@@ -3,14 +3,20 @@ import { useState, type FormEvent } from "react";
 import type { GetServerSideProps } from "next";
 
 type Locale = "en" | "ru";
-type Props = { locale: Locale };
+type DistributionSource = "binance_square" | "x" | "bitcointalk" | "direct" | "other";
+type DistributionAttribution = { source: DistributionSource; campaign: string | null; content: string | null };
+type Props = { locale: Locale; attribution: DistributionAttribution };
 
 export const getServerSideProps: GetServerSideProps<Props> = async ({ query }) => ({
-  props: { locale: query.lang === "ru" ? "ru" : "en" },
+  props: {
+    locale: query.lang === "ru" ? "ru" : "en",
+    attribution: readDistributionAttribution(query),
+  },
 });
 
-export default function PhiBtcTimingWindowsFoundingRequest({ locale }: Props) {
+export default function PhiBtcTimingWindowsFoundingRequest({ locale, attribution }: Props) {
   const ru = locale === "ru";
+  const attributionSuffix = buildAttributionSuffix(attribution);
   const [state, setState] = useState<"idle" | "submitting" | "success" | "error">("idle");
   const [requestId, setRequestId] = useState("");
   const t = ru ? {
@@ -76,6 +82,9 @@ export default function PhiBtcTimingWindowsFoundingRequest({ locale }: Props) {
           currentBitcoinContext: String(data.get("currentBitcoinContext") ?? ""),
           willingToPayAfterScopeAcceptance:
             data.get("willingToPayAfterScopeAcceptance") === "yes",
+          distributionSource: attribution.source,
+          distributionCampaign: attribution.campaign,
+          distributionContent: attribution.content,
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -96,7 +105,7 @@ export default function PhiBtcTimingWindowsFoundingRequest({ locale }: Props) {
       <meta name="robots" content="noindex,nofollow" />
     </Head>
     <main>
-      <a className="back" href={`/founding/phi-btc-timing-windows?lang=${locale}`}>{t.back}</a>
+      <a className="back" href={`/founding/phi-btc-timing-windows?lang=${locale}${attributionSuffix}`}>{t.back}</a>
       <header>
         <p className="eyebrow">BHRIGU · FOUNDING REQUEST · NON-PAYMENT</p>
         <h1>{t.title}</h1>
@@ -135,4 +144,44 @@ export default function PhiBtcTimingWindowsFoundingRequest({ locale }: Props) {
       @media(max-width:680px){main{padding:36px 15px 56px}.back{margin-bottom:40px}.pair{grid-template-columns:1fr}.pair label+label{margin-top:21px}form{padding:24px 20px}h1{font-size:43px}.lead{font-size:18px}}
     `}</style>
   </>;
+}
+
+
+function readDistributionAttribution(query: Record<string, unknown>): DistributionAttribution {
+  const rawSource = queryScalar(query.source) ?? queryScalar(query.utm_source);
+  const rawCampaign = queryScalar(query.campaign) ?? queryScalar(query.utm_campaign);
+  const rawContent = queryScalar(query.content) ?? queryScalar(query.utm_content);
+  return {
+    source: normalizeDistributionSource(rawSource),
+    campaign: normalizeDistributionId(rawCampaign),
+    content: normalizeDistributionId(rawContent),
+  };
+}
+
+function queryScalar(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value) && typeof value[0] === "string") return value[0];
+  return null;
+}
+
+function normalizeDistributionSource(value: string | null): DistributionSource {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (!normalized) return "direct";
+  if (["binance_square", "binance-square", "binance"].includes(normalized)) return "binance_square";
+  if (["x", "twitter"].includes(normalized)) return "x";
+  if (normalized === "bitcointalk") return "bitcointalk";
+  if (normalized === "direct") return "direct";
+  return "other";
+}
+
+function normalizeDistributionId(value: string | null): string | null {
+  const normalized = (value ?? "").trim();
+  return /^[A-Za-z0-9._:-]{1,80}$/.test(normalized) ? normalized : null;
+}
+
+function buildAttributionSuffix(attribution: DistributionAttribution): string {
+  const params = new URLSearchParams({ source: attribution.source });
+  if (attribution.campaign) params.set("campaign", attribution.campaign);
+  if (attribution.content) params.set("content", attribution.content);
+  return `&${params.toString()}`;
 }

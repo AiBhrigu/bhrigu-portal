@@ -102,6 +102,18 @@ export default function AccessReviewPage({ requests }: AccessReviewProps) {
                           {founding.willingToPayAfterScopeAcceptance ? "YES" : "NO / NOT STATED"}
                         </dd>
                       </div>
+                      <div>
+                        <dt style={styles.label}>Distribution source</dt>
+                        <dd style={styles.value}>{founding.distributionSource ?? "UNKNOWN / PRE-ATTRIBUTION"}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Campaign</dt>
+                        <dd style={styles.value}>{founding.distributionCampaign ?? "—"}</dd>
+                      </div>
+                      <div>
+                        <dt style={styles.label}>Content</dt>
+                        <dd style={styles.value}>{founding.distributionContent ?? "—"}</dd>
+                      </div>
                     </dl>
                     <DeliveryBadges deliveries={deliveries} />
                   </article>

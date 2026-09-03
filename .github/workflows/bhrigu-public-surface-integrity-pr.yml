@@ -70,6 +70,20 @@ jobs:
             echo "PASS_PHI_BTC_TIMING_WINDOWS_FOUNDING_PUBLIC_SURFACE_EXACT_5_FILE_SCOPE"
             exit 0
           fi
+          founder_attribution_expected=(
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            "lib/access-intake-neon.ts"
+            "pages/access-review.tsx"
+            "pages/api/founding/phi-btc-timing-windows/request.ts"
+            "pages/founding/phi-btc-timing-windows.tsx"
+            "pages/founding/phi-btc-timing-windows/request.tsx"
+            "tests/access-private-intake-acceptance.ts"
+          )
+          mapfile -t founder_attribution_expected_sorted < <(printf '%s\n' "${founder_attribution_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${founder_attribution_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_PHI_BTC_TIMING_WINDOWS_FOUNDING_ATTRIBUTION_EXACT_7_FILE_SCOPE"
+            exit 0
+          fi
           protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')
           test -z "$protected" || { echo "$protected"; exit 1; }
       - name: Static truth gates
