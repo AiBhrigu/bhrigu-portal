@@ -19,6 +19,17 @@ jobs:
     env:
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       VERCEL_GIT_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+      VERCEL_ENV: preview
+      ACCESS_PRIVATE_INTAKE_MODE: neon_auth0_resend_v1
+      ACCESS_RESEND_DOMAIN_VERIFIED: 'true'
+      DATABASE_URL: postgresql://bhrigu_ci:bhrigu_ci@127.0.0.1:1/bhrigu_ci
+      RESEND_API_KEY: re_ci_invalid_post_guard_only
+      ACCESS_PRIVATE_REVIEW_MODE: auth0_neon_v1
+      AUTH0_DOMAIN: ci.invalid
+      AUTH0_CLIENT_ID: ci
+      AUTH0_CLIENT_SECRET: ci
+      AUTH0_SECRET: ci
+      APP_BASE_URL: http://127.0.0.1:3000
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,7 +153,7 @@ jobs:
           home=urlopen('http://127.0.0.1:3000/?lang=ru',timeout=30).read().decode()
           assert '<title' in home and '>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
           assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
-          assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
+          assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru,' in home,'home-links-ru'
 
           graphs={}
           for route in ['start','map','frey','reading','guide/frey']:
