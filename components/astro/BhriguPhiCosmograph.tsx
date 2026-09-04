@@ -358,14 +358,14 @@ export default function BhriguPhiCosmograph({
         return <line key={`${aspect.a}-${aspect.b}-${i}`} data-aspect-phase={aspect.phase} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={applying ? palette.blue : palette.violet} strokeWidth={applying ? 1.5 : 1.1} opacity={applying ? 0.72 : 0.50} strokeDasharray={applying ? undefined : `${size * 0.0055} ${size * 0.004}`} />;
       })}
 
-      <g data-observer-origin="EARTH_PHI" data-axial-tilt-metaphor-deg={EARTH_AXIAL_TILT_DEG} transform={`rotate(${-EARTH_AXIAL_TILT_DEG} ${cx} ${cy})`}>
+      <g data-observer-origin="EARTH_PHI" data-axial-tilt-metaphor-deg={EARTH_AXIAL_TILT_DEG} data-magnetic-field-model="symbolic" transform={`rotate(${-EARTH_AXIAL_TILT_DEG} ${cx} ${cy})`}>
         <line x1={cx} y1={cy - size * 0.054} x2={cx} y2={cy + size * 0.054} stroke={palette.blue} strokeWidth={0.9} opacity={0.18} />
         {[0.036, 0.043].flatMap((height, index) => {
           const width = index === 0 ? 0.034 : 0.055;
           const opacity = index === 0 ? 0.17 : 0.23;
           return ([-1, 1] as const).map((side) => <path key={`field-${index}-${side}`} d={`M ${cx} ${cy - size * height} C ${cx + side * size * width} ${cy - size * 0.016}, ${cx + side * size * width} ${cy + size * 0.016}, ${cx} ${cy + size * height}`} fill="none" stroke={palette.blue} strokeWidth={index === 0 ? 0.8 : 1} opacity={opacity} />);
         })}
-        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={size * 0.052} fontFamily='Georgia,"Times New Roman",serif' opacity={0.94}>Φ</text>
+        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={size * 0.028} fontFamily='Georgia,"Times New Roman",serif' opacity={0.94}>Φ</text>
       </g>
     </svg>
   );

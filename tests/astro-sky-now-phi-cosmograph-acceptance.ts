@@ -45,6 +45,8 @@ assert.match(wheel,/height="auto"/);
 assert.match(wheel,/preserveAspectRatio="xMidYMid meet"/);
 assert.match(wheel,/data-observer-origin="EARTH_PHI"/);
 assert.match(wheel,/EARTH_AXIAL_TILT_DEG = 23\.44/);
+assert.match(wheel,/data-magnetic-field-model="symbolic"/);
+assert.match(wheel,/fontSize=\{size \* 0\.028\}/);
 assert.ok(wheel.includes('transform={`rotate(${-EARTH_AXIAL_TILT_DEG} ${cx} ${cy})`}'));
 const tiltRad=-BHRIGU_PHI_COSMOGRAPH_LAW.axialTiltMetaphorDeg*Math.PI/180;
 const upperPoleAfterSvgRotation={
@@ -84,6 +86,8 @@ assert.equal(ru.nextPublishedTurningPoint?.date,"2026-09-11");
 assert.match(today,/The Sky Now\./);
 assert.match(today,/Небо сейчас\./);
 assert.match(today,/BHRIGU_SKY_NOW_PHI_V0_1/);
+assert.match(today,/magnitude of Earth\'s axial tilt/);
+assert.match(today,/величину осевого наклона Земли/);
 assert.match(today,/\.rail\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*min-width:0/);
 assert.match(today,/\.railBlock\{min-width:0/);
 assert.match(today,/\.microBoundary\{[^}]*overflow-wrap:anywhere/);
