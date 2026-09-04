@@ -7,7 +7,11 @@ on:
       - pages/_app.js
       - components/astro/PublicEphemeridesV1.tsx
       - components/astro/PublicEphemeridesToday.tsx
+      - components/astro/BhriguPhiCosmograph.tsx
+      - lib/public-ephemerides-live.ts
       - tests/astro-ephemerides-p1-integrity-acceptance.ts
+      - tests/public-ephemerides-v2-acceptance.ts
+      - tests/astro-sky-now-phi-cosmograph-acceptance.ts
       - .github/workflows/astro-ephemerides-p1-integrity-pr.yml
 
 permissions:
@@ -32,16 +36,27 @@ jobs:
           git fetch origin master
           python3 - <<'PY'
           import os, subprocess
-          expected={
+          legacy={
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             'pages/_app.js',
             'components/astro/PublicEphemeridesV1.tsx',
             'components/astro/PublicEphemeridesToday.tsx',
             'tests/astro-ephemerides-p1-integrity-acceptance.ts',
           }
+          sky_now_phi={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            'components/astro/BhriguPhiCosmograph.tsx',
+            'components/astro/PublicEphemeridesToday.tsx',
+            'lib/public-ephemerides-live.ts',
+            'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          if actual!=expected: raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
-          print('EXACT_SCOPE_PASS',sorted(actual))
+          if actual==legacy:
+            print('EXACT_SCOPE_PASS legacy',sorted(actual))
+          elif actual==sky_now_phi:
+            print('EXACT_SCOPE_PASS sky_now_phi',sorted(actual))
+          else:
+            raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)}')
           PY
 
       - name: Install locked dependencies
@@ -49,6 +64,12 @@ jobs:
 
       - name: Static P1 contract
         run: npx tsx tests/astro-ephemerides-p1-integrity-acceptance.ts
+
+      - name: Existing public ephemerides V2 contract
+        run: npx tsx tests/public-ephemerides-v2-acceptance.ts
+
+      - name: SKY NOW Phi cosmograph contract
+        run: npx tsx tests/astro-sky-now-phi-cosmograph-acceptance.ts
 
       - name: Production build
         run: npm run build
@@ -58,7 +79,7 @@ jobs:
           npm start > /tmp/astro-p1.log 2>&1 &
           echo $! > /tmp/astro-p1.pid
           for attempt in $(seq 1 60); do
-            curl -fsS 'http://127.0.0.1:3000/astro?lang=ru' >/dev/null && exit 0
+            curl -fsS 'http://127.0.0.1:3000/ephemerides?lang=ru' >/dev/null && exit 0
             sleep 1
           done
           cat /tmp/astro-p1.log
@@ -87,13 +108,23 @@ jobs:
             assert html.count('"temporalCoverage":"2026-09-01/2026-09-30"') >= 2
             assert '"temporalCoverage":"2026-01-01/2026-12-31"' not in html
           today_ru=get('/ephemerides?lang=ru'); today_en=get('/ephemerides?lang=en')
+          assert 'Небо сейчас.' in today_ru
+          assert 'The Sky Now.' in today_en
           for html,label in ((today_ru,'Источник и проверяемость'),(today_en,'Source &amp; proof')):
             assert label in html
+            assert 'data-sky-now="BHRIGU_SKY_NOW_PHI_V0_1"' in html
+            assert 'data-phi-cosmograph="BHRIGU_PHI_COSMOGRAPH_V0_1"' in html
+            assert 'data-zero-aries="left"' in html
+            assert 'data-ninety-cancer="bottom"' in html
+            assert 'data-one-eighty-libra="right"' in html
+            assert 'data-two-seventy-capricorn="top"' in html
+            assert 'data-observer-origin="EARTH_PHI"' in html
             assert 'AiBhrigu/orion_ai' in html
             assert '0b9998c669b9b50e926b1891604b1969c642e046' in html
             assert 'CANONICAL_PUBLIC_SAFE_DAILY_EXPORT' in html
             assert '28bfad7e2d12617757e4f742e1722f2965b6a2f6369b50973e4890f1f8f6781a' in html
           print('ASTRO_EPHEMERIDES_P1_FIRST_HTTP=PASS')
+          print('SKY_NOW_PHI_FIRST_HTTP=PASS')
           PY
 
       - name: Stop server
