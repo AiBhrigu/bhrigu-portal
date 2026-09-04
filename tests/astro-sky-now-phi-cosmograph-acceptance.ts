@@ -45,6 +45,14 @@ assert.match(wheel,/height="auto"/);
 assert.match(wheel,/preserveAspectRatio="xMidYMid meet"/);
 assert.match(wheel,/data-observer-origin="EARTH_PHI"/);
 assert.match(wheel,/EARTH_AXIAL_TILT_DEG = 23\.44/);
+assert.ok(wheel.includes('transform={`rotate(${-EARTH_AXIAL_TILT_DEG} ${cx} ${cy})`}'));
+const tiltRad=-BHRIGU_PHI_COSMOGRAPH_LAW.axialTiltMetaphorDeg*Math.PI/180;
+const upperPoleAfterSvgRotation={
+  x:Math.cos(tiltRad)*0-Math.sin(tiltRad)*(-1),
+  y:Math.sin(tiltRad)*0+Math.cos(tiltRad)*(-1),
+};
+assert.ok(upperPoleAfterSvgRotation.x<0,"Phi/Earth upper pole must lean LEFT on screen");
+assert.ok(upperPoleAfterSvgRotation.y<0,"Phi/Earth upper pole must remain upward");
 assert.doesNotMatch(wheel,/\bASC\b|\bDSC\b|\bMC\b|\bIC\b/);
 
 // Planets are glyph groups, never circle elements; aspect endpoints are line geometry only.
@@ -92,6 +100,7 @@ console.log("ASTRO_SKY_NOW_PHI_COSMOGRAPH_ACCEPTANCE=PASS");
 console.log("CARDINAL_GEOMETRY=PASS");
 console.log("EQUAL_HOUSES_12X30=PASS");
 console.log("PHI_RADIAL_GEOMETRY=PASS");
+console.log("EARTH_PHI_UPPER_POLE_LEFT=PASS");
 console.log("SINGLE_LONGITUDE_TRUTH=PASS");
 console.log("NEXT_PUBLISHED_TURN_2026_09_11_URANUS=PASS");
 console.log("RESPONSIVE_SVG=PASS");
