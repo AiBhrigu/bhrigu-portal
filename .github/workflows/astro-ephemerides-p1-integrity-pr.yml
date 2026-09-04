@@ -68,7 +68,7 @@ jobs:
       - name: Existing public ephemerides V2 contract
         run: npx tsx tests/public-ephemerides-v2-acceptance.ts
 
-      - name: SKY NOW Phi cosmograph contract
+      - name: SKY TODAY Phi cosmograph contract
         run: npx tsx tests/astro-sky-now-phi-cosmograph-acceptance.ts
 
       - name: Production build
@@ -108,11 +108,11 @@ jobs:
             assert html.count('"temporalCoverage":"2026-09-01/2026-09-30"') >= 2
             assert '"temporalCoverage":"2026-01-01/2026-12-31"' not in html
           today_ru=get('/ephemerides?lang=ru'); today_en=get('/ephemerides?lang=en')
-          assert 'Небо сейчас.' in today_ru
-          assert 'The Sky Now.' in today_en
+          assert 'Небо сегодня.' in today_ru
+          assert 'The Sky Today.' in today_en
           for html,label in ((today_ru,'Источник и проверяемость'),(today_en,'Source &amp; proof')):
             assert label in html
-            assert 'data-sky-now="BHRIGU_SKY_NOW_PHI_V0_1"' in html
+            assert 'data-sky-today="BHRIGU_SKY_TODAY_PHI_V0_1"' in html
             assert 'data-phi-cosmograph="BHRIGU_PHI_COSMOGRAPH_V0_1"' in html
             assert 'data-zero-aries="left"' in html
             assert 'data-ninety-cancer="bottom"' in html

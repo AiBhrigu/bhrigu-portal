@@ -83,9 +83,9 @@ assert.equal(en.nextPublishedTurningPoint?.motion,"retrograde");
 assert.equal(en.nextPublishedTurningPoint?.source?.authority,"PUBLISHED_MONTHLY_ASTRO_EVIDENCE");
 assert.equal(ru.nextPublishedTurningPoint?.date,"2026-09-11");
 
-assert.match(today,/The Sky Now\./);
-assert.match(today,/Небо сейчас\./);
-assert.match(today,/BHRIGU_SKY_NOW_PHI_V0_1/);
+assert.match(today,/The Sky Today\./);
+assert.match(today,/Небо сегодня\./);
+assert.match(today,/BHRIGU_SKY_TODAY_PHI_V0_1/);
 assert.match(today,/magnitude of Earth\'s axial tilt/);
 assert.match(today,/величину осевого наклона Земли/);
 assert.match(today,/\.rail\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*min-width:0/);
@@ -110,3 +110,4 @@ console.log("RESPONSIVE_SVG=PASS");
 console.log("PLANET_DISKS=ZERO");
 console.log("ASPECT_ENDPOINT_DOTS=ZERO");
 console.log("PRODUCTION_MUTATION=ZERO");
+assert.doesNotMatch(today,/SKY NOW|The Sky Now|Небо сейчас|active now|активных сейчас/);
