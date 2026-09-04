@@ -47,18 +47,17 @@ assert.match(wheel,/data-observer-origin="EARTH_PHI"/);
 assert.match(wheel,/EARTH_AXIAL_TILT_DEG = 23\.44/);
 assert.doesNotMatch(wheel,/\bASC\b|\bDSC\b|\bMC\b|\bIC\b/);
 
-const planetBlock=wheel.split("Planet glyphs only.")[1]?.split("Aspects are anchored")[0]??"";
-assert.match(planetBlock,/data-planet-glyph/);
-assert.doesNotMatch(planetBlock,/<circle\b/);
-const aspectBlock=wheel.split("Aspects are anchored")[1]?.split("Φ = symbolic")[0]??"";
-assert.match(aspectBlock,/data-aspect-phase/);
-assert.doesNotMatch(aspectBlock,/<circle\b/);
+// Planets are glyph groups, never circle elements; aspect endpoints are line geometry only.
+assert.match(wheel,/data-planet-glyph=\{body\.key\}/);
+assert.doesNotMatch(wheel,/<circle[^>]*data-planet-glyph/);
+assert.match(wheel,/data-aspect-phase=\{aspect\.phase\}/);
+assert.doesNotMatch(wheel,/<circle[^>]*data-aspect-phase/);
 
-const houseBlock=wheel.split("Equal 30° cosmographic houses")[1]?.split("Zodiac:")[0]??"";
-assert.match(houseBlock,/stroke=\{palette\.ivory\}/);
-assert.doesNotMatch(houseBlock,/stroke=\{palette\.gold(?:High)?\}/);
-const degreeBlock=wheel.split("degree scale sits inside")[1]?.split("Exact longitude")[0]??"";
-assert.match(degreeBlock,/stroke=\{palette\.blue\}/);
+// Gold scarcity / semantic color use.
+assert.match(wheel,/key={`house-boundary-\$\{longitude\}`}[^>]*stroke=\{palette\.ivory\}/);
+assert.match(wheel,/key={`zodiac-boundary-\$\{longitude\}`}[^>]*stroke=\{palette\.gold\}/);
+assert.match(wheel,/key={`degree-\$\{degree\}`}[^>]*stroke=\{palette\.blue\}/);
+assert.match(wheel,/key={`locator-\$\{body\.key\}`}[^>]*stroke=\{palette\.blue\}/);
 
 const en=loadPublicEphemeridesToday("en",new Date("2026-09-04T12:01:00Z")) as any;
 const ru=loadPublicEphemeridesToday("ru",new Date("2026-09-04T12:01:00Z")) as any;
