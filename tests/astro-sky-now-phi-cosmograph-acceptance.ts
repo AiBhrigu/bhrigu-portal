@@ -92,8 +92,7 @@ assert.match(today,/\.rail\{[^}]*grid-template-columns:minmax\(0,1fr\)[^}]*min-w
 assert.match(today,/\.railBlock\{min-width:0/);
 assert.match(today,/\.microBoundary\{[^}]*overflow-wrap:anywhere/);
 assert.match(today,/@media\(max-width:760px\)[\s\S]*\.rail\{[^}]*grid-template-columns:minmax\(0,1fr\)/);
-assert.match(today,/No Bitcoin causality and no trading signal/);
-assert.match(today,/Без причинности Bitcoin и без торгового сигнала/);
+assert.doesNotMatch(today,/Bitcoin causality|trading signal|причинности Bitcoin|торгового сигнала/i);
 assert.doesNotMatch(today,/\bbuy\b|\bsell\b|bullish|bearish|price target/i);
 
 assert.doesNotMatch(loader,/loadBtcAstroField|BHRIGU_ASTRO_FIELD_URL|process\.env|fetch\(/);
