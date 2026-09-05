@@ -20,6 +20,7 @@ import { btcCleanChatRuntimeFailureCopy } from "../ui/btc/BtcCleanChatV1";
 const MIGRATIONS = [
   "migrations/20260830_btc_clean_chat_cost_guard_v1.sql",
   "migrations/20260830_btc_clean_chat_cost_guard_v2.sql",
+  "migrations/20260905_btc_clean_chat_cost_guard_public_pilot_v3.sql",
 ] as const;
 const BASE_MS = Date.parse("2026-08-30T00:00:00Z");
 const key = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -61,9 +62,9 @@ async function adjust(db: PGlite, n: number, atMs: number, targetMicros: number)
 async function run() {
   assert.equal(BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS, 120_000);
   assert.equal(BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS, 0);
-  assert.equal(BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS, 250_000);
-  assert.equal(BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS, 750_000);
-  assert.equal(BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS, 4_000_000);
+  assert.equal(BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS, 2_000_000);
+  assert.equal(BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS, 6_000_000);
+  assert.equal(BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS, 25_000_000);
   assert.equal(getBtcCleanChatCapacityMode({}), "open");
   assert.equal(getBtcCleanChatCapacityMode({ BHRIGU_BTC_CLEAN_CHAT_CAPACITY_MODE: "hold" }), "hold");
   assert.equal(getBtcCleanChatCapacityMode({ BHRIGU_BTC_CLEAN_CHAT_CAPACITY_MODE: "open" }), "open");
@@ -111,6 +112,7 @@ async function run() {
 
   const migrationV1 = await readFile(MIGRATIONS[0], "utf8");
   const migrationV2 = await readFile(MIGRATIONS[1], "utf8");
+  const migrationV3 = await readFile(MIGRATIONS[2], "utf8");
   for (const expected of [
     /btc_clean_chat_guard_reserve_v2/,
     /p_reservation_micros <> 0/,
@@ -124,10 +126,24 @@ async function run() {
     /LOCK TABLE btc_clean_chat_cost_admissions IN SHARE ROW EXCLUSIVE MODE/,
     /btc_clean_chat_guard_adjust/,
   ]) assert.match(migrationV2, expected);
+  for (const expected of [
+    /btc_clean_chat_guard_reserve_v2/,
+    /btc_clean_chat_guard_adjust/,
+    /v_cost\+p_reservation_micros > 2000000/,
+    /v_cost\+p_reservation_micros > 6000000/,
+    /v_cost\+p_reservation_micros > 25000000/,
+    /v_count >= 10/, /v_count >= 12/, /v_count >= 24/,
+    /v_count >= 18/, /v_count >= 48/, /v_count >= 96/,
+    /v_count >= 30/, /v_count >= 60/, /v_count >= 150/,
+    /v_count >= 1/, /v_count >= 3/,
+    /LOCK TABLE btc_clean_chat_cost_admissions IN SHARE ROW EXCLUSIVE MODE/,
+  ]) assert.match(migrationV3, expected);
+  for (const forbiddenOldCap of [/ > 250000(?:\D|$)/, / > 750000(?:\D|$)/, / > 4000000(?:\D|$)/]) assert.doesNotMatch(migrationV3, forbiddenOldCap);
   for (const expected of [/settled_micros <= reservation_micros/, /settlement_exceeds_reservation/]) assert.match(migrationV1, expected);
   assert.match(migrationV1, /v_count >= 6/);
   assert.doesNotMatch(migrationV2, /CREATE TABLE|btc_clean_chat_guard_upgrade|btc_clean_chat_guard_settle/);
-  assert.doesNotMatch(`${migrationV1}\n${migrationV2}`, /raw_ip|raw_user_agent/i);
+  assert.doesNotMatch(migrationV3, /CREATE TABLE|btc_clean_chat_guard_upgrade|btc_clean_chat_guard_settle/);
+  assert.doesNotMatch(`${migrationV1}\n${migrationV2}\n${migrationV3}`, /raw_ip|raw_user_agent/i);
 
   const replayDb = await setup();
   try {
@@ -172,15 +188,48 @@ async function run() {
 
   const budgetDb = await setup();
   try {
-    for (const n of [400, 401]) {
-      assert.equal((await reserve(budgetDb, n, `budget-${n}`, `budget-ip-${n}`, BASE_MS + (n - 400) * 2_000)).disposition, "admitted");
-      assert.equal((await adjust(budgetDb, n, BASE_MS + (n - 400) * 2_000 + 500, 120_000)).disposition, "admitted");
-      await settle(budgetDb, n, BASE_MS + (n - 400) * 2_000 + 1_000, 120_000);
-    }
-    assert.equal((await reserve(budgetDb, 402, "budget-402", "budget-ip-402", BASE_MS + 4_000)).disposition, "admitted");
-    assert.equal((await adjust(budgetDb, 402, BASE_MS + 4_500, 120_000)).disposition, "budget_limited");
-    await settle(budgetDb, 402, BASE_MS + 5_000, 0, "failed");
+    assert.equal((await reserve(budgetDb, 400, "budget-400", "budget-ip-400", BASE_MS)).disposition, "admitted");
+    assert.equal((await adjust(budgetDb, 400, BASE_MS + 500, 1_900_000)).disposition, "admitted");
+    await settle(budgetDb, 400, BASE_MS + 1_000, 1_900_000);
+    assert.equal((await reserve(budgetDb, 401, "budget-401", "budget-ip-401", BASE_MS + 2_000)).disposition, "admitted");
+    assert.equal((await adjust(budgetDb, 401, BASE_MS + 2_500, 200_000)).disposition, "budget_limited");
+    await settle(budgetDb, 401, BASE_MS + 3_000, 0, "failed");
   } finally { await budgetDb.close(); }
+
+  const dayBudgetDb = await setup();
+  try {
+    for (let i = 0; i < 3; i++) {
+      const n = 420 + i;
+      const at = BASE_MS + i * 2 * 60 * 60 * 1_000;
+      assert.equal((await reserve(dayBudgetDb, n, `day-${n}`, `day-ip-${n}`, at)).disposition, "admitted");
+      assert.equal((await adjust(dayBudgetDb, n, at + 500, 2_000_000)).disposition, "admitted");
+      await settle(dayBudgetDb, n, at + 1_000, 2_000_000);
+    }
+    const blockedAt = BASE_MS + 6 * 60 * 60 * 1_000;
+    assert.equal((await reserve(dayBudgetDb, 423, "day-423", "day-ip-423", blockedAt)).disposition, "admitted");
+    assert.equal((await adjust(dayBudgetDb, 423, blockedAt + 500, 100_000)).disposition, "budget_limited");
+    await settle(dayBudgetDb, 423, blockedAt + 1_000, 0, "failed");
+  } finally { await dayBudgetDb.close(); }
+
+  const monthBudgetDb = await setup();
+  try {
+    const monthBase = Date.parse("2026-09-01T00:00:00Z");
+    for (let i = 0; i < 12; i++) {
+      const n = 440 + i;
+      const at = monthBase + i * 25 * 60 * 60 * 1_000;
+      assert.equal((await reserve(monthBudgetDb, n, `month-${n}`, `month-ip-${n}`, at)).disposition, "admitted");
+      assert.equal((await adjust(monthBudgetDb, n, at + 500, 2_000_000)).disposition, "admitted");
+      await settle(monthBudgetDb, n, at + 1_000, 2_000_000);
+    }
+    const capAt = monthBase + 12 * 25 * 60 * 60 * 1_000;
+    assert.equal((await reserve(monthBudgetDb, 452, "month-452", "month-ip-452", capAt)).disposition, "admitted");
+    assert.equal((await adjust(monthBudgetDb, 452, capAt + 500, 1_000_000)).disposition, "admitted");
+    await settle(monthBudgetDb, 452, capAt + 1_000, 1_000_000);
+    const blockedAt = monthBase + 13 * 25 * 60 * 60 * 1_000;
+    assert.equal((await reserve(monthBudgetDb, 453, "month-453", "month-ip-453", blockedAt)).disposition, "admitted");
+    assert.equal((await adjust(monthBudgetDb, 453, blockedAt + 500, 100_000)).disposition, "budget_limited");
+    await settle(monthBudgetDb, 453, blockedAt + 1_000, 0, "failed");
+  } finally { await monthBudgetDb.close(); }
 
   const adjustDb = await setup();
   try {
@@ -188,7 +237,7 @@ async function run() {
     assert.equal((await adjust(adjustDb, 500, BASE_MS + 500, 145_000)).disposition, "admitted");
     assert.equal((await adjust(adjustDb, 500, BASE_MS + 700, 40_000)).disposition, "admitted");
     assert.equal((await adjust(adjustDb, 500, BASE_MS + 900, 200_000)).disposition, "admitted");
-    assert.equal((await adjust(adjustDb, 500, BASE_MS + 1_100, 260_000)).disposition, "budget_limited");
+    assert.equal((await adjust(adjustDb, 500, BASE_MS + 1_100, 260_000)).disposition, "admitted");
     await settle(adjustDb, 500, BASE_MS + 1_300, 40_000);
   } finally { await adjustDb.close(); }
 
@@ -271,6 +320,7 @@ async function run() {
   console.log("SETTLEMENT_LE_RESERVATION=PASS");
   console.log("MERGE_SAFE_ACTIVATION_ORDER=PASS");
   console.log("GLOBAL_HOUR_DAY_MONTH_BUDGET_CAPS=PASS");
+  console.log("PUBLIC_PILOT_CAPS_2_6_25_USD=PASS");
   console.log("REAL_OPENAI_CALLS=ZERO");
 }
 
