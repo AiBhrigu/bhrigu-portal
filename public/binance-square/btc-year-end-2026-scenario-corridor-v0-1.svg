@@ -90,7 +90,7 @@
       <text x="34" y="65" fill="#8a8373" font-size="10" letter-spacing="1.8">NOT CONFIRMED</text>
       <text x="34" y="100" fill="#26343c" font-size="15">Condition · acceptance above observed upper structure</text>
       <text x="34" y="132" fill="#4f5d63" font-size="13"><tspan font-weight="600">CONFIRM</tspan><tspan> · break → hold → higher-low structure preserved</tspan></text>
-      <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · failed breakout + recent lower structure lost</tspan></text>
+      <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · failed breakout → return inside prior field</tspan></text>
     </g>
 
     <g transform="translate(575 486)">
