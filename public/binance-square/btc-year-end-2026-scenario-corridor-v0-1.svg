@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
   <title id="title">BTC Year-End 2026 Scenario Corridor</title>
-  <desc id="desc">A BHRIGU research visual showing one current Bitcoin field branching into three conditional year-end scenarios: bull continuation, range compression, and loss of structure. Each branch is defined by confirmation and invalidation, with no single price target and no buy or sell signal.</desc>
+  <desc id="desc">A BHRIGU research visual showing one observed Bitcoin field branching into three conditional year-end scenarios: bull continuation, range compression, and loss of structure. Each branch is defined by confirmation and invalidation, with no single price target and no buy or sell signal.</desc>
 
   <defs>
     <radialGradient id="fieldGlow" cx="50%" cy="50%" r="50%">
@@ -35,7 +35,7 @@
   <g font-family="Inter,Arial,sans-serif">
     <text x="72" y="84" fill="#26343c" font-size="17" letter-spacing="4.5">BHRIGU · MARKET COSMOGRAPHER</text>
     <text x="72" y="139" fill="#18262f" font-size="44" font-weight="600" letter-spacing="0.6">BTC YEAR-END 2026 · SCENARIO CORRIDOR</text>
-    <text x="72" y="177" fill="#5f6d73" font-size="20" letter-spacing="0.8">One current field · three conditional research paths</text>
+    <text x="72" y="177" fill="#5f6d73" font-size="20" letter-spacing="0.8">One observed field · three conditional research paths</text>
 
     <g transform="translate(790 188)">
       <text x="0" y="0" fill="#7668a9" font-size="12" letter-spacing="2.8">YEAR-END WINDOW</text>
@@ -51,10 +51,10 @@
     <g transform="translate(296 604)">
       <circle r="92" fill="#fffdf8" stroke="#4f86a8" stroke-opacity="0.34" stroke-width="1.4"/>
       <circle r="70" fill="none" stroke="#b6944c" stroke-opacity="0.26"/>
-      <text x="0" y="-55" text-anchor="middle" fill="#4f86a8" font-size="11" letter-spacing="2.6">CURRENT BTC FIELD</text>
+      <text x="0" y="-55" text-anchor="middle" fill="#4f86a8" font-size="11" letter-spacing="2.6">OBSERVED BTC FIELD</text>
       <text x="0" y="4" text-anchor="middle" fill="#b6944c" font-family="Georgia,Times New Roman,serif" font-size="56">₿</text>
-      <text x="0" y="34" text-anchor="middle" fill="#26343c" font-size="23" font-weight="600">~79.6K</text>
-      <text x="0" y="58" text-anchor="middle" fill="#68757a" font-size="11" letter-spacing="1.1">05 SEP 2026</text>
+      <text x="0" y="34" text-anchor="middle" fill="#26343c" font-size="23" font-weight="600">~80.1K</text>
+      <text x="0" y="58" text-anchor="middle" fill="#68757a" font-size="10" letter-spacing="0.7">05 SEP 2026 · 17:10 UTC</text>
     </g>
 
     <g transform="translate(122 464)">
@@ -70,7 +70,7 @@
     </g>
 
     <g transform="translate(142 808)">
-      <text x="154" y="0" text-anchor="middle" fill="#53636b" font-size="11" letter-spacing="1.2">30D +23.0% · 7D +2.6% · 24H −1.8%</text>
+      <text x="154" y="0" text-anchor="middle" fill="#53636b" font-size="11" letter-spacing="1.2">30D +23.8% · 7D +2.7% · 24H +0.6%</text>
       <text x="154" y="22" text-anchor="middle" fill="#7a8589" font-size="10" letter-spacing="1.3">BROADER EXPANSION · LOCAL RESOLUTION UNCONFIRMED</text>
     </g>
 
@@ -97,7 +97,7 @@
       <rect width="548" height="190" rx="24" fill="#fffdf8" stroke="#4f86a8" stroke-opacity="0.50"/>
       <rect x="0" y="0" width="12" height="190" rx="6" fill="#4f86a8" fill-opacity="0.78"/>
       <text x="34" y="39" fill="#3f7799" font-size="13" font-weight="600" letter-spacing="2.2">B · RANGE COMPRESSION</text>
-      <text x="34" y="65" fill="#5f7f91" font-size="10" letter-spacing="1.8">CURRENT LOCAL DESCRIPTION</text>
+      <text x="34" y="65" fill="#5f7f91" font-size="10" letter-spacing="1.8">LOCAL DESCRIPTION AT SNAPSHOT</text>
       <text x="34" y="100" fill="#26343c" font-size="15">Condition · upper rejects · lower holds</text>
       <text x="34" y="132" fill="#4f5d63" font-size="13"><tspan font-weight="600">CONFIRM</tspan><tspan> · repeated returns inside the same field</tspan></text>
       <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · sustained acceptance outside either boundary</tspan></text>
@@ -117,7 +117,7 @@
       <path d="M0 0H1056" fill="none" stroke="#9e9a8f" stroke-opacity="0.26"/>
       <text x="0" y="42" fill="#5d676b" font-size="12" font-weight="600" letter-spacing="1.5">HYPOTHESES, NOT ASSERTIONS · CONFIRMATION + INVALIDATION REQUIRED</text>
       <text x="0" y="70" fill="#787f81" font-size="11" letter-spacing="1.2">No single year-end target · No buy/sell signal · Branches change only when evidence changes</text>
-      <text x="0" y="105" fill="#8b8f8d" font-size="10" letter-spacing="0.9">Market reference: Binance Spot BTCUSDT · broader field context: BHRIGU Market Cosmographer · observed 05 Sep 2026</text>
+      <text x="0" y="105" fill="#8b8f8d" font-size="10" letter-spacing="0.9">Market reference: Binance Spot BTCUSDT · broader field context: BHRIGU Market Cosmographer · observed 05 Sep 2026 · 17:10 UTC</text>
     </g>
   </g>
 </svg>
