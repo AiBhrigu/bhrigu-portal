@@ -12,9 +12,9 @@ export const BTC_CLEAN_CHAT_CAPACITY_MODE_ENV = "BHRIGU_BTC_CLEAN_CHAT_CAPACITY_
 // Legacy V1 reserve remains accepted during zero-downtime rollout. V2 admission starts at zero cost.
 export const BTC_CLEAN_CHAT_BASE_RESERVATION_MICROS = 120_000 as const;
 export const BTC_CLEAN_CHAT_INITIAL_RESERVATION_MICROS = 0 as const;
-export const BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS = 250_000 as const;
-export const BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS = 750_000 as const;
-export const BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS = 4_000_000 as const;
+export const BTC_CLEAN_CHAT_GLOBAL_HOUR_CAP_MICROS = 2_000_000 as const;
+export const BTC_CLEAN_CHAT_GLOBAL_DAY_CAP_MICROS = 6_000_000 as const;
+export const BTC_CLEAN_CHAT_GLOBAL_MONTH_CAP_MICROS = 25_000_000 as const;
 
 const CLIENT_TOKEN = /^[A-Za-z0-9_-]{32,128}$/;
 const TURN_ID = /^[A-Za-z0-9._:-]{8,160}$/;

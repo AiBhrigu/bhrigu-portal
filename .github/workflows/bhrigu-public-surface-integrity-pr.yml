@@ -41,6 +41,19 @@ jobs:
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
           mapfile -t actual < <(git diff --name-only "$base" "$head" | sort)
+          public_pilot_cost_guard_expected=(
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-clean-chat-cost-guard.ts"
+            "migrations/20260905_btc_clean_chat_cost_guard_public_pilot_v3.sql"
+            "scripts/btc-direct-payment-fresh-db-migration.ts"
+            "tests/btc-clean-chat-cost-guard-acceptance.ts"
+          )
+          mapfile -t public_pilot_cost_guard_expected_sorted < <(printf '%s\n' "${public_pilot_cost_guard_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${public_pilot_cost_guard_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_CLEAN_CHAT_PUBLIC_PILOT_COST_GUARD_PUBLIC_SURFACE_EXACT_6_FILE_SCOPE"
+            exit 0
+          fi
           cost_guard_expected=(
             ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
