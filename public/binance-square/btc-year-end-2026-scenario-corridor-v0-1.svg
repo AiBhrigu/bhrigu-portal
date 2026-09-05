@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1200" role="img" aria-labelledby="title desc">
+  <title id="title">BTC Year-End 2026 Scenario Corridor</title>
+  <desc id="desc">A BHRIGU research visual showing one current Bitcoin field branching into three conditional year-end scenarios: bull continuation, range compression, and loss of structure. Each branch is defined by confirmation and invalidation, with no single price target and no buy or sell signal.</desc>
+
+  <defs>
+    <radialGradient id="fieldGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#b6944c" stop-opacity="0.18"/>
+      <stop offset="0.42" stop-color="#4f86a8" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#f7f2e8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="goldFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#b6944c" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#b6944c" stop-opacity="0.78"/>
+    </linearGradient>
+    <linearGradient id="blueFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4f86a8" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#4f86a8" stop-opacity="0.82"/>
+    </linearGradient>
+    <linearGradient id="neutralFlow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7668a9" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#4f6570" stop-opacity="0.62"/>
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="1200" fill="#f7f2e8"/>
+  <circle cx="296" cy="604" r="214" fill="url(#fieldGlow)"/>
+  <circle cx="296" cy="604" r="182" fill="none" stroke="#4f86a8" stroke-opacity="0.14"/>
+  <circle cx="296" cy="604" r="142" fill="none" stroke="#b6944c" stroke-opacity="0.18"/>
+  <ellipse cx="296" cy="604" rx="218" ry="82" fill="none" stroke="#4f86a8" stroke-opacity="0.10" transform="rotate(-11 296 604)"/>
+  <ellipse cx="296" cy="604" rx="218" ry="82" fill="none" stroke="#7668a9" stroke-opacity="0.08" transform="rotate(11 296 604)"/>
+
+  <g font-family="Inter,Arial,sans-serif">
+    <text x="72" y="84" fill="#26343c" font-size="17" letter-spacing="4.5">BHRIGU · MARKET COSMOGRAPHER</text>
+    <text x="72" y="139" fill="#18262f" font-size="44" font-weight="600" letter-spacing="0.6">BTC YEAR-END 2026 · SCENARIO CORRIDOR</text>
+    <text x="72" y="177" fill="#5f6d73" font-size="20" letter-spacing="0.8">One current field · three conditional research paths</text>
+
+    <g transform="translate(790 188)">
+      <text x="0" y="0" fill="#7668a9" font-size="12" letter-spacing="2.8">YEAR-END WINDOW</text>
+      <path d="M0 25H260" fill="none" stroke="#7668a9" stroke-opacity="0.34"/>
+      <g fill="#7668a9" fill-opacity="0.55">
+        <circle cx="0" cy="25" r="3"/><circle cx="87" cy="25" r="3"/><circle cx="174" cy="25" r="3"/><circle cx="260" cy="25" r="3"/>
+      </g>
+      <g fill="#6b657e" font-size="10" letter-spacing="1.5">
+        <text x="0" y="47">SEP</text><text x="78" y="47">OCT</text><text x="164" y="47">NOV</text><text x="246" y="47">DEC</text>
+      </g>
+    </g>
+
+    <g transform="translate(296 604)">
+      <circle r="92" fill="#fffdf8" stroke="#4f86a8" stroke-opacity="0.34" stroke-width="1.4"/>
+      <circle r="70" fill="none" stroke="#b6944c" stroke-opacity="0.26"/>
+      <text x="0" y="-55" text-anchor="middle" fill="#4f86a8" font-size="11" letter-spacing="2.6">CURRENT BTC FIELD</text>
+      <text x="0" y="4" text-anchor="middle" fill="#b6944c" font-family="Georgia,Times New Roman,serif" font-size="56">₿</text>
+      <text x="0" y="34" text-anchor="middle" fill="#26343c" font-size="23" font-weight="600">~79.6K</text>
+      <text x="0" y="58" text-anchor="middle" fill="#68757a" font-size="11" letter-spacing="1.1">05 SEP 2026</text>
+    </g>
+
+    <g transform="translate(122 464)">
+      <rect x="0" y="0" width="348" height="50" rx="25" fill="#fffdf8" stroke="#b6944c" stroke-opacity="0.28"/>
+      <text x="174" y="20" text-anchor="middle" fill="#7a6737" font-size="10" letter-spacing="2">OBSERVED UPPER STRUCTURE</text>
+      <text x="174" y="38" text-anchor="middle" fill="#4d5356" font-size="14" font-weight="600">~81.5–82.8K</text>
+    </g>
+
+    <g transform="translate(122 694)">
+      <rect x="0" y="0" width="348" height="50" rx="25" fill="#fffdf8" stroke="#4f86a8" stroke-opacity="0.24"/>
+      <text x="174" y="20" text-anchor="middle" fill="#4f7186" font-size="10" letter-spacing="2">OBSERVED LOWER STRUCTURE</text>
+      <text x="174" y="38" text-anchor="middle" fill="#4d5356" font-size="14" font-weight="600">~76.2–76.7K</text>
+    </g>
+
+    <g transform="translate(142 808)">
+      <text x="154" y="0" text-anchor="middle" fill="#53636b" font-size="11" letter-spacing="1.2">30D +23.0% · 7D +2.6% · 24H −1.8%</text>
+      <text x="154" y="22" text-anchor="middle" fill="#7a8589" font-size="10" letter-spacing="1.3">BROADER EXPANSION · LOCAL RESOLUTION UNCONFIRMED</text>
+    </g>
+
+    <path d="M388 560C455 520 470 344 548 318" fill="none" stroke="url(#goldFlow)" stroke-width="3"/>
+    <path d="M397 604C462 604 490 578 548 578" fill="none" stroke="url(#blueFlow)" stroke-width="3"/>
+    <path d="M388 649C455 690 470 826 548 838" fill="none" stroke="url(#neutralFlow)" stroke-width="3"/>
+    <g fill="#fffdf8" stroke-width="2">
+      <circle cx="548" cy="318" r="7" stroke="#b6944c"/>
+      <circle cx="548" cy="578" r="7" stroke="#4f86a8"/>
+      <circle cx="548" cy="838" r="7" stroke="#5f6870"/>
+    </g>
+
+    <g transform="translate(575 226)">
+      <rect width="548" height="190" rx="24" fill="#fffdf8" stroke="#b6944c" stroke-opacity="0.42"/>
+      <rect x="0" y="0" width="12" height="190" rx="6" fill="#b6944c" fill-opacity="0.70"/>
+      <text x="34" y="39" fill="#9a7933" font-size="13" font-weight="600" letter-spacing="2.2">A · BULL CONTINUATION</text>
+      <text x="34" y="65" fill="#8a8373" font-size="10" letter-spacing="1.8">NOT CONFIRMED</text>
+      <text x="34" y="100" fill="#26343c" font-size="15">Condition · acceptance above observed upper structure</text>
+      <text x="34" y="132" fill="#4f5d63" font-size="13"><tspan font-weight="600">CONFIRM</tspan><tspan> · break → hold → higher-low structure preserved</tspan></text>
+      <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · failed breakout → return inside prior field</tspan></text>
+    </g>
+
+    <g transform="translate(575 486)">
+      <rect width="548" height="190" rx="24" fill="#fffdf8" stroke="#4f86a8" stroke-opacity="0.50"/>
+      <rect x="0" y="0" width="12" height="190" rx="6" fill="#4f86a8" fill-opacity="0.78"/>
+      <text x="34" y="39" fill="#3f7799" font-size="13" font-weight="600" letter-spacing="2.2">B · RANGE COMPRESSION</text>
+      <text x="34" y="65" fill="#5f7f91" font-size="10" letter-spacing="1.8">CURRENT LOCAL DESCRIPTION</text>
+      <text x="34" y="100" fill="#26343c" font-size="15">Condition · upper rejects · lower holds</text>
+      <text x="34" y="132" fill="#4f5d63" font-size="13"><tspan font-weight="600">CONFIRM</tspan><tspan> · repeated returns inside the same field</tspan></text>
+      <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · sustained acceptance outside either boundary</tspan></text>
+    </g>
+
+    <g transform="translate(575 746)">
+      <rect width="548" height="190" rx="24" fill="#fffdf8" stroke="#596b74" stroke-opacity="0.40"/>
+      <rect x="0" y="0" width="12" height="190" rx="6" fill="#596b74" fill-opacity="0.66"/>
+      <text x="34" y="39" fill="#4f616a" font-size="13" font-weight="600" letter-spacing="2.2">C · LOSS OF STRUCTURE</text>
+      <text x="34" y="65" fill="#7b8184" font-size="10" letter-spacing="1.8">NOT CONFIRMED</text>
+      <text x="34" y="100" fill="#26343c" font-size="15">Condition · observed lower structure is lost</text>
+      <text x="34" y="132" fill="#4f5d63" font-size="13"><tspan font-weight="600">CONFIRM</tspan><tspan> · acceptance below + reclaim attempt fails</tspan></text>
+      <text x="34" y="160" fill="#4f5d63" font-size="13"><tspan font-weight="600">INVALIDATE</tspan><tspan> · lower structure reclaimed and held</tspan></text>
+    </g>
+
+    <g transform="translate(72 1038)">
+      <path d="M0 0H1056" fill="none" stroke="#9e9a8f" stroke-opacity="0.26"/>
+      <text x="0" y="42" fill="#5d676b" font-size="12" font-weight="600" letter-spacing="1.5">HYPOTHESES, NOT ASSERTIONS · CONFIRMATION + INVALIDATION REQUIRED</text>
+      <text x="0" y="70" fill="#787f81" font-size="11" letter-spacing="1.2">No single year-end target · No buy/sell signal · Branches change only when evidence changes</text>
+      <text x="0" y="105" fill="#8b8f8d" font-size="10" letter-spacing="0.9">Market reference: Binance Spot BTCUSDT · broader field context: BHRIGU Market Cosmographer · observed 05 Sep 2026</text>
+    </g>
+  </g>
+</svg>
