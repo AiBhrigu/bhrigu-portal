@@ -50,13 +50,20 @@ jobs:
             'lib/public-ephemerides-live.ts',
             'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
           }
+          phi_visual_parity={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            'components/astro/BhriguPhiCosmograph.tsx',
+            'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
           if actual==legacy:
             print('EXACT_SCOPE_PASS legacy',sorted(actual))
           elif actual==sky_now_phi:
             print('EXACT_SCOPE_PASS sky_now_phi',sorted(actual))
+          elif actual==phi_visual_parity:
+            print('EXACT_SCOPE_PASS phi_visual_parity',sorted(actual))
           else:
-            raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)}')
+            raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)} phi_visual_parity={sorted(phi_visual_parity)}')
           PY
 
       - name: Install locked dependencies
