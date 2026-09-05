@@ -23,6 +23,7 @@ const PHI = (1 + Math.sqrt(5)) / 2;
 const INV_PHI = 1 / PHI;
 const INV_PHI2 = INV_PHI * INV_PHI;
 const EARTH_AXIAL_TILT_DEG = 23.44;
+const TEXT_PRESENTATION_SELECTOR = "\uFE0E";
 
 const BODY_GLYPH: Record<string, string> = {
   sun: "☉",
@@ -140,6 +141,7 @@ export default function BhriguPhiCosmograph({
     blue: "#62A8D8",
     violet: "#9A89D1",
     muted: "rgba(241,239,233,.50)",
+    degreeText: "rgba(241,239,233,.76)",
   };
 
   const polar = (longitude: number, r: number) => {
@@ -318,7 +320,7 @@ export default function BhriguPhiCosmograph({
 
       {SIGNS.map(([glyph, name], i) => {
         const point = polar(i * 30 + 15, (R_ZODIAC_OUTER + R_ZODIAC_INNER) / 2);
-        return <text key={name} x={point.x} y={point.y} textAnchor="middle" dominantBaseline="central" fill={palette.goldHigh} fontSize={size * 0.034} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{glyph}</text>;
+        return <text key={name} data-zodiac-presentation="text" x={point.x} y={point.y} textAnchor="middle" dominantBaseline="central" fill={palette.goldHigh} fontSize={size * 0.034} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{`${glyph}${TEXT_PRESENTATION_SELECTOR}`}</text>;
       })}
 
       {[0, 90, 180, 270].map((longitude) => {
@@ -345,7 +347,7 @@ export default function BhriguPhiCosmograph({
         const point = polar(body.displayLongitude, body.r);
         const degree = cosmographDegreeInSign(body.exactLongitude);
         const glyph = BODY_GLYPH[body.key] ?? "·";
-        return <g key={body.key} data-planet-glyph={body.key}><text x={point.x} y={point.y - size * 0.003} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={body.fontSize} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{glyph}</text><text x={point.x} y={point.y + body.fontSize * 0.72} textAnchor="middle" fill={palette.muted} fontSize={Math.max(size * 0.008, body.fontSize * 0.30)}>{degree.toFixed(2)}°{body.retrograde ? " R" : ""}</text></g>;
+        return <g key={body.key} data-planet-glyph={body.key}><text x={point.x} y={point.y - size * 0.003} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={body.fontSize} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{glyph}</text><text x={point.x} y={point.y + body.fontSize * 0.72} textAnchor="middle" fill={palette.degreeText} fontSize={Math.max(size * 0.0125, body.fontSize * 0.40)}>{degree.toFixed(2)}°{body.retrograde ? " R" : ""}</text></g>;
       })}
 
       {aspects.map((aspect, i) => {
@@ -355,7 +357,7 @@ export default function BhriguPhiCosmograph({
         const p1 = polar(a.exactLongitude, R_ASPECT * 0.985);
         const p2 = polar(b.exactLongitude, R_ASPECT * 0.985);
         const applying = aspect.phase === "APPLYING";
-        return <line key={`${aspect.a}-${aspect.b}-${i}`} data-aspect-phase={aspect.phase} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={applying ? palette.blue : palette.violet} strokeWidth={applying ? 1.5 : 1.1} opacity={applying ? 0.72 : 0.50} strokeDasharray={applying ? undefined : `${size * 0.0055} ${size * 0.004}`} />;
+        return <line key={`${aspect.a}-${aspect.b}-${i}`} data-aspect-phase={aspect.phase} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={applying ? palette.blue : palette.violet} strokeWidth={applying ? 1.65 : 1.30} opacity={applying ? 0.80 : 0.64} vectorEffect="non-scaling-stroke" strokeDasharray={applying ? undefined : `${size * 0.0055} ${size * 0.004}`} />;
       })}
 
       <g data-observer-origin="EARTH_PHI" data-axial-tilt-metaphor-deg={EARTH_AXIAL_TILT_DEG} data-magnetic-field-model="symbolic" transform={`rotate(${-EARTH_AXIAL_TILT_DEG} ${cx} ${cy})`}>

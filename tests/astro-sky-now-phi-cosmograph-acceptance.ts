@@ -63,6 +63,16 @@ assert.doesNotMatch(wheel,/<circle[^>]*data-planet-glyph/);
 assert.match(wheel,/data-aspect-phase=\{aspect\.phase\}/);
 assert.doesNotMatch(wheel,/<circle[^>]*data-aspect-phase/);
 
+// One canonical responsive visual language: zodiac glyphs must stay text glyphs, never mobile emoji tiles.
+assert.match(wheel,/TEXT_PRESENTATION_SELECTOR = "\\uFE0E"/);
+assert.match(wheel,/data-zodiac-presentation="text"/);
+assert.match(wheel,/\{`\$\{glyph\}\$\{TEXT_PRESENTATION_SELECTOR\}`\}/);
+
+// Planet degrees and aspect relations remain legible after responsive SVG reduction.
+assert.match(wheel,/degreeText: "rgba\(241,239,233,\.76\)"/);
+assert.match(wheel,/Math\.max\(size \* 0\.0125, body\.fontSize \* 0\.40\)/);
+assert.match(wheel,/data-aspect-phase=\{aspect\.phase\}[^>]*strokeWidth=\{applying \? 1\.65 : 1\.30\}[^>]*opacity=\{applying \? 0\.80 : 0\.64\}[^>]*vectorEffect="non-scaling-stroke"/);
+
 // Gold scarcity / semantic color use.
 assert.match(wheel,/key={`house-boundary-\$\{longitude\}`}[^>]*stroke=\{palette\.ivory\}/);
 assert.match(wheel,/key={`zodiac-boundary-\$\{longitude\}`}[^>]*stroke=\{palette\.gold\}/);
