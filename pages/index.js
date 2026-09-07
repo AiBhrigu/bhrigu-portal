@@ -10,6 +10,10 @@ import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
+const BINANCE_SQUARE_PROFILE_URL = {
+  en: "https://www.binance.com/en/square/profile/square-creator-634982873",
+  ru: "https://www.binance.com/ru/square/profile/square-creator-634982873",
+};
 
 const COPY = {
   en: {
@@ -20,6 +24,7 @@ const COPY = {
       "For self-directed Bitcoin investors: verified change, why it matters, and explicit conditions in one evidence-linked read.",
     openBtc: "Ask what changed in Bitcoin",
     viewProof: "View public proof",
+    viewSquare: "Live research on Binance Square",
     systemMapLabel: "SYSTEM MAP",
     systemMapRoot: "public home",
     systemMapAria: "BHRIGU system map: BTC Cosmographer is the current Bitcoin product, with Frey, Cosmographer, and ORION as distinct related surfaces.",
@@ -117,6 +122,7 @@ const COPY = {
       "Для самостоятельных Bitcoin-инвесторов: проверенное изменение, его значение и явные условия в одном чтении со связанными доказательствами.",
     openBtc: "Спросить, что изменилось в Bitcoin",
     viewProof: "Посмотреть публичные доказательства",
+    viewSquare: "Живые исследования в Binance Square",
     systemMapLabel: "КАРТА СИСТЕМЫ",
     systemMapRoot: "публичный дом",
     systemMapAria: "Карта системы BHRIGU: BTC Cosmographer — текущий Bitcoin-продукт; Frey, Космограф и ORION — отдельные связанные поверхности.",
@@ -301,7 +307,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}><SectionHeading eyebrow={copy.outcomesEyebrow} title={copy.outcomesTitle} body={copy.outcomesIntro}/><EditorialList items={copy.outcomes}/></section>
       <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><aside className={styles.polymarketLane} data-polymarket-public-reveal="bounded-expectation-layer" aria-labelledby="home-polymarket-title"><div><p className={styles.expectationEyebrow}>{copy.polymarketEyebrow}</p><h3 id="home-polymarket-title">{copy.polymarketTitle}</h3><p>{copy.polymarketBody}</p><small>{copy.polymarketBoundary}</small><Link href={`${btcEntryHref}#polymarket-expectations`}>{copy.polymarketCta} <span aria-hidden="true">→</span></Link></div></aside><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
       <section id="question-to-knowledge" className={styles.editorialSection}><SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle}/><EditorialList items={copy.questionSteps} numbered/></section>
-      <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></section>
+      <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><div><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div><div><a href={BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en} className={styles.textCta} target="_blank" rel="noopener noreferrer">{copy.viewSquare} <span aria-hidden="true">↗</span></a></div></div></section>
       <PublicSupportRoute locale={locale} surface="home" />
       <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}><SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle}/><EditorialList items={copy.methodItems}/></section>
       <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav></section>

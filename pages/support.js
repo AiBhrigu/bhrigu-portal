@@ -37,6 +37,9 @@ const PAGE_COPY = {
     boundary: "Support does not buy access, priority, ownership, investment rights, or private-engine access.",
     access: "For reviewed analytical work, go to",
     investors: "For capital or partner context, use",
+    binanceTitle: "Already on Binance?",
+    binanceBody: "You can support BHRIGU with BTC through Binance Pay using Binance ID 483049666.",
+    binanceSafety: "Verify the recipient inside Binance before sending. This remains voluntary support and does not buy access, priority, ownership or investment rights.",
     closed: "Support the public surface",
     footer: "Public support does not alter the system boundary.",
   },
@@ -55,6 +58,9 @@ const PAGE_COPY = {
     boundary: "Поддержка не покупает доступ, приоритет, собственность, инвестиционные права или доступ к приватному движку.",
     access: "Для аналитической работы с review перейдите в",
     investors: "Для капитала или партнёрского контекста используйте",
+    binanceTitle: "Уже пользуетесь Binance?",
+    binanceBody: "Можно поддержать BHRIGU в BTC через Binance Pay по Binance ID 483049666.",
+    binanceSafety: "Перед отправкой проверьте получателя в интерфейсе Binance. Это по-прежнему добровольная поддержка и она не покупает доступ, приоритет, собственность или инвестиционные права.",
     closed: "Поддержать публичный контур",
     footer: "Публичная поддержка не меняет границы системы.",
   },
@@ -142,6 +148,11 @@ export default function Support({ donationSurface = null, locale = "en" }) {
               <p>{copy.investors} <Link href={withPublicLocale("/investors", locale)}>/investors</Link>.</p>
             </div>
             <p className="footer">{copy.footer}</p>
+            <aside className="binanceRail" data-support-secondary-rail="BINANCE_PAY_BTC_V0_1">
+              <strong>{copy.binanceTitle}</strong>
+              <p>{copy.binanceBody}</p>
+              <small>{copy.binanceSafety}</small>
+            </aside>
           </section>
         </section>
       </main>
@@ -233,6 +244,17 @@ export default function Support({ donationSurface = null, locale = "en" }) {
         .routes { grid-column: 2; grid-row: 1 / span 2; }
         .routes a { color: rgba(83,201,230,.88); text-underline-offset: 3px; }
         .footer { opacity: .58; font-size: 12px; }
+        .binanceRail {
+          grid-column: 1 / -1;
+          display: grid;
+          gap: 6px;
+          padding: 16px 0 0;
+          border-top: 1px solid rgba(255,255,255,.065);
+          color: rgba(255,255,255,.62);
+        }
+        .binanceRail strong { color: rgba(222,194,125,.76); font-size: 12px; letter-spacing: .05em; }
+        .binanceRail p { margin: 0; color: rgba(255,255,255,.68); font-size: 13px; line-height: 1.55; }
+        .binanceRail small { max-width: 760px; color: rgba(255,255,255,.44); font-size: 10px; line-height: 1.55; }
         .action {
           min-height: 44px;
           display: flex;
@@ -248,6 +270,7 @@ export default function Support({ donationSurface = null, locale = "en" }) {
           .actionRegion { padding: 26px 30px 30px; border-left: 0; border-top: 1px solid rgba(222,194,125,.16); border-image: none; }
           .supportingZone { grid-template-columns: 1fr; padding: 21px 30px 25px; }
           .routes { grid-column: 1; grid-row: auto; }
+          .binanceRail { grid-column: 1; }
         }
         @media (max-width: 560px) {
           .wrap { padding: 13px 8px 56px; }
