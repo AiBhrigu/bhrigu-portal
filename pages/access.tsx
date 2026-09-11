@@ -1,3 +1,4 @@
+import Head from "next/head";
 import Link from "next/link";
 
 type Locale = "en" | "ru";
@@ -143,9 +144,35 @@ export default function Access({ locale }: { locale: Locale }) {
   const c = COPY[locale];
   const mailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[Φ RECON] ")}&body=${encodeURIComponent(c.humanBody)}`;
   const agentSubject = "[Φ RECON] <system_name>";
+  const canonicalUrl = `https://www.bhrigu.io/access?lang=${locale}`;
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Φ External Systems Recon",
+    serviceType: "External AI and research systems recon",
+    url: canonicalUrl,
+    provider: {
+      "@type": "Organization",
+      name: "Φ Research Systems / BHRIGU",
+      url: "https://www.bhrigu.io/",
+      email: REVENUE_EMAIL,
+    },
+    description: c.lead,
+    offers: {
+      "@type": "Offer",
+      price: "300",
+      priceCurrency: "USD",
+      url: canonicalUrl,
+      description: "One bounded read-only system recon: system map, 3 findings, evidence, and exact repair blueprint. Implementation not included.",
+    },
+  };
 
   return (
-    <main className="q" lang={locale} data-access-surface="PHI_EXTERNAL_SYSTEMS_RECON_V0_1">
+    <>
+      <Head>
+        <script type="application/ld+json" data-bhrigu-commercial-service="PHI_EXTERNAL_SYSTEMS_RECON_V0_1" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c") }} />
+      </Head>
+      <main className="q" lang={locale} data-access-surface="PHI_EXTERNAL_SYSTEMS_RECON_V0_1">
       <section className="hero">
         <div className="meaning">
           <p className="ey">{c.eyebrow}</p>
@@ -256,6 +283,7 @@ export default function Access({ locale }: { locale: Locale }) {
         @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
         @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.block,.finalCta{padding:24px 20px}.four,.proofs{grid-template-columns:1fr}.action{gap:8px}.price{font-size:50px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
       `}</style>
-    </main>
+      </main>
+    </>
   );
 }
