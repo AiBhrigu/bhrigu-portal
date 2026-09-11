@@ -26,7 +26,7 @@ const COPY = {
       ]],
       ["Public boundary", [
         ["Support", "Voluntary Bitcoin support", "/support"],
-        ["Access", "Reviewed intake temporarily closed", "/access"],
+        ["Access", "Agent-first commercial systems recon", "/access"],
         ["DAO", "Future/peripheral only", "/dao"],
       ]],
     ],
@@ -54,7 +54,7 @@ const COPY = {
       ]],
       ["Публичная граница", [
         ["Поддержка", "Добровольная Bitcoin-поддержка", "/support"],
-        ["Доступ", "Reviewed intake временно закрыт", "/access"],
+        ["Доступ", "Agent-first коммерческая разведка систем", "/access"],
         ["DAO", "Только будущее/периферия", "/dao"],
       ]],
     ],
