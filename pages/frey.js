@@ -511,6 +511,7 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
     () => buildConversationalResponse(responseSurface, interpretation),
     [responseSurface, interpretation]
   );
+  const personalAccessHref = `${initialAccessHref}${initialAccessHref.includes("?") ? "&" : "?"}offer=frey-personal&lang=${initialLocale}`;
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1173,16 +1174,17 @@ export default function Frey({ initialDate, initialResult, initialCompareDate, i
                   data-frey-access-signal={initialAccessCtx.signal_class || ""}
                   data-frey-access-vector={initialAccessCtx.operational_vector || ""}
                 >
-                  <div className="freyEscalationLabel">{ru ? "Углубление" : "Escalation"}</div>
+                  <div className="freyEscalationLabel">{ru ? "Персональное исследование" : "Personal research"}</div>
                   <div className="freyEscalationText">
-                    {ru ? "Запросите глубокий анализ, когда текущему результату нужен операторский разбор." : "Request deep analysis when the current result needs operator review."}
+                    {ru ? "Превратите текущее чтение Frey в законченный персональный темпоральный research memo: один человек, один вопрос, одно временное окно." : "Turn the current Frey reading into a finished personal temporal research memo: one person, one question, one time window."}
                   </div>
                   <Link
-                    href={`${initialAccessHref}${initialAccessHref.includes("?") ? "&" : "?"}lang=${initialLocale}`}
+                    href={personalAccessHref}
                     className="freyButton freyTemporalButton"
+                    data-frey-personal-commercial-entry="FREY_PERSONAL_TEMPORAL_RESEARCH_USD79_V0_1"
                     style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
                   >
-                    {ru ? "Запросить глубокий анализ" : "Request deep analysis"}
+                    {ru ? "Персональное исследование · USD 79" : "Personal research · USD 79"}
                   </Link>
                 </div>
                 <div className="freyBottomNavClearance" data-frey-bottom-nav-detach={C1_4_BOTTOM_NAV_DETACH_MARKER} data-frey-bottom-nav-spacing={C1_5_BOTTOM_NAV_SPACING_MARKER} data-frey-bottom-nav-trim="__FREY_C1_5_BOTTOM_NAV_TRIM_V0_2__" data-frey-bottom-nav-dynamic="__FREY_C1_5_1_DYNAMIC_BOTTOM_CLEARANCE_V0_1__" aria-hidden="true" />

@@ -115,6 +115,103 @@ const COPY = {
   },
 } as const;
 
+const FREY_PERSONAL_COPY = {
+  en: {
+    eyebrow: "FREY × COSMOGRAPHER · PERSONAL RESEARCH",
+    title: "Turn one Frey reading into a finished personal temporal research object.",
+    lead: "One person. One question. One time window. A bounded research memo that separates observation, interpretation, uncertainty, and the conditions that would change the current read.",
+    boundary: "No guaranteed prediction. No open-ended consulting. No medical, legal, or financial advice.",
+    signal: "ONE PERSON · ONE QUESTION · ONE TIME WINDOW · USD 79",
+    priceLabel: "FIXED PERSONAL OBJECT",
+    priceScope: "ONE BOUNDED RESEARCH MEMO",
+    primaryCta: "Request personal research",
+    backCta: "Return to Frey →",
+    offerTitle: "Frey Personal Temporal Research",
+    offerLead: "A bounded personal research object built from one Frey reading and one explicit question.",
+    getsTitle: "You receive exactly five research objects",
+    gets: [
+      ["01", "Personal temporal map", "The active structure of the selected time window, expressed as a bounded research map."],
+      ["02", "3 highest-signal factors", "The three factors carrying the most interpretive weight in the current read."],
+      ["03", "Time window", "Where the current structure is active, strengthening, weakening, or changing."],
+      ["04", "Forward conditions", "What observable conditions would materially change the present interpretation."],
+      ["05", "Finished research memo", "One concise deliverable that joins the map, signals, window, conditions, and uncertainty boundary."],
+    ],
+    contextTitle: "Frey context carried into the request",
+    contextValid: "The public, non-secret context below was transferred from your current Frey reading and will prefill the request.",
+    contextMissing: "No valid Frey context was transferred. You can still request this fixed object by sending one question and one time window.",
+    humanTitle: "Request the USD 79 research object",
+    humanLead: "No registration. No account. No questionnaire. Start by email with one question and only the context needed for the research object.",
+    boundaryTitle: "Bounded research boundary",
+    boundaryItems: ["No guaranteed prediction", "No open-ended consulting", "No medical advice", "No legal advice", "No financial advice", "No credentials or secrets"],
+    processTitle: "Commercial process",
+    process: "REQUEST → SCOPE CONFIRMATION → PAYMENT ARRANGEMENT → WORK → RESEARCH MEMO",
+    privacyTitle: "Privacy + protected IP boundary",
+    privacyLead: "Send only the personal context needed to understand the question. Do not send passwords, API keys, wallet secrets, account credentials, or unrelated private records.",
+    protectedLead: "The delivered memo may expose observations, interpretation, uncertainty, and forward conditions. ORION internals, private prompts/planners/evaluators/corpora, unpublished research, and protected mechanisms remain private.",
+    supportLabel: "Voluntary Bitcoin support is not payment for this research object.",
+    supportBody: "The existing /support corridor remains voluntary research support and does not purchase this USD 79 personal research object.",
+    finalTitle: "One person. One question. One bounded temporal research memo.",
+    finalLead: "Start from the Frey reading you already have, then state the one question the memo must help you examine.",
+    mailTitle: "Frey Personal Temporal Research · USD 79",
+    questionLabel: "One question",
+    contextLabel: "Short context",
+    replyLabel: "Reply contact",
+    languageLabel: "Language",
+    primaryDateLabel: "Primary date",
+    secondaryDateLabel: "Optional second date",
+    signalClassLabel: "Signal class",
+    structuralStateLabel: "Structural state",
+    vectorLabel: "Operational vector",
+  },
+  ru: {
+    eyebrow: "FREY × КОСМОГРАФ · ПЕРСОНАЛЬНОЕ ИССЛЕДОВАНИЕ",
+    title: "Превратите одно чтение Frey в законченный персональный темпоральный исследовательский объект.",
+    lead: "Один человек. Один вопрос. Одно временное окно. Ограниченный research memo, который разделяет наблюдение, интерпретацию, неопределённость и условия, способные изменить текущее чтение.",
+    boundary: "Без гарантированного прогноза. Без бессрочного консультирования. Без медицинских, юридических и финансовых рекомендаций.",
+    signal: "ОДИН ЧЕЛОВЕК · ОДИН ВОПРОС · ОДНО ВРЕМЕННОЕ ОКНО · USD 79",
+    priceLabel: "ФИКСИРОВАННЫЙ ПЕРСОНАЛЬНЫЙ ОБЪЕКТ",
+    priceScope: "ОДИН ОГРАНИЧЕННЫЙ RESEARCH MEMO",
+    primaryCta: "Запросить персональное исследование",
+    backCta: "Вернуться в Frey →",
+    offerTitle: "Frey Personal Temporal Research",
+    offerLead: "Ограниченный персональный исследовательский объект на основе одного чтения Frey и одного явного вопроса.",
+    getsTitle: "Вы получаете ровно пять исследовательских объектов",
+    gets: [
+      ["01", "Персональная темпоральная карта", "Активная структура выбранного временного окна как ограниченная исследовательская карта."],
+      ["02", "3 наиболее значимых фактора", "Три фактора, которые несут наибольший интерпретационный вес в текущем чтении."],
+      ["03", "Временное окно", "Где текущая структура активна, усиливается, ослабевает или меняется."],
+      ["04", "Условия вперёд", "Какие наблюдаемые условия способны существенно изменить текущую интерпретацию."],
+      ["05", "Законченный research memo", "Один компактный результат, объединяющий карту, сигналы, окно, условия и границу неопределённости."],
+    ],
+    contextTitle: "Контекст Frey, перенесённый в запрос",
+    contextValid: "Публичный несекретный контекст ниже перенесён из текущего чтения Frey и будет подставлен в запрос.",
+    contextMissing: "Корректный контекст Frey не передан. Этот фиксированный объект всё равно можно запросить, указав один вопрос и одно временное окно.",
+    humanTitle: "Запросить исследовательский объект за USD 79",
+    humanLead: "Без регистрации. Без аккаунта. Без анкеты. Начните с письма: один вопрос и только тот контекст, который нужен для исследовательского объекта.",
+    boundaryTitle: "Граница ограниченного исследования",
+    boundaryItems: ["Без гарантированного прогноза", "Без бессрочного консультирования", "Без медицинских рекомендаций", "Без юридических рекомендаций", "Без финансовых рекомендаций", "Без credentials и secrets"],
+    processTitle: "Коммерческий процесс",
+    process: "REQUEST → SCOPE CONFIRMATION → PAYMENT ARRANGEMENT → WORK → RESEARCH MEMO",
+    privacyTitle: "Privacy + protected IP boundary",
+    privacyLead: "Отправляйте только персональный контекст, необходимый для понимания вопроса. Не отправляйте пароли, API keys, wallet secrets, account credentials или не относящиеся к вопросу private records.",
+    protectedLead: "Research memo может раскрывать наблюдения, интерпретацию, неопределённость и forward conditions. ORION internals, private prompts/planners/evaluators/corpora, unpublished research и protected mechanisms остаются закрытыми.",
+    supportLabel: "Добровольная Bitcoin-поддержка не является оплатой этого исследовательского объекта.",
+    supportBody: "Существующий /support остаётся добровольной поддержкой исследований и не покупает персональный объект за USD 79.",
+    finalTitle: "Один человек. Один вопрос. Один ограниченный темпоральный research memo.",
+    finalLead: "Начните с уже полученного чтения Frey и сформулируйте один вопрос, который должен исследовать memo.",
+    mailTitle: "Frey Personal Temporal Research · USD 79",
+    questionLabel: "Один вопрос",
+    contextLabel: "Краткий контекст",
+    replyLabel: "Контакт для ответа",
+    languageLabel: "Язык",
+    primaryDateLabel: "Основная дата",
+    secondaryDateLabel: "Опциональная вторая дата",
+    signalClassLabel: "Класс сигнала",
+    structuralStateLabel: "Структурное состояние",
+    vectorLabel: "Операционный вектор",
+  },
+} as const;
+
 const AGENT_CONTRACT = {
   request_type: "phi_external_systems_recon",
   version: "1",
@@ -137,15 +234,73 @@ IMPLEMENTATION=NO
 NEXT=scope agreement`;
 
 export async function getServerSideProps({ query }: any) {
-  return { props: { locale: query.lang === "ru" ? "ru" : "en" } };
+  const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang;
+  const locale: Locale = rawLang === "ru" ? "ru" : "en";
+  const rawOffer = Array.isArray(query?.offer) ? query.offer[0] : query?.offer;
+  const offer = rawOffer === "frey-personal" ? "frey-personal" : "system-recon";
+
+  let freyContext = null;
+  if (offer === "frey-personal") {
+    const rawCtx = Array.isArray(query?.ctx) ? query.ctx[0] : query?.ctx;
+    const boundedCtx = typeof rawCtx === "string" ? rawCtx.trim().slice(0, 4096) : "";
+    if (boundedCtx) {
+      const { decodeFreyAccessBridgeCtx } = await import("../lib/frey-access-bridge.js");
+      freyContext = decodeFreyAccessBridgeCtx(boundedCtx);
+    }
+  }
+
+  return { props: { locale, offer, freyContext } };
 }
 
-export default function Access({ locale }: { locale: Locale }) {
+type AccessProps = {
+  locale: Locale;
+  offer: "system-recon" | "frey-personal";
+  freyContext: any | null;
+};
+
+export default function Access({ locale, offer, freyContext }: AccessProps) {
   const c = COPY[locale];
+  const f = FREY_PERSONAL_COPY[locale];
+  const isFreyPersonal = offer === "frey-personal";
   const mailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[Φ RECON] ")}&body=${encodeURIComponent(c.humanBody)}`;
+  const freyMailBody = [
+    f.mailTitle,
+    "",
+    `${f.primaryDateLabel}: ${freyContext?.primary_date || ""}`,
+    `${f.secondaryDateLabel}: ${freyContext?.secondary_date || ""}`,
+    `${f.questionLabel}: `,
+    `${f.contextLabel}: `,
+    `${f.languageLabel}: ${locale.toUpperCase()}`,
+    `${f.replyLabel}: `,
+    "",
+    freyContext?.signal_class ? `${f.signalClassLabel}: ${freyContext.signal_class}` : "",
+    freyContext?.structural_state ? `${f.structuralStateLabel}: ${freyContext.structural_state}` : "",
+    freyContext?.operational_vector ? `${f.vectorLabel}: ${freyContext.operational_vector}` : "",
+  ].filter((line, index, arr) => line || index < 2 || index < arr.length - 3).join("\n");
+  const freyMailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[FREY PERSONAL · USD 79] ")}&body=${encodeURIComponent(freyMailBody)}`;
   const agentSubject = "[Φ RECON] <system_name>";
-  const canonicalUrl = `https://www.bhrigu.io/access?lang=${locale}`;
-  const serviceJsonLd = {
+  const canonicalUrl = `https://www.bhrigu.io/access?lang=${locale}${isFreyPersonal ? "&offer=frey-personal" : ""}`;
+  const serviceJsonLd = isFreyPersonal ? {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: "Frey Personal Temporal Research",
+    serviceType: "Bounded personal temporal research",
+    url: canonicalUrl,
+    provider: {
+      "@type": "Organization",
+      name: "Φ Research Systems / BHRIGU",
+      url: "https://www.bhrigu.io/",
+      email: REVENUE_EMAIL,
+    },
+    description: f.lead,
+    offers: {
+      "@type": "Offer",
+      price: "79",
+      priceCurrency: "USD",
+      url: canonicalUrl,
+      description: "One person, one question, one time window: personal temporal map, 3 highest-signal factors, time window, forward conditions, and one finished research memo.",
+    },
+  } : {
     "@context": "https://schema.org",
     "@type": "Service",
     name: "Φ External Systems Recon",
@@ -170,9 +325,90 @@ export default function Access({ locale }: { locale: Locale }) {
   return (
     <>
       <Head>
-        <script type="application/ld+json" data-bhrigu-commercial-service="PHI_EXTERNAL_SYSTEMS_RECON_V0_1" dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c") }} />
+        <script
+          type="application/ld+json"
+          data-bhrigu-commercial-service={isFreyPersonal ? "FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c") }}
+        />
       </Head>
-      <main className="q" lang={locale} data-access-surface="PHI_EXTERNAL_SYSTEMS_RECON_V0_1">
+      <main className="q" lang={locale} data-access-surface={isFreyPersonal ? "FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}>
+      {isFreyPersonal ? (
+        <>
+          <section className="hero" data-frey-personal-offer="FREY_PERSONAL_TEMPORAL_RESEARCH_USD79_V0_1">
+            <div className="meaning">
+              <p className="ey">{f.eyebrow}</p>
+              <h1>{f.title}</h1>
+              <p className="lead">{f.lead}</p>
+              <p className="boundary">{f.boundary}</p>
+              <p className="signal">{f.signal}</p>
+            </div>
+            <aside className="action" aria-label={f.offerTitle}>
+              <p className="mini">{f.priceLabel}</p>
+              <strong className="price">USD 79</strong>
+              <span>ONE PERSON</span>
+              <span>ONE QUESTION</span>
+              <span>ONE TIME WINDOW</span>
+              <a className="primary" href={freyMailto}>{f.primaryCta}</a>
+              <Link className="secondary" href={`/frey?lang=${locale}`}>{f.backCta}</Link>
+            </aside>
+          </section>
+
+          <section className="block offer">
+            <div><p className="ey">01 · OBJECT</p><h2>{f.offerTitle} — USD 79</h2><p>{f.offerLead}</p></div>
+            <p className="scopeLaw">{f.boundary}</p>
+          </section>
+
+          <section className="block">
+            <p className="ey">02 · DELIVERABLE</p>
+            <h2>{f.getsTitle}</h2>
+            <div className="grid five">
+              {f.gets.map(([n, title, body]) => <article key={n}><b>{n}</b><h3>{title}</h3><p>{body}</p></article>)}
+            </div>
+          </section>
+
+          <section className="block freyContext" data-frey-personal-context={freyContext ? "valid" : "missing-or-invalid"}>
+            <p className="ey">03 · FREY CONTEXT</p>
+            <h2>{f.contextTitle}</h2>
+            <p>{freyContext ? f.contextValid : f.contextMissing}</p>
+            {freyContext ? (
+              <div className="contextGrid">
+                <article><b>{f.primaryDateLabel}</b><p>{freyContext.primary_date || "—"}</p></article>
+                <article><b>{f.secondaryDateLabel}</b><p>{freyContext.secondary_date || "—"}</p></article>
+                <article><b>{f.structuralStateLabel}</b><p>{freyContext.structural_state || "—"}</p></article>
+                <article><b>{f.vectorLabel}</b><p>{freyContext.operational_vector || "—"}</p></article>
+              </div>
+            ) : null}
+          </section>
+
+          <section className="block human">
+            <div><p className="ey">04 · REQUEST</p><h2>{f.humanTitle}</h2><p>{f.humanLead}</p><a className="primary inline" href={freyMailto}>{f.primaryCta}</a></div>
+            <pre>{freyMailBody}</pre>
+          </section>
+
+          <section className="block fit">
+            <div><p className="ey">05 · BOUNDARY</p><h2>{f.boundaryTitle}</h2><ul>{f.boundaryItems.map((item) => <li key={item}>{item}</li>)}</ul></div>
+            <div><p className="ey">06 · CONTACT</p><h2>{REVENUE_EMAIL}</h2><p>{f.humanLead}</p></div>
+          </section>
+
+          <section className="block process">
+            <p className="ey">07 · PROCESS</p><h2>{f.processTitle}</h2><p className="flow">{f.process}</p>
+          </section>
+
+          <section className="block privacy">
+            <p className="ey">08 · PRIVACY / PROTECTED IP</p><h2>{f.privacyTitle}</h2><p>{f.privacyLead}</p><p>{f.protectedLead}</p>
+          </section>
+
+          <section className="block support">
+            <p className="ey">09 · SUPPORT SEPARATION</p><h2>{f.supportLabel}</h2><p>{f.supportBody}</p><Link href={`/support?lang=${locale}`}>/support →</Link>
+          </section>
+
+          <section className="finalCta">
+            <div><p className="ey">10 · START</p><h2>{f.finalTitle}</h2><p>{f.finalLead}</p></div>
+            <a className="primary" href={freyMailto}>{f.primaryCta}</a>
+          </section>
+        </>
+      ) : (
+        <>
       <section className="hero">
         <div className="meaning">
           <p className="ey">{c.eyebrow}</p>
@@ -263,6 +499,8 @@ export default function Access({ locale }: { locale: Locale }) {
         <div><p className="ey">11 · START</p><h2>{c.finalTitle}</h2><p>{c.finalLead}</p></div>
         <a className="primary" href={mailto}>{c.primaryCta}</a>
       </section>
+        </>
+      )}
 
       <style jsx>{`
         .q{--gold:#d5b86d;--cyan:#62c9e6;max-width:1080px;margin:auto;padding:54px 20px 120px;color:rgba(247,248,250,.94)}
@@ -274,14 +512,14 @@ export default function Access({ locale }: { locale: Locale }) {
         .price{font:500 clamp(42px,5vw,64px)/1 Georgia,serif;color:#fff}.action span{color:rgba(255,255,255,.62);font:600 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
         .primary,.secondary{display:inline-flex;justify-content:center;align-items:center;min-height:46px;margin-top:10px;padding:0 18px;border-radius:999px;text-decoration:none}.primary{background:var(--gold);color:#111!important;font-weight:700}.secondary{border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.82)!important}.inline{width:max-content}
         .block{margin-top:18px;padding:32px;border:1px solid rgba(255,255,255,.085);border-radius:20px;background:rgba(255,255,255,.01)}.offer{display:grid;grid-template-columns:1fr 1fr;gap:36px}.scopeLaw{margin:0;padding-left:18px;border-left:1px solid rgba(98,201,230,.28)}
-        .grid{display:grid;gap:12px}.four{grid-template-columns:repeat(4,1fr)}article{min-width:0;padding:18px;border:1px solid rgba(255,255,255,.075);border-radius:15px;background:rgba(255,255,255,.012)}article b{color:var(--cyan);font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace}article p{margin-bottom:0;font-size:14px}
-        .fit,.contractGrid,.human{display:grid;grid-template-columns:1fr 1fr;gap:24px}.fit>div{padding:4px 12px}.fit>div+div{border-left:1px solid rgba(255,255,255,.08);padding-left:28px}ul{padding-left:20px;color:rgba(255,255,255,.67);line-height:1.65}
+        .grid{display:grid;gap:12px}.four{grid-template-columns:repeat(4,1fr)}.five{grid-template-columns:repeat(5,minmax(0,1fr))}.contextGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.contextGrid article b{display:block;color:var(--gold);font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase}.contextGrid article p{margin-top:8px;overflow-wrap:anywhere}article{min-width:0;padding:18px;border:1px solid rgba(255,255,255,.075);border-radius:15px;background:rgba(255,255,255,.012)}article b{color:var(--cyan);font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace}article p{margin-bottom:0;font-size:14px}
+        .fit,.contractGrid,.human{display:grid;grid-template-columns:1fr 1fr;gap:24px}.fit>div{padding:4px 12px}.fit>div+div{border-left:1px solid rgba(255,255,255,.08);padding-left:28px}.fit h2,.fit p,.privacy p{overflow-wrap:anywhere;word-break:break-word}ul{padding-left:20px;color:rgba(255,255,255,.67);line-height:1.65}
         .proofs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.proofs a,.support a{color:#e1c77d;text-underline-offset:3px}
         .contract{scroll-margin-top:80px}.top{margin-top:22px!important}code{color:rgba(98,201,230,.9);overflow-wrap:anywhere}pre{margin:12px 0 0;padding:16px;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.22);color:rgba(235,239,244,.78);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
         .flow{color:rgba(255,255,255,.88);font:600 13px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}.support{border-color:rgba(213,184,109,.15)}
         .finalCta{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;margin-top:18px;padding:34px;border:1px solid rgba(213,184,109,.18);border-radius:20px;background:linear-gradient(120deg,rgba(213,184,109,.055),rgba(98,201,230,.025))}.finalCta .primary{min-width:190px;margin:0}
-        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
-        @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.block,.finalCta{padding:24px 20px}.four,.proofs{grid-template-columns:1fr}.action{gap:8px}.price{font-size:50px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
+        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.five,.contextGrid{grid-template-columns:repeat(2,1fr)}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
+        @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.block,.finalCta{padding:24px 20px}.four,.five,.proofs,.contextGrid{grid-template-columns:1fr}.action{gap:8px}.price{font-size:50px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
       `}</style>
       </main>
     </>

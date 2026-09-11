@@ -4,12 +4,15 @@ on:
     branches: [master]
     paths:
       - 'pages/frey.js'
+      - 'pages/access.tsx'
       - 'pages/guide/frey.js'
       - 'pages/_app.js'
       - 'pages/start.js'
       - 'pages/map.js'
       - 'lib/frey-export-minimal.js'
       - '.github/workflows/bhrigu-frey-preservation-pr.yml'
+      - '.github/workflows/access-intake-containment-pr.yml'
+      - '.github/workflows/bhrigu-public-surface-integrity-pr.yml'
 permissions:
   contents: read
 jobs:
@@ -21,6 +24,26 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - name: Exact Frey personal commercial scope
+        run: |
+          base='${{ github.event.pull_request.base.sha }}'
+          head='${{ github.event.pull_request.head.sha }}'
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            'pages/access.tsx',
+            'pages/frey.js',
+          }
+          actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
+          assert actual == expected, f'FREY_PERSONAL_EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}'
+          print('FREY_PERSONAL_EXACT_5_FILE_SCOPE=PASS')
+          PY
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - name: Protected runtime diff
         run: |
           base='${{ github.event.pull_request.base.sha }}'
@@ -66,6 +89,20 @@ jobs:
           grep -q 'Сравнить со второй датой · Δ изменения' pages/frey.js
           grep -q 'Для другого ИИ · Пакет чтения' pages/frey.js
           grep -q 'data-frey-response-state={responseSurface.ui_state}' pages/frey.js
+      - name: Frey personal commercial contract
+        run: |
+          grep -Fq 'FREY_PERSONAL_TEMPORAL_RESEARCH_USD79_V0_1' pages/frey.js
+          grep -Fq 'offer=frey-personal' pages/frey.js
+          grep -Fq 'Personal research · USD 79' pages/frey.js
+          grep -Fq 'Персональное исследование · USD 79' pages/frey.js
+          grep -Fq 'Frey Personal Temporal Research' pages/access.tsx
+          grep -Fq 'USD 79' pages/access.tsx
+          grep -Fq 'price: "79"' pages/access.tsx
+          grep -Fq 'FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1' pages/access.tsx
+          grep -Fq 'No guaranteed prediction' pages/access.tsx
+          grep -Fq 'Без гарантированного прогноза' pages/access.tsx
+          test -z "$(git diff --name-only '${{ github.event.pull_request.base.sha }}' '${{ github.event.pull_request.head.sha }}' -- lib/frey-access-bridge.js lib/access-triage.js pages/api)"
+          echo 'FREY_PERSONAL_COMMERCIAL_CONTRACT=PASS'
       - name: AI packet contract
         run: |
           node <<'NODE'
@@ -138,7 +175,61 @@ jobs:
           for leak in ['Baseline pressure stays moderate, yet distortion rises fast','Signal aligns in short stable bands, but resonance breaks','Core structure holds, while outer balance becomes vulnerable']:
             assert leak not in ru,leak
           assert 'data-frey-response-state="success"' in ru
+          for lang in ('en','ru'):
+            default_access=urlopen(f'http://127.0.0.1:3000/access?lang={lang}',timeout=30).read().decode()
+            assert 'PHI_EXTERNAL_SYSTEMS_RECON_V0_1' in default_access,(lang,'default-access-marker')
+            assert 'USD 300' in default_access,(lang,'default-access-price')
+            personal=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal',timeout=30).read().decode()
+            assert 'FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1' in personal,(lang,'personal-marker')
+            assert 'USD 79' in personal,(lang,'personal-price')
+            assert '<form' not in personal.lower(),(lang,'no-form')
+            broken=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal&ctx=%25%25%25',timeout=30).read().decode()
+            assert 'data-frey-personal-context="missing-or-invalid"' in broken,(lang,'invalid-ctx-safe')
           print('FREY_GUIDE_DISCOVERABILITY_PHI=PASS')
+          print('FREY_PERSONAL_HTTP_MATRIX=PASS')
+          PY
+      - name: Install browser acceptance client
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+      - name: Frey personal RU EN desktop mobile browser acceptance
+        run: |
+          python3 - <<'PY'
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from urllib.parse import urlparse
+
+          base='http://127.0.0.1:3000'
+          options=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--window-size=1280,900'):
+            options.add_argument(arg)
+          driver=webdriver.Chrome(options=options)
+          wait=WebDriverWait(driver,30)
+          try:
+            for viewport,w,h in (('desktop',1280,900),('mobile',390,844)):
+              driver.set_window_size(w,h)
+              for lang in ('en','ru'):
+                driver.get(f'{base}/frey?lang={lang}&d=2026-08-28')
+                wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                link=driver.find_element(By.CSS_SELECTOR,'[data-frey-personal-commercial-entry="FREY_PERSONAL_TEMPORAL_RESEARCH_USD79_V0_1"]')
+                href=link.get_attribute('href')
+                assert 'offer=frey-personal' in href,(viewport,lang,'offer-selector',href)
+                assert 'ctx=' in href,(viewport,lang,'ctx-transfer',href)
+                path=urlparse(href).path + '?' + urlparse(href).query
+                driver.get(base+path)
+                wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                body=driver.find_element(By.TAG_NAME,'body').text
+                assert 'USD 79' in body,(viewport,lang,'price')
+                expected='personal research' if lang=='en' else 'персональное исследование'
+                assert expected in body.lower(),(viewport,lang,'localized-copy')
+                ctx=driver.find_element(By.CSS_SELECTOR,'[data-frey-personal-context]').get_attribute('data-frey-personal-context')
+                assert ctx == 'valid',(viewport,lang,'ctx-valid',ctx)
+                assert '2026-08-28' in body,(viewport,lang,'primary-date-prefill')
+                assert not driver.find_elements(By.TAG_NAME,'form'),(viewport,lang,'no-form')
+                overflow=driver.execute_script('return document.documentElement.scrollWidth - window.innerWidth')
+                assert overflow <= 1,(viewport,lang,'horizontal-overflow',overflow)
+            print('FREY_PERSONAL_BROWSER_MATRIX=PASS')
+          finally:
+            driver.quit()
           PY
       - name: Stop server
         if: always()
