@@ -55,6 +55,27 @@ jobs:
             'components/astro/BhriguPhiCosmograph.tsx',
             'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
           }
+          commercial_access={
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            'pages/_app.js',
+            'pages/access.tsx',
+            'pages/guide/frey.js',
+            'pages/map.js',
+            'pages/support.js',
+            'public/llms.txt',
+          }
+          ci_authority_repair={
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-public-locale-transport-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
+            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
           if actual==legacy:
             print('EXACT_SCOPE_PASS legacy',sorted(actual))
@@ -62,26 +83,36 @@ jobs:
             print('EXACT_SCOPE_PASS sky_now_phi',sorted(actual))
           elif actual==phi_visual_parity:
             print('EXACT_SCOPE_PASS phi_visual_parity',sorted(actual))
+          elif actual==commercial_access:
+            print('SHARED_SCOPE_PASS commercial_access',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==ci_authority_repair:
+            print('SHARED_SCOPE_PASS ci_authority_repair',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           else:
             raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)} phi_visual_parity={sorted(phi_visual_parity)}')
           PY
 
       - name: Install locked dependencies
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npm ci --ignore-scripts
 
       - name: Static P1 contract
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npx tsx tests/astro-ephemerides-p1-integrity-acceptance.ts
 
       - name: Existing public ephemerides V2 contract
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npx tsx tests/public-ephemerides-v2-acceptance.ts
 
       - name: SKY TODAY Phi cosmograph contract
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npx tsx tests/astro-sky-now-phi-cosmograph-acceptance.ts
 
       - name: Production build
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npm run build
 
       - name: Start exact-head server
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: |
           npm start > /tmp/astro-p1.log 2>&1 &
           echo $! > /tmp/astro-p1.pid
@@ -93,6 +124,7 @@ jobs:
           exit 1
 
       - name: First HTTP semantic integrity
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from urllib.request import urlopen

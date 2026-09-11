@@ -54,7 +54,7 @@ check("accepted_public_knowledge", entry.includes("BTC_ACCEPTED_PUBLIC_KNOWLEDGE
 check("json_ld", entry.includes("application/ld+json"));
 check("robots", read("public/robots.txt").includes("Sitemap:"));
 check("sitemap", read("public/sitemap.xml").includes("btc?lang=ru"));
-check("llms", read("public/llms.txt").includes("Arbitrary live dialogue queries"));
+check("llms", read("public/llms.txt").includes("BTC Field / BTC Cosmographer is the first proven public Bitcoin corridor") && read("public/llms.txt").includes("/crypto-astro/btc/clean-chat?lang=en"));
 check("tracked_python_cache_guard", trackedPythonCaches.length === 0, `count=${trackedPythonCaches.length}`);
 check("working_tree_python_cache_ignored", ignoredPythonCacheProbes);
 check("CLOSED_PUBLIC_STOP_REASON_LABELS", [
