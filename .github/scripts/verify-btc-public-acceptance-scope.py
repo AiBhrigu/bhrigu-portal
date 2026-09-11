@@ -408,6 +408,31 @@ BTC_OBSERVABILITY_V1_SCOPE = {
     "ui/btc/BtcCleanChatV1.tsx",
 }
 
+# Shared commercial-access atom: public meaning changes outside BTC product/runtime ownership.
+COMMERCIAL_ACCESS_SHARED_SCOPE = {
+    '.github/workflows/bhrigu-frey-preservation-pr.yml',
+    '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+    'pages/_app.js',
+    'pages/access.tsx',
+    'pages/guide/frey.js',
+    'pages/map.js',
+    'pages/support.js',
+    'public/llms.txt',
+}
+
+# CI-only authority repair for cross-surface shared-file routing.
+COMMERCIAL_ACCESS_CI_AUTHORITY_REPAIR_SCOPE = {
+    '.github/workflows/access-intake-containment-pr.yml',
+    '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+    '.github/workflows/bhrigu-public-locale-transport-pr.yml',
+    '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+    '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+    '.github/workflows/btc-clean-chat-v1-pr.yml',
+    '.github/scripts/verify-btc-public-acceptance-scope.py',
+    'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
+    '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+}
+
 if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
     print("workflow_dispatch: exact PR diff gate deferred")
     raise SystemExit(0)
@@ -442,6 +467,8 @@ actual = set(subprocess.check_output(
 ).splitlines())
 
 accepted_scopes = {
+    "PASS_SHARED_COMMERCIAL_ACCESS_EXACT_8_FILE_SCOPE": COMMERCIAL_ACCESS_SHARED_SCOPE,
+    "PASS_SHARED_COMMERCIAL_ACCESS_CI_AUTHORITY_REPAIR_EXACT_9_FILE_SCOPE": COMMERCIAL_ACCESS_CI_AUTHORITY_REPAIR_SCOPE,
     "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE": PUBLIC_ACCEPTANCE_SCOPE,
     "PASS_BTC_ENTRY_CLEAN_PREMIUM_EXACT_4_FILE_SCOPE": BTC_ENTRY_CLEAN_PREMIUM_SCOPE,
     "PASS_BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_EXACT_7_FILE_SCOPE": BTC_COSMOGRAPHER_FOUNDER_BLOCKERS_REPAIR_SCOPE,

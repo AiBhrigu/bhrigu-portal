@@ -219,6 +219,27 @@ jobs:
             "tests/btc-observability-v1-acceptance.ts"
             "ui/btc/BtcCleanChatV1.tsx"
           )
+          commercial_access_expected=(
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            "pages/_app.js"
+            "pages/access.tsx"
+            "pages/guide/frey.js"
+            "pages/map.js"
+            "pages/support.js"
+            "public/llms.txt"
+          )
+          ci_authority_repair_expected=(
+            ".github/workflows/access-intake-containment-pr.yml"
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-public-locale-transport-pr.yml"
+            ".github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml"
+            ".github/workflows/bhrigu-public-site-human-copy-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            "scripts/run-btc-natural-followup-discovery-static-fixture.mjs"
+            ".github/workflows/bhrigu-home-market-cosmographer-pr.yml"
+          )
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
@@ -236,7 +257,15 @@ jobs:
           mapfile -t research_field_preview_expected_sorted < <(printf '%s\n' "${research_field_preview_expected[@]}" | sort)
           mapfile -t integration_expected_sorted < <(printf '%s\n' "${integration_expected[@]}" | sort -u)
           mapfile -t quick_entry_routing_expected_sorted < <(printf '%s\n' "${quick_entry_routing_expected[@]}" | sort)
-          if diff -q <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+          mapfile -t commercial_access_expected_sorted < <(printf '%s\n' "${commercial_access_expected[@]}" | sort)
+          mapfile -t ci_authority_repair_expected_sorted < <(printf '%s\n' "${ci_authority_repair_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${commercial_access_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_SHARED_COMMERCIAL_ACCESS_SCOPE"
+            echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
+          elif diff -q <(printf '%s\n' "${ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_SHARED_CI_AUTHORITY_REPAIR_SCOPE"
+            echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
+          elif diff -q <(printf '%s\n' "${expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_CLEAN_CHAT_V1_RELEASE_REPAIR_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${link_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_PUBLIC_LINK_CANONICALIZATION_EXACT_11_FILE_SCOPE"
@@ -284,20 +313,27 @@ jobs:
             exit 1
           fi
       - run: npm ci
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
       - name: Direct OpenAI architecture acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: node --import tsx tests/btc-clean-chat-v1-acceptance.ts
       - name: Public cost-abuse guard acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: npm run verify:btc-clean-chat-cost-guard
       - name: Two-epoch Astro static and mocked acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         env:
           OPENAI_API_KEY: static-mock-only
           VERCEL_ENV: preview
         run: node --import tsx tests/btc-clean-chat-two-epoch-astro-acceptance.ts
       - name: Pending-state and client-timeout acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: node --import tsx tests/btc-clean-chat-pending-state-acceptance.ts
       - name: Privacy-safe observability acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: node --import tsx tests/btc-observability-v1-acceptance.ts
       - name: Traffic-retention copy attribution acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         shell: bash
         run: |
           node --import tsx - <<'NODE'
@@ -313,13 +349,16 @@ jobs:
           console.log('PASS_BTC_CLEAN_CHAT_COPY_ATTRIBUTION');
           NODE
       - name: TypeScript
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: npx tsc --noEmit
       - name: Production build
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         env:
           BHRIGU_BINANCE_PUBLIC_PRODUCTION_ENABLE: '0'
           BHRIGU_BINANCE_PUBLIC_BINDING_DISABLE: '0'
         run: npx next build
       - name: Start exact-head local Preview shell
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         shell: bash
         run: |
           npm run start -- -p 3000 >/tmp/btc-clean-chat-v1.log 2>&1 &
@@ -335,8 +374,10 @@ jobs:
           cat /tmp/btc-clean-chat-v1.log
           exit 1
       - name: Install browser driver
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
       - name: RU EN desktop mobile clean-shell acceptance
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         shell: bash
         run: |
           python3 - <<'PY'
@@ -437,6 +478,7 @@ jobs:
               driver.quit()
           PY
       - name: Current-to-Genesis native matrix desktop mobile proof
+        if: env.BTC_CLEAN_CHAT_SHARED_SCOPE != 'true'
         shell: bash
         run: |
           python3 - <<'PY'

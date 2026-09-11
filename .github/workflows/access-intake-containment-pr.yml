@@ -59,7 +59,58 @@ jobs:
       - name: Install exact dependency graph
         run: npm ci
       - name: Verify current private intake contract
-        run: npm run verify:access-private-intake
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --import tsx tests/access-private-intake-acceptance.ts
+          if [[ "${GITHUB_EVENT_NAME}" != "pull_request" ]]; then
+            git diff --exit-code origin/master -- pages/access.tsx
+            exit 0
+          fi
+          git fetch origin "${GITHUB_BASE_REF}"
+          python3 - <<'PY'
+          import os, subprocess
+          commercial_access = {
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            'pages/_app.js',
+            'pages/access.tsx',
+            'pages/guide/frey.js',
+            'pages/map.js',
+            'pages/support.js',
+            'public/llms.txt',
+          }
+          ci_authority_repair = {
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-public-locale-transport-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
+            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+          }
+          actual = set(subprocess.check_output(
+              ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD"], text=True
+          ).splitlines())
+          protected = [
+            'lib/access-intake-config.ts','lib/access-intake-neon.ts','lib/access-intake-runtime.ts',
+            'lib/access-review-auth0.ts','lib/access-models.ts','pages/access-review.tsx',
+            'pages/api/access/submit.ts','pages/api/founding/phi-btc-timing-windows/request.ts',
+            'tests/access-private-intake-acceptance.ts','migrations/20260809_access_private_intake_v1.sql',
+          ]
+          if actual in (commercial_access, ci_authority_repair):
+              drift = subprocess.check_output(
+                  ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD",'--',*protected], text=True
+              ).strip()
+              if drift:
+                  raise SystemExit('PRIVATE_INTAKE_PROTECTED_DIFF=' + drift)
+              print('ACCESS_PUBLIC_COMMERCIAL_SCOPE=PASS')
+              print('PRIVATE_INTAKE_PROTECTED_DIFF=ZERO')
+          else:
+              subprocess.check_call(['git','diff','--exit-code',f"origin/{os.environ['GITHUB_BASE_REF']}",'--','pages/access.tsx'])
+          PY
 
       - name: Verify TypeScript
         run: npx tsc --noEmit

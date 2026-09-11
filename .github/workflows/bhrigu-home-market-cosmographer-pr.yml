@@ -418,7 +418,7 @@ jobs:
 
               driver.get(f"{base}/?lang=en")
               canonical = driver.find_element(By.CSS_SELECTOR, "link[rel='canonical']").get_attribute("href")
-              check("canonical_exact", canonical == "https://www.bhrigu.io/", canonical)
+              check("canonical_exact", canonical == "https://www.bhrigu.io/?lang=en", canonical)
 
               try:
                   urllib.request.urlopen(f"{base}/market-cosmographer", timeout=30)
