@@ -112,7 +112,12 @@ jobs:
           llms=Path('public/llms.txt').read_text()
           checks={
             'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
-            'ACCESS_CLOSED':'temporarily closed' in Path('pages/access.tsx').read_text(),
+            'ACCESS_COMMERCIAL_OBJECT_PRESENT':'Φ External Systems Recon' in Path('pages/access.tsx').read_text(),
+            'ACCESS_USD_300_PRESENT':'USD 300' in Path('pages/access.tsx').read_text(),
+            'ACCESS_AGENTMAIL_PRESENT':'bhrigu-revenue@agentmail.to' in Path('pages/access.tsx').read_text(),
+            'ACCESS_NO_FORM_PRESENT':'<form' not in Path('pages/access.tsx').read_text().lower(),
+            'ACCESS_SUPPORT_SEPARATION_PRESENT':all(token in Path('pages/access.tsx').read_text() for token in ['Voluntary Bitcoin support — not payment for this service.','Добровольная Bitcoin-поддержка — не оплата этой услуги.']),
+            'ACCESS_NO_IMPLEMENTATION_PRESENT':'NO IMPLEMENTATION' in Path('pages/access.tsx').read_text(),
             'SIGNAL_ARCHIVE':'HISTORICAL SIGNAL' in Path('pages/signal.js').read_text(),
             'CHRONICLE_DATED':'JANUARY 2026 SNAPSHOT' in Path('pages/chronicle.js').read_text(),
             'SITEMAP_BILINGUAL':'?lang=ru' in sitemap and '?lang=en' in sitemap,

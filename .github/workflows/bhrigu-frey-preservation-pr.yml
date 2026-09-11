@@ -34,7 +34,7 @@ jobs:
           grep -q 'bhrigu-frey-ru-v2-aligned.pdf' pages/guide/frey.js
           grep -q 'bhrigu-frey-en-approved-poster-pack-v5-visual-guide.pdf' pages/guide/frey.js
           grep -q 'bhrigu-frey-ru-approved-poster-pack-v1-visual-guide.pdf' pages/guide/frey.js
-          grep -q 'reviewed private intake is temporarily closed' pages/guide/frey.js
+          grep -q 'external systems recon is handled separately through /access' pages/guide/frey.js
           grep -q 'Одна дата открывает состояние. Две даты открывают переход.' pages/guide/frey.js
       - name: Single Guide metadata authority
         run: |

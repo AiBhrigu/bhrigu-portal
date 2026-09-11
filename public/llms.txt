@@ -20,7 +20,10 @@ Use these relations when reading the public system:
 - Frey Guide -> method authority for how to read one date, compare two dates, understand Delta, use Timeline, and hand a Frey reading to another AI.
 - BTC Field -> evidence-linked Bitcoin intelligence surface with explicit source and causality boundaries.
 - Cosmography -> public research language for structure, cycles and relations; protected mechanisms are not implied by public descriptions.
-- Access -> public boundary page; reviewed private intake is currently closed.
+- Access -> bounded commercial entry for Φ External Systems Recon, usable by humans and external agents.
+  Base object: one read-only bounded system recon, USD 300, system map + 3 findings + evidence + repair blueprint.
+  Implementation is not included.
+  Support is not payment.
 
 ## Canonical public orientation
 - https://www.bhrigu.io/?lang=en

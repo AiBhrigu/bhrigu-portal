@@ -30,11 +30,11 @@ const COPY = {
     hero: 'How to read a Frey response without losing its structure',
     lead: 'Frey is a bounded temporal-reading interface. It is not a chatbot, horoscope, oracle or prediction engine. This guide explains how to read one date, compare two dates, follow nearby movement and hand the result to another AI without stripping away its method or boundaries.',
     routeTitle: 'The public route',
-    routeIntro: 'The current public path remains simple. Reviewed private intake is temporarily closed, so the guide preserves the public explanation without presenting Access as open.',
+    routeIntro: 'The current public path remains simple. Frey remains a distinct temporal service; external systems recon is handled separately through /access.',
     routes: [
       ['/frey', '1 · Frey', 'Choose a date or temporal focus and receive the deterministic Frey result.'],
       ['/reading', '2 · Reading', 'Use the reading layer to understand structural state, tension, resonance, direction and boundary.'],
-      ['/access', '3 · Access boundary', 'Public explanation remains available; reviewed private intake is temporarily closed.'],
+      ['/access', '3 · External systems recon', 'Paid bounded external systems recon is handled separately from Frey.'],
     ],
     readTitle: 'How to read one Frey date',
     readBody1: 'Read a Frey response as a structure, not as a command. The primary movement is raw metrics → state → meaning → direction → boundary.',
@@ -69,7 +69,7 @@ const COPY = {
     ruPackBody: 'Russian approved visual guide pack. It is also a strong explanatory prompt/reference for AI-assisted interpretation because it preserves the logic, vocabulary and reading order of Frey.',
     boundaryTitle: 'Boundary',
     boundary: 'BHRIGU / Frey is not financial, medical, legal, trading or deterministic life advice. Frey turns a temporal pattern into a readable structure; the final decision remains human.',
-    support: 'Guide materials and public Frey remain available even while reviewed private intake is closed.',
+    support: 'Guide materials and public Frey remain distinct from the paid external systems recon available through /access.',
   },
   ru: {
     title: 'Гид Frey · Как читать, сравнивать и передавать чтение ИИ',
@@ -78,11 +78,11 @@ const COPY = {
     hero: 'Как читать ответ Frey, не теряя его структуру',
     lead: 'Frey — ограниченный интерфейс темпорального чтения. Это не чат-бот, не гороскоп, не оракул и не машина предсказаний. Этот гид объясняет, как читать одну дату, сравнивать две даты, смотреть ближайшее движение и передавать результат другому ИИ без потери метода и границ.',
     routeTitle: 'Публичный маршрут',
-    routeIntro: 'Текущий публичный путь остаётся простым. Reviewed private intake временно закрыт, поэтому гид сохраняет публичные объяснения, но не показывает Access как открытый вход.',
+    routeIntro: 'Текущий публичный путь остаётся простым. Frey остаётся отдельным темпоральным сервисом; внешняя разведка систем обрабатывается отдельно через /access.',
     routes: [
       ['/frey', '1 · Frey', 'Выберите дату или временной фокус и получите детерминированный результат Frey.'],
       ['/reading', '2 · Reading', 'Читайте структурное состояние, напряжение, резонанс, направление и границу.'],
-      ['/access', '3 · Граница Access', 'Публичное объяснение доступно; reviewed private intake временно закрыт.'],
+      ['/access', '3 · Внешняя разведка систем', 'Платная ограниченная внешняя разведка систем обрабатывается отдельно от Frey.'],
     ],
     readTitle: 'Как читать одну дату Frey',
     readBody1: 'Читайте ответ Frey как структуру, а не как команду. Основной порядок: исходные метрики → состояние → значение → направление → граница.',
@@ -117,7 +117,7 @@ const COPY = {
     ruPackBody: 'Утверждённый русский визуальный гид. Он одновременно работает как сильный подробный промт/справочник для ИИ-трактовки, потому что сохраняет логику, словарь и порядок чтения Frey.',
     boundaryTitle: 'Граница',
     boundary: 'BHRIGU / Frey не является финансовой, медицинской, юридической, торговой или детерминированной жизненной рекомендацией. Frey превращает временной паттерн в читаемую структуру; окончательное решение остаётся за человеком.',
-    support: 'Материалы Guide и публичный Frey остаются доступными, пока reviewed private intake закрыт.',
+    support: 'Материалы Guide и публичный Frey остаются отдельными от платной внешней разведки систем через /access.',
   },
 };
 
