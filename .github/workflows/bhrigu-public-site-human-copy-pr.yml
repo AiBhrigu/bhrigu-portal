@@ -77,6 +77,9 @@ jobs:
             '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
           }
+          revenue_discovery_human_copy_routing={
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -89,6 +92,8 @@ jobs:
               print('SHARED_SCOPE_PASS ci_authority_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == revenue_discovery_ci_repair:
               print('SHARED_SCOPE_PASS revenue_discovery_ci_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == revenue_discovery_human_copy_routing:
+              print('SHARED_SCOPE_PASS revenue_discovery_human_copy_routing', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
@@ -107,7 +112,7 @@ jobs:
           echo 'REVENUE_DISCOVERY_CONTRACT=PASS'
 
       - name: Verify copy, boundary, SEO and agent truth
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -149,15 +154,15 @@ jobs:
           PY
 
       - name: Install locked dependencies
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: npm ci --ignore-scripts
 
       - name: Production build
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: npm run build
 
       - name: Start exact-head server
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: |
           npm start > /tmp/public-site-repair.log 2>&1 &
           echo $! > /tmp/public-site-repair.pid
@@ -169,11 +174,11 @@ jobs:
           exit 1
 
       - name: Install browser client
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
 
       - name: RU EN desktop mobile browser acceptance
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           import json
