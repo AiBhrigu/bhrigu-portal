@@ -7,12 +7,13 @@ const COPY = {
     title: "Start with the working system, not the archive.",
     lead: "BHRIGU is the public home of Market Cosmographer, BTC Field, Frey, public proof, and clearly bounded research surfaces.",
     choose: "Choose a surface",
-    chooseLead: "Four different doors into the same public system. Start with Bitcoin, temporal reading, evidence, or the relationship map.",
+    chooseLead: "Five doors into the same public system: Bitcoin, temporal reading, evidence, the relationship map, or bounded external systems work.",
     items: [
       ["01", "BITCOIN · LIVE FIELD", "BTC Field", "The first proven live corridor for evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Open BTC Field"],
       ["02", "TEMPORAL · ACTIVE SERVICE", "Frey", "A distinct active temporal reading and dialogue service.", "/frey", "Open Frey"],
       ["03", "EVIDENCE · PUBLIC PROOF", "Public proof", "Inspect the source-bound research surface behind current public claims.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Inspect proof"],
       ["04", "SYSTEM · RELATION MAP", "System map", "See how BHRIGU, Cosmographer, Frey and ORION relate without collapsing their roles.", "/map", "Open system map"],
+      ["05", "WORK · FIXED COMMERCIAL OBJECT", "External Systems Recon · USD 300", "A bounded read-only review of one AI or research system: system map, 3 findings, evidence, and an exact repair blueprint.", "/access", "Open commercial access"],
     ],
     boundaryLabel: "Protected depth",
     boundary: "ORION remains protected research depth. Public surfaces expose meaning, evidence and boundaries — not private internals.",
@@ -23,12 +24,13 @@ const COPY = {
     title: "Начните с работающей системы, а не с архива.",
     lead: "BHRIGU — публичный дом Market Cosmographer, BTC Field, Frey, публичных доказательств и чётко ограниченных исследовательских поверхностей.",
     choose: "Выберите поверхность",
-    chooseLead: "Четыре разных входа в одну публичную систему: Bitcoin, темпоральное чтение, доказательства или карта связей.",
+    chooseLead: "Пять входов в одну публичную систему: Bitcoin, темпоральное чтение, доказательства, карта связей или ограниченная внешняя работа с системами.",
     items: [
       ["01", "BITCOIN · ЖИВОЕ ПОЛЕ", "BTC Field", "Первый доказанный живой коридор evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Открыть BTC Field"],
       ["02", "TEMPORAL · АКТИВНЫЙ СЕРВИС", "Frey", "Отдельный действующий сервис темпорального чтения и диалога.", "/frey", "Открыть Frey"],
       ["03", "EVIDENCE · ПУБЛИЧНЫЙ PROOF", "Публичные доказательства", "Проверьте source-bound исследовательскую поверхность, на которой основаны текущие публичные утверждения.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Открыть доказательства"],
       ["04", "SYSTEM · КАРТА СВЯЗЕЙ", "Карта системы", "Посмотрите связи BHRIGU, Космографа, Frey и ORION без смешения их ролей.", "/map", "Открыть карту"],
+      ["05", "WORK · ФИКСИРОВАННЫЙ КОММЕРЧЕСКИЙ ОБЪЕКТ", "External Systems Recon · USD 300", "Ограниченный read-only разбор одной AI- или исследовательской системы: карта, 3 вывода, доказательства и точный blueprint исправления.", "/access", "Открыть коммерческий доступ"],
     ],
     boundaryLabel: "Защищённая глубина",
     boundary: "ORION остаётся защищённой исследовательской глубиной. Публичные поверхности показывают смысл, доказательства и границы — не приватные механизмы.",
@@ -36,7 +38,7 @@ const COPY = {
   },
 };
 
-const CARD_TONES = ["blue", "violet", "gold", "mix"];
+const CARD_TONES = ["blue", "violet", "gold", "mix", "gold"];
 
 function local(href, locale) {
   if (href.startsWith("http")) return href;
@@ -59,7 +61,7 @@ export default function Start({ locale }) {
 
       <section className="orientation" aria-labelledby="start-orientation-title">
         <div className="sectionHead">
-          <p className="sectionIndex">01 — 04</p>
+          <p className="sectionIndex">01 — 05</p>
           <div>
             <h2 id="start-orientation-title">{c.choose}</h2>
             <p>{c.chooseLead}</p>
