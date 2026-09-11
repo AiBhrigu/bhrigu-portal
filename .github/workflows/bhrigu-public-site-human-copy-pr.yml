@@ -67,18 +67,44 @@ jobs:
             'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
           }
+          revenue_discovery={
+            'pages/access.tsx',
+            'pages/index.js',
+            'pages/start.js',
+          }
+          revenue_discovery_ci_repair={
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
           ).splitlines())
-          if actual == commercial_access:
+          if actual == revenue_discovery:
+              print('EXACT_SCOPE_PASS revenue_discovery', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_REVENUE_DISCOVERY_SCOPE=true\n')
+          elif actual == commercial_access:
               print('SHARED_SCOPE_PASS commercial_access', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == ci_authority_repair:
               print('SHARED_SCOPE_PASS ci_authority_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == revenue_discovery_ci_repair:
+              print('SHARED_SCOPE_PASS revenue_discovery_ci_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
           PY
+
+      - name: Verify revenue discovery contract
+        if: env.BHRIGU_REVENUE_DISCOVERY_SCOPE == 'true'
+        run: |
+          grep -Fq 'data-commercial-cta="external-systems-recon"' pages/index.js
+          grep -Fq 'External systems recon · USD 300' pages/index.js
+          grep -Fq 'External Systems Recon · USD 300' pages/start.js
+          grep -Fq 'data-bhrigu-commercial-service="PHI_EXTERNAL_SYSTEMS_RECON_V0_1"' pages/access.tsx
+          grep -Fq '"@type": "Service"' pages/access.tsx
+          grep -Fq '"@type": "Offer"' pages/access.tsx
+          grep -Fq 'price: "300"' pages/access.tsx
+          echo 'REVENUE_DISCOVERY_CONTRACT=PASS'
 
       - name: Verify copy, boundary, SEO and agent truth
         if: env.BHRIGU_SHARED_SCOPE != 'true'
