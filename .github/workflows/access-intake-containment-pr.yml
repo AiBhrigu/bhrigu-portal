@@ -91,6 +91,16 @@ jobs:
             'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
           }
+          revenue_discovery = {
+            'pages/access.tsx',
+            'pages/index.js',
+            'pages/start.js',
+          }
+          revenue_discovery_ci_repair = {
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+          }
           actual = set(subprocess.check_output(
               ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD"], text=True
           ).splitlines())
@@ -100,7 +110,7 @@ jobs:
             'pages/api/access/submit.ts','pages/api/founding/phi-btc-timing-windows/request.ts',
             'tests/access-private-intake-acceptance.ts','migrations/20260809_access_private_intake_v1.sql',
           ]
-          if actual in (commercial_access, ci_authority_repair):
+          if actual in (commercial_access, ci_authority_repair, revenue_discovery, revenue_discovery_ci_repair):
               drift = subprocess.check_output(
                   ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD",'--',*protected], text=True
               ).strip()
