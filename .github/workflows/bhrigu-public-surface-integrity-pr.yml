@@ -41,6 +41,17 @@ jobs:
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
           mapfile -t actual < <(git diff --name-only "$base" "$head" | sort)
+          frey_personal_expected=(
+            ".github/workflows/access-intake-containment-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            "pages/access.tsx"
+            "pages/frey.js"
+          )
+          mapfile -t frey_personal_expected_sorted < <(printf '%s\n' "${frey_personal_expected[@]}" | sort)
+          if diff -q <(printf '%s\n' "${frey_personal_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_FREY_PERSONAL_RESEARCH_EXACT_5_FILE_SCOPE"
+          fi
           public_pilot_cost_guard_expected=(
             ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -114,6 +125,10 @@ jobs:
             'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
             'ACCESS_COMMERCIAL_OBJECT_PRESENT':'Φ External Systems Recon' in Path('pages/access.tsx').read_text(),
             'ACCESS_USD_300_PRESENT':'USD 300' in Path('pages/access.tsx').read_text(),
+            'ACCESS_FREY_PERSONAL_PRESENT':'Frey Personal Temporal Research' in Path('pages/access.tsx').read_text(),
+            'ACCESS_FREY_USD_79_PRESENT':'USD 79' in Path('pages/access.tsx').read_text(),
+            'ACCESS_FREY_OFFER_SELECTOR':'offer=frey-personal' in frey,
+            'ACCESS_FREY_BOUNDARY':all(token in Path('pages/access.tsx').read_text() for token in ['No guaranteed prediction','Без гарантированного прогноза','No medical, legal, or financial advice.']),
             'ACCESS_AGENTMAIL_PRESENT':'bhrigu-revenue@agentmail.to' in Path('pages/access.tsx').read_text(),
             'ACCESS_NO_FORM_PRESENT':'<form' not in Path('pages/access.tsx').read_text().lower(),
             'ACCESS_SUPPORT_SEPARATION_PRESENT':all(token in Path('pages/access.tsx').read_text() for token in ['Voluntary Bitcoin support — not payment for this service.','Добровольная Bitcoin-поддержка — не оплата этой услуги.']),
@@ -170,6 +185,15 @@ jobs:
               else:
                 assert 'hreflang="en"' in lower and 'hreflang="ru"' in lower,(route,lang,'hreflang')
               print('PASS',route,lang)
+
+          for lang in ('en','ru'):
+            default_access=urlopen(f'http://127.0.0.1:3000/access?lang={lang}',timeout=30).read().decode()
+            personal_access=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal',timeout=30).read().decode()
+            invalid_personal=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal&ctx=%25%25%25',timeout=30).read().decode()
+            assert 'PHI_EXTERNAL_SYSTEMS_RECON_V0_1' in default_access and 'USD 300' in default_access,(lang,'default-access-preserved')
+            assert 'FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1' in personal_access and 'USD 79' in personal_access,(lang,'frey-personal-offer')
+            assert 'data-frey-personal-context="missing-or-invalid"' in invalid_personal,(lang,'frey-invalid-ctx-safe')
+            assert '<form' not in personal_access.lower(),(lang,'frey-no-form')
 
           reading=urlopen('http://127.0.0.1:3000/reading?lang=ru',timeout=30).read().decode()
           for text in ['Темпоральное чтение Frey','Временной якорь','Структурное состояние','Поле напряжения','Поле резонанса','Линия навигатора','Следующий шаг']:
