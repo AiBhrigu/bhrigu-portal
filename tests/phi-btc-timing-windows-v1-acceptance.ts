@@ -39,8 +39,10 @@ async function main(){
   assert.equal(getPhiBtcTimingWindowsPreviewConfig({VERCEL_ENV:"preview",DATABASE_URL:"postgres://x"}).enabled,true);
   assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",DATABASE_URL:"postgres://x"}),false);
   assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",OPENAI_API_KEY:"key"}),false);
-  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example"}),true);
-  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"production",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example"}),false);
+  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example"}),false);
+  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example",VERCEL_OIDC_TOKEN:"oidc"}),true);
+  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"preview",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example",BHRIGU_ASTRO_FIELD_BYPASS_SECRET:"bypass"}),true);
+  assert.equal(isPhiTimingWindowsPreviewExecutionConfigured({VERCEL_ENV:"production",OPENAI_API_KEY:"key",BHRIGU_ASTRO_FIELD_URL:"https://astro.example",VERCEL_OIDC_TOKEN:"oidc"}),false);
 
   const identity=newPhiBtcTimingWindowsIdentity("ru"); const pending=identity.record;
   assert.equal(isPhiBtcTimingWindowsOrderRecord(pending),true); assert.equal(pending.product_id,"PHI_BTC_TIMING_WINDOWS_FOUNDING_V1");

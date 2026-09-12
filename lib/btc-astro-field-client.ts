@@ -167,8 +167,10 @@ async function postAstroField(request: BtcAstroFieldRequest, timeoutMs: number):
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const bypass = process.env.BHRIGU_ASTRO_FIELD_BYPASS_SECRET?.trim();
+    const oidc = process.env.VERCEL_OIDC_TOKEN?.trim();
     const headers: Record<string, string> = { "content-type": "application/json", accept: "application/json" };
     if (bypass) headers["x-vercel-protection-bypass"] = bypass;
+    else if (oidc) headers["x-vercel-trusted-oidc-idp-token"] = oidc;
     const response = await fetch(endpoint(), {
       method: "POST",
       headers,
