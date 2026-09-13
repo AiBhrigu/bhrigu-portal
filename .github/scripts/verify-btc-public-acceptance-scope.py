@@ -466,7 +466,25 @@ actual = set(subprocess.check_output(
     ["git", "diff", "--name-only", base, head], text=True
 ).splitlines())
 
+FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_SCOPE = {
+    'pages/_app.js',
+    'pages/access.tsx',
+}
+
+FREY_COSMOGRAPHIC_PASSPORT_CI_AUTHORITY_SCOPE = {
+    '.github/scripts/verify-btc-public-acceptance-scope.py',
+    '.github/workflows/access-intake-containment-pr.yml',
+    '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+    '.github/workflows/bhrigu-frey-preservation-pr.yml',
+    '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+    '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+    '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+    '.github/workflows/btc-clean-chat-v1-pr.yml',
+}
+
 accepted_scopes = {
+    "PASS_FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_EXACT_2_FILE_SCOPE": FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_SCOPE,
+    "PASS_FREY_COSMOGRAPHIC_PASSPORT_CI_AUTHORITY_EXACT_8_FILE_SCOPE": FREY_COSMOGRAPHIC_PASSPORT_CI_AUTHORITY_SCOPE,
     "PASS_SHARED_COMMERCIAL_ACCESS_EXACT_8_FILE_SCOPE": COMMERCIAL_ACCESS_SHARED_SCOPE,
     "PASS_SHARED_COMMERCIAL_ACCESS_CI_AUTHORITY_REPAIR_EXACT_9_FILE_SCOPE": COMMERCIAL_ACCESS_CI_AUTHORITY_REPAIR_SCOPE,
     "PASS_PUBLIC_ACCEPTANCE_EXACT_22_FILE_SCOPE": PUBLIC_ACCEPTANCE_SCOPE,
