@@ -121,14 +121,21 @@ jobs:
           app=Path('pages/_app.js').read_text()
           sitemap=Path('public/sitemap.xml').read_text()
           llms=Path('public/llms.txt').read_text()
+          access=Path('pages/access.tsx').read_text()
+          legacy_frey_contract=all(token in access for token in ['Frey Personal Temporal Research','FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1','USD 79'])
+          passport_frey_contract=all(token in access for token in ['FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1','Cosmographic Reading','Cosmographic Passport','Космографическое чтение','Космографический паспорт','USD 79'])
+          legacy_frey_boundary=all(token in access for token in ['No guaranteed prediction','Без гарантированного прогноза','No medical, legal, or financial advice.'])
+          passport_frey_boundary=all(token in access for token in ['Interpretive research, not a guaranteed outcome','Исследовательская интерпретация, а не гарантированный исход','No medical, legal or financial advice','Без медицинских, юридических и финансовых рекомендаций'])
+          passport_metadata_ok=(not passport_frey_contract) or all(token in app for token in ['Cosmographic Reading · Cosmographic Passport | BHRIGU','Космографическое чтение · Космографический паспорт | BHRIGU','offer=frey-personal'])
           checks={
             'INVESTORS_TRUTH':'Capital Alignment Layer' not in Path('pages/investors.js').read_text() and 'paid service contracts' not in Path('pages/investors.js').read_text(),
             'ACCESS_COMMERCIAL_OBJECT_PRESENT':'Φ External Systems Recon' in Path('pages/access.tsx').read_text(),
             'ACCESS_USD_300_PRESENT':'USD 300' in Path('pages/access.tsx').read_text(),
-            'ACCESS_FREY_PERSONAL_PRESENT':'Frey Personal Temporal Research' in Path('pages/access.tsx').read_text(),
+            'ACCESS_FREY_COMMERCIAL_CONTRACT':legacy_frey_contract or passport_frey_contract,
             'ACCESS_FREY_USD_79_PRESENT':'USD 79' in Path('pages/access.tsx').read_text(),
             'ACCESS_FREY_OFFER_SELECTOR':'offer=frey-personal' in frey,
-            'ACCESS_FREY_BOUNDARY':all(token in Path('pages/access.tsx').read_text() for token in ['No guaranteed prediction','Без гарантированного прогноза','No medical, legal, or financial advice.']),
+            'ACCESS_FREY_BOUNDARY':legacy_frey_boundary or passport_frey_boundary,
+            'ACCESS_FREY_PASSPORT_METADATA':passport_metadata_ok,
             'ACCESS_AGENTMAIL_PRESENT':'bhrigu-revenue@agentmail.to' in Path('pages/access.tsx').read_text(),
             'ACCESS_NO_FORM_PRESENT':'<form' not in Path('pages/access.tsx').read_text().lower(),
             'ACCESS_SUPPORT_SEPARATION_PRESENT':all(token in Path('pages/access.tsx').read_text() for token in ['Voluntary Bitcoin support — not payment for this service.','Добровольная Bitcoin-поддержка — не оплата этой услуги.']),
