@@ -223,14 +223,20 @@ export default function App({ Component, pageProps }) {
   const routePath=pathOnly(router.pathname || router.asPath || "/");
   const raw=Array.isArray(router.query?.lang)?router.query.lang[0]:router.query?.lang;
   const lang=raw==="ru"?"ru":"en";
+  const rawOffer=routePath==="/access"&&typeof pageProps?.offer==="string"?pageProps.offer:(Array.isArray(router.query?.offer)?router.query.offer[0]:router.query?.offer);
+  const freyAccess=routePath==="/access"&&rawOffer==="frey-personal";
   const ephemeridesRoute=routePath==="/ephemerides"||routePath.startsWith("/ephemerides/");
   const path=ephemeridesRoute&&typeof pageProps?.canonicalPath==="string"?pageProps.canonicalPath:routePath;
   const ephemeridesPath=path==="/ephemerides"||path.startsWith("/ephemerides/");
   const monthIdentity=ephemeridesMonthIdentity(path,lang);
-  const pair=monthIdentity?[monthIdentity.title,monthIdentity.description]:META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."];
+  const freyAccessPair=lang==="ru"
+    ?["Космографическое чтение · Космографический паспорт | BHRIGU","Полное чтение Frey × Космограф одного объекта в значимом временном горизонте. Результат — переносимый Космографический паспорт за USD 79."]
+    :["Cosmographic Reading · Cosmographic Passport | BHRIGU","A complete Frey × Cosmographer reading of one subject across a meaningful temporal horizon, delivered as a portable Cosmographic Passport for USD 79."];
+  const pair=freyAccess?freyAccessPair:(monthIdentity?[monthIdentity.title,monthIdentity.description]:META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."]);
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
   const localized=LOCALIZED.has(path)||ephemeridesPath;
-  const canonical=`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
+  const canonical=freyAccess?`${BASE}/access?lang=${lang}&offer=frey-personal`:`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
+  const alternateHref=(targetLang)=>freyAccess?`${BASE}/access?lang=${targetLang}&offer=frey-personal`:`${BASE}${canonicalPath}?lang=${targetLang}`;
   const pageOwnsMetadata=PAGE_OWNS_METADATA.has(path);
   const machineGraph=buildMachineGraph(path,lang);
   return <>
@@ -238,9 +244,9 @@ export default function App({ Component, pageProps }) {
       {!pageOwnsMetadata&&<>
         <title>{pair[0]}</title><meta name="description" content={pair[1]} key="description" />
         <link rel="canonical" href={canonical} key="canonical" />
-        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={`${BASE}${canonicalPath}?lang=en`} key="alt-en" />}
-        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={`${BASE}${canonicalPath}?lang=ru`} key="alt-ru" />}
-        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={`${BASE}${canonicalPath}?lang=en`} key="alt-default" />}
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="en" href={alternateHref("en")} key="alt-en" />}
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="ru" href={alternateHref("ru")} key="alt-ru" />}
+        {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={alternateHref("en")} key="alt-default" />}
         {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
         <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
         <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
