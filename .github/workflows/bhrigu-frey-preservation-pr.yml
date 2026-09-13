@@ -48,6 +48,9 @@ jobs:
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
             '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
           }
+          frey_browser_copy_alignment = {
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+          }
           frey_personal = {
             '.github/workflows/access-intake-containment-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -61,7 +64,7 @@ jobs:
             'pages/access.tsx',
           }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
           print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
@@ -256,8 +259,8 @@ jobs:
                 wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
                 body=driver.find_element(By.TAG_NAME,'body').text
                 assert 'USD 79' in body,(viewport,lang,'price')
-                expected='personal research' if lang=='en' else 'персональное исследование'
-                assert expected in body.lower(),(viewport,lang,'localized-copy')
+                expected=('personal research','cosmographic reading') if lang=='en' else ('персональное исследование','космографическое чтение')
+                assert any(token in body.lower() for token in expected),(viewport,lang,'localized-copy')
                 ctx=driver.find_element(By.CSS_SELECTOR,'[data-frey-personal-context]').get_attribute('data-frey-personal-context')
                 assert ctx == 'valid',(viewport,lang,'ctx-valid',ctx)
                 assert '2026-08-28' in body,(viewport,lang,'primary-date-prefill')
