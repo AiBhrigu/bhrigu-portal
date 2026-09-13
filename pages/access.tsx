@@ -11,8 +11,8 @@ const HACKATHON_CAPSULE_REPO = "https://github.com/AiBhrigu/bhrigu-binance-agent
 const COPY = {
   en: {
     eyebrow: "Φ RESEARCH SYSTEMS · EXTERNAL RECON",
-    title: "Find the three highest-impact failures in your AI or research system — with evidence and an exact repair blueprint.",
-    lead: "Bounded, read-only systems recon for AI agents, MCP, RAG, knowledge systems, conversational AI, research products, and Bitcoin / crypto systems.",
+    title: "Find what is failing in your system.",
+    lead: "One bounded, read-only recon of an AI or research system — three highest-impact findings, evidence, and an exact repair blueprint.",
     noMutation: "No development or production mutation is included.",
     firstLine: "ONE BOUNDED SYSTEM · 3 FINDINGS · EVIDENCE-LINKED · USD 300",
     priceLabel: "FIXED BASE OBJECT",
@@ -20,6 +20,7 @@ const COPY = {
     implementation: "NO IMPLEMENTATION",
     primaryCta: "Start the recon",
     agentCta: "Agent entry contract ↓",
+    directEmail: "Email directly:",
     offerTitle: "Φ External Systems Recon",
     offerLead: "One bounded system. One read-only investigation.",
     getsTitle: "You receive exactly four primary objects",
@@ -63,8 +64,8 @@ const COPY = {
   },
   ru: {
     eyebrow: "Φ RESEARCH SYSTEMS · ВНЕШНЯЯ РАЗВЕДКА",
-    title: "Найдём три наиболее значимых дефекта вашей AI- или исследовательской системы — с доказательствами и точным планом исправления.",
-    lead: "Ограниченная read-only разведка AI-агентов, MCP, RAG, knowledge-систем, conversational AI, исследовательских продуктов и Bitcoin / crypto систем.",
+    title: "Найдём, что ломает вашу систему.",
+    lead: "Одна bounded read-only разведка AI- или исследовательской системы: три ключевых вывода, доказательства и точный blueprint исправления.",
     noMutation: "Разработка и изменение production не входят в работу.",
     firstLine: "ОДНА СИСТЕМА · 3 ВЫВОДА · EVIDENCE-LINKED · USD 300",
     priceLabel: "ФИКСИРОВАННЫЙ БАЗОВЫЙ ОБЪЕКТ",
@@ -72,6 +73,7 @@ const COPY = {
     implementation: "NO IMPLEMENTATION",
     primaryCta: "Начать разведку",
     agentCta: "Контракт для AI-агента ↓",
+    directEmail: "Написать напрямую:",
     offerTitle: "Φ External Systems Recon",
     offerLead: "Одна ограниченная система. Одна read-only разведка.",
     getsTitle: "Вы получаете ровно четыре основных объекта",
@@ -409,15 +411,15 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
         </>
       ) : (
         <>
-      <section className="hero">
-        <div className="meaning">
+      <section className="hero systemHero">
+        <div className="meaning systemMeaning">
           <p className="ey">{c.eyebrow}</p>
           <h1>{c.title}</h1>
           <p className="lead">{c.lead}</p>
-          <p className="boundary">{c.noMutation}</p>
-          <p className="signal">{c.firstLine}</p>
+          <div className="evidenceMotif" aria-hidden="true"><span className="motifNode" /><span className="motifLine" /><span className="motifNode" /><span className="motifLine" /><span className="motifNode" /></div>
+          <p className="motifLabel">SYSTEM → EVIDENCE → REPAIR</p>
         </div>
-        <aside className="action" aria-label={c.offerTitle}>
+        <aside className="action systemAction" aria-label={c.offerTitle}>
           <p className="mini">{c.priceLabel}</p>
           <strong className="price">USD 300</strong>
           <span>{c.priceScope}</span>
@@ -425,6 +427,7 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
           <span>{c.implementation}</span>
           <a className="primary" href={mailto}>{c.primaryCta}</a>
           <a className="secondary" href="#agent-entry">{c.agentCta}</a>
+          <p className="directEmail"><span>{c.directEmail}</span><a href={"mailto:" + REVENUE_EMAIL}>{REVENUE_EMAIL}</a></p>
         </aside>
       </section>
 
@@ -506,6 +509,9 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
         .q{--gold:#d5b86d;--cyan:#62c9e6;max-width:1080px;margin:auto;padding:54px 20px 120px;color:rgba(247,248,250,.94)}
         .hero{display:grid;grid-template-columns:minmax(0,61.803fr) minmax(280px,38.197fr);border:1px solid rgba(213,184,109,.16);border-radius:24px;overflow:hidden;background:radial-gradient(circle at 10% 8%,rgba(213,184,109,.08),transparent 34%),radial-gradient(circle at 100% 20%,rgba(98,201,230,.06),transparent 28%),rgba(255,255,255,.012)}
         .meaning{padding:48px 44px}.action{display:flex;flex-direction:column;gap:10px;padding:42px 34px;border-left:1px solid rgba(213,184,109,.16);background:rgba(0,0,0,.14)}
+        .systemHero{min-height:520px}.systemMeaning,.systemAction{justify-content:center}.systemMeaning{padding:64px 56px}.systemMeaning h1{max-width:660px;margin-bottom:24px;font-size:clamp(44px,5.2vw,68px);line-height:1.01}.systemMeaning .lead{max-width:610px;margin:0;font-size:18px;line-height:1.62}.systemAction{padding:54px 38px}.systemAction .primary{margin-top:24px}
+        .evidenceMotif{display:grid;grid-template-columns:10px minmax(44px,96px) 10px minmax(44px,96px) 10px;align-items:center;width:min(330px,76%);margin-top:54px}.motifNode{width:10px;height:10px;border:1px solid rgba(213,184,109,.78);border-radius:50%;box-shadow:0 0 18px rgba(213,184,109,.12)}.motifNode:nth-of-type(3){border-color:rgba(98,201,230,.62)}.motifLine{height:1px;background:linear-gradient(90deg,rgba(213,184,109,.55),rgba(98,201,230,.32))}.motifLabel{margin:11px 0 0;color:rgba(255,255,255,.42);font:600 10px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em}
+        .directEmail{display:grid;gap:3px;margin:14px 0 0;padding-top:14px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;line-height:1.45}.directEmail span{color:rgba(255,255,255,.42);font:500 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase}.directEmail a{width:max-content;max-width:100%;color:rgba(255,255,255,.72);text-decoration-color:rgba(213,184,109,.34);text-underline-offset:4px;overflow-wrap:anywhere}
         .ey,.mini{margin:0 0 12px;color:var(--gold);font-size:11px;letter-spacing:.15em;text-transform:uppercase}.mini{color:rgba(213,184,109,.72)}
         h1{margin:0 0 20px;font:400 clamp(38px,5.4vw,66px)/.99 Georgia,serif;letter-spacing:-.035em}h2{margin:0 0 14px;font:500 clamp(28px,3.5vw,42px)/1.08 Georgia,serif}h3{margin:8px 0 8px;font-size:16px}
         p{color:rgba(255,255,255,.68);line-height:1.65}.lead{max-width:720px;font-size:17px}.boundary{padding-left:16px;border-left:1px solid rgba(213,184,109,.4)}.signal{margin-top:26px;color:rgba(255,255,255,.88);font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em}
@@ -518,8 +524,8 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
         .contract{scroll-margin-top:80px}.top{margin-top:22px!important}code{color:rgba(98,201,230,.9);overflow-wrap:anywhere}pre{margin:12px 0 0;padding:16px;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.22);color:rgba(235,239,244,.78);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
         .flow{color:rgba(255,255,255,.88);font:600 13px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}.support{border-color:rgba(213,184,109,.15)}
         .finalCta{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;margin-top:18px;padding:34px;border:1px solid rgba(213,184,109,.18);border-radius:20px;background:linear-gradient(120deg,rgba(213,184,109,.055),rgba(98,201,230,.025))}.finalCta .primary{min-width:190px;margin:0}
-        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.five,.contextGrid{grid-template-columns:repeat(2,1fr)}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
-        @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.block,.finalCta{padding:24px 20px}.four,.five,.proofs,.contextGrid{grid-template-columns:1fr}.action{gap:8px}.price{font-size:50px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
+        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.five,.contextGrid{grid-template-columns:repeat(2,1fr)}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.systemHero{min-height:0}.systemMeaning{padding:52px 42px 46px}.systemAction{padding:38px 42px}.evidenceMotif{margin-top:38px}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
+        @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.systemMeaning{padding:38px 26px 34px}.systemAction{padding:32px 26px}.systemMeaning h1{font-size:clamp(38px,12vw,50px)}.systemMeaning .lead{font-size:16px}.evidenceMotif{width:min(280px,88%);margin-top:32px}.motifLabel{font-size:9px;letter-spacing:.1em}.directEmail{margin-top:12px}.block,.finalCta{padding:24px 20px}.four,.five,.proofs,.contextGrid{grid-template-columns:1fr}.action{gap:8px}.price{font-size:50px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
       `}</style>
       </main>
     </>
