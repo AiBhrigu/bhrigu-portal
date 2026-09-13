@@ -30,6 +30,20 @@ jobs:
           head='${{ github.event.pull_request.head.sha }}'
           python3 - <<'PY'
           import os, subprocess
+          frey_passport_preview = {
+            'pages/_app.js',
+            'pages/access.tsx',
+          }
+          frey_passport_ci_authority = {
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+          }
           frey_personal = {
             '.github/workflows/access-intake-containment-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -43,7 +57,7 @@ jobs:
             'pages/access.tsx',
           }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
           print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
@@ -100,12 +114,26 @@ jobs:
           grep -Fq 'offer=frey-personal' pages/frey.js
           grep -Fq 'Personal research · USD 79' pages/frey.js
           grep -Fq 'Персональное исследование · USD 79' pages/frey.js
-          grep -Fq 'Frey Personal Temporal Research' pages/access.tsx
           grep -Fq 'USD 79' pages/access.tsx
           grep -Fq 'price: "79"' pages/access.tsx
-          grep -Fq 'FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1' pages/access.tsx
-          grep -Fq 'No guaranteed prediction' pages/access.tsx
-          grep -Fq 'Без гарантированного прогноза' pages/access.tsx
+          if grep -Fq 'FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1' pages/access.tsx; then
+            grep -Fq 'Cosmographic Reading' pages/access.tsx
+            grep -Fq 'Cosmographic Passport' pages/access.tsx
+            grep -Fq 'Космографическое чтение' pages/access.tsx
+            grep -Fq 'Космографический паспорт' pages/access.tsx
+            grep -Fq 'Interpretive research, not a guaranteed outcome' pages/access.tsx
+            grep -Fq 'Исследовательская интерпретация, а не гарантированный исход' pages/access.tsx
+            grep -Fq 'No medical, legal or financial advice' pages/access.tsx
+            grep -Fq 'Без медицинских, юридических и финансовых рекомендаций' pages/access.tsx
+            ! grep -Fq 'Frey Personal Temporal Research' pages/access.tsx
+            echo 'FREY_COSMOGRAPHIC_READING_PASSPORT_CONTRACT=PASS'
+          else
+            grep -Fq 'Frey Personal Temporal Research' pages/access.tsx
+            grep -Fq 'FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1' pages/access.tsx
+            grep -Fq 'No guaranteed prediction' pages/access.tsx
+            grep -Fq 'Без гарантированного прогноза' pages/access.tsx
+            echo 'FREY_PERSONAL_LEGACY_CONTRACT=PASS'
+          fi
           test -z "$(git diff --name-only '${{ github.event.pull_request.base.sha }}' '${{ github.event.pull_request.head.sha }}' -- lib/frey-access-bridge.js lib/access-triage.js pages/api)"
           echo 'FREY_PERSONAL_COMMERCIAL_CONTRACT=PASS'
       - name: AI packet contract

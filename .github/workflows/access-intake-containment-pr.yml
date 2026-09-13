@@ -101,6 +101,20 @@ jobs:
             '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
           }
+          frey_passport_preview = {
+            'pages/_app.js',
+            'pages/access.tsx',
+          }
+          frey_passport_ci_authority = {
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+          }
           frey_personal_research = {
             '.github/workflows/access-intake-containment-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -122,7 +136,7 @@ jobs:
             'pages/api/access/submit.ts','pages/api/founding/phi-btc-timing-windows/request.ts',
             'tests/access-private-intake-acceptance.ts','migrations/20260809_access_private_intake_v1.sql',
           ]
-          if actual in (commercial_access, ci_authority_repair, revenue_discovery, revenue_discovery_ci_repair, frey_personal_research, access_visual_ci_repair):
+          if actual in (commercial_access, ci_authority_repair, revenue_discovery, revenue_discovery_ci_repair, frey_passport_preview, frey_passport_ci_authority, frey_personal_research, access_visual_ci_repair):
               drift = subprocess.check_output(
                   ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD",'--',*protected], text=True
               ).strip()

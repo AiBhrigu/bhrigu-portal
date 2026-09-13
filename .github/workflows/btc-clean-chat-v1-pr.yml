@@ -219,6 +219,20 @@ jobs:
             "tests/btc-observability-v1-acceptance.ts"
             "ui/btc/BtcCleanChatV1.tsx"
           )
+          frey_passport_preview_expected=(
+            "pages/_app.js"
+            "pages/access.tsx"
+          )
+          frey_passport_ci_authority_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/access-intake-containment-pr.yml"
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml"
+            ".github/workflows/bhrigu-public-site-human-copy-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+          )
           commercial_access_expected=(
             ".github/workflows/bhrigu-frey-preservation-pr.yml"
             ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
@@ -257,9 +271,17 @@ jobs:
           mapfile -t research_field_preview_expected_sorted < <(printf '%s\n' "${research_field_preview_expected[@]}" | sort)
           mapfile -t integration_expected_sorted < <(printf '%s\n' "${integration_expected[@]}" | sort -u)
           mapfile -t quick_entry_routing_expected_sorted < <(printf '%s\n' "${quick_entry_routing_expected[@]}" | sort)
+          mapfile -t frey_passport_preview_expected_sorted < <(printf '%s\n' "${frey_passport_preview_expected[@]}" | sort)
+          mapfile -t frey_passport_ci_authority_expected_sorted < <(printf '%s\n' "${frey_passport_ci_authority_expected[@]}" | sort)
           mapfile -t commercial_access_expected_sorted < <(printf '%s\n' "${commercial_access_expected[@]}" | sort)
           mapfile -t ci_authority_repair_expected_sorted < <(printf '%s\n' "${ci_authority_repair_expected[@]}" | sort)
-          if diff -q <(printf '%s\n' "${commercial_access_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+          if diff -q <(printf '%s\n' "${frey_passport_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_SHARED_FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_SCOPE"
+            echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
+          elif diff -q <(printf '%s\n' "${frey_passport_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_SHARED_FREY_COSMOGRAPHIC_PASSPORT_CI_AUTHORITY_SCOPE"
+            echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
+          elif diff -q <(printf '%s\n' "${commercial_access_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_SHARED_COMMERCIAL_ACCESS_SCOPE"
             echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
           elif diff -q <(printf '%s\n' "${ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then

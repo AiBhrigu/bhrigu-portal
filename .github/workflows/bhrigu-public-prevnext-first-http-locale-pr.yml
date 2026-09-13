@@ -37,6 +37,20 @@ jobs:
               '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
               'pages/_app.js',
           }
+          frey_passport_preview={
+            'pages/_app.js',
+            'pages/access.tsx',
+          }
+          frey_passport_ci_authority={
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+          }
           commercial_access={
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
             '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
@@ -62,7 +76,11 @@ jobs:
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
           ).splitlines())
-          if actual == commercial_access:
+          if actual == frey_passport_preview:
+              print('SHARED_SCOPE_PASS frey_passport_preview', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == frey_passport_ci_authority:
+              print('SHARED_SCOPE_PASS frey_passport_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == commercial_access:
               print('SHARED_SCOPE_PASS commercial_access', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == ci_authority_repair:
               print('SHARED_SCOPE_PASS ci_authority_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
