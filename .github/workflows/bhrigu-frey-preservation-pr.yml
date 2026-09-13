@@ -217,7 +217,7 @@ jobs:
             assert 'PHI_EXTERNAL_SYSTEMS_RECON_V0_1' in default_access,(lang,'default-access-marker')
             assert 'USD 300' in default_access,(lang,'default-access-price')
             personal=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal',timeout=30).read().decode()
-            assert 'FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1' in personal,(lang,'personal-marker')
+            assert any(marker in personal for marker in ('FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1','FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1')),(lang,'personal-marker')
             assert 'USD 79' in personal,(lang,'personal-price')
             assert '<form' not in personal.lower(),(lang,'no-form')
             broken=urlopen(f'http://127.0.0.1:3000/access?lang={lang}&offer=frey-personal&ctx=%25%25%25',timeout=30).read().decode()
