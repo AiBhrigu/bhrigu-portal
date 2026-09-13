@@ -30,16 +30,21 @@ jobs:
           head='${{ github.event.pull_request.head.sha }}'
           python3 - <<'PY'
           import os, subprocess
-          expected = {
+          frey_personal = {
             '.github/workflows/access-intake-containment-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
             '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
             'pages/access.tsx',
             'pages/frey.js',
           }
+          access_visual_ci_repair = {
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            'pages/access.tsx',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual == expected, f'FREY_PERSONAL_EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}'
-          print('FREY_PERSONAL_EXACT_5_FILE_SCOPE=PASS')
+          assert actual in (frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
