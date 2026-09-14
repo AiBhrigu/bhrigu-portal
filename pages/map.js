@@ -78,14 +78,7 @@ export default function MapPage({ locale }) {
   const c = COPY[locale];
   return (
     <main className="q" lang={locale}>
-      <div className="mapTop">
-        <p className="ey">{c.ey}</p>
-        <nav className="localeNav" aria-label={locale === "ru" ? "Язык карты" : "Map language"}>
-          <Link className={locale === "en" ? "activeLocale" : ""} href="/map?lang=en">EN</Link>
-          <span aria-hidden="true">/</span>
-          <Link className={locale === "ru" ? "activeLocale" : ""} href="/map?lang=ru">RU</Link>
-        </nav>
-      </div>
+      <p className="ey">{c.ey}</p>
       <h1>{c.title}</h1>
       <div className="mapFieldLine" aria-hidden="true"><span /><i /><b /></div>
       {c.groups.map(([group, items], groupIndex) => (
@@ -120,10 +113,6 @@ export default function MapPage({ locale }) {
             radial-gradient(circle at 98% 44%, rgba(154,137,209,.05), transparent 28%);
         }
         .ey { color: #d5b86d; letter-spacing: .16em; font-size: 12px; }
-        .mapTop { display:flex; align-items:center; justify-content:space-between; gap:18px; }
-        .localeNav { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.34); font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; }
-        .localeNav :global(a) { color:rgba(255,255,255,.56); text-decoration:none; padding:7px 8px; border:1px solid transparent; border-radius:999px; }
-        .localeNav :global(a:hover), .localeNav :global(a:focus-visible), .localeNav :global(a.activeLocale) { color:#e4cb84; border-color:rgba(213,184,109,.28); outline:none; }
         .q h1 { margin-bottom: 22px; font: 400 clamp(38px,6vw,64px)/1.02 Georgia,serif; }
         .mapFieldLine { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; width: min(420px, 70%); height: 2px; margin: 0 0 36px; overflow: hidden; border-radius: 999px; opacity: .82; }
         .mapFieldLine span { background: var(--map-blue); }
