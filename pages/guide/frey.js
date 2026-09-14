@@ -208,30 +208,46 @@ export default function FreyGuidePage({ locale }) {
         data-frey-poster-pack-ru="FREY_GUIDE_APPROVED_POSTER_PACK_RU_V1"
         lang={locale}
       >
-        <section className="hero">
+        <section className="hero compactHero">
           <div className="heroTop">
             <p className="eyebrow">{c.eyebrow}</p>
             <a className="language" href={`/guide/frey?lang=${locale === 'ru' ? 'en' : 'ru'}`}>{locale === 'ru' ? 'EN' : 'RU'}</a>
           </div>
           <h1>{c.hero}</h1>
           <p className="lead">{c.lead}</p>
-          <div className="routeLine" aria-label="BHRIGU Frey public route">
-            <a href={localeHref('/frey', locale)}>/frey</a><span>→</span><a href={localeHref('/reading', locale)}>/reading</a><span>→</span><a href={localeHref('/access', locale)}>/access</a>
-          </div>
+          <a className="guideJump" href="#visual-guide">{locale === 'ru' ? 'Сразу к визуальному гиду ↓' : 'Go straight to the Visual Guide ↓'}</a>
         </section>
 
-        <section className="panel">
-          <h2>{c.routeTitle}</h2>
-          <p>{c.routeIntro}</p>
-          <div className="grid">
-            {c.routes.map(([path, title, body]) => (
-              <a className="card" key={path} href={localeHref(path, locale)}>
-                <p className="path">{path}</p>
-                <h3>{title}</h3>
-                <p>{body}</p>
-              </a>
-            ))}
+        <section
+          id="visual-guide"
+          className="panel visualGuidePanel"
+          data-frey-guide-primary-visual="true"
+          data-frey-guide-approved-en-pack="v5"
+          data-frey-guide-approved-ru-pack="v1"
+        >
+          <div className="visualGuideHeader">
+            <div>
+              <p className="eyebrow">{guide.eyebrow}</p>
+              <h2>{guide.title}</h2>
+            </div>
+            <p className="provenance">{guide.provenance}</p>
           </div>
+          <div className="visualGuideGrid">
+            <div className="previewFrame" aria-label={guide.previewAlt}>
+              <img className="previewImage" src={guide.preview} alt={guide.previewAlt} loading="lazy" />
+            </div>
+            <div className="guideCopy">
+              <p className="visualLead">{guide.lead}</p>
+              <ul className="valueList">{guide.bullets.map((item) => <li key={item}>{item}</li>)}</ul>
+              <a className="visualGuideCta" href={guide.pdf} target="_blank" rel="noreferrer">{guide.cta}</a>
+              <p className="guideMeta">{guide.meta}</p>
+            </div>
+          </div>
+          <p className="continuityNote">{guide.continuity}</p>
+          <details className="techDetails">
+            <summary>{guide.techTitle}</summary>
+            <div className="techLinks">{guide.tech.map(([label, href]) => <a href={href} key={href}>{label}</a>)}</div>
+          </details>
         </section>
 
         <section className="panel split" data-frey-guide-reading-protocol="one-date">
@@ -268,37 +284,6 @@ export default function FreyGuidePage({ locale }) {
           <a className="primaryAction" href={localeHref('/frey', locale)}>{locale === 'ru' ? 'Создать пакет Frey для другого ИИ →' : 'Create a Frey packet for another AI →'}</a>
         </section>
 
-        <section
-          className="panel visualGuidePanel"
-          data-frey-guide-primary-visual="true"
-          data-frey-guide-approved-en-pack="v5"
-          data-frey-guide-approved-ru-pack="v1"
-        >
-          <div className="visualGuideHeader">
-            <div>
-              <p className="eyebrow">{guide.eyebrow}</p>
-              <h2>{guide.title}</h2>
-            </div>
-            <p className="provenance">{guide.provenance}</p>
-          </div>
-          <div className="visualGuideGrid">
-            <div className="previewFrame" aria-label={guide.previewAlt}>
-              <img className="previewImage" src={guide.preview} alt={guide.previewAlt} loading="lazy" />
-            </div>
-            <div className="guideCopy">
-              <p className="visualLead">{guide.lead}</p>
-              <ul className="valueList">{guide.bullets.map((item) => <li key={item}>{item}</li>)}</ul>
-              <a className="visualGuideCta" href={guide.pdf} target="_blank" rel="noreferrer">{guide.cta}</a>
-              <p className="guideMeta">{guide.meta}</p>
-            </div>
-          </div>
-          <p className="continuityNote">{guide.continuity}</p>
-          <details className="techDetails">
-            <summary>{guide.techTitle}</summary>
-            <div className="techLinks">{guide.tech.map(([label, href]) => <a href={href} key={href}>{label}</a>)}</div>
-          </details>
-        </section>
-
         <section className="panel referencePanel" data-frey-guide-approved-core-materials="true">
           <p className="eyebrow">{c.materialsEyebrow}</p>
           <h2>{locale === 'ru' ? 'Справочные материалы' : 'Reference materials'}</h2>
@@ -313,6 +298,20 @@ export default function FreyGuidePage({ locale }) {
           <a className="alternateLink" href={alternateGuide.pdf} target="_blank" rel="noreferrer">{guide.alternateCta}</a>
         </section>
 
+        <section className="panel routePanel">
+          <h2>{c.routeTitle}</h2>
+          <p>{c.routeIntro}</p>
+          <div className="grid">
+            {c.routes.map(([path, title, body]) => (
+              <a className="card" key={path} href={localeHref(path, locale)}>
+                <p className="path">{path}</p>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+
         <section className="boundary">
           <h2>{c.boundaryTitle}</h2>
           <p>{c.boundary}</p>
@@ -323,7 +322,7 @@ export default function FreyGuidePage({ locale }) {
       </main>
 
       <style jsx>{`
-        .freyGuide{min-height:100vh;padding:72px 22px 130px;color:#f5efe2;background:radial-gradient(circle at 20% 10%,rgba(226,180,92,.18),transparent 32%),radial-gradient(circle at 80% 0%,rgba(75,124,255,.16),transparent 30%),linear-gradient(145deg,#070a12 0%,#10131d 46%,#06070b 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.hero,.panel,.boundary{width:min(1040px,100%);margin:0 auto 24px;border:1px solid rgba(226,180,92,.24);border-radius:28px;background:rgba(9,12,20,.72);box-shadow:0 24px 80px rgba(0,0,0,.32);backdrop-filter:blur(18px)}.hero{padding:48px}.panel,.boundary{padding:34px}.heroTop{display:flex;justify-content:space-between;gap:20px;align-items:center}.language{color:#f7d08a;text-decoration:none;border:1px solid rgba(226,180,92,.26);border-radius:999px;padding:8px 11px;font-size:.78rem}.eyebrow,.path{margin:0 0 12px;color:#d8ad62;font-size:.78rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase}h1,h2,h3,p{margin-top:0}h1{max-width:880px;margin-bottom:18px;font-size:clamp(2.4rem,7vw,5.8rem);line-height:.95;letter-spacing:-.07em}h2{margin-bottom:16px;font-size:clamp(1.6rem,4vw,2.6rem);letter-spacing:-.04em}h3{margin-bottom:10px;font-size:1.2rem}p,li{color:rgba(245,239,226,.78);font-size:1rem;line-height:1.75}.lead,.featureLead{max-width:820px;font-size:clamp(1.08rem,2.2vw,1.38rem)}.routeLine{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:30px;font-size:clamp(1.25rem,4vw,2rem);font-weight:800}.routeLine a,.download,.primaryAction{color:#f7d08a;text-decoration:none}.routeLine span{color:rgba(245,239,226,.46)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:22px}.card{min-height:210px;padding:24px;border:1px solid rgba(245,239,226,.12);border-radius:22px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none}.split{display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:center}.metricBox,.downloads{display:flex;flex-wrap:wrap;gap:10px}.metricBox span,.download{border:1px solid rgba(226,180,92,.24);border-radius:999px;padding:10px 14px;background:rgba(226,180,92,.08);font-size:.92rem}.feature{border-color:rgba(125,166,255,.22)}.aiPanel{border-color:rgba(125,166,255,.42);background:linear-gradient(145deg,rgba(15,24,42,.82),rgba(9,12,20,.76))}.aiPanel ol{margin:22px 0;padding-left:22px}.primaryAction{display:inline-flex;margin-top:10px;padding:12px 16px;border:1px solid rgba(226,180,92,.3);border-radius:999px;background:rgba(226,180,92,.07);font-weight:700}.visualGuidePanel{position:relative;overflow:hidden;border-color:rgba(226,180,92,.48);background:radial-gradient(circle at 20% 30%,rgba(226,180,92,.12),transparent 38%),linear-gradient(145deg,rgba(9,12,20,.9),rgba(10,16,28,.86))}.visualGuidePanel:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 0 72%,rgba(96,176,220,.045) 100%)}.visualGuideHeader{position:relative;display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:24px}.visualGuideHeader h2{margin-bottom:0}.provenance{margin:3px 0 0;color:rgba(247,208,138,.62);font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:right}.visualGuideGrid{position:relative;display:grid;grid-template-columns:minmax(0,1.27fr) minmax(280px,1fr);gap:30px;align-items:center}.previewFrame{padding:10px;border:1px solid rgba(226,180,92,.28);border-radius:22px;background:#070a10;box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 46px rgba(226,180,92,.045)}.previewImage{display:block;width:100%;height:auto;border-radius:14px}.visualLead{font-size:1.08rem;color:rgba(245,239,226,.88)}.valueList{margin:18px 0 22px;padding-left:20px}.valueList li{margin:7px 0;color:rgba(245,239,226,.74);line-height:1.55}.visualGuideCta{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:12px 20px;border:1px solid rgba(247,208,138,.52);border-radius:999px;color:#130f08;background:linear-gradient(135deg,#f0cf82,#c99d4d);box-shadow:0 0 0 1px rgba(247,208,138,.08),0 0 34px rgba(226,180,92,.18);font-weight:800;text-decoration:none}.guideMeta{margin:10px 0 0;color:rgba(245,239,226,.48);font-size:.82rem}.continuityNote{position:relative;margin:26px 0 0;padding-top:20px;border-top:1px solid rgba(245,239,226,.09);color:rgba(245,239,226,.6);font-size:.9rem}.techDetails{position:relative;margin-top:16px;padding-top:14px;border-top:1px solid rgba(245,239,226,.07)}.techDetails summary{cursor:pointer;color:rgba(245,239,226,.58);font-size:.88rem;font-weight:700}.techLinks,.referenceLinks{display:flex;flex-wrap:wrap;gap:12px 18px;margin-top:14px}.techLinks a,.referenceLink,.alternateLink{color:#d8ad62;text-decoration:none;border-bottom:1px solid rgba(216,173,98,.4);font-size:.88rem}.referencePanel{border-color:rgba(245,239,226,.12);background:rgba(9,12,20,.56)}.alternateGuide{border-color:rgba(125,166,255,.2);background:rgba(10,14,23,.62)}.alternateGuide h2{font-size:1.55rem;margin-bottom:10px}.alternateGuide p:not(.eyebrow){max-width:760px}.boundary{border-color:rgba(125,166,255,.28)}.quiet{color:rgba(245,239,226,.52);font-size:.9rem}@media(max-width:820px){.freyGuide{padding:28px 14px 110px}.hero,.panel,.boundary{border-radius:22px;padding:24px}.grid,.split,.visualGuideGrid{grid-template-columns:1fr}.card{min-height:0}.downloads{display:grid}.download{border-radius:16px}.heroTop{align-items:flex-start}.visualGuideHeader{display:block}.provenance{text-align:left;margin-top:8px}.visualGuideGrid{gap:22px}.previewFrame{padding:7px;border-radius:18px}.visualGuideCta{width:100%}.techLinks,.referenceLinks{display:grid;gap:12px}.techLinks a,.referenceLink{width:max-content;max-width:100%}}
+        .freyGuide{min-height:100vh;padding:72px 22px 130px;color:#f5efe2;background:radial-gradient(circle at 20% 10%,rgba(226,180,92,.18),transparent 32%),radial-gradient(circle at 80% 0%,rgba(75,124,255,.16),transparent 30%),linear-gradient(145deg,#070a12 0%,#10131d 46%,#06070b 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.hero,.panel,.boundary{width:min(1040px,100%);margin:0 auto 24px;border:1px solid rgba(226,180,92,.24);border-radius:28px;background:rgba(9,12,20,.72);box-shadow:0 24px 80px rgba(0,0,0,.32);backdrop-filter:blur(18px)}.hero{padding:44px 48px 46px}.panel,.boundary{padding:34px}.heroTop{display:flex;justify-content:space-between;gap:20px;align-items:center}.language{color:#f7d08a;text-decoration:none;border:1px solid rgba(226,180,92,.26);border-radius:999px;padding:8px 11px;font-size:.78rem}.eyebrow,.path{margin:0 0 12px;color:#d8ad62;font-size:.78rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase}h1,h2,h3,p{margin-top:0}h1{max-width:820px;margin-bottom:28px;font-size:clamp(2.25rem,5.1vw,4.45rem);line-height:1.04;letter-spacing:-.045em}h2{margin-bottom:16px;font-size:clamp(1.6rem,4vw,2.6rem);letter-spacing:-.04em}h3{margin-bottom:10px;font-size:1.2rem}p,li{color:rgba(245,239,226,.78);font-size:1rem;line-height:1.75}.lead,.featureLead{max-width:790px;font-size:clamp(1.04rem,1.75vw,1.24rem)}.compactHero .lead{margin-bottom:0;line-height:1.82}.guideJump{display:inline-flex;margin-top:30px;color:#f7d08a;text-decoration:none;border-bottom:1px solid rgba(247,208,138,.38);padding-bottom:4px;font-weight:750;letter-spacing:.01em}.routeLine{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:30px;font-size:clamp(1.25rem,4vw,2rem);font-weight:800}.routeLine a,.download,.primaryAction{color:#f7d08a;text-decoration:none}.routeLine span{color:rgba(245,239,226,.46)}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:22px}.card{min-height:210px;padding:24px;border:1px solid rgba(245,239,226,.12);border-radius:22px;background:rgba(255,255,255,.045);color:inherit;text-decoration:none}.routePanel{border-color:rgba(245,239,226,.1);background:rgba(9,12,20,.5)}.routePanel .card{min-height:0;padding:20px}.routePanel .card p{font-size:.94rem}.routePanel h2{font-size:clamp(1.45rem,3vw,2rem)}.split{display:grid;grid-template-columns:1.25fr .75fr;gap:28px;align-items:center}.metricBox,.downloads{display:flex;flex-wrap:wrap;gap:10px}.metricBox span,.download{border:1px solid rgba(226,180,92,.24);border-radius:999px;padding:10px 14px;background:rgba(226,180,92,.08);font-size:.92rem}.feature{border-color:rgba(125,166,255,.22)}.aiPanel{border-color:rgba(125,166,255,.42);background:linear-gradient(145deg,rgba(15,24,42,.82),rgba(9,12,20,.76))}.aiPanel ol{margin:22px 0;padding-left:22px}.primaryAction{display:inline-flex;margin-top:10px;padding:12px 16px;border:1px solid rgba(226,180,92,.3);border-radius:999px;background:rgba(226,180,92,.07);font-weight:700}.visualGuidePanel{scroll-margin-top:108px;margin-bottom:34px;position:relative;overflow:hidden;border-color:rgba(226,180,92,.48);background:radial-gradient(circle at 20% 30%,rgba(226,180,92,.12),transparent 38%),linear-gradient(145deg,rgba(9,12,20,.9),rgba(10,16,28,.86))}.visualGuidePanel:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 0 72%,rgba(96,176,220,.045) 100%)}.visualGuideHeader{position:relative;display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:24px}.visualGuideHeader h2{margin-bottom:0}.provenance{margin:3px 0 0;color:rgba(247,208,138,.62);font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:right}.visualGuideGrid{position:relative;display:grid;grid-template-columns:minmax(0,1.27fr) minmax(280px,1fr);gap:30px;align-items:center}.previewFrame{padding:10px;border:1px solid rgba(226,180,92,.28);border-radius:22px;background:#070a10;box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 46px rgba(226,180,92,.045)}.previewImage{display:block;width:100%;height:auto;border-radius:14px}.visualLead{font-size:1.08rem;color:rgba(245,239,226,.88)}.valueList{margin:18px 0 22px;padding-left:20px}.valueList li{margin:7px 0;color:rgba(245,239,226,.74);line-height:1.55}.visualGuideCta{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:12px 20px;border:1px solid rgba(247,208,138,.52);border-radius:999px;color:#130f08;background:linear-gradient(135deg,#f0cf82,#c99d4d);box-shadow:0 0 0 1px rgba(247,208,138,.08),0 0 34px rgba(226,180,92,.18);font-weight:800;text-decoration:none}.guideMeta{margin:10px 0 0;color:rgba(245,239,226,.48);font-size:.82rem}.continuityNote{position:relative;margin:26px 0 0;padding-top:20px;border-top:1px solid rgba(245,239,226,.09);color:rgba(245,239,226,.6);font-size:.9rem}.techDetails{position:relative;margin-top:16px;padding-top:14px;border-top:1px solid rgba(245,239,226,.07)}.techDetails summary{cursor:pointer;color:rgba(245,239,226,.58);font-size:.88rem;font-weight:700}.techLinks,.referenceLinks{display:flex;flex-wrap:wrap;gap:12px 18px;margin-top:14px}.techLinks a,.referenceLink,.alternateLink{color:#d8ad62;text-decoration:none;border-bottom:1px solid rgba(216,173,98,.4);font-size:.88rem}.referencePanel{border-color:rgba(245,239,226,.12);background:rgba(9,12,20,.56)}.alternateGuide{border-color:rgba(125,166,255,.2);background:rgba(10,14,23,.62)}.alternateGuide h2{font-size:1.55rem;margin-bottom:10px}.alternateGuide p:not(.eyebrow){max-width:760px}.boundary{border-color:rgba(125,166,255,.28)}.quiet{color:rgba(245,239,226,.52);font-size:.9rem}@media(max-width:820px){.freyGuide{padding:28px 14px 110px}.hero,.panel,.boundary{border-radius:22px;padding:24px}.compactHero{padding:30px 24px 32px}.compactHero h1{font-size:clamp(2.15rem,11vw,3.45rem);line-height:1.03;margin-bottom:24px}.guideJump{margin-top:24px}.grid,.split,.visualGuideGrid{grid-template-columns:1fr}.card{min-height:0}.downloads{display:grid}.download{border-radius:16px}.heroTop{align-items:flex-start}.visualGuideHeader{display:block}.provenance{text-align:left;margin-top:8px}.visualGuideGrid{gap:22px}.previewFrame{padding:7px;border-radius:18px}.visualGuideCta{width:100%}.techLinks,.referenceLinks{display:grid;gap:12px}.techLinks a,.referenceLink{width:max-content;max-width:100%}}
       `}</style>
     </>
   );
