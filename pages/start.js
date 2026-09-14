@@ -7,13 +7,14 @@ const COPY = {
     title: "Start with the working system, not the archive.",
     lead: "BHRIGU is the public home of Market Cosmographer, BTC Field, Frey, public proof, and clearly bounded research surfaces.",
     choose: "Choose a surface",
-    chooseLead: "Five doors into the same public system: Bitcoin, temporal reading, evidence, the relationship map, or bounded external systems work.",
+    chooseLead: "Six doors into the same public system: Bitcoin, temporal reading, evidence, the relationship map, a Cosmographic Passport, or bounded external systems work.",
     items: [
       ["01", "BITCOIN · LIVE FIELD", "BTC Field", "The first proven live corridor for evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Open BTC Field"],
       ["02", "TEMPORAL · ACTIVE SERVICE", "Frey", "A distinct active temporal reading and dialogue service.", "/frey", "Open Frey"],
       ["03", "EVIDENCE · PUBLIC PROOF", "Public proof", "Inspect the source-bound research surface behind current public claims.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Inspect proof"],
       ["04", "SYSTEM · RELATION MAP", "System map", "See how BHRIGU, Cosmographer, Frey and ORION relate without collapsing their roles.", "/map", "Open system map"],
       ["05", "WORK · FIXED COMMERCIAL OBJECT", "External Systems Recon · USD 300", "A bounded read-only review of one AI or research system: system map, 3 findings, evidence, and an exact repair blueprint.", "/access", "Open commercial access"],
+      ["06", "FREY × COSMOGRAPHER · PERSONAL RESEARCH OBJECT", "Cosmographic Passport · USD 79", "One complete Cosmographic Reading of one bounded subject and temporal horizon, delivered as a portable Passport you can revisit with your AI.", "/access?offer=frey-personal", "Open Cosmographic Passport"],
     ],
     boundaryLabel: "Protected depth",
     boundary: "ORION remains protected research depth. Public surfaces expose meaning, evidence and boundaries — not private internals.",
@@ -24,13 +25,14 @@ const COPY = {
     title: "Начните с работающей системы, а не с архива.",
     lead: "BHRIGU — публичный дом Market Cosmographer, BTC Field, Frey, публичных доказательств и чётко ограниченных исследовательских поверхностей.",
     choose: "Выберите поверхность",
-    chooseLead: "Пять входов в одну публичную систему: Bitcoin, темпоральное чтение, доказательства, карта связей или ограниченная внешняя работа с системами.",
+    chooseLead: "Шесть входов в одну публичную систему: Bitcoin, темпоральное чтение, доказательства, карта связей, Космографический паспорт или ограниченная внешняя работа с системами.",
     items: [
       ["01", "BITCOIN · ЖИВОЕ ПОЛЕ", "BTC Field", "Первый доказанный живой коридор evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Открыть BTC Field"],
       ["02", "TEMPORAL · АКТИВНЫЙ СЕРВИС", "Frey", "Отдельный действующий сервис темпорального чтения и диалога.", "/frey", "Открыть Frey"],
       ["03", "EVIDENCE · ПУБЛИЧНЫЙ PROOF", "Публичные доказательства", "Проверьте source-bound исследовательскую поверхность, на которой основаны текущие публичные утверждения.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Открыть доказательства"],
       ["04", "SYSTEM · КАРТА СВЯЗЕЙ", "Карта системы", "Посмотрите связи BHRIGU, Космографа, Frey и ORION без смешения их ролей.", "/map", "Открыть карту"],
       ["05", "WORK · ФИКСИРОВАННЫЙ КОММЕРЧЕСКИЙ ОБЪЕКТ", "External Systems Recon · USD 300", "Ограниченный read-only разбор одной AI- или исследовательской системы: карта, 3 вывода, доказательства и точный blueprint исправления.", "/access", "Открыть коммерческий доступ"],
+      ["06", "FREY × КОСМОГРАФ · ПЕРСОНАЛЬНЫЙ ИССЛЕДОВАТЕЛЬСКИЙ ОБЪЕКТ", "Космографический паспорт · USD 79", "Одно полное Космографическое чтение ограниченного объекта и временного горизонта с переносимым Паспортом, к которому можно возвращаться со своим AI.", "/access?offer=frey-personal", "Открыть Космографический паспорт"],
     ],
     boundaryLabel: "Защищённая глубина",
     boundary: "ORION остаётся защищённой исследовательской глубиной. Публичные поверхности показывают смысл, доказательства и границы — не приватные механизмы.",
@@ -38,7 +40,7 @@ const COPY = {
   },
 };
 
-const CARD_TONES = ["blue", "violet", "gold", "mix", "gold"];
+const CARD_TONES = ["blue", "violet", "gold", "mix", "gold", "passport"];
 
 function local(href, locale) {
   if (href.startsWith("http")) return href;
@@ -61,7 +63,7 @@ export default function Start({ locale }) {
 
       <section className="orientation" aria-labelledby="start-orientation-title">
         <div className="sectionHead">
-          <p className="sectionIndex">01 — 05</p>
+          <p className="sectionIndex">01 — 06</p>
           <div>
             <h2 id="start-orientation-title">{c.choose}</h2>
             <p>{c.chooseLead}</p>
@@ -216,6 +218,10 @@ export default function Start({ locale }) {
         :global(.startNodeTone-blue) .cardAction { color: #83b9dc; border-top-color: rgba(98,168,216,.18); }
         :global(.startNodeTone-violet) .cardAction { color: #b0a0df; border-top-color: rgba(154,137,209,.18); }
         :global(.startNodeTone-mix) .cardAction { color: #9eacdF; border-top-color: rgba(121,151,210,.18); }
+        :global(.startNodeTone-passport) { border-color: rgba(213,184,109,.26); background: radial-gradient(circle at 82% 18%, rgba(98,201,230,.10), transparent 34%), radial-gradient(circle at 18% 82%, rgba(213,184,109,.10), transparent 38%), rgba(255,255,255,.012); box-shadow: inset 0 0 46px rgba(213,184,109,.025), 0 0 32px rgba(98,201,230,.025); }
+        :global(.startNodeTone-passport)::before { background: linear-gradient(var(--start-gold), var(--start-blue)); }
+        :global(.startNodeTone-passport) .cardIndex { color: #e0c47f; text-shadow: 0 0 14px rgba(213,184,109,.3); }
+        :global(.startNodeTone-passport) .cardAction { color: #e0c47f; border-top-color: rgba(213,184,109,.24); }
         .boundaryPanel {
           display: grid;
           grid-template-columns: 170px minmax(0,1fr) auto;
