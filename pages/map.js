@@ -16,6 +16,7 @@ const COPY = {
         ["Frey", "Active temporal reading/dialogue", "/frey"],
         ["Reading", "Temporal meaning surface", "/reading"],
         ["Frey Guide", "How to read, compare and carry Frey into another AI", "/guide/frey"],
+        ["Cosmographic Passport · USD 79", "One complete Frey × Cosmographer reading delivered as a portable research object", "/access?offer=frey-personal"],
       ]],
       ["Interpretation & depth", [
         ["Cosmographer", "Interpretation/navigation role", "/cosmographer"],
@@ -44,6 +45,7 @@ const COPY = {
         ["Frey", "Действующее темпоральное чтение/диалог", "/frey"],
         ["Reading", "Поверхность темпорального смысла", "/reading"],
         ["Гид Frey", "Как читать, сравнивать и передавать Frey стороннему ИИ", "/guide/frey"],
+        ["Космографический паспорт · USD 79", "Полное чтение Frey × Космограф с результатом в виде переносимого исследовательского объекта", "/access?offer=frey-personal"],
       ]],
       ["Интерпретация и глубина", [
         ["Космограф", "Роль интерпретации/навигации", "/cosmographer"],
@@ -63,6 +65,11 @@ const COPY = {
 
 const GROUP_TONES = ["blue", "violet", "mix", "gold"];
 
+function localizedTarget(href, locale) {
+  if (/^https?:\/\//.test(href)) return href;
+  return `${href}${href.includes("?") ? "&" : "?"}lang=${locale}`;
+}
+
 export async function getServerSideProps({ query }) {
   return { props: { locale: query.lang === "ru" ? "ru" : "en" } };
 }
@@ -71,7 +78,14 @@ export default function MapPage({ locale }) {
   const c = COPY[locale];
   return (
     <main className="q" lang={locale}>
-      <p className="ey">{c.ey}</p>
+      <div className="mapTop">
+        <p className="ey">{c.ey}</p>
+        <nav className="localeNav" aria-label={locale === "ru" ? "Язык карты" : "Map language"}>
+          <Link className={locale === "en" ? "activeLocale" : ""} href="/map?lang=en">EN</Link>
+          <span aria-hidden="true">/</span>
+          <Link className={locale === "ru" ? "activeLocale" : ""} href="/map?lang=ru">RU</Link>
+        </nav>
+      </div>
       <h1>{c.title}</h1>
       <div className="mapFieldLine" aria-hidden="true"><span /><i /><b /></div>
       {c.groups.map(([group, items], groupIndex) => (
@@ -82,7 +96,7 @@ export default function MapPage({ locale }) {
           </div>
           <div className="mapRows">
             {items.map(([name, description, href]) => {
-              const target = /^https?:\/\//.test(href) ? href : `${href}?lang=${locale}`;
+              const target = localizedTarget(href, locale);
               return (
                 <Link className="mapRow" key={name} href={target}>
                   <strong className="mapName">{name}</strong>
@@ -106,6 +120,10 @@ export default function MapPage({ locale }) {
             radial-gradient(circle at 98% 44%, rgba(154,137,209,.05), transparent 28%);
         }
         .ey { color: #d5b86d; letter-spacing: .16em; font-size: 12px; }
+        .mapTop { display:flex; align-items:center; justify-content:space-between; gap:18px; }
+        .localeNav { display:flex; align-items:center; gap:8px; color:rgba(255,255,255,.34); font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace; letter-spacing:.12em; }
+        .localeNav :global(a) { color:rgba(255,255,255,.56); text-decoration:none; padding:7px 8px; border:1px solid transparent; border-radius:999px; }
+        .localeNav :global(a:hover), .localeNav :global(a:focus-visible), .localeNav :global(a.activeLocale) { color:#e4cb84; border-color:rgba(213,184,109,.28); outline:none; }
         .q h1 { margin-bottom: 22px; font: 400 clamp(38px,6vw,64px)/1.02 Georgia,serif; }
         .mapFieldLine { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; width: min(420px, 70%); height: 2px; margin: 0 0 36px; overflow: hidden; border-radius: 999px; opacity: .82; }
         .mapFieldLine span { background: var(--map-blue); }
