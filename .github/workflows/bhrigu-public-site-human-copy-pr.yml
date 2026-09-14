@@ -94,6 +94,16 @@ jobs:
           revenue_discovery_human_copy_routing={
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
           }
+          passport_navigation = {
+            'pages/index.js',
+            'pages/map.js',
+            'pages/start.js',
+          }
+          passport_navigation_ci_authority = {
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -112,6 +122,10 @@ jobs:
               print('SHARED_SCOPE_PASS revenue_discovery_ci_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == revenue_discovery_human_copy_routing:
               print('SHARED_SCOPE_PASS revenue_discovery_human_copy_routing', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == passport_navigation:
+              print('EXACT_SCOPE_PASS passport_navigation', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PASSPORT_NAV_SCOPE=true\n')
+          elif actual == passport_navigation_ci_authority:
+              print('SHARED_SCOPE_PASS passport_navigation_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
@@ -129,8 +143,24 @@ jobs:
           grep -Fq 'price: "300"' pages/access.tsx
           echo 'REVENUE_DISCOVERY_CONTRACT=PASS'
 
+      - name: Verify Cosmographic Passport navigation reveal
+        if: env.BHRIGU_PASSPORT_NAV_SCOPE == 'true'
+        run: |
+          grep -Fq 'data-commercial-cta="cosmographic-passport-usd79"' pages/index.js
+          grep -Fq 'Cosmographic Passport · USD 79' pages/index.js
+          grep -Fq 'Космографический паспорт · USD 79' pages/index.js
+          grep -Fq '/access?offer=frey-personal&lang=${locale}' pages/index.js
+          grep -Fq 'Cosmographic Passport · USD 79' pages/start.js
+          grep -Fq 'Космографический паспорт · USD 79' pages/start.js
+          grep -Fq '/access?offer=frey-personal' pages/start.js
+          grep -Fq 'Cosmographic Passport · USD 79' pages/map.js
+          grep -Fq 'Космографический паспорт · USD 79' pages/map.js
+          grep -Fq 'href="/map?lang=en"' pages/map.js
+          grep -Fq 'href="/map?lang=ru"' pages/map.js
+          echo 'COSMOGRAPHIC_PASSPORT_NAVIGATION_REVEAL=PASS'
+
       - name: Verify copy, boundary, SEO and agent truth
-        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
