@@ -104,6 +104,11 @@ jobs:
             '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
           }
+          home_map_link_repair = {
+            'pages/index.js',
+            'pages/index.module.css',
+            'pages/map.js',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -126,6 +131,8 @@ jobs:
               print('EXACT_SCOPE_PASS passport_navigation', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PASSPORT_NAV_SCOPE=true\n')
           elif actual == passport_navigation_ci_authority:
               print('SHARED_SCOPE_PASS passport_navigation_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == home_map_link_repair:
+              print('EXACT_SCOPE_PASS home_map_link_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
@@ -159,8 +166,20 @@ jobs:
           grep -Fq 'href="/map?lang=ru"' pages/map.js
           echo 'COSMOGRAPHIC_PASSPORT_NAVIGATION_REVEAL=PASS'
 
+      - name: Verify Home map-link and commercial hierarchy repair
+        if: env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE == 'true'
+        run: |
+          grep -Fq 'data-home-system-map-link' pages/index.js
+          grep -Fq 'href={`/map?lang=${locale}`}' pages/index.js
+          grep -Fq 'className={styles.commercialActions}' pages/index.js
+          grep -Fq 'data-commercial-cta="external-systems-recon"' pages/index.js
+          grep -Fq 'data-commercial-cta="cosmographic-passport-usd79"' pages/index.js
+          grep -Fq '.commercialActions { flex-basis: 100%; display: grid;' pages/index.module.css
+          ! grep -Fq 'className="localeNav"' pages/map.js
+          echo 'HOME_MAP_LINK_COMMERCIAL_HIERARCHY_REPAIR=PASS'
+
       - name: Verify copy, boundary, SEO and agent truth
-        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true' && env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
