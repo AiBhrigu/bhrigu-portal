@@ -285,8 +285,8 @@ jobs:
 
               open_path('/cosmographer')
               body=driver.find_element(By.TAG_NAME,'body').text
-              record('COSMOGRAPHER_BRIDGE_VISIBLE', 'BTC Cosmographer is the Bitcoin-specific public application' in body, body)
-              record('COSMOGRAPHER_FREY_VISIBLE', 'Frey is an active temporal reading and dialogue service' in body, body)
+              record('COSMOGRAPHER_BRIDGE_VISIBLE', 'BTC Cosmographer is its current Bitcoin-specific public application.' in body, body)
+              record('COSMOGRAPHER_FREY_VISIBLE', 'Frey is a distinct temporal reading/dialogue service' in body, body)
 
               for route in ('/frey','/reading','/start','/map'):
                   open_path(route)
