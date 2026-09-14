@@ -250,6 +250,7 @@ export default function App({ Component, pageProps }) {
         {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
         <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
         <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
+        {freyAccess&&<meta name="theme-color" content="#070b13" key="frey-theme-color"/>}
       </>}
       {machineGraph&&<script type="application/ld+json" data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1" dangerouslySetInnerHTML={{__html:JSON.stringify(machineGraph).replace(/</g,"\\u003c")}} />}
     </Head>
