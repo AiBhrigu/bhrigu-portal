@@ -55,6 +55,8 @@
 .hero h1 span:last-child { color: rgba(241, 239, 233, 0.74); }
 .subheadline { max-width: 730px; margin: 0; color: var(--home-muted); font-size: clamp(16px, 1.2vw, 19px) !important; line-height: 1.55; }
 .heroActions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 26px; margin-top: 24px; }
+.commercialActions { flex-basis: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 14px 26px; }
+.commercialActions .secondaryCta { min-width: 0; }
 .primaryCta, .secondaryCta, .textCta { font-weight: 650; text-decoration: none !important; }
 .primaryCta { display: inline-flex; align-items: center; justify-content: space-between; gap: 30px; min-height: 54px; padding: 0 22px; border: 1px solid rgba(240, 211, 145, 0.55); color: #0a0b0d !important; background: linear-gradient(135deg, var(--home-gold-bright), var(--home-gold)); box-shadow: 0 10px 28px rgba(122, 89, 31, 0.16); }
 .primaryCta:hover { color: #0a0b0d !important; text-decoration: none !important; filter: brightness(1.04); }
@@ -81,6 +83,8 @@
 
 .fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 12px; padding: 18px 18px 16px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: radial-gradient(circle at 38.2% 58%, rgba(98, 168, 216, 0.1), transparent 36%), radial-gradient(circle at 82% 78%, rgba(200, 164, 90, 0.05), transparent 28%), linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
 .systemMapTopline { display: flex; align-items: center; justify-content: space-between; gap: 16px; color: rgba(128, 188, 227, 0.78); font-size: 8px; font-weight: 750; letter-spacing: 0.18em; text-transform: uppercase; }
+.systemMapLink { display: inline-flex; align-items: center; gap: 7px; color: rgba(128, 188, 227, 0.9) !important; text-decoration: none !important; border-bottom: 1px solid rgba(98, 168, 216, 0.34); padding-bottom: 4px; }
+.systemMapLink:hover, .systemMapLink:focus-visible { color: var(--home-gold-bright) !important; border-bottom-color: rgba(224, 196, 127, 0.66); outline: none; }
 .homeFieldAnchorGlyph { position: absolute !important; z-index: 3; left: 50%; top: 18px; width: 34px; height: 34px; display: grid; place-items: center; transform: translateX(-50%); border: 1px solid rgba(200, 164, 90, 0.52); border-radius: 50%; background: radial-gradient(circle, rgba(200, 164, 90, 0.08), transparent 68%); pointer-events: none; }
 .homeFieldAnchorGlyph::after { content: ""; position: absolute; inset: -4px; border: 1px solid rgba(200, 164, 90, 0.14); border-radius: 50%; }
 .homeFieldAnchorGlyph b { color: var(--home-gold-bright); font: 700 18px/1 Georgia, "Times New Roman", serif; }
@@ -196,6 +200,7 @@
   .hero h1 { margin: 22px 0 18px; font-size: clamp(40px, 11.7vw, 56px); line-height: 0.98; }
   .subheadline { font-size: 15px !important; line-height: 1.48; }
   .heroActions { align-items: stretch; margin-top: 24px; }
+  .commercialActions { grid-template-columns: 1fr; gap: 8px; }
   .primaryCta { width: 100%; }
   .secondaryCta { padding: 6px 0; font-size: 13px; }
   .heroVisual { width: 100%; overflow: visible; }
