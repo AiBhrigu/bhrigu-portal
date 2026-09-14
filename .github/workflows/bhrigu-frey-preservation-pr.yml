@@ -78,8 +78,13 @@ jobs:
             'pages/index.module.css',
             'pages/map.js',
           }
+          frey_guide_visual_primary_surfacing = {
+            'pages/guide/frey.js',
+            'public/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-preview.webp',
+            'public/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-preview.webp',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
           print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
