@@ -119,98 +119,136 @@ const COPY = {
 
 const FREY_PERSONAL_COPY = {
   en: {
-    eyebrow: "FREY × COSMOGRAPHER · PERSONAL RESEARCH",
-    title: "Turn one Frey reading into a finished personal temporal research object.",
-    lead: "One person. One question. One time window. A bounded research memo that separates observation, interpretation, uncertainty, and the conditions that would change the current read.",
-    boundary: "No guaranteed prediction. No open-ended consulting. No medical, legal, or financial advice.",
-    signal: "ONE PERSON · ONE QUESTION · ONE TIME WINDOW · USD 79",
-    priceLabel: "FIXED PERSONAL OBJECT",
-    priceScope: "ONE BOUNDED RESEARCH MEMO",
-    primaryCta: "Request personal research",
-    backCta: "Return to Frey →",
-    offerTitle: "Frey Personal Temporal Research",
-    offerLead: "A bounded personal research object built from one Frey reading and one explicit question.",
-    getsTitle: "You receive exactly five research objects",
+    eyebrow: "FREY × COSMOGRAPHER · COSMOGRAPHIC READING",
+    title: "See the field before you decide what to ask.",
+    lead: "A complete Cosmographic Reading of one subject across one meaningful temporal horizon — interpreted by the Cosmographer and delivered as a portable Cosmographic Passport.",
+    signal: "ONE SUBJECT · ONE TEMPORAL HORIZON · COSMOGRAPHIC PASSPORT · USD 79",
+    priceLabel: "ONE COMPLETE READING",
+    priceScope: "DELIVERED AS A COSMOGRAPHIC PASSPORT",
+    primaryCta: "Begin the reading",
+    backCta: "Open Frey →",
+    guideCta: "Understand the method →",
+    offerTitle: "Cosmographic Reading",
+    offerLead: "You do not need to arrive with the perfect question. Bring the person, organization, project or event — and the situation that makes this moment matter.",
+    passportTitle: "Your Cosmographic Passport",
+    passportLead: "The reading becomes a structured object you can keep, revisit and continue exploring with your own AI.",
+    getsTitle: "One reading. Seven layers of usable orientation.",
     gets: [
-      ["01", "Personal temporal map", "The active structure of the selected time window, expressed as a bounded research map."],
-      ["02", "3 highest-signal factors", "The three factors carrying the most interpretive weight in the current read."],
-      ["03", "Time window", "Where the current structure is active, strengthening, weakening, or changing."],
-      ["04", "Forward conditions", "What observable conditions would materially change the present interpretation."],
-      ["05", "Finished research memo", "One concise deliverable that joins the map, signals, window, conditions, and uncertainty boundary."],
+      ["01", "Subject + anchors", "The bounded subject and temporal anchors that define what is actually being read."],
+      ["02", "Field portrait", "The current configuration of the field — what is active, compressed, open or changing."],
+      ["03", "Dominant axes", "The relationships carrying the most structural weight, not a catalogue of every possible signal."],
+      ["04", "Temporal movement", "Where the pattern is forming, intensifying, releasing or crossing into another phase."],
+      ["05", "Cosmographer interpretation", "A joined reading of the field, with uncertainty kept visible instead of hidden behind certainty language."],
+      ["06", "Focus + synthesis", "Your question when you have one — or the focus vector the Cosmographer discovers from the situation."],
+      ["07", "AI continuation", "A public-safe reading/context packet for continuing the exploration in ChatGPT, Claude, Gemini or another capable AI."],
     ],
-    contextTitle: "Frey context carried into the request",
-    contextValid: "The public, non-secret context below was transferred from your current Frey reading and will prefill the request.",
-    contextMissing: "No valid Frey context was transferred. You can still request this fixed object by sending one question and one time window.",
-    humanTitle: "Request the USD 79 research object",
-    humanLead: "No registration. No account. No questionnaire. Start by email with one question and only the context needed for the research object.",
-    boundaryTitle: "Bounded research boundary",
-    boundaryItems: ["No guaranteed prediction", "No open-ended consulting", "No medical advice", "No legal advice", "No financial advice", "No credentials or secrets"],
-    processTitle: "Commercial process",
-    process: "REQUEST → SCOPE CONFIRMATION → PAYMENT ARRANGEMENT → WORK → RESEARCH MEMO",
-    privacyTitle: "Privacy + protected IP boundary",
-    privacyLead: "Send only the personal context needed to understand the question. Do not send passwords, API keys, wallet secrets, account credentials, or unrelated private records.",
-    protectedLead: "The delivered memo may expose observations, interpretation, uncertainty, and forward conditions. ORION internals, private prompts/planners/evaluators/corpora, unpublished research, and protected mechanisms remain private.",
-    supportLabel: "Voluntary Bitcoin support is not payment for this research object.",
-    supportBody: "The existing /support corridor remains voluntary research support and does not purchase this USD 79 personal research object.",
-    finalTitle: "One person. One question. One bounded temporal research memo.",
-    finalLead: "Start from the Frey reading you already have, then state the one question the memo must help you examine.",
-    mailTitle: "Frey Personal Temporal Research · USD 79",
-    questionLabel: "One question",
-    contextLabel: "Short context",
+    entryTitle: "You can begin from where you actually are.",
+    entryLead: "The application helps shape the focus. A polished question is not an admission requirement.",
+    entryModes: [
+      ["I KNOW MY QUESTION", "Bring the subject, the temporal horizon and the question you already want examined."],
+      ["I KNOW THE SITUATION", "Describe what is happening and why this moment matters. The Cosmographer will define the focus vector."],
+      ["I WANT THE READING", "Bring the subject and the relevant period even if you do not yet know what the central question is."],
+    ],
+    subjectLine: "PERSON · ORGANIZATION · PROJECT · EVENT",
+    fieldLabel: "FIELD",
+    timeLabel: "TIME",
+    focusLabelShort: "FOCUS",
+    synthesisLabel: "SYNTHESIS",
+    contextTitle: "Your Frey context can enter the reading with you",
+    contextValid: "The public, non-secret temporal context below came from the Frey reading that brought you here. It can seed the application without turning the reading into a fixed template.",
+    contextMissing: "No Frey context was carried into this visit. That is fine — the application can start from the subject and the situation itself.",
+    guideTitle: "Frey explains the instrument. The Cosmographer performs the reading.",
+    guideLead: "The Frey Guide shows how the field is represented and how a Reading Packet can continue into another AI. You do not need to study the guide before applying.",
+    humanTitle: "Request the USD 79 Cosmographic Reading",
+    humanLead: "Start with the subject and why you are looking now. If the right question is not clear yet, say so — discovering the focus is part of the reading.",
+    boundaryTitle: "A clear research boundary, without making the boundary the product",
+    boundaryItems: ["Interpretive research, not a guaranteed outcome", "No open-ended consulting obligation", "No medical, legal or financial advice", "No credentials, secrets or unrelated private records"],
+    processTitle: "From request to passport",
+    process: "REQUEST → SUBJECT + HORIZON → FOCUS → READING → COSMOGRAPHIC PASSPORT",
+    privacyTitle: "Trust layer",
+    privacyLead: "Send only the context needed to understand the subject and the period. Sensitive material is not a sales requirement.",
+    protectedLead: "Your Passport exposes the reading and its usable meaning. ORION internals, private prompts/planners/evaluators/corpora and unpublished mechanisms remain protected.",
+    finalTitle: "Bring the subject. The Cosmographer will help find the question worth reading.",
+    finalLead: "USD 79 · one complete Cosmographic Reading · delivered as your Cosmographic Passport.",
+    mailTitle: "Cosmographic Reading · USD 79",
+    subjectTypeLabel: "Subject type (person / organization / project / event / not sure)",
+    subjectNameLabel: "Subject / name",
+    situationLabel: "What is happening / why now",
+    questionLabel: "Question or focus (optional)",
+    contextLabel: "Context that matters",
     replyLabel: "Reply contact",
     languageLabel: "Language",
-    primaryDateLabel: "Primary date",
+    primaryDateLabel: "Primary date / temporal anchor",
     secondaryDateLabel: "Optional second date",
-    signalClassLabel: "Signal class",
-    structuralStateLabel: "Structural state",
-    vectorLabel: "Operational vector",
+    signalClassLabel: "Frey signal class",
+    structuralStateLabel: "Frey structural state",
+    vectorLabel: "Frey operational vector",
   },
   ru: {
-    eyebrow: "FREY × КОСМОГРАФ · ПЕРСОНАЛЬНОЕ ИССЛЕДОВАНИЕ",
-    title: "Превратите одно чтение Frey в законченный персональный темпоральный исследовательский объект.",
-    lead: "Один человек. Один вопрос. Одно временное окно. Ограниченный research memo, который разделяет наблюдение, интерпретацию, неопределённость и условия, способные изменить текущее чтение.",
-    boundary: "Без гарантированного прогноза. Без бессрочного консультирования. Без медицинских, юридических и финансовых рекомендаций.",
-    signal: "ОДИН ЧЕЛОВЕК · ОДИН ВОПРОС · ОДНО ВРЕМЕННОЕ ОКНО · USD 79",
-    priceLabel: "ФИКСИРОВАННЫЙ ПЕРСОНАЛЬНЫЙ ОБЪЕКТ",
-    priceScope: "ОДИН ОГРАНИЧЕННЫЙ RESEARCH MEMO",
-    primaryCta: "Запросить персональное исследование",
-    backCta: "Вернуться в Frey →",
-    offerTitle: "Frey Personal Temporal Research",
-    offerLead: "Ограниченный персональный исследовательский объект на основе одного чтения Frey и одного явного вопроса.",
-    getsTitle: "Вы получаете ровно пять исследовательских объектов",
+    eyebrow: "FREY × КОСМОГРАФ · КОСМОГРАФИЧЕСКОЕ ЧТЕНИЕ",
+    title: "Увидеть поле — прежде чем решать, какой вопрос задавать.",
+    lead: "Полное Космографическое чтение одного объекта в одном значимом временном горизонте — с интерпретацией Космографа и результатом в виде переносимого Космографического паспорта.",
+    signal: "ОДИН ОБЪЕКТ · ОДИН ВРЕМЕННОЙ ГОРИЗОНТ · КОСМОГРАФИЧЕСКИЙ ПАСПОРТ · USD 79",
+    priceLabel: "ОДНО ПОЛНОЕ ЧТЕНИЕ",
+    priceScope: "РЕЗУЛЬТАТ — КОСМОГРАФИЧЕСКИЙ ПАСПОРТ",
+    primaryCta: "Начать чтение",
+    backCta: "Открыть Frey →",
+    guideCta: "Понять метод →",
+    offerTitle: "Космографическое чтение",
+    offerLead: "Не нужно заранее знать идеальный вопрос. Принесите человека, организацию, проект или событие — и ситуацию, из-за которой именно этот момент важен.",
+    passportTitle: "Ваш Космографический паспорт",
+    passportLead: "Чтение становится структурированным объектом, который можно сохранить, перечитать и дальше исследовать со своим AI.",
+    getsTitle: "Одно чтение. Семь слоёв ориентации.",
     gets: [
-      ["01", "Персональная темпоральная карта", "Активная структура выбранного временного окна как ограниченная исследовательская карта."],
-      ["02", "3 наиболее значимых фактора", "Три фактора, которые несут наибольший интерпретационный вес в текущем чтении."],
-      ["03", "Временное окно", "Где текущая структура активна, усиливается, ослабевает или меняется."],
-      ["04", "Условия вперёд", "Какие наблюдаемые условия способны существенно изменить текущую интерпретацию."],
-      ["05", "Законченный research memo", "Один компактный результат, объединяющий карту, сигналы, окно, условия и границу неопределённости."],
+      ["01", "Объект + якоря", "Ограниченный объект и временные якоря, которые точно определяют, что именно читается."],
+      ["02", "Портрет поля", "Текущая конфигурация: что активно, сжато, открыто или уже меняется."],
+      ["03", "Доминирующие оси", "Отношения с наибольшим структурным весом — не каталог всех возможных сигналов."],
+      ["04", "Движение во времени", "Где структура формируется, усиливается, отпускает или переходит в другую фазу."],
+      ["05", "Интерпретация Космографа", "Связанное чтение поля, где неопределённость остаётся видимой, а не маскируется языком уверенности."],
+      ["06", "Фокус + синтез", "Ваш вопрос, если он уже есть, или focus vector, который Космограф обнаруживает в самой ситуации."],
+      ["07", "Продолжение с AI", "Public-safe reading/context packet для дальнейшего исследования в ChatGPT, Claude, Gemini или другом способном AI."],
     ],
-    contextTitle: "Контекст Frey, перенесённый в запрос",
-    contextValid: "Публичный несекретный контекст ниже перенесён из текущего чтения Frey и будет подставлен в запрос.",
-    contextMissing: "Корректный контекст Frey не передан. Этот фиксированный объект всё равно можно запросить, указав один вопрос и одно временное окно.",
-    humanTitle: "Запросить исследовательский объект за USD 79",
-    humanLead: "Без регистрации. Без аккаунта. Без анкеты. Начните с письма: один вопрос и только тот контекст, который нужен для исследовательского объекта.",
-    boundaryTitle: "Граница ограниченного исследования",
-    boundaryItems: ["Без гарантированного прогноза", "Без бессрочного консультирования", "Без медицинских рекомендаций", "Без юридических рекомендаций", "Без финансовых рекомендаций", "Без credentials и secrets"],
-    processTitle: "Коммерческий процесс",
-    process: "REQUEST → SCOPE CONFIRMATION → PAYMENT ARRANGEMENT → WORK → RESEARCH MEMO",
-    privacyTitle: "Privacy + protected IP boundary",
-    privacyLead: "Отправляйте только персональный контекст, необходимый для понимания вопроса. Не отправляйте пароли, API keys, wallet secrets, account credentials или не относящиеся к вопросу private records.",
-    protectedLead: "Research memo может раскрывать наблюдения, интерпретацию, неопределённость и forward conditions. ORION internals, private prompts/planners/evaluators/corpora, unpublished research и protected mechanisms остаются закрытыми.",
-    supportLabel: "Добровольная Bitcoin-поддержка не является оплатой этого исследовательского объекта.",
-    supportBody: "Существующий /support остаётся добровольной поддержкой исследований и не покупает персональный объект за USD 79.",
-    finalTitle: "Один человек. Один вопрос. Один ограниченный темпоральный research memo.",
-    finalLead: "Начните с уже полученного чтения Frey и сформулируйте один вопрос, который должен исследовать memo.",
-    mailTitle: "Frey Personal Temporal Research · USD 79",
-    questionLabel: "Один вопрос",
-    contextLabel: "Краткий контекст",
+    entryTitle: "Начать можно из той точки, где вы действительно находитесь.",
+    entryLead: "Заявка помогает сформировать фокус. Идеально сформулированный вопрос не является условием входа.",
+    entryModes: [
+      ["Я ЗНАЮ СВОЙ ВОПРОС", "Укажите объект, временной горизонт и вопрос, который уже хотите исследовать."],
+      ["Я ЗНАЮ СИТУАЦИЮ", "Опишите, что происходит и почему момент важен. Космограф определит focus vector."],
+      ["Я ХОЧУ ЧТЕНИЕ", "Укажите объект и значимый период, даже если главный вопрос пока ещё не сформировался."],
+    ],
+    subjectLine: "ЧЕЛОВЕК · ОРГАНИЗАЦИЯ · ПРОЕКТ · СОБЫТИЕ",
+    fieldLabel: "ПОЛЕ",
+    timeLabel: "ВРЕМЯ",
+    focusLabelShort: "ФОКУС",
+    synthesisLabel: "СИНТЕЗ",
+    contextTitle: "Контекст Frey может войти в чтение вместе с вами",
+    contextValid: "Публичный несекретный темпоральный контекст ниже пришёл из чтения Frey, которое привело вас сюда. Он может стать начальным слоем заявки, не превращая чтение в шаблон.",
+    contextMissing: "Контекст Frey в этот переход не передан. Это нормально — заявка может начаться с самого объекта и ситуации.",
+    guideTitle: "Frey объясняет инструмент. Космограф выполняет чтение.",
+    guideLead: "Гайд Frey показывает, как представлено поле и как Reading Packet переносится в другой AI. Изучать гайд до заявки не требуется.",
+    humanTitle: "Запросить Космографическое чтение за USD 79",
+    humanLead: "Начните с объекта и причины, почему вы смотрите именно сейчас. Если правильный вопрос ещё не ясен — так и напишите: поиск фокуса входит в чтение.",
+    boundaryTitle: "Ясная исследовательская граница — без превращения границы в сам продукт",
+    boundaryItems: ["Исследовательская интерпретация, а не гарантированный исход", "Без обязательства бессрочного консультирования", "Без медицинских, юридических и финансовых рекомендаций", "Без credentials, secrets и не относящихся к чтению private records"],
+    processTitle: "От заявки к паспорту",
+    process: "ЗАЯВКА → ОБЪЕКТ + ГОРИЗОНТ → ФОКУС → ЧТЕНИЕ → КОСМОГРАФИЧЕСКИЙ ПАСПОРТ",
+    privacyTitle: "Слой доверия",
+    privacyLead: "Отправляйте только тот контекст, который нужен для понимания объекта и периода. Чувствительные данные не являются условием продажи.",
+    protectedLead: "Паспорт раскрывает чтение и его применимый смысл. ORION internals, private prompts/planners/evaluators/corpora и unpublished mechanisms остаются защищёнными.",
+    finalTitle: "Принесите объект. Космограф поможет найти вопрос, который действительно стоит читать.",
+    finalLead: "USD 79 · одно полное Космографическое чтение · результат — ваш Космографический паспорт.",
+    mailTitle: "Космографическое чтение · USD 79",
+    subjectTypeLabel: "Тип объекта (человек / организация / проект / событие / не уверен)",
+    subjectNameLabel: "Объект / название",
+    situationLabel: "Что происходит / почему сейчас",
+    questionLabel: "Вопрос или фокус (необязательно)",
+    contextLabel: "Контекст, который действительно важен",
     replyLabel: "Контакт для ответа",
     languageLabel: "Язык",
-    primaryDateLabel: "Основная дата",
+    primaryDateLabel: "Основная дата / временной якорь",
     secondaryDateLabel: "Опциональная вторая дата",
-    signalClassLabel: "Класс сигнала",
-    structuralStateLabel: "Структурное состояние",
-    vectorLabel: "Операционный вектор",
+    signalClassLabel: "Класс сигнала Frey",
+    structuralStateLabel: "Структурное состояние Frey",
+    vectorLabel: "Операционный вектор Frey",
   },
 } as const;
 
@@ -268,8 +306,11 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
   const freyMailBody = [
     f.mailTitle,
     "",
+    `${f.subjectTypeLabel}: `,
+    `${f.subjectNameLabel}: `,
     `${f.primaryDateLabel}: ${freyContext?.primary_date || ""}`,
     `${f.secondaryDateLabel}: ${freyContext?.secondary_date || ""}`,
+    `${f.situationLabel}: `,
     `${f.questionLabel}: `,
     `${f.contextLabel}: `,
     `${f.languageLabel}: ${locale.toUpperCase()}`,
@@ -279,14 +320,14 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
     freyContext?.structural_state ? `${f.structuralStateLabel}: ${freyContext.structural_state}` : "",
     freyContext?.operational_vector ? `${f.vectorLabel}: ${freyContext.operational_vector}` : "",
   ].filter((line, index, arr) => line || index < 2 || index < arr.length - 3).join("\n");
-  const freyMailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[FREY PERSONAL · USD 79] ")}&body=${encodeURIComponent(freyMailBody)}`;
+  const freyMailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[COSMOGRAPHIC READING · USD 79] ")}&body=${encodeURIComponent(freyMailBody)}`;
   const agentSubject = "[Φ RECON] <system_name>";
-  const canonicalUrl = `https://www.bhrigu.io/access?lang=${locale}${isFreyPersonal ? "&offer=frey-personal" : ""}`;
+  const canonicalUrl = isFreyPersonal ? `https://www.bhrigu.io/access?lang=${locale}&offer=frey-personal` : `https://www.bhrigu.io/access?lang=${locale}`;
   const serviceJsonLd = isFreyPersonal ? {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Frey Personal Temporal Research",
-    serviceType: "Bounded personal temporal research",
+    name: "Frey × Cosmographer · Cosmographic Reading",
+    serviceType: "Cosmographic reading delivered as a Cosmographic Passport",
     url: canonicalUrl,
     provider: {
       "@type": "Organization",
@@ -300,7 +341,7 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
       price: "79",
       priceCurrency: "USD",
       url: canonicalUrl,
-      description: "One person, one question, one time window: personal temporal map, 3 highest-signal factors, time window, forward conditions, and one finished research memo.",
+      description: "One complete Cosmographic Reading of one subject across one temporal horizon, delivered as a portable Cosmographic Passport with field portrait, dominant axes, temporal movement, Cosmographer interpretation, focus synthesis, and AI continuation packet.",
     },
   } : {
     "@context": "https://schema.org",
@@ -329,49 +370,98 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
       <Head>
         <script
           type="application/ld+json"
-          data-bhrigu-commercial-service={isFreyPersonal ? "FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}
+          data-bhrigu-commercial-service={isFreyPersonal ? "FREY_COSMOGRAPHIC_READING_PASSPORT_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c") }}
         />
       </Head>
-      <main className="q" lang={locale} data-access-surface={isFreyPersonal ? "FREY_PERSONAL_TEMPORAL_RESEARCH_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}>
+      <main className="q" lang={locale} data-access-surface={isFreyPersonal ? "FREY_COSMOGRAPHIC_READING_PASSPORT_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}>
       {isFreyPersonal ? (
         <>
-          <section className="hero" data-frey-personal-offer="FREY_PERSONAL_TEMPORAL_RESEARCH_USD79_V0_1">
-            <div className="meaning">
+          <section className="freyHero" data-frey-personal-offer="FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1">
+            <div className="freyHeroCopy">
               <p className="ey">{f.eyebrow}</p>
               <h1>{f.title}</h1>
               <p className="lead">{f.lead}</p>
-              <p className="boundary">{f.boundary}</p>
               <p className="signal">{f.signal}</p>
+              <div className="freyHeroActions">
+                <a className="primary" href="#cosmographic-application">{f.primaryCta}</a>
+                <Link className="freyTextLink" href={`/guide/frey?lang=${locale}`}>{f.guideCta}</Link>
+              </div>
             </div>
-            <aside className="action" aria-label={f.offerTitle}>
-              <p className="mini">{f.priceLabel}</p>
-              <strong className="price">USD 79</strong>
-              <span>ONE PERSON</span>
-              <span>ONE QUESTION</span>
-              <span>ONE TIME WINDOW</span>
-              <a className="primary" href={freyMailto}>{f.primaryCta}</a>
-              <Link className="secondary" href={`/frey?lang=${locale}`}>{f.backCta}</Link>
-            </aside>
-          </section>
 
-          <section className="block offer">
-            <div><p className="ey">01 · OBJECT</p><h2>{f.offerTitle} — USD 79</h2><p>{f.offerLead}</p></div>
-            <p className="scopeLaw">{f.boundary}</p>
-          </section>
-
-          <section className="block">
-            <p className="ey">02 · DELIVERABLE</p>
-            <h2>{f.getsTitle}</h2>
-            <div className="grid five">
-              {f.gets.map(([n, title, body]) => <article key={n}><b>{n}</b><h3>{title}</h3><p>{body}</p></article>)}
+            <div className="fieldPlate" aria-label={f.passportTitle}>
+              <div className="plateTopline"><span>COSMOGRAPHIC PASSPORT</span><span>v0.1</span></div>
+              <div className="fieldOrbit" aria-hidden="true">
+                <span className="orbit orbitA" />
+                <span className="orbit orbitB" />
+                <span className="orbit orbitC" />
+                <span className="axis axisX" />
+                <span className="axis axisY" />
+                <span className="fieldCore">Φ</span>
+                <span className="fieldNode nodeA" />
+                <span className="fieldNode nodeB" />
+                <span className="fieldNode nodeC" />
+                <span className="fieldWord fieldWordA">{f.fieldLabel}</span>
+                <span className="fieldWord fieldWordB">{f.timeLabel}</span>
+                <span className="fieldWord fieldWordC">{f.focusLabelShort}</span>
+                <span className="fieldWord fieldWordD">{f.synthesisLabel}</span>
+              </div>
+              <div className="passportPrice">
+                <span>{f.priceLabel}</span>
+                <strong>USD 79</strong>
+                <small>{f.priceScope}</small>
+              </div>
             </div>
           </section>
 
-          <section className="block freyContext" data-frey-personal-context={freyContext ? "valid" : "missing-or-invalid"}>
-            <p className="ey">03 · FREY CONTEXT</p>
-            <h2>{f.contextTitle}</h2>
-            <p>{freyContext ? f.contextValid : f.contextMissing}</p>
+          <section className="passportBand">
+            <div>
+              <p className="ey">01 · SUBJECT</p>
+              <h2>{f.offerTitle}</h2>
+              <p>{f.offerLead}</p>
+            </div>
+            <div className="subjectRail"><span>{f.subjectLine}</span><i /></div>
+          </section>
+
+          <section className="passportSpecimen">
+            <div className="passportIntro">
+              <p className="ey">02 · PASSPORT</p>
+              <h2>{f.passportTitle}</h2>
+              <p>{f.passportLead}</p>
+              <div className="passportMark"><span>FREY</span><b>×</b><span>COSMOGRAPHER</span></div>
+            </div>
+            <div className="passportLayers" aria-label={f.getsTitle}>
+              <p className="layersTitle">{f.getsTitle}</p>
+              {f.gets.map(([n, title, body]) => (
+                <article className="passportLayer" key={n}>
+                  <b>{n}</b>
+                  <div><h3>{title}</h3><p>{body}</p></div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="entryScene" id="cosmographic-application">
+            <div className="entryHeading">
+              <p className="ey">03 · APPLICATION</p>
+              <h2>{f.entryTitle}</h2>
+              <p>{f.entryLead}</p>
+            </div>
+            <div className="entryModes">
+              {f.entryModes.map(([title, body], index) => (
+                <article key={title} className="entryMode">
+                  <b>0{index + 1}</b><h3>{title}</h3><p>{body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="freyContextScene" data-frey-personal-context={freyContext ? "valid" : "missing-or-invalid"}>
+            <div>
+              <p className="ey">04 · FREY CONTEXT</p>
+              <h2>{f.contextTitle}</h2>
+              <p>{freyContext ? f.contextValid : f.contextMissing}</p>
+            </div>
             {freyContext ? (
               <div className="contextGrid">
                 <article><b>{f.primaryDateLabel}</b><p>{freyContext.primary_date || "—"}</p></article>
@@ -379,32 +469,56 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
                 <article><b>{f.structuralStateLabel}</b><p>{freyContext.structural_state || "—"}</p></article>
                 <article><b>{f.vectorLabel}</b><p>{freyContext.operational_vector || "—"}</p></article>
               </div>
-            ) : null}
+            ) : <div className="contextEmpty"><span>SUBJECT</span><i /><span>TIME</span><i /><span>FOCUS</span></div>}
           </section>
 
-          <section className="block human">
-            <div><p className="ey">04 · REQUEST</p><h2>{f.humanTitle}</h2><p>{f.humanLead}</p><a className="primary inline" href={freyMailto}>{f.primaryCta}</a></div>
-            <pre>{freyMailBody}</pre>
+          <section className="guideBridge">
+            <div>
+              <p className="ey">05 · METHOD / CONTINUATION</p>
+              <h2>{f.guideTitle}</h2>
+              <p>{f.guideLead}</p>
+            </div>
+            <div className="guideLinks">
+              <Link className="primary" href={`/guide/frey?lang=${locale}`}>{f.guideCta}</Link>
+              <Link className="freyTextLink" href={`/frey?lang=${locale}`}>{f.backCta}</Link>
+            </div>
           </section>
 
-          <section className="block fit">
-            <div><p className="ey">05 · BOUNDARY</p><h2>{f.boundaryTitle}</h2><ul>{f.boundaryItems.map((item) => <li key={item}>{item}</li>)}</ul></div>
-            <div><p className="ey">06 · CONTACT</p><h2>{REVENUE_EMAIL}</h2><p>{f.humanLead}</p></div>
+          <section className="applicationScene">
+            <div className="applicationCopy">
+              <p className="ey">06 · REQUEST</p>
+              <h2>{f.humanTitle}</h2>
+              <p>{f.humanLead}</p>
+              <a className="primary inline" href={freyMailto}>{f.primaryCta}</a>
+            </div>
+            <div className="requestSheet" aria-label={f.humanTitle}>
+              <div className="requestSheetTop"><span>APPLICATION</span><span>USD 79</span></div>
+              {[f.subjectTypeLabel, f.subjectNameLabel, f.primaryDateLabel, f.situationLabel, f.questionLabel].map((label) => (
+                <div className="requestField" key={label}><span>{label}</span><i /></div>
+              ))}
+            </div>
           </section>
 
-          <section className="block process">
-            <p className="ey">07 · PROCESS</p><h2>{f.processTitle}</h2><p className="flow">{f.process}</p>
+          <section className="trustLayer">
+            <div>
+              <p className="ey">07 · TRUST</p>
+              <h2>{f.boundaryTitle}</h2>
+              <ul>{f.boundaryItems.map((item) => <li key={item}>{item}</li>)}</ul>
+            </div>
+            <div>
+              <p className="ey">08 · PRIVACY / IP</p>
+              <h2>{f.privacyTitle}</h2>
+              <p>{f.privacyLead}</p><p>{f.protectedLead}</p>
+            </div>
           </section>
 
-          <section className="block privacy">
-            <p className="ey">08 · PRIVACY / PROTECTED IP</p><h2>{f.privacyTitle}</h2><p>{f.privacyLead}</p><p>{f.protectedLead}</p>
+          <section className="processScene">
+            <p className="ey">09 · PATH</p>
+            <h2>{f.processTitle}</h2>
+            <p className="flow">{f.process}</p>
           </section>
 
-          <section className="block support">
-            <p className="ey">09 · SUPPORT SEPARATION</p><h2>{f.supportLabel}</h2><p>{f.supportBody}</p><Link href={`/support?lang=${locale}`}>/support →</Link>
-          </section>
-
-          <section className="finalCta">
+          <section className="finalCta freyFinal">
             <div><p className="ey">10 · START</p><h2>{f.finalTitle}</h2><p>{f.finalLead}</p></div>
             <a className="primary" href={freyMailto}>{f.primaryCta}</a>
           </section>
@@ -519,13 +633,25 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
         .primary,.secondary{display:inline-flex;justify-content:center;align-items:center;min-height:46px;margin-top:10px;padding:0 18px;border-radius:999px;text-decoration:none}.primary{background:var(--gold);color:#111!important;font-weight:700}.secondary{border:1px solid rgba(255,255,255,.16);color:rgba(255,255,255,.82)!important}.inline{width:max-content}
         .block{margin-top:18px;padding:32px;border:1px solid rgba(255,255,255,.085);border-radius:20px;background:rgba(255,255,255,.01)}.offer{display:grid;grid-template-columns:1fr 1fr;gap:36px}.scopeLaw{margin:0;padding-left:18px;border-left:1px solid rgba(98,201,230,.28)}
         .grid{display:grid;gap:12px}.four{grid-template-columns:repeat(4,1fr)}.five{grid-template-columns:repeat(5,minmax(0,1fr))}.contextGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.contextGrid article b{display:block;color:var(--gold);font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase}.contextGrid article p{margin-top:8px;overflow-wrap:anywhere}article{min-width:0;padding:18px;border:1px solid rgba(255,255,255,.075);border-radius:15px;background:rgba(255,255,255,.012)}article b{color:var(--cyan);font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace}article p{margin-bottom:0;font-size:14px}
-        .fit,.contractGrid,.human{display:grid;grid-template-columns:1fr 1fr;gap:24px}.fit>div{padding:4px 12px}.fit>div+div{border-left:1px solid rgba(255,255,255,.08);padding-left:28px}.fit h2,.fit p,.privacy p{overflow-wrap:anywhere;word-break:break-word}ul{padding-left:20px;color:rgba(255,255,255,.67);line-height:1.65}
+        .fit,.contractGrid,.human{display:grid;grid-template-columns:1fr 1fr;gap:24px}.fit>div{min-width:0;padding:4px 12px}.fit>div+div{border-left:1px solid rgba(255,255,255,.08);padding-left:28px}.fit h2,.fit p,.fit li,.privacy p{overflow-wrap:anywhere;word-break:break-word}ul{padding-left:20px;color:rgba(255,255,255,.67);line-height:1.65}
         .proofs{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.proofs a,.support a{color:#e1c77d;text-underline-offset:3px}
         .contract{scroll-margin-top:80px}.top{margin-top:22px!important}code{color:rgba(98,201,230,.9);overflow-wrap:anywhere}pre{margin:12px 0 0;padding:16px;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(0,0,0,.22);color:rgba(235,239,244,.78);font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
         .flow{color:rgba(255,255,255,.88);font:600 13px/1.8 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em}.support{border-color:rgba(213,184,109,.15)}
         .finalCta{display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center;margin-top:18px;padding:34px;border:1px solid rgba(213,184,109,.18);border-radius:20px;background:linear-gradient(120deg,rgba(213,184,109,.055),rgba(98,201,230,.025))}.finalCta .primary{min-width:190px;margin:0}
-        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta{grid-template-columns:1fr}.five,.contextGrid{grid-template-columns:repeat(2,1fr)}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.systemHero{min-height:0}.systemMeaning{padding:52px 42px 46px}.systemAction{padding:38px 42px}.evidenceMotif{margin-top:38px}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
-        @media(max-width:560px){.q{padding:28px 12px 90px}.meaning,.action{padding:30px 22px}.systemMeaning{padding:22px 26px 12px}.systemAction{padding:12px 26px 22px}.systemMeaning .ey{margin-bottom:8px}.systemMeaning h1{margin-bottom:14px;font-size:clamp(36px,10.5vw,42px)}.systemMeaning .lead{font-size:15px;line-height:1.38}.evidenceMotif{width:min(280px,88%);margin-top:10px}.motifLabel{margin-top:3px;font-size:9px;letter-spacing:.1em}.systemAction .mini{margin-bottom:2px}.systemAction .primary{margin-top:2px}.directEmail{margin-top:8px}.block,.finalCta{padding:24px 20px}.four,.five,.proofs,.contextGrid{grid-template-columns:1fr}.action{gap:6px}.price{font-size:48px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
+        .freyHero{position:relative;display:grid;grid-template-columns:minmax(0,1.04fr) minmax(360px,.96fr);min-height:610px;border:1px solid rgba(213,184,109,.18);border-radius:28px;overflow:hidden;background:radial-gradient(circle at 12% 18%,rgba(213,184,109,.10),transparent 34%),radial-gradient(circle at 86% 32%,rgba(98,201,230,.09),transparent 30%),linear-gradient(145deg,rgba(11,14,24,.98),rgba(5,8,15,.96))}
+        .freyHero::after{content:"";position:absolute;inset:auto 0 0 0;height:1px;background:linear-gradient(90deg,transparent,rgba(213,184,109,.52),rgba(98,201,230,.3),transparent)}
+        .freyHeroCopy{position:relative;z-index:2;display:flex;flex-direction:column;justify-content:center;padding:66px 56px 58px}.freyHeroCopy h1{max-width:650px;font-size:clamp(44px,5.2vw,70px)}.freyHeroCopy .lead{max-width:640px;font-size:18px}.freyHeroActions{display:flex;align-items:center;gap:20px;margin-top:26px}.freyHeroActions .primary{min-width:176px;margin:0}.freyTextLink{color:rgba(247,248,250,.76);text-decoration-color:rgba(213,184,109,.35);text-underline-offset:5px;font-size:13px}
+        .fieldPlate{position:relative;display:flex;min-height:610px;flex-direction:column;justify-content:space-between;padding:32px 32px 30px;border-left:1px solid rgba(213,184,109,.15);background:linear-gradient(180deg,rgba(255,255,255,.018),rgba(0,0,0,.15));overflow:hidden}.plateTopline,.requestSheetTop{display:flex;justify-content:space-between;color:rgba(213,184,109,.72);font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.13em}.fieldOrbit{position:relative;width:min(340px,88%);aspect-ratio:1;margin:4px auto 12px}.orbit,.axis,.fieldNode,.fieldCore,.fieldWord{position:absolute}.orbit{inset:50%;border:1px solid rgba(213,184,109,.18);border-radius:50%;transform:translate(-50%,-50%)}.orbitA{width:88%;height:88%}.orbitB{width:62%;height:62%;border-color:rgba(98,201,230,.2)}.orbitC{width:35%;height:35%;border-color:rgba(213,184,109,.34)}.axis{background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent)}.axisX{left:4%;right:4%;top:50%;height:1px}.axisY{top:4%;bottom:4%;left:50%;width:1px;background:linear-gradient(180deg,transparent,rgba(255,255,255,.12),transparent)}.fieldCore{left:50%;top:50%;transform:translate(-50%,-50%);display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(213,184,109,.55);border-radius:50%;background:rgba(5,8,15,.9);color:#e4cb84;font:400 26px/1 Georgia,serif;box-shadow:0 0 48px rgba(213,184,109,.10)}.fieldNode{width:8px;height:8px;border-radius:50%;background:#d5b86d;box-shadow:0 0 18px rgba(213,184,109,.45)}.nodeA{left:19%;top:35%}.nodeB{right:15%;top:54%;background:#62c9e6;box-shadow:0 0 18px rgba(98,201,230,.4)}.nodeC{left:44%;bottom:9%}.fieldWord{color:rgba(255,255,255,.46);font:600 9px/1.3 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.16em}.fieldWordA{left:5%;top:48%}.fieldWordB{right:3%;top:23%}.fieldWordC{right:5%;bottom:19%}.fieldWordD{left:7%;bottom:15%}.passportPrice{display:grid;gap:5px;padding-top:20px;border-top:1px solid rgba(255,255,255,.08)}.passportPrice span,.passportPrice small{color:rgba(255,255,255,.48);font:600 9px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.11em}.passportPrice strong{color:#fff;font:500 42px/1 Georgia,serif}
+        .passportBand,.passportSpecimen,.entryScene,.freyContextScene,.guideBridge,.applicationScene,.trustLayer,.processScene{margin-top:18px;border:1px solid rgba(255,255,255,.08);border-radius:22px;background:rgba(255,255,255,.01)}
+        .passportBand{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(300px,.95fr);gap:40px;align-items:center;padding:38px}.passportBand h2{font-size:clamp(34px,4vw,50px)}.subjectRail{display:grid;gap:18px;padding:24px 0}.subjectRail span{color:rgba(247,248,250,.72);font:600 11px/1.7 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.09em}.subjectRail i{display:block;height:1px;background:linear-gradient(90deg,rgba(213,184,109,.72),rgba(98,201,230,.36),transparent)}
+        .passportSpecimen{display:grid;grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr);overflow:hidden}.passportIntro{display:flex;flex-direction:column;justify-content:center;padding:44px;border-right:1px solid rgba(213,184,109,.12);background:radial-gradient(circle at 10% 10%,rgba(213,184,109,.08),transparent 48%)}.passportMark{display:flex;align-items:center;gap:11px;margin-top:32px;color:rgba(255,255,255,.42);font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}.passportMark b{color:var(--gold);font-size:17px}.passportLayers{padding:26px 34px 30px}.layersTitle{margin:0 0 10px;color:rgba(255,255,255,.52);font-size:13px}.passportLayer{display:grid;grid-template-columns:44px 1fr;gap:15px;align-items:start;padding:15px 0;border:0;border-bottom:1px solid rgba(255,255,255,.065);border-radius:0;background:none}.passportLayer:last-child{border-bottom:0}.passportLayer b{padding-top:3px;color:rgba(98,201,230,.82)}.passportLayer h3{margin:0 0 4px;font:500 17px/1.25 Georgia,serif}.passportLayer p{margin:0;font-size:13px;line-height:1.52}
+        .entryScene{padding:42px}.entryHeading{max-width:720px}.entryModes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px}.entryMode{position:relative;min-height:190px;padding:24px 22px;border-color:rgba(213,184,109,.12);background:linear-gradient(145deg,rgba(213,184,109,.035),rgba(98,201,230,.018))}.entryMode b{color:rgba(213,184,109,.58)}.entryMode h3{margin-top:26px;font:500 19px/1.25 Georgia,serif}.entryMode p{font-size:13px}.entryMode::after{content:"";position:absolute;left:22px;right:22px;bottom:18px;height:1px;background:linear-gradient(90deg,rgba(213,184,109,.42),transparent)}
+        .freyContextScene{display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,.92fr);gap:34px;align-items:center;padding:38px}.freyContextScene .contextGrid{grid-template-columns:repeat(2,1fr)}.contextEmpty{display:grid;grid-template-columns:auto 1fr auto 1fr auto;align-items:center;gap:9px;color:rgba(255,255,255,.42);font:600 9px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em}.contextEmpty i{height:1px;background:rgba(213,184,109,.22)}
+        .guideBridge{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:34px;align-items:center;padding:42px;background:linear-gradient(120deg,rgba(98,201,230,.035),rgba(213,184,109,.028))}.guideBridge>div:first-child{max-width:730px}.guideLinks{display:grid;gap:10px;min-width:210px}.guideLinks .primary{margin:0}.guideLinks .freyTextLink{text-align:center}
+        .applicationScene{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.88fr);overflow:hidden}.applicationCopy{display:flex;flex-direction:column;justify-content:center;padding:46px}.requestSheet{padding:30px 32px;border-left:1px solid rgba(213,184,109,.12);background:rgba(0,0,0,.12)}.requestSheetTop{margin-bottom:20px}.requestField{padding:14px 0;border-bottom:1px solid rgba(255,255,255,.07)}.requestField span{display:block;color:rgba(255,255,255,.54);font-size:11px;line-height:1.45}.requestField i{display:block;width:72%;height:1px;margin-top:13px;background:linear-gradient(90deg,rgba(213,184,109,.34),transparent)}
+        .trustLayer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;overflow:hidden}.trustLayer>div{min-width:0;padding:36px}.trustLayer>div+div{border-left:1px solid rgba(255,255,255,.07)}.trustLayer h2{font-size:clamp(25px,3vw,34px)}.trustLayer h2,.trustLayer p,.trustLayer li{overflow-wrap:anywhere;word-break:break-word}.trustLayer li,.trustLayer p{font-size:13px}.processScene{padding:38px}.processScene h2{font-size:clamp(30px,3.5vw,42px)}.freyFinal{margin-top:18px;border-radius:22px;background:radial-gradient(circle at 12% 40%,rgba(213,184,109,.08),transparent 34%),linear-gradient(120deg,rgba(213,184,109,.04),rgba(98,201,230,.025))}
+        @media(max-width:860px){.hero,.offer,.fit,.contractGrid,.human,.finalCta,.freyHero,.passportSpecimen,.freyContextScene,.guideBridge,.applicationScene,.trustLayer{grid-template-columns:1fr}.passportBand{grid-template-columns:minmax(0,1fr)}.passportBand>div,.subjectRail{min-width:0}.subjectRail span{overflow-wrap:anywhere;word-break:break-word}.five,.contextGrid{grid-template-columns:repeat(2,1fr)}.action{border-left:0;border-top:1px solid rgba(213,184,109,.16)}.fieldPlate,.requestSheet{border-left:0;border-top:1px solid rgba(213,184,109,.14)}.passportIntro{border-right:0;border-bottom:1px solid rgba(213,184,109,.12)}.entryModes{grid-template-columns:1fr}.trustLayer>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.07)}.systemHero{min-height:0}.systemMeaning{padding:52px 42px 46px}.systemAction{padding:38px 42px}.evidenceMotif{margin-top:38px}.four{grid-template-columns:repeat(2,1fr)}.fit>div+div{border-left:0;border-top:1px solid rgba(255,255,255,.08);padding:22px 12px 4px}.finalCta .primary{width:100%}}
+        @media(max-width:560px){.q{padding:28px 12px 90px}.passportBand h2{font-size:28px}.freyHeroCopy{padding:36px 24px 28px}.freyHeroCopy h1{font-size:clamp(38px,11vw,48px)}.freyHeroCopy .lead{font-size:15px}.freyHeroActions{align-items:stretch;flex-direction:column;gap:13px}.freyHeroActions .primary{width:100%}.freyHeroActions .freyTextLink{text-align:center}.fieldPlate{min-height:440px;padding:24px}.fieldOrbit{width:min(300px,86%)}.passportBand,.entryScene,.freyContextScene,.guideBridge,.processScene{padding:28px 22px}.passportIntro,.applicationCopy{padding:30px 22px}.passportLayers,.requestSheet{padding:24px 22px}.entryMode{min-height:0}.subjectRail{padding:5px 0}.guideLinks{min-width:0;width:100%}.trustLayer>div{padding:28px 22px}.passportPrice strong{font-size:38px}.meaning,.action{padding:30px 22px}.systemMeaning{padding:22px 26px 12px}.systemAction{padding:12px 26px 22px}.systemMeaning .ey{margin-bottom:8px}.systemMeaning h1{margin-bottom:14px;font-size:clamp(36px,10.5vw,42px)}.systemMeaning .lead{font-size:15px;line-height:1.38}.evidenceMotif{width:min(280px,88%);margin-top:10px}.motifLabel{margin-top:3px;font-size:9px;letter-spacing:.1em}.systemAction .mini{margin-bottom:2px}.systemAction .primary{margin-top:2px}.directEmail{margin-top:8px}.block,.finalCta{padding:24px 20px}.four,.five,.proofs,.contextGrid{grid-template-columns:1fr}.action{gap:6px}.price{font-size:48px}.primary,.secondary{width:100%;box-sizing:border-box}.inline{width:100%}.signal{font-size:11px}}
       `}</style>
       </main>
     </>
