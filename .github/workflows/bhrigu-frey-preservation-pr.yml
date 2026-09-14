@@ -63,8 +63,18 @@ jobs:
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
             'pages/access.tsx',
           }
+          passport_navigation = {
+            'pages/index.js',
+            'pages/map.js',
+            'pages/start.js',
+          }
+          passport_navigation_ci_authority = {
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
           print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
