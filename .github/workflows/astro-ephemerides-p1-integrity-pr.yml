@@ -90,6 +90,22 @@ jobs:
             'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
           }
+          public_discovery_ci_closure={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+            'pages/_app.js',
+            'pages/field.js',
+            'pages/index.js',
+            'pages/map.js',
+            'public/llms.txt',
+            'public/sitemap.xml',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
           if actual==legacy:
             print('EXACT_SCOPE_PASS legacy',sorted(actual))
@@ -105,6 +121,8 @@ jobs:
             print('SHARED_SCOPE_PASS commercial_access',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==ci_authority_repair:
             print('SHARED_SCOPE_PASS ci_authority_repair',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==public_discovery_ci_closure:
+            print('SHARED_SCOPE_PASS public_discovery_ci_closure',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           else:
             raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)} phi_visual_parity={sorted(phi_visual_parity)}')
           PY

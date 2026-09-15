@@ -109,6 +109,31 @@ jobs:
             'pages/index.module.css',
             'pages/map.js',
           }
+          public_discovery_patch = {
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            'pages/_app.js',
+            'pages/field.js',
+            'pages/index.js',
+            'pages/map.js',
+            'public/llms.txt',
+            'public/sitemap.xml',
+          }
+          public_discovery_ci_closure = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+            'pages/_app.js',
+            'pages/field.js',
+            'pages/index.js',
+            'pages/map.js',
+            'public/llms.txt',
+            'public/sitemap.xml',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -133,6 +158,10 @@ jobs:
               print('SHARED_SCOPE_PASS passport_navigation_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_map_link_repair:
               print('EXACT_SCOPE_PASS home_map_link_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE=true\n')
+          elif actual == public_discovery_patch:
+              print('EXACT_SCOPE_PASS public_discovery_patch', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
+          elif actual == public_discovery_ci_closure:
+              print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
@@ -178,8 +207,32 @@ jobs:
           ! grep -Fq 'className="localeNav"' pages/map.js
           echo 'HOME_MAP_LINK_COMMERCIAL_HIERARCHY_REPAIR=PASS'
 
+      - name: Verify public discovery minimal patch
+        if: env.BHRIGU_PUBLIC_DISCOVERY_SCOPE == 'true'
+        run: |
+          grep -Fq 'data-commercial-cta="ai-founding-field"' pages/index.js
+          grep -Fq 'AI Founding Field' pages/index.js
+          grep -Fq 'href={`/field?lang=${locale}`}' pages/index.js
+          grep -Fq '["AI Founding Field", "Founding registry for agents, models, projects and products", "/field"]' pages/map.js
+          grep -Fq '["Cosmographic Passport", "One complete Frey × Cosmographer reading delivered as a portable research object", "/access?offer=frey-personal"]' pages/map.js
+          ! grep -Fq 'Cosmographic Passport · USD 79' pages/map.js
+          grep -Fq '["Φ External Systems Recon", "Agent-first commercial systems recon", "/access"]' pages/map.js
+          grep -Fq '"/field": { en:["AI Founding Field · BHRIGU"' pages/_app.js
+          grep -Fq 'data-bhrigu-commercial-service="BHRIGU_AI_FOUNDING_FIELD_V0_1"' pages/field.js
+          grep -Fq '"@type": "Service"' pages/field.js
+          grep -Fq '"@type": "Offer"' pages/field.js
+          grep -Fq 'price: "99"' pages/field.js
+          ! grep -Fq '<title>{locale === "ru" ? "AI Founding Field · BHRIGU"' pages/field.js
+          grep -Fq 'https://www.bhrigu.io/field?lang=en' public/sitemap.xml
+          grep -Fq 'https://www.bhrigu.io/field?lang=ru' public/sitemap.xml
+          grep -Fq 'https://www.bhrigu.io/access?lang=en&amp;offer=frey-personal' public/sitemap.xml
+          grep -Fq 'https://www.bhrigu.io/access?lang=ru&amp;offer=frey-personal' public/sitemap.xml
+          grep -Fq 'AI Founding Field -> finite curated public founding registry' public/llms.txt
+          grep -Fq 'Cosmographic Passport -> one complete Frey × Cosmographer reading' public/llms.txt
+          echo 'PUBLIC_DISCOVERY_MINIMAL_PATCH=PASS'
+
       - name: Verify copy, boundary, SEO and agent truth
-        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true' && env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true' && env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE != 'true' && env.BHRIGU_PUBLIC_DISCOVERY_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path

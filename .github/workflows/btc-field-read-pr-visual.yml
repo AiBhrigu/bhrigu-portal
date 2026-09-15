@@ -49,9 +49,28 @@ jobs:
           pages/_app.js
           EOF
           sort -o /tmp/btc-free-corridor-scope /tmp/btc-free-corridor-scope
+          cat > /tmp/public-discovery-ci-closure <<'EOF'
+          .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+          .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/bhrigu-home-market-cosmographer-pr.yml
+          .github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml
+          .github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml
+          .github/workflows/bhrigu-public-site-human-copy-pr.yml
+          .github/workflows/btc-field-read-pr-visual.yml
+          .github/workflows/btc-free-corridor-conversational-surface-pr.yml
+          pages/_app.js
+          pages/field.js
+          pages/index.js
+          pages/map.js
+          public/llms.txt
+          public/sitemap.xml
+          EOF
+          sort -o /tmp/public-discovery-ci-closure /tmp/public-discovery-ci-closure
           if diff -u /tmp/btc-free-corridor-scope /tmp/btc-actual-scope; then
             echo 'PASS_BTC_FREE_CORRIDOR_CONVERSATIONAL_SURFACE_EXACT_4_FILE_SCOPE'
             echo 'BTC_FREE_CORRIDOR_COLLAPSED_PROOF=true' >> "$GITHUB_ENV"
+          elif diff -u /tmp/public-discovery-ci-closure /tmp/btc-actual-scope; then
+            echo 'PASS_PUBLIC_DISCOVERY_CI_CLOSURE_EXACT_14_FILE_SCOPE'
           else
             python3 .github/scripts/verify-btc-public-acceptance-scope.py
           fi

@@ -66,20 +66,49 @@ export async function getServerSideProps({ query }) {
 export default function AiFoundingField({ locale }) {
   const c = COPY[locale];
   const claimHref = `mailto:bhrigu-revenue@agentmail.to?subject=${encodeURIComponent(`Claim AI Founding Coordinate · ${locale.toUpperCase()}`)}&body=${encodeURIComponent("Project / agent name:\nCanonical URL:\nPreferred coordinate (optional):\nOne-line signal:\n")}`;
+  const canonicalUrl = `https://www.bhrigu.io/field?lang=${locale}`;
   const structured = {
     "@context": "https://schema.org",
-    "@type": "ItemList",
-    name: "BHRIGU AI Founding Field",
-    numberOfItems: 33,
-    itemListElement: [{ "@type": "ListItem", position: 0, name: "BHRIGU", identifier: "F-000", url: "https://www.bhrigu.io/" }]
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.bhrigu.io/#organization",
+        name: "BHRIGU",
+        url: "https://www.bhrigu.io/"
+      },
+      {
+        "@type": "Service",
+        "@id": `${canonicalUrl}#service`,
+        name: "BHRIGU AI Founding Field",
+        description: c.lead,
+        url: canonicalUrl,
+        provider: { "@id": "https://www.bhrigu.io/#organization" },
+        audience: {
+          "@type": "Audience",
+          audienceType: "AI agents, models, projects and products seeking a durable public machine-readable coordinate"
+        },
+        offers: {
+          "@type": "Offer",
+          price: "99",
+          priceCurrency: "USD",
+          availability: "https://schema.org/InStock",
+          url: canonicalUrl
+        }
+      },
+      {
+        "@type": "ItemList",
+        "@id": `${canonicalUrl}#registry`,
+        name: "BHRIGU AI Founding Field",
+        numberOfItems: 33,
+        itemListElement: [{ "@type": "ListItem", position: 0, name: "BHRIGU", identifier: "F-000", url: "https://www.bhrigu.io/" }]
+      }
+    ]
   };
 
   return (
     <>
       <Head>
-        <title>{locale === "ru" ? "AI Founding Field · BHRIGU" : "AI Founding Field · BHRIGU"}</title>
-        <meta name="description" content={c.lead} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structured) }} />
+        <script type="application/ld+json" data-bhrigu-commercial-service="BHRIGU_AI_FOUNDING_FIELD_V0_1" dangerouslySetInnerHTML={{ __html: JSON.stringify(structured).replace(/</g, "\u003c") }} />
       </Head>
       <main className="field" lang={locale}>
         <section className="hero">

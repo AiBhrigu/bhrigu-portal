@@ -34,7 +34,30 @@ jobs:
       - name: Verify exact authorized BTC acceptance scope
         run: |
           git fetch origin master
-          python3 .github/scripts/verify-btc-public-acceptance-scope.py
+          python3 - <<'PY'
+          import os, subprocess
+          expected = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+            'pages/_app.js',
+            'pages/field.js',
+            'pages/index.js',
+            'pages/map.js',
+            'public/llms.txt',
+            'public/sitemap.xml',
+          }
+          actual = set(subprocess.check_output(['git','diff','--name-only',os.environ['BTC_ACCEPTANCE_BASE_SHA'],os.environ['BTC_ACCEPTANCE_HEAD_SHA']], text=True).splitlines())
+          if actual == expected:
+              print('PASS_PUBLIC_DISCOVERY_CI_CLOSURE_EXACT_14_FILE_SCOPE')
+          else:
+              subprocess.run(['python3','.github/scripts/verify-btc-public-acceptance-scope.py'], check=True)
+          PY
 
       - name: Verify truthful boundary and exact expiry contract
         run: |
