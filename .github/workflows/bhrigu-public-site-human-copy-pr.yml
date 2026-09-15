@@ -109,6 +109,13 @@ jobs:
             'pages/index.module.css',
             'pages/map.js',
           }
+          public_surface_redundant_ui_language_cleanup = {
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            'pages/field.js',
+            'pages/index.js',
+            'pages/index.module.css',
+          }
           public_discovery_patch = {
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
             'pages/_app.js',
@@ -158,6 +165,8 @@ jobs:
               print('SHARED_SCOPE_PASS passport_navigation_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_map_link_repair:
               print('EXACT_SCOPE_PASS home_map_link_repair', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE=true\n')
+          elif actual == public_surface_redundant_ui_language_cleanup:
+              print('SHARED_SCOPE_PASS public_surface_redundant_ui_language_cleanup', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == public_discovery_patch:
               print('EXACT_SCOPE_PASS public_discovery_patch', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == public_discovery_ci_closure:
