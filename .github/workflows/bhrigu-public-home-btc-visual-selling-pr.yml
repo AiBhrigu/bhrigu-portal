@@ -141,7 +141,7 @@ jobs:
           if hits:
               raise SystemExit('CONFLICTING_NEW_GLYPH_SEMANTICS=' + ','.join(hits))
           home = open('pages/index.js', encoding='utf-8').read()
-          required_import = 'import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";'
+          required_import = 'import { FieldAnchorGlyph } from \"../components/btc/BtcSurfaceGlyphs\";'
           required_use = '<FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>'
           if home.count(required_import) != 1 or home.count(required_use) != 1 or home.count('<FieldAnchorGlyph') != 1:
               raise SystemExit('FIELD_ANCHOR_CANON_BIND=FAIL')
