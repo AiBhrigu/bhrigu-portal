@@ -13,6 +13,10 @@ import {
   normalizeDonationSessionId,
 } from "../lib/btc-donation-session";
 import { BTC_DONATION_BRIDGE_MODE, BTC_DONATION_MODE } from "../lib/btc-donation-bridge";
+import {
+  BTC_SUPPORT_STABLE_FALLBACK_ADDRESS,
+  BTC_SUPPORT_STABLE_FALLBACK_URI,
+} from "../lib/btc-support-stable-fallback";
 
 const SESSION_ONE = "don_session_123e4567-e89b-42d3-a456-426614174000";
 const SESSION_TWO = "don_session_123e4567-e89b-42d3-b456-426614174001";
@@ -65,6 +69,10 @@ async function run() {
   const qr = await QRCode.toDataURL(uri, { width: 128, margin: 1 });
   assert.match(qr, /^data:image\/png;base64,/);
   assert(!qr.includes("http://") && !qr.includes("https://"));
+  assert.equal(BTC_SUPPORT_STABLE_FALLBACK_ADDRESS, "bc1qg84nvvjff86xyxd4m4y6mynwrskzt5auuvlpu4");
+  assert.equal(BTC_SUPPORT_STABLE_FALLBACK_URI, `bitcoin:${BTC_SUPPORT_STABLE_FALLBACK_ADDRESS}`);
+  const fallbackQr = await QRCode.toDataURL(BTC_SUPPORT_STABLE_FALLBACK_URI, { width: 128, margin: 1 });
+  assert.match(fallbackQr, /^data:image\/png;base64,/);
 
   const bridgeMigration = await readFile("migrations/20260815_btc_donation_bridge_v1.sql", "utf8");
   const sessionMigration = await readFile("migrations/20260815_btc_donation_session_v1.sql", "utf8");
@@ -173,8 +181,14 @@ async function run() {
   assert.match(component, /navigator\.clipboard\.writeText\(viewSession\.receiveAddress\)/);
   assert.match(component, /QRCode\.toDataURL\(viewSession\.bip321Uri/);
   assert.match(component, /href=\{viewSession\.bip321Uri\}/);
-  assert.match(component, /No fresh one-time Bitcoin address is available right now\. No support session was created\./);
-  assert.match(component, /Сейчас нет свободного нового одноразового Bitcoin-адреса\. Сессия поддержки не создана\./);
+  assert.match(component, /Fresh one-time addresses are temporarily unavailable\. You can still support BHRIGU using its stable Bitcoin mainnet address\./);
+  assert.match(component, /Свежие одноразовые адреса временно недоступны\. Вы всё ещё можете поддержать BHRIGU через стабильный адрес Bitcoin mainnet\./);
+  assert.match(component, /body\?\.errorCode === "address_unavailable"/);
+  assert.match(component, /setStableFallbackActive\(true\)/);
+  assert.match(component, /QRCode\.toDataURL\(BTC_SUPPORT_STABLE_FALLBACK_URI/);
+  assert.match(component, /navigator\.clipboard\.writeText\(BTC_SUPPORT_STABLE_FALLBACK_ADDRESS\)/);
+  assert.match(component, /data-stable-fallback-address/);
+  assert.match(component, /data-stable-fallback-copy/);
   assert.match(component, /sessionStorage\.getItem\(SESSION_STORAGE_KEY\)/);
   assert.match(component, /sessionStorage\.setItem\(SESSION_STORAGE_KEY, body\.session\.sessionId\)/);
   assert.match(component, /fetch\(`\/api\/donation\/session\/\$\{encodeURIComponent\(storedSessionId\)\}`/);
@@ -244,7 +258,7 @@ async function run() {
   console.log("LOCAL_QR_DATA_URL=PASS");
   console.log("CEX_RAW_ADDRESS_HANDOFF=PASS");
   console.log("BIP321_WALLET_HANDOFF=PASS");
-  console.log("ADDRESS_UNAVAILABLE_FAIL_CLOSED_COPY=PASS");
+  console.log("ADDRESS_UNAVAILABLE_STABLE_FALLBACK=PASS");
   console.log("ONE_SESSION_ONE_ADDRESS=PASS");
   console.log("IDENTICAL_SESSION_REPLAY_NO_SECOND_ISSUE=PASS");
   console.log("ABANDONED_SESSION_RETIREMENT=PASS");

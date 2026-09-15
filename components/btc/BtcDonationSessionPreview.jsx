@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import QRCode from "qrcode";
 import { getBtcObservabilityContext, recordBtcClientEvent } from "../../lib/btc-observability-client";
+import {
+  BTC_SUPPORT_STABLE_FALLBACK_ADDRESS,
+  BTC_SUPPORT_STABLE_FALLBACK_URI,
+} from "../../lib/btc-support-stable-fallback";
 
 const SYNTHETIC_STATES = new Set(["awaiting_payment", "mempool_seen", "confirmed", "confirmation_lost", "retired"]);
 const RECEIPT_LOCKED_STATES = new Set(["mempool_seen", "confirmed", "confirmation_lost", "retired"]);
@@ -68,7 +72,10 @@ const SUPPORT_COPY = {
     ],
     exchangeTitle: "Sending from a centralized exchange?",
     exchangeBody: "Withdraw asset = BTC and network = Bitcoin mainnet. Use Copy raw BTC address and paste only the raw address into the exchange withdrawal field. Do not paste the bitcoin: prefix and do not use this BIP321 QR for an exchange withdrawal form. Do not use Lightning or another withdrawal network.",
-    unavailable: "No fresh one-time Bitcoin address is available right now. No support session was created. Please try again after fresh-address capacity is restored.",
+    fallbackTitle: "Stable Bitcoin fallback",
+    fallbackBody: "Fresh one-time addresses are temporarily unavailable. You can still support BHRIGU using its stable Bitcoin mainnet address.",
+    fallbackAddress: "Stable BHRIGU Bitcoin address",
+    fallbackSafety: "Bitcoin mainnet only. This fallback does not create a one-time support session.",
     rateLimited: "Fresh Bitcoin session creation is temporarily limited for safety.",
     retryAfter: "Please try again in",
     endUnused: "End unused session",
@@ -135,7 +142,10 @@ const SUPPORT_COPY = {
     ],
     exchangeTitle: "Отправляете BTC с централизованной биржи?",
     exchangeBody: "Выберите актив = BTC и сеть = Bitcoin mainnet. Используйте Копировать обычный BTC-адрес и вставляйте в поле вывода биржи только обычный адрес. Не вставляйте префикс bitcoin: и не используйте этот BIP321 QR для формы вывода биржи. Не используйте Lightning или другую сеть вывода.",
-    unavailable: "Сейчас нет свободного нового одноразового Bitcoin-адреса. Сессия поддержки не создана. Попробуйте снова после восстановления запаса свежих адресов.",
+    fallbackTitle: "Резервный Bitcoin-адрес",
+    fallbackBody: "Свежие одноразовые адреса временно недоступны. Вы всё ещё можете поддержать BHRIGU через стабильный адрес Bitcoin mainnet.",
+    fallbackAddress: "Стабильный Bitcoin-адрес BHRIGU",
+    fallbackSafety: "Только Bitcoin mainnet. Этот резервный путь не создаёт одноразовую сессию поддержки.",
     rateLimited: "Создание новых Bitcoin-сессий временно ограничено для защиты запаса одноразовых адресов.",
     retryAfter: "Попробуйте снова через",
     endUnused: "Закрыть неиспользованную сессию",
@@ -163,6 +173,9 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [stableFallbackActive, setStableFallbackActive] = useState(false);
+  const [stableFallbackQrDataUrl, setStableFallbackQrDataUrl] = useState("");
+  const [stableFallbackCopied, setStableFallbackCopied] = useState(false);
 
   const syntheticState = useMemo(() => {
     if (isProduction) return null;
@@ -231,6 +244,22 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
   }, [sendSurfaceOpen, viewSession?.bip321Uri]);
 
   useEffect(() => {
+    let cancelled = false;
+    setStableFallbackQrDataUrl("");
+    if (!stableFallbackActive) return undefined;
+    QRCode.toDataURL(BTC_SUPPORT_STABLE_FALLBACK_URI, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 288,
+    }).then((url) => {
+      if (!cancelled) setStableFallbackQrDataUrl(url);
+    }).catch(() => {
+      if (!cancelled) setError("Local QR generation failed.");
+    });
+    return () => { cancelled = true; };
+  }, [stableFallbackActive]);
+
+  useEffect(() => {
     if (syntheticMode || !session?.sessionId || session.state === "retired") return undefined;
     let cancelled = false;
     const refresh = async () => {
@@ -259,6 +288,8 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     setBusy(true);
     setError("");
     setCopied(false);
+    setStableFallbackActive(false);
+    setStableFallbackCopied(false);
     setReceiptLocked(false);
     const sessionId = `don_session_${window.crypto.randomUUID()}`;
     try {
@@ -274,7 +305,12 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
           const retry = retryAfterText(body?.retryAfterSeconds, locale);
           throw new Error(`${supportCopy.rateLimited} ${supportCopy.retryAfter} ${retry}.`);
         }
-        throw new Error(body?.errorCode === "address_unavailable" ? supportCopy.unavailable : "Donation session is unavailable.");
+        if (body?.errorCode === "address_unavailable") {
+          setStableFallbackActive(true);
+          setError("");
+          return;
+        }
+        throw new Error("Donation session is unavailable.");
       }
       window.sessionStorage.setItem(SESSION_STORAGE_KEY, body.session.sessionId);
       if (hasReceiptEvidence(body.session)) setReceiptLocked(true);
@@ -306,6 +342,16 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     }
   }
 
+  async function copyStableFallbackAddress() {
+    if (!stableFallbackActive) return;
+    try {
+      await navigator.clipboard.writeText(BTC_SUPPORT_STABLE_FALLBACK_ADDRESS);
+      setStableFallbackCopied(true);
+    } catch {
+      setError("Address copy is unavailable in this browser.");
+    }
+  }
+
   async function copyAddress() {
     if (!viewSession?.receiveAddress || !sendSurfaceOpen) return;
     if (syntheticMode) {
@@ -328,13 +374,13 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
     <section className="donation" data-donation-surface={surface} data-support-final-polish="bhrigu-phi-structured-cyberpunk-v0-1" data-action-energy="state-driven">
       <div className="previewFlag">{isProduction ? "Bitcoin mainnet · voluntary support" : "Protected Preview · No real BTC"}</div>
       <h2>{supportCopy.title}</h2>
-      {!viewSession && (
+      {!viewSession && !stableFallbackActive && (
         <div className="approvedCopy" data-approved-support-copy={locale}>
           {supportCopy.lines.map((line) => <p className="intro" key={line}>{line}</p>)}
         </div>
       )}
 
-      {!viewSession && (
+      {!viewSession && !stableFallbackActive && (
         <div className="decision" data-support-amount-suggestions data-support-amount-binding="none">
           <p className="directAsk"><strong>{supportCopy.directAsk}</strong></p>
           <div className="micro">{supportCopy.suggestedTitle}</div>
@@ -350,13 +396,56 @@ export default function BtcDonationSessionPreview({ surface = "preview" }) {
         </div>
       )}
 
-      {!viewSession && (
+      {!viewSession && !stableFallbackActive && (
         <button className="primary" type="button" onClick={startSession} disabled={busy} data-donation-start>
           {busy ? supportCopy.opening : supportCopy.donate}
         </button>
       )}
 
-      {viewSession && (
+      {stableFallbackActive && (
+        <div className="stableFallback" data-stable-fallback="active">
+          <div className="activeHeader" data-stable-fallback-header>
+            <div className="activeSignal">
+              <span className="activePulse" aria-hidden="true" />
+              <div>
+                <div className="micro">{supportCopy.fallbackTitle}</div>
+                <strong>{supportCopy.fallbackBody}</strong>
+              </div>
+            </div>
+            <span className="qrNetwork">BTC / MAINNET</span>
+          </div>
+
+          <div className="qrCore" data-stable-fallback-qr data-qr-payload={BTC_SUPPORT_STABLE_FALLBACK_URI}>
+            <div className="qrCoreHead">
+              <span className="micro">{supportCopy.fallbackAddress}</span>
+              <span className="qrNetwork">STABLE FALLBACK</span>
+            </div>
+            <div className="qrFrame">
+              <div className="qrShell" data-local-qr>
+                {stableFallbackQrDataUrl ? (
+                  <img src={stableFallbackQrDataUrl} width="288" height="288" alt="Stable BHRIGU Bitcoin support QR generated locally in this browser" />
+                ) : (
+                  <div className="qrLoading">Generating QR locally…</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="addressBlock">
+            <div className="micro">{supportCopy.fallbackAddress}</div>
+            <code data-stable-fallback-address>{BTC_SUPPORT_STABLE_FALLBACK_ADDRESS}</code>
+            <div className="addressActions">
+              <button type="button" className="secondary" onClick={copyStableFallbackAddress} data-stable-fallback-copy>
+                {stableFallbackCopied ? supportCopy.copied : supportCopy.copy}
+              </button>
+              <a className="secondary" href={BTC_SUPPORT_STABLE_FALLBACK_URI} data-stable-fallback-wallet>{supportCopy.openWallet}</a>
+            </div>
+          </div>
+          <p className="guard" data-stable-fallback-safety><strong>{supportCopy.fallbackSafety}</strong></p>
+        </div>
+      )}
+
+      {viewSession && !stableFallbackActive && (
         <div
           className={`session ${sendSurfaceOpen ? "sessionActive" : ""}`}
           data-donation-session-state={viewSession.state}
