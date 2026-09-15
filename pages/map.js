@@ -11,12 +11,13 @@ const COPY = {
         ["BHRIGU", "Public home", "/"],
         ["Market Cosmographer", "Primary current product", MARKET_COSMOGRAPHER_URL],
         ["BTC Field", "First proven Bitcoin corridor", "/crypto-astro/btc"],
+        ["AI Founding Field", "Founding registry for agents, models, projects and products", "/field"],
       ]],
       ["Temporal path", [
         ["Frey", "Active temporal reading/dialogue", "/frey"],
         ["Reading", "Temporal meaning surface", "/reading"],
         ["Frey Guide", "How to read, compare and carry Frey into another AI", "/guide/frey"],
-        ["Cosmographic Passport · USD 79", "One complete Frey × Cosmographer reading delivered as a portable research object", "/access?offer=frey-personal"],
+        ["Cosmographic Passport", "One complete Frey × Cosmographer reading delivered as a portable research object", "/access?offer=frey-personal"],
       ]],
       ["Interpretation & depth", [
         ["Cosmographer", "Interpretation/navigation role", "/cosmographer"],
@@ -27,7 +28,7 @@ const COPY = {
       ]],
       ["Public boundary", [
         ["Support", "Voluntary Bitcoin support", "/support"],
-        ["Access", "Agent-first commercial systems recon", "/access"],
+        ["Φ External Systems Recon", "Agent-first commercial systems recon", "/access"],
         ["DAO", "Future/peripheral only", "/dao"],
       ]],
     ],
@@ -40,12 +41,13 @@ const COPY = {
         ["BHRIGU", "Публичный дом", "/"],
         ["Market Cosmographer", "Основной текущий продукт", MARKET_COSMOGRAPHER_URL],
         ["BTC Field", "Первый доказанный Bitcoin-коридор", "/crypto-astro/btc"],
+        ["AI Founding Field", "Founding-реестр для агентов, моделей, проектов и продуктов", "/field"],
       ]],
       ["Темпоральный путь", [
         ["Frey", "Действующее темпоральное чтение/диалог", "/frey"],
         ["Reading", "Поверхность темпорального смысла", "/reading"],
         ["Гид Frey", "Как читать, сравнивать и передавать Frey стороннему ИИ", "/guide/frey"],
-        ["Космографический паспорт · USD 79", "Полное чтение Frey × Космограф с результатом в виде переносимого исследовательского объекта", "/access?offer=frey-personal"],
+        ["Космографический паспорт", "Полное чтение Frey × Космограф с результатом в виде переносимого исследовательского объекта", "/access?offer=frey-personal"],
       ]],
       ["Интерпретация и глубина", [
         ["Космограф", "Роль интерпретации/навигации", "/cosmographer"],
@@ -56,7 +58,7 @@ const COPY = {
       ]],
       ["Публичная граница", [
         ["Поддержка", "Добровольная Bitcoin-поддержка", "/support"],
-        ["Доступ", "Agent-first коммерческая разведка систем", "/access"],
+        ["Φ External Systems Recon", "Agent-first коммерческая разведка систем", "/access"],
         ["DAO", "Только будущее/периферия", "/dao"],
       ]],
     ],

@@ -24,6 +24,11 @@ Use these relations when reading the public system:
   Base object: one read-only bounded system recon, USD 300, system map + 3 findings + evidence + repair blueprint.
   Implementation is not included.
   Support is not payment.
+- AI Founding Field -> finite curated public founding registry for agents, models, projects and products.
+  Base object: one founding coordinate, USD 99 one-time, with canonical URL, label, direct link and timestamped machine-readable registry entry.
+  No promise of traffic, ranking or endorsement.
+- Cosmographic Passport -> one complete Frey × Cosmographer reading of one subject across one meaningful temporal horizon.
+  Base object: one portable Cosmographic Passport, USD 79, delivered as a bounded research object.
 
 ## Canonical public orientation
 - https://www.bhrigu.io/?lang=en
@@ -113,6 +118,10 @@ The older /crypto-astro/btc/live route remains a bounded legacy/public evidence 
 - https://www.bhrigu.io/orion?lang=ru
 - https://www.bhrigu.io/access?lang=en
 - https://www.bhrigu.io/access?lang=ru
+- https://www.bhrigu.io/access?lang=en&offer=frey-personal
+- https://www.bhrigu.io/access?lang=ru&offer=frey-personal
+- https://www.bhrigu.io/field?lang=en
+- https://www.bhrigu.io/field?lang=ru
 - https://www.bhrigu.io/support?lang=en
 - https://www.bhrigu.io/support?lang=ru
 - https://www.bhrigu.io/github?lang=en
