@@ -112,7 +112,7 @@ export default function AiFoundingField({ locale }) {
       </Head>
       <main className="field" lang={locale}>
         <section className="hero">
-          <div className="heroTop"><p className="eyebrow">{c.eyebrow}</p><a className="language" href={`/field?lang=${locale === "ru" ? "en" : "ru"}`}>{c.lang}</a></div>
+          <div className="heroTop"><p className="eyebrow">{c.eyebrow}</p></div>
           <div className="heroBody">
             <div className="heroCopy">
               <h1>{c.title}</h1>

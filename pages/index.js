@@ -305,7 +305,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             <div className={styles.proofStateGrid}>
               <span><small>{copy.currentStateLabel}</small><strong>{acceptedState.synthesis}</strong><i data-btc-state-meta>{acceptedState.meta || "—"}</i></span>
               <span><small>{copy.changeStateLabel}</small><strong>{acceptedState.delta}</strong><i>{btcAcceptedState.changed_metric_count} {copy.changedWord} · {btcAcceptedState.stable_metric_count} {copy.stableWord}</i></span>
-              <span><small>{copy.evidenceStateLabel}</small><strong>{acceptedState.freshness}</strong><i>{acceptedState.snapshot || "—"}</i></span>
               <span><small>{copy.sourceProofLabel}</small><strong>{btcAcceptedState.evidence_source_count} {copy.sourcesWord}</strong><i data-btc-state-proof>{btcAcceptedState.comparable_metric_count} {copy.comparableWord} · {acceptedState.delta}</i></span>
             </div>
           </div>
