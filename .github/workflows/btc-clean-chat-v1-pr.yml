@@ -139,6 +139,20 @@ jobs:
             "pages/support.js"
             "tests/btc-donation-session-acceptance.ts"
           )
+          support_stable_fallback_product_expected=(
+            "components/btc/BtcDonationSessionPreview.jsx"
+            "lib/btc-support-stable-fallback.ts"
+            "tests/btc-donation-session-acceptance.ts"
+            "tests/btc-support-stable-fallback-acceptance.ts"
+          )
+          support_stable_fallback_ci_authority_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "components/btc/BtcDonationSessionPreview.jsx"
+            "lib/btc-support-stable-fallback.ts"
+            "tests/btc-donation-session-acceptance.ts"
+            "tests/btc-support-stable-fallback-acceptance.ts"
+          )
           polymarket_recertification_expected=(
             ".github/workflows/btc-clean-chat-v1-pr.yml"
             "lib/btc-clean-chat-model-runtime.ts"
@@ -263,6 +277,8 @@ jobs:
           mapfile -t postmerge_ru_matrix_expected_sorted < <(printf '%s\n' "${postmerge_ru_matrix_expected[@]}" | sort)
           mapfile -t support_expected_sorted < <(printf '%s\n' "${support_expected[@]}" | sort)
           mapfile -t support_ci_authority_repair_expected_sorted < <(printf '%s\n' "${support_ci_authority_repair_expected[@]}" | sort)
+          mapfile -t support_stable_fallback_product_expected_sorted < <(printf '%s\n' "${support_stable_fallback_product_expected[@]}" | sort)
+          mapfile -t support_stable_fallback_ci_authority_expected_sorted < <(printf '%s\n' "${support_stable_fallback_ci_authority_expected[@]}" | sort)
           mapfile -t polymarket_recertification_expected_sorted < <(printf '%s\n' "${polymarket_recertification_expected[@]}" | sort)
           mapfile -t polymarket_query_binding_expected_sorted < <(printf '%s\n' "${polymarket_query_binding_expected[@]}" | sort)
           mapfile -t observability_expected_sorted < <(printf '%s\n' "${observability_expected[@]}" | sort)
@@ -311,6 +327,10 @@ jobs:
             echo "PASS_BTC_SUPPORT_PHI_STRUCTURED_CYBERPUNK_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${support_ci_authority_repair_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${support_stable_fallback_product_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_SUPPORT_STABLE_FALLBACK_EXACT_4_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${support_stable_fallback_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_SUPPORT_STABLE_FALLBACK_CI_AUTHORITY_EXACT_6_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${polymarket_recertification_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_POLYMARKET_RECERTIFICATION_EXACT_4_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${polymarket_query_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then

@@ -256,6 +256,20 @@ BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE = {
     ".github/workflows/btc-clean-chat-v1-pr.yml",
 }
 
+# Stable support fallback: exact product scope plus bounded CI-authority repair.
+BTC_SUPPORT_STABLE_FALLBACK_PRODUCT_SCOPE = {
+    "components/btc/BtcDonationSessionPreview.jsx",
+    "lib/btc-support-stable-fallback.ts",
+    "tests/btc-donation-session-acceptance.ts",
+    "tests/btc-support-stable-fallback-acceptance.ts",
+}
+
+BTC_SUPPORT_STABLE_FALLBACK_CI_AUTHORITY_SCOPE = {
+    *BTC_SUPPORT_STABLE_FALLBACK_PRODUCT_SCOPE,
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+}
+
 BTC_SUPPORT_CAPACITY_ADMISSION_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/btc-binance-public-market-shadow-pr.yml",
@@ -520,6 +534,8 @@ accepted_scopes = {
     "PASS_BTC_CLEAN_CHAT_TRAFFIC_RETENTION_EXACT_3_FILE_SCOPE": BTC_CLEAN_CHAT_TRAFFIC_RETENTION_SCOPE,
     "PASS_BTC_CLEAN_CHAT_ZERO_WASTE_P0_EXACT_7_FILE_SCOPE": BTC_CLEAN_CHAT_ZERO_WASTE_P0_SCOPE,
     "PASS_BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_EXACT_5_FILE_SCOPE": BTC_SUPPORT_PHI_CI_AUTHORITY_REPAIR_SCOPE,
+    "PASS_BTC_SUPPORT_STABLE_FALLBACK_EXACT_4_FILE_SCOPE": BTC_SUPPORT_STABLE_FALLBACK_PRODUCT_SCOPE,
+    "PASS_BTC_SUPPORT_STABLE_FALLBACK_CI_AUTHORITY_EXACT_6_FILE_SCOPE": BTC_SUPPORT_STABLE_FALLBACK_CI_AUTHORITY_SCOPE,
     "PASS_BTC_OBSERVABILITY_V1_EXACT_16_FILE_SCOPE": BTC_OBSERVABILITY_V1_SCOPE,
     "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE": BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE,
     "PASS_BTC_PR195_PR196_PREVIEW_INTEGRATION_EXACT_23_FILE_SCOPE": BTC_PR195_PR196_PREVIEW_INTEGRATION_SCOPE,
