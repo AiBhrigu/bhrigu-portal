@@ -55,7 +55,8 @@ function stable(value: unknown): unknown {
 }
 
 export function isPhiTimingWindowsPreviewExecutionConfigured(env: Partial<NodeJS.ProcessEnv> = process.env): boolean {
-  if (env.VERCEL_ENV !== "preview" || !env.BHRIGU_ASTRO_FIELD_URL?.trim()) return false;
+  const astroAuth = env.BHRIGU_ASTRO_FIELD_BYPASS_SECRET?.trim() || env.VERCEL_OIDC_TOKEN?.trim();
+  if (env.VERCEL_ENV !== "preview" || !env.BHRIGU_ASTRO_FIELD_URL?.trim() || !astroAuth) return false;
   if (env.BTC_RESEARCH_FIELD_MODE === "preview_v1") {
     const endpoint = env.BTC_RESEARCH_FIELD_PREVIEW_RESPONSES_URL?.trim();
     return Boolean(endpoint?.startsWith("https://") && env.BTC_RESEARCH_FIELD_PREVIEW_MODEL_ID?.trim() && env.BTC_RESEARCH_FIELD_PREVIEW_BEARER?.trim());
