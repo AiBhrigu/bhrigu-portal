@@ -7,7 +7,7 @@ on:
       - ".github/workflows/pr272-home-proof-close-self-patch.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   patch:
@@ -19,7 +19,6 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 0
-          token: ${{ github.token }}
 
       - name: Apply exact bounded close
         shell: bash
@@ -37,14 +36,12 @@ jobs:
               p.write_text(text.replace(old, new, 1), encoding='utf-8')
               print(f'PATCHED {path}')
 
-          # 1) Hero secondary proof CTA becomes the internal evidence-rail entry.
           replace_once(
               'pages/index.js',
               '<a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a>',
               '<a className={styles.secondaryCta} href="#public-evidence" data-secondary-cta="public-proof">{copy.viewProof}</a>',
           )
 
-          # 2) Canonical home acceptance now proves the internal hero evidence route.
           replace_once(
               '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
               '"schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_5",',
@@ -58,7 +55,6 @@ jobs:
 
           scope = '''          home_external_reality_proof_rail_close = {\n            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',\n            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',\n            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',\n            'pages/index.js',\n            'pages/index.module.css',\n          }\n'''
 
-          # 3) Human-copy legacy authority recognizes this exact 5-file close atom and yields to the canonical home gate.
           replace_once(
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
               '          actual = set(subprocess.check_output(\n',
@@ -70,7 +66,6 @@ jobs:
               "          elif actual == home_external_reality_proof_rail_close:\n              print('SHARED_SCOPE_PASS home_external_reality_proof_rail_close', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\\n')\n          elif actual != expected:\n              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')",
           )
 
-          # 4) Visual-selling legacy authority recognizes the same exact atom and still runs its protected-surface/model-call checks.
           replace_once(
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
               '          actual = set(subprocess.check_output(\n',
@@ -94,17 +89,14 @@ jobs:
           grep -Fq 'home_external_reality_proof_rail_close' .github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml
           git diff --check
 
-      - name: Commit bounded close and self-delete
-        shell: bash
-        run: |
-          set -euo pipefail
-          git rm .github/workflows/pr272-home-proof-close-self-patch.yml
-          git config user.name "BHRIGU CI Authority"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add pages/index.js \
-            .github/workflows/bhrigu-home-market-cosmographer-pr.yml \
-            .github/workflows/bhrigu-public-site-human-copy-pr.yml \
+      - name: Upload exact patched files
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr272-home-proof-close-patched-files
+          path: |
+            pages/index.js
+            .github/workflows/bhrigu-home-market-cosmographer-pr.yml
+            .github/workflows/bhrigu-public-site-human-copy-pr.yml
             .github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml
-          git diff --cached --check
-          git commit -m "Close home proof route and CI authority"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          if-no-files-found: error
+          retention-days: 1
