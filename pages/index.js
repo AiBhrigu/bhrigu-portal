@@ -15,6 +15,103 @@ const BINANCE_SQUARE_PROFILE_URL = {
   ru: "https://www.binance.com/ru/square/profile/square-creator-634982873",
 };
 
+const PUBLIC_EVIDENCE_COPY = {
+  en: {
+    signal: ["PROVEN IN THE OPEN", "BINANCE TRACK A", "X-AGENT ×2", "ENTROPY32 UPSTREAM"],
+    eyebrow: "PROVEN IN THE OPEN",
+    title: "Real systems leave public evidence.",
+    intro:
+      "BHRIGU is tested outside its own surfaces: by frozen time, public agent submissions, and an upstream change adopted in an independent Bitcoin hardware project.",
+    boundary:
+      "Every object below links to an external or immutable source. Pending review stays labeled pending.",
+    cases: [
+      {
+        id: "binance-temporal",
+        kicker: "TEMPORAL EVIDENCE · BINANCE",
+        title: "A claim existed before the outcome.",
+        body:
+          "Track A was frozen before the Sep 10 boundary. The first post-boundary cycle was preserved; Sep 17 was precommitted seven days before its boundary. The second durable append is still being bound.",
+        status: "FROZEN ORIGIN · APPEND-ONLY",
+        links: [
+          ["Frozen submission", "https://github.com/AiBhrigu/bhrigu-binance-agent-os-track-a"],
+          ["Research state", "https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api"],
+        ],
+      },
+      {
+        id: "xagent-two-submissions",
+        kicker: "AGENT / MCP · X-AGENT ×2",
+        title: "Two distinct entries are on the external review surface.",
+        body:
+          "X-Agent officially received Bitcoin Temporal Evidence v2 (PR48) and the OlaXBT Strategy Evidence Agent (PR55). Receipts exist; technical review and judging are still pending.",
+        status: "OFFICIAL RECEIPTS · JUDGING PENDING",
+        links: [
+          ["PR48 · Temporal Evidence", "https://github.com/xagentAI/xagt-plugin/pull/48"],
+          ["PR55 · OlaXBT Evidence", "https://github.com/xagentAI/xagt-plugin/pull/55"],
+        ],
+      },
+      {
+        id: "entropy32-upstream",
+        kicker: "EXTERNAL SYSTEM · ENTROPY32 PLUS",
+        title: "Finding adopted upstream.",
+        body:
+          "BHRIGU identified an overlapping-comparison entropy defect. The maintainer changed the firmware to non-overlapping interval pairs and publicly credited Cosmographer / BHRIGU in both the README and firmware source.",
+        status: "OPEN-SOURCE RESEARCH COLLABORATION · NOT CLIENT WORK",
+        links: [
+          ["README credit", "https://github.com/captainchapster/Entropy32-Plus/blob/a69f95c0098d25b762845d3b2b4751ef412b00a0/README.md"],
+          ["Firmware credit", "https://github.com/captainchapster/Entropy32-Plus/blob/a69f95c0098d25b762845d3b2b4751ef412b00a0/entropy32_plus.ino"],
+        ],
+      },
+    ],
+  },
+  ru: {
+    signal: ["ДОКАЗАНО В ОТКРЫТОМ ПОЛЕ", "BINANCE TRACK A", "X-AGENT ×2", "ENTROPY32 UPSTREAM"],
+    eyebrow: "ДОКАЗАНО В ОТКРЫТОМ ПОЛЕ",
+    title: "Реальные системы оставляют публичные доказательства.",
+    intro:
+      "BHRIGU проверяется не только на собственных поверхностях: замороженным временем, внешними agent/MCP-заявками и изменением, принятым upstream в независимом Bitcoin hardware-проекте.",
+    boundary:
+      "Каждый объект ниже ведёт к внешнему или неизменяемому первоисточнику. То, что ещё находится на review, так и обозначено.",
+    cases: [
+      {
+        id: "binance-temporal",
+        kicker: "TEMPORAL EVIDENCE · BINANCE",
+        title: "Утверждение существовало до результата.",
+        body:
+          "Track A был заморожен до границы 10 сентября. Первый post-boundary цикл сохранён; окно 17 сентября было precommit за семь дней до границы. Второй durable append ещё связывается с публичным evidence.",
+        status: "FROZEN ORIGIN · APPEND-ONLY",
+        links: [
+          ["Замороженная заявка", "https://github.com/AiBhrigu/bhrigu-binance-agent-os-track-a"],
+          ["Research state", "https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api"],
+        ],
+      },
+      {
+        id: "xagent-two-submissions",
+        kicker: "AGENT / MCP · X-AGENT ×2",
+        title: "Две независимые заявки находятся на внешнем review.",
+        body:
+          "X-Agent официально получил Bitcoin Temporal Evidence v2 (PR48) и OlaXBT Strategy Evidence Agent (PR55). Receipts существуют; technical review и judging ещё не завершены.",
+        status: "OFFICIAL RECEIPTS · JUDGING PENDING",
+        links: [
+          ["PR48 · Temporal Evidence", "https://github.com/xagentAI/xagt-plugin/pull/48"],
+          ["PR55 · OlaXBT Evidence", "https://github.com/xagentAI/xagt-plugin/pull/55"],
+        ],
+      },
+      {
+        id: "entropy32-upstream",
+        kicker: "EXTERNAL SYSTEM · ENTROPY32 PLUS",
+        title: "Finding принят upstream.",
+        body:
+          "В Entropy32 Plus BHRIGU обнаружил дефект overlapping comparison. Maintainer изменил firmware на non-overlapping interval pairs и публично указал Cosmographer / BHRIGU и в README, и в исходном коде.",
+        status: "OPEN-SOURCE RESEARCH COLLABORATION · NOT CLIENT WORK",
+        links: [
+          ["README credit", "https://github.com/captainchapster/Entropy32-Plus/blob/a69f95c0098d25b762845d3b2b4751ef412b00a0/README.md"],
+          ["Firmware credit", "https://github.com/captainchapster/Entropy32-Plus/blob/a69f95c0098d25b762845d3b2b4751ef412b00a0/entropy32_plus.ino"],
+        ],
+      },
+    ],
+  },
+};
+
 const COPY = {
   en: {
     category: "AI MARKET INTELLIGENCE SYSTEM",
@@ -274,6 +371,7 @@ export async function getServerSideProps({ query, res }) {
 
 export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE }) {
   const copy = COPY[locale] || COPY.en;
+  const publicEvidence = PUBLIC_EVIDENCE_COPY[locale] || PUBLIC_EVIDENCE_COPY.en;
   const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
   const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
@@ -284,7 +382,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroCopy}><p className={styles.product}>MARKET COSMOGRAPHER</p><p className={styles.category}>{copy.category}</p><h1 id="home-title"><span>{copy.h1Lead}</span><span>{copy.h1Close}</span></h1><p className={styles.subheadline}>{copy.subheadline}</p><div className={styles.heroActions}><Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">{copy.openBtc}<span aria-hidden="true">↗</span></Link><a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a><div className={styles.commercialActions} aria-label={locale === "ru" ? "Коммерческие маршруты" : "Commercial routes"}><Link className={styles.secondaryCta} href={`/access?lang=${locale}`} data-commercial-cta="external-systems-recon">{copy.workRecon}</Link><Link className={styles.secondaryCta} href={`/access?offer=frey-personal&lang=${locale}`} data-commercial-cta="cosmographic-passport-usd79">{copy.passportAccess}</Link><Link className={styles.secondaryCta} href={`/field?lang=${locale}`} data-commercial-cta="ai-founding-field"><span>{copy.foundingField}</span><small> · {copy.foundingFieldMeta}</small></Link></div></div></div>
+        <div className={styles.heroCopy}><p className={styles.product}>MARKET COSMOGRAPHER</p><p className={styles.category}>{copy.category}</p><h1 id="home-title"><span>{copy.h1Lead}</span><span>{copy.h1Close}</span></h1><p className={styles.subheadline}>{copy.subheadline}</p><div className={styles.heroActions}><Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">{copy.openBtc}<span aria-hidden="true">↗</span></Link><a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a><a className={styles.heroProofSignal} href="#public-evidence" data-hero-public-evidence>{publicEvidence.signal.map((item)=><span key={item}>{item}</span>)}</a><div className={styles.commercialActions} aria-label={locale === "ru" ? "Коммерческие маршруты" : "Commercial routes"}><Link className={styles.secondaryCta} href={`/access?lang=${locale}`} data-commercial-cta="external-systems-recon">{copy.workRecon}</Link><Link className={styles.secondaryCta} href={`/access?offer=frey-personal&lang=${locale}`} data-commercial-cta="cosmographic-passport-usd79">{copy.passportAccess}</Link><Link className={styles.secondaryCta} href={`/field?lang=${locale}`} data-commercial-cta="ai-founding-field"><span>{copy.foundingField}</span><small> · {copy.foundingFieldMeta}</small></Link></div></div></div>
         <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
             <FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>
@@ -310,6 +408,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           </div>
         </div>
       </section>
+      <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail><SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/><div className={styles.externalProofRail}>{publicEvidence.cases.map((item)=><article className={styles.externalProofObject} key={item.id} data-evidence-object={item.id}><p className={styles.externalProofKicker}>{item.kicker}</p><h3>{item.title}</h3><p>{item.body}</p><small>{item.status}</small><nav aria-label={`${item.title} proof links`}>{item.links.map(([label,href])=><a key={href} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</nav></article>)}<p className={styles.externalEvidenceBoundary}>{publicEvidence.boundary}</p></div></section>
       <section id="product" className={styles.editorialSection}><SectionHeading eyebrow={copy.productEyebrow} title={copy.productTitle} body={copy.productIntro}/><EditorialList items={copy.productLayers}/></section>
       <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}><SectionHeading eyebrow={copy.outcomesEyebrow} title={copy.outcomesTitle} body={copy.outcomesIntro}/><EditorialList items={copy.outcomes}/></section>
       <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><aside className={styles.polymarketLane} data-polymarket-public-reveal="bounded-expectation-layer" aria-labelledby="home-polymarket-title"><div><p className={styles.expectationEyebrow}>{copy.polymarketEyebrow}</p><h3 id="home-polymarket-title">{copy.polymarketTitle}</h3><p>{copy.polymarketBody}</p><small>{copy.polymarketBoundary}</small><Link href={`${btcEntryHref}#polymarket-expectations`}>{copy.polymarketCta} <span aria-hidden="true">→</span></Link></div></aside><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
