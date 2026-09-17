@@ -6,10 +6,11 @@ import {
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 import PublicSupportRoute from "../components/btc/PublicSupportRoute";
-import { FieldAnchorGlyph } from "../components/btc/BtcSurfaceGlyphs";
+import { FieldAnchorGlyph, RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
+const X_PROFILE_URL = "https://x.com/bhrigu_io";
 const BINANCE_SQUARE_PROFILE_URL = {
   en: "https://www.binance.com/en/square/profile/square-creator-634982873",
   ru: "https://www.binance.com/ru/square/profile/square-creator-634982873",
@@ -110,6 +111,11 @@ const PUBLIC_EVIDENCE_COPY = {
       },
     ],
   },
+};
+
+const PUBLIC_CHANNEL_COPY = {
+  en: { eyebrow: "FOLLOW THE FIELD", x: "X · @bhrigu_io", square: "Binance Square · live research" },
+  ru: { eyebrow: "СЛЕДИТЬ ЗА ПОЛЕМ", x: "X · @bhrigu_io", square: "Binance Square · живые исследования" },
 };
 
 const COPY = {
@@ -345,7 +351,7 @@ function buildJsonLd(locale) {
   const description = ru
     ? "Система AI-аналитики рынков, объединяющая проверенные рыночные данные, контекст поля и явные условия в чтении со связанными доказательствами."
     : "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.";
-  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/"},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":product},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
+  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/",sameAs:[X_PROFILE_URL,BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en]},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":product},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
 }
 
 function formatAcceptedSnapshotTime(value) { if (!value) return null; const date = new Date(value); if (!Number.isFinite(date.getTime())) return null; return `${date.toISOString().slice(0,16).replace("T"," ")} UTC`; }
@@ -372,6 +378,7 @@ export async function getServerSideProps({ query, res }) {
 export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTED_STATE }) {
   const copy = COPY[locale] || COPY.en;
   const publicEvidence = PUBLIC_EVIDENCE_COPY[locale] || PUBLIC_EVIDENCE_COPY.en;
+  const publicChannels = PUBLIC_CHANNEL_COPY[locale] || PUBLIC_CHANNEL_COPY.en;
   const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
   const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
@@ -389,6 +396,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             <div className={styles.systemMapTopline}><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
             <div className={styles.systemRoot} data-system-role="boundary"><strong>BHRIGU</strong><small>{copy.systemMapRoot}</small></div>
             <div className={styles.systemBranches} data-system-relations="true">
+              <RelationGlyph className={styles.homeRelationGlyph}/>
               <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc" data-system-role="primary">
                 <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
                 <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
@@ -408,12 +416,26 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           </div>
         </div>
       </section>
-      <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail><SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/><div className={styles.externalProofRail}>{publicEvidence.cases.map((item)=><article className={styles.externalProofObject} key={item.id} data-evidence-object={item.id}><p className={styles.externalProofKicker}>{item.kicker}</p><h3>{item.title}</h3><p>{item.body}</p><small>{item.status}</small><nav aria-label={`${item.title} proof links`}>{item.links.map(([label,href])=><a key={href} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</nav></article>)}<p className={styles.externalEvidenceBoundary}>{publicEvidence.boundary}</p></div></section>
+      <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail>
+        <SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/>
+        <div className={styles.externalProofRail}>
+          {publicEvidence.cases.map((item)=><article className={styles.externalProofObject} key={item.id} data-evidence-object={item.id}>
+            <p className={styles.externalProofKicker}>{item.kicker}</p><h3>{item.title}</h3><p>{item.body}</p><small>{item.status}</small>
+            <nav aria-label={`${item.title} proof links`}>{item.links.map(([label,href])=><a key={href} href={href} target="_blank" rel="noopener noreferrer">{label} <span aria-hidden="true">↗</span></a>)}</nav>
+          </article>)}
+          <p className={styles.externalEvidenceBoundary}>{publicEvidence.boundary}</p>
+          <nav className={styles.publicChannelRail} data-public-channel-rail aria-label={publicChannels.eyebrow}>
+            <span>{publicChannels.eyebrow}</span>
+            <a href={X_PROFILE_URL} target="_blank" rel="noopener noreferrer">{publicChannels.x} <i aria-hidden="true">↗</i></a>
+            <a href={BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en} target="_blank" rel="noopener noreferrer">{publicChannels.square} <i aria-hidden="true">↗</i></a>
+          </nav>
+        </div>
+      </section>
       <section id="product" className={styles.editorialSection}><SectionHeading eyebrow={copy.productEyebrow} title={copy.productTitle} body={copy.productIntro}/><EditorialList items={copy.productLayers}/></section>
       <section id="outcomes" className={`${styles.editorialSection} ${styles.blueSection}`}><SectionHeading eyebrow={copy.outcomesEyebrow} title={copy.outcomesTitle} body={copy.outcomesIntro}/><EditorialList items={copy.outcomes}/></section>
       <section id="btc-field" className={`${styles.editorialSection} ${styles.btcSection}`}><div><SectionHeading eyebrow={copy.btcEyebrow} title={copy.btcTitle} body={copy.btcBody}/><p className={styles.sectionSupport}>{copy.btcDetail}</p><aside className={styles.polymarketLane} data-polymarket-public-reveal="bounded-expectation-layer" aria-labelledby="home-polymarket-title"><div><p className={styles.expectationEyebrow}>{copy.polymarketEyebrow}</p><h3 id="home-polymarket-title">{copy.polymarketTitle}</h3><p>{copy.polymarketBody}</p><small>{copy.polymarketBoundary}</small><Link href={`${btcEntryHref}#polymarket-expectations`}>{copy.polymarketCta} <span aria-hidden="true">→</span></Link></div></aside><Link className={styles.textCta} href={btcEntryHref}>{locale === "ru" ? "Открыть обзор BTC Field" : "Open BTC Field overview"} <span aria-hidden="true">→</span></Link></div><div className={styles.btcVisual} aria-label={copy.btcStatus} role="img"><span className={styles.btcOrbit}/><span className={styles.btcDisc}>₿</span><span className={styles.btcStatus}>{copy.btcStatus}</span></div></section>
       <section id="question-to-knowledge" className={styles.editorialSection}><SectionHeading eyebrow={copy.questionEyebrow} title={copy.questionTitle}/><EditorialList items={copy.questionSteps} numbered/></section>
-      <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><div><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div><div><a href={BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en} className={styles.textCta} target="_blank" rel="noopener noreferrer">{copy.viewSquare} <span aria-hidden="true">↗</span></a></div></div></section>
+      <section id="proof" className={`${styles.editorialSection} ${styles.proofSection}`}><SectionHeading eyebrow={copy.proofEyebrow} title={copy.proofTitle} body={copy.proofBody}/><div className={styles.proofRoute}><p>{copy.proofBoundary}</p><div><a href={PUBLIC_PROOF_URL} className={styles.textCta}>{copy.viewProof} <span aria-hidden="true">↗</span></a></div></div></section>
       <PublicSupportRoute locale={locale} surface="home" />
       <section id="method" className={`${styles.editorialSection} ${styles.violetSection}`}><SectionHeading eyebrow={copy.methodEyebrow} title={copy.methodTitle}/><EditorialList items={copy.methodItems}/></section>
       <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav></section>
