@@ -80,6 +80,7 @@ jobs:
           artifacts = Path("artifacts")
           ids = [
               "market-cosmographer",
+              "public-evidence",
               "product",
               "outcomes",
               "btc-field",
@@ -93,7 +94,7 @@ jobs:
           ]
           proof_url = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed"
           report = {
-              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_4",
+              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_6",
               "head_sha": head_sha,
               "views": {},
               "identity_counts": {},
@@ -162,6 +163,10 @@ jobs:
               category = driver.find_element(By.XPATH, "//*[normalize-space(text())='AI MARKET INTELLIGENCE SYSTEM']").text
               primary = driver.find_element(By.CSS_SELECTOR, "[data-primary-cta='btc-current-change-question']")
               secondary = driver.find_element(By.CSS_SELECTOR, "[data-secondary-cta='public-proof']")
+              hero_evidence = driver.find_element(By.CSS_SELECTOR, "[data-hero-public-evidence]")
+              evidence_cards = driver.find_elements(By.CSS_SELECTOR, "[data-public-evidence-rail] [data-evidence-object]")
+              evidence_ids = [item.get_attribute("data-evidence-object") for item in evidence_cards]
+              entropy_links = driver.find_elements(By.CSS_SELECTOR, "[data-evidence-object='entropy32-upstream'] a")
               primary_url = urlparse(primary.get_attribute("href"))
               primary_query = parse_qs(primary_url.query)
               primary_contract = cta_contract(primary)
@@ -291,7 +296,14 @@ jobs:
               check(f"{name}_no_decision_horizon_promise", "multi-week to multi-month decision horizons" not in body)
               check(f"{name}_no_next_scenario_promise", "what confirms the next scenario" not in body.lower())
               check(f"{name}_no_forecasting_category", "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM" not in body)
-              check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
+              check(f"{name}_secondary_cta_target", urlparse(secondary.get_attribute("href")).fragment == "public-evidence", secondary.get_attribute("href"))
+              check(f"{name}_hero_evidence_signal", "PROVEN IN THE OPEN" in hero_evidence.text and "ENTROPY32 UPSTREAM" in hero_evidence.text, hero_evidence.text)
+              check(f"{name}_hero_evidence_anchor", urlparse(hero_evidence.get_attribute("href")).fragment == "public-evidence", hero_evidence.get_attribute("href"))
+              check(f"{name}_external_evidence_card_count", evidence_ids == ["binance-temporal", "xagent-two-submissions", "entropy32-upstream"], evidence_ids)
+              check(f"{name}_xagent_pending_boundary", "OFFICIAL RECEIPTS · JUDGING PENDING" in body)
+              check(f"{name}_entropy_collaboration_boundary", "OPEN-SOURCE RESEARCH COLLABORATION · NOT CLIENT WORK" in body)
+              check(f"{name}_entropy_upstream_finding", "Finding adopted upstream." in body)
+              check(f"{name}_entropy_immutable_links", len(entropy_links) == 2 and all("a69f95c0098d25b762845d3b2b4751ef412b00a0" in item.get_attribute("href") for item in entropy_links), [item.get_attribute("href") for item in entropy_links])
               check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
               check(f"{name}_primary_cta_not_occluded", primary_center_clear)
               check(f"{name}_no_portal_dock", not driver.find_elements(By.CSS_SELECTOR, "nav[data-pn-root='PORTAL_PREVNEXT_V0_2']"))
@@ -374,6 +386,8 @@ jobs:
               check("ru_product_identity", "MARKET COSMOGRAPHER" in ru_body)
               check("ru_h1_current_capability", ru_h1 == "Что изменилось в Bitcoin — и что изменит текущее чтение.", ru_h1)
               check("ru_category_current_capability", "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ" in ru_body)
+              check("ru_external_evidence_signal", "ДОКАЗАНО В ОТКРЫТОМ ПОЛЕ" in ru_body)
+              check("ru_external_evidence_title", "Реальные системы оставляют публичные доказательства." in ru_body)
               check("ru_no_decision_horizon_promise", "горизонтом решений от нескольких недель до нескольких месяцев" not in ru_body)
               check("ru_no_forecast_role", "владеет чтением и прогнозом" not in ru_body)
 
@@ -438,9 +452,9 @@ jobs:
           print(json.dumps(report, ensure_ascii=False, indent=2))
           if report["failures"]:
               raise SystemExit(f"BHRIGU_HOME_ACCEPTANCE=FAIL {report['failures']}")
-          print("GLOBAL_BHRIGU_IDENTITY_COUNT=1")
+          print("GLOBAL_BGRIGU_IDENTITY_COUNT=1")
           print("GLOBAL_LANGUAGE_CONTROL_COUNT=1")
-          print("HERO_BHRIGU_DUPLICATE=0")
+          print("HERO_BGRIGU_DUPLICATE=0")
           print("HERO_LANGUAGE_CONTROL_DUPLICATE=0")
           print("BHRIGU_HOME_ACCEPTANCE=PASS")
           PY
