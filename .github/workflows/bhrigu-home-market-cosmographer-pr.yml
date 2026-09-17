@@ -94,7 +94,7 @@ jobs:
           ]
           proof_url = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed"
           report = {
-              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_5",
+              "schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_6",
               "head_sha": head_sha,
               "views": {},
               "identity_counts": {},
@@ -296,7 +296,7 @@ jobs:
               check(f"{name}_no_decision_horizon_promise", "multi-week to multi-month decision horizons" not in body)
               check(f"{name}_no_next_scenario_promise", "what confirms the next scenario" not in body.lower())
               check(f"{name}_no_forecasting_category", "AI MARKET INTELLIGENCE AND FORECASTING SYSTEM" not in body)
-              check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)
+              check(f"{name}_secondary_cta_target", urlparse(secondary.get_attribute("href")).fragment == "public-evidence", secondary.get_attribute("href"))
               check(f"{name}_hero_evidence_signal", "PROVEN IN THE OPEN" in hero_evidence.text and "ENTROPY32 UPSTREAM" in hero_evidence.text, hero_evidence.text)
               check(f"{name}_hero_evidence_anchor", urlparse(hero_evidence.get_attribute("href")).fragment == "public-evidence", hero_evidence.get_attribute("href"))
               check(f"{name}_external_evidence_card_count", evidence_ids == ["binance-temporal", "xagent-two-submissions", "entropy32-upstream"], evidence_ids)
