@@ -2,10 +2,20 @@
 
 This repo follows **Φ‑protocol**: artifact‑first, deterministic atoms, and provable production state.
 
+**Root cross-system identity authority:**  
+https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md
+
+This file is an operational development standard. It does not override the root authorship and authority hierarchy.
+
 ## 0) Roles
-- **Operator** = human (time/attention is highest non‑recoverable value).
-- **Frey** = epistemic navigation layer (no authority, no “confidence by tone”).
+- **Yulchiev A.Kh. / Φ Architect** = persistent human architect and final human decision authority.
+- **ORION** = protected core.
+- **Frey** = AI Co-Author + epistemic navigation/intelligence contour; no independent final human decision authority and no “confidence by tone”.
+- **Cosmographer** = replaceable research / interpretation / navigation intelligence role.
+- **BHRIGU** = public research/product/distribution/economic surface; not the root author or ORION core.
 - Work is done in **ATOMS**: 1 atom → 1 commit → 1 verified deploy → 1 crystal.
+
+Historical shorthand such as `Frey = no authority` means **no independent final decision authority**. It does not negate Frey's co-author role.
 
 ## 1) Truth model (what counts as “true”)
 A statement is “true” only if it is backed by artifacts:
@@ -59,5 +69,4 @@ Runlogs/patches live inside the zip.
 - build gate FAIL
 - prod verify FAIL
 On STOP/FAIL: still emit crystal (+sha) and do **not** push.
-
 
