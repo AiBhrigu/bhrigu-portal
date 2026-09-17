@@ -344,3 +344,46 @@
     transform: translateY(-72px);
   }
 }
+
+.heroProofSignal {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 18px;
+  margin-top: 2px;
+  padding: 11px 0 1px;
+  border-top: 1px solid rgba(200, 164, 90, 0.2);
+  color: rgba(224, 196, 127, 0.82) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-decoration: none !important;
+}
+.heroProofSignal span:not(:first-child) { color: rgba(161, 204, 232, 0.74); }
+.heroProofSignal:hover, .heroProofSignal:focus-visible { color: var(--home-gold-bright) !important; outline: none; }
+
+.externalEvidenceSection {
+  box-shadow: inset 5px 0 0 rgba(200, 164, 90, 0.12);
+  background: linear-gradient(90deg, rgba(200, 164, 90, 0.025), transparent 38.2%);
+}
+.externalEvidenceSection .eyebrow { color: var(--home-gold-bright); }
+.externalProofRail { align-self: start; border-top: 1px solid rgba(200, 164, 90, 0.28); }
+.externalProofObject { padding: 24px 0 26px; border-bottom: 1px solid var(--home-line); }
+.externalProofKicker { margin: 0 0 9px; color: var(--home-blue); font-size: 10px !important; font-weight: 750; letter-spacing: 0.14em; line-height: 1.35; }
+.externalProofObject h3 { margin: 0 0 10px; color: var(--home-ink); font-family: Georgia, "Times New Roman", serif; font-size: 23px; font-weight: 400; letter-spacing: -0.018em; line-height: 1.15; }
+.externalProofObject > p:not(.externalProofKicker) { margin: 0; color: var(--home-muted); font-size: 14px !important; line-height: 1.65; }
+.externalProofObject > small { display: block; margin-top: 12px; color: rgba(224, 196, 127, 0.76); font-size: 9px; font-weight: 700; letter-spacing: 0.09em; line-height: 1.45; }
+.externalProofObject nav { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 15px; }
+.externalProofObject nav a { color: var(--home-blue) !important; font-size: 11px; font-weight: 650; letter-spacing: 0.025em; text-decoration: none !important; border-bottom: 1px solid rgba(98, 168, 216, 0.35); }
+.externalProofObject nav a:hover, .externalProofObject nav a:focus-visible { color: #8ccaff !important; border-bottom-color: #8ccaff; outline: none; }
+.externalEvidenceBoundary { margin: 20px 0 0; color: rgba(241, 239, 233, 0.48); font-size: 11px !important; line-height: 1.6; }
+
+@media (max-width: 620px) {
+  .heroProofSignal { gap: 6px 11px; padding-top: 10px; font-size: 9px; letter-spacing: 0.055em; }
+  .externalEvidenceSection { padding-top: 70px; }
+  .externalProofObject { padding: 21px 0 23px; }
+  .externalProofObject h3 { font-size: 21px; }
+  .externalProofObject > small { font-size: 8px; }
+}
