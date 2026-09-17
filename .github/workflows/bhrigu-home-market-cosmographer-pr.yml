@@ -167,6 +167,11 @@ jobs:
               evidence_cards = driver.find_elements(By.CSS_SELECTOR, "[data-public-evidence-rail] [data-evidence-object]")
               evidence_ids = [item.get_attribute("data-evidence-object") for item in evidence_cards]
               entropy_links = driver.find_elements(By.CSS_SELECTOR, "[data-evidence-object='entropy32-upstream'] a")
+              relation_glyphs = driver.find_elements(By.CSS_SELECTOR, "[data-home-system-map] .relationGlyph")
+              public_channel_rail = driver.find_element(By.CSS_SELECTOR, "[data-public-channel-rail]")
+              public_channel_links = public_channel_rail.find_elements(By.TAG_NAME, "a")
+              public_channel_hrefs = [item.get_attribute("href") for item in public_channel_links]
+              all_home_hrefs = [item.get_attribute("href") for item in driver.find_elements(By.CSS_SELECTOR, "main a[href]")]
               primary_url = urlparse(primary.get_attribute("href"))
               primary_query = parse_qs(primary_url.query)
               primary_contract = cta_contract(primary)
@@ -304,6 +309,17 @@ jobs:
               check(f"{name}_entropy_collaboration_boundary", "OPEN-SOURCE RESEARCH COLLABORATION · NOT CLIENT WORK" in body)
               check(f"{name}_entropy_upstream_finding", "Finding adopted upstream." in body)
               check(f"{name}_entropy_immutable_links", len(entropy_links) == 2 and all("a69f95c0098d25b762845d3b2b4751ef412b00a0" in item.get_attribute("href") for item in entropy_links), [item.get_attribute("href") for item in entropy_links])
+              check(f"{name}_existing_relation_glyph_once", len(relation_glyphs) == 1, len(relation_glyphs))
+              if relation_glyphs:
+                  glyph_class = relation_glyphs[0].get_attribute("data-glyph-class") or ""
+                  check(f"{name}_existing_relation_glyph_semantics", glyph_class == "PRIMARY_ROUTE SUPPORT_ROUTE", glyph_class)
+              check(f"{name}_public_channel_link_count", len(public_channel_links) == 2, public_channel_hrefs)
+              check(f"{name}_public_channel_x", public_channel_hrefs[0] == "https://x.com/bhrigu_io", public_channel_hrefs)
+              expected_square = "https://www.binance.com/en/square/profile/square-creator-634982873"
+              check(f"{name}_public_channel_binance", public_channel_hrefs[1] == expected_square, public_channel_hrefs)
+              check(f"{name}_x_home_link_once", sum(1 for href in all_home_hrefs if href == "https://x.com/bhrigu_io") == 1, all_home_hrefs)
+              check(f"{name}_binance_home_link_once", sum(1 for href in all_home_hrefs if href and "binance.com/en/square/profile/square-creator-634982873" in href) == 1, all_home_hrefs)
+              check(f"{name}_bitcointalk_home_link_zero", all(not href or "bitcointalk.org" not in href for href in all_home_hrefs), all_home_hrefs)
               check(f"{name}_primary_cta_first_viewport", primary_rect["top"] >= 0 and primary_rect["bottom"] <= viewport["height"], primary_rect)
               check(f"{name}_primary_cta_not_occluded", primary_center_clear)
               check(f"{name}_no_portal_dock", not driver.find_elements(By.CSS_SELECTOR, "nav[data-pn-root='PORTAL_PREVNEXT_V0_2']"))
@@ -337,6 +353,11 @@ jobs:
                   ratio = copy_rect["width"] / glyph_rect["width"]
                   report["views"][name]["semantic_ratio"] = ratio
                   check("desktop_61_8_38_2_composition", 1.55 <= ratio <= 1.68, ratio)
+              driver.execute_script("document.getElementById('public-evidence').scrollIntoView({block:'start'})")
+              evidence_screenshot = artifacts / f"bhrigu-home-pr113-{name}-public-evidence.png"
+              driver.save_screenshot(str(evidence_screenshot))
+              report["views"][name]["public_evidence_screenshot"] = str(evidence_screenshot)
+              driver.execute_script("window.scrollTo(0,0)")
 
           try:
               run_view("desktop", 1440, 1100)
@@ -388,6 +409,8 @@ jobs:
               check("ru_category_current_capability", "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ" in ru_body)
               check("ru_external_evidence_signal", "ДОКАЗАНО В ОТКРЫТОМ ПОЛЕ" in ru_body)
               check("ru_external_evidence_title", "Реальные системы оставляют публичные доказательства." in ru_body)
+              ru_channels = driver.find_element(By.CSS_SELECTOR, "[data-public-channel-rail]").text
+              check("ru_public_channel_rail", "СЛЕДИТЬ ЗА ПОЛЕМ" in ru_channels and "X · @bhrigu_io" in ru_channels and "Binance Square · живые исследования" in ru_channels, ru_channels)
               check("ru_no_decision_horizon_promise", "горизонтом решений от нескольких недель до нескольких месяцев" not in ru_body)
               check("ru_no_forecast_role", "владеет чтением и прогнозом" not in ru_body)
 
@@ -429,7 +452,9 @@ jobs:
                   sorted(graph_types),
               )
               software = next((item for item in graph if item.get("@type") == "SoftwareApplication" and item.get("name") == "Market Cosmographer"), {})
+              organization = next((item for item in graph if item.get("@type") == "Organization" and item.get("name") == "BHRIGU"), {})
               check("jsonld_current_capability_description", software.get("description") == "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.", software.get("description"))
+              check("jsonld_public_channels", organization.get("sameAs") == ["https://x.com/bhrigu_io", "https://www.binance.com/en/square/profile/square-creator-634982873"], organization.get("sameAs"))
 
               driver.get(f"{base}/?lang=en")
               canonical = driver.find_element(By.CSS_SELECTOR, "link[rel='canonical']").get_attribute("href")

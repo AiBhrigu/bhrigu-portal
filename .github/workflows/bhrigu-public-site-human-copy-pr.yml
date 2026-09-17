@@ -141,7 +141,7 @@ jobs:
             'public/llms.txt',
             'public/sitemap.xml',
           }
-          home_external_reality_proof_rail_close = {
+          home_phi_visual_truth = {
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
             '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
@@ -178,12 +178,23 @@ jobs:
               print('EXACT_SCOPE_PASS public_discovery_patch', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == public_discovery_ci_closure:
               print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
-          elif actual == home_external_reality_proof_rail_close:
-              print('SHARED_SCOPE_PASS home_external_reality_proof_rail_close', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == home_phi_visual_truth:
+              print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual != expected:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
           PY
+
+      - name: Verify Home Φ visual truth and public-channel copy
+        run: |
+          grep -Fq 'FOLLOW THE FIELD' pages/index.js
+          grep -Fq 'СЛЕДИТЬ ЗА ПОЛЕМ' pages/index.js
+          grep -Fq 'X · @bhrigu_io' pages/index.js
+          grep -Fq 'Binance Square · live research' pages/index.js
+          grep -Fq 'Binance Square · живые исследования' pages/index.js
+          grep -Fq '<RelationGlyph className={styles.homeRelationGlyph}/>' pages/index.js
+          ! grep -Fq 'bitcointalk.org' pages/index.js
+          echo 'HOME_PHI_VISUAL_TRUTH_COPY=PASS'
 
       - name: Verify revenue discovery contract
         if: env.BHRIGU_REVENUE_DISCOVERY_SCOPE == 'true'
