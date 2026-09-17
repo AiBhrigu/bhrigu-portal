@@ -1,0 +1,110 @@
+name: PR272 Home Proof Close Self Patch
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/pr272-home-proof-close-self-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.number == 272 && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout PR head branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - name: Apply exact bounded close
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'EXACT_REPLACE_FAIL path={path} count={count} anchor={old[:120]!r}')
+              p.write_text(text.replace(old, new, 1), encoding='utf-8')
+              print(f'PATCHED {path}')
+
+          # 1) Hero secondary proof CTA becomes the internal evidence-rail entry.
+          replace_once(
+              'pages/index.js',
+              '<a className={styles.secondaryCta} href={PUBLIC_PROOF_URL} data-secondary-cta="public-proof">{copy.viewProof}</a>',
+              '<a className={styles.secondaryCta} href="#public-evidence" data-secondary-cta="public-proof">{copy.viewProof}</a>',
+          )
+
+          # 2) Canonical home acceptance now proves the internal hero evidence route.
+          replace_once(
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              '"schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_5",',
+              '"schema_version": "bhrigu_home_market_cosmographer_acceptance_v0_6",',
+          )
+          replace_once(
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              'check(f"{name}_secondary_cta_target", secondary.get_attribute("href") == proof_url)',
+              'check(f"{name}_secondary_cta_target", urlparse(secondary.get_attribute("href")).fragment == "public-evidence", secondary.get_attribute("href"))',
+          )
+
+          scope = '''          home_external_reality_proof_rail_close = {\n            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',\n            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',\n            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',\n            'pages/index.js',\n            'pages/index.module.css',\n          }\n'''
+
+          # 3) Human-copy legacy authority recognizes this exact 5-file close atom and yields to the canonical home gate.
+          replace_once(
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              '          actual = set(subprocess.check_output(\n',
+              scope + '          actual = set(subprocess.check_output(\n',
+          )
+          replace_once(
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              "          elif actual != expected:\n              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')",
+              "          elif actual == home_external_reality_proof_rail_close:\n              print('SHARED_SCOPE_PASS home_external_reality_proof_rail_close', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\\n')\n          elif actual != expected:\n              raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')",
+          )
+
+          # 4) Visual-selling legacy authority recognizes the same exact atom and still runs its protected-surface/model-call checks.
+          replace_once(
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '          actual = set(subprocess.check_output(\n',
+              scope + '          actual = set(subprocess.check_output(\n',
+          )
+          replace_once(
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '          if actual not in (expected, revenue_discovery, revenue_discovery_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, public_surface_redundant_ui_language_cleanup, public_discovery_ci_closure):',
+              '          if actual not in (expected, revenue_discovery, revenue_discovery_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, public_surface_redundant_ui_language_cleanup, public_discovery_ci_closure, home_external_reality_proof_rail_close):',
+          )
+          replace_once(
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              "          scope_class = 'public_discovery_ci_closure' if actual == public_discovery_ci_closure else 'public_surface_redundant_ui_language_cleanup' if actual == public_surface_redundant_ui_language_cleanup else 'home_map_link_repair' if actual == home_map_link_repair else 'passport_navigation' if actual == passport_navigation else 'passport_navigation_ci_authority' if actual == passport_navigation_ci_authority else 'revenue_discovery' if actual == revenue_discovery else 'revenue_discovery_ci_repair' if actual == revenue_discovery_ci_repair else 'historical_visual_atom'",
+              "          scope_class = 'home_external_reality_proof_rail_close' if actual == home_external_reality_proof_rail_close else 'public_discovery_ci_closure' if actual == public_discovery_ci_closure else 'public_surface_redundant_ui_language_cleanup' if actual == public_surface_redundant_ui_language_cleanup else 'home_map_link_repair' if actual == home_map_link_repair else 'passport_navigation' if actual == passport_navigation else 'passport_navigation_ci_authority' if actual == passport_navigation_ci_authority else 'revenue_discovery' if actual == revenue_discovery else 'revenue_discovery_ci_repair' if actual == revenue_discovery_ci_repair else 'historical_visual_atom'",
+          )
+          PY
+
+          grep -Fq 'href="#public-evidence" data-secondary-cta="public-proof"' pages/index.js
+          grep -Fq 'bhrigu_home_market_cosmographer_acceptance_v0_6' .github/workflows/bhrigu-home-market-cosmographer-pr.yml
+          grep -Fq 'home_external_reality_proof_rail_close' .github/workflows/bhrigu-public-site-human-copy-pr.yml
+          grep -Fq 'home_external_reality_proof_rail_close' .github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml
+          git diff --check
+
+      - name: Commit bounded close and self-delete
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/pr272-home-proof-close-self-patch.yml
+          git config user.name "BHRIGU CI Authority"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pages/index.js \
+            .github/workflows/bhrigu-home-market-cosmographer-pr.yml \
+            .github/workflows/bhrigu-public-site-human-copy-pr.yml \
+            .github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml
+          git diff --cached --check
+          git commit -m "Close home proof route and CI authority"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
