@@ -219,6 +219,13 @@ const COPY = {
     marketsTitle: "Bitcoin first. Expansion only after proof.",
     marketsBody:
       "The method can be applied to additional market fields, but BTC Field is the first and only proven public live corridor today. New corridors remain outside the public claim until their data, method and acceptance are verified.",
+    footerCommerceEyebrow: "THREE LIVE OBJECTS",
+    footerCommerceTitle: "Three different kinds of work.",
+    footerCommerceBody:
+      "Inspect one bounded system. Read one subject across a meaningful horizon. Claim one durable coordinate in a finite public field.",
+    footerReconLine: "One bounded system. Three findings. Evidence. Exact repair blueprint.",
+    footerFreyLine: "One subject. One temporal horizon. One complete reading you can keep.",
+    footerFieldLine: "One durable public coordinate for an agent, model, project or product.",
     footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
   },
   ru: {
@@ -321,6 +328,13 @@ const COPY = {
     marketsTitle: "Сначала Bitcoin. Расширение — только после доказательств.",
     marketsBody:
       "Метод применим к другим рыночным полям, но сегодня BTC Field — первый и единственный доказанный публичный живой коридор. Новые коридоры не входят в публичное обещание до проверки данных, метода и приёмки.",
+    footerCommerceEyebrow: "ТРИ ЖИВЫХ ОБЪЕКТА",
+    footerCommerceTitle: "Три разных типа работы.",
+    footerCommerceBody:
+      "Исследовать одну ограниченную систему. Прочитать один объект в значимом временном горизонте. Занять одну долговечную координату в конечном публичном поле.",
+    footerReconLine: "Одна ограниченная система. Три ключевых finding. Evidence. Точный repair blueprint.",
+    footerFreyLine: "Один объект. Один временной горизонт. Одно полное чтение, которое остаётся у вас.",
+    footerFieldLine: "Одна долговечная публичная координата для агента, модели, проекта или продукта.",
     footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
   },
 };
@@ -441,7 +455,78 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav></section>
       <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}><SectionHeading eyebrow={copy.continuityEyebrow} title={copy.continuityTitle} body={copy.continuityBody}/><p className={styles.boundaryNote}>{copy.continuityBoundary}</p></section>
       <section id="markets" className={styles.editorialSection}><SectionHeading eyebrow={copy.marketsEyebrow} title={copy.marketsTitle} body={copy.marketsBody}/><div className={styles.marketState}><span>01</span><strong>BTC FIELD</strong><small>{copy.btcStatus}</small></div></section>
-      <footer id="open-btc-field" className={styles.siteFooter}><strong>{copy.footerIdentity}</strong><a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a></footer>
+      <section id="footer-offers" className={styles.footerCommerce}>
+        <div className={styles.footerCommerceIntro}>
+          <span className={styles.eyebrow}>{copy.footerCommerceEyebrow}</span>
+          <h2>{copy.footerCommerceTitle}</h2>
+          <p>{copy.footerCommerceBody}</p>
+        </div>
+
+        <div className={styles.footerOfferGrid} aria-label={locale === "ru" ? "Три коммерческих объекта BHRIGU" : "Three BHRIGU commercial objects"}>
+          <article className={`${styles.footerOffer} ${styles.footerRecon}`} data-footer-offer="external-systems-recon">
+            <div className={`${styles.footerVisual} ${styles.reconVisual}`} aria-hidden="true">
+              <div className={styles.reconBoundary}>
+                <span className={styles.reconNodeA} />
+                <span className={styles.reconNodeB} />
+                <span className={styles.reconNodeC} />
+                <span className={styles.reconNodeD} />
+                <span className={styles.reconFlowA} />
+                <span className={styles.reconFlowB} />
+                <span className={styles.reconFlowC} />
+              </div>
+              <div className={styles.reconEvidenceRail}><span>01</span><span>02</span><span>03</span></div>
+            </div>
+            <div className={styles.footerOfferBody}>
+              <span className={styles.footerOfferIndex}>01 · SYSTEM TOPOLOGY</span>
+              <h3>External Systems Recon</h3>
+              <p>{copy.footerReconLine}</p>
+              <div className={styles.footerOfferMeta}><strong>USD 300</strong><span>READ-ONLY</span></div>
+              <Link className={styles.footerOfferCta} href={`/access?lang=${locale}`} data-commercial-cta="footer-external-systems-recon">Open Access <span aria-hidden="true">↗</span></Link>
+            </div>
+          </article>
+
+          <article className={`${styles.footerOffer} ${styles.footerFrey}`} data-footer-offer="frey-personal">
+            <div className={`${styles.footerVisual} ${styles.passportVisual}`} aria-hidden="true">
+              <div className={styles.passportHorizon}><span /><span /><span /></div>
+              <div className={styles.passportStack}>
+                {Array.from({ length: 7 }, (_, index) => <span key={index} style={{ "--passport-layer": index }} />)}
+              </div>
+              <div className={styles.passportFocus} />
+            </div>
+            <div className={styles.footerOfferBody}>
+              <span className={styles.footerOfferIndex}>02 · COSMOGRAPHIC PASSPORT</span>
+              <h3>Frey Personal</h3>
+              <small>Cosmographic Reading · Cosmographic Passport</small>
+              <p>{copy.footerFreyLine}</p>
+              <div className={styles.footerOfferMeta}><strong>USD 79</strong><span>ONE READING</span></div>
+              <Link className={styles.footerOfferCta} href={`/access?offer=frey-personal&lang=${locale}`} data-commercial-cta="footer-frey-personal">Explore Frey <span aria-hidden="true">↗</span></Link>
+            </div>
+          </article>
+
+          <article className={`${styles.footerOffer} ${styles.footerField}`} data-footer-offer="ai-founding-field">
+            <div className={`${styles.footerVisual} ${styles.registryVisual}`} aria-hidden="true">
+              <span className={styles.registryOrigin}>F-000</span>
+              <div className={styles.registryGrid}>
+                {Array.from({ length: 32 }, (_, index) => <span key={index} className={index === 6 ? styles.registryClaimed : undefined} />)}
+              </div>
+              <span className={styles.registryMachineLine}>PUBLIC · TIMESTAMPED · MACHINE-READABLE</span>
+            </div>
+            <div className={styles.footerOfferBody}>
+              <span className={styles.footerOfferIndex}>03 · FINITE PUBLIC REGISTRY</span>
+              <h3>Founding Field</h3>
+              <small>32 Founding Coordinates</small>
+              <p>{copy.footerFieldLine}</p>
+              <div className={styles.footerOfferMeta}><strong>USD 99</strong><span>ONE-TIME</span></div>
+              <Link className={styles.footerOfferCta} href={`/field?lang=${locale}`} data-commercial-cta="footer-ai-founding-field">Enter the Field <span aria-hidden="true">↗</span></Link>
+            </div>
+          </article>
+        </div>
+
+      </section>
+      <footer id="open-btc-field" className={styles.siteFooter}>
+        <strong>{copy.footerIdentity}</strong>
+        <a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a>
+      </footer>
     </main>
   </>;
 }
