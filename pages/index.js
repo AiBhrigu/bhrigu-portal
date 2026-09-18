@@ -478,7 +478,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             </div>
             <div className={styles.footerOfferBody}>
               <span className={styles.footerOfferIndex}>01 · SYSTEM TOPOLOGY</span>
-              <h3><span aria-hidden="true">{"\u03A6"}</span> External Systems Recon</h3>
+              <h3>External Systems Recon</h3>
               <p>{copy.footerReconLine}</p>
               <div className={styles.footerOfferMeta}><strong>USD 300</strong><span>READ-ONLY</span></div>
               <Link className={styles.footerOfferCta} href={`/access?lang=${locale}`} data-commercial-cta="footer-external-systems-recon">Open Access <span aria-hidden="true">↗</span></Link>
@@ -513,7 +513,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             </div>
             <div className={styles.footerOfferBody}>
               <span className={styles.footerOfferIndex}>03 · FINITE PUBLIC REGISTRY</span>
-              <h3>AI Founding Field</h3>
+              <h3>Founding Field</h3>
               <small>32 Founding Coordinates</small>
               <p>{copy.footerFieldLine}</p>
               <div className={styles.footerOfferMeta}><strong>USD 99</strong><span>ONE-TIME</span></div>
