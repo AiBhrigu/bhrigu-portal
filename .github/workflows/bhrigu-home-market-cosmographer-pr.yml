@@ -507,7 +507,8 @@ jobs:
           grep -Fq '.reconVisual {' pages/index.module.css
           grep -Fq '.passportVisual {' pages/index.module.css
           grep -Fq '.registryVisual {' pages/index.module.css
-          grep -Fq '.footerClosure {' pages/index.module.css
+          grep -Fq '.footerCommerce {' pages/index.module.css
+          grep -Fq '.siteFooter {' pages/index.module.css
           ! grep -Fq '© 2024' pages/index.js
           ! grep -Fq 'WORLD MAP' pages/index.js
           ! grep -Fq 'STARTUP GROWTH' pages/index.js
