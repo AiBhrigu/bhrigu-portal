@@ -455,7 +455,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
       <section id="system-roles" className={styles.editorialSection}><SectionHeading eyebrow={copy.rolesEyebrow} title={copy.rolesTitle}/><dl className={styles.roleMap}>{copy.roles.map(([name,role])=><div key={name}><dt>{name}</dt><dd>{role}</dd></div>)}</dl><nav className={styles.quietRoutes} aria-label={locale === "ru" ? "Маршруты системы BHRIGU" : "BHRIGU system routes"}><Link href={`/frey?lang=${locale}`}>Frey</Link><Link href={`/cosmographer?lang=${locale}`}>{locale === "ru" ? "Космограф" : "Cosmographer"}</Link><Link href={`/orion?lang=${locale}`}>ORION</Link></nav></section>
       <section id="continuity" className={`${styles.editorialSection} ${styles.continuitySection}`}><SectionHeading eyebrow={copy.continuityEyebrow} title={copy.continuityTitle} body={copy.continuityBody}/><p className={styles.boundaryNote}>{copy.continuityBoundary}</p></section>
       <section id="markets" className={styles.editorialSection}><SectionHeading eyebrow={copy.marketsEyebrow} title={copy.marketsTitle} body={copy.marketsBody}/><div className={styles.marketState}><span>01</span><strong>BTC FIELD</strong><small>{copy.btcStatus}</small></div></section>
-      <footer id="open-btc-field" className={styles.siteFooter}>
+      <section id="footer-offers" className={styles.footerCommerce}>
         <div className={styles.footerCommerceIntro}>
           <span className={styles.eyebrow}>{copy.footerCommerceEyebrow}</span>
           <h2>{copy.footerCommerceTitle}</h2>
@@ -522,10 +522,10 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           </article>
         </div>
 
-        <div className={styles.footerClosure}>
-          <strong>{copy.footerIdentity}</strong>
-          <a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a>
-        </div>
+      </section>
+      <footer id="open-btc-field" className={styles.siteFooter}>
+        <strong>{copy.footerIdentity}</strong>
+        <a href={`https://www.bhrigu.io/?lang=${locale}`}>www.bhrigu.io</a>
       </footer>
     </main>
   </>;
