@@ -302,6 +302,35 @@ jobs:
               raise SystemExit('STATIC_ACCEPTANCE_FAIL=' + ','.join(failed))
           PY
 
+      - name: Verify bound three-object footer authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -o 'data-footer-offer=' pages/index.js | wc -l | tr -d ' ')" = "3"
+          grep -Fq 'data-footer-offer="external-systems-recon"' pages/index.js
+          grep -Fq 'data-footer-offer="frey-personal"' pages/index.js
+          grep -Fq 'data-footer-offer="ai-founding-field"' pages/index.js
+          grep -Fq 'data-commercial-cta="footer-external-systems-recon"' pages/index.js
+          grep -Fq 'data-commercial-cta="footer-frey-personal"' pages/index.js
+          grep -Fq 'data-commercial-cta="footer-ai-founding-field"' pages/index.js
+          grep -Fq '/access?lang=${locale}' pages/index.js
+          grep -Fq '/access?offer=frey-personal&lang=${locale}' pages/index.js
+          grep -Fq '/field?lang=${locale}' pages/index.js
+          grep -Fq 'USD 300' pages/index.js
+          grep -Fq 'USD 79' pages/index.js
+          grep -Fq 'USD 99' pages/index.js
+          grep -Fq 'Array.from({ length: 7 }' pages/index.js
+          grep -Fq 'Array.from({ length: 32 }' pages/index.js
+          grep -Fq '.footerOfferGrid {' pages/index.module.css
+          grep -Fq '.reconVisual {' pages/index.module.css
+          grep -Fq '.passportVisual {' pages/index.module.css
+          grep -Fq '.registryVisual {' pages/index.module.css
+          grep -Fq '.footerClosure {' pages/index.module.css
+          ! grep -Fq '© 2024' pages/index.js
+          ! grep -Fq 'WORLD MAP' pages/index.js
+          ! grep -Fq 'STARTUP GROWTH' pages/index.js
+          echo 'BHRIGU_FOOTER_BOUND_VISUAL_AUTHORITY=PASS'
+
       - name: Install locked dependencies
         if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true'
         run: npm ci --ignore-scripts
