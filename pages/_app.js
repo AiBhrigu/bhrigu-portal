@@ -36,7 +36,7 @@ const META = {
 };
 const LOCALIZED = new Set(Object.keys(META));
 const NOINDEX = new Set(["/dao","/crypto-astro/btc/live","/crypto-astro/btc/clean-chat"]);
-const PAGE_OWNS_METADATA = new Set(["/crypto-astro/btc","/crypto-astro/btc/clean-chat"]);
+const PAGE_OWNS_METADATA = new Set(["/systems","/crypto-astro/btc","/crypto-astro/btc/clean-chat"]);
 
 function pathOnly(v){return String(v||"/").split("#")[0].split("?")[0]||"/";}
 function localizedUrl(path, lang){return `${BASE}${path}?lang=${lang}`;}
