@@ -361,11 +361,14 @@ function buildJsonLd(locale) {
   const home = `https://www.bhrigu.io/?lang=${locale}`;
   const product = `${home}#market-cosmographer`;
   const btc = `https://www.bhrigu.io/crypto-astro/btc?lang=${locale}`;
-  const pageName = ru ? "Market Cosmographer · AI-анализ рынков | BHRIGU" : "Market Cosmographer · AI Market Intelligence | BHRIGU";
-  const description = ru
+  const pageName = "BHRIGU · Φ Research Systems | Market Cosmographer";
+  const pageDescription = ru
+    ? "Публичный дом Φ Research Systems: AI, эфемериды, системы астрологии, темпоральные доказательства, верификация и исследования состояния рынка; Market Cosmographer — текущее Bitcoin-приложение."
+    : "Public home of Φ Research Systems: AI, ephemerides, astrology systems, temporal evidence, verification and market-state research; Market Cosmographer is the current Bitcoin application.";
+  const productDescription = ru
     ? "Система AI-аналитики рынков, объединяющая проверенные рыночные данные, контекст поля и явные условия в чтении со связанными доказательствами."
     : "An AI market intelligence system combining verified market data, field context and explicit conditions in an evidence-linked read.";
-  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/",sameAs:[X_PROFILE_URL,BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en]},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":product},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
+  return {"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://www.bhrigu.io/#organization",name:"BHRIGU",url:"https://www.bhrigu.io/",sameAs:[X_PROFILE_URL,BINANCE_SQUARE_PROFILE_URL[locale] || BINANCE_SQUARE_PROFILE_URL.en]},{"@type":"WebSite","@id":"https://www.bhrigu.io/#website",name:"BHRIGU",url:"https://www.bhrigu.io/",publisher:{"@id":"https://www.bhrigu.io/#organization"}},{"@type":"WebPage","@id":`${home}#webpage`,url:home,name:pageName,description:pageDescription,isPartOf:{"@id":"https://www.bhrigu.io/#website"},about:{"@id":"https://www.bhrigu.io/#organization"},inLanguage:locale},{"@type":"SoftwareApplication","@id":product,name:"Market Cosmographer",applicationCategory:"BusinessApplication",operatingSystem:"Web",url:home,description:productDescription,inLanguage:locale},{"@type":"BreadcrumbList","@id":`${home}#breadcrumb`,itemListElement:[{"@type":"ListItem",position:1,name:"BHRIGU",item:home},{"@type":"ListItem",position:2,name:"Market Cosmographer",item:product},{"@type":"ListItem",position:3,name:"BTC Field",item:btc}]}]};
 }
 
 function formatAcceptedSnapshotTime(value) { if (!value) return null; const date = new Date(value); if (!Number.isFinite(date.getTime())) return null; return `${date.toISOString().slice(0,16).replace("T"," ")} UTC`; }
