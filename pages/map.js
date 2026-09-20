@@ -6,6 +6,7 @@ const COPY = {
   en: {
     ey: "SYSTEM MAP",
     title: "One public system. Distinct roles.",
+    root: ["Φ Research Systems", "Capability root · one Φ field · seven system classes · public proof · explicit boundaries", "/systems"],
     groups: [
       ["Market path", [
         ["BHRIGU", "Public home", "/"],
@@ -36,6 +37,7 @@ const COPY = {
   ru: {
     ey: "КАРТА СИСТЕМЫ",
     title: "Одна публичная система. Разные роли.",
+    root: ["Φ Research Systems", "Корень возможностей · одно Φ-поле · семь классов систем · публичные доказательства · явные границы", "/systems"],
     groups: [
       ["Рыночный путь", [
         ["BHRIGU", "Публичный дом", "/"],
@@ -83,6 +85,15 @@ export default function MapPage({ locale }) {
       <p className="ey">{c.ey}</p>
       <h1>{c.title}</h1>
       <div className="mapFieldLine" aria-hidden="true"><span /><i /><b /></div>
+      <Link className="rootNode" href={localizedTarget(c.root[2], locale)}>
+        <span className="rootIndex">00</span>
+        <span className="rootGlyph" aria-hidden="true">Φ</span>
+        <span className="rootCopy">
+          <strong>{c.root[0]}</strong>
+          <small>{c.root[1]}</small>
+        </span>
+        <span className="rootArrow" aria-hidden="true">↗</span>
+      </Link>
       {c.groups.map(([group, items], groupIndex) => (
         <section key={group} data-map-tone={GROUP_TONES[groupIndex]}>
           <div className="groupHead">
@@ -120,6 +131,66 @@ export default function MapPage({ locale }) {
         .mapFieldLine span { background: var(--map-blue); }
         .mapFieldLine i { background: var(--map-violet); }
         .mapFieldLine b { background: var(--map-gold); }
+        :global(.rootNode) {
+          display:grid;
+          grid-template-columns:34px 54px minmax(0,1fr) 28px;
+          gap:14px;
+          align-items:center;
+          margin:0 0 30px;
+          padding:18px 20px;
+          border:1px solid rgba(200,164,90,.28);
+          border-radius:18px;
+          background:
+            radial-gradient(circle at 82% 50%, rgba(200,164,90,.08), transparent 30%),
+            linear-gradient(90deg, rgba(98,168,216,.035), rgba(154,137,209,.028), rgba(200,164,90,.035));
+          color:inherit;
+          text-decoration:none;
+          transition:border-color 140ms ease, transform 140ms ease, background 140ms ease;
+        }
+        :global(.rootNode:hover), :global(.rootNode:focus-visible) {
+          border-color:rgba(213,184,109,.48);
+          transform:translateY(-1px);
+          outline:none;
+          background:
+            radial-gradient(circle at 82% 50%, rgba(200,164,90,.12), transparent 32%),
+            linear-gradient(90deg, rgba(98,168,216,.05), rgba(154,137,209,.04), rgba(200,164,90,.05));
+        }
+        .rootIndex {
+          color:rgba(213,184,109,.72);
+          font:600 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+          letter-spacing:.12em;
+        }
+        .rootGlyph {
+          display:grid;
+          place-items:center;
+          width:46px;
+          height:46px;
+          border:1px solid rgba(200,164,90,.34);
+          border-radius:50%;
+          color:#d5b86d;
+          font:400 30px/1 Georgia,serif;
+          box-shadow:inset 0 0 0 5px rgba(200,164,90,.035);
+        }
+        .rootCopy {
+          display:grid;
+          gap:5px;
+          min-width:0;
+        }
+        .rootCopy strong {
+          color:rgba(242,244,247,.96);
+          font-size:17px;
+          letter-spacing:.02em;
+        }
+        .rootCopy small {
+          color:rgba(255,255,255,.62);
+          font-size:12px;
+          line-height:1.45;
+        }
+        .rootArrow {
+          color:#d5b86d;
+          font-size:18px;
+          text-align:right;
+        }
         .q section {
           position: relative;
           margin-top: 16px;
@@ -161,6 +232,16 @@ export default function MapPage({ locale }) {
         @media(max-width:600px) {
           .q { padding: 48px 16px 110px; }
           .mapFieldLine { width: 78%; margin-bottom: 28px; }
+          :global(.rootNode) {
+            grid-template-columns:26px 46px minmax(0,1fr);
+            gap:11px;
+            padding:16px 15px;
+            margin-bottom:24px;
+          }
+          .rootGlyph { width:40px; height:40px; font-size:26px; }
+          .rootCopy strong { font-size:15px; }
+          .rootCopy small { font-size:11px; }
+          .rootArrow { display:none; }
           .q section { padding: 20px 18px 16px; border-radius: 17px; }
           :global(.mapRow) { grid-template-columns:1fr; row-gap:5px; padding:13px 0; }
           :global(.mapRow:hover), :global(.mapRow:focus-visible) { padding-left: 5px; }
