@@ -65,7 +65,6 @@ export async function getServerSideProps({ query, req }) {
 
 export default function AppGateway({ locale, canonicalHost }) {
   const c = COPY[locale];
-  const other = locale === "ru" ? "en" : "ru";
   const canonical = locale === "ru" ? "https://app.bhrigu.io/?lang=ru" : "https://app.bhrigu.io/";
 
   const schema = {
@@ -104,16 +103,6 @@ export default function AppGateway({ locale, canonicalHost }) {
       </Head>
 
       <div className={styles.page} lang={locale}>
-        <header className={styles.header}>
-          <a className={styles.brand} href={publicUrl("/", locale)}>BHRIGU</a>
-          <nav className={styles.nav} aria-label="BHRIGU">
-            <a href={publicUrl("/frey", locale)}>{c.frey}</a>
-            <a href={publicUrl("/systems", locale)}>{c.systems}</a>
-            <a href={publicUrl("/map", locale)}>{c.map}</a>
-            <a href={`/?lang=${other}`}>{c.lang}</a>
-          </nav>
-        </header>
-
         <main>
           <section className={styles.hero}>
             <div className={styles.eyebrow}><span>Φ</span>{c.eyebrow}</div>
