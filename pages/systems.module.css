@@ -1489,6 +1489,145 @@
   }
 }
 
+/* RU mobile harmony · 2026-09-20
+   Real-device authority: restore breathing room and reduce headline pressure
+   without weakening the Φ / systems hierarchy. */
+
+@media (max-width: 680px) {
+  .systems[lang="ru"] {
+    --systems-ink: #e9e4d9;
+    --systems-muted: rgba(233, 228, 217, 0.7);
+  }
+
+  .systems[lang="ru"] .hero {
+    padding: 44px 22px 20px;
+  }
+
+  .systems[lang="ru"] .hero h1 {
+    max-width: 100%;
+    color: #eee9df;
+    font-size: clamp(38px, 10.5vw, 50px);
+    line-height: 1.04;
+    letter-spacing: -0.032em;
+  }
+
+  .systems[lang="ru"] .heroLead {
+    max-width: 100%;
+    font-size: 15px !important;
+    line-height: 1.62 !important;
+  }
+
+  .systems[lang="ru"] .heroClasses {
+    max-width: 100%;
+    font-size: 12px !important;
+    line-height: 1.72 !important;
+  }
+
+  .systems[lang="ru"] .identityLine {
+    gap: 10px;
+    font-size: 8.5px !important;
+    line-height: 1.55;
+  }
+
+  .systems[lang="ru"] .section,
+  .systems[lang="ru"] .proofSection {
+    width: calc(100% - 44px);
+    padding-top: 68px;
+    padding-bottom: 68px;
+  }
+
+  .systems[lang="ru"] .sectionHeading {
+    gap: 7px;
+    margin-bottom: 34px;
+  }
+
+  .systems[lang="ru"] .sectionHeading h2 {
+    max-width: 100%;
+    color: #e2ddd2;
+    font-size: clamp(32px, 9.4vw, 44px);
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+    overflow-wrap: break-word;
+    hyphens: none;
+  }
+
+  .systems[lang="ru"] .sectionHeading .eyebrow {
+    margin-bottom: 10px !important;
+  }
+
+  .systems[lang="ru"] .sectionLead {
+    margin-top: -20px !important;
+    margin-bottom: 36px !important;
+    font-size: 14px !important;
+    line-height: 1.68 !important;
+  }
+
+  .systems[lang="ru"] .fieldBody p,
+  .systems[lang="ru"] .fieldClosing p,
+  .systems[lang="ru"] .classCopy p,
+  .systems[lang="ru"] .proofCopy p,
+  .systems[lang="ru"] .commercialIdentity p,
+  .systems[lang="ru"] .entryGrid p {
+    line-height: 1.68 !important;
+  }
+
+  .systems[lang="ru"] .fieldClosing strong {
+    color: #ddd7cb;
+    font-size: 21px;
+    line-height: 1.38;
+  }
+
+  .systems[lang="ru"] .classRow {
+    gap: 18px;
+    padding: 28px 0;
+  }
+
+  .systems[lang="ru"] .classCopy h3,
+  .systems[lang="ru"] .proofCopy h3,
+  .systems[lang="ru"] .commercialIdentity h3 {
+    color: #e2ddd2;
+    font-size: 25px;
+    line-height: 1.2;
+    letter-spacing: -0.018em;
+  }
+
+  .systems[lang="ru"] .capabilityGroup h3 {
+    color: rgba(233, 228, 217, 0.62);
+  }
+
+  .systems[lang="ru"] .capabilityItem h4 {
+    color: rgba(233, 228, 217, 0.9);
+  }
+
+  .systems[lang="ru"] .relationChain {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .systems[lang="ru"] .relationChain span {
+    font-size: 8.5px;
+  }
+
+  .systems[lang="ru"] .searchBridge {
+    font-size: 10.5px !important;
+    line-height: 1.7 !important;
+  }
+
+  .systems[lang="ru"] .methodChain article {
+    padding-right: 4px;
+    padding-left: 54px;
+  }
+
+  .systems[lang="ru"] .boundaryLedger p {
+    grid-template-columns: 38px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .systems[lang="ru"] .pageFooter {
+    margin-top: 68px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .systems *,
   .systems *::before,
