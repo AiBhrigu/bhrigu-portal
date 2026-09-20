@@ -106,6 +106,9 @@ The Clean Chat dialogue is session-local and noindex. It is not a canonical know
 The older /crypto-astro/btc/live route remains a bounded legacy/public evidence route and is not the preferred dialogue entry.
 
 ## Other current public surfaces
+- https://www.bhrigu.io/systems
+- https://www.bhrigu.io/systems?lang=en
+- https://www.bhrigu.io/systems?lang=ru
 - https://www.bhrigu.io/cosmographer?lang=en
 - https://www.bhrigu.io/cosmographer?lang=ru
 - https://www.bhrigu.io/cosmography?lang=en
@@ -126,6 +129,26 @@ The older /crypto-astro/btc/live route remains a bounded legacy/public evidence 
 - https://www.bhrigu.io/support?lang=ru
 - https://www.bhrigu.io/github?lang=en
 - https://www.bhrigu.io/github?lang=ru
+
+### Φ Research Systems
+Φ Research Systems is a research and systems field working across AI and persistent intelligence, astronomy and ephemerides, astrology research systems, temporal and prospective systems, evidence verification, Bitcoin market-state research, and information architecture.
+
+Its public systems preserve explicit boundaries between source, observation, state, change, interpretation, uncertainty and protected mechanism.
+
+BHRIGU is a public product and research surface.
+
+ORION remains protected analytical depth.
+
+AiBhrigu is a public proof namespace.
+
+CAPABILITY ≠ PRODUCT.
+
+What Φ Research Systems can credibly work with is broader than what BHRIGU currently sells.
+
+Only these live commercial objects belong here:
+- Φ External Systems Recon
+- Frey Personal
+- BHRIGU AI Founding Field
 
 ## Discovery
 - Sitemap: https://www.bhrigu.io/sitemap.xml

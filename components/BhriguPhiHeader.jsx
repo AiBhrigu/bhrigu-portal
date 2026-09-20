@@ -22,6 +22,7 @@ const REQUEST_LOCALE_ROUTES = new Set([
   "/archive",
   "/chronicle",
   "/cosmography",
+  "/systems",
   "/access",
   "/support",
   "/github",
@@ -67,6 +68,7 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
   const homeHref = withPublicLocale("/", locale);
   const freyHref = withPublicLocale("/frey", locale);
   const orionHref = withPublicLocale("/orion", locale);
+  const systemsHref = withPublicLocale("/systems", locale);
   const btcHref = withPublicLocale("/crypto-astro/btc", locale);
 
   const handleLanguageSwitch = (event) => {
@@ -101,6 +103,7 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
 {home || btc ? (
   <>
     {btc && <a className="bh-btc-route" href={btcHref}>BTC Field</a>}
+    <a className="bh-systems-route" href={systemsHref}>{ru ? "СИСТЕМЫ" : "SYSTEMS"}</a>
     <a
       className="bh-language"
       href={languageHref}
@@ -113,6 +116,7 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
 ) : (
   <>
     <a className="bh-btn bh-btn-primary" href={freyHref} data-bh="FREY_CTA_PRIMARY_V0_6">{ru ? "Открыть Frey" : "Open Frey"}</a>
+    <a className="bh-systems-route" href={systemsHref}>{ru ? "СИСТЕМЫ" : "SYSTEMS"}</a>
     <a className="bh-btn" href={orionHref}>ORION</a>
     <a
       className="bh-language"
@@ -151,7 +155,8 @@ gap: 20px;
         .bh-brand,
         .bh-btn,
         .bh-language,
-        .bh-btc-route {
+        .bh-btc-route,
+        .bh-systems-route {
 text-decoration: none !important;
         }
         .bh-brand {
@@ -197,7 +202,8 @@ gap: 10px;
         }
         .bh-btn,
         .bh-language,
-        .bh-btc-route {
+        .bh-btc-route,
+        .bh-systems-route {
 display: inline-flex;
 align-items: center;
 justify-content: center;
@@ -216,7 +222,8 @@ text-transform: uppercase;
 min-width: 40px;
 padding: 0 10px;
         }
-        .bh-btc-route {
+        .bh-btc-route,
+        .bh-systems-route {
 border-color: rgba(222,194,125,0.38);
 color: #dec27d !important;
         }
@@ -244,11 +251,20 @@ border-radius: 0;
         }
         .bh-btn:hover,
         .bh-language:hover,
-        .bh-btc-route:hover {
+        .bh-btc-route:hover,
+        .bh-systems-route:hover {
 border-color: rgba(255,255,255,0.26);
 text-decoration: none !important;
         }
-        @media (max-width: 620px) {
+        @media (max-width: 720px) {
+.bh-shell {
+  padding-left: 12px;
+  padding-right: 12px;
+  gap: 10px;
+}
+.bh-ctas {
+  gap: 6px;
+}
 .bh-header-home .bh-shell {
   min-height: 62px;
   padding: 0 18px;
@@ -257,10 +273,26 @@ text-decoration: none !important;
   font-size: 11px;
 }
 .bh-btn,
-.bh-btc-route {
+.bh-btc-route,
+.bh-systems-route {
   min-height: 36px;
-  padding: 0 10px;
-  font-size: 9px;
+  padding: 0 9px;
+  font-size: 8.5px;
+}
+        }
+
+        @media (max-width: 480px) {
+.bh-btn-primary {
+  display: none;
+}
+.bh-ctas {
+  gap: 5px;
+}
+.bh-btn,
+.bh-btc-route,
+.bh-systems-route {
+  padding: 0 8px;
+  font-size: 8px;
 }
         }
       `}</style>
