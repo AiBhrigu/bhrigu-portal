@@ -8,7 +8,7 @@ import BtcFreeCorridorSurfaceAdapter from "../components/btc/BtcFreeCorridorSurf
 
 const BASE = "https://www.bhrigu.io";
 const META = {
-  "/": { en:["Market Cosmographer · AI Market Intelligence | BHRIGU","Evidence-linked Bitcoin intelligence: verified change, why it matters, and explicit conditions."], ru:["Market Cosmographer · AI-анализ рынков | BHRIGU","Bitcoin-аналитика со связанными доказательствами: проверенное изменение, его значение и явные условия."] },
+  "/": { en:["BHRIGU · Φ Research Systems | Market Cosmographer","Public home of Φ Research Systems: AI, ephemerides, astrology systems, temporal evidence, verification and market-state research; Market Cosmographer is the current Bitcoin application."], ru:["BHRIGU · Φ Research Systems | Market Cosmographer","Публичный дом Φ Research Systems: AI, эфемериды, системы астрологии, темпоральные доказательства, верификация и исследования состояния рынка; Market Cosmographer — текущее Bitcoin-приложение."] },
   "/start": { en:["Start · BHRIGU","Start with the working BHRIGU system: BTC Field, Frey, public proof and clear boundaries."], ru:["Старт · BHRIGU","Начните с работающей системы BHRIGU: BTC Field, Frey, публичные доказательства и ясные границы."] },
   "/frey": { en:["Frey · Temporal Reading | BHRIGU","Frey is BHRIGU's active temporal reading and dialogue service."], ru:["Frey · Темпоральное чтение | BHRIGU","Frey — действующий сервис темпорального чтения и диалога BHRIGU."] },
   "/reading": { en:["Reading · BHRIGU","Temporal reading surface with explicit structural context and boundaries."], ru:["Чтение · BHRIGU","Поверхность темпорального чтения с явным структурным контекстом и границами."] },
