@@ -1628,6 +1628,95 @@
   }
 }
 
+/* Real-phone RU hero closure · 2026-09-20
+   Only the pre-Φ-field hero is adjusted. All downstream sections remain canonical. */
+
+@media (max-width: 680px) {
+  .systems[lang="ru"] .hero {
+    padding: 36px 20px 16px;
+  }
+
+  .systems[lang="ru"] .heroCore {
+    gap: 20px;
+  }
+
+  .systems[lang="ru"] .heroCopy {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .systems[lang="ru"] .hero .eyebrow {
+    margin-bottom: 14px !important;
+    font-size: 10.5px !important;
+  }
+
+  .systems[lang="ru"] .hero h1 {
+    max-width: 100%;
+    margin-bottom: 18px;
+    font-size: clamp(33px, 9.2vw, 42px);
+    line-height: 1.07;
+    letter-spacing: -0.026em;
+    text-wrap: balance;
+    overflow-wrap: normal;
+    word-break: normal;
+  }
+
+  .systems[lang="ru"] .heroLead {
+    margin-bottom: 14px !important;
+    font-size: 14.5px !important;
+    line-height: 1.58 !important;
+  }
+
+  .systems[lang="ru"] .heroClasses {
+    margin-bottom: 16px !important;
+    font-size: 11.5px !important;
+    line-height: 1.65 !important;
+  }
+
+  .systems[lang="ru"] .identityLine {
+    margin-bottom: 16px !important;
+    gap: 8px;
+    font-size: 8px !important;
+    line-height: 1.45;
+  }
+
+  .systems[lang="ru"] .heroActions {
+    gap: 9px;
+  }
+
+  .systems[lang="ru"] .heroActions a {
+    min-height: 44px;
+    padding-right: 12px;
+    padding-left: 12px;
+    font-size: 9px;
+    letter-spacing: 0.065em;
+  }
+
+  .systems[lang="ru"] .fieldCanvas {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .systems[lang="ru"] .hero {
+    padding-right: 18px;
+    padding-left: 18px;
+  }
+
+  .systems[lang="ru"] .hero h1 {
+    font-size: clamp(32px, 9vw, 35px);
+    line-height: 1.08;
+  }
+
+  .systems[lang="ru"] .heroLead {
+    font-size: 14px !important;
+  }
+
+  .systems[lang="ru"] .heroClasses {
+    font-size: 11px !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .systems *,
   .systems *::before,
