@@ -214,7 +214,7 @@ jobs:
           assert 'data-frey-response-state="success"' in frey, 'frey-raw-state'
 
           home=urlopen('http://127.0.0.1:3000/?lang=ru',timeout=30).read().decode()
-          assert '<title' in home and '>Market Cosmographer · AI-анализ рынков | BHRIGU</title>' in home,'home-title-ru'
+          assert '<title' in home and '>BHRIGU · Φ Research Systems | Market Cosmographer</title>' in home,'home-title-ru'
           assert 'inLanguage":"ru"' in home,'home-jsonld-ru'
           assert '/frey?lang=ru' in home and '/cosmographer?lang=ru' in home and '/orion?lang=ru' in home,'home-links-ru'
 
