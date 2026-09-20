@@ -3,6 +3,50 @@
   "framework": "nextjs",
   "redirects": [
     {
+      "source": "/login",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.bhrigu.io"
+        }
+      ],
+      "destination": "https://app.bhrigu.io/",
+      "permanent": true
+    },
+    {
+      "source": "/menu",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.bhrigu.io"
+        }
+      ],
+      "destination": "https://app.bhrigu.io/",
+      "permanent": true
+    },
+    {
+      "source": "/forgot_password",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.bhrigu.io"
+        }
+      ],
+      "destination": "https://app.bhrigu.io/",
+      "permanent": true
+    },
+    {
+      "source": "/wizard/signup",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.bhrigu.io"
+        }
+      ],
+      "destination": "https://app.bhrigu.io/",
+      "permanent": true
+    },
+    {
       "source": "/",
       "has": [
         {
@@ -23,6 +67,18 @@
       ],
       "destination": "https://www.bhrigu.io/:path*",
       "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.bhrigu.io"
+        }
+      ],
+      "destination": "/app-gateway"
     }
   ]
 }
