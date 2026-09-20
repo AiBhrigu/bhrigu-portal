@@ -1111,6 +1111,124 @@
   .pageFooter { align-items: flex-start; flex-direction: column; margin-top: 84px !important; }
 }
 
+/* Operator visual acceptance repair · 2026-09-20
+   Restore first-screen balance after the readability lift.
+   RU is denser than EN, so it receives a bounded desktop fit law rather than global downsizing. */
+
+@media (min-width: 1181px) {
+  .hero {
+    padding-top: 30px;
+    padding-bottom: 16px;
+  }
+
+  .heroCore {
+    min-height: 470px;
+  }
+
+  .fieldCanvas {
+    height: 470px;
+  }
+
+  .proofRail {
+    margin-top: 12px;
+  }
+
+  .proofRailLabel {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-size: 9.5px;
+  }
+
+  .proofRail a {
+    gap: 5px;
+    padding: 9px 10px;
+  }
+
+  .proofRail a span {
+    min-height: 0;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .proofRail a strong {
+    font-size: 7.5px;
+    line-height: 1.3;
+  }
+
+  .systems[lang="ru"] .heroCore {
+    grid-template-columns: minmax(500px, 0.9fr) minmax(680px, 1.1fr);
+    gap: clamp(42px, 4.2vw, 70px);
+  }
+
+  .systems[lang="ru"] .heroCopy {
+    max-width: 600px;
+  }
+
+  .systems[lang="ru"] .hero h1 {
+    max-width: 600px;
+    font-size: clamp(52px, 4.2vw, 70px);
+    letter-spacing: -0.038em;
+    line-height: 1;
+  }
+
+  .systems[lang="ru"] .fieldCanvas {
+    min-width: 680px;
+  }
+
+  .systems[lang="ru"] .expression {
+    grid-template-columns: 26px 100px minmax(0, 1fr);
+    gap: 10px;
+    min-height: 72px;
+    padding: 9px 10px;
+  }
+
+  .systems[lang="ru"] .expression .geometry {
+    transform: scale(1.08);
+  }
+
+  .systems[lang="ru"] .expression > strong {
+    font-size: clamp(12px, 0.72vw, 13px);
+    line-height: 1.34;
+  }
+
+  .systems[lang="ru"] .expression01 {
+    width: 46%;
+  }
+
+  .systems[lang="ru"] .expression05 {
+    width: 47%;
+  }
+
+  .systems[lang="ru"] .geometryEvidence span {
+    font-size: 7px;
+    letter-spacing: 0.025em;
+  }
+}
+
+@media (max-width: 680px) {
+  .systems[lang="ru"] .hero h1 {
+    font-size: clamp(40px, 11.5vw, 54px);
+    line-height: 1.02;
+  }
+
+  .systems[lang="ru"] .expression {
+    grid-template-columns: 30px 108px minmax(0, 1fr);
+  }
+
+  .systems[lang="ru"] .expression .geometry {
+    transform: scale(1.16);
+  }
+
+  .systems[lang="ru"] .expression > strong {
+    font-size: 12.5px;
+    line-height: 1.38;
+  }
+
+  .systems[lang="ru"] .geometryEvidence span {
+    font-size: 6.8px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .systems *,
   .systems *::before,
