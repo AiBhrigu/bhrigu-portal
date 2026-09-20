@@ -255,14 +255,14 @@
 .fieldCore span {
   color: var(--systems-faint);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 8px;
-  letter-spacing: 0.22em;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
 }
 
 .fieldCore strong {
   color: #e5c475;
   font-family: Iowan Old Style, Baskerville, Georgia, serif;
-  font-size: 36px;
+  font-size: 40px;
   font-weight: 400;
   line-height: 0.8;
 }
@@ -294,11 +294,11 @@
   position: absolute;
   z-index: 2;
   display: grid;
-  grid-template-columns: 25px 72px minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: 28px 112px minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
-  min-height: 64px;
-  padding: 8px 10px;
+  min-height: 76px;
+  padding: 10px 12px;
   border-top: 1px solid rgba(240, 238, 231, 0.16);
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.025), transparent);
 }
@@ -316,14 +316,14 @@
   align-self: start;
   padding-top: 3px;
   color: var(--systems-gold);
-  font-size: 8px;
+  font-size: 9.5px;
 }
 
 .expression > strong {
   color: rgba(240, 238, 231, 0.78);
-  font-size: 10px;
+  font-size: clamp(12px, 0.85vw, 14px);
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.32;
 }
 
 .expression01 { top: 4%; left: 0; width: 43%; }
@@ -336,9 +336,14 @@
 
 .geometry {
   position: relative;
-  width: 72px;
-  height: 40px;
-  opacity: 0.78;
+  width: 100px;
+  height: 48px;
+  opacity: 0.9;
+}
+
+.expression .geometry {
+  transform: scale(1.16);
+  transform-origin: left center;
 }
 
 .geometryAi i {
@@ -395,8 +400,8 @@
   min-width: 72px;
   overflow: hidden;
 }
-.geometryEvidence span { flex: 0 0 auto; color: rgba(240, 238, 231, 0.55); font-family: ui-monospace, monospace; font-size: 4.5px; letter-spacing: 0.05em; }
-.geometryEvidence i { flex: 1 1 5px; min-width: 3px; height: 1px; margin: 0 2px; background: var(--systems-gold); }
+.geometryEvidence span { flex: 0 0 auto; color: rgba(240, 238, 231, 0.68); font-family: ui-monospace, monospace; font-size: 6.5px; letter-spacing: 0.035em; }
+.geometryEvidence i { flex: 1 1 6px; min-width: 4px; height: 1px; margin: 0 3px; background: var(--systems-gold); }
 
 .geometryBtc { display: flex; align-items: center; gap: 4px; }
 .geometryBtc span { width: 10px; height: 22px; border: 1px solid rgba(116, 169, 199, 0.58); }
@@ -418,7 +423,7 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 145px repeat(6, minmax(0, 1fr));
+  grid-template-columns: 160px repeat(6, minmax(0, 1fr));
   width: min(1480px, 100%);
   margin: 18px auto 0;
   border-top: 1px solid rgba(198, 162, 87, 0.34);
@@ -428,16 +433,16 @@
 .proofRailLabel {
   display: flex;
   align-items: center;
-  padding: 13px 12px 13px 0;
+  padding: 15px 14px 15px 0;
   color: var(--systems-gold);
-  font-size: 8px;
+  font-size: 9.5px;
   line-height: 1.4;
 }
 
 .proofRail a {
   display: flex;
   min-width: 0;
-  padding: 11px 10px;
+  padding: 13px 12px;
   border-left: 1px solid rgba(240, 238, 231, 0.09);
   flex-direction: column;
   justify-content: space-between;
@@ -445,20 +450,22 @@
 }
 
 .proofRail a span {
-  overflow: hidden;
-  color: rgba(240, 238, 231, 0.72);
-  font-size: 9px;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-height: 2.7em;
+  overflow: visible;
+  color: rgba(240, 238, 231, 0.8);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .proofRail a strong {
   color: rgba(198, 162, 87, 0.88);
   font-family: ui-monospace, monospace;
-  font-size: 6px;
+  font-size: 7.5px;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  line-height: 1.35;
+  letter-spacing: 0.075em;
 }
 
 .proofRail a:hover,
@@ -497,7 +504,7 @@
 .sectionIndex {
   margin: 6px 0 0 !important;
   color: var(--systems-faint) !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
 }
 
 .sectionHeading .eyebrow {
@@ -570,8 +577,8 @@
   background: var(--systems-bg);
   color: rgba(240, 238, 231, 0.72);
   font-family: ui-monospace, monospace;
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 9.5px;
+  letter-spacing: 0.075em;
 }
 
 .classLedger {
@@ -589,8 +596,8 @@
 
 .classIdentity {
   display: grid;
-  grid-template-columns: 28px 82px;
-  gap: 14px;
+  grid-template-columns: 28px 96px;
+  gap: 16px;
   align-items: center;
 }
 
@@ -602,8 +609,8 @@
 }
 
 .classIdentity .geometry {
-  width: 82px;
-  transform: scale(1.08);
+  width: 96px;
+  transform: scale(1.18);
   transform-origin: left center;
 }
 
@@ -634,14 +641,14 @@
   margin: 3px 0 0 !important;
   color: var(--systems-faint) !important;
   font-family: ui-monospace, monospace;
-  font-size: 10px !important;
-  line-height: 1.6 !important;
+  font-size: 11px !important;
+  line-height: 1.65 !important;
 }
 
 .searchBridge strong {
   color: rgba(198, 162, 87, 0.72);
-  font-size: 8px;
-  letter-spacing: 0.12em;
+  font-size: 9.5px;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
@@ -692,9 +699,9 @@
   border-bottom: 1px solid rgba(198, 162, 87, 0.3);
   color: rgba(240, 238, 231, 0.58);
   font-family: ui-monospace, monospace;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.14em;
 }
 
 .capabilityItem {
@@ -708,9 +715,9 @@
 .capabilityItem > span {
   padding-top: 3px;
   font-family: ui-monospace, monospace;
-  font-size: 8px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.1em;
 }
 
 .proven { color: var(--systems-gold); }
@@ -727,7 +734,7 @@
 .capabilityItem p {
   margin: 8px 0 0 !important;
   color: var(--systems-muted) !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .languageBoundary {
@@ -740,7 +747,7 @@
 .languageBoundary p {
   margin: 3px 0 !important;
   font-family: ui-monospace, monospace;
-  font-size: 9px !important;
+  font-size: 10.5px !important;
 }
 
 .proofSection {
@@ -816,12 +823,12 @@
   gap: 7px;
   margin: 4px 0 0 !important;
   color: var(--systems-faint) !important;
-  font-size: 8px !important;
+  font-size: 9.5px !important;
 }
 
 .proofStatus strong {
   color: var(--systems-gold);
-  font-size: 9px;
+  font-size: 10.5px;
   font-weight: 700;
   line-height: 1.45;
 }
@@ -844,10 +851,10 @@
 .methodChain article:last-child { border-right: 0; }
 .methodChain article::after { position: absolute; top: 38px; right: -4px; z-index: 1; width: 7px; height: 7px; border-top: 1px solid var(--systems-gold); border-right: 1px solid var(--systems-gold); content: ""; transform: rotate(45deg); }
 .methodChain article:last-child::after { display: none; }
-.methodChain article > span { color: var(--systems-gold); font-family: ui-monospace, monospace; font-size: 9px; }
+.methodChain article > span { color: var(--systems-gold); font-family: ui-monospace, monospace; font-size: 10px; }
 .methodChain h3 { margin: 48px 0 12px; color: var(--systems-ink); font-family: Iowan Old Style, Baskerville, Georgia, serif; font-size: 21px; font-weight: 400; }
-.methodChain p { color: var(--systems-muted) !important; font-size: 11px !important; }
-.methodLine { margin: 30px 0 0 !important; color: rgba(198, 162, 87, 0.8) !important; font-size: 9px !important; text-align: center; }
+.methodChain p { color: var(--systems-muted) !important; font-size: 12.5px !important; }
+.methodLine { margin: 30px 0 0 !important; color: rgba(198, 162, 87, 0.8) !important; font-size: 10.5px !important; text-align: center; }
 
 .boundarySection {
   width: min(1120px, calc(100% - 44px));
@@ -871,7 +878,7 @@
 .boundaryLedger span {
   color: var(--systems-faint);
   font-family: ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .boundaryLine {
@@ -879,12 +886,12 @@
   padding: 20px 22px;
   border: 1px solid rgba(198, 162, 87, 0.34);
   color: rgba(240, 238, 231, 0.86) !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   text-align: center;
 }
 
 .boundaryLine span { color: var(--systems-gold); }
-.orionBoundary { max-width: 760px; margin: 0 0 0 110px !important; color: var(--systems-faint) !important; font-size: 12px !important; }
+.orionBoundary { max-width: 760px; margin: 0 0 0 110px !important; color: var(--systems-faint) !important; font-size: 13px !important; }
 
 .commercialSection {
   width: min(1220px, calc(100% - 44px));
@@ -1056,13 +1063,15 @@
   .expression06,
   .expression07 { grid-column: 1; }
   .fieldCore { height: 110px; }
-  .expression { grid-template-columns: 28px 86px minmax(0, 1fr); min-height: 82px; }
-  .expression > strong { font-size: 11px; }
+  .expression { grid-template-columns: 30px 118px minmax(0, 1fr); min-height: 96px; padding: 12px 10px; }
+  .expression .geometry { transform: scale(1.22); }
+  .expressionNumber { font-size: 10px; }
+  .expression > strong { font-size: 13px; line-height: 1.35; }
   .proofRail { grid-template-columns: 1fr; }
-  .proofRailLabel { grid-row: auto; min-height: 48px; border-bottom: 1px solid rgba(240, 238, 231, 0.09); }
+  .proofRailLabel { grid-row: auto; min-height: 52px; font-size: 10px; border-bottom: 1px solid rgba(240, 238, 231, 0.09); }
   .proofRail a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; border-top: 0 !important; border-left: 0; border-bottom: 1px solid rgba(240, 238, 231, 0.07); }
-  .proofRail a span { white-space: normal; }
-  .proofRail a strong { text-align: right; }
+  .proofRail a span { min-height: 0; font-size: 11.5px; white-space: normal; }
+  .proofRail a strong { font-size: 8.5px; text-align: right; }
   .section { width: calc(100% - 34px); padding: 82px 0; }
   .sectionHeading { grid-template-columns: 1fr; gap: 8px; margin-bottom: 42px; }
   .sectionIndex { margin: 0 !important; }
@@ -1070,7 +1079,8 @@
   .relationChain { grid-template-columns: repeat(2, 1fr); }
   .relationChain::before { top: 18%; bottom: 18%; left: 50%; width: 1px; height: auto; background: linear-gradient(transparent, rgba(198, 162, 87, 0.48), transparent); }
   .classRow { grid-template-columns: 1fr; gap: 20px; padding: 32px 0; }
-  .classIdentity { grid-template-columns: 30px 100px; }
+  .classIdentity { grid-template-columns: 30px 116px; }
+  .classIdentity .geometry { transform: scale(1.22); }
   .searchBridge { grid-column: 1; }
   .statusKey,
   .sectionLead,
