@@ -1299,6 +1299,105 @@
   }
 }
 
+/* Final bespoke fit for long semantic classes 05 / 07.
+   Their glyph and label zones must never compete for the same horizontal space. */
+
+@media (min-width: 1181px) {
+  .expression05 {
+    width: 50%;
+    grid-template-columns: 26px 128px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .expression05 .geometry {
+    width: 112px;
+    transform: scale(1.08);
+    transform-origin: left center;
+  }
+
+  .expression05 > strong {
+    max-width: 190px;
+    line-height: 1.3;
+  }
+
+  .expression07 {
+    width: 58%;
+    grid-template-columns: 26px 136px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .expression07 .geometry {
+    width: 118px;
+    transform: scale(1.08);
+    transform-origin: left center;
+  }
+
+  .expression07 > strong {
+    max-width: 220px;
+    line-height: 1.3;
+  }
+
+  .systems[lang="ru"] .expression05 {
+    width: 52%;
+    grid-template-columns: 26px 132px minmax(0, 1fr);
+  }
+
+  .systems[lang="ru"] .expression05 > strong {
+    max-width: 205px;
+  }
+
+  .systems[lang="ru"] .expression07 {
+    width: 62%;
+    grid-template-columns: 26px 140px minmax(0, 1fr);
+  }
+
+  .systems[lang="ru"] .expression07 > strong {
+    max-width: 245px;
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 681px) {
+  .expression05,
+  .expression07 {
+    grid-column: span 6;
+    grid-template-columns: 28px 128px minmax(0, 1fr);
+  }
+
+  .expression05 .geometry,
+  .expression07 .geometry {
+    width: 112px;
+    transform: scale(1.08);
+  }
+}
+
+@media (max-width: 680px) {
+  .expression05,
+  .expression07,
+  .systems[lang="ru"] .expression05,
+  .systems[lang="ru"] .expression07 {
+    grid-template-columns: 30px 148px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .expression05 .geometry,
+  .expression07 .geometry,
+  .systems[lang="ru"] .expression05 .geometry,
+  .systems[lang="ru"] .expression07 .geometry {
+    width: 124px;
+    transform: scale(1.02);
+    transform-origin: left center;
+  }
+
+  .expression05 > strong,
+  .expression07 > strong,
+  .systems[lang="ru"] .expression05 > strong,
+  .systems[lang="ru"] .expression07 > strong {
+    max-width: none;
+    font-size: 12.5px;
+    line-height: 1.36;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .systems *,
   .systems *::before,
