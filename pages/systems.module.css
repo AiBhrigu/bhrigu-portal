@@ -1408,13 +1408,13 @@
   }
 
   .systems[lang="ru"] .expression05 {
-    width: 56%;
-    grid-template-columns: 26px 112px minmax(220px, 1fr);
+    width: 52%;
+    grid-template-columns: 26px 102px minmax(0, 1fr);
   }
 
   .systems[lang="ru"] .expression07 {
     width: 62%;
-    grid-template-columns: 26px 126px minmax(220px, 1fr);
+    grid-template-columns: 26px 126px minmax(0, 1fr);
   }
 
   .systems[lang="ru"] .expression05 .geometry,
@@ -1440,8 +1440,11 @@
   }
 
   .systems[lang="ru"] .expression05 > strong {
-    font-size: 13.5px;
-    line-height: 1.22;
+    max-width: 180px;
+    font-size: 12.5px;
+    line-height: 1.24;
+    overflow-wrap: normal;
+    white-space: normal;
   }
 
   .systems[lang="ru"] .expression07 > strong {
@@ -1454,8 +1457,8 @@
   .systems[lang="ru"] .expression05,
   .systems[lang="ru"] .expression07 {
     width: 100%;
-    grid-template-columns: 30px 118px minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: 30px 110px minmax(0, 1fr);
+    gap: 12px;
   }
 
   .systems[lang="ru"] .expression05 .geometry,
