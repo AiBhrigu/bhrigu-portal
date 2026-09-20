@@ -1398,6 +1398,94 @@
   }
 }
 
+/* FINAL SAFE FIT — RU long labels 05 / 07 */
+
+@media (min-width: 1181px) {
+  .systems[lang="ru"] .expression05,
+  .systems[lang="ru"] .expression07 {
+    align-items: center;
+    gap: 16px;
+  }
+
+  .systems[lang="ru"] .expression05 {
+    width: 56%;
+    grid-template-columns: 26px 112px minmax(220px, 1fr);
+  }
+
+  .systems[lang="ru"] .expression07 {
+    width: 62%;
+    grid-template-columns: 26px 126px minmax(220px, 1fr);
+  }
+
+  .systems[lang="ru"] .expression05 .geometry,
+  .systems[lang="ru"] .expression07 .geometry {
+    transform: none;
+    transform-origin: left center;
+  }
+
+  .systems[lang="ru"] .expression05 .geometry {
+    width: 102px;
+  }
+
+  .systems[lang="ru"] .expression07 .geometry {
+    width: 116px;
+  }
+
+  .systems[lang="ru"] .expression05 > strong,
+  .systems[lang="ru"] .expression07 > strong {
+    display: block;
+    min-width: 0;
+    max-width: none;
+    word-break: normal;
+  }
+
+  .systems[lang="ru"] .expression05 > strong {
+    font-size: 13.5px;
+    line-height: 1.22;
+  }
+
+  .systems[lang="ru"] .expression07 > strong {
+    font-size: 13px;
+    line-height: 1.24;
+  }
+}
+
+@media (max-width: 1180px) {
+  .systems[lang="ru"] .expression05,
+  .systems[lang="ru"] .expression07 {
+    width: 100%;
+    grid-template-columns: 30px 118px minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .systems[lang="ru"] .expression05 .geometry,
+  .systems[lang="ru"] .expression07 .geometry {
+    transform: none;
+  }
+
+  .systems[lang="ru"] .expression05 .geometry {
+    width: 104px;
+  }
+
+  .systems[lang="ru"] .expression07 .geometry {
+    width: 112px;
+  }
+}
+
+@media (max-width: 680px) {
+  .systems[lang="ru"] .expression05,
+  .systems[lang="ru"] .expression07 {
+    grid-template-columns: 30px 112px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .systems[lang="ru"] .expression05 > strong,
+  .systems[lang="ru"] .expression07 > strong {
+    font-size: 12.5px;
+    line-height: 1.25;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .systems *,
   .systems *::before,
