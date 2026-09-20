@@ -22,6 +22,7 @@ const REQUEST_LOCALE_ROUTES = new Set([
   "/archive",
   "/chronicle",
   "/cosmography",
+  "/systems",
   "/access",
   "/support",
   "/github",
@@ -56,7 +57,6 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
   const path = activeRoute.split("?")[0].split("#")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
-  const showLanguage = path !== "/systems";
   const rawLang = Array.isArray(router.query?.lang) ? router.query.lang[0] : router.query?.lang;
   const requestLocale = REQUEST_LOCALE_ROUTES.has(stablePath)
     ? resolvePublicLocale("", rawLang)
@@ -102,27 +102,27 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
 {home || btc ? (
   <>
     {btc && <a className="bh-btc-route" href={btcHref}>BTC Field</a>}
-    {showLanguage && <a
+    <a
       className="bh-language"
       href={languageHref}
       onClick={handleLanguageSwitch}
       aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
     >
       {ru ? "EN" : "RU"}
-    </a>}
+    </a>
   </>
 ) : (
   <>
     <a className="bh-btn bh-btn-primary" href={freyHref} data-bh="FREY_CTA_PRIMARY_V0_6">{ru ? "Открыть Frey" : "Open Frey"}</a>
     <a className="bh-btn" href={orionHref}>ORION</a>
-    {showLanguage && <a
+    <a
       className="bh-language"
       href={languageHref}
       onClick={handleLanguageSwitch}
       aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
     >
       {ru ? "EN" : "RU"}
-    </a>}
+    </a>
   </>
 )}
         </nav>

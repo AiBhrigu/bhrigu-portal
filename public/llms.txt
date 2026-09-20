@@ -107,6 +107,8 @@ The older /crypto-astro/btc/live route remains a bounded legacy/public evidence 
 
 ## Other current public surfaces
 - https://www.bhrigu.io/systems
+- https://www.bhrigu.io/systems?lang=en
+- https://www.bhrigu.io/systems?lang=ru
 - https://www.bhrigu.io/cosmographer?lang=en
 - https://www.bhrigu.io/cosmographer?lang=ru
 - https://www.bhrigu.io/cosmography?lang=en
