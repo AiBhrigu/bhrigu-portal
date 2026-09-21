@@ -159,6 +159,7 @@ jobs:
           }
           home_copy_dedup_ci_authority = {
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
             'pages/index.js',
           }
           actual = set(subprocess.check_output(
