@@ -1298,12 +1298,14 @@
   }
 
   .returnRoute {
-    position: relative;
-    z-index: 4;
+    position: absolute;
+    right: 3%;
+    bottom: 10px;
+    z-index: 6;
     width: 69%;
     grid-template-columns: auto minmax(90px, 1fr) auto;
     gap: 16px;
-    margin: -10px 3% 0 auto;
+    margin: 0;
     color: rgba(241, 239, 233, 0.36);
   }
 
