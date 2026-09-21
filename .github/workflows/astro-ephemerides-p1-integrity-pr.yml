@@ -17,6 +17,7 @@ on:
       - tests/public-ephemerides-v2-acceptance.ts
       - tests/astro-sky-now-phi-cosmograph-acceptance.ts
       - .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+      - .github/scripts/verify-btc-public-acceptance-scope.py
 
 permissions:
   contents: read
@@ -60,6 +61,7 @@ jobs:
             'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
           }
           sexagesimal_repair={
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             'components/astro/BhriguPhiCosmograph.tsx',
             'components/astro/PublicEphemeridesToday.tsx',
