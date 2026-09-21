@@ -33,6 +33,7 @@ jobs:
           git fetch origin master
           python3 - <<'PY'
           import os, subprocess
+          # Home cosmographic-scene authority: this workflow pair plus pages/index.js and pages/index.module.css is the exact bounded scene scope.
           expected = {
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
