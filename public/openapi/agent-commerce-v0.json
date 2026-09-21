@@ -1,0 +1,296 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "BHRIGU Agent Commerce V0",
+    "version": "0.1.0-preview",
+    "description": "Preview-only deterministic machine contract for one bounded Bitcoin evidence answer. Model-provider synthesis is not part of V0. Production payment and settlement are disabled; PAY_TO is unbound."
+  },
+  "paths": {
+    "/api/agent/btc/evidence-answer/v0": {
+      "post": {
+        "operationId": "bhrigu_btc_evidence_answer",
+        "summary": "Preview one bounded BHRIGU Bitcoin evidence answer",
+        "description": "Stateless deterministic evidence-class route using DETERMINISTIC_EVIDENCE_V0 only. Provider/model calls are zero. Preview mock authorization only; no production x402 settlement.",
+        "parameters": [
+          {
+            "name": "X-BHRIGU-x402-Preview",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "mock-authorized-v0"
+            },
+            "description": "Isolated preview authorization marker. It is not a payment credential and does not settle funds."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "schema_version",
+                  "query_class",
+                  "locale",
+                  "question",
+                  "protocol_subject"
+                ],
+                "properties": {
+                  "schema_version": {
+                    "const": "bhrigu_btc_evidence_answer_request_v0"
+                  },
+                  "query_class": {
+                    "enum": [
+                      "BTC_FIELD_NOW",
+                      "BTC_CHANGE_MEMORY",
+                      "BITCOIN_PROTOCOL"
+                    ]
+                  },
+                  "locale": {
+                    "enum": [
+                      "en",
+                      "ru"
+                    ]
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 280
+                  },
+                  "protocol_subject": {
+                    "anyOf": [
+                      {
+                        "enum": [
+                          "overview",
+                          "supply",
+                          "halving",
+                          "subsidy",
+                          "fees",
+                          "difficulty",
+                          "mining",
+                          "utxo",
+                          "genesis",
+                          "consensus",
+                          "blocks",
+                          "satoshi_history",
+                          "bitcoin_origin",
+                          "genesis_history"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated preview research result; no settlement occurred.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "schema_version",
+                    "request_id",
+                    "request_hash",
+                    "query_class",
+                    "topic",
+                    "answer",
+                    "as_of",
+                    "sources",
+                    "evidence",
+                    "boundary",
+                    "usage",
+                    "payment",
+                    "result_hash"
+                  ],
+                  "properties": {
+                    "schema_version": {
+                      "const": "bhrigu_btc_evidence_answer_v0"
+                    },
+                    "request_id": {
+                      "type": "string"
+                    },
+                    "request_hash": {
+                      "type": "string",
+                      "pattern": "^sha256:[a-f0-9]{64}$"
+                    },
+                    "query_class": {
+                      "enum": [
+                        "BTC_FIELD_NOW",
+                        "BTC_CHANGE_MEMORY",
+                        "BITCOIN_PROTOCOL"
+                      ]
+                    },
+                    "topic": {
+                      "type": "string"
+                    },
+                    "answer": {
+                      "type": "string",
+                      "description": "At most five visible lines."
+                    },
+                    "as_of": {
+                      "type": "string"
+                    },
+                    "sources": {
+                      "type": "array",
+                      "maxItems": 12,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "label",
+                          "href",
+                          "as_of"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "href": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "as_of": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "evidence": {
+                      "type": "object"
+                    },
+                    "boundary": {
+                      "type": "object"
+                    },
+                    "usage": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "provider",
+                        "model",
+                        "input_tokens",
+                        "output_tokens",
+                        "web_search_calls",
+                        "nominal_provider_cost_micros"
+                      ],
+                      "properties": {
+                        "provider": {
+                          "const": "NONE"
+                        },
+                        "model": {
+                          "const": "DETERMINISTIC_EVIDENCE_V0"
+                        },
+                        "input_tokens": {
+                          "const": 0
+                        },
+                        "output_tokens": {
+                          "const": 0
+                        },
+                        "web_search_calls": {
+                          "const": 0
+                        },
+                        "nominal_provider_cost_micros": {
+                          "const": 0
+                        }
+                      }
+                    },
+                    "payment": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "protocol",
+                        "network",
+                        "asset",
+                        "amount_atomic",
+                        "payer",
+                        "transaction"
+                      ],
+                      "properties": {
+                        "protocol": {
+                          "const": "x402"
+                        },
+                        "network": {
+                          "const": "eip155:8453"
+                        },
+                        "asset": {
+                          "const": "USDC"
+                        },
+                        "amount_atomic": {
+                          "const": "500000"
+                        },
+                        "payer": {
+                          "type": "string"
+                        },
+                        "transaction": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "result_hash": {
+                      "type": "string",
+                      "pattern": "^sha256:[a-f0-9]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Preview authorization marker is missing. This is not a production x402 PaymentRequired wire response because PAY_TO is unbound."
+          },
+          "413": {
+            "description": "Request body exceeds 4096 bytes."
+          },
+          "422": {
+            "description": "Request contract or trading boundary rejected before service completion."
+          },
+          "503": {
+            "description": "Required deterministic evidence source unavailable, deterministic response contract invalid, or production payment remains disabled."
+          }
+        },
+        "x-bhrigu-x402": {
+          "version": 2,
+          "scheme": "exact",
+          "network": "eip155:8453",
+          "asset": "USDC",
+          "amount_atomic": "500000",
+          "preview_only": true,
+          "pay_to": null,
+          "settlement_enabled": false
+        },
+        "x-bazaar": {
+          "prepared": true,
+          "externally_registered": false,
+          "tags": [
+            "bitcoin",
+            "research",
+            "evidence",
+            "temporal-state",
+            "verification"
+          ]
+        },
+        "x-bhrigu-synthesis": {
+          "mode": "DETERMINISTIC_EVIDENCE_V0",
+          "provider": "NONE",
+          "provider_calls": 0
+        }
+      }
+    }
+  }
+}

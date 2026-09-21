@@ -1,0 +1,79 @@
+{
+  "schema_version": "bhrigu_agent_commerce_descriptor_v0",
+  "service": "BHRIGU BTC Evidence Answer V0",
+  "description": "Buy one bounded deterministic BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no model provider and no trading authority.",
+  "preview_only": true,
+  "production_payment_enabled": false,
+  "public_registration": false,
+  "pay_to_bound": false,
+  "endpoint": "/api/agent/btc/evidence-answer/v0",
+  "openapi": "/openapi/agent-commerce-v0.json",
+  "query_classes": [
+    "BTC_FIELD_NOW",
+    "BTC_CHANGE_MEMORY",
+    "BITCOIN_PROTOCOL"
+  ],
+  "limits": {
+    "request_body_bytes": 4096,
+    "question_chars": 280,
+    "visible_answer_lines": 5,
+    "sources": 12,
+    "web_search_calls": 0,
+    "provider_calls": 0
+  },
+  "x402": {
+    "version": 2,
+    "scheme": "exact",
+    "network": "eip155:8453",
+    "asset": "USDC",
+    "amount_atomic": "500000",
+    "pay_to": null,
+    "settlement_enabled": false,
+    "preview_authorization_header": "X-BHRIGU-x402-Preview: mock-authorized-v0",
+    "official_source": {
+      "package_family": "@x402/*",
+      "observed_package_version": "2.26.0",
+      "repository": "https://github.com/x402-foundation/x402",
+      "source_commit": "6323ec74c85607e706e0722dd294365a7fb57768",
+      "spec": "https://github.com/x402/x402/blob/main/specs/x402-specification-v2.md"
+    }
+  },
+  "mcp": {
+    "tool": "bhrigu_btc_evidence_answer",
+    "status": "CONTRACT_DECLARED_NOT_PUBLISHED",
+    "input": [
+      "query_class",
+      "locale",
+      "question",
+      "protocol_subject"
+    ]
+  },
+  "bazaar": {
+    "metadata_prepared": true,
+    "external_registration": false,
+    "description": "Buy one bounded deterministic BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no model provider and no trading authority.",
+    "tags": [
+      "bitcoin",
+      "research",
+      "evidence",
+      "temporal-state",
+      "verification"
+    ]
+  },
+  "boundary": {
+    "stateless": true,
+    "no_prior_turns": true,
+    "no_session_memory": true,
+    "no_client_tool_selection": true,
+    "no_client_source_urls": true,
+    "no_client_prompt_override": true,
+    "no_trading_signal": true,
+    "no_financial_advice": true,
+    "free_temporal_evidence_unchanged": true,
+    "human_clean_chat_unchanged": true,
+    "deterministic_v0_only": true,
+    "model_provider_calls_zero": true
+  },
+  "synthesis_mode": "DETERMINISTIC_EVIDENCE_V0",
+  "provider": "NONE"
+}

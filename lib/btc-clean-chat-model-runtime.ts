@@ -289,7 +289,10 @@ export function btcCleanChatProviderCallHardCostMicros(requestBody: Record<strin
 async function singleOpenAiResponse(body: Record<string, unknown>, guard?: BtcCleanChatRuntimeGuard): Promise<ModelResult> {
   const transport = resolveBtcCleanChatModelTransport();
   const requestBody = { model: transport.model, store: false, ...body };
-  await guard?.beforeProviderCall?.(btcCleanChatProviderCallHardCostMicros(requestBody));
+  const serializedBytes = Buffer.byteLength(JSON.stringify(requestBody), "utf8");
+  const hardCostMicros = btcCleanChatProviderCallHardCostMicros(requestBody);
+  await guard?.beforeProviderRequest?.({ serializedBytes, hardCostMicros });
+  await guard?.beforeProviderCall?.(hardCostMicros);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
   try {
@@ -1035,9 +1038,236 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
 }
 
 export type BtcCleanChatRuntimeGuard = {
+  beforeProviderRequest?: (bounds: { serializedBytes: number; hardCostMicros: number }) => Promise<void>;
   beforeProviderCall?: (hardCostMicros: number) => Promise<void>;
   afterProviderCall?: (usage: Usage) => Promise<void>;
 };
+
+export type BtcDeclaredMachineQueryClass =
+  | "BTC_FIELD_NOW"
+  | "BTC_CHANGE_MEMORY"
+  | "BITCOIN_PROTOCOL";
+
+export type BtcDeclaredMachineProtocolSubject =
+  | "overview"
+  | "supply"
+  | "halving"
+  | "subsidy"
+  | "fees"
+  | "difficulty"
+  | "mining"
+  | "utxo"
+  | "genesis"
+  | "consensus"
+  | "blocks"
+  | "satoshi_history"
+  | "bitcoin_origin"
+  | "genesis_history";
+
+export type BtcDeclaredMachineEvidenceTool = "snapshot" | "binance" | "bitcoin_protocol";
+
+export type BtcDeclaredMachineEvidenceResult = {
+  topic: string;
+  answer: string;
+  as_of: string;
+  sources: BtcCleanSource[];
+  evidence: {
+    accepted_snapshot: BtcCleanEvidenceState;
+    snapshot_memory: BtcCleanEvidenceState;
+    binance_current_field: BtcCleanEvidenceState;
+    bitcoin_protocol: BtcCleanEvidenceState;
+  };
+  usage: {
+    provider: typeof BTC_CLEAN_CHAT_PROVIDER | "NONE";
+    model: typeof BTC_CLEAN_CHAT_MODEL_ID | "DETERMINISTIC_EVIDENCE_V0";
+    input_tokens: number;
+    output_tokens: number;
+    web_search_calls: number;
+  };
+};
+
+export function btcDeclaredMachineTools(queryClass: BtcDeclaredMachineQueryClass): BtcDeclaredMachineEvidenceTool[] {
+  if (queryClass === "BTC_FIELD_NOW") return ["snapshot", "binance"];
+  if (queryClass === "BTC_CHANGE_MEMORY") return ["snapshot"];
+  return ["bitcoin_protocol"];
+}
+
+function declaredMachinePlan(
+  queryClass: BtcDeclaredMachineQueryClass,
+  protocolSubject: BtcDeclaredMachineProtocolSubject | null,
+): Plan {
+  const common = {
+    polymarket_history: false,
+    context_relation: "new" as const,
+    astro_bodies: [] as string[],
+    astro_phenomena: [] as BtcAstroPhenomenon[],
+    astro_timestamp_utc: null,
+    time_start: null,
+    time_end: null,
+    bitcoin_event: null,
+    astro_relation: "NONE" as const,
+    temporal_request: "NONE" as const,
+    answer_max_lines: 5,
+    web_reason: null,
+  };
+  if (queryClass === "BTC_FIELD_NOW") {
+    return {
+      ...common,
+      topic: "btc_market",
+      tools: btcDeclaredMachineTools(queryClass),
+      focus: "general_btc_field",
+      request_type: "fact",
+      visual_focus: "market_structure",
+      protocol_subject: null,
+    };
+  }
+  if (queryClass === "BTC_CHANGE_MEMORY") {
+    return {
+      ...common,
+      topic: "snapshot_memory",
+      tools: btcDeclaredMachineTools(queryClass),
+      focus: "change_memory",
+      request_type: "change",
+      visual_focus: "market_structure",
+      protocol_subject: null,
+    };
+  }
+  return {
+    ...common,
+    topic: "bitcoin_protocol",
+    tools: btcDeclaredMachineTools(queryClass),
+    focus: protocolSubject ?? "overview",
+    request_type: "explain",
+    visual_focus: "none",
+    protocol_subject: protocolSubject ?? "overview",
+  };
+}
+
+function compactMachineLine(value: string, max = 260): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function signedPct(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+function deterministicDeclaredMachineSynthesis(
+  locale: BtcCleanLocale,
+  queryClass: BtcDeclaredMachineQueryClass,
+  evidence: EvidenceBundle,
+): { topic: string; answer: string; usage: Usage } {
+  const ru = locale === "ru";
+  const boundaryLine = ru
+    ? "Исследовательское состояние; не торговый сигнал и не финансовая рекомендация."
+    : "Research state only; not a trading signal or financial advice.";
+
+  if (queryClass === "BTC_FIELD_NOW" && evidence.envelope?.ok && evidence.binance?.ok) {
+    const current = evidence.envelope.value.current;
+    const live = evidence.binance.snapshot;
+    const lines = ru
+      ? [
+          `Поле BTC: ${current.source_freshness}; snapshot ${current.source_generated_at_utc}.`,
+          `BTC ${current.price_usd.toFixed(0)}; 24ч ${signedPct(current.change_24h_pct)}; доминация ${current.btc_dominance_pct.toFixed(2)}%; field ${current.market_field_score.toFixed(1)} (${current.regime}).`,
+          `Binance BTCUSDT: mid ${live.derived.mid_price_usdt.toFixed(2)}; spread ${live.derived.spread_bps.toFixed(2)} bps; ${live.retrieved_at}.`,
+          boundaryLine,
+        ]
+      : [
+          `BTC field: ${current.source_freshness}; snapshot ${current.source_generated_at_utc}.`,
+          `BTC ${current.price_usd.toFixed(0)}; 24h ${signedPct(current.change_24h_pct)}; dominance ${current.btc_dominance_pct.toFixed(2)}%; field ${current.market_field_score.toFixed(1)} (${current.regime}).`,
+          `Binance BTCUSDT: mid ${live.derived.mid_price_usdt.toFixed(2)}; spread ${live.derived.spread_bps.toFixed(2)} bps; ${live.retrieved_at}.`,
+          boundaryLine,
+        ];
+    return { topic: "btc_market", answer: lines.map((line) => compactMachineLine(line)).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  if (queryClass === "BTC_CHANGE_MEMORY" && evidence.envelope?.ok) {
+    const memory = evidence.envelope.value.memory;
+    const synthesis = evidence.envelope.value.synthesis;
+    const changed = synthesis.what_changed[0] ?? synthesis.why_this_matters;
+    const lines = ru
+      ? [
+          `Память изменений BTC: ${memory.comparison_status}; сопоставимых метрик ${memory.comparable_metric_count}; методология совместима.`,
+          compactMachineLine(memory.transition_interpretation),
+          compactMachineLine(changed),
+          boundaryLine,
+        ]
+      : [
+          `BTC change memory: ${memory.comparison_status}; ${memory.comparable_metric_count} comparable metrics; methodology compatible.`,
+          compactMachineLine(memory.transition_interpretation),
+          compactMachineLine(changed),
+          boundaryLine,
+        ];
+    return { topic: "snapshot_memory", answer: lines.filter(Boolean).map((line) => compactMachineLine(line)).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  if (queryClass === "BITCOIN_PROTOCOL" && evidence.protocol) {
+    const projection = evidence.protocol;
+    const lines = [
+      compactMachineLine(projection.headline),
+      compactMachineLine(projection.direct_answer),
+      compactMachineLine(projection.source_boundary),
+      compactMachineLine(`${projection.proof_label}; state=${projection.answer_state}.`),
+    ];
+    return { topic: "bitcoin_protocol", answer: lines.filter(Boolean).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+}
+
+export async function runBtcDeclaredMachineEvidence(input: {
+  locale: BtcCleanLocale;
+  question: string;
+  queryClass: BtcDeclaredMachineQueryClass;
+  protocolSubject?: BtcDeclaredMachineProtocolSubject | null;
+}): Promise<BtcDeclaredMachineEvidenceResult> {
+  const plan = declaredMachinePlan(input.queryClass, input.protocolSubject ?? null);
+  const evidence = await collectEvidence(input.locale, input.question, plan);
+
+  if (input.queryClass === "BTC_FIELD_NOW" && (!evidence.envelope?.ok || !evidence.binance?.ok)) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+  if (
+    input.queryClass === "BTC_CHANGE_MEMORY"
+    && (
+      !evidence.envelope?.ok
+      || !evidence.envelope.value.memory.methodology_compatible
+      || evidence.envelope.value.memory.comparable_metric_count < 1
+    )
+  ) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+  if (input.queryClass === "BITCOIN_PROTOCOL" && !evidence.protocol) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+
+  const completed = deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
+
+  const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
+  const asOf = evidence.envelope?.ok
+    ? evidence.envelope.value.current.source_generated_at_utc
+    : new Date().toISOString();
+
+  return {
+    topic: completed.topic,
+    answer: completed.answer,
+    as_of: asOf,
+    sources: sourceRows(input.question, evidence),
+    evidence: {
+      accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),
+      snapshot_memory: state(
+        input.queryClass === "BTC_CHANGE_MEMORY",
+        Boolean(evidence.envelope?.ok && evidence.envelope.value.memory.methodology_compatible),
+      ),
+      binance_current_field: state(wants("binance"), Boolean(evidence.binance?.ok)),
+      bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
+    },
+    usage: {
+      provider: "NONE",
+      model: "DETERMINISTIC_EVIDENCE_V0",
+      ...completed.usage,
+    },
+  };
+}
 
 export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<BtcCleanChatResponse> {
   const priorTurns = input.priorTurns ?? [];

@@ -109,6 +109,19 @@ jobs:
             'scripts/run-btc-natural-followup-discovery-static-fixture.mjs',
             '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
           }
+          agent_commerce_v0_ci_authority={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            'lib/btc-agent-evidence-answer-v0.ts',
+            'lib/btc-agent-x402-preview-v0.ts',
+            'lib/btc-clean-chat-model-runtime.ts',
+            'pages/api/agent/btc/evidence-answer/v0.ts',
+            'public/.well-known/bhrigu-agent-commerce.json',
+            'public/openapi/agent-commerce-v0.json',
+            'tests/btc-agent-evidence-answer-v0-acceptance.ts',
+          }
           public_discovery_ci_closure={
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -142,6 +155,8 @@ jobs:
             print('SHARED_SCOPE_PASS commercial_access',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==ci_authority_repair:
             print('SHARED_SCOPE_PASS ci_authority_repair',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==agent_commerce_v0_ci_authority:
+            print('SHARED_SCOPE_PASS agent_commerce_v0_ci_authority',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==public_discovery_ci_closure:
             print('SHARED_SCOPE_PASS public_discovery_ci_closure',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           else:
