@@ -1254,23 +1254,25 @@ export async function runBtcDeclaredMachineEvidence(input: {
     throw new Error("MACHINE_SOURCE_UNAVAILABLE");
   }
 
-  const synthesis = declaredMachineProviderConfigured()
-    ? await synthesizeAnswer(
-        input.locale,
-        input.question,
-        [],
-        plan,
-        evidence,
-        undefined,
-        input.guard,
-      )
-    : deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
-  if ("status" in synthesis && synthesis.status !== "COMPLETE") {
-    throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
+  const providerConfigured = declaredMachineProviderConfigured();
+  let completed: { topic: string; answer: string; usage: Usage };
+  if (providerConfigured) {
+    const synthesis = await synthesizeAnswer(
+      input.locale,
+      input.question,
+      [],
+      plan,
+      evidence,
+      undefined,
+      input.guard,
+    );
+    if (synthesis.status === "OUTPUT_LIMIT") {
+      throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
+    }
+    completed = synthesis;
+  } else {
+    completed = deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
   }
-  const completed = "status" in synthesis
-    ? synthesis
-    : { status: "COMPLETE" as const, ...synthesis };
 
   const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
   const asOf = evidence.envelope?.ok
@@ -1292,8 +1294,8 @@ export async function runBtcDeclaredMachineEvidence(input: {
       bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
     },
     usage: {
-      provider: declaredMachineProviderConfigured() ? BTC_CLEAN_CHAT_PROVIDER : "NONE",
-      model: declaredMachineProviderConfigured() ? BTC_CLEAN_CHAT_MODEL_ID : "DETERMINISTIC_EVIDENCE_V0",
+      provider: providerConfigured ? BTC_CLEAN_CHAT_PROVIDER : "NONE",
+      model: providerConfigured ? BTC_CLEAN_CHAT_MODEL_ID : "DETERMINISTIC_EVIDENCE_V0",
       ...completed.usage,
     },
   };
