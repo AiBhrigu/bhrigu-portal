@@ -205,7 +205,6 @@ jobs:
               opts.add_argument(arg)
           driver=webdriver.Chrome(options=opts)
           wait=WebDriverWait(driver,30)
-          report={}
           try:
               driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
                   'mobile': True,
@@ -226,72 +225,12 @@ jobs:
               body_text=driver.find_element(By.TAG_NAME,'body').text
               articles=driver.find_elements(By.CSS_SELECTOR,'.planetGrid article')
               assert len(articles) == 10, len(articles)
-              dms=re.compile(r'^.{2,}\s(?:[0-9]|[12][0-9])°[0-5][0-9]′[0-5][0-9]″      - name: First HTTP semantic integrity
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
-        run: |
-          python3 - <<'PY'
-          from urllib.request import urlopen
-          def get(path): return urlopen('http://127.0.0.1:3000'+path,timeout=20).read().decode('utf-8')
-          ru=get('/astro?lang=ru'); en=get('/astro?lang=en')
-          for html,lang,other in ((ru,'ru','en'),(en,'en','ru')):
-            assert f'<html lang="{lang}"' in html
-            assert f'href="/?lang={lang}"' in html
-            assert f'href="/frey?lang={lang}"' in html
-            assert f'href="/orion?lang={lang}"' in html
-            assert f'href="/astro?lang={other}"' in html
-          ru_m=get('/ephemerides/2026/09?lang=ru'); en_m=get('/ephemerides/2026/09?lang=en')
-          assert 'Планетные эфемериды · сентябрь 2026' in ru_m
-          assert 'Planetary ephemerides · September 2026' in en_m
-          assert 'property="og:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
-          assert 'property="og:title" content="September 2026 ephemerides · BHRIGU"' in en_m
-          assert 'name="twitter:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
-          assert 'name="twitter:title" content="September 2026 ephemerides · BHRIGU"' in en_m
-          for html in (ru_m,en_m):
-            assert html.count('"temporalCoverage":"2026-09-01/2026-09-30"') >= 2
-            assert '"temporalCoverage":"2026-01-01/2026-12-31"' not in html
-          today_ru=get('/ephemerides?lang=ru'); today_en=get('/ephemerides?lang=en')
-          assert 'Небо сегодня.' in today_ru
-          assert 'The Sky Today.' in today_en
-          for html,label in ((today_ru,'Источник и проверяемость'),(today_en,'Source &amp; proof')):
-            assert label in html
-            assert 'data-sky-today="BHRIGU_SKY_TODAY_PHI_V0_1"' in html
-            assert 'data-phi-cosmograph="BHRIGU_PHI_COSMOGRAPH_V0_1"' in html
-            assert 'data-zero-aries="left"' in html
-            assert 'data-ninety-cancer="bottom"' in html
-            assert 'data-one-eighty-libra="right"' in html
-            assert 'data-two-seventy-capricorn="top"' in html
-            assert 'data-observer-origin="EARTH_PHI"' in html
-            assert 'AiBhrigu/orion_ai' in html
-            assert '0b9998c669b9b50e926b1891604b1969c642e046' in html
-            assert 'CANONICAL_PUBLIC_SAFE_DAILY_EXPORT' in html
-            assert '28bfad7e2d12617757e4f742e1722f2965b6a2f6369b50973e4890f1f8f6781a' in html
-          print('ASTRO_EPHEMERIDES_P1_FIRST_HTTP=PASS')
-          print('SKY_NOW_PHI_FIRST_HTTP=PASS')
-          PY
-
-      - name: Upload mobile visual evidence
-        if: always() && env.BHRIGU_SHARED_SCOPE != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: astro-ephemerides-mobile-${{ env.HEAD_SHA }}
-          path: |
-            /tmp/astro-ephemerides-mobile-ru-390x844.png
-            /tmp/astro-ephemerides-mobile-ru.json
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: Stop server
-        if: always()
-        run: |
-          test ! -f /tmp/astro-p1.pid || kill "$(cat /tmp/astro-p1.pid)" || true
-          test ! -f /tmp/astro-p1.log || tail -n 80 /tmp/astro-p1.log
-)
               positions=[]
               for article in articles:
                   assert article.is_displayed(), article.text
                   name=article.find_element(By.TAG_NAME,'strong').text.strip()
                   position=article.find_element(By.TAG_NAME,'small').text.strip()
-                  assert dms.match(f'{name} {position}'), (name, position)
+                  assert re.fullmatch(r'.{2,}\s(?:[0-9]|[12][0-9])°[0-5][0-9]′[0-5][0-9]″', f'{name} {position}'), (name, position)
                   assert driver.execute_script('return arguments[0].scrollWidth <= arguments[0].clientWidth + 2', article), f'article overflow: {name}'
                   rect=driver.execute_script('const r=arguments[0].getBoundingClientRect(); return {left:r.left,right:r.right,width:r.width}', article)
                   assert rect['left'] >= -1 and rect['right'] <= inner_width + 1, (name, rect, inner_width)
@@ -383,6 +322,17 @@ jobs:
           print('ASTRO_EPHEMERIDES_P1_FIRST_HTTP=PASS')
           print('SKY_NOW_PHI_FIRST_HTTP=PASS')
           PY
+
+      - name: Upload mobile visual evidence
+        if: always() && env.BHRIGU_SHARED_SCOPE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: astro-ephemerides-mobile-pr286
+          path: |
+            /tmp/astro-ephemerides-mobile-ru-390x844.png
+            /tmp/astro-ephemerides-mobile-ru.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Stop server
         if: always()
