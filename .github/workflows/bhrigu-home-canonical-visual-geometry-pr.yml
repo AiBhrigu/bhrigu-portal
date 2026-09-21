@@ -36,6 +36,16 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      - name: Detect Home cosmographic scene authority
+        shell: bash
+        run: |
+          if grep -Fq 'Φ COSMOGRAPHIC SCENE RESTORATION · DESKTOP PASS v0.1' pages/index.module.css; then
+            echo 'BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=true' >> "$GITHUB_ENV"
+            echo 'HOME_GEOMETRY_AUTHORITY=COSMOGRAPHIC_SCENE'
+          else
+            echo 'BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=false' >> "$GITHUB_ENV"
+            echo 'HOME_GEOMETRY_AUTHORITY=LEGACY_MARKET'
+          fi
       - name: Start exact-head preview
         run: |
           set -euo pipefail
@@ -51,6 +61,7 @@ jobs:
       - name: Install visual driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
       - name: Verify canonical geometry and first fold
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           import json, os, xml.etree.ElementTree as ET
@@ -124,6 +135,76 @@ jobs:
           print(json.dumps(report,ensure_ascii=False,indent=2))
           if report["failures"]: raise SystemExit(f"HOME_CANONICAL_VISUAL_GEOMETRY=FAIL {report['failures']}")
           print("HOME_CANONICAL_VISUAL_GEOMETRY=PASS")
+          PY
+      - name: Verify cosmographic scene geometry and first fold
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base=os.environ["BASE"].rstrip("/")
+          artifacts=Path("artifacts")
+          report={"schema_version":"bhrigu_home_cosmographic_scene_geometry_v0_1","checks":{},"failures":[]}
+          def check(name,value,detail=None):
+              ok=bool(value); report["checks"][name]=ok
+              if not ok:
+                  report["failures"].append(name)
+                  if detail is not None: report.setdefault("detail",{})[name]=detail
+
+          options=Options()
+          for arg in ("--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu","--hide-scrollbars","--window-size=1440,1100"):
+              options.add_argument(arg)
+          driver=webdriver.Chrome(options=options)
+          try:
+              driver.set_window_size(1440,1100); driver.get(f"{base}/?lang=en")
+              WebDriverWait(driver,30).until(lambda d:d.find_element(By.ID,"home-title").is_displayed())
+              result=driver.execute_script("""
+                const q=s=>document.querySelector(s);
+                const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+                const relation=q('[data-home-relation]');
+                const human=q('[data-relation-role="human-entry"]');
+                const bridge=q('[data-relation-role="intelligence-bridge"]');
+                const phi=q('[data-relation-role="phi-field"]');
+                const ret=q('[data-relation-role="human-return"]');
+                const stage=human.parentElement;
+                return {
+                  relation:rect(relation),human:rect(human),bridge:rect(bridge),phi:rect(phi),ret:rect(ret),
+                  stageDisplay:getComputedStyle(stage).display,
+                  humanPosition:getComputedStyle(human).position,
+                  bridgePosition:getComputedStyle(bridge).position,
+                  phiPosition:getComputedStyle(phi).position,
+                  phiRadius:getComputedStyle(phi).borderRadius,
+                  phiBorder:getComputedStyle(phi).borderTopWidth,
+                  fieldBefore:getComputedStyle(relation,'::before').backgroundImage,
+                  overflow:document.documentElement.scrollWidth-window.innerWidth,
+                  viewport:{width:innerWidth,height:innerHeight},
+                };
+              """)
+              check("one_continuous_field",len(driver.find_elements(By.CSS_SELECTOR,"[data-home-relation]"))==1)
+              check("stage_is_spatial_not_grid",result["stageDisplay"]=="block",result)
+              check("human_spatial_locus",result["humanPosition"]=="absolute",result)
+              check("bridge_spatial_locus",result["bridgePosition"]=="absolute",result)
+              check("phi_spatial_field",result["phiPosition"]=="absolute" and result["phiBorder"]=="0px",result)
+              check("phi_field_not_rectangular","50%" in result["phiRadius"],result)
+              check("field_depth_present",result["fieldBefore"]!="none",result)
+              check("human_return_first_fold",result["ret"]["top"]>=0 and result["ret"]["bottom"]<=result["viewport"]["height"],result)
+              check("relation_first_fold",result["relation"]["top"]>=0 and result["relation"]["bottom"]<=result["viewport"]["height"]+8,result)
+              check("no_horizontal_overflow",result["overflow"]<=1,result)
+              driver.save_screenshot(str(artifacts/"home-cosmographic-scene-geometry-desktop.png"))
+          finally:
+              driver.quit()
+          report["status"]="PASS" if not report["failures"] else "FAIL"
+          (artifacts/"home-cosmographic-scene-geometry-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          if report["failures"]:
+              raise SystemExit("HOME_COSMOGRAPHIC_SCENE_GEOMETRY=FAIL "+repr(report["failures"]))
+          print("HOME_COSMOGRAPHIC_SCENE_GEOMETRY=PASS")
           PY
       - name: Stop preview
         if: always()

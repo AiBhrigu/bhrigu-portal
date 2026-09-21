@@ -40,7 +40,16 @@ jobs:
           git fetch origin master
           python3 - <<'PY'
           import os, subprocess
+          # Home cosmographic-scene authority: this workflow pair plus pages/index.js and pages/index.module.css is the exact bounded scene scope.
           expected = {
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              'pages/index.js',
+              'pages/index.module.css',
+          }
+          home_cosmographic_scene_ci_authority = {
+              '.github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml',
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
               'pages/index.js',
@@ -180,7 +189,11 @@ jobs:
               print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == home_phi_visual_truth:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
-          elif actual != expected:
+          elif actual == expected:
+              print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == home_cosmographic_scene_ci_authority:
+              print('SHARED_SCOPE_PASS home_cosmographic_scene_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          else:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
           PY

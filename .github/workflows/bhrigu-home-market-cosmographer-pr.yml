@@ -59,7 +59,19 @@ jobs:
       - name: Install visual driver
         run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
 
+      - name: Detect Home cosmographic scene authority
+        shell: bash
+        run: |
+          if grep -Fq 'Φ COSMOGRAPHIC SCENE RESTORATION · DESKTOP PASS v0.1' pages/index.module.css; then
+            echo 'BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=true' >> "$GITHUB_ENV"
+            echo 'HOME_SCENE_AUTHORITY=BOUND'
+          else
+            echo 'BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=false' >> "$GITHUB_ENV"
+            echo 'HOME_SCENE_AUTHORITY=LEGACY'
+          fi
+
       - name: Verify desktop mobile semantics and routes
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           import json
@@ -482,6 +494,98 @@ jobs:
           print("HERO_BGRIGU_DUPLICATE=0")
           print("HERO_LANGUAGE_CONTROL_DUPLICATE=0")
           print("BHRIGU_HOME_ACCEPTANCE=PASS")
+          PY
+
+      - name: Verify cosmographic scene desktop semantics
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["HOME_ACCEPTANCE_BASE"].rstrip("/")
+          artifacts = Path("artifacts")
+          report = {"schema_version":"bhrigu_home_cosmographic_scene_acceptance_v0_1","checks":{},"failures":[]}
+
+          def check(name, value, detail=None):
+              ok=bool(value); report["checks"][name]=ok
+              if not ok:
+                  report["failures"].append(name)
+                  if detail is not None: report.setdefault("detail",{})[name]=detail
+
+          options=Options()
+          for arg in ("--headless=new","--no-sandbox","--disable-dev-shm-usage","--disable-gpu","--hide-scrollbars","--window-size=1440,1100"):
+              options.add_argument(arg)
+          driver=webdriver.Chrome(options=options)
+          try:
+              driver.set_window_size(1440,1100)
+              driver.get(f"{base}/?lang=en")
+              WebDriverWait(driver,30).until(lambda d:d.find_element(By.ID,"home-title").is_displayed())
+              selectors={
+                  "relation":"[data-home-relation]",
+                  "human":"[data-relation-role='human-entry']",
+                  "frey":"[data-human-capability='frey']",
+                  "bridge":"[data-relation-role='intelligence-bridge']",
+                  "agent":"[data-agent-capability='bhrigu-btc-evidence-answer-v0']",
+                  "phi":"[data-relation-role='phi-field']",
+                  "return":"[data-relation-role='human-return']",
+                  "proof":"[data-home-btc-proof-object]",
+              }
+              nodes={k:driver.find_element(By.CSS_SELECTOR,v) for k,v in selectors.items()}
+              for name,node in nodes.items():
+                  check(f"{name}_visible",node.is_displayed())
+
+              nested=driver.execute_script("""
+                const r=document.querySelector('[data-home-relation]');
+                const h=document.querySelector('[data-relation-role="human-entry"]');
+                const f=document.querySelector('[data-human-capability="frey"]');
+                const b=document.querySelector('[data-relation-role="intelligence-bridge"]');
+                const a=document.querySelector('[data-agent-capability="bhrigu-btc-evidence-answer-v0"]');
+                const p=document.querySelector('[data-relation-role="phi-field"]');
+                const ret=document.querySelector('[data-relation-role="human-return"]');
+                return r.contains(h)&&h.contains(f)&&r.contains(b)&&b.contains(a)&&r.contains(p)&&r.contains(ret);
+              """)
+              check("single_relation_field",nested)
+
+              styles=driver.execute_script("""
+                const keys={
+                  human:document.querySelector('[data-relation-role="human-entry"]'),
+                  bridge:document.querySelector('[data-relation-role="intelligence-bridge"]'),
+                  phi:document.querySelector('[data-relation-role="phi-field"]')
+                };
+                return Object.fromEntries(Object.entries(keys).map(([k,e])=>[k,{
+                  position:getComputedStyle(e).position,
+                  borderTopWidth:getComputedStyle(e).borderTopWidth,
+                  borderRadius:getComputedStyle(e).borderRadius
+                }]));
+              """)
+              check("scene_nodes_spatial",all(styles[k]["position"]=="absolute" for k in ("human","bridge","phi")),styles)
+              check("no_three_card_borders",all(styles[k]["borderTopWidth"]=="0px" for k in ("human","bridge","phi")),styles)
+
+              ret=nodes["return"].rect
+              check("human_return_first_screen",ret["y"]>=0 and ret["y"]+ret["height"]<=1100,ret)
+              body=driver.find_element(By.TAG_NAME,"body").text
+              check("root_identity_present","Φ RESEARCH SYSTEMS" in body.upper())
+              check("human_judgment_present","HUMAN JUDGMENT" in body.upper())
+              check("btc_corridor_present",nodes["proof"].is_displayed() and bool(nodes["proof"].text.strip()),nodes["proof"].text)
+              overflow=driver.execute_script("return document.documentElement.scrollWidth-window.innerWidth")
+              check("no_horizontal_overflow",overflow<=1,overflow)
+              driver.save_screenshot(str(artifacts/"bhrigu-home-cosmographic-scene-desktop.png"))
+          finally:
+              driver.quit()
+
+          report["status"]="PASS" if not report["failures"] else "FAIL"
+          (artifacts/"bhrigu-home-cosmographic-scene-report.json").write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          print(json.dumps(report,ensure_ascii=False,indent=2))
+          if report["failures"]:
+              raise SystemExit("BHRIGU_HOME_COSMOGRAPHIC_SCENE=FAIL "+repr(report["failures"]))
+          print("BHRIGU_HOME_COSMOGRAPHIC_SCENE=PASS")
           PY
 
       - name: Verify bound three-object footer authority
