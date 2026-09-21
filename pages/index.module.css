@@ -197,9 +197,6 @@
 .systemMapTopline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; color: rgba(128, 188, 227, 0.78); font-size: 8px; font-weight: 750; letter-spacing: 0.18em; text-transform: uppercase; }
 .systemMapLink { display: inline-flex; align-items: center; gap: 7px; color: rgba(128, 188, 227, 0.9) !important; text-decoration: none !important; border-bottom: 1px solid rgba(98, 168, 216, 0.34); padding-bottom: 4px; }
 .systemMapLink:hover, .systemMapLink:focus-visible { color: var(--home-gold-bright) !important; border-bottom-color: rgba(224, 196, 127, 0.66); outline: none; }
-.homeFieldAnchorGlyph { position: absolute !important; z-index: 3; left: 50%; top: 18px; width: 34px; height: 34px; display: grid; place-items: center; transform: translateX(-50%); border: 1px solid rgba(200, 164, 90, 0.52); border-radius: 50%; background: radial-gradient(circle, rgba(200, 164, 90, 0.08), transparent 68%); pointer-events: none; }
-.homeFieldAnchorGlyph::after { content: ""; position: absolute; inset: -4px; border: 1px solid rgba(200, 164, 90, 0.14); border-radius: 50%; }
-.homeFieldAnchorGlyph b { color: var(--home-gold-bright); font: 700 18px/1 Georgia, "Times New Roman", serif; }
 .systemRoot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px 12px; padding: 10px 0 11px; border: 0; border-bottom: 1px solid rgba(200, 164, 90, 0.28); background: transparent; }
 .systemRoot strong { color: var(--home-ink); font-size: 15px; letter-spacing: 0.12em; }
 .systemRoot small { color: rgba(224, 196, 127, 0.78); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }

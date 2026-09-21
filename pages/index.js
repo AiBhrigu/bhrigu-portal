@@ -6,7 +6,7 @@ import {
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 import PublicSupportRoute from "../components/btc/PublicSupportRoute";
-import { FieldAnchorGlyph, RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
+import { RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
@@ -472,7 +472,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
         </div>
         <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
-            <FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>
             <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
             <div className={styles.systemRoot} data-system-role="boundary"><strong>MARKET COSMOGRAPHER</strong><small>{copy.systemMapRoot}</small></div>
             <div className={styles.systemBranches} data-system-relations="true">
