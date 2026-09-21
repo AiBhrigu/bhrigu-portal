@@ -21,7 +21,7 @@ export function normalizeZodiacLongitude(value: number): number {
 
 export function projectZodiacPosition(value: number) {
   const normalized = normalizeZodiacLongitude(value);
-  const roundedArcseconds = Math.round(normalized * ARCSECONDS_PER_DEGREE);
+  const roundedArcseconds = Math.round(normalized * ARCSECONDS_PER_DEGREE + 1e-9);
   const totalArcseconds = ((roundedArcseconds % ARCSECONDS_PER_CIRCLE) + ARCSECONDS_PER_CIRCLE) % ARCSECONDS_PER_CIRCLE;
   const signIndex = Math.floor(totalArcseconds / ARCSECONDS_PER_SIGN);
   const withinSign = totalArcseconds - signIndex * ARCSECONDS_PER_SIGN;
