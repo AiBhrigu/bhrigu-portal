@@ -14,6 +14,8 @@ const PAGE_META = {
 
 const PROOF_ROUTES = {
   temporal: "https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api",
+  frey: "https://www.bhrigu.io/reading?lang=en",
+  agent: "https://www.bhrigu.io/openapi/agent-commerce-v0.json",
   ephemerides: "https://www.bhrigu.io/ephemerides?lang=en",
   astro: "https://www.bhrigu.io/astro?lang=en",
   btc: "https://www.bhrigu.io/?lang=en",
@@ -266,6 +268,24 @@ const PROOF_OBJECTS = [
     status: "PROVEN PUBLIC AUTHORITY SURFACE",
     href: PROOF_ROUTES.phi,
   },
+  {
+    number: "07",
+    className: "Human / Temporal Interface",
+    title: "Frey",
+    description: "Public Human ↔ AI temporal interface with an explicit time anchor, structural state, interpretation, navigation and visible boundary.",
+    cta: "Open Frey →",
+    status: "PROVEN PUBLIC HUMAN TEMPORAL INTERFACE",
+    href: PROOF_ROUTES.frey,
+  },
+  {
+    number: "08",
+    className: "AI / Agent Machine Capability",
+    title: "BHRIGU BTC Evidence Answer V0",
+    description: "Production-deployed deterministic agent capability for bounded Bitcoin evidence queries, with public discovery, OpenAPI and explicit no-payment/no-settlement boundaries.",
+    cta: "Inspect agent contract →",
+    status: "PROVEN / PAYMENT DISABLED",
+    href: PROOF_ROUTES.agent,
+  },
 ];
 
 const METHOD = [
@@ -431,6 +451,14 @@ const RU_TEXT = new Map([
   ["Public Architecture Layer", "Публичный архитектурный слой"],
   ["Public-safe system hierarchy, selected repositories, proof surfaces, machine-readable discovery routes and protected-IP boundary.", "Безопасная для публикации иерархия системы, избранные репозитории, поверхности доказательств, машиночитаемые маршруты обнаружения и граница защищённой интеллектуальной собственности."],
   ["Inspect public proof ↗", "Проверить публичные доказательства ↗"],
+  ["Human / Temporal Interface", "Человек / темпоральный интерфейс"],
+  ["Public Human ↔ AI temporal interface with an explicit time anchor, structural state, interpretation, navigation and visible boundary.", "Публичный темпоральный интерфейс Человек ↔ AI с явным временным якорем, структурным состоянием, интерпретацией, навигацией и видимой границей."],
+  ["Open Frey →", "Открыть Frey →"],
+  ["PROVEN PUBLIC HUMAN TEMPORAL INTERFACE", "ДОКАЗАННЫЙ ПУБЛИЧНЫЙ ТЕМПОРАЛЬНЫЙ ИНТЕРФЕЙС"],
+  ["AI / Agent Machine Capability", "AI / машинная возможность для агентов"],
+  ["Production-deployed deterministic agent capability for bounded Bitcoin evidence queries, with public discovery, OpenAPI and explicit no-payment/no-settlement boundaries.", "Развёрнутая в production детерминированная возможность для агентов: ограниченные запросы к доказательствам Bitcoin, публичное обнаружение, OpenAPI и явные границы — оплата и расчёты отключены."],
+  ["Inspect agent contract →", "Проверить контракт агента →"],
+  ["PROVEN / PAYMENT DISABLED", "ДОКАЗАНО / ОПЛАТА ОТКЛЮЧЕНА"],
   ["PROVEN", "ДОКАЗАНО"],
   ["BOUNDED", "ОГРАНИЧЕНО"],
   ["PROVEN / BOUNDED BY MODULE", "ДОКАЗАНО / ОГРАНИЧЕНО ПО МОДУЛЮ"],
@@ -626,7 +654,7 @@ function SystemsStructuredData({ locale }) {
       {
         "@type": "ItemList",
         name: "public_proof",
-        numberOfItems: 6,
+        numberOfItems: 8,
         itemListElement: PROOF_OBJECTS.map((item, index) => ({
           "@type": "ListItem",
           position: index + 1,
