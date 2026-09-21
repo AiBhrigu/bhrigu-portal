@@ -289,7 +289,10 @@ export function btcCleanChatProviderCallHardCostMicros(requestBody: Record<strin
 async function singleOpenAiResponse(body: Record<string, unknown>, guard?: BtcCleanChatRuntimeGuard): Promise<ModelResult> {
   const transport = resolveBtcCleanChatModelTransport();
   const requestBody = { model: transport.model, store: false, ...body };
-  await guard?.beforeProviderCall?.(btcCleanChatProviderCallHardCostMicros(requestBody));
+  const serializedBytes = Buffer.byteLength(JSON.stringify(requestBody), "utf8");
+  const hardCostMicros = btcCleanChatProviderCallHardCostMicros(requestBody);
+  await guard?.beforeProviderRequest?.({ serializedBytes, hardCostMicros });
+  await guard?.beforeProviderCall?.(hardCostMicros);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), MODEL_TIMEOUT_MS);
   try {
@@ -1035,9 +1038,177 @@ async function synthesizeAnswer(locale: BtcCleanLocale, question: string, priorT
 }
 
 export type BtcCleanChatRuntimeGuard = {
+  beforeProviderRequest?: (bounds: { serializedBytes: number; hardCostMicros: number }) => Promise<void>;
   beforeProviderCall?: (hardCostMicros: number) => Promise<void>;
   afterProviderCall?: (usage: Usage) => Promise<void>;
 };
+
+export type BtcDeclaredMachineQueryClass =
+  | "BTC_FIELD_NOW"
+  | "BTC_CHANGE_MEMORY"
+  | "BITCOIN_PROTOCOL";
+
+export type BtcDeclaredMachineProtocolSubject =
+  | "overview"
+  | "supply"
+  | "halving"
+  | "subsidy"
+  | "fees"
+  | "difficulty"
+  | "mining"
+  | "utxo"
+  | "genesis"
+  | "consensus"
+  | "blocks"
+  | "satoshi_history"
+  | "bitcoin_origin"
+  | "genesis_history";
+
+export type BtcDeclaredMachineEvidenceTool = "snapshot" | "binance" | "bitcoin_protocol";
+
+export type BtcDeclaredMachineEvidenceResult = {
+  topic: string;
+  answer: string;
+  as_of: string;
+  sources: BtcCleanSource[];
+  evidence: {
+    accepted_snapshot: BtcCleanEvidenceState;
+    snapshot_memory: BtcCleanEvidenceState;
+    binance_current_field: BtcCleanEvidenceState;
+    bitcoin_protocol: BtcCleanEvidenceState;
+  };
+  usage: {
+    provider: typeof BTC_CLEAN_CHAT_PROVIDER;
+    model: typeof BTC_CLEAN_CHAT_MODEL_ID;
+    input_tokens: number;
+    output_tokens: number;
+    web_search_calls: number;
+  };
+};
+
+export function btcDeclaredMachineTools(queryClass: BtcDeclaredMachineQueryClass): BtcDeclaredMachineEvidenceTool[] {
+  if (queryClass === "BTC_FIELD_NOW") return ["snapshot", "binance"];
+  if (queryClass === "BTC_CHANGE_MEMORY") return ["snapshot"];
+  return ["bitcoin_protocol"];
+}
+
+function declaredMachinePlan(
+  queryClass: BtcDeclaredMachineQueryClass,
+  protocolSubject: BtcDeclaredMachineProtocolSubject | null,
+): Plan {
+  const common = {
+    polymarket_history: false,
+    context_relation: "new" as const,
+    astro_bodies: [] as string[],
+    astro_phenomena: [] as BtcAstroPhenomenon[],
+    astro_timestamp_utc: null,
+    time_start: null,
+    time_end: null,
+    bitcoin_event: null,
+    astro_relation: "NONE" as const,
+    temporal_request: "NONE" as const,
+    answer_max_lines: 5,
+    web_reason: null,
+  };
+  if (queryClass === "BTC_FIELD_NOW") {
+    return {
+      ...common,
+      topic: "btc_market",
+      tools: btcDeclaredMachineTools(queryClass),
+      focus: "general_btc_field",
+      request_type: "fact",
+      visual_focus: "market_structure",
+      protocol_subject: null,
+    };
+  }
+  if (queryClass === "BTC_CHANGE_MEMORY") {
+    return {
+      ...common,
+      topic: "snapshot_memory",
+      tools: btcDeclaredMachineTools(queryClass),
+      focus: "change_memory",
+      request_type: "change",
+      visual_focus: "market_structure",
+      protocol_subject: null,
+    };
+  }
+  return {
+    ...common,
+    topic: "bitcoin_protocol",
+    tools: btcDeclaredMachineTools(queryClass),
+    focus: protocolSubject ?? "overview",
+    request_type: "explain",
+    visual_focus: "none",
+    protocol_subject: protocolSubject ?? "overview",
+  };
+}
+
+export async function runBtcDeclaredMachineEvidence(input: {
+  locale: BtcCleanLocale;
+  question: string;
+  queryClass: BtcDeclaredMachineQueryClass;
+  protocolSubject?: BtcDeclaredMachineProtocolSubject | null;
+  guard?: BtcCleanChatRuntimeGuard;
+}): Promise<BtcDeclaredMachineEvidenceResult> {
+  const plan = declaredMachinePlan(input.queryClass, input.protocolSubject ?? null);
+  const evidence = await collectEvidence(input.locale, input.question, plan, input.guard);
+
+  if (input.queryClass === "BTC_FIELD_NOW" && (!evidence.envelope?.ok || !evidence.binance?.ok)) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+  if (
+    input.queryClass === "BTC_CHANGE_MEMORY"
+    && (
+      !evidence.envelope?.ok
+      || !evidence.envelope.value.memory.methodology_compatible
+      || evidence.envelope.value.memory.comparable_metric_count < 1
+    )
+  ) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+  if (input.queryClass === "BITCOIN_PROTOCOL" && !evidence.protocol) {
+    throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+  }
+
+  const synthesis = await synthesizeAnswer(
+    input.locale,
+    input.question,
+    [],
+    plan,
+    evidence,
+    undefined,
+    input.guard,
+  );
+  if (synthesis.status !== "COMPLETE") {
+    throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
+  }
+
+  const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
+  const asOf = evidence.envelope?.ok
+    ? evidence.envelope.value.current.source_generated_at_utc
+    : new Date().toISOString();
+
+  return {
+    topic: synthesis.topic,
+    answer: synthesis.answer,
+    as_of: asOf,
+    sources: sourceRows(input.question, evidence),
+    evidence: {
+      accepted_snapshot: state(wants("snapshot"), Boolean(evidence.envelope?.ok)),
+      snapshot_memory: state(
+        input.queryClass === "BTC_CHANGE_MEMORY",
+        Boolean(evidence.envelope?.ok && evidence.envelope.value.memory.methodology_compatible),
+      ),
+      binance_current_field: state(wants("binance"), Boolean(evidence.binance?.ok)),
+      bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
+    },
+    usage: {
+      provider: BTC_CLEAN_CHAT_PROVIDER,
+      model: BTC_CLEAN_CHAT_MODEL_ID,
+      ...synthesis.usage,
+    },
+  };
+}
 
 export async function runBtcCleanChatModel(input: { locale: BtcCleanLocale; question: string; priorTurns?: BtcCleanPriorTurn[]; fieldContext?: BtcResearchFieldModelContext; guard?: BtcCleanChatRuntimeGuard }): Promise<BtcCleanChatResponse> {
   const priorTurns = input.priorTurns ?? [];
