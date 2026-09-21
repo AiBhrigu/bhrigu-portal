@@ -127,6 +127,9 @@ const COPY = {
     humanAnchor: "HUMAN",
     entryCoordinate: "ENTRY COORDINATE",
     entryInput: "QUESTION · STATE · TIME",
+    humanObject: "FREY",
+    humanResult: "INTERPRETATION / NAVIGATION",
+    humanState: "PUBLIC HUMAN TEMPORAL INTERFACE",
     intelligenceBridge: "AI / COSMOGRAPHER",
     intelligenceBridgeMeta: "RELATION · INTERPRETATION",
     agentRole: "AI AGENT",
@@ -138,7 +141,7 @@ const COPY = {
     returnLabel: "ORIENTATION",
     returnValue: "HUMAN JUDGMENT",
     corridorEyebrow: "CURRENT LIVE APPLICATION",
-    relationAria: "One human enters with a question, state and time. AI and Cosmographer mediate the relation with the Φ field. The subordinate AI-agent position is bound to BHRIGU BTC Evidence Answer V0: machine inquiry returns bounded, verified Bitcoin evidence through deterministic public discovery. Evidence, memory and change return as orientation, while final judgment remains with the human.",
+    relationAria: "One human enters with a question, state and time through Frey, the public human temporal interface for interpretation and navigation. AI and Cosmographer mediate the relation with the Φ field. The subordinate AI-agent position is bound to BHRIGU BTC Evidence Answer V0: machine inquiry returns bounded, verified Bitcoin evidence through deterministic public discovery. Evidence, memory and change return as orientation, while final judgment remains with the human.",
     category: "AI MARKET INTELLIGENCE SYSTEM",
     h1Lead: "See what changed in Bitcoin —",
     h1Close: "and what would change the current read.",
@@ -255,6 +258,9 @@ const COPY = {
     humanAnchor: "ЧЕЛОВЕК",
     entryCoordinate: "ТОЧКА ВХОДА",
     entryInput: "ВОПРОС · СОСТОЯНИЕ · ВРЕМЯ",
+    humanObject: "FREY",
+    humanResult: "ИНТЕРПРЕТАЦИЯ / НАВИГАЦИЯ",
+    humanState: "ПУБЛИЧНЫЙ ТЕМПОРАЛЬНЫЙ ИНТЕРФЕЙС ЧЕЛОВЕКА",
     intelligenceBridge: "AI / КОСМОГРАФ",
     intelligenceBridgeMeta: "СВЯЗЬ · ИНТЕРПРЕТАЦИЯ",
     agentRole: "AI-АГЕНТ",
@@ -266,7 +272,7 @@ const COPY = {
     returnLabel: "ОРИЕНТАЦИЯ",
     returnValue: "СУЖДЕНИЕ ЧЕЛОВЕКА",
     corridorEyebrow: "ТЕКУЩЕЕ ЖИВОЕ ПРИЛОЖЕНИЕ",
-    relationAria: "Человек входит в систему со своим вопросом, состоянием и временем. AI и Космограф связывают его с полем Φ. Подчинённая позиция AI-агента связана с BHRIGU BTC Evidence Answer V0: машинный запрос возвращает ограниченные проверенные Bitcoin-доказательства через детерминированное публичное обнаружение. Доказательства, память и изменение возвращаются как ориентация, а окончательное суждение остаётся за человеком.",
+    relationAria: "Человек входит в систему со своим вопросом, состоянием и временем через Frey — публичный темпоральный интерфейс человека для интерпретации и навигации. AI и Космограф связывают его с полем Φ. Подчинённая позиция AI-агента связана с BHRIGU BTC Evidence Answer V0: машинный запрос возвращает ограниченные проверенные Bitcoin-доказательства через детерминированное публичное обнаружение. Доказательства, память и изменение возвращаются как ориентация, а окончательное суждение остаётся за человеком.",
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ",
     h1Lead: "Что изменилось в Bitcoin —",
     h1Close: "и что изменит текущее чтение.",
@@ -403,6 +409,13 @@ function HomeRelation({ copy }) {
           <small>{copy.entryCoordinate}</small>
           <strong>{copy.humanAnchor}</strong>
           <span>{copy.entryInput}</span>
+          <span className={styles.humanCapability} data-human-capability="frey" data-human-state="verified-public-temporal-interface">
+            <b aria-hidden="true">↓</b>
+            <strong>{copy.humanObject}</strong>
+            <b aria-hidden="true">↓</b>
+            <small>{copy.humanResult}</small>
+            <em>{copy.humanState}</em>
+          </span>
         </div>
         <div className={styles.relationRoute} aria-hidden="true"><i /></div>
         <div className={styles.intelligenceBridge} data-relation-role="intelligence-bridge">
