@@ -18,6 +18,7 @@ on:
       - tests/astro-sky-now-phi-cosmograph-acceptance.ts
       - .github/workflows/astro-ephemerides-p1-integrity-pr.yml
       - .github/scripts/verify-btc-public-acceptance-scope.py
+      - .github/workflows/btc-clean-chat-v1-pr.yml
 
 permissions:
   contents: read
@@ -63,6 +64,7 @@ jobs:
           sexagesimal_repair={
             '.github/scripts/verify-btc-public-acceptance-scope.py',
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
             'components/astro/BhriguPhiCosmograph.tsx',
             'components/astro/PublicEphemeridesToday.tsx',
             'components/astro/PublicEphemeridesV1.tsx',
@@ -181,6 +183,163 @@ jobs:
           done
           cat /tmp/astro-p1.log
           exit 1
+
+      - name: Install mobile browser client
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        run: python3 -m pip install --disable-pip-version-check selenium==4.34.2
+
+      - name: Today RU mobile runtime visual acceptance
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.support.ui import WebDriverWait
+          from selenium.webdriver.support import expected_conditions as EC
+
+          base='http://127.0.0.1:3000'
+          opts=webdriver.ChromeOptions()
+          for arg in ('--headless=new','--no-sandbox','--disable-dev-shm-usage','--disable-gpu'):
+              opts.add_argument(arg)
+          driver=webdriver.Chrome(options=opts)
+          wait=WebDriverWait(driver,30)
+          report={}
+          try:
+              driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+                  'mobile': True,
+                  'width': 390,
+                  'height': 844,
+                  'deviceScaleFactor': 1,
+                  'screenWidth': 390,
+                  'screenHeight': 844,
+                  'positionX': 0,
+                  'positionY': 0,
+              })
+              driver.get(base+'/ephemerides?lang=ru')
+              wait.until(EC.presence_of_element_located((By.CSS_SELECTOR,'.planetGrid')))
+              inner_width=driver.execute_script('return window.innerWidth')
+              inner_height=driver.execute_script('return window.innerHeight')
+              assert inner_width == 390, (inner_width, inner_height)
+
+              body_text=driver.find_element(By.TAG_NAME,'body').text
+              articles=driver.find_elements(By.CSS_SELECTOR,'.planetGrid article')
+              assert len(articles) == 10, len(articles)
+              dms=re.compile(r'^.{2,}\s(?:[0-9]|[12][0-9])°[0-5][0-9]′[0-5][0-9]″      - name: First HTTP semantic integrity
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        run: |
+          python3 - <<'PY'
+          from urllib.request import urlopen
+          def get(path): return urlopen('http://127.0.0.1:3000'+path,timeout=20).read().decode('utf-8')
+          ru=get('/astro?lang=ru'); en=get('/astro?lang=en')
+          for html,lang,other in ((ru,'ru','en'),(en,'en','ru')):
+            assert f'<html lang="{lang}"' in html
+            assert f'href="/?lang={lang}"' in html
+            assert f'href="/frey?lang={lang}"' in html
+            assert f'href="/orion?lang={lang}"' in html
+            assert f'href="/astro?lang={other}"' in html
+          ru_m=get('/ephemerides/2026/09?lang=ru'); en_m=get('/ephemerides/2026/09?lang=en')
+          assert 'Планетные эфемериды · сентябрь 2026' in ru_m
+          assert 'Planetary ephemerides · September 2026' in en_m
+          assert 'property="og:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
+          assert 'property="og:title" content="September 2026 ephemerides · BHRIGU"' in en_m
+          assert 'name="twitter:title" content="Эфемериды · сентябрь 2026 | BHRIGU"' in ru_m
+          assert 'name="twitter:title" content="September 2026 ephemerides · BHRIGU"' in en_m
+          for html in (ru_m,en_m):
+            assert html.count('"temporalCoverage":"2026-09-01/2026-09-30"') >= 2
+            assert '"temporalCoverage":"2026-01-01/2026-12-31"' not in html
+          today_ru=get('/ephemerides?lang=ru'); today_en=get('/ephemerides?lang=en')
+          assert 'Небо сегодня.' in today_ru
+          assert 'The Sky Today.' in today_en
+          for html,label in ((today_ru,'Источник и проверяемость'),(today_en,'Source &amp; proof')):
+            assert label in html
+            assert 'data-sky-today="BHRIGU_SKY_TODAY_PHI_V0_1"' in html
+            assert 'data-phi-cosmograph="BHRIGU_PHI_COSMOGRAPH_V0_1"' in html
+            assert 'data-zero-aries="left"' in html
+            assert 'data-ninety-cancer="bottom"' in html
+            assert 'data-one-eighty-libra="right"' in html
+            assert 'data-two-seventy-capricorn="top"' in html
+            assert 'data-observer-origin="EARTH_PHI"' in html
+            assert 'AiBhrigu/orion_ai' in html
+            assert '0b9998c669b9b50e926b1891604b1969c642e046' in html
+            assert 'CANONICAL_PUBLIC_SAFE_DAILY_EXPORT' in html
+            assert '28bfad7e2d12617757e4f742e1722f2965b6a2f6369b50973e4890f1f8f6781a' in html
+          print('ASTRO_EPHEMERIDES_P1_FIRST_HTTP=PASS')
+          print('SKY_NOW_PHI_FIRST_HTTP=PASS')
+          PY
+
+      - name: Upload mobile visual evidence
+        if: always() && env.BHRIGU_SHARED_SCOPE != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: astro-ephemerides-mobile-${{ env.HEAD_SHA }}
+          path: |
+            /tmp/astro-ephemerides-mobile-ru-390x844.png
+            /tmp/astro-ephemerides-mobile-ru.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Stop server
+        if: always()
+        run: |
+          test ! -f /tmp/astro-p1.pid || kill "$(cat /tmp/astro-p1.pid)" || true
+          test ! -f /tmp/astro-p1.log || tail -n 80 /tmp/astro-p1.log
+)
+              positions=[]
+              for article in articles:
+                  assert article.is_displayed(), article.text
+                  name=article.find_element(By.TAG_NAME,'strong').text.strip()
+                  position=article.find_element(By.TAG_NAME,'small').text.strip()
+                  assert dms.match(f'{name} {position}'), (name, position)
+                  assert driver.execute_script('return arguments[0].scrollWidth <= arguments[0].clientWidth + 2', article), f'article overflow: {name}'
+                  rect=driver.execute_script('const r=arguments[0].getBoundingClientRect(); return {left:r.left,right:r.right,width:r.width}', article)
+                  assert rect['left'] >= -1 and rect['right'] <= inner_width + 1, (name, rect, inner_width)
+                  positions.append({'name':name,'position':position})
+
+              jupiter=next(row for row in positions if row['name']=='Юпитер')
+              assert jupiter['position']=='Лев 17°49′51″', jupiter
+              assert driver.execute_script('return document.documentElement.scrollWidth <= window.innerWidth + 2'), (
+                  driver.execute_script('return document.documentElement.scrollWidth'), inner_width
+              )
+
+              svg=driver.find_element(By.CSS_SELECTOR,'[data-phi-cosmograph="BHRIGU_PHI_COSMOGRAPH_V0_1"]')
+              assert svg.is_displayed()
+              svg_rect=driver.execute_script('const r=arguments[0].getBoundingClientRect(); return {left:r.left,right:r.right,width:r.width,height:r.height}', svg)
+              assert svg_rect['width'] >= 300 and svg_rect['right'] <= inner_width + 1, svg_rect
+              assert svg_rect['height'] > 300, svg_rect
+              planet_glyphs=svg.find_elements(By.CSS_SELECTOR,'[data-planet-glyph]')
+              assert len(planet_glyphs) == 10, len(planet_glyphs)
+              assert all(g.is_displayed() for g in planet_glyphs)
+
+              assert 'СХОДЯТСЯ' in body_text and 'APPLYING' in body_text, 'applying panel missing'
+              assert 'РАСХОДЯТСЯ' in body_text and 'SEPARATING' in body_text, 'separating panel missing'
+
+              screenshot='/tmp/astro-ephemerides-mobile-ru-390x844.png'
+              driver.save_screenshot(screenshot)
+              report={
+                  'schema':'bhrigu_ephemerides_mobile_final_acceptance_v0_1',
+                  'viewport':{'width':inner_width,'height':inner_height},
+                  'planet_count':len(articles),
+                  'positions':positions,
+                  'jupiter':jupiter,
+                  'horizontal_overflow':False,
+                  'phi_cosmograph':{'width':svg_rect['width'],'height':svg_rect['height'],'planet_glyphs':len(planet_glyphs)},
+                  'aspect_panels':{'applying':True,'separating':True},
+                  'result':'PASS',
+              }
+              Path('/tmp/astro-ephemerides-mobile-ru.json').write_text(json.dumps(report,ensure_ascii=False,indent=2))
+              print(json.dumps(report,ensure_ascii=False,indent=2))
+              print('EPHEMERIDES_TODAY_RU_MOBILE_RUNTIME=PASS')
+              print('EPHEMERIDES_MOBILE_10_PLANETS=PASS')
+              print('EPHEMERIDES_MOBILE_DMS=PASS')
+              print('EPHEMERIDES_MOBILE_JUPITER=PASS')
+              print('EPHEMERIDES_MOBILE_NO_HORIZONTAL_OVERFLOW=PASS')
+              print('EPHEMERIDES_MOBILE_PHI_COSMOGRAPH=PASS')
+              print('EPHEMERIDES_MOBILE_ASPECT_PANELS=PASS')
+          finally:
+              driver.quit()
+          PY
 
       - name: First HTTP semantic integrity
         if: env.BHRIGU_SHARED_SCOPE != 'true'
