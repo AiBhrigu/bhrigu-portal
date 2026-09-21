@@ -9,7 +9,11 @@ on:
       - components/astro/PublicEphemeridesToday.tsx
       - components/astro/BhriguPhiCosmograph.tsx
       - lib/public-ephemerides-live.ts
+      - lib/public-ephemerides-v1.ts
+      - lib/public-zodiac-position.ts
+      - lib/btc-public-astro-evidence.ts
       - tests/astro-ephemerides-p1-integrity-acceptance.ts
+      - tests/astro-ephemerides-sexagesimal-format-acceptance.ts
       - tests/public-ephemerides-v2-acceptance.ts
       - tests/astro-sky-now-phi-cosmograph-acceptance.ts
       - .github/workflows/astro-ephemerides-p1-integrity-pr.yml
@@ -54,6 +58,17 @@ jobs:
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             'components/astro/BhriguPhiCosmograph.tsx',
             'tests/astro-sky-now-phi-cosmograph-acceptance.ts',
+          }
+          sexagesimal_repair={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            'components/astro/BhriguPhiCosmograph.tsx',
+            'components/astro/PublicEphemeridesToday.tsx',
+            'components/astro/PublicEphemeridesV1.tsx',
+            'lib/btc-public-astro-evidence.ts',
+            'lib/public-ephemerides-live.ts',
+            'lib/public-ephemerides-v1.ts',
+            'lib/public-zodiac-position.ts',
+            'tests/astro-ephemerides-sexagesimal-format-acceptance.ts',
           }
           frey_passport_preview={
             'pages/_app.js',
@@ -113,6 +128,8 @@ jobs:
             print('EXACT_SCOPE_PASS sky_now_phi',sorted(actual))
           elif actual==phi_visual_parity:
             print('EXACT_SCOPE_PASS phi_visual_parity',sorted(actual))
+          elif actual==sexagesimal_repair:
+            print('EXACT_SCOPE_PASS sexagesimal_repair',sorted(actual))
           elif actual==frey_passport_preview:
             print('SHARED_SCOPE_PASS frey_passport_preview',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==frey_passport_ci_authority:
@@ -134,6 +151,10 @@ jobs:
       - name: Static P1 contract
         if: env.BHRIGU_SHARED_SCOPE != 'true'
         run: npx tsx tests/astro-ephemerides-p1-integrity-acceptance.ts
+
+      - name: Sexagesimal public format contract
+        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        run: npx tsx tests/astro-ephemerides-sexagesimal-format-acceptance.ts
 
       - name: Existing public ephemerides V2 contract
         if: env.BHRIGU_SHARED_SCOPE != 'true'
