@@ -38,6 +38,20 @@ jobs:
           fi
           echo 'BHRIGU_SPELLING_GUARD=PASS'
 
+      - name: Verify Home first-screen copy de-duplication
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
+          grep -Fq 'rootIdentity: "Φ RESEARCH SYSTEMS"' pages/index.js
+          grep -Fq 'humanEntryLead: "One human."' pages/index.js
+          grep -Fq 'humanEntryClose: "One entry."' pages/index.js
+          grep -Fq 'humanEntryLead: "Один человек."' pages/index.js
+          grep -Fq 'humanEntryClose: "Одна точка входа."' pages/index.js
+          echo 'BHRIGU_HOME_COPY_DEDUP=PASS'
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
