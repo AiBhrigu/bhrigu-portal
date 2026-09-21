@@ -6,7 +6,7 @@ import {
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 import PublicSupportRoute from "../components/btc/PublicSupportRoute";
-import { FieldAnchorGlyph, RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
+import { RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
@@ -120,6 +120,28 @@ const PUBLIC_CHANNEL_COPY = {
 
 const COPY = {
   en: {
+    rootIdentity: "Φ RESEARCH SYSTEMS",
+    humanEntryLead: "One human.",
+    humanEntryClose: "One entry.",
+    relationEquation: "ONE HUMAN = ONE ENTRY",
+    humanAnchor: "HUMAN",
+    entryCoordinate: "ENTRY COORDINATE",
+    entryInput: "QUESTION · STATE · TIME",
+    humanObject: "FREY",
+    humanResult: "INTERPRETATION / NAVIGATION",
+    humanState: "PUBLIC HUMAN TEMPORAL INTERFACE",
+    intelligenceBridge: "AI / COSMOGRAPHER",
+    intelligenceBridgeMeta: "RELATION · INTERPRETATION",
+    agentRole: "AI AGENT",
+    agentObject: "BHRIGU BTC EVIDENCE ANSWER V0",
+    agentResult: "VERIFIED BITCOIN EVIDENCE",
+    agentState: "DETERMINISTIC V0 · PUBLIC DISCOVERY LIVE",
+    phiField: "Φ FIELD",
+    phiFieldMeta: "EVIDENCE · MEMORY · CHANGE",
+    returnLabel: "ORIENTATION",
+    returnValue: "HUMAN JUDGMENT",
+    corridorEyebrow: "CURRENT LIVE APPLICATION",
+    relationAria: "One human enters with a question, state and time through Frey, the public human temporal interface for interpretation and navigation. AI and Cosmographer mediate the relation with the Φ field. The subordinate AI-agent position is bound to BHRIGU BTC Evidence Answer V0: machine inquiry returns bounded, verified Bitcoin evidence through deterministic public discovery. Evidence, memory and change return as orientation, while final judgment remains with the human.",
     category: "AI MARKET INTELLIGENCE SYSTEM",
     h1Lead: "See what changed in Bitcoin —",
     h1Close: "and what would change the current read.",
@@ -133,8 +155,8 @@ const COPY = {
     foundingField: "AI Founding Field",
     foundingFieldMeta: "32 founding coordinates · USD 99 one-time",
     systemMapLabel: "SYSTEM MAP",
-    systemMapRoot: "public home",
-    systemMapAria: "BHRIGU system map: BTC Cosmographer is the current Bitcoin product, with Frey, Cosmographer, and ORION as distinct related surfaces.",
+    systemMapRoot: "BITCOIN PROOF CORRIDOR",
+    systemMapAria: "Current live Bitcoin application and proof corridor: BTC Cosmographer, Frey, Cosmographer and protected ORION depth remain distinct related surfaces.",
     btcSystemLanes: ["Market evidence", "Change / Snapshot", "Expectations", "Astro field", "Sources / Proof"],
     freyVisual: "active temporal reading / dialogue",
     cosmographerVisual: "interpretation / navigation",
@@ -229,6 +251,28 @@ const COPY = {
     footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
   },
   ru: {
+    rootIdentity: "Φ RESEARCH SYSTEMS",
+    humanEntryLead: "Один человек.",
+    humanEntryClose: "Одна точка входа.",
+    relationEquation: "ОДИН ЧЕЛОВЕК = ОДНА ТОЧКА ВХОДА",
+    humanAnchor: "ЧЕЛОВЕК",
+    entryCoordinate: "ТОЧКА ВХОДА",
+    entryInput: "ВОПРОС · СОСТОЯНИЕ · ВРЕМЯ",
+    humanObject: "FREY",
+    humanResult: "ИНТЕРПРЕТАЦИЯ / НАВИГАЦИЯ",
+    humanState: "ПУБЛИЧНЫЙ ТЕМПОРАЛЬНЫЙ ИНТЕРФЕЙС ЧЕЛОВЕКА",
+    intelligenceBridge: "AI / КОСМОГРАФ",
+    intelligenceBridgeMeta: "СВЯЗЬ · ИНТЕРПРЕТАЦИЯ",
+    agentRole: "AI-АГЕНТ",
+    agentObject: "BHRIGU BTC EVIDENCE ANSWER V0",
+    agentResult: "ПРОВЕРЕННЫЕ BITCOIN-ДОКАЗАТЕЛЬСТВА",
+    agentState: "DETERMINISTIC V0 · ПУБЛИЧНОЕ ОБНАРУЖЕНИЕ LIVE",
+    phiField: "ПОЛЕ Φ",
+    phiFieldMeta: "ДОКАЗАТЕЛЬСТВА · ПАМЯТЬ · ИЗМЕНЕНИЕ",
+    returnLabel: "ОРИЕНТАЦИЯ",
+    returnValue: "СУЖДЕНИЕ ЧЕЛОВЕКА",
+    corridorEyebrow: "ТЕКУЩЕЕ ЖИВОЕ ПРИЛОЖЕНИЕ",
+    relationAria: "Человек входит в систему со своим вопросом, состоянием и временем через Frey — публичный темпоральный интерфейс человека для интерпретации и навигации. AI и Космограф связывают его с полем Φ. Подчинённая позиция AI-агента связана с BHRIGU BTC Evidence Answer V0: машинный запрос возвращает ограниченные проверенные Bitcoin-доказательства через детерминированное публичное обнаружение. Доказательства, память и изменение возвращаются как ориентация, а окончательное суждение остаётся за человеком.",
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ",
     h1Lead: "Что изменилось в Bitcoin —",
     h1Close: "и что изменит текущее чтение.",
@@ -242,8 +286,8 @@ const COPY = {
     foundingField: "AI Founding Field",
     foundingFieldMeta: "32 founding-координаты · USD 99 один раз",
     systemMapLabel: "КАРТА СИСТЕМЫ",
-    systemMapRoot: "публичный дом",
-    systemMapAria: "Карта системы BHRIGU: BTC Cosmographer — текущий Bitcoin-продукт; Frey, Космограф и ORION — отдельные связанные поверхности.",
+    systemMapRoot: "BITCOIN-КОРИДОР ДОКАЗАТЕЛЬСТВ",
+    systemMapAria: "Текущее живое Bitcoin-приложение и коридор доказательств: BTC Cosmographer, Frey, Космограф и защищённая глубина ORION остаются раздельными связанными поверхностями.",
     btcSystemLanes: ["Рыночные данные", "Изменение / Snapshot", "Ожидания", "Астро-поле", "Источники / Proof"],
     freyVisual: "действующее темпоральное чтение / диалог",
     cosmographerVisual: "интерпретация / навигация",
@@ -356,6 +400,51 @@ function SectionHeading({ eyebrow, title, body }) {
   return <div className={styles.sectionHeading}><p className={styles.eyebrow}>{eyebrow}</p><h2>{title}</h2>{body ? <p className={styles.sectionLead}>{body}</p> : null}</div>;
 }
 
+function HomeRelation({ copy }) {
+  return (
+    <div className={styles.homeRelation} data-home-relation aria-label={copy.relationAria}>
+      <p className={styles.relationEquation}>{copy.relationEquation}</p>
+      <div className={styles.relationStage}>
+        <div className={styles.humanCoordinate} data-relation-role="human-entry">
+          <small>{copy.entryCoordinate}</small>
+          <strong>{copy.humanAnchor}</strong>
+          <span>{copy.entryInput}</span>
+          <span className={styles.humanCapability} data-human-capability="frey" data-human-state="verified-public-temporal-interface">
+            <b aria-hidden="true">↓</b>
+            <strong>{copy.humanObject}</strong>
+            <b aria-hidden="true">↓</b>
+            <small>{copy.humanResult}</small>
+            <em>{copy.humanState}</em>
+          </span>
+        </div>
+        <div className={styles.relationRoute} aria-hidden="true"><i /></div>
+        <div className={styles.intelligenceBridge} data-relation-role="intelligence-bridge">
+          <strong>{copy.intelligenceBridge}</strong>
+          <small>{copy.intelligenceBridgeMeta}</small>
+          <span className={styles.agentCapability} data-agent-capability="bhrigu-btc-evidence-answer-v0" data-agent-state="verified-deterministic-public-discovery">
+            <i>{copy.agentRole}</i>
+            <b aria-hidden="true">→</b>
+            <strong>{copy.agentObject}</strong>
+            <b aria-hidden="true">→</b>
+            <small>{copy.agentResult}</small>
+            <em>{copy.agentState}</em>
+          </span>
+        </div>
+        <div className={styles.relationRoute} aria-hidden="true"><i /></div>
+        <div className={styles.phiRelationField} data-relation-role="phi-field">
+          <strong>{copy.phiField}</strong>
+          <small>{copy.phiFieldMeta}</small>
+        </div>
+      </div>
+      <div className={styles.returnRoute} data-relation-role="human-return">
+        <span>{copy.returnLabel}</span>
+        <i aria-hidden="true">←</i>
+        <strong>{copy.returnValue}</strong>
+      </div>
+    </div>
+  );
+}
+
 function buildJsonLd(locale) {
   const ru = locale === "ru";
   const home = `https://www.bhrigu.io/?lang=${locale}`;
@@ -398,20 +487,22 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
   const publicChannels = PUBLIC_CHANNEL_COPY[locale] || PUBLIC_CHANNEL_COPY.en;
   const acceptedState = acceptedStateView(locale, btcAcceptedState);
   const btcEntryHref = `/crypto-astro/btc?lang=${locale}`;
-  const primaryQuestion = locale === "ru" ? "Что изменилось в Bitcoin с предыдущего принятого Snapshot — и почему это важно?" : "What changed in Bitcoin since the previous accepted Snapshot — and why does it matter?";
-  const btcQuestionHref = `/crypto-astro/btc/clean-chat?lang=${locale}&q=${encodeURIComponent(primaryQuestion)}`;
   const jsonLd = buildJsonLd(locale);
   return <>
     <Head><meta name="phi-surface" content="MARKET_COSMOGRAPHER_PRIMARY_PRODUCT_V0_1"/></Head>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
-        <div className={styles.heroCopy}><p className={styles.product}>MARKET COSMOGRAPHER</p><p className={styles.category}>{copy.category}</p><h1 id="home-title"><span>{copy.h1Lead}</span><span>{copy.h1Close}</span></h1><p className={styles.subheadline}>{copy.subheadline}</p><div className={styles.heroActions}><Link className={styles.primaryCta} href={btcQuestionHref} data-primary-cta="btc-current-change-question">{copy.openBtc}<span aria-hidden="true">↗</span></Link><a className={styles.secondaryCta} href="#public-evidence" data-secondary-cta="public-proof">{copy.viewProof}</a><a className={styles.heroProofSignal} href="#public-evidence" data-hero-public-evidence>{publicEvidence.signal.map((item)=><span key={item}>{item}</span>)}</a><div className={styles.commercialActions} aria-label={locale === "ru" ? "Коммерческие маршруты" : "Commercial routes"}><Link className={styles.secondaryCta} href={`/access?lang=${locale}`} data-commercial-cta="external-systems-recon">{copy.workRecon}</Link><Link className={styles.secondaryCta} href={`/access?offer=frey-personal&lang=${locale}`} data-commercial-cta="cosmographic-passport-usd79">{copy.passportAccess}</Link><Link className={styles.secondaryCta} href={`/field?lang=${locale}`} data-commercial-cta="ai-founding-field"><span>{copy.foundingField}</span><small> · {copy.foundingFieldMeta}</small></Link></div></div></div>
+        <div className={styles.heroCopy}>
+          <p className={styles.product}>BHRIGU</p>
+          <p className={styles.category}>{copy.rootIdentity}</p>
+          <h1 id="home-title"><span>{copy.humanEntryLead}</span><span>{copy.humanEntryClose}</span></h1>
+          <HomeRelation copy={copy} />
+        </div>
         <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
-            <FieldAnchorGlyph className={styles.homeFieldAnchorGlyph}/>
-            <div className={styles.systemMapTopline}><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
-            <div className={styles.systemRoot} data-system-role="boundary"><strong>BHRIGU</strong><small>{copy.systemMapRoot}</small></div>
+            <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
+            <div className={styles.systemRoot} data-system-role="boundary"><strong>MARKET COSMOGRAPHER</strong><small>{copy.systemMapRoot}</small></div>
             <div className={styles.systemBranches} data-system-relations="true">
               <RelationGlyph className={styles.homeRelationGlyph}/>
               <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc" data-system-role="primary">
