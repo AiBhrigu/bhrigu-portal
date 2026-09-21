@@ -47,7 +47,7 @@ const REQUEST_KEYS = new Set([
   "protocol_subject",
 ]);
 
-const TRADING_INSTRUCTION = /(?:\b(?:buy|sell)\s+(?:btc|bitcoin)\b|\b(?:go|open|enter)\s+(?:a\s+)?(?:long|short)\b|\b(?:leverage|position\s+sizing|stop[- ]loss|take[- ]profit|entry\s+price|exit\s+price)\b|(?:купи|покупай|продай|продавай)\s+(?:btc|биткоин)|(?:открой|войти|входить)\s+(?:в\s+)?(?:лонг|шорт)|(?:плечо|размер\s+позиции|стоп[- ]лосс|тейк[- ]профит))/iu;
+const TRADING_INSTRUCTION = /(?:\b(?:buy|sell)\s+(?:btc|bitcoin)\b|\b(?:go|open|enter)\s+(?:a\s+)?(?:long|short)\b|\b(?:leverage|position\s+sizing|stop[- ]loss|take[- ]profit|entry\s+price|exit\s+price)\b|(?:купи|покупай|продай|продавай)\s+(?:btc|биткоин)|(?:открой|войти|входить)\s+(?:в\s+)?(?:лонг|шорт)|(?:плечо|размер\s+позиции|стоп[- ]лосс|тейк[- ]профит))/i;
 
 export type BtcAgentEvidenceRequestV0 = {
   schema_version: typeof BTC_AGENT_EVIDENCE_REQUEST_SCHEMA;
