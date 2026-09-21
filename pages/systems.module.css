@@ -444,11 +444,19 @@
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: 160px repeat(6, minmax(0, 1fr));
+  grid-template-columns: 160px repeat(4, minmax(0, 1fr));
   width: min(1480px, 100%);
   margin: 18px auto 0;
   border-top: 1px solid rgba(198, 162, 87, 0.34);
   border-bottom: 1px solid rgba(240, 238, 231, 0.09);
+}
+
+.proofRail a:nth-of-type(n + 5) {
+  border-top: 1px solid rgba(240, 238, 231, 0.09);
+}
+
+.proofRailLabel {
+  grid-row: span 2;
 }
 
 .proofRailLabel {
@@ -1028,7 +1036,7 @@
   .expression07 { grid-column: span 3; }
   .proofRail { grid-template-columns: 130px repeat(3, minmax(0, 1fr)); }
   .proofRail a:nth-of-type(n + 4) { border-top: 1px solid rgba(240, 238, 231, 0.09); }
-  .proofRailLabel { grid-row: span 2; }
+  .proofRailLabel { grid-row: span 3; }
   .fieldStatement { grid-template-columns: 1fr; }
   .relationChain { order: 2; }
   .fieldClosing { order: 3; }
