@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { formatSexagesimalPosition } from "../../lib/public-zodiac-position";
 
 type Body = {
   key: string;
@@ -345,9 +346,9 @@ export default function BhriguPhiCosmograph({
 
       {placedBodies.map((body) => {
         const point = polar(body.displayLongitude, body.r);
-        const degree = cosmographDegreeInSign(body.exactLongitude);
+        const position = formatSexagesimalPosition(body.exactLongitude);
         const glyph = BODY_GLYPH[body.key] ?? "·";
-        return <g key={body.key} data-planet-glyph={body.key}><text x={point.x} y={point.y - size * 0.003} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={body.fontSize} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{glyph}</text><text x={point.x} y={point.y + body.fontSize * 0.72} textAnchor="middle" fill={palette.degreeText} fontSize={Math.max(size * 0.0125, body.fontSize * 0.40)}>{degree.toFixed(2)}°{body.retrograde ? " R" : ""}</text></g>;
+        return <g key={body.key} data-planet-glyph={body.key}><text x={point.x} y={point.y - size * 0.003} textAnchor="middle" dominantBaseline="central" fill={palette.ivory} fontSize={body.fontSize} fontFamily='"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif'>{glyph}</text><text x={point.x} y={point.y + body.fontSize * 0.72} textAnchor="middle" fill={palette.degreeText} fontSize={Math.max(size * 0.0125, body.fontSize * 0.40)}>{position}{body.retrograde ? " R" : ""}</text></g>;
       })}
 
       {aspects.map((aspect, i) => {
