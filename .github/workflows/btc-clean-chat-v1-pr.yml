@@ -65,6 +65,19 @@ jobs:
         run: |
           git fetch origin "${GITHUB_BASE_REF}"
           mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
+          agent_commerce_v0_ci_authority_expected=(
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-agent-evidence-answer-v0.ts"
+            "lib/btc-agent-x402-preview-v0.ts"
+            "lib/btc-clean-chat-model-runtime.ts"
+            "pages/api/agent/btc/evidence-answer/v0.ts"
+            "public/.well-known/bhrigu-agent-commerce.json"
+            "public/openapi/agent-commerce-v0.json"
+            "tests/btc-agent-evidence-answer-v0-acceptance.ts"
+          )
           expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -281,6 +294,7 @@ jobs:
             "lib/public-zodiac-position.ts"
             "tests/astro-ephemerides-sexagesimal-format-acceptance.ts"
           )
+          mapfile -t agent_commerce_v0_ci_authority_expected_sorted < <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected[@]}" | sort)
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
@@ -305,7 +319,9 @@ jobs:
           mapfile -t commercial_access_expected_sorted < <(printf '%s\n' "${commercial_access_expected[@]}" | sort)
           mapfile -t ci_authority_repair_expected_sorted < <(printf '%s\n' "${ci_authority_repair_expected[@]}" | sort)
           mapfile -t ephemerides_sexagesimal_expected_sorted < <(printf '%s\n' "${ephemerides_sexagesimal_expected[@]}" | sort)
-          if diff -q <(printf '%s\n' "${frey_passport_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+          if diff -q <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BHRIGU_BTC_EVIDENCE_ANSWER_V0_CI_AUTHORITY_EXACT_11_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${frey_passport_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_SHARED_FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_SCOPE"
             echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
           elif diff -q <(printf '%s\n' "${frey_passport_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
