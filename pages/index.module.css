@@ -1319,3 +1319,28 @@
 }
 
 /* EXACT HEAD PREVIEW REVERIFY TRIGGER · no visual delta */
+
+
+/* HUMAN RETURN VISIBILITY REPAIR · DESKTOP v0.1 */
+@media (min-width: 841px) {
+  .returnRoute {
+    width: 72%;
+    margin: -34px 2.5% 0 auto;
+    padding-top: 8px;
+    color: rgba(241, 239, 233, 0.52);
+    border-top: 1px solid rgba(224, 196, 127, 0.14);
+  }
+
+  .returnRoute span {
+    color: rgba(241, 239, 233, 0.5);
+  }
+
+  .returnRoute strong {
+    color: rgba(224, 196, 127, 0.88);
+    text-shadow: 0 0 18px rgba(224, 196, 127, 0.1);
+  }
+
+  .returnRoute i::before {
+    background: linear-gradient(90deg, rgba(224, 196, 127, 0.62), rgba(154, 137, 209, 0.16), rgba(98, 168, 216, 0.08));
+  }
+}
