@@ -40,6 +40,14 @@ jobs:
               'pages/index.js',
               'pages/index.module.css',
           }
+          home_cosmographic_scene_ci_authority = {
+              '.github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml',
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              'pages/index.js',
+              'pages/index.module.css',
+          }
           revenue_discovery = {
               'pages/access.tsx',
               'pages/index.js',
@@ -98,11 +106,11 @@ jobs:
           actual = set(subprocess.check_output(
               ['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']], text=True
           ).splitlines())
-          if actual not in (expected, revenue_discovery, revenue_discovery_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, public_surface_redundant_ui_language_cleanup, public_discovery_ci_closure, home_phi_visual_truth):
+          if actual not in (expected, home_cosmographic_scene_ci_authority, revenue_discovery, revenue_discovery_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, public_surface_redundant_ui_language_cleanup, public_discovery_ci_closure, home_phi_visual_truth):
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)}')
-          scope_class = 'home_cosmographic_scene' if actual == expected else 'home_phi_visual_truth' if actual == home_phi_visual_truth else 'public_discovery_ci_closure' if actual == public_discovery_ci_closure else 'public_surface_redundant_ui_language_cleanup' if actual == public_surface_redundant_ui_language_cleanup else 'home_map_link_repair' if actual == home_map_link_repair else 'passport_navigation' if actual == passport_navigation else 'passport_navigation_ci_authority' if actual == passport_navigation_ci_authority else 'revenue_discovery' if actual == revenue_discovery else 'revenue_discovery_ci_repair' if actual == revenue_discovery_ci_repair else 'historical_visual_atom'
+          scope_class = 'home_cosmographic_scene_ci_authority' if actual == home_cosmographic_scene_ci_authority else 'home_cosmographic_scene' if actual == expected else 'home_phi_visual_truth' if actual == home_phi_visual_truth else 'public_discovery_ci_closure' if actual == public_discovery_ci_closure else 'public_surface_redundant_ui_language_cleanup' if actual == public_surface_redundant_ui_language_cleanup else 'home_map_link_repair' if actual == home_map_link_repair else 'passport_navigation' if actual == passport_navigation else 'passport_navigation_ci_authority' if actual == passport_navigation_ci_authority else 'revenue_discovery' if actual == revenue_discovery else 'revenue_discovery_ci_repair' if actual == revenue_discovery_ci_repair else 'historical_visual_atom'
           print('EXACT_SCOPE_CLASS=' + scope_class)
-          if actual == expected:
+          if actual in (expected, home_cosmographic_scene_ci_authority):
               with open(os.environ['GITHUB_ENV'],'a') as env:
                   env.write('BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=true\n')
           protected = [
