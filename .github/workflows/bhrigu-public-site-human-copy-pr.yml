@@ -47,6 +47,14 @@ jobs:
               'pages/index.js',
               'pages/index.module.css',
           }
+          home_cosmographic_scene_ci_authority = {
+              '.github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml',
+              '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
+              '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+              '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+              'pages/index.js',
+              'pages/index.module.css',
+          }
           frey_passport_preview={
             'pages/_app.js',
             'pages/access.tsx',
@@ -183,6 +191,8 @@ jobs:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == expected:
               print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == home_cosmographic_scene_ci_authority:
+              print('SHARED_SCOPE_PASS home_cosmographic_scene_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           else:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
