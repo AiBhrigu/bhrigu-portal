@@ -1,4 +1,5 @@
 import astroEvidence from "../data/btc_public_astro_evidence_v0_1.json";
+import { formatSexagesimalPosition, projectZodiacPosition } from "./public-zodiac-position";
 import type { BtcCosmographerRoute } from "./btc-cosmographer-route-graph";
 import type { BtcCosmographerAnswerProjection } from "./btc-protocol-evidence";
 import type { BtcPublicLocale } from "./btc-public-language-contract";
@@ -134,15 +135,14 @@ function closestAnchor(target: string, body: string): Anchor | null {
 
 function positionText(locale: BtcPublicLocale, state: BodyState): string {
   const [longitude, speed] = state;
-  const normalized = ((longitude % 360) + 360) % 360;
-  const signIndex = Math.floor(normalized / 30);
-  const degree = normalized - signIndex * 30;
+  const { signIndex } = projectZodiacPosition(longitude);
+  const position = formatSexagesimalPosition(longitude);
   const motion = speed < 0
     ? (locale === "ru" ? "ретроградно" : "retrograde")
     : (locale === "ru" ? "директно" : "direct");
   return locale === "ru"
-    ? `${degree.toFixed(1)}° в ${SIGNS.ru[signIndex]}, ${motion}`
-    : `${degree.toFixed(1)}° ${SIGNS.en[signIndex]}, ${motion}`;
+    ? `${position} в ${SIGNS.ru[signIndex]}, ${motion}`
+    : `${position} ${SIGNS.en[signIndex]}, ${motion}`;
 }
 
 function exactEventItems(
