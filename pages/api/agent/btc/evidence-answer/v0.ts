@@ -44,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const authorization = authorizeBtcAgentPreview(req.headers["x-bhrigu-x402-preview"]);
-  if (!authorization.ok) {
+  if (authorization.ok === false) {
     return res.status(authorization.status).json({
       ok: false,
       code: authorization.code,
