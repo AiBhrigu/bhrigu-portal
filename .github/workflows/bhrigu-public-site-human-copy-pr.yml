@@ -157,11 +157,6 @@ jobs:
             'pages/index.js',
             'pages/index.module.css',
           }
-          home_copy_dedup_ci_authority = {
-            '.github/workflows/bhrigu-home-market-cosmographer-pr.yml',
-            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
-            'pages/index.js',
-          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -194,8 +189,6 @@ jobs:
               print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == home_phi_visual_truth:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
-          elif actual == home_copy_dedup_ci_authority:
-              print('SHARED_SCOPE_PASS home_copy_dedup_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == expected:
               print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_cosmographic_scene_ci_authority:
@@ -207,6 +200,9 @@ jobs:
 
       - name: Verify Home Φ visual truth and public-channel copy
         run: |
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
           grep -Fq 'FOLLOW THE FIELD' pages/index.js
           grep -Fq 'СЛЕДИТЬ ЗА ПОЛЕМ' pages/index.js
           grep -Fq 'X · @bhrigu_io' pages/index.js
