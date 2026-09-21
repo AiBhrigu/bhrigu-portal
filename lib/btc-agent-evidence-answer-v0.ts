@@ -200,7 +200,10 @@ function validateRuntimeResult(result: BtcDeclaredMachineEvidenceResult) {
     visibleLines < 1
     || visibleLines > BTC_AGENT_MAX_VISIBLE_ANSWER_LINES
     || result.sources.length > BTC_AGENT_MAX_SOURCES
-    || result.usage.output_tokens > BTC_AGENT_MAX_MODEL_OUTPUT_TOKENS
+    || result.usage.provider !== "NONE"
+    || result.usage.model !== "DETERMINISTIC_EVIDENCE_V0"
+    || result.usage.input_tokens !== 0
+    || result.usage.output_tokens !== 0
     || result.usage.web_search_calls !== 0
   ) {
     throw new BtcAgentEvidenceError("MACHINE_RESPONSE_CONTRACT_INVALID", 503);
@@ -225,9 +228,6 @@ export async function executeBtcAgentEvidenceAnswerV0(
       question: request.question,
       queryClass: request.query_class,
       protocolSubject: request.protocol_subject,
-      guard: {
-        beforeProviderRequest: async (bounds) => assertBtcAgentProviderBounds(bounds),
-      },
     });
   } catch (error) {
     if (error instanceof BtcAgentEvidenceError) throw error;
@@ -243,8 +243,8 @@ export async function executeBtcAgentEvidenceAnswerV0(
     runtimeResult.usage.output_tokens,
     runtimeResult.usage.web_search_calls,
   );
-  if (nominalProviderCostMicros > BTC_AGENT_MAX_PROVIDER_HARD_COST_MICROS) {
-    throw new BtcAgentEvidenceError("MACHINE_QUERY_COST_BOUND_EXCEEDED", 422);
+  if (nominalProviderCostMicros !== 0) {
+    throw new BtcAgentEvidenceError("MACHINE_RESPONSE_CONTRACT_INVALID", 503);
   }
 
   const boundary = {

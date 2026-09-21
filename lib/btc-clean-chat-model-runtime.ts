@@ -1151,19 +1151,6 @@ function signedPct(value: number): string {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function declaredMachineProviderConfigured(
-  env: Readonly<Record<string, string | undefined>> = process.env,
-): boolean {
-  try {
-    const transport = resolveBtcCleanChatModelTransport(env);
-    return transport.authEnv === "OPENAI_API_KEY"
-      ? Boolean(env.OPENAI_API_KEY?.trim())
-      : Boolean(env.BTC_RESEARCH_FIELD_PREVIEW_BEARER?.trim());
-  } catch {
-    return false;
-  }
-}
-
 function deterministicDeclaredMachineSynthesis(
   locale: BtcCleanLocale,
   queryClass: BtcDeclaredMachineQueryClass,
@@ -1232,10 +1219,9 @@ export async function runBtcDeclaredMachineEvidence(input: {
   question: string;
   queryClass: BtcDeclaredMachineQueryClass;
   protocolSubject?: BtcDeclaredMachineProtocolSubject | null;
-  guard?: BtcCleanChatRuntimeGuard;
 }): Promise<BtcDeclaredMachineEvidenceResult> {
   const plan = declaredMachinePlan(input.queryClass, input.protocolSubject ?? null);
-  const evidence = await collectEvidence(input.locale, input.question, plan, input.guard);
+  const evidence = await collectEvidence(input.locale, input.question, plan);
 
   if (input.queryClass === "BTC_FIELD_NOW" && (!evidence.envelope?.ok || !evidence.binance?.ok)) {
     throw new Error("MACHINE_SOURCE_UNAVAILABLE");
@@ -1254,25 +1240,7 @@ export async function runBtcDeclaredMachineEvidence(input: {
     throw new Error("MACHINE_SOURCE_UNAVAILABLE");
   }
 
-  const providerConfigured = declaredMachineProviderConfigured();
-  let completed: { topic: string; answer: string; usage: Usage };
-  if (providerConfigured) {
-    const synthesis = await synthesizeAnswer(
-      input.locale,
-      input.question,
-      [],
-      plan,
-      evidence,
-      undefined,
-      input.guard,
-    );
-    if (synthesis.status === "OUTPUT_LIMIT") {
-      throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
-    }
-    completed = synthesis;
-  } else {
-    completed = deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
-  }
+  const completed = deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
 
   const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
   const asOf = evidence.envelope?.ok
@@ -1294,8 +1262,8 @@ export async function runBtcDeclaredMachineEvidence(input: {
       bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
     },
     usage: {
-      provider: providerConfigured ? BTC_CLEAN_CHAT_PROVIDER : "NONE",
-      model: providerConfigured ? BTC_CLEAN_CHAT_MODEL_ID : "DETERMINISTIC_EVIDENCE_V0",
+      provider: "NONE",
+      model: "DETERMINISTIC_EVIDENCE_V0",
       ...completed.usage,
     },
   };

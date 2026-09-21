@@ -1,7 +1,7 @@
 {
   "schema_version": "bhrigu_agent_commerce_descriptor_v0",
   "service": "BHRIGU BTC Evidence Answer V0",
-  "description": "Buy one bounded BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no trading authority.",
+  "description": "Buy one bounded deterministic BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no model provider and no trading authority.",
   "preview_only": true,
   "production_payment_enabled": false,
   "public_registration": false,
@@ -16,12 +16,10 @@
   "limits": {
     "request_body_bytes": 4096,
     "question_chars": 280,
-    "provider_request_bytes": 24576,
-    "provider_hard_cost_micros": 147520,
-    "model_output_tokens": 480,
     "visible_answer_lines": 5,
     "sources": 12,
-    "web_search_calls": 0
+    "web_search_calls": 0,
+    "provider_calls": 0
   },
   "x402": {
     "version": 2,
@@ -53,7 +51,7 @@
   "bazaar": {
     "metadata_prepared": true,
     "external_registration": false,
-    "description": "Buy one bounded BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no trading authority.",
+    "description": "Buy one bounded deterministic BHRIGU Bitcoin evidence answer from a declared evidence class. Read-only research; no model provider and no trading authority.",
     "tags": [
       "bitcoin",
       "research",
@@ -72,6 +70,10 @@
     "no_trading_signal": true,
     "no_financial_advice": true,
     "free_temporal_evidence_unchanged": true,
-    "human_clean_chat_unchanged": true
-  }
+    "human_clean_chat_unchanged": true,
+    "deterministic_v0_only": true,
+    "model_provider_calls_zero": true
+  },
+  "synthesis_mode": "DETERMINISTIC_EVIDENCE_V0",
+  "provider": "NONE"
 }

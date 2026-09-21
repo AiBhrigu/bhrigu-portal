@@ -108,15 +108,9 @@ if (previewAuth.ok === false) throw new Error("preview authorization unexpectedl
 assert.equal(previewAuth.ok, true);
 
 const payment: BtcAgentPaymentReceiptV0 = previewAuth.receipt;
-let providerBoundObserved = false;
 const fakeRuntime = async (input: Parameters<typeof import("../lib/btc-clean-chat-model-runtime").runBtcDeclaredMachineEvidence>[0]) => {
   assert.equal(input.queryClass, "BTC_FIELD_NOW");
   assert.equal(input.protocolSubject, null);
-  await input.guard?.beforeProviderRequest?.({
-    serializedBytes: BTC_AGENT_MAX_PROVIDER_REQUEST_BYTES,
-    hardCostMicros: BTC_AGENT_MAX_PROVIDER_HARD_COST_MICROS,
-  });
-  providerBoundObserved = true;
   return {
     topic: "btc_market",
     answer: "BTC field remains bounded.\nSnapshot evidence is accepted.\nBinance is current.\nNo trading signal.",
@@ -132,10 +126,10 @@ const fakeRuntime = async (input: Parameters<typeof import("../lib/btc-clean-cha
       bitcoin_protocol: "NOT_REQUIRED" as const,
     },
     usage: {
-      provider: "DIRECT_OPENAI_API" as const,
-      model: "gpt-5.6-sol" as const,
-      input_tokens: 100,
-      output_tokens: 120,
+      provider: "NONE" as const,
+      model: "DETERMINISTIC_EVIDENCE_V0" as const,
+      input_tokens: 0,
+      output_tokens: 0,
       web_search_calls: 0,
     },
   };
@@ -143,14 +137,32 @@ const fakeRuntime = async (input: Parameters<typeof import("../lib/btc-clean-cha
 
 const responseA = await executeBtcAgentEvidenceAnswerV0(parsed, payment, { runtime: fakeRuntime });
 const responseB = await executeBtcAgentEvidenceAnswerV0(parsed, payment, { runtime: fakeRuntime });
-assert.equal(providerBoundObserved, true);
 assert.equal(responseA.request_hash, responseB.request_hash);
 assert.equal(responseA.request_id, responseB.request_id);
 assert.equal(responseA.result_hash, responseB.result_hash);
 assert.equal(responseA.answer.split("\n").length <= 5, true);
 assert.equal(responseA.sources.length <= 12, true);
-assert.equal(responseA.usage.output_tokens <= 480, true);
+assert.equal(responseA.usage.provider, "NONE");
+assert.equal(responseA.usage.model, "DETERMINISTIC_EVIDENCE_V0");
+assert.equal(responseA.usage.input_tokens, 0);
+assert.equal(responseA.usage.output_tokens, 0);
 assert.equal(responseA.usage.web_search_calls, 0);
+assert.equal(responseA.usage.nominal_provider_cost_micros, 0);
+
+const modelBackedRuntime = async (input: Parameters<typeof fakeRuntime>[0]) => ({
+  ...(await fakeRuntime(input)),
+  usage: {
+    provider: "DIRECT_OPENAI_API" as const,
+    model: "gpt-5.6-sol" as const,
+    input_tokens: 1,
+    output_tokens: 1,
+    web_search_calls: 0,
+  },
+});
+await assert.rejects(
+  () => executeBtcAgentEvidenceAnswerV0(parsed, payment, { runtime: modelBackedRuntime }),
+  (error: unknown) => error instanceof BtcAgentEvidenceError && error.code === "MACHINE_RESPONSE_CONTRACT_INVALID",
+);
 assert.equal(responseA.boundary.research_state_not_trade, true);
 assert.equal(responseA.boundary.no_trading_signal, true);
 assert.equal(responseA.boundary.no_financial_advice, true);
@@ -171,8 +183,11 @@ console.log(JSON.stringify({
     trading_boundary: true,
     provider_request_byte_ceiling: true,
     provider_hard_cost_ceiling: true,
+    deterministic_v0_only: true,
+    model_backed_runtime_rejected: true,
+    provider_calls_zero: true,
     five_line_output: true,
-    output_token_ceiling: true,
+    output_tokens_zero: true,
     web_calls_zero: true,
     deterministic_hashes: true,
     x402_v2_price_contract: true,

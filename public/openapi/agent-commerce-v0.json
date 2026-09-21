@@ -3,14 +3,14 @@
   "info": {
     "title": "BHRIGU Agent Commerce V0",
     "version": "0.1.0-preview",
-    "description": "Preview-only machine contract for one bounded Bitcoin evidence answer. Production payment and settlement are disabled; PAY_TO is unbound."
+    "description": "Preview-only deterministic machine contract for one bounded Bitcoin evidence answer. Model-provider synthesis is not part of V0. Production payment and settlement are disabled; PAY_TO is unbound."
   },
   "paths": {
     "/api/agent/btc/evidence-answer/v0": {
       "post": {
         "operationId": "bhrigu_btc_evidence_answer",
         "summary": "Preview one bounded BHRIGU Bitcoin evidence answer",
-        "description": "Stateless deterministic evidence-class route. Preview mock authorization only; no production x402 settlement.",
+        "description": "Stateless deterministic evidence-class route using DETERMINISTIC_EVIDENCE_V0 only. Provider/model calls are zero. Preview mock authorization only; no production x402 settlement.",
         "parameters": [
           {
             "name": "X-BHRIGU-x402-Preview",
@@ -179,7 +179,36 @@
                       "type": "object"
                     },
                     "usage": {
-                      "type": "object"
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "provider",
+                        "model",
+                        "input_tokens",
+                        "output_tokens",
+                        "web_search_calls",
+                        "nominal_provider_cost_micros"
+                      ],
+                      "properties": {
+                        "provider": {
+                          "const": "NONE"
+                        },
+                        "model": {
+                          "const": "DETERMINISTIC_EVIDENCE_V0"
+                        },
+                        "input_tokens": {
+                          "const": 0
+                        },
+                        "output_tokens": {
+                          "const": 0
+                        },
+                        "web_search_calls": {
+                          "const": 0
+                        },
+                        "nominal_provider_cost_micros": {
+                          "const": 0
+                        }
+                      }
                     },
                     "payment": {
                       "type": "object",
@@ -229,10 +258,10 @@
             "description": "Request body exceeds 4096 bytes."
           },
           "422": {
-            "description": "Request contract, trading boundary, or provider hard-cost boundary rejected before service completion."
+            "description": "Request contract or trading boundary rejected before service completion."
           },
           "503": {
-            "description": "Source/model unavailable or production payment remains disabled."
+            "description": "Required deterministic evidence source unavailable, deterministic response contract invalid, or production payment remains disabled."
           }
         },
         "x-bhrigu-x402": {
@@ -255,6 +284,11 @@
             "temporal-state",
             "verification"
           ]
+        },
+        "x-bhrigu-synthesis": {
+          "mode": "DETERMINISTIC_EVIDENCE_V0",
+          "provider": "NONE",
+          "provider_calls": 0
         }
       }
     }
