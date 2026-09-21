@@ -1078,8 +1078,8 @@ export type BtcDeclaredMachineEvidenceResult = {
     bitcoin_protocol: BtcCleanEvidenceState;
   };
   usage: {
-    provider: typeof BTC_CLEAN_CHAT_PROVIDER;
-    model: typeof BTC_CLEAN_CHAT_MODEL_ID;
+    provider: typeof BTC_CLEAN_CHAT_PROVIDER | "NONE";
+    model: typeof BTC_CLEAN_CHAT_MODEL_ID | "DETERMINISTIC_EVIDENCE_V0";
     input_tokens: number;
     output_tokens: number;
     web_search_calls: number;
@@ -1143,6 +1143,90 @@ function declaredMachinePlan(
   };
 }
 
+function compactMachineLine(value: string, max = 260): string {
+  return value.replace(/\s+/g, " ").trim().slice(0, max);
+}
+
+function signedPct(value: number): string {
+  return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
+}
+
+function declaredMachineProviderConfigured(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+): boolean {
+  try {
+    const transport = resolveBtcCleanChatModelTransport(env);
+    return transport.authEnv === "OPENAI_API_KEY"
+      ? Boolean(env.OPENAI_API_KEY?.trim())
+      : Boolean(env.BTC_RESEARCH_FIELD_PREVIEW_BEARER?.trim());
+  } catch {
+    return false;
+  }
+}
+
+function deterministicDeclaredMachineSynthesis(
+  locale: BtcCleanLocale,
+  queryClass: BtcDeclaredMachineQueryClass,
+  evidence: EvidenceBundle,
+): { topic: string; answer: string; usage: Usage } {
+  const ru = locale === "ru";
+  const boundaryLine = ru
+    ? "Исследовательское состояние; не торговый сигнал и не финансовая рекомендация."
+    : "Research state only; not a trading signal or financial advice.";
+
+  if (queryClass === "BTC_FIELD_NOW" && evidence.envelope?.ok && evidence.binance?.ok) {
+    const current = evidence.envelope.value.current;
+    const live = evidence.binance.snapshot;
+    const lines = ru
+      ? [
+          `Поле BTC: ${current.source_freshness}; snapshot ${current.source_generated_at_utc}.`,
+          `BTC ${current.price_usd.toFixed(0)}; 24ч ${signedPct(current.change_24h_pct)}; доминация ${current.btc_dominance_pct.toFixed(2)}%; field ${current.market_field_score.toFixed(1)} (${current.regime}).`,
+          `Binance BTCUSDT: mid ${live.derived.mid_price_usdt.toFixed(2)}; spread ${live.derived.spread_bps.toFixed(2)} bps; ${live.retrieved_at}.`,
+          boundaryLine,
+        ]
+      : [
+          `BTC field: ${current.source_freshness}; snapshot ${current.source_generated_at_utc}.`,
+          `BTC ${current.price_usd.toFixed(0)}; 24h ${signedPct(current.change_24h_pct)}; dominance ${current.btc_dominance_pct.toFixed(2)}%; field ${current.market_field_score.toFixed(1)} (${current.regime}).`,
+          `Binance BTCUSDT: mid ${live.derived.mid_price_usdt.toFixed(2)}; spread ${live.derived.spread_bps.toFixed(2)} bps; ${live.retrieved_at}.`,
+          boundaryLine,
+        ];
+    return { topic: "btc_market", answer: lines.map((line) => compactMachineLine(line)).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  if (queryClass === "BTC_CHANGE_MEMORY" && evidence.envelope?.ok) {
+    const memory = evidence.envelope.value.memory;
+    const synthesis = evidence.envelope.value.synthesis;
+    const changed = synthesis.what_changed[0] ?? synthesis.why_this_matters;
+    const lines = ru
+      ? [
+          `Память изменений BTC: ${memory.comparison_status}; сопоставимых метрик ${memory.comparable_metric_count}; методология совместима.`,
+          compactMachineLine(memory.transition_interpretation),
+          compactMachineLine(changed),
+          boundaryLine,
+        ]
+      : [
+          `BTC change memory: ${memory.comparison_status}; ${memory.comparable_metric_count} comparable metrics; methodology compatible.`,
+          compactMachineLine(memory.transition_interpretation),
+          compactMachineLine(changed),
+          boundaryLine,
+        ];
+    return { topic: "snapshot_memory", answer: lines.filter(Boolean).map((line) => compactMachineLine(line)).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  if (queryClass === "BITCOIN_PROTOCOL" && evidence.protocol) {
+    const projection = evidence.protocol;
+    const lines = [
+      compactMachineLine(projection.headline),
+      compactMachineLine(projection.direct_answer),
+      compactMachineLine(projection.source_boundary),
+      compactMachineLine(`${projection.proof_label}; state=${projection.answer_state}.`),
+    ];
+    return { topic: "bitcoin_protocol", answer: lines.filter(Boolean).join("\n"), usage: { input_tokens: 0, output_tokens: 0, web_search_calls: 0 } };
+  }
+
+  throw new Error("MACHINE_SOURCE_UNAVAILABLE");
+}
+
 export async function runBtcDeclaredMachineEvidence(input: {
   locale: BtcCleanLocale;
   question: string;
@@ -1170,18 +1254,23 @@ export async function runBtcDeclaredMachineEvidence(input: {
     throw new Error("MACHINE_SOURCE_UNAVAILABLE");
   }
 
-  const synthesis = await synthesizeAnswer(
-    input.locale,
-    input.question,
-    [],
-    plan,
-    evidence,
-    undefined,
-    input.guard,
-  );
-  if (synthesis.status !== "COMPLETE") {
+  const synthesis = declaredMachineProviderConfigured()
+    ? await synthesizeAnswer(
+        input.locale,
+        input.question,
+        [],
+        plan,
+        evidence,
+        undefined,
+        input.guard,
+      )
+    : deterministicDeclaredMachineSynthesis(input.locale, input.queryClass, evidence);
+  if ("status" in synthesis && synthesis.status !== "COMPLETE") {
     throw new BtcCleanChatRuntimeError("MODEL_OUTPUT_LIMIT", false);
   }
+  const completed = "status" in synthesis
+    ? synthesis
+    : { status: "COMPLETE" as const, ...synthesis };
 
   const wants = (tool: EvidenceTool) => plan.tools.includes(tool);
   const asOf = evidence.envelope?.ok
@@ -1189,8 +1278,8 @@ export async function runBtcDeclaredMachineEvidence(input: {
     : new Date().toISOString();
 
   return {
-    topic: synthesis.topic,
-    answer: synthesis.answer,
+    topic: completed.topic,
+    answer: completed.answer,
     as_of: asOf,
     sources: sourceRows(input.question, evidence),
     evidence: {
@@ -1203,9 +1292,9 @@ export async function runBtcDeclaredMachineEvidence(input: {
       bitcoin_protocol: state(wants("bitcoin_protocol"), Boolean(evidence.protocol)),
     },
     usage: {
-      provider: BTC_CLEAN_CHAT_PROVIDER,
-      model: BTC_CLEAN_CHAT_MODEL_ID,
-      ...synthesis.usage,
+      provider: declaredMachineProviderConfigured() ? BTC_CLEAN_CHAT_PROVIDER : "NONE",
+      model: declaredMachineProviderConfigured() ? BTC_CLEAN_CHAT_MODEL_ID : "DETERMINISTIC_EVIDENCE_V0",
+      ...completed.usage,
     },
   };
 }
