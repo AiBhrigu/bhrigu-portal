@@ -123,7 +123,6 @@ const COPY = {
     rootIdentity: "Φ RESEARCH SYSTEMS",
     humanEntryLead: "One human.",
     humanEntryClose: "One entry.",
-    relationEquation: "ONE HUMAN = ONE ENTRY",
     humanAnchor: "HUMAN",
     entryCoordinate: "ENTRY COORDINATE",
     entryInput: "QUESTION · STATE · TIME",
@@ -254,7 +253,6 @@ const COPY = {
     rootIdentity: "Φ RESEARCH SYSTEMS",
     humanEntryLead: "Один человек.",
     humanEntryClose: "Одна точка входа.",
-    relationEquation: "ОДИН ЧЕЛОВЕК = ОДНА ТОЧКА ВХОДА",
     humanAnchor: "ЧЕЛОВЕК",
     entryCoordinate: "ТОЧКА ВХОДА",
     entryInput: "ВОПРОС · СОСТОЯНИЕ · ВРЕМЯ",
@@ -403,7 +401,6 @@ function SectionHeading({ eyebrow, title, body }) {
 function HomeRelation({ copy }) {
   return (
     <div className={styles.homeRelation} data-home-relation aria-label={copy.relationAria}>
-      <p className={styles.relationEquation}>{copy.relationEquation}</p>
       <div className={styles.relationStage}>
         <div className={styles.humanCoordinate} data-relation-role="human-entry">
           <small>{copy.entryCoordinate}</small>
@@ -494,7 +491,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
         <div className={styles.heroCopy}>
-          <p className={styles.product}>BHRIGU</p>
           <p className={styles.category}>{copy.rootIdentity}</p>
           <h1 id="home-title"><span>{copy.humanEntryLead}</span><span>{copy.humanEntryClose}</span></h1>
           <HomeRelation copy={copy} />
