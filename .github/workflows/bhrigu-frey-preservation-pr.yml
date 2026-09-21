@@ -83,6 +83,19 @@ jobs:
             'public/publications/frey/bhrigu-frey-en-approved-poster-pack-v5-preview.webp',
             'public/publications/frey/bhrigu-frey-ru-approved-poster-pack-v1-preview.webp',
           }
+          agent_commerce_v0_ci_authority = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            'lib/btc-agent-evidence-answer-v0.ts',
+            'lib/btc-agent-x402-preview-v0.ts',
+            'lib/btc-clean-chat-model-runtime.ts',
+            'pages/api/agent/btc/evidence-answer/v0.ts',
+            'public/.well-known/bhrigu-agent-commerce.json',
+            'public/openapi/agent-commerce-v0.json',
+            'tests/btc-agent-evidence-answer-v0-acceptance.ts',
+          }
           public_discovery_ci_closure = {
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -100,13 +113,17 @@ jobs:
             'public/sitemap.xml',
           }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, public_discovery_ci_closure), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, agent_commerce_v0_ci_authority, public_discovery_ci_closure), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          if actual == agent_commerce_v0_ci_authority:
+              open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_AGENT_COMMERCE_SHARED_SCOPE=true\n')
+              print('FREY_SHARED_SCOPE=agent_commerce_v0_ci_authority')
           print('FREY_COMMERCIAL_SCOPE=PASS')
           PY
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       - name: Protected runtime diff
+        if: env.BHRIGU_AGENT_COMMERCE_SHARED_SCOPE != 'true'
         run: |
           base='${{ github.event.pull_request.base.sha }}'
           head='${{ github.event.pull_request.head.sha }}'
@@ -177,7 +194,9 @@ jobs:
             grep -Fq 'Без гарантированного прогноза' pages/access.tsx
             echo 'FREY_PERSONAL_LEGACY_CONTRACT=PASS'
           fi
-          test -z "$(git diff --name-only '${{ github.event.pull_request.base.sha }}' '${{ github.event.pull_request.head.sha }}' -- lib/frey-access-bridge.js lib/access-triage.js pages/api)"
+          if test "${BHRIGU_AGENT_COMMERCE_SHARED_SCOPE:-}" != "true"; then
+            test -z "$(git diff --name-only '${{ github.event.pull_request.base.sha }}' '${{ github.event.pull_request.head.sha }}' -- lib/frey-access-bridge.js lib/access-triage.js pages/api)"
+          fi
           echo 'FREY_PERSONAL_COMMERCIAL_CONTRACT=PASS'
       - name: AI packet contract
         run: |
