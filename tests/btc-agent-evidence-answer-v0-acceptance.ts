@@ -104,7 +104,7 @@ const noPreviewAuth = authorizeBtcAgentPreview(undefined, { VERCEL_ENV: "preview
 assert.deepEqual(noPreviewAuth, { ok: false, code: "PREVIEW_AUTHORIZATION_REQUIRED", status: 402 });
 const previewAuth = authorizeBtcAgentPreview("mock-authorized-v0", { VERCEL_ENV: "preview" });
 assert.equal(previewAuth.ok, true);
-if (!previewAuth.ok) throw new Error("preview authorization unexpectedly unavailable");
+if (previewAuth.ok === false) throw new Error("preview authorization unexpectedly unavailable");
 
 const payment: BtcAgentPaymentReceiptV0 = previewAuth.receipt;
 let providerBoundObserved = false;
