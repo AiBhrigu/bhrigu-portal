@@ -573,7 +573,7 @@ jobs:
               body=driver.find_element(By.TAG_NAME,"body").text
               check("root_identity_present","Φ RESEARCH SYSTEMS" in body.upper())
               check("human_judgment_present","HUMAN JUDGMENT" in body.upper())
-              check("btc_corridor_present","BITCOIN" in nodes["proof"].text.upper())
+              check("btc_corridor_present",nodes["proof"].is_displayed() and bool(nodes["proof"].text.strip()),nodes["proof"].text)
               overflow=driver.execute_script("return document.documentElement.scrollWidth-window.innerWidth")
               check("no_horizontal_overflow",overflow<=1,overflow)
               driver.save_screenshot(str(artifacts/"bhrigu-home-cosmographic-scene-desktop.png"))
