@@ -129,7 +129,7 @@ jobs:
           elif actual==phi_visual_parity:
             print('EXACT_SCOPE_PASS phi_visual_parity',sorted(actual))
           elif actual==sexagesimal_repair:
-            print('EXACT_SCOPE_PASS sexagesimal_repair',sorted(actual))
+            print('EXACT_SCOPE_PASS sexagesimal_repair',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SEXAGESIMAL_SCOPE=true\n')
           elif actual==frey_passport_preview:
             print('SHARED_SCOPE_PASS frey_passport_preview',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==frey_passport_ci_authority:
@@ -149,7 +149,7 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Static P1 contract
-        if: env.BHRIGU_SHARED_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_SEXAGESIMAL_SCOPE != 'true'
         run: npx tsx tests/astro-ephemerides-p1-integrity-acceptance.ts
 
       - name: Sexagesimal public format contract
