@@ -46,6 +46,17 @@ jobs:
             echo 'BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE=false' >> "$GITHUB_ENV"
             echo 'HOME_GEOMETRY_AUTHORITY=LEGACY_MARKET'
           fi
+      - name: Verify Home first-screen copy de-duplication
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
+          ! grep -Fq '.relationEquation' pages/index.module.css
+          echo 'HOME_FIRST_SCREEN_COPY_DEDUP=PASS'
+
       - name: Start exact-head preview
         run: |
           set -euo pipefail

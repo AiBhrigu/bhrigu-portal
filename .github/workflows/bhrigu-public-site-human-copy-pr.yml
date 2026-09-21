@@ -200,6 +200,9 @@ jobs:
 
       - name: Verify Home Φ visual truth and public-channel copy
         run: |
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
           grep -Fq 'FOLLOW THE FIELD' pages/index.js
           grep -Fq 'СЛЕДИТЬ ЗА ПОЛЕМ' pages/index.js
           grep -Fq 'X · @bhrigu_io' pages/index.js

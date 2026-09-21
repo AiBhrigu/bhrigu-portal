@@ -63,15 +63,6 @@
   border-top: 1px solid rgba(200, 164, 90, 0.28);
 }
 
-.relationEquation {
-  margin: 0 0 16px;
-  color: rgba(224, 196, 127, 0.82);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px !important;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-}
-
 .relationStage {
   display: grid;
   grid-template-columns: minmax(132px, 0.92fr) minmax(44px, 0.34fr) minmax(134px, 0.9fr) minmax(44px, 0.34fr) minmax(150px, 1fr);
@@ -722,7 +713,6 @@
   .category { max-width: 330px; font-size: 8px !important; line-height: 1.5; }
   .hero h1 { margin: 22px 0 18px; font-size: clamp(40px, 11.7vw, 56px); line-height: 0.98; }
   .homeRelation { margin-top: 30px; padding-top: 13px; }
-  .relationEquation { margin-bottom: 18px; font-size: 8px !important; letter-spacing: 0.14em; }
   .relationStage { grid-template-columns: 1fr; gap: 0; }
   .humanCoordinate, .intelligenceBridge, .phiRelationField { min-height: 112px; }
   .humanCoordinate { padding: 20px 22px; }
@@ -966,14 +956,6 @@
     box-shadow: 0 -18px 70px rgba(98, 168, 216, 0.055);
     transform: perspective(280px) rotateX(58deg);
     transform-origin: center;
-  }
-
-  .relationEquation {
-    position: relative;
-    z-index: 7;
-    width: max-content;
-    margin: 0 0 8px 2%;
-    color: rgba(224, 196, 127, 0.76);
   }
 
   .relationStage {

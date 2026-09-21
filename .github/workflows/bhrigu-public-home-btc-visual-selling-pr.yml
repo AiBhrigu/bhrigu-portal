@@ -209,6 +209,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
           grep -Fq 'data-home-relation' pages/index.js
           grep -Fq 'data-relation-role="human-entry"' pages/index.js
           grep -Fq 'data-human-capability="frey"' pages/index.js

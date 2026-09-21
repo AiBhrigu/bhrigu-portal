@@ -28,6 +28,30 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
+      - name: Reject invalid BHRIGU spelling
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -n -I -E '\\b[Bb][Gg][Rr][Ii][Gg][Uu]\\b' -- .; then
+            echo 'BHRIGU_SPELLING_GUARD=FAIL'
+            exit 1
+          fi
+          echo 'BHRIGU_SPELLING_GUARD=PASS'
+
+      - name: Verify Home first-screen copy de-duplication
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -Fq '<p className={styles.product}>BHRIGU</p>' pages/index.js
+          ! grep -Fq 'relationEquation:' pages/index.js
+          ! grep -Fq '{copy.relationEquation}' pages/index.js
+          grep -Fq 'rootIdentity: "Φ RESEARCH SYSTEMS"' pages/index.js
+          grep -Fq 'humanEntryLead: "One human."' pages/index.js
+          grep -Fq 'humanEntryClose: "One entry."' pages/index.js
+          grep -Fq 'humanEntryLead: "Один человек."' pages/index.js
+          grep -Fq 'humanEntryClose: "Одна точка входа."' pages/index.js
+          echo 'BHRIGU_HOME_COPY_DEDUP=PASS'
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -489,9 +513,9 @@ jobs:
           print(json.dumps(report, ensure_ascii=False, indent=2))
           if report["failures"]:
               raise SystemExit(f"BHRIGU_HOME_ACCEPTANCE=FAIL {report['failures']}")
-          print("GLOBAL_BGRIGU_IDENTITY_COUNT=1")
+          print("GLOBAL_BHRIGU_IDENTITY_COUNT=1")
           print("GLOBAL_LANGUAGE_CONTROL_COUNT=1")
-          print("HERO_BGRIGU_DUPLICATE=0")
+          print("HERO_BHRIGU_DUPLICATE=0")
           print("HERO_LANGUAGE_CONTROL_DUPLICATE=0")
           print("BHRIGU_HOME_ACCEPTANCE=PASS")
           PY
