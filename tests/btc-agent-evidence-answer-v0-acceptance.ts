@@ -36,7 +36,7 @@ function expectEvidenceError(
   ));
 }
 
-assert.deepEqual(btcDeclaredMachineTools("BTC_FIELD_NOW"), ["snapshot", "binance"]);
+async function main() {\nassert.deepEqual(btcDeclaredMachineTools("BTC_FIELD_NOW"), ["snapshot", "binance"]);
 assert.deepEqual(btcDeclaredMachineTools("BTC_CHANGE_MEMORY"), ["snapshot"]);
 assert.deepEqual(btcDeclaredMachineTools("BITCOIN_PROTOCOL"), ["bitcoin_protocol"]);
 for (const queryClass of ["BTC_FIELD_NOW", "BTC_CHANGE_MEMORY", "BITCOIN_PROTOCOL"] as const) {
@@ -179,4 +179,4 @@ console.log(JSON.stringify({
     settlement_disabled: true,
     production_payment_disabled: true,
   },
-}, null, 2));
+}, null, 2));\n}\n\nmain().catch((error) => {\n  console.error(error);\n  process.exitCode = 1;\n});
