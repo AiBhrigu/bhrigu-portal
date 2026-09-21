@@ -129,12 +129,16 @@ const COPY = {
     entryInput: "QUESTION · STATE · TIME",
     intelligenceBridge: "AI / COSMOGRAPHER",
     intelligenceBridgeMeta: "RELATION · INTERPRETATION",
+    agentRole: "AI AGENT",
+    agentObject: "BHRIGU BTC EVIDENCE ANSWER V0",
+    agentResult: "VERIFIED BITCOIN EVIDENCE",
+    agentState: "DETERMINISTIC V0 · PUBLIC DISCOVERY LIVE",
     phiField: "Φ FIELD",
     phiFieldMeta: "EVIDENCE · MEMORY · CHANGE",
     returnLabel: "ORIENTATION",
     returnValue: "HUMAN JUDGMENT",
     corridorEyebrow: "CURRENT LIVE APPLICATION",
-    relationAria: "One human enters with a question, state and time. AI and Cosmographer mediate the relation with the Φ field. Evidence, memory and change return as orientation, while final judgment remains with the human.",
+    relationAria: "One human enters with a question, state and time. AI and Cosmographer mediate the relation with the Φ field. The subordinate AI-agent position is bound to BHRIGU BTC Evidence Answer V0: machine inquiry returns bounded, verified Bitcoin evidence through deterministic public discovery. Evidence, memory and change return as orientation, while final judgment remains with the human.",
     category: "AI MARKET INTELLIGENCE SYSTEM",
     h1Lead: "See what changed in Bitcoin —",
     h1Close: "and what would change the current read.",
@@ -253,12 +257,16 @@ const COPY = {
     entryInput: "ВОПРОС · СОСТОЯНИЕ · ВРЕМЯ",
     intelligenceBridge: "AI / КОСМОГРАФ",
     intelligenceBridgeMeta: "СВЯЗЬ · ИНТЕРПРЕТАЦИЯ",
+    agentRole: "AI-АГЕНТ",
+    agentObject: "BHRIGU BTC EVIDENCE ANSWER V0",
+    agentResult: "ПРОВЕРЕННЫЕ BITCOIN-ДОКАЗАТЕЛЬСТВА",
+    agentState: "DETERMINISTIC V0 · ПУБЛИЧНОЕ ОБНАРУЖЕНИЕ LIVE",
     phiField: "ПОЛЕ Φ",
     phiFieldMeta: "ДОКАЗАТЕЛЬСТВА · ПАМЯТЬ · ИЗМЕНЕНИЕ",
     returnLabel: "ОРИЕНТАЦИЯ",
     returnValue: "СУЖДЕНИЕ ЧЕЛОВЕКА",
     corridorEyebrow: "ТЕКУЩЕЕ ЖИВОЕ ПРИЛОЖЕНИЕ",
-    relationAria: "Человек входит в систему со своим вопросом, состоянием и временем. AI и Космограф связывают его с полем Φ. Доказательства, память и изменение возвращаются как ориентация, а окончательное суждение остаётся за человеком.",
+    relationAria: "Человек входит в систему со своим вопросом, состоянием и временем. AI и Космограф связывают его с полем Φ. Подчинённая позиция AI-агента связана с BHRIGU BTC Evidence Answer V0: машинный запрос возвращает ограниченные проверенные Bitcoin-доказательства через детерминированное публичное обнаружение. Доказательства, память и изменение возвращаются как ориентация, а окончательное суждение остаётся за человеком.",
     category: "СИСТЕМА AI-АНАЛИТИКИ РЫНКОВ",
     h1Lead: "Что изменилось в Bitcoin —",
     h1Close: "и что изменит текущее чтение.",
@@ -400,6 +408,14 @@ function HomeRelation({ copy }) {
         <div className={styles.intelligenceBridge} data-relation-role="intelligence-bridge">
           <strong>{copy.intelligenceBridge}</strong>
           <small>{copy.intelligenceBridgeMeta}</small>
+          <span className={styles.agentCapability} data-agent-capability="bhrigu-btc-evidence-answer-v0" data-agent-state="verified-deterministic-public-discovery">
+            <i>{copy.agentRole}</i>
+            <b aria-hidden="true">→</b>
+            <strong>{copy.agentObject}</strong>
+            <b aria-hidden="true">→</b>
+            <small>{copy.agentResult}</small>
+            <em>{copy.agentState}</em>
+          </span>
         </div>
         <div className={styles.relationRoute} aria-hidden="true"><i /></div>
         <div className={styles.phiRelationField} data-relation-role="phi-field">
