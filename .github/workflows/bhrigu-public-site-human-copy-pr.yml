@@ -181,7 +181,9 @@ jobs:
               print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == home_phi_visual_truth:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
-          elif actual != expected:
+          elif actual == expected:
+              print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          else:
               raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} expected={sorted(expected)}')
           print('EXACT_SCOPE_PASS', sorted(actual))
           PY
