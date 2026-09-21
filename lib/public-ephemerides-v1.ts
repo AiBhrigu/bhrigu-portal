@@ -1,4 +1,5 @@
 import evidenceJson from "../data/btc_public_astro_evidence_v0_1.json";
+import { formatZodiacPosition } from "./public-zodiac-position";
 
 export type PublicAstroLocale = "en" | "ru";
 export const PUBLIC_EPHEMERIDES_YEAR = 2026;
@@ -49,16 +50,13 @@ export function buildPublicEphemeridesMonth(locale: PublicAstroLocale, month: nu
   const bodies = Object.entries(anchor.b).map(([body, pair]) => {
     const longitude = Number(pair[0]);
     const speed = Number(pair[1]);
-    const signIndex = Math.floor(((longitude % 360) + 360) % 360 / 30);
-    const degree = ((longitude % 30) + 30) % 30;
     return {
       key: body,
       name: bodyName(body, locale),
       longitude: Number(longitude.toFixed(4)),
       speed: Number(speed.toFixed(5)),
       retrograde: speed < 0,
-      sign: signName(signIndex, locale),
-      degree: Number(degree.toFixed(2)),
+      position: formatZodiacPosition(longitude, locale),
     };
   });
   const { start, end } = monthBounds(month);

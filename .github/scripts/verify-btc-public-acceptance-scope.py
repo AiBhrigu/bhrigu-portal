@@ -422,6 +422,21 @@ BTC_OBSERVABILITY_V1_SCOPE = {
     "ui/btc/BtcCleanChatV1.tsx",
 }
 
+# Cross-surface ephemerides unit-semantics repair: formatter + exact public consumers + acceptance authority only.
+EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_SCOPE = {
+    ".github/scripts/verify-btc-public-acceptance-scope.py",
+    ".github/workflows/astro-ephemerides-p1-integrity-pr.yml",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
+    "components/astro/BhriguPhiCosmograph.tsx",
+    "components/astro/PublicEphemeridesToday.tsx",
+    "components/astro/PublicEphemeridesV1.tsx",
+    "lib/btc-public-astro-evidence.ts",
+    "lib/public-ephemerides-live.ts",
+    "lib/public-ephemerides-v1.ts",
+    "lib/public-zodiac-position.ts",
+    "tests/astro-ephemerides-sexagesimal-format-acceptance.ts",
+}
+
 # Shared commercial-access atom: public meaning changes outside BTC product/runtime ownership.
 COMMERCIAL_ACCESS_SHARED_SCOPE = {
     '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -540,6 +555,7 @@ accepted_scopes = {
     "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE": BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE,
     "PASS_BTC_PR195_PR196_PREVIEW_INTEGRATION_EXACT_23_FILE_SCOPE": BTC_PR195_PR196_PREVIEW_INTEGRATION_SCOPE,
     "PASS_BTC_POLYMARKET_PUBLIC_REVEAL_EXACT_5_FILE_SCOPE": BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE,
+    "PASS_EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_EXACT_11_FILE_SCOPE": EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
