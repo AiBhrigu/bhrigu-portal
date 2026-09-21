@@ -426,6 +426,7 @@ BTC_OBSERVABILITY_V1_SCOPE = {
 EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_SCOPE = {
     ".github/scripts/verify-btc-public-acceptance-scope.py",
     ".github/workflows/astro-ephemerides-p1-integrity-pr.yml",
+    ".github/workflows/btc-clean-chat-v1-pr.yml",
     "components/astro/BhriguPhiCosmograph.tsx",
     "components/astro/PublicEphemeridesToday.tsx",
     "components/astro/PublicEphemeridesV1.tsx",
@@ -554,7 +555,7 @@ accepted_scopes = {
     "PASS_BTC_RESEARCH_FIELD_V1_PREVIEW_EXACT_19_FILE_SCOPE": BTC_RESEARCH_FIELD_V1_PREVIEW_SCOPE,
     "PASS_BTC_PR195_PR196_PREVIEW_INTEGRATION_EXACT_23_FILE_SCOPE": BTC_PR195_PR196_PREVIEW_INTEGRATION_SCOPE,
     "PASS_BTC_POLYMARKET_PUBLIC_REVEAL_EXACT_5_FILE_SCOPE": BTC_POLYMARKET_PUBLIC_REVEAL_SCOPE,
-    "PASS_EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_EXACT_10_FILE_SCOPE": EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_SCOPE,
+    "PASS_EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_EXACT_11_FILE_SCOPE": EPHEMERIDES_SEXAGESIMAL_PUBLIC_FORMAT_REPAIR_SCOPE,
 }
 
 for status, expected in accepted_scopes.items():
