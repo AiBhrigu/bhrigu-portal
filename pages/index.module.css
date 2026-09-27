@@ -1342,6 +1342,40 @@
   object-position: 50% 50%;
 }
 
+.scenePlate::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 49%;
+  width: 72px;
+  height: 72px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(39, 30, 31, 0.92) 0 29%,
+    rgba(67, 46, 36, 0.78) 40%,
+    rgba(129, 82, 45, 0.20) 58%,
+    rgba(154, 137, 209, 0.06) 70%,
+    transparent 78%);
+  box-shadow: 0 0 28px rgba(224, 196, 127, 0.16), 0 0 58px rgba(154, 137, 209, 0.08);
+}
+
+.scenePlate::after {
+  content: "Φ";
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 49%;
+  transform: translate(-50%, -52%);
+  color: rgba(226, 199, 132, 0.9);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 45px;
+  font-weight: 400;
+  line-height: 1;
+  text-shadow: 0 0 9px rgba(226, 199, 132, 0.18), 0 0 26px rgba(154, 137, 209, 0.08);
+}
+
 /* The locked plate owns all scene geometry. Live DOM owns meaning and proof. */
 .homeRelation::before,
 .homeRelation::after,
@@ -1579,11 +1613,11 @@
   z-index: 5;
   top: 8.7%;
   right: 2.4%;
-  bottom: 15.2%;
+  bottom: auto;
   width: 27.8%;
   min-width: 350px;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
   align-self: auto;
   overflow: hidden;
   border: 1px solid rgba(200, 164, 90, 0.34);
@@ -1708,6 +1742,9 @@
     object-fit: cover;
     object-position: left center;
   }
+
+  .scenePlate::before,
+  .scenePlate::after { display: none; }
 
   .homeRelation {
     position: relative;
@@ -1846,4 +1883,63 @@
   .proofObjectHeader .stateKicker { white-space: normal; overflow: visible; text-overflow: clip; }
   .proofStateGrid { grid-template-columns: 1fr; }
   .proofStateGrid > span { min-height: 0; }
+}
+
+
+/* PR291 bounded responsive closure: stable right panel + mobile role flow */
+@media (max-width: 840px) {
+  .heroVisual {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    margin-top: 28px;
+    grid-template-rows: auto auto;
+  }
+  .fieldCanvas[data-home-system-map] {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    overflow: visible;
+  }
+  .systemBranches {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    row-gap: 0;
+  }
+  .systemNodePrimary,
+  .systemNodeFrey,
+  .systemNodeCosmographer,
+  .systemNodeOrion {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: start;
+    justify-self: stretch;
+    width: auto;
+    min-height: 0;
+    margin-left: 0;
+    padding: 12px 0;
+  }
+  .systemNodePrimary { padding-left: 0; padding-right: 0; }
+  .systemNodeFrey { margin-left: 7%; }
+  .systemNodeCosmographer { margin-left: 14%; }
+  .systemNodeOrion {
+    display: grid;
+    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+    gap: 12px;
+    margin-left: 21%;
+    border-top: 1px solid rgba(200, 164, 90, 0.2);
+  }
+  .systemNodeOrion .systemNodeTitle { min-width: 92px; }
+  .btcSystemLanes { margin-top: 10px; }
+  .acceptedStateBand { position: relative; margin-top: 0; }
+}
+
+@media (max-width: 620px) {
+  .systemNodeFrey { margin-left: 5%; }
+  .systemNodeCosmographer { margin-left: 10%; }
+  .systemNodeOrion { margin-left: 15%; grid-template-columns: 1fr; gap: 5px; }
+  .systemNodeOrion .systemNodeTitle { min-width: 0; }
+  .proofObjectHeader { align-items: start; }
 }
