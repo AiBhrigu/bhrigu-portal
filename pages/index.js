@@ -512,7 +512,8 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           <HomeRelation copy={copy} />
         </div>
       </section>
-        <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
+      <section className={styles.applicationArchitecture} data-home-application-architecture>
+        <div className={styles.bitcoinModule} aria-label={copy.systemMapAria} data-home-bitcoin-module data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
             <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
             <div className={styles.systemRoot} data-system-role="boundary"><strong>MARKET COSMOGRAPHER</strong><small>{copy.systemMapRoot}</small></div>
@@ -521,9 +522,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
                 <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
                 <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
               </Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeFrey}`} href={`/frey?lang=${locale}`} data-system-node="frey" data-system-role="temporal"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeCosmographer}`} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer" data-system-role="membrane"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeOrion}`} href={`/orion?lang=${locale}`} data-system-node="orion" data-system-role="depth"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
             </div>
           </nav>
           <div className={styles.acceptedStateBand} data-btc-accepted-state data-home-btc-proof-object aria-label={acceptedState.aria}>
@@ -535,6 +533,12 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             </div>
           </div>
         </div>
+        <nav className={styles.systemRoleModule} data-home-system-role-module aria-label={copy.systemMapAria}>
+          <Link className={`${styles.systemNode} ${styles.systemNodeFrey}`} href={`/frey?lang=${locale}`} data-system-node="frey" data-system-role="temporal"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
+          <Link className={`${styles.systemNode} ${styles.systemNodeCosmographer}`} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer" data-system-role="membrane"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
+          <Link className={`${styles.systemNode} ${styles.systemNodeOrion}`} href={`/orion?lang=${locale}`} data-system-node="orion" data-system-role="depth"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
+        </nav>
+      </section>
       <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail>
         <SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/>
         <div className={styles.externalProofRail}>

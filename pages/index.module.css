@@ -2038,44 +2038,155 @@
   .proofStateGrid > span { min-height: 46px; padding: 5px 7px; }
 }
 
-/* PR291 final architecture: field and live evidence are separate surfaces. */
-.heroVisual {
-  position: relative;
-  inset: auto;
-  z-index: 1;
+/* PR291 bounded architecture: Bitcoin proof and system roles are independent modules. */
+.applicationArchitecture {
   width: min(1460px, calc(100% - 96px));
   min-width: 0;
   margin: 24px auto 52px;
   display: grid;
   grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.75fr);
-  grid-template-rows: auto;
-  align-items: stretch;
+  gap: 18px;
+  align-items: start;
+}
+
+.bitcoinModule,
+.systemRoleModule {
+  min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(200, 164, 90, 0.30);
   background: rgba(4, 8, 12, 0.92);
   box-shadow: 0 14px 44px rgba(0, 0, 0, 0.20), inset 0 0 40px rgba(98, 168, 216, 0.03);
-  backdrop-filter: none;
 }
 
-.heroVisual .fieldCanvas[data-home-system-map] {
+.bitcoinModule {
+  display: grid;
+  grid-template-rows: auto auto;
+}
+
+.bitcoinModule .fieldCanvas[data-home-system-map] {
   min-height: 0;
-  border-right: 1px solid rgba(200, 164, 90, 0.14);
+  padding: 18px;
+  border: 0;
+  background: linear-gradient(145deg, rgba(7, 12, 18, 0.72), rgba(5, 8, 12, 0.52));
 }
 
-.heroVisual .acceptedStateBand {
+.bitcoinModule .systemBranches {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  min-height: 150px;
+  padding-top: 10px;
+}
+
+.bitcoinModule .systemNodePrimary {
+  grid-column: 1;
+  grid-row: 1;
   align-self: stretch;
-  border-left: 0;
+  min-height: 150px;
+  padding: 18px 8px;
+}
+
+.bitcoinModule .acceptedStateBand {
+  position: relative;
+  align-self: auto;
+  padding: 12px 14px 14px;
+  border: 0;
+  border-top: 1px solid rgba(98, 168, 216, 0.22);
   background: rgba(4, 8, 12, 0.86);
 }
 
+.bitcoinModule .proofStateGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.systemRoleModule {
+  display: grid;
+  align-content: start;
+  padding: 10px 18px;
+}
+
+.systemRoleModule .systemNodeFrey,
+.systemRoleModule .systemNodeCosmographer,
+.systemRoleModule .systemNodeOrion {
+  grid-column: auto;
+  grid-row: auto;
+  align-self: start;
+  justify-self: stretch;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(98, 168, 216, 0.14);
+  background: transparent;
+}
+
+.systemRoleModule .systemNodeOrion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  border-bottom: 0;
+}
+
+.systemRoleModule .systemNodeOrion .systemNodeTitle {
+  min-width: 0;
+}
+
 @media (max-width: 840px) {
-  .heroVisual {
+  .applicationArchitecture {
     width: min(100% - 32px, 760px);
     margin: 0 auto 42px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    gap: 16px;
   }
-  .heroVisual .fieldCanvas[data-home-system-map] { border-right: 0; }
+
+  .bitcoinModule .fieldCanvas[data-home-system-map] {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bitcoinModule .systemBranches {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-auto-rows: auto;
+    min-height: 0;
+  }
+
+  .bitcoinModule .systemNodePrimary {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 12px 0;
+  }
+
+  .systemRoleModule .systemNodeFrey,
+  .systemRoleModule .systemNodeCosmographer,
+  .systemRoleModule .systemNodeOrion {
+    grid-column: auto;
+    grid-row: auto;
+    margin: 0;
+    padding: 16px 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .bitcoinModule .fieldCanvas[data-home-system-map] {
+    padding: 14px;
+  }
+
+  .bitcoinModule .acceptedStateBand {
+    padding: 12px 11px 13px;
+  }
+
+  .bitcoinModule .proofStateGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .systemRoleModule {
+    padding: 8px 14px;
+  }
 }
 
 /* Preserve canonical two-line desktop title after evidence decoupling. */

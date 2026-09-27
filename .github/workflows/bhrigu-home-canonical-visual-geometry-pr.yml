@@ -217,6 +217,151 @@ jobs:
               raise SystemExit("HOME_COSMOGRAPHIC_SCENE_GEOMETRY=FAIL "+repr(report["failures"]))
           print("HOME_COSMOGRAPHIC_SCENE_GEOMETRY=PASS")
           PY
+      - name: Verify decoupled Home modules in four viewports
+        if: env.BHRIGU_HOME_COSMOGRAPHIC_SCENE_SCOPE == 'true'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          from selenium import webdriver
+          from selenium.webdriver.common.by import By
+          from selenium.webdriver.chrome.options import Options
+          from selenium.webdriver.support.ui import WebDriverWait
+
+          base = os.environ["BASE"].rstrip("/")
+          artifacts = Path("artifacts")
+          report = {
+              "schema_version": "bhrigu_home_decoupled_market_modules_v0_1",
+              "checks": {},
+              "views": {},
+              "failures": [],
+          }
+
+          def check(name, value, detail=None):
+              ok = bool(value)
+              report["checks"][name] = ok
+              if not ok:
+                  report["failures"].append(name)
+                  if detail is not None:
+                      report.setdefault("detail", {})[name] = detail
+
+          options = Options()
+          for arg in ("--headless=new", "--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu", "--hide-scrollbars"):
+              options.add_argument(arg)
+          options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
+          driver = webdriver.Chrome(options=options)
+
+          def run_view(name, width, height, locale):
+              driver.set_window_size(width, height)
+              driver.get(f"{base}/?lang={locale}")
+              WebDriverWait(driver, 30).until(
+                  lambda current: current.find_element(By.CSS_SELECTOR, "[data-home-bitcoin-module]").is_displayed()
+              )
+              result = driver.execute_script(r"""
+                const q = (s, root=document) => root.querySelector(s);
+                const qa = (s, root=document) => Array.from(root.querySelectorAll(s));
+                const rect = (e) => { const r=e.getBoundingClientRect(); return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height}; };
+                const hero = q('section[aria-labelledby="home-title"]');
+                const architecture = q('[data-home-application-architecture]');
+                const bitcoin = q('[data-home-bitcoin-module]');
+                const roles = q('[data-home-system-role-module]');
+                const map = q('[data-home-system-map]');
+                const proof = q('[data-home-btc-proof-object]');
+                const proofGrid = q('[data-home-btc-proof-object] > div:last-child');
+                const plate = q('[data-home-locked-scene-plate]');
+                const roleNodes = qa('[data-system-node]', roles).map((e) => e.dataset.systemNode);
+                const bitcoinNodes = qa('[data-system-node]', bitcoin).map((e) => e.dataset.systemNode);
+                const audited = [architecture,bitcoin,roles,map,proof,...qa('[data-system-node]',architecture)].filter(Boolean);
+                const clipping = audited.map((e) => ({
+                  key:e.dataset.homeBitcoinModule!==undefined?'bitcoin':e.dataset.homeSystemRoleModule!==undefined?'roles':e.dataset.homeSystemMap!==undefined?'map':e.dataset.homeBtcProofObject!==undefined?'proof':e.dataset.systemNode||e.tagName,
+                  horizontal:e.scrollWidth-e.clientWidth,
+                  vertical:e.scrollHeight-e.clientHeight,
+                  overflowX:getComputedStyle(e).overflowX,
+                  overflowY:getComputedStyle(e).overflowY,
+                }));
+                const br=rect(bitcoin), rr=rect(roles), mr=rect(map), pr=rect(proof), ar=rect(architecture);
+                const overlapWidth=Math.max(0,Math.min(br.right,rr.right)-Math.max(br.left,rr.left));
+                const overlapHeight=Math.max(0,Math.min(br.bottom,rr.bottom)-Math.max(br.top,rr.top));
+                return {
+                  locale:document.documentElement.lang,
+                  heroModules:qa('[data-home-bitcoin-module],[data-home-system-role-module],[data-home-system-map],[data-home-btc-proof-object]',hero).length,
+                  architectureCount:qa('[data-home-application-architecture]').length,
+                  bitcoinCount:qa('[data-home-bitcoin-module]').length,
+                  rolesCount:qa('[data-home-system-role-module]').length,
+                  plateCount:qa('[data-home-locked-scene-plate]').length,
+                  plateSha:plate?.dataset.scenePlateSha256||null,
+                  bitcoinContainsMap:bitcoin.contains(map),
+                  bitcoinContainsProof:bitcoin.contains(proof),
+                  rolesContainsProof:roles.contains(proof),
+                  bitcoinNodes, roleNodes,
+                  proofCells:proofGrid?proofGrid.children.length:0,
+                  mapBeforeProof:mr.bottom<=pr.top+1,
+                  proofInsideBitcoin:pr.left>=br.left-1&&pr.right<=br.right+1&&pr.bottom<=br.bottom+1,
+                  architectureContainsBoth:architecture.contains(bitcoin)&&architecture.contains(roles),
+                  modulesOverlap:overlapWidth*overlapHeight,
+                  mobileStacked:rr.top>=br.bottom-1,
+                  noHorizontalOverflow:document.documentElement.scrollWidth<=innerWidth+1,
+                  clipping,
+                  rects:{architecture:ar,bitcoin:br,roles:rr,map:mr,proof:pr},
+                  routes:qa('[data-system-node]',architecture).map((e)=>({node:e.dataset.systemNode,href:e.getAttribute('href')})),
+                  errorOverlay:!!q('nextjs-portal,[data-nextjs-dialog-overlay]'),
+                };
+              """)
+              severe = [
+                  entry for entry in driver.get_log("browser")
+                  if entry.get("level") == "SEVERE"
+                  and "favicon.ico" not in entry.get("message", "").lower()
+                  and "/api/btc/observability/v1/event" not in entry.get("message", "")
+              ]
+              result["severeErrors"] = severe
+              report["views"][name] = result
+
+              prefix = name
+              check(f"{prefix}_language", result["locale"] == locale, result)
+              check(f"{prefix}_hero_is_pure", result["heroModules"] == 0, result)
+              check(f"{prefix}_one_architecture", result["architectureCount"] == 1, result)
+              check(f"{prefix}_one_bitcoin_module", result["bitcoinCount"] == 1, result)
+              check(f"{prefix}_one_role_module", result["rolesCount"] == 1, result)
+              check(f"{prefix}_locked_plate_single", result["plateCount"] == 1 and result["plateSha"] == "9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303", result)
+              check(f"{prefix}_bitcoin_coherent", result["bitcoinContainsMap"] and result["bitcoinContainsProof"] and result["bitcoinNodes"] == ["btc"], result)
+              check(f"{prefix}_accepted_state_at_bottom", result["mapBeforeProof"] and result["proofInsideBitcoin"] and result["proofCells"] == 3, result)
+              check(f"{prefix}_roles_separate", not result["rolesContainsProof"] and result["roleNodes"] == ["frey", "cosmographer", "orion"], result)
+              check(f"{prefix}_modules_independent", result["architectureContainsBoth"] and result["modulesOverlap"] == 0, result)
+              check(f"{prefix}_responsive_order", width > 840 or result["mobileStacked"], result)
+              check(f"{prefix}_no_horizontal_overflow", result["noHorizontalOverflow"], result)
+              check(f"{prefix}_no_clipping", all(item["horizontal"] <= 1 and item["vertical"] <= 1 for item in result["clipping"]), result["clipping"])
+              check(f"{prefix}_routes_preserved", result["routes"] == [
+                  {"node":"btc","href":f"/crypto-astro/btc?lang={locale}"},
+                  {"node":"frey","href":f"/frey?lang={locale}"},
+                  {"node":"cosmographer","href":f"/cosmographer?lang={locale}"},
+                  {"node":"orion","href":f"/orion?lang={locale}"},
+              ], result["routes"])
+              check(f"{prefix}_no_error_overlay", not result["errorOverlay"], result)
+              check(f"{prefix}_console_clean", not severe, severe)
+
+              driver.execute_script("window.scrollTo(0,0)")
+              driver.save_screenshot(str(artifacts / f"home-decoupled-{name}-hero.png"))
+              driver.execute_script("document.querySelector('[data-home-application-architecture]').scrollIntoView({block:'start'})")
+              driver.save_screenshot(str(artifacts / f"home-decoupled-{name}-modules.png"))
+
+          try:
+              run_view("desktop-en", 1440, 1100, "en")
+              run_view("desktop-ru", 1440, 1100, "ru")
+              run_view("mobile-en", 390, 844, "en")
+              run_view("mobile-ru", 390, 844, "ru")
+          finally:
+              driver.quit()
+
+          report["status"] = "PASS" if not report["failures"] else "FAIL"
+          (artifacts / "home-decoupled-market-modules-report.json").write_text(
+              json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+          )
+          print(json.dumps(report, ensure_ascii=False, indent=2))
+          if report["failures"]:
+              raise SystemExit("HOME_DECOUPLED_MARKET_MODULES=FAIL " + repr(report["failures"]))
+          print("HOME_DECOUPLED_MARKET_MODULES=PASS")
+          PY
       - name: Stop preview
         if: always()
         run: |
