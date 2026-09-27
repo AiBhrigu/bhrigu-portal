@@ -5,6 +5,9 @@ on:
     branches: [master]
     paths:
       - ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+      - ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+      - ".github/workflows/bhrigu-frey-preservation-pr.yml"
+      - ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
       - ".github/workflows/btc-clean-chat-v1-pr.yml"
       - "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
       - "package.json"
@@ -33,6 +36,9 @@ jobs:
           set -euo pipefail
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+          .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/bhrigu-public-surface-integrity-pr.yml
           .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
           .github/workflows/btc-clean-chat-v1-pr.yml
           lib/btc-agent-x402-base-sepolia-testnet-v0.ts

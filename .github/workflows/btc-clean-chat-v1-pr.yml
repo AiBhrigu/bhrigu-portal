@@ -66,6 +66,9 @@ jobs:
           git fetch origin "${GITHUB_BASE_REF}"
           mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
           btc_agent_x402_base_sepolia_testnet_binding_expected=(
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
             ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
             "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
