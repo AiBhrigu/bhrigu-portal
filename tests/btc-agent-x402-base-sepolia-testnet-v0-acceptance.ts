@@ -6,6 +6,7 @@ import {
   BTC_AGENT_X402_BASE_SEPOLIA_ASSET,
   BTC_AGENT_X402_BASE_SEPOLIA_ENABLE_ENV,
   BTC_AGENT_X402_BASE_SEPOLIA_NETWORK,
+  BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS,
   BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS_ENV,
   BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME,
   BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME_ENV,
@@ -20,12 +21,12 @@ import {
 } from "../lib/btc-agent-x402-base-sepolia-testnet-v0";
 import { btcAgentX402PreviewBoundary } from "../lib/btc-agent-x402-preview-v0";
 
-const fixturePayTo = "0x1111111111111111111111111111111111111111";
+const authoritativePayTo = BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS;
 const enabledEnv = {
   VERCEL_ENV: "preview",
   [BTC_AGENT_X402_BASE_SEPOLIA_ENABLE_ENV]: "true",
   [BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME_ENV]: BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME,
-  [BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS_ENV]: fixturePayTo,
+  [BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS_ENV]: authoritativePayTo,
 };
 
 function expectBindingError(fn: () => unknown, code: BtcAgentX402BaseSepoliaBindingError["code"]) {
@@ -53,13 +54,20 @@ expectBindingError(
   }),
   "RECEIVER_ADDRESS_MISSING",
 );
+expectBindingError(
+  () => resolveBtcAgentX402BaseSepoliaBinding({
+    ...enabledEnv,
+    [BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS_ENV]: "0x1111111111111111111111111111111111111111",
+  }),
+  "RECEIVER_ADDRESS_MISMATCH",
+);
 
 const requirements = btcAgentX402BaseSepoliaPaymentRequirements(enabledEnv);
 assert.equal(requirements.scheme, "exact");
 assert.equal(requirements.network, "eip155:84532");
 assert.equal(requirements.asset, BTC_AGENT_X402_BASE_SEPOLIA_ASSET);
 assert.equal(requirements.amount, "500000");
-assert.equal(requirements.payTo, fixturePayTo);
+assert.equal(requirements.payTo, authoritativePayTo);
 assert.equal(requirements.maxTimeoutSeconds, 60);
 assert.deepEqual(requirements.extra, { name: "USDC", version: "2" });
 
@@ -81,7 +89,7 @@ const paymentPayload = {
     signature: "0x" + "00".repeat(65),
     authorization: {
       from: "0x2222222222222222222222222222222222222222",
-      to: fixturePayTo,
+      to: authoritativePayTo,
       value: BTC_AGENT_X402_BASE_SEPOLIA_AMOUNT_ATOMIC,
       validAfter: "0",
       validBefore: "9999999999",
@@ -138,6 +146,7 @@ console.log(JSON.stringify({
     testnet_binding_fail_closed: true,
     production_environment_forbidden: true,
     receiver_name_bound: true,
+    receiver_address_bound: BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS,
     challenge_x402_v2: true,
     scheme_exact: true,
     network: BTC_AGENT_X402_BASE_SEPOLIA_NETWORK,

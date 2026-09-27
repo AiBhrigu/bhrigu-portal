@@ -13,6 +13,8 @@ export const BTC_AGENT_X402_BASE_SEPOLIA_PAYER_ADDRESS =
   "0x9f736D6922ad950337C8A336b923dBBc17216004" as const;
 export const BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME =
   "bhrigu-x402-base-sepolia-receiver" as const;
+export const BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS =
+  "0xC7a1D5Bd75869c14cFd9b61C646785ab80A1cD12" as const;
 
 export const BTC_AGENT_X402_BASE_SEPOLIA_ENABLE_ENV =
   "BHRIGU_BTC_EVIDENCE_X402_BASE_SEPOLIA_ENABLED" as const;
@@ -64,6 +66,7 @@ export class BtcAgentX402BaseSepoliaBindingError extends Error {
       | "RECEIVER_NAME_MISMATCH"
       | "RECEIVER_ADDRESS_MISSING"
       | "RECEIVER_ADDRESS_INVALID"
+      | "RECEIVER_ADDRESS_MISMATCH"
       | "RESOURCE_URL_INVALID"
       | "PAYMENT_SIGNATURE_INVALID"
       | "PAYMENT_REQUIREMENTS_MISMATCH",
@@ -109,13 +112,16 @@ export function resolveBtcAgentX402BaseSepoliaBinding(
   if (!EVM_ADDRESS.test(payTo)) {
     throw new BtcAgentX402BaseSepoliaBindingError("RECEIVER_ADDRESS_INVALID");
   }
+  if (payTo !== BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS) {
+    throw new BtcAgentX402BaseSepoliaBindingError("RECEIVER_ADDRESS_MISMATCH");
+  }
   return {
     schema_version: BTC_AGENT_X402_BASE_SEPOLIA_TESTNET_SCHEMA,
     testnet_only: true,
     production_payment_enabled: false,
     public_contract_unchanged: true,
     receiver_name: BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_NAME,
-    pay_to: payTo,
+    pay_to: BTC_AGENT_X402_BASE_SEPOLIA_RECEIVER_ADDRESS,
   };
 }
 
