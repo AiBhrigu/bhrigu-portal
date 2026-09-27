@@ -1,0 +1,66 @@
+name: BTC Evidence x402 Base Sepolia Testnet Binding
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+      - "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
+      - "package.json"
+      - "tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
+
+permissions:
+  contents: read
+
+jobs:
+  exact-testnet-binding:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Exact bounded scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
+          cat > /tmp/expected.txt <<'EOF'
+          .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
+          lib/btc-agent-x402-base-sepolia-testnet-v0.ts
+          package.json
+          tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
+      - name: Public and production contract preservation
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test -z "$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" -- \
+            lib/btc-agent-evidence-answer-v0.ts \
+            lib/btc-agent-x402-preview-v0.ts \
+            pages/api/agent/btc/evidence-answer/v0.ts \
+            public/.well-known/bhrigu-agent-commerce.json \
+            public/openapi/agent-commerce-v0.json \
+            tests/btc-agent-evidence-answer-v0-acceptance.ts)"
+          echo "PUBLIC_PRODUCTION_CONTRACT_UNCHANGED=PASS"
+      - name: Install locked repository dependencies
+        run: npm ci --ignore-scripts
+      - name: Verify isolated Base Sepolia binding membrane
+        run: npm run verify:btc-agent-x402-base-sepolia-binding
+      - name: Re-verify canonical BTC Evidence Answer V0
+        run: node --import tsx tests/btc-agent-evidence-answer-v0-acceptance.ts
+      - name: Prove no execution occurred
+        run: |
+          echo "SIGNATURE_PERFORMED=ZERO"
+          echo "SETTLEMENT_PERFORMED=ZERO"
+          echo "BLOCKCHAIN_TRANSACTION_COUNT=ZERO"
