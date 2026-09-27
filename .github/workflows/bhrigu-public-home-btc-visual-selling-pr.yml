@@ -33,7 +33,7 @@ jobs:
           git fetch origin master
           python3 - <<'PY'
           import os, subprocess
-          # Home cosmographic-scene authority: this workflow pair plus pages/index.js and pages/index.module.css is the exact bounded scene scope.
+          # Home cosmographic-scene authority: exact CI pair, Home source, and locked scene plate only.
           expected = {
               '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
@@ -47,6 +47,7 @@ jobs:
               '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
               'pages/index.js',
               'pages/index.module.css',
+              'public/home/bhrigu-home-locked-field-plate-v0-1.webp',
           }
           revenue_discovery = {
               'pages/access.tsx',
@@ -225,7 +226,13 @@ jobs:
           grep -Fq '.relationStage::after' pages/index.module.css
           grep -Fq '.phiRelationField' pages/index.module.css
           grep -Fq '.returnRoute' pages/index.module.css
+          grep -Fq 'data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"' pages/index.js
+          grep -Fq 'src="/home/bhrigu-home-locked-field-plate-v0-1.webp"' pages/index.js
+          grep -Fq '9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303' pages/index.js
+          test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
+          ! grep -Fq '<RelationGlyph' pages/index.js
           ! grep -Fq '<FieldAnchorGlyph' pages/index.js
+          echo 'HOME_LOCKED_SCENE_PLATE_CONTRACT=PASS'
           echo 'HOME_COSMOGRAPHIC_SCENE_CONTRACT=PASS'
 
       - name: Verify visual contracts in source

@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import {
   EMPTY_BTC_HOME_ACCEPTED_STATE,
@@ -6,7 +7,6 @@ import {
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 import PublicSupportRoute from "../components/btc/PublicSupportRoute";
-import { RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
@@ -490,6 +490,22 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
+        <div
+          className={styles.scenePlate}
+          data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"
+          data-scene-plate-sha256="9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
+          aria-hidden="true"
+        >
+          <Image
+            className={styles.scenePlateImage}
+            src="/home/bhrigu-home-locked-field-plate-v0-1.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            unoptimized
+          />
+        </div>
         <div className={styles.heroCopy}>
           <p className={styles.category}>{copy.rootIdentity}</p>
           <h1 id="home-title"><span>{copy.humanEntryLead}</span><span>{copy.humanEntryClose}</span></h1>
@@ -500,7 +516,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
             <div className={styles.systemRoot} data-system-role="boundary"><strong>MARKET COSMOGRAPHER</strong><small>{copy.systemMapRoot}</small></div>
             <div className={styles.systemBranches} data-system-relations="true">
-              <RelationGlyph className={styles.homeRelationGlyph}/>
               <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc" data-system-role="primary">
                 <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
                 <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
