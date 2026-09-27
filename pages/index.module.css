@@ -236,14 +236,14 @@
 @keyframes bhriguAcceptedStatePulse { 0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.98) rotate(0deg); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.035) rotate(5deg); } }
 
 
-.fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 12px; padding: 18px 18px 16px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: radial-gradient(circle at 38.2% 58%, rgba(98, 168, 216, 0.1), transparent 36%), radial-gradient(circle at 82% 78%, rgba(200, 164, 90, 0.05), transparent 28%), linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
+.fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto auto; gap: 12px; padding: 18px 18px 16px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: radial-gradient(circle at 38.2% 58%, rgba(98, 168, 216, 0.1), transparent 36%), radial-gradient(circle at 82% 78%, rgba(200, 164, 90, 0.05), transparent 28%), linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
 .systemMapTopline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; color: rgba(128, 188, 227, 0.78); font-size: 8px; font-weight: 750; letter-spacing: 0.18em; text-transform: uppercase; }
 .systemMapLink { display: inline-flex; align-items: center; gap: 7px; color: rgba(128, 188, 227, 0.9) !important; text-decoration: none !important; border-bottom: 1px solid rgba(98, 168, 216, 0.34); padding-bottom: 4px; }
 .systemMapLink:hover, .systemMapLink:focus-visible { color: var(--home-gold-bright) !important; border-bottom-color: rgba(224, 196, 127, 0.66); outline: none; }
 .systemRoot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px 12px; padding: 10px 0 11px; border: 0; border-bottom: 1px solid rgba(200, 164, 90, 0.28); background: transparent; }
 .systemRoot strong { color: var(--home-ink); font-size: 15px; letter-spacing: 0.12em; }
 .systemRoot small { color: rgba(224, 196, 127, 0.78); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }
-.systemBranches { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); grid-template-rows: minmax(126px, 1.618fr) minmax(78px, 1fr) minmax(64px, 0.82fr); column-gap: 18px; row-gap: 0; min-height: 280px; padding: 10px 0 0; isolation: isolate; overflow: hidden; }
+.systemBranches { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); grid-template-rows: minmax(126px, auto) minmax(84px, auto) minmax(84px, auto); column-gap: 18px; row-gap: 8px; min-height: 0; padding: 10px 0 0; isolation: isolate; overflow: visible; }
 .homeRelationGlyph { position: absolute; inset: 2px -3% 0 -2%; z-index: 0; width: 105%; height: 100%; opacity: 0.46; pointer-events: none; }
 .homeRelationGlyph :global(.primaryRoutePath), .homeRelationGlyph :global(.supportRoutePath) { fill: none; vector-effect: non-scaling-stroke; }
 .homeRelationGlyph :global(.primaryRoutePath) { stroke: var(--home-blue); stroke-width: 1.35; stroke-dasharray: 9 13; opacity: 0.58; }
