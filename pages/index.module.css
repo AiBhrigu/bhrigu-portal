@@ -1574,7 +1574,7 @@
   z-index: 5;
   top: 8.7%;
   right: 2.4%;
-  bottom: 16.3%;
+  bottom: 2%;
   width: 27.8%;
   min-width: 350px;
   display: grid;
@@ -1588,17 +1588,22 @@
 }
 
 .fieldCanvas[data-home-system-map] {
+  width: 100%;
+  min-width: 0;
   min-height: 0;
+  box-sizing: border-box;
   gap: 10px;
   padding: 17px 18px 12px;
-  overflow: hidden;
+  overflow: visible;
   border: 0;
   background: linear-gradient(145deg, rgba(7, 12, 18, 0.56), rgba(5, 8, 12, 0.32));
 }
 
 .systemBranches {
+  min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  grid-template-rows: minmax(126px, auto) minmax(96px, auto) minmax(96px, auto);
+  overflow: visible;
 }
 
 .systemNodePrimary,
@@ -1607,9 +1612,20 @@
 }
 
 .acceptedStateBand {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   border-bottom: 0;
   background: rgba(4, 8, 12, 0.76);
 }
+
+.systemMapTopline,
+.systemRoot,
+.proofObjectHeader,
+.proofStateGrid { width: 100%; max-width: 100%; min-width: 0; }
+.systemMapTopline > *,
+.systemRoot > *,
+.proofObjectHeader > * { min-width: 0; overflow-wrap: anywhere; }
 
 @media (max-width: 1180px) and (min-width: 841px) {
   .heroVisual {
@@ -1803,6 +1819,7 @@
   }
 
   .acceptedStateBand { padding: 12px 11px 13px; }
+  .proofObjectHeader .stateKicker { white-space: normal; overflow: visible; text-overflow: clip; }
   .proofStateGrid { grid-template-columns: 1fr; }
   .proofStateGrid > span { min-height: 0; }
 }
