@@ -1342,40 +1342,6 @@
   object-position: 50% 50%;
 }
 
-.scenePlate::before {
-  content: "";
-  position: absolute;
-  z-index: 1;
-  left: 50%;
-  top: 49%;
-  width: 72px;
-  height: 72px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(39, 30, 31, 0.92) 0 29%,
-    rgba(67, 46, 36, 0.78) 40%,
-    rgba(129, 82, 45, 0.20) 58%,
-    rgba(154, 137, 209, 0.06) 70%,
-    transparent 78%);
-  box-shadow: 0 0 28px rgba(224, 196, 127, 0.16), 0 0 58px rgba(154, 137, 209, 0.08);
-}
-
-.scenePlate::after {
-  content: "Φ";
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 49%;
-  transform: translate(-50%, -52%);
-  color: rgba(226, 199, 132, 0.9);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 45px;
-  font-weight: 400;
-  line-height: 1;
-  text-shadow: 0 0 9px rgba(226, 199, 132, 0.18), 0 0 26px rgba(154, 137, 209, 0.08);
-}
-
 /* The locked plate owns all scene geometry. Live DOM owns meaning and proof. */
 .homeRelation::before,
 .homeRelation::after,
@@ -1567,10 +1533,10 @@
 .agentCapability { display: none; }
 
 .phiRelationField {
-  left: 58.8%;
+  left: 55.4%;
   top: 46.8%;
   display: grid;
-  width: 12.8%;
+  width: 12.2%;
   height: auto;
   gap: 3px;
   border-radius: 50%;
@@ -1590,23 +1556,46 @@
 
 .returnRoute {
   position: absolute;
-  left: 55.8%;
-  right: auto;
-  bottom: 14.8%;
+  left: 18.5%;
+  right: 39.5%;
+  bottom: 10.8%;
   z-index: 6;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(84px, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: auto;
   margin: 0;
   padding: 0;
   border: 0;
-  color: rgba(241, 239, 233, 0.72);
+  color: rgba(241, 239, 233, 0.58);
   text-shadow: 0 2px 12px #07090c, 0 2px 24px #07090c;
 }
-
-.returnRoute i { display: inline; color: var(--home-gold-bright); font-style: normal; }
-.returnRoute strong { color: var(--home-gold-bright); }
+.returnRoute strong { order: 1; color: var(--home-gold-bright); white-space: nowrap; }
+.returnRoute i { order: 2; position: relative; display: block; min-width: 84px; height: 14px; overflow: visible; color: transparent; font-style: normal; }
+.returnRoute span { order: 3; justify-self: end; white-space: nowrap; }
+.returnRoute i::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(224, 196, 127, 0.68), rgba(154, 137, 209, 0.22), rgba(98, 168, 216, 0.12));
+}
+.returnRoute i::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: calc(50% - 3px);
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid rgba(224, 196, 127, 0.82);
+  border-left: 1px solid rgba(224, 196, 127, 0.82);
+  transform: rotate(45deg);
+}
 
 .heroVisual {
   position: absolute;
@@ -1742,9 +1731,6 @@
     object-fit: cover;
     object-position: left center;
   }
-
-  .scenePlate::before,
-  .scenePlate::after { display: none; }
 
   .homeRelation {
     position: relative;
@@ -1942,4 +1928,52 @@
   .systemNodeOrion { margin-left: 15%; grid-template-columns: 1fr; gap: 5px; }
   .systemNodeOrion .systemNodeTitle { min-width: 0; }
   .proofObjectHeader { align-items: start; }
+}
+
+
+/* PR291 final visual harmony: one Phi, closed return, balanced mobile labels */
+@media (max-width: 840px) {
+  .returnRoute {
+    position: static;
+    order: 5;
+    display: grid;
+    grid-template-columns: auto minmax(54px, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 16px 0 0;
+  }
+  .returnRoute strong { order: 1; }
+  .returnRoute i { order: 2; min-width: 54px; }
+  .returnRoute span { order: 3; justify-self: end; }
+}
+
+@media (max-width: 620px) {
+  .relationStage {
+    row-gap: 16px;
+  }
+  .humanCoordinate { padding-bottom: 0; }
+  .intelligenceBridge { justify-self: center; width: min(72%, 250px); }
+  .phiRelationField {
+    justify-self: end;
+    width: min(58%, 210px);
+    padding-top: 12px;
+  }
+  .proofObjectHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    align-items: start;
+  }
+  .proofObjectHeader strong {
+    justify-self: start;
+    white-space: nowrap;
+  }
+  .returnRoute {
+    grid-template-columns: auto minmax(36px, 1fr) auto;
+    gap: 8px;
+    font-size: 7.5px;
+    letter-spacing: 0.08em;
+  }
+  .returnRoute strong, .returnRoute span { font-size: 7.5px; letter-spacing: 0.08em; }
 }
