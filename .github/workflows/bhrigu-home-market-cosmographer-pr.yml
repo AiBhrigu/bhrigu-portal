@@ -563,7 +563,11 @@ jobs:
               }
               nodes={k:driver.find_element(By.CSS_SELECTOR,v) for k,v in selectors.items()}
               for name,node in nodes.items():
+                  if name == "agent":
+                      continue
                   check(f"{name}_visible",node.is_displayed())
+              check("agent_semantic_bound", nodes["agent"] is not None)
+              check("agent_scene_deemphasized", not nodes["agent"].is_displayed())
 
               nested=driver.execute_script("""
                 const r=document.querySelector('[data-home-relation]');
