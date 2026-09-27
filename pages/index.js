@@ -1,3 +1,5 @@
+[Reading 637 lines from start (total: 637 lines, 0 remaining)]
+
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -511,6 +513,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
           <h1 id="home-title"><span>{copy.humanEntryLead}</span><span>{copy.humanEntryClose}</span></h1>
           <HomeRelation copy={copy} />
         </div>
+      </section>
         <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
             <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
@@ -534,7 +537,6 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             </div>
           </div>
         </div>
-      </section>
       <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail>
         <SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/>
         <div className={styles.externalProofRail}>
@@ -635,3 +637,5 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     </main>
   </>;
 }
+
+[executed on device: ORION (0cf33df5-ba62-49d6-906f-f1123004e908)]
