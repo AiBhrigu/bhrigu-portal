@@ -65,6 +65,13 @@ jobs:
         run: |
           git fetch origin "${GITHUB_BASE_REF}"
           mapfile -t actual < <(git diff --name-only "origin/${GITHUB_BASE_REF}...HEAD" | sort)
+          btc_agent_x402_base_sepolia_testnet_binding_expected=(
+            ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
+            "package.json"
+            "tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
+          )
           agent_commerce_v0_ci_authority_expected=(
             ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
             ".github/workflows/bhrigu-frey-preservation-pr.yml"
@@ -294,6 +301,7 @@ jobs:
             "lib/public-zodiac-position.ts"
             "tests/astro-ephemerides-sexagesimal-format-acceptance.ts"
           )
+          mapfile -t btc_agent_x402_base_sepolia_testnet_binding_expected_sorted < <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected[@]}" | sort)
           mapfile -t agent_commerce_v0_ci_authority_expected_sorted < <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected[@]}" | sort)
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
@@ -319,7 +327,9 @@ jobs:
           mapfile -t commercial_access_expected_sorted < <(printf '%s\n' "${commercial_access_expected[@]}" | sort)
           mapfile -t ci_authority_repair_expected_sorted < <(printf '%s\n' "${ci_authority_repair_expected[@]}" | sort)
           mapfile -t ephemerides_sexagesimal_expected_sorted < <(printf '%s\n' "${ephemerides_sexagesimal_expected[@]}" | sort)
-          if diff -q <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+          if diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_AGENT_X402_BASE_SEPOLIA_TESTNET_BINDING_EXACT_5_FILE_SCOPE"
+          elif diff -q <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BHRIGU_BTC_EVIDENCE_ANSWER_V0_CI_AUTHORITY_EXACT_11_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${frey_passport_preview_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_SHARED_FREY_COSMOGRAPHIC_PASSPORT_PREVIEW_SCOPE"

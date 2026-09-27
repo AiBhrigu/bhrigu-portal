@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+      - ".github/workflows/btc-clean-chat-v1-pr.yml"
       - "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
       - "package.json"
       - "tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
@@ -33,6 +34,7 @@ jobs:
           git diff --name-only "$BASE_SHA" "$HEAD_SHA" | sort > /tmp/actual.txt
           cat > /tmp/expected.txt <<'EOF'
           .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
+          .github/workflows/btc-clean-chat-v1-pr.yml
           lib/btc-agent-x402-base-sepolia-testnet-v0.ts
           package.json
           tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts
