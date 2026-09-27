@@ -51,6 +51,18 @@ jobs:
             "package.json"
             "tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
           )
+          btc_agent_x402_base_sepolia_runtime_bridge_expected=(
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "lib/btc-agent-x402-base-sepolia-runtime-v0.ts"
+            "lib/server/btc-agent-x402-cdp-cli-adapter-v0.ts"
+            "package.json"
+            "scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts"
+            "tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts"
+          )
           agent_commerce_v0_ci_authority_expected=(
             ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
             ".github/workflows/bhrigu-frey-preservation-pr.yml"
@@ -65,9 +77,14 @@ jobs:
             "tests/btc-agent-evidence-answer-v0-acceptance.ts"
           )
           mapfile -t btc_agent_x402_base_sepolia_testnet_binding_expected_sorted < <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected[@]}" | sort)
+          mapfile -t btc_agent_x402_base_sepolia_runtime_bridge_expected_sorted < <(printf '%s\n' "${btc_agent_x402_base_sepolia_runtime_bridge_expected[@]}" | sort)
           mapfile -t agent_commerce_v0_ci_authority_expected_sorted < <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected[@]}" | sort)
           if diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_AGENT_X402_BASE_SEPOLIA_TESTNET_BINDING_PUBLIC_SURFACE_EXACT_8_FILE_SCOPE"
+            exit 0
+          fi
+          if diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_runtime_bridge_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_AGENT_X402_BASE_SEPOLIA_RUNTIME_BRIDGE_PUBLIC_SURFACE_EXACT_10_FILE_SCOPE"
             exit 0
           fi
           if diff -q <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
