@@ -1,5 +1,3 @@
-[Reading 637 lines from start (total: 637 lines, 0 remaining)]
-
 import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
@@ -637,5 +635,3 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     </main>
   </>;
 }
-
-[executed on device: ORION (0cf33df5-ba62-49d6-906f-f1123004e908)]
