@@ -10,8 +10,12 @@ on:
       - ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
       - ".github/workflows/btc-clean-chat-v1-pr.yml"
       - "lib/btc-agent-x402-base-sepolia-testnet-v0.ts"
+      - "lib/btc-agent-x402-base-sepolia-runtime-v0.ts"
+      - "lib/server/btc-agent-x402-cdp-cli-adapter-v0.ts"
       - "package.json"
+      - "scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts"
       - "tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
+      - "tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts"
 
 permissions:
   contents: read
@@ -41,9 +45,11 @@ jobs:
           .github/workflows/bhrigu-public-surface-integrity-pr.yml
           .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
           .github/workflows/btc-clean-chat-v1-pr.yml
-          lib/btc-agent-x402-base-sepolia-testnet-v0.ts
+          lib/btc-agent-x402-base-sepolia-runtime-v0.ts
+          lib/server/btc-agent-x402-cdp-cli-adapter-v0.ts
           package.json
-          tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts
+          scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts
+          tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
@@ -63,12 +69,18 @@ jobs:
           echo "PUBLIC_PRODUCTION_CONTRACT_UNCHANGED=PASS"
       - name: Install locked repository dependencies
         run: npm ci --ignore-scripts
-      - name: Verify isolated Base Sepolia binding membrane
+      - name: Verify receipt-bound Base Sepolia runtime bridge
+        run: npm run verify:btc-agent-x402-base-sepolia-runtime
+      - name: Re-verify isolated Base Sepolia binding membrane
         run: npm run verify:btc-agent-x402-base-sepolia-binding
       - name: Re-verify canonical BTC Evidence Answer V0
         run: node --import tsx tests/btc-agent-evidence-answer-v0-acceptance.ts
+      - name: TypeScript
+        run: npx tsc --noEmit
       - name: Prove no execution occurred
         run: |
           echo "SIGNATURE_PERFORMED=ZERO"
+          echo "LIVE_VERIFY_PERFORMED=ZERO"
           echo "SETTLEMENT_PERFORMED=ZERO"
           echo "BLOCKCHAIN_TRANSACTION_COUNT=ZERO"
+          echo "PAID_ATTEMPT=0/1"

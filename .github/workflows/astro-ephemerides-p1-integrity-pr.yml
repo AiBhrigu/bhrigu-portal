@@ -119,6 +119,18 @@ jobs:
             'package.json',
             'tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts',
           }
+          btc_agent_x402_base_sepolia_runtime_bridge={
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            'lib/btc-agent-x402-base-sepolia-runtime-v0.ts',
+            'lib/server/btc-agent-x402-cdp-cli-adapter-v0.ts',
+            'package.json',
+            'scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts',
+            'tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts',
+          }
           agent_commerce_v0_ci_authority={
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -167,6 +179,8 @@ jobs:
             print('SHARED_SCOPE_PASS ci_authority_repair',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==btc_agent_x402_base_sepolia_testnet_binding:
             print('SHARED_SCOPE_PASS btc_agent_x402_base_sepolia_testnet_binding',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==btc_agent_x402_base_sepolia_runtime_bridge:
+            print('SHARED_SCOPE_PASS btc_agent_x402_base_sepolia_runtime_bridge',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==agent_commerce_v0_ci_authority:
             print('SHARED_SCOPE_PASS agent_commerce_v0_ci_authority',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==public_discovery_ci_closure:

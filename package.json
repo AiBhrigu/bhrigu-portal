@@ -24,7 +24,9 @@
     "verify:btc-research-field-v1-preview": "node --import tsx tests/btc-research-field-v1-acceptance.ts",
     "verify:btc-clean-chat-cost-guard": "node --import tsx tests/btc-clean-chat-cost-guard-acceptance.ts",
     "verify:phi-btc-timing-windows-v1": "node --import tsx tests/phi-btc-timing-windows-v1-acceptance.ts",
-    "verify:btc-agent-x402-base-sepolia-binding": "node --import tsx tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts"
+    "verify:btc-agent-x402-base-sepolia-binding": "node --import tsx tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts",
+    "verify:btc-agent-x402-base-sepolia-runtime": "node --import tsx tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts",
+    "run:btc-agent-x402-base-sepolia-runtime": "node --import tsx scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "4.26.0",

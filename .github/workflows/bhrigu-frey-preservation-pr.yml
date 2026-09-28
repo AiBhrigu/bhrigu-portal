@@ -93,6 +93,18 @@ jobs:
             'package.json',
             'tests/btc-agent-x402-base-sepolia-testnet-v0-acceptance.ts',
           }
+          btc_agent_x402_base_sepolia_runtime_bridge = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            'lib/btc-agent-x402-base-sepolia-runtime-v0.ts',
+            'lib/server/btc-agent-x402-cdp-cli-adapter-v0.ts',
+            'package.json',
+            'scripts/btc-agent-x402-base-sepolia-runtime-server-v0.ts',
+            'tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts',
+          }
           agent_commerce_v0_ci_authority = {
             '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -123,10 +135,13 @@ jobs:
             'public/sitemap.xml',
           }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, btc_agent_x402_base_sepolia_testnet_binding, agent_commerce_v0_ci_authority, public_discovery_ci_closure), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, btc_agent_x402_base_sepolia_testnet_binding, btc_agent_x402_base_sepolia_runtime_bridge, agent_commerce_v0_ci_authority, public_discovery_ci_closure), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
           if actual == btc_agent_x402_base_sepolia_testnet_binding:
               open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_AGENT_COMMERCE_SHARED_SCOPE=true\n')
               print('FREY_SHARED_SCOPE=btc_agent_x402_base_sepolia_testnet_binding')
+          elif actual == btc_agent_x402_base_sepolia_runtime_bridge:
+              open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_AGENT_COMMERCE_SHARED_SCOPE=true\n')
+              print('FREY_SHARED_SCOPE=btc_agent_x402_base_sepolia_runtime_bridge')
           elif actual == agent_commerce_v0_ci_authority:
               open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_AGENT_COMMERCE_SHARED_SCOPE=true\n')
               print('FREY_SHARED_SCOPE=agent_commerce_v0_ci_authority')
