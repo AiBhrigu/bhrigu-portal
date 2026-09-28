@@ -7,40 +7,40 @@ const COPY = {
     title: "Start with the working system, not the archive.",
     lead: "BHRIGU is the public home of Market Cosmographer, BTC Field, Frey, public proof, and clearly bounded research surfaces.",
     choose: "Choose a surface",
-    chooseLead: "Six doors into the same public system: Bitcoin, temporal reading, evidence, the relationship map, a Cosmographic Passport, or bounded external systems work.",
+    chooseLead: "Six doors into the same public system: Bitcoin, temporal reading, evidence, the relationship map, live services, or the full systems architecture.",
     items: [
       ["01", "BITCOIN · LIVE FIELD", "BTC Field", "The first proven live corridor for evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Open BTC Field"],
       ["02", "TEMPORAL · ACTIVE SERVICE", "Frey", "A distinct active temporal reading and dialogue service.", "/frey", "Open Frey"],
       ["03", "EVIDENCE · PUBLIC PROOF", "Public proof", "Inspect the source-bound research surface behind current public claims.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Inspect proof"],
       ["04", "SYSTEM · RELATION MAP", "System map", "See how BHRIGU, Cosmographer, Frey and ORION relate without collapsing their roles.", "/map", "Open system map"],
-      ["05", "WORK · FIXED COMMERCIAL OBJECT", "External Systems Recon · USD 300", "A bounded read-only review of one AI or research system: system map, 3 findings, evidence, and an exact repair blueprint.", "/access", "Open commercial access"],
-      ["06", "FREY × COSMOGRAPHER · PERSONAL RESEARCH OBJECT", "Cosmographic Passport · USD 79", "One complete Cosmographic Reading of one bounded subject and temporal horizon, delivered as a portable Passport you can revisit with your AI.", "/access?offer=frey-personal", "Open Cosmographic Passport"],
+      ["05", "WORK · AVAILABLE NOW", "Services", "Three exact commercial objects: External Systems Recon · USD 300, Frey Personal · USD 79, and AI Founding Field · USD 99. x402 Failure-Surface Recon is a specialized path inside External Systems Recon.", "/services", "Open Services"],
+      ["06", "SYSTEM · FULL CAPABILITY MAP", "Φ Research Systems", "Seven system classes, public proof, explicit boundaries, and the exact separation between capability and product.", "/systems", "Explore Systems"],
     ],
     boundaryLabel: "Protected depth",
     boundary: "ORION remains protected research depth. Public surfaces expose meaning, evidence and boundaries — not private internals.",
-    cta: "Open BTC Field",
+    cta: "Open Services",
   },
   ru: {
     eyebrow: "СТАРТ · ТЕКУЩИЙ BHRIGU",
     title: "Начните с работающей системы, а не с архива.",
     lead: "BHRIGU — публичный дом Market Cosmographer, BTC Field, Frey, публичных доказательств и чётко ограниченных исследовательских поверхностей.",
     choose: "Выберите поверхность",
-    chooseLead: "Шесть входов в одну публичную систему: Bitcoin, темпоральное чтение, доказательства, карта связей, Космографический паспорт или ограниченная внешняя работа с системами.",
+    chooseLead: "Шесть входов в одну публичную систему: Bitcoin, темпоральное чтение, доказательства, карта связей, действующие услуги или полная архитектура систем.",
     items: [
       ["01", "BITCOIN · ЖИВОЕ ПОЛЕ", "BTC Field", "Первый доказанный живой коридор evidence-linked Bitcoin intelligence.", "/crypto-astro/btc", "Открыть BTC Field"],
       ["02", "TEMPORAL · АКТИВНЫЙ СЕРВИС", "Frey", "Отдельный действующий сервис темпорального чтения и диалога.", "/frey", "Открыть Frey"],
       ["03", "EVIDENCE · ПУБЛИЧНЫЙ PROOF", "Публичные доказательства", "Проверьте source-bound исследовательскую поверхность, на которой основаны текущие публичные утверждения.", "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html", "Открыть доказательства"],
       ["04", "SYSTEM · КАРТА СВЯЗЕЙ", "Карта системы", "Посмотрите связи BHRIGU, Космографа, Frey и ORION без смешения их ролей.", "/map", "Открыть карту"],
-      ["05", "WORK · ФИКСИРОВАННЫЙ КОММЕРЧЕСКИЙ ОБЪЕКТ", "External Systems Recon · USD 300", "Ограниченный read-only разбор одной AI- или исследовательской системы: карта, 3 вывода, доказательства и точный blueprint исправления.", "/access", "Открыть коммерческий доступ"],
-      ["06", "FREY × КОСМОГРАФ · ПЕРСОНАЛЬНЫЙ ИССЛЕДОВАТЕЛЬСКИЙ ОБЪЕКТ", "Космографический паспорт · USD 79", "Одно полное Космографическое чтение ограниченного объекта и временного горизонта с переносимым Паспортом, к которому можно возвращаться со своим AI.", "/access?offer=frey-personal", "Открыть Космографический паспорт"],
+      ["05", "WORK · ДОСТУПНО СЕЙЧАС", "Услуги", "Три точных коммерческих объекта: External Systems Recon · USD 300, Frey Personal · USD 79 и AI Founding Field · USD 99. x402 Failure-Surface Recon — специализированный путь внутри External Systems Recon.", "/services", "Открыть услуги"],
+      ["06", "SYSTEM · ПОЛНАЯ КАРТА ВОЗМОЖНОСТЕЙ", "Φ Research Systems", "Семь классов систем, публичные доказательства, явные границы и точное разделение между capability и product.", "/systems", "Исследовать системы"],
     ],
     boundaryLabel: "Защищённая глубина",
     boundary: "ORION остаётся защищённой исследовательской глубиной. Публичные поверхности показывают смысл, доказательства и границы — не приватные механизмы.",
-    cta: "Открыть BTC Field",
+    cta: "Открыть услуги",
   },
 };
 
-const CARD_TONES = ["blue", "violet", "gold", "mix", "gold", "passport"];
+const CARD_TONES = ["blue", "violet", "gold", "mix", "gold", "mix"];
 
 function local(href, locale) {
   if (href.startsWith("http")) return href;
@@ -94,7 +94,7 @@ export default function Start({ locale }) {
       <section className="boundaryPanel" aria-label={c.boundaryLabel}>
         <p className="boundaryLabel">{c.boundaryLabel}</p>
         <p className="boundary">{c.boundary}</p>
-        <Link className="primaryButton" href={local("/crypto-astro/btc", locale)}>
+        <Link className="primaryButton" href={local("/services", locale)}>
           {c.cta} <span aria-hidden="true">→</span>
         </Link>
       </section>
