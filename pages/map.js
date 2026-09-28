@@ -30,6 +30,7 @@ const COPY = {
       ["Public boundary", [
         ["Support", "Voluntary Bitcoin support", "/support"],
         ["Φ External Systems Recon", "Agent-first commercial systems recon", "/access"],
+        ["x402 Failure-Surface Recon", "Specialized x402 payment-path reliability and failure-surface recon", "/access?offer=x402-recon"],
         ["DAO", "Future/peripheral only", "/dao"],
       ]],
     ],
@@ -61,6 +62,7 @@ const COPY = {
       ["Публичная граница", [
         ["Поддержка", "Добровольная Bitcoin-поддержка", "/support"],
         ["Φ External Systems Recon", "Agent-first коммерческая разведка систем", "/access"],
+        ["x402 Failure-Surface Recon", "Специализированная разведка надёжности и failure surface одного x402 payment path", "/access?offer=x402-recon"],
         ["DAO", "Только будущее/периферия", "/dao"],
       ]],
     ],

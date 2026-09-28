@@ -246,6 +246,8 @@ const COPY = {
     footerCommerceBody:
       "Inspect one bounded system. Read one subject across a meaningful horizon. Claim one durable coordinate in a finite public field.",
     footerReconLine: "One bounded system. Three findings. Evidence. Exact repair blueprint.",
+    footerReconSpecializedLabel: "SPECIALIZED PATH",
+    footerReconSpecializedTitle: "x402 Failure-Surface Recon",
     footerFreyLine: "One subject. One temporal horizon. One complete reading you can keep.",
     footerFieldLine: "One durable public coordinate for an agent, model, project or product.",
     footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
@@ -377,6 +379,8 @@ const COPY = {
     footerCommerceBody:
       "Исследовать одну ограниченную систему. Прочитать один объект в значимом временном горизонте. Занять одну долговечную координату в конечном публичном поле.",
     footerReconLine: "Одна ограниченная система. Три ключевых finding. Evidence. Точный repair blueprint.",
+    footerReconSpecializedLabel: "СПЕЦИАЛИЗИРОВАННЫЙ ПУТЬ",
+    footerReconSpecializedTitle: "x402 Failure-Surface Recon",
     footerFreyLine: "Один объект. Один временной горизонт. Одно полное чтение, которое остаётся у вас.",
     footerFieldLine: "Одна долговечная публичная координата для агента, модели, проекта или продукта.",
     footerIdentity: "BTC FIELD · MARKET COSMOGRAPHER",
@@ -575,7 +579,13 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
               <h3>External Systems Recon</h3>
               <p>{copy.footerReconLine}</p>
               <div className={styles.footerOfferMeta}><strong>USD 300</strong><span>READ-ONLY</span></div>
-              <Link className={styles.footerOfferCta} href={`/access?lang=${locale}`} data-commercial-cta="footer-external-systems-recon">Open Access <span aria-hidden="true">↗</span></Link>
+              <Link className={styles.footerOfferCta} href={`/access?lang=${locale}`} data-commercial-cta="footer-external-systems-recon">{locale === "ru" ? "Открыть доступ" : "Open Access"} <span aria-hidden="true">↗</span></Link>
+              <div className={styles.footerSpecializedRoute} data-specialized-route="x402-failure-surface-recon">
+                <small>{copy.footerReconSpecializedLabel}</small>
+                <Link href={`/access?offer=x402-recon&lang=${locale}`} data-commercial-cta="footer-x402-failure-surface-recon">
+                  {copy.footerReconSpecializedTitle} <span aria-hidden="true">→</span>
+                </Link>
+              </div>
             </div>
           </article>
 
