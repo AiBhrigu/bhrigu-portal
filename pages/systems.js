@@ -319,6 +319,14 @@ const COMMERCIAL = [
     cta: "Open External Systems Recon →",
     boundary: "The live object explicitly excludes full product development, penetration testing, trading execution and unbounded redesign.",
     href: COMMERCIAL_ROUTES.recon,
+    specialized: {
+      label: "SPECIALIZED PATH",
+      title: "x402 Failure-Surface Recon",
+      body: "One x402 payment path: HTTP 402 → PaymentRequired → signing → verify → settle → response → receipt / recovery.",
+      cta: "Open x402 Recon →",
+      href: "/access?offer=x402-recon",
+      truth: "Current public claims stop short of a completed BHRIGU end-to-end x402 settlement proof.",
+    },
   },
   {
     letter: "B",
@@ -494,6 +502,10 @@ const RU_TEXT = new Map([
   ["One exact repair blueprint", "Один точный blueprint исправления"],
   ["Open External Systems Recon →", "Открыть External Systems Recon →"],
   ["The live object explicitly excludes full product development, penetration testing, trading execution and unbounded redesign.", "Действующий объект явно исключает полную разработку продукта, тестирование на проникновение, исполнение торговых операций и неограниченный редизайн."],
+  ["SPECIALIZED PATH", "СПЕЦИАЛИЗИРОВАННЫЙ ПУТЬ"],
+  ["One x402 payment path: HTTP 402 → PaymentRequired → signing → verify → settle → response → receipt / recovery.", "Один x402 payment path: HTTP 402 → PaymentRequired → signing → verify → settle → response → receipt / recovery."],
+  ["Open x402 Recon →", "Открыть x402 Recon →"],
+  ["Current public claims stop short of a completed BHRIGU end-to-end x402 settlement proof.", "Текущие публичные claims BHRIGU пока не включают завершённый end-to-end x402 settlement proof."],
   ["One subject.", "Один объект."],
   ["One meaningful temporal horizon.", "Один значимый темпоральный горизонт."],
   ["One complete Cosmographic Reading.", "Одно полное Космографическое чтение."],
@@ -581,6 +593,13 @@ const RU_TEXT = new Map([
 
 function tr(locale, value) {
   return locale === "ru" ? RU_TEXT.get(value) || value : value;
+}
+
+function localizedCommercialHref(href, locale) {
+  if (/^https?:\/\//.test(href)) {
+    return href.replace(/([?&])lang=en\b/, `$1lang=${locale}`);
+  }
+  return `${href}${href.includes("?") ? "&" : "?"}lang=${locale}`;
 }
 
 function externalProps(href) {
@@ -672,7 +691,7 @@ function SystemsStructuredData({ locale }) {
           position: index + 1,
           name: tr(locale, item.title),
           description: item.price,
-          url: item.href,
+          url: localizedCommercialHref(item.href, locale),
         })),
       },
     ],
@@ -893,8 +912,17 @@ export default function SystemsPage({ locale = "en" }) {
                   {item.attributes && <p className={styles.attributes}>{item.attributes.map((value) => tr(locale, value)).join(" ")}</p>}
                 </div>
                 <div className={styles.commercialAction}>
-                  <a href={item.href}>{tr(locale, item.cta)}</a>
+                  <a href={localizedCommercialHref(item.href, locale)}>{tr(locale, item.cta)}</a>
                   <p>{tr(locale, item.boundary)}</p>
+                  {item.specialized ? (
+                    <div className={styles.specializedCommercial} data-specialized-service="x402-failure-surface-recon">
+                      <span>{tr(locale, item.specialized.label)}</span>
+                      <strong>{item.specialized.title}</strong>
+                      <p>{tr(locale, item.specialized.body)}</p>
+                      <small>{tr(locale, item.specialized.truth)}</small>
+                      <a href={localizedCommercialHref(item.specialized.href, locale)}>{tr(locale, item.specialized.cta)}</a>
+                    </div>
+                  ) : null}
                 </div>
               </article>
             ))}
