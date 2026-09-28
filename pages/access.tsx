@@ -117,6 +117,61 @@ const COPY = {
   },
 } as const;
 
+const X402_RECON_COPY = {
+  en: {
+    ...COPY.en,
+    eyebrow: "Φ RESEARCH SYSTEMS · x402 FAILURE LAB",
+    title: "Find the failure before the payment becomes ambiguous.",
+    lead: "One bounded, read-only recon of one x402 payment path — from HTTP 402 and PaymentRequired through signing, verify, settle, response, receipt, and recovery.",
+    firstLine: "ONE x402 PATH · 3 FINDINGS · EVIDENCE-LINKED · USD 300",
+    offerTitle: "x402 Integration Readiness / Failure-Surface Recon",
+    offerLead: "One payment path. One bounded falsification pass. No production mutation.",
+    getsTitle: "You receive four x402-specific objects",
+    gets: [
+      ["01", "Payment-state map", "HTTP 402, PaymentRequired, payer signing, verify, settle, response, receipt/evidence, and recovery boundaries."],
+      ["02", "3 highest-impact failure findings", "Focused on ambiguity, duplicate execution, stale authority, paid-without-delivery, and observability gaps that are actually supported by evidence."],
+      ["03", "Evidence for each finding", "Public code/docs, observable behavior, state transitions, hashes/receipts where available, and reproducible evidence without requesting secrets."],
+      ["04", "Exact verification / repair blueprint", "The invariant to enforce, the checkpoint or boundary to change, and the acceptance test that proves closure."],
+    ],
+    forTitle: "Good fit for teams building or shipping x402",
+    forItems: ["Paid AI / agent APIs", "MCP tools with machine payments", "x402 facilitators", "Base / USDC payment paths", "Agent marketplaces", "Wallet / signer integrations", "Metered data and research APIs", "Teams preparing an x402 launch"],
+    notItems: ["Penetration testing", "Wallet custody", "Private-key handling", "Mainnet payment execution on your behalf", "Generic smart-contract audit", "Open-ended consulting", "Guaranteed vulnerability findings", "Production mutation"],
+    proofLead: "The method comes from protocol-failure research plus BHRIGU's own bounded Base Sepolia x402 lab. Current public claims stop short of a completed end-to-end settlement proof.",
+    agentTitle: "Agent / engineering-team entry contract",
+    agentLead: "Send one bounded x402 path and the decision you need the recon to support. No credentials, wallet secrets, private keys, or production secrets.",
+    process: "QUALIFY → BOUND ONE x402 PATH → EVIDENCE RECON → 3 FINDINGS → REPAIR / VERIFICATION BLUEPRINT → REPORT → PAYMENT",
+    finalTitle: "One x402 path. Make the failure state observable before it becomes a payment incident.",
+    finalLead: "Start with public evidence, the exact payment path, and the reliability decision this recon must support.",
+    humanBody: "x402 Integration Readiness / Failure-Surface Recon\n\nSystem / product:\nURL / repository:\nExact x402 path to review:\nCurrent stage (planning / testnet / production):\nWhat must be proven or falsified:\nRelevant public evidence:\nLanguage: EN",
+  },
+  ru: {
+    ...COPY.ru,
+    eyebrow: "Φ RESEARCH SYSTEMS · ЛАБОРАТОРИЯ ОТКАЗОВ x402",
+    title: "Найдём отказ до того, как платёж станет неоднозначным.",
+    lead: "Одна bounded read-only разведка одного x402 payment path — от HTTP 402 и PaymentRequired через signing, verify, settle, response, receipt и recovery.",
+    firstLine: "ОДИН x402 PATH · 3 ВЫВОДА · EVIDENCE-LINKED · USD 300",
+    offerTitle: "x402 Integration Readiness / Failure-Surface Recon",
+    offerLead: "Один платёжный путь. Один bounded falsification pass. Без изменения production.",
+    getsTitle: "Вы получаете четыре x402-специфичных объекта",
+    gets: [
+      ["01", "Карта состояния платежа", "HTTP 402, PaymentRequired, подпись плательщика, verify, settle, response, receipt/evidence и recovery boundaries."],
+      ["02", "3 наиболее значимых failure findings", "Фокус на ambiguity, duplicate execution, stale authority, paid-without-delivery и observability gaps — только там, где это подтверждает evidence."],
+      ["03", "Доказательства по каждому выводу", "Public code/docs, observable behavior, state transitions, hashes/receipts где доступны и воспроизводимый evidence без запроса секретов."],
+      ["04", "Точный verification / repair blueprint", "Какой invariant нужен, какую boundary/checkpoint менять и какой acceptance test доказывает закрытие."],
+    ],
+    forTitle: "Подходит командам, которые строят или запускают x402",
+    forItems: ["Платные AI / agent API", "MCP tools с machine payments", "x402 facilitators", "Base / USDC payment paths", "Agent marketplaces", "Wallet / signer integrations", "Metered data и research APIs", "Команды перед x402 launch"],
+    notItems: ["Penetration testing", "Wallet custody", "Работа с private keys", "Mainnet execution от вашего имени", "Generic smart-contract audit", "Open-ended consulting", "Гарантия найденной уязвимости", "Production mutation"],
+    proofLead: "Метод вырос из исследования protocol failures и собственной bounded Base Sepolia x402 лаборатории BHRIGU. Публичные claims пока не включают завершённый end-to-end settlement proof.",
+    agentTitle: "Вход для AI-агента / инженерной команды",
+    agentLead: "Передайте один bounded x402 path и решение, которое должна поддержать разведка. Не отправляйте credentials, wallet secrets, private keys или production secrets.",
+    process: "QUALIFY → BOUND ONE x402 PATH → EVIDENCE RECON → 3 FINDINGS → REPAIR / VERIFICATION BLUEPRINT → REPORT → PAYMENT",
+    finalTitle: "Один x402 path. Сделать failure state наблюдаемым до того, как он станет payment incident.",
+    finalLead: "Начните с public evidence, точного payment path и reliability-решения, которое должна поддержать разведка.",
+    humanBody: "x402 Integration Readiness / Failure-Surface Recon\n\nSystem / product:\nURL / repository:\nExact x402 path to review:\nCurrent stage (planning / testnet / production):\nWhat must be proven or falsified:\nRelevant public evidence:\nLanguage: RU",
+  },
+} as const;
+
 const FREY_PERSONAL_COPY = {
   en: {
     eyebrow: "FREY × COSMOGRAPHER · COSMOGRAPHIC READING",
@@ -279,7 +334,7 @@ export async function getServerSideProps({ query }: any) {
   const rawLang = Array.isArray(query?.lang) ? query.lang[0] : query?.lang;
   const locale: Locale = rawLang === "ru" ? "ru" : "en";
   const rawOffer = Array.isArray(query?.offer) ? query.offer[0] : query?.offer;
-  const offer = rawOffer === "frey-personal" ? "frey-personal" : "system-recon";
+  const offer = rawOffer === "frey-personal" ? "frey-personal" : rawOffer === "x402-recon" ? "x402-recon" : "system-recon";
 
   let freyContext = null;
   if (offer === "frey-personal") {
@@ -296,15 +351,17 @@ export async function getServerSideProps({ query }: any) {
 
 type AccessProps = {
   locale: Locale;
-  offer: "system-recon" | "frey-personal";
+  offer: "system-recon" | "frey-personal" | "x402-recon";
   freyContext: any | null;
 };
 
 export default function Access({ locale, offer, freyContext }: AccessProps) {
-  const c = COPY[locale];
-  const f = FREY_PERSONAL_COPY[locale];
   const isFreyPersonal = offer === "frey-personal";
-  const mailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[Φ RECON] ")}&body=${encodeURIComponent(c.humanBody)}`;
+  const isX402Recon = offer === "x402-recon";
+  const c = isX402Recon ? X402_RECON_COPY[locale] : COPY[locale];
+  const f = FREY_PERSONAL_COPY[locale];
+  const reconSubject = isX402Recon ? "[x402 RECON] " : "[Φ RECON] ";
+  const mailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent(reconSubject)}&body=${encodeURIComponent(c.humanBody)}`;
   const freyMailBody = [
     f.mailTitle,
     "",
@@ -323,8 +380,12 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
     freyContext?.operational_vector ? `${f.vectorLabel}: ${freyContext.operational_vector}` : "",
   ].filter((line, index, arr) => line || index < 2 || index < arr.length - 3).join("\n");
   const freyMailto = `mailto:${REVENUE_EMAIL}?subject=${encodeURIComponent("[COSMOGRAPHIC READING · USD 79] ")}&body=${encodeURIComponent(freyMailBody)}`;
-  const agentSubject = "[Φ RECON] <system_name>";
-  const canonicalUrl = isFreyPersonal ? `https://www.bhrigu.io/access?lang=${locale}&offer=frey-personal` : `https://www.bhrigu.io/access?lang=${locale}`;
+  const agentSubject = isX402Recon ? "[x402 RECON] <system_name>" : "[Φ RECON] <system_name>";
+  const canonicalUrl = isFreyPersonal
+    ? `https://www.bhrigu.io/access?lang=${locale}&offer=frey-personal`
+    : isX402Recon
+      ? `https://www.bhrigu.io/access?lang=${locale}&offer=x402-recon`
+      : `https://www.bhrigu.io/access?lang=${locale}`;
   const serviceJsonLd = isFreyPersonal ? {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -348,8 +409,8 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
   } : {
     "@context": "https://schema.org",
     "@type": "Service",
-    name: "Φ External Systems Recon",
-    serviceType: "External AI and research systems recon",
+    name: isX402Recon ? "x402 Integration Readiness / Failure-Surface Recon" : "Φ External Systems Recon",
+    serviceType: isX402Recon ? "Read-only x402 payment-path reliability and failure-surface recon" : "External AI and research systems recon",
     url: canonicalUrl,
     provider: {
       "@type": "Organization",
@@ -363,7 +424,9 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
       price: "300",
       priceCurrency: "USD",
       url: canonicalUrl,
-      description: "One bounded read-only system recon: system map, 3 findings, evidence, and exact repair blueprint. Implementation not included.",
+      description: isX402Recon
+        ? "One bounded read-only x402 payment-path recon: payment-state map, 3 evidence-tied findings, and exact verification/repair blueprint. No production mutation."
+        : "One bounded read-only system recon: system map, 3 findings, evidence, and exact repair blueprint. Implementation not included.",
     },
   };
 
@@ -376,7 +439,7 @@ export default function Access({ locale, offer, freyContext }: AccessProps) {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(serviceJsonLd).replace(/</g, "\\u003c") }}
         />
       </Head>
-      <main className="q" lang={locale} data-access-surface={isFreyPersonal ? "FREY_COSMOGRAPHIC_READING_PASSPORT_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}>
+      <main className="q" lang={locale} data-access-surface={isFreyPersonal ? "FREY_COSMOGRAPHIC_READING_PASSPORT_V0_1" : isX402Recon ? "BHRIGU_X402_FAILURE_SURFACE_RECON_V0_1" : "PHI_EXTERNAL_SYSTEMS_RECON_V0_1"}>
       {isFreyPersonal ? (
         <>
           <section className="freyHero" data-frey-personal-offer="FREY_COSMOGRAPHIC_READING_PASSPORT_USD79_V0_1">
