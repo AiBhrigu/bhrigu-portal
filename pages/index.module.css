@@ -493,6 +493,44 @@
 .footerOfferCta:hover span, .footerOfferCta:focus-visible span { transform: translate(2px,-2px); }
 .footerOfferCta:focus-visible { outline: 1px solid var(--home-gold); outline-offset: 6px; }
 
+.footerSpecializedRoute {
+  display: grid;
+  gap: 6px;
+  margin-top: -2px;
+  padding: 12px 0 2px;
+  border-top: 1px solid rgba(98,168,216,0.16);
+}
+.footerSpecializedRoute small {
+  margin: 0;
+  color: rgba(98,168,216,0.72);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: 0.16em;
+}
+.footerSpecializedRoute a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  color: rgba(241,239,233,0.78) !important;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-decoration: none !important;
+}
+.footerSpecializedRoute a span {
+  color: var(--home-blue);
+  transition: transform 160ms ease;
+}
+.footerSpecializedRoute a:hover span,
+.footerSpecializedRoute a:focus-visible span { transform: translateX(3px); }
+.footerSpecializedRoute a:focus-visible {
+  outline: 1px solid var(--home-blue);
+  outline-offset: 5px;
+}
+
 /* 01 — one bounded system: topology / boundaries / evidence */
 .footerRecon { border-color: rgba(98,168,216,0.28); }
 .reconVisual {
