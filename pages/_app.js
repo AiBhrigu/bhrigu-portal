@@ -226,6 +226,7 @@ export default function App({ Component, pageProps }) {
   const lang=raw==="ru"?"ru":"en";
   const rawOffer=routePath==="/access"&&typeof pageProps?.offer==="string"?pageProps.offer:(Array.isArray(router.query?.offer)?router.query.offer[0]:router.query?.offer);
   const freyAccess=routePath==="/access"&&rawOffer==="frey-personal";
+  const x402ReconAccess=routePath==="/access"&&rawOffer==="x402-recon";
   const ephemeridesRoute=routePath==="/ephemerides"||routePath.startsWith("/ephemerides/");
   const path=ephemeridesRoute&&typeof pageProps?.canonicalPath==="string"?pageProps.canonicalPath:routePath;
   const ephemeridesPath=path==="/ephemerides"||path.startsWith("/ephemerides/");
@@ -233,11 +234,14 @@ export default function App({ Component, pageProps }) {
   const freyAccessPair=lang==="ru"
     ?["Космографическое чтение · Космографический паспорт | BHRIGU","Полное чтение Frey × Космограф одного объекта в значимом временном горизонте. Результат — переносимый Космографический паспорт за USD 79."]
     :["Cosmographic Reading · Cosmographic Passport | BHRIGU","A complete Frey × Cosmographer reading of one subject across a meaningful temporal horizon, delivered as a portable Cosmographic Passport for USD 79."];
-  const pair=freyAccess?freyAccessPair:(monthIdentity?[monthIdentity.title,monthIdentity.description]:META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."]);
+  const x402ReconPair=lang==="ru"
+    ?["x402 Integration Readiness / Failure-Surface Recon · BHRIGU","Read-only разведка одного x402 payment path: state map, 3 evidence-tied findings и точный verification / repair blueprint за USD 300."]
+    :["x402 Integration Readiness / Failure-Surface Recon · BHRIGU","Read-only recon of one x402 payment path: state map, 3 evidence-tied findings, and an exact verification / repair blueprint for USD 300."];
+  const pair=freyAccess?freyAccessPair:(x402ReconAccess?x402ReconPair:(monthIdentity?[monthIdentity.title,monthIdentity.description]:META[path]?.[lang]||META[path]?.en||(ephemeridesPath?META["/ephemerides"]?.[lang]:null)||["BHRIGU","BHRIGU public product and research surfaces."]));
   const canonicalPath=path==="/crypto-astro/btc/live"?"/crypto-astro/btc":path;
   const localized=LOCALIZED.has(path)||ephemeridesPath;
-  const canonical=freyAccess?`${BASE}/access?lang=${lang}&offer=frey-personal`:`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`;
-  const alternateHref=(targetLang)=>freyAccess?`${BASE}/access?lang=${targetLang}&offer=frey-personal`:`${BASE}${canonicalPath}?lang=${targetLang}`;
+  const canonical=freyAccess?`${BASE}/access?lang=${lang}&offer=frey-personal`:(x402ReconAccess?`${BASE}/access?lang=${lang}&offer=x402-recon`:`${BASE}${canonicalPath}${localized?`?lang=${lang}`:""}`);
+  const alternateHref=(targetLang)=>freyAccess?`${BASE}/access?lang=${targetLang}&offer=frey-personal`:(x402ReconAccess?`${BASE}/access?lang=${targetLang}&offer=x402-recon`:`${BASE}${canonicalPath}?lang=${targetLang}`);
   const pageOwnsMetadata=PAGE_OWNS_METADATA.has(path);
   const machineGraph=buildMachineGraph(path,lang);
   return <>
