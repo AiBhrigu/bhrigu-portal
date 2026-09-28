@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Image from "next/image";
 import Link from "next/link";
 import {
   EMPTY_BTC_HOME_ACCEPTED_STATE,
@@ -6,7 +7,6 @@ import {
 } from "../lib/btc-home-accepted-state";
 import styles from "./index.module.css";
 import PublicSupportRoute from "../components/btc/PublicSupportRoute";
-import { RelationGlyph } from "../components/btc/BtcSurfaceGlyphs";
 
 const PUBLIC_PROOF_URL =
   "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index.html#what-changed";
@@ -123,7 +123,6 @@ const COPY = {
     rootIdentity: "Φ RESEARCH SYSTEMS",
     humanEntryLead: "One human.",
     humanEntryClose: "One entry.",
-    relationEquation: "ONE HUMAN = ONE ENTRY",
     humanAnchor: "HUMAN",
     entryCoordinate: "ENTRY COORDINATE",
     entryInput: "QUESTION · STATE · TIME",
@@ -256,7 +255,6 @@ const COPY = {
     rootIdentity: "Φ RESEARCH SYSTEMS",
     humanEntryLead: "Один человек.",
     humanEntryClose: "Одна точка входа.",
-    relationEquation: "ОДИН ЧЕЛОВЕК = ОДНА ТОЧКА ВХОДА",
     humanAnchor: "ЧЕЛОВЕК",
     entryCoordinate: "ТОЧКА ВХОДА",
     entryInput: "ВОПРОС · СОСТОЯНИЕ · ВРЕМЯ",
@@ -407,7 +405,6 @@ function SectionHeading({ eyebrow, title, body }) {
 function HomeRelation({ copy }) {
   return (
     <div className={styles.homeRelation} data-home-relation aria-label={copy.relationAria}>
-      <p className={styles.relationEquation}>{copy.relationEquation}</p>
       <div className={styles.relationStage}>
         <div className={styles.humanCoordinate} data-relation-role="human-entry">
           <small>{copy.entryCoordinate}</small>
@@ -497,25 +494,38 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <main id="market-cosmographer" className={styles.page} lang={locale} data-primary-product="market-cosmographer" data-home-contract="BHRIGU_HOME_CANONICAL_VISUAL_GEOMETRY_AND_FIRST_FOLD_FINAL_REPAIR_v0_1">
       <section className={styles.hero} aria-labelledby="home-title">
+        <div
+          className={styles.scenePlate}
+          data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"
+          data-scene-plate-sha256="9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
+          aria-hidden="true"
+        >
+          <Image
+            className={styles.scenePlateImage}
+            src="/home/bhrigu-home-locked-field-plate-v0-1.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            unoptimized
+          />
+        </div>
         <div className={styles.heroCopy}>
-          <p className={styles.product}>BHRIGU</p>
           <p className={styles.category}>{copy.rootIdentity}</p>
           <h1 id="home-title"><span>{copy.humanEntryLead}</span><span>{copy.humanEntryClose}</span></h1>
           <HomeRelation copy={copy} />
         </div>
-        <div className={styles.heroVisual} aria-label={copy.systemMapAria} data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
+      </section>
+      <section className={styles.applicationArchitecture} data-home-application-architecture>
+        <div className={styles.bitcoinModule} aria-label={copy.systemMapAria} data-home-bitcoin-module data-btc-status={btcAcceptedState.status} data-btc-freshness={btcAcceptedState.freshness} data-btc-synthesis={btcAcceptedState.synthesis_state} data-btc-delta={btcAcceptedState.delta_direction} data-btc-conditions={btcAcceptedState.conditions_state}>
           <nav className={styles.fieldCanvas} data-btc-field-canvas data-home-system-map aria-label={copy.systemMapLabel}>
             <div className={styles.systemMapTopline}><span>{copy.corridorEyebrow}</span><Link className={styles.systemMapLink} href={`/map?lang=${locale}`} data-home-system-map-link>{copy.systemMapLabel} <span aria-hidden="true">↗</span></Link></div>
             <div className={styles.systemRoot} data-system-role="boundary"><strong>MARKET COSMOGRAPHER</strong><small>{copy.systemMapRoot}</small></div>
             <div className={styles.systemBranches} data-system-relations="true">
-              <RelationGlyph className={styles.homeRelationGlyph}/>
               <Link className={`${styles.systemNode} ${styles.systemNodePrimary}`} href={btcEntryHref} data-system-node="btc" data-system-role="primary">
                 <span className={styles.systemNodeTitle}><strong>BTC COSMOGRAPHER</strong><small>01</small></span>
                 <span className={styles.btcSystemLanes}>{copy.btcSystemLanes.map((lane)=><i key={lane}>{lane}</i>)}</span>
               </Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeFrey}`} href={`/frey?lang=${locale}`} data-system-node="frey" data-system-role="temporal"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeCosmographer}`} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer" data-system-role="membrane"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
-              <Link className={`${styles.systemNode} ${styles.systemNodeOrion}`} href={`/orion?lang=${locale}`} data-system-node="orion" data-system-role="depth"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
             </div>
           </nav>
           <div className={styles.acceptedStateBand} data-btc-accepted-state data-home-btc-proof-object aria-label={acceptedState.aria}>
@@ -527,6 +537,11 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
             </div>
           </div>
         </div>
+        <nav className={styles.systemRoleModule} data-home-system-role-module aria-label={copy.systemMapAria}>
+          <Link className={`${styles.systemNode} ${styles.systemNodeFrey}`} href={`/frey?lang=${locale}`} data-system-node="frey" data-system-role="temporal"><span className={styles.systemNodeTitle}><strong>FREY</strong><small>02</small></span><span>{copy.freyVisual}</span></Link>
+          <Link className={`${styles.systemNode} ${styles.systemNodeCosmographer}`} href={`/cosmographer?lang=${locale}`} data-system-node="cosmographer" data-system-role="membrane"><span className={styles.systemNodeTitle}><strong>{locale === "ru" ? "КОСМОГРАФ" : "COSMOGRAPHER"}</strong><small>03</small></span><span>{copy.cosmographerVisual}</span></Link>
+          <Link className={`${styles.systemNode} ${styles.systemNodeOrion}`} href={`/orion?lang=${locale}`} data-system-node="orion" data-system-role="depth"><span className={styles.systemNodeTitle}><strong>ORION</strong><small>04</small></span><span>{copy.orionVisual}</span></Link>
+        </nav>
       </section>
       <section id="public-evidence" className={`${styles.editorialSection} ${styles.externalEvidenceSection}`} data-public-evidence-rail>
         <SectionHeading eyebrow={publicEvidence.eyebrow} title={publicEvidence.title} body={publicEvidence.intro}/>

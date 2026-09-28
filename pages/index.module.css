@@ -63,15 +63,6 @@
   border-top: 1px solid rgba(200, 164, 90, 0.28);
 }
 
-.relationEquation {
-  margin: 0 0 16px;
-  color: rgba(224, 196, 127, 0.82);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 10px !important;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-}
-
 .relationStage {
   display: grid;
   grid-template-columns: minmax(132px, 0.92fr) minmax(44px, 0.34fr) minmax(134px, 0.9fr) minmax(44px, 0.34fr) minmax(150px, 1fr);
@@ -245,14 +236,14 @@
 @keyframes bhriguAcceptedStatePulse { 0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.98) rotate(0deg); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.035) rotate(5deg); } }
 
 
-.fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 12px; padding: 18px 18px 16px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: radial-gradient(circle at 38.2% 58%, rgba(98, 168, 216, 0.1), transparent 36%), radial-gradient(circle at 82% 78%, rgba(200, 164, 90, 0.05), transparent 28%), linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
+.fieldCanvas[data-home-system-map] { aspect-ratio: auto; min-height: 420px; display: grid; grid-template-rows: auto auto auto; gap: 12px; padding: 18px 18px 16px; overflow: visible; border: 1px solid rgba(98, 168, 216, 0.22); background: radial-gradient(circle at 38.2% 58%, rgba(98, 168, 216, 0.1), transparent 36%), radial-gradient(circle at 82% 78%, rgba(200, 164, 90, 0.05), transparent 28%), linear-gradient(145deg, rgba(10, 16, 24, 0.96), rgba(6, 9, 14, 0.98)); }
 .systemMapTopline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; color: rgba(128, 188, 227, 0.78); font-size: 8px; font-weight: 750; letter-spacing: 0.18em; text-transform: uppercase; }
 .systemMapLink { display: inline-flex; align-items: center; gap: 7px; color: rgba(128, 188, 227, 0.9) !important; text-decoration: none !important; border-bottom: 1px solid rgba(98, 168, 216, 0.34); padding-bottom: 4px; }
 .systemMapLink:hover, .systemMapLink:focus-visible { color: var(--home-gold-bright) !important; border-bottom-color: rgba(224, 196, 127, 0.66); outline: none; }
 .systemRoot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px 12px; padding: 10px 0 11px; border: 0; border-bottom: 1px solid rgba(200, 164, 90, 0.28); background: transparent; }
 .systemRoot strong { color: var(--home-ink); font-size: 15px; letter-spacing: 0.12em; }
 .systemRoot small { color: rgba(224, 196, 127, 0.78); font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; }
-.systemBranches { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); grid-template-rows: minmax(126px, 1.618fr) minmax(78px, 1fr) minmax(64px, 0.82fr); column-gap: 18px; row-gap: 0; min-height: 280px; padding: 10px 0 0; isolation: isolate; overflow: hidden; }
+.systemBranches { position: relative; display: grid; grid-template-columns: minmax(0, 1.618fr) minmax(0, 1fr); grid-template-rows: minmax(126px, auto) minmax(84px, auto) minmax(84px, auto); column-gap: 18px; row-gap: 8px; min-height: 0; padding: 10px 0 0; isolation: isolate; overflow: visible; }
 .homeRelationGlyph { position: absolute; inset: 2px -3% 0 -2%; z-index: 0; width: 105%; height: 100%; opacity: 0.46; pointer-events: none; }
 .homeRelationGlyph :global(.primaryRoutePath), .homeRelationGlyph :global(.supportRoutePath) { fill: none; vector-effect: non-scaling-stroke; }
 .homeRelationGlyph :global(.primaryRoutePath) { stroke: var(--home-blue); stroke-width: 1.35; stroke-dasharray: 9 13; opacity: 0.58; }
@@ -760,7 +751,6 @@
   .category { max-width: 330px; font-size: 8px !important; line-height: 1.5; }
   .hero h1 { margin: 22px 0 18px; font-size: clamp(40px, 11.7vw, 56px); line-height: 0.98; }
   .homeRelation { margin-top: 30px; padding-top: 13px; }
-  .relationEquation { margin-bottom: 18px; font-size: 8px !important; letter-spacing: 0.14em; }
   .relationStage { grid-template-columns: 1fr; gap: 0; }
   .humanCoordinate, .intelligenceBridge, .phiRelationField { min-height: 112px; }
   .humanCoordinate { padding: 20px 22px; }
@@ -1004,14 +994,6 @@
     box-shadow: 0 -18px 70px rgba(98, 168, 216, 0.055);
     transform: perspective(280px) rotateX(58deg);
     transform-origin: center;
-  }
-
-  .relationEquation {
-    position: relative;
-    z-index: 7;
-    width: max-content;
-    margin: 0 0 8px 2%;
-    color: rgba(224, 196, 127, 0.76);
   }
 
   .relationStage {
@@ -1381,4 +1363,871 @@
   .returnRoute i::before {
     background: linear-gradient(90deg, rgba(224, 196, 127, 0.62), rgba(154, 137, 209, 0.16), rgba(98, 168, 216, 0.08));
   }
+}
+
+/* LOCKED TEXT-FREE SCENE PLATE INTEGRATION · PR291 v0.1 */
+.scenePlate {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scenePlateImage {
+  object-fit: contain;
+  object-position: 50% 50%;
+}
+
+/* The locked plate owns all scene geometry. Live DOM owns meaning and proof. */
+.homeRelation::before,
+.homeRelation::after,
+.relationStage::before,
+.relationStage::after,
+.humanCoordinate::before,
+.humanCoordinate::after,
+.humanCapability::before,
+.intelligenceBridge::before,
+.intelligenceBridge::after,
+.agentCapability::before,
+.agentCapability::after,
+.phiRelationField::before,
+.phiRelationField::after,
+.relationRoute::before,
+.relationRoute::after,
+.returnRoute i::before,
+.returnRoute i::after {
+  content: none !important;
+  display: none !important;
+}
+
+.relationRoute,
+.homeRelationGlyph,
+.phiGlyph,
+.statePulse {
+  display: none !important;
+}
+
+.hero {
+  position: relative;
+  isolation: isolate;
+  width: min(1859px, 100%);
+  min-height: min(760px, calc(100svh - 72px));
+  grid-template-columns: minmax(0, 1fr) minmax(350px, 0.42fr);
+  gap: 0;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  background: #07090c;
+}
+
+.heroCopy {
+  position: relative;
+  z-index: 2;
+  grid-column: 1;
+  min-width: 0;
+  min-height: 100%;
+  align-self: stretch;
+}
+
+.heroCopy > .category {
+  position: absolute;
+  top: 7.4%;
+  left: 5.3%;
+  z-index: 4;
+  margin: 0;
+  color: var(--home-gold-bright);
+  text-shadow: 0 2px 18px #07090c;
+}
+
+.hero h1 {
+  position: absolute;
+  top: 12.6%;
+  left: 5.2%;
+  z-index: 4;
+  width: min(43vw, 620px);
+  margin: 0;
+  font-size: clamp(54px, 4.6vw, 82px);
+  text-shadow: 0 3px 30px rgba(7, 9, 12, 0.96);
+}
+
+.hero h1 span:last-child {
+  color: var(--home-gold-bright);
+}
+
+.homeRelation {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.relationStage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  min-height: 0;
+  overflow: visible;
+}
+
+.humanCoordinate,
+.intelligenceBridge,
+.phiRelationField {
+  position: absolute;
+  z-index: 3;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  text-shadow: 0 2px 12px #07090c, 0 2px 24px #07090c;
+}
+
+.humanCoordinate {
+  inset: 0;
+  width: auto;
+  display: block;
+}
+
+.humanCoordinate > small,
+.humanCoordinate > strong,
+.humanCoordinate > span:not(.humanCapability) {
+  position: absolute;
+  left: 13.2%;
+  display: block;
+  width: 14.5%;
+}
+
+.humanCoordinate > small { top: 62.2%; color: var(--home-gold-bright); }
+.humanCoordinate > strong { top: 65.2%; color: var(--home-ink); font-size: 15px; letter-spacing: 0.16em; }
+.humanCoordinate > span:not(.humanCapability) { top: 69.2%; color: rgba(241, 239, 233, 0.72); }
+
+.humanCapability {
+  position: absolute;
+  left: 30.8%;
+  top: 64.6%;
+  display: grid;
+  width: 14.2%;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+.humanCapability b,
+.agentCapability b {
+  display: none;
+}
+
+.humanCapability strong { color: var(--home-ink); font-size: 13px; }
+.humanCapability small { color: var(--home-gold-bright); font-size: 9px; }
+.humanCapability em { color: rgba(241, 239, 233, 0.62); font-size: 8px; }
+
+.intelligenceBridge {
+  left: 45.6%;
+  top: 63.2%;
+  display: grid;
+  width: 14.8%;
+  gap: 4px;
+  text-align: left;
+}
+
+.intelligenceBridge > strong {
+  margin: 0;
+  color: #8ccaff;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.intelligenceBridge > small { color: rgba(192, 174, 232, 0.74); }
+
+.agentCapability {
+  position: static;
+  display: grid;
+  width: 100%;
+  gap: 3px;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+
+.agentCapability i { color: #8ccaff; }
+.agentCapability strong { max-width: 255px; color: rgba(241, 239, 233, 0.82); font-size: 8px; }
+.agentCapability small { color: #8ccaff; }
+.agentCapability em { max-width: 255px; color: rgba(241, 239, 233, 0.54); }
+
+/* Scene semantics stay minimal: system-specific proof lives in the right evidence surface. */
+.humanCapability em,
+.agentCapability { display: none; }
+
+.phiRelationField {
+  left: 55.4%;
+  top: 46.8%;
+  display: grid;
+  width: 12.2%;
+  height: auto;
+  gap: 3px;
+  border-radius: 50%;
+  text-align: left;
+}
+
+.phiRelationField strong {
+  color: rgba(241, 239, 233, 0.8);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-shadow: inherit;
+}
+
+.phiRelationField small { max-width: 180px; color: #c0aee8; }
+
+.returnRoute {
+  position: absolute;
+  left: 18.5%;
+  right: 39.5%;
+  bottom: 10.8%;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: auto minmax(84px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: rgba(241, 239, 233, 0.58);
+  text-shadow: 0 2px 12px #07090c, 0 2px 24px #07090c;
+}
+.returnRoute strong { order: 1; color: var(--home-gold-bright); white-space: nowrap; }
+.returnRoute i { order: 2; position: relative; display: block; min-width: 84px; height: 14px; overflow: visible; color: transparent; font-style: normal; }
+.returnRoute span { order: 3; justify-self: end; white-space: nowrap; }
+.returnRoute i::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(224, 196, 127, 0.68), rgba(154, 137, 209, 0.22), rgba(98, 168, 216, 0.12));
+}
+.returnRoute i::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: calc(50% - 3px);
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-bottom: 1px solid rgba(224, 196, 127, 0.82);
+  border-left: 1px solid rgba(224, 196, 127, 0.82);
+  transform: rotate(45deg);
+}
+
+.heroVisual {
+  position: absolute;
+  z-index: 5;
+  top: 8.7%;
+  right: 2.4%;
+  bottom: auto;
+  width: 27.8%;
+  min-width: 350px;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-self: auto;
+  overflow: hidden;
+  border: 1px solid rgba(200, 164, 90, 0.34);
+  background: rgba(4, 8, 12, 0.76);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.28), inset 0 0 44px rgba(98, 168, 216, 0.035);
+  backdrop-filter: blur(2px);
+}
+
+.fieldCanvas[data-home-system-map] {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 15px 18px 9px;
+  overflow: visible;
+  border: 0;
+  background: linear-gradient(145deg, rgba(7, 12, 18, 0.56), rgba(5, 8, 12, 0.32));
+}
+
+.systemBranches {
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: minmax(108px, auto) minmax(72px, auto) minmax(72px, auto);
+  overflow: visible;
+}
+
+.systemNodePrimary,
+.systemNodeCosmographer {
+  background: none;
+}
+
+.systemNodePrimary { grid-row: 1 / 3; padding: 12px 28px 10px 8px; }
+.systemNodeFrey { grid-row: 1; padding: 7px 0 7px 16px; }
+.systemNodeCosmographer { grid-row: 2; padding: 7px 0 7px 14px; }
+.systemNodeOrion {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  justify-self: stretch;
+  align-self: end;
+  width: auto;
+  display: grid;
+  grid-template-columns: minmax(110px, auto) minmax(0, 1fr);
+  align-items: baseline;
+  gap: 14px;
+  padding: 8px 0 0 8px;
+}
+.systemNodeOrion .systemNodeTitle { min-width: 110px; }
+.btcSystemLanes { gap: 5px 12px; margin-bottom: 0; }
+.btcSystemLanes i { padding: 4px 0 3px; }
+
+.acceptedStateBand {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  border-bottom: 0;
+  background: rgba(4, 8, 12, 0.76);
+}
+
+.systemMapTopline,
+.systemRoot,
+.proofObjectHeader,
+.proofStateGrid { width: 100%; max-width: 100%; min-width: 0; }
+.systemMapTopline > *,
+.systemRoot > *,
+.proofObjectHeader > * { min-width: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 1180px) and (min-width: 841px) {
+  .heroVisual {
+    right: 1.5%;
+    width: 31.5%;
+    min-width: 330px;
+  }
+
+  .hero h1 { width: min(48vw, 560px); }
+  .humanCoordinate > small,
+  .humanCoordinate > strong,
+  .humanCoordinate > span:not(.humanCapability) { left: 18%; }
+  .humanCapability { left: 34%; }
+  .intelligenceBridge { left: 50%; width: 22%; }
+  .phiRelationField { left: 55%; }
+}
+
+@media (max-width: 840px) {
+  .hero {
+    width: min(100% - 32px, 760px);
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 30px 0 42px;
+    overflow: visible;
+  }
+
+  .heroCopy { display: contents; }
+  .heroCopy > .category {
+    position: static;
+    order: 1;
+    margin: 0;
+    font-size: 10px !important;
+  }
+
+  .hero h1 {
+    position: static;
+    order: 2;
+    width: 100%;
+    margin: 18px 0 0;
+    font-size: clamp(42px, 12vw, 64px);
+    text-shadow: none;
+  }
+
+  .scenePlate {
+    position: relative;
+    inset: auto;
+    order: 3;
+    width: calc(100% + 32px);
+    height: clamp(300px, 72vw, 420px);
+    margin: 24px -16px 0;
+  }
+
+  .scenePlateImage {
+    object-fit: cover;
+    object-position: left center;
+  }
+
+  .homeRelation {
+    position: relative;
+    inset: auto;
+    order: 4;
+    width: 100%;
+    margin: 22px 0 0;
+    padding: 20px 0 0;
+    border-top: 1px solid rgba(200, 164, 90, 0.24);
+    pointer-events: auto;
+  }
+
+  .relationStage {
+    position: relative;
+    inset: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 26px;
+  }
+
+  .humanCoordinate,
+  .intelligenceBridge,
+  .phiRelationField {
+    position: static;
+    inset: auto;
+    width: auto;
+    height: auto;
+    display: grid;
+    align-content: start;
+    gap: 5px;
+    min-height: 0;
+    text-align: left;
+  }
+
+  .humanCoordinate {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .humanCoordinate > small,
+  .humanCoordinate > strong,
+  .humanCoordinate > span:not(.humanCapability) {
+    position: static;
+    width: auto;
+  }
+
+  .humanCoordinate > strong { font-size: 16px; }
+
+  .humanCapability {
+    position: static;
+    width: auto;
+    margin-top: 9px;
+  }
+
+  .intelligenceBridge {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .agentCapability {
+    margin-top: 9px;
+  }
+
+  .phiRelationField {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    padding-top: 16px;
+    border-top: 1px solid rgba(154, 137, 209, 0.2);
+  }
+
+  .returnRoute {
+    position: static;
+    order: 5;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin: 18px 0 0;
+    padding-top: 16px;
+    border-top: 1px solid rgba(200, 164, 90, 0.18);
+  }
+
+  .heroVisual {
+    position: relative;
+    inset: auto;
+    order: 5;
+    width: 100%;
+    min-width: 0;
+    margin-top: 28px;
+    overflow: hidden;
+    backdrop-filter: none;
+  }
+
+  .fieldCanvas[data-home-system-map] {
+    min-height: 390px;
+  }
+}
+
+@media (max-width: 620px) {
+  .hero {
+    width: min(100% - 32px, 760px);
+    padding-top: 26px;
+  }
+
+  .scenePlate {
+    height: clamp(292px, 77vw, 324px);
+  }
+
+  .relationStage {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .humanCoordinate,
+  .intelligenceBridge,
+  .phiRelationField {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .phiRelationField { padding-top: 14px; }
+
+  .fieldCanvas[data-home-system-map] {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .systemBranches {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 0;
+    padding: 8px 0 0 10px;
+  }
+
+  .acceptedStateBand { padding: 12px 11px 13px; }
+  .proofObjectHeader .stateKicker { white-space: normal; overflow: visible; text-overflow: clip; }
+  .proofStateGrid { grid-template-columns: 1fr; }
+  .proofStateGrid > span { min-height: 0; }
+}
+
+
+/* PR291 bounded responsive closure: stable right panel + mobile role flow */
+@media (max-width: 840px) {
+  .heroVisual {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    margin-top: 28px;
+    grid-template-rows: auto auto;
+  }
+  .fieldCanvas[data-home-system-map] {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    overflow: visible;
+  }
+  .systemBranches {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    row-gap: 0;
+  }
+  .systemNodePrimary,
+  .systemNodeFrey,
+  .systemNodeCosmographer,
+  .systemNodeOrion {
+    grid-column: 1;
+    grid-row: auto;
+    align-self: start;
+    justify-self: stretch;
+    width: auto;
+    min-height: 0;
+    margin-left: 0;
+    padding: 12px 0;
+  }
+  .systemNodePrimary { padding-left: 0; padding-right: 0; }
+  .systemNodeFrey { margin-left: 7%; }
+  .systemNodeCosmographer { margin-left: 14%; }
+  .systemNodeOrion {
+    display: grid;
+    grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+    gap: 12px;
+    margin-left: 21%;
+    border-top: 1px solid rgba(200, 164, 90, 0.2);
+  }
+  .systemNodeOrion .systemNodeTitle { min-width: 92px; }
+  .btcSystemLanes { margin-top: 10px; }
+  .acceptedStateBand { position: relative; margin-top: 0; }
+}
+
+@media (max-width: 620px) {
+  .systemNodeFrey { margin-left: 5%; }
+  .systemNodeCosmographer { margin-left: 10%; }
+  .systemNodeOrion { margin-left: 15%; grid-template-columns: 1fr; gap: 5px; }
+  .systemNodeOrion .systemNodeTitle { min-width: 0; }
+  .proofObjectHeader { align-items: start; }
+}
+
+
+/* PR291 final visual harmony: one Phi, closed return, balanced mobile labels */
+@media (max-width: 840px) {
+  .returnRoute {
+    position: static;
+    order: 5;
+    display: grid;
+    grid-template-columns: auto minmax(54px, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin: 16px 0 0;
+  }
+  .returnRoute strong { order: 1; }
+  .returnRoute i { order: 2; min-width: 54px; }
+  .returnRoute span { order: 3; justify-self: end; }
+}
+
+@media (max-width: 620px) {
+  .relationStage {
+    row-gap: 16px;
+  }
+  .humanCoordinate { padding-bottom: 0; }
+  .intelligenceBridge { justify-self: center; width: min(72%, 250px); }
+  .phiRelationField {
+    justify-self: end;
+    width: min(58%, 210px);
+    padding-top: 12px;
+  }
+  .proofObjectHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    align-items: start;
+  }
+  .proofObjectHeader strong {
+    justify-self: start;
+    white-space: nowrap;
+  }
+  .returnRoute {
+    grid-template-columns: auto minmax(36px, 1fr) auto;
+    gap: 8px;
+    font-size: 7.5px;
+    letter-spacing: 0.08em;
+  }
+  .returnRoute strong, .returnRoute span { font-size: 7.5px; letter-spacing: 0.08em; }
+}
+
+/* PR291 right-lower field continuity repair */
+@media (min-width: 841px) {
+  .heroVisual {
+    background: linear-gradient(180deg,
+      rgba(4, 8, 12, 0.78) 0%,
+      rgba(4, 8, 12, 0.74) 62%,
+      rgba(4, 8, 12, 0.50) 82%,
+      rgba(4, 8, 12, 0.22) 100%);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16), inset 0 0 44px rgba(98, 168, 216, 0.03);
+  }
+
+  .acceptedStateBand {
+    background:
+      radial-gradient(ellipse at 0% 100%, rgba(4, 8, 12, 0.22) 0%, rgba(4, 8, 12, 0.48) 38%, rgba(4, 8, 12, 0.72) 72%),
+      linear-gradient(90deg, rgba(4, 8, 12, 0.44), rgba(4, 8, 12, 0.70));
+    border-bottom-color: rgba(200, 164, 90, 0.10);
+  }
+
+  .proofStateGrid > span {
+    background: rgba(6, 10, 15, 0.46);
+  }
+}
+
+/* PR291 EN Cosmographer title containment */
+@media (min-width: 841px) {
+  .systemNodeCosmographer .systemNodeTitle { gap: 6px; }
+  .systemNodeCosmographer .systemNodeTitle strong {
+    min-width: 0;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .systemNodeCosmographer .systemNodeTitle small { flex: 0 0 auto; }
+}
+
+/* PR291 short-desktop evidence fit: preserve all RU/EN proof data above the fold */
+@media (min-width: 841px) and (max-height: 820px) {
+  .heroVisual { top: 5.8%; }
+  .fieldCanvas[data-home-system-map] {
+    gap: 6px;
+    padding: 11px 16px 7px;
+  }
+  .systemMapTopline { gap: 7px 12px; }
+  .systemRoot { padding: 7px 0 8px; }
+  .systemBranches {
+    grid-template-rows: minmax(96px, auto) minmax(60px, auto) minmax(58px, auto);
+    padding-top: 6px;
+    row-gap: 4px;
+  }
+  .systemNodePrimary { padding-top: 8px; padding-bottom: 7px; }
+  .systemNodeFrey,
+  .systemNodeCosmographer { padding-top: 4px; padding-bottom: 4px; }
+  .systemNodeOrion { padding-top: 5px; }
+  .btcSystemLanes { gap: 3px 12px; }
+  .btcSystemLanes i { padding: 3px 0 2px; }
+  .acceptedStateBand { gap: 5px; padding: 6px 9px 7px; }
+  .proofStateGrid { gap: 6px; }
+  .proofStateGrid > span { min-height: 46px; padding: 5px 7px; }
+}
+
+/* PR291 bounded architecture: Bitcoin proof and system roles are independent modules. */
+.applicationArchitecture {
+  width: min(1460px, calc(100% - 96px));
+  min-width: 0;
+  margin: 24px auto 52px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(360px, 0.75fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.bitcoinModule,
+.systemRoleModule {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(200, 164, 90, 0.30);
+  background: rgba(4, 8, 12, 0.92);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.20), inset 0 0 40px rgba(98, 168, 216, 0.03);
+}
+
+.bitcoinModule {
+  display: grid;
+  grid-template-rows: auto auto;
+}
+
+.bitcoinModule .fieldCanvas[data-home-system-map] {
+  min-height: 0;
+  padding: 18px;
+  border: 0;
+  background: linear-gradient(145deg, rgba(7, 12, 18, 0.72), rgba(5, 8, 12, 0.52));
+}
+
+.bitcoinModule .systemBranches {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto;
+  min-height: 150px;
+  padding-top: 10px;
+}
+
+.bitcoinModule .systemNodePrimary {
+  grid-column: 1;
+  grid-row: 1;
+  align-self: stretch;
+  min-height: 150px;
+  padding: 18px 8px;
+}
+
+.bitcoinModule .acceptedStateBand {
+  position: relative;
+  align-self: auto;
+  padding: 12px 14px 14px;
+  border: 0;
+  border-top: 1px solid rgba(98, 168, 216, 0.22);
+  background: rgba(4, 8, 12, 0.86);
+}
+
+.bitcoinModule .proofStateGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.systemRoleModule {
+  display: grid;
+  align-content: start;
+  padding: 10px 18px;
+}
+
+.systemRoleModule .systemNodeFrey,
+.systemRoleModule .systemNodeCosmographer,
+.systemRoleModule .systemNodeOrion {
+  grid-column: auto;
+  grid-row: auto;
+  align-self: start;
+  justify-self: stretch;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 18px 0;
+  border: 0;
+  border-bottom: 1px solid rgba(98, 168, 216, 0.14);
+  background: transparent;
+}
+
+.systemRoleModule .systemNodeOrion {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  border-bottom: 0;
+}
+
+.systemRoleModule .systemNodeOrion .systemNodeTitle {
+  min-width: 0;
+}
+
+@media (max-width: 840px) {
+  .applicationArchitecture {
+    width: min(100% - 32px, 760px);
+    margin: 0 auto 42px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .bitcoinModule .fieldCanvas[data-home-system-map] {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    overflow: visible;
+  }
+
+  .bitcoinModule .systemBranches {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-auto-rows: auto;
+    min-height: 0;
+  }
+
+  .bitcoinModule .systemNodePrimary {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 12px 0;
+  }
+
+  .systemRoleModule .systemNodeFrey,
+  .systemRoleModule .systemNodeCosmographer,
+  .systemRoleModule .systemNodeOrion {
+    grid-column: auto;
+    grid-row: auto;
+    margin: 0;
+    padding: 16px 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .bitcoinModule .fieldCanvas[data-home-system-map] {
+    padding: 14px;
+  }
+
+  .bitcoinModule .acceptedStateBand {
+    padding: 12px 11px 13px;
+  }
+
+  .bitcoinModule .proofStateGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .systemRoleModule {
+    padding: 8px 14px;
+  }
+}
+
+/* Preserve canonical two-line desktop title after evidence decoupling. */
+@media (min-width: 841px) {
+  .hero h1 { width: min(52vw, 760px); }
 }
