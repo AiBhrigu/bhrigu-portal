@@ -1444,7 +1444,7 @@
 .hero h1 {
   position: absolute;
   top: 12.6%;
-  left: 5.2%;
+  left: 6.8%;
   z-index: 4;
   width: min(43vw, 620px);
   margin: 0;
@@ -1571,7 +1571,7 @@
 .agentCapability { display: none; }
 
 .phiRelationField {
-  left: 55.4%;
+  left: 72.4%;
   top: 46.8%;
   display: grid;
   width: 12.2%;
@@ -1725,7 +1725,7 @@
   .humanCoordinate > span:not(.humanCapability) { left: 18%; }
   .humanCapability { left: 34%; }
   .intelligenceBridge { left: 50%; width: 22%; }
-  .phiRelationField { left: 55%; }
+  .phiRelationField { left: 72.4%; }
 }
 
 @media (max-width: 840px) {
