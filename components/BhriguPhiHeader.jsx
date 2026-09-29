@@ -57,6 +57,7 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
   const path = activeRoute.split("?")[0].split("#")[0];
   const home = path === "/";
   const btc = path.startsWith("/crypto-astro/btc");
+  const services = path === "/services";
   const rawLang = Array.isArray(router.query?.lang) ? router.query.lang[0] : router.query?.lang;
   const requestLocale = REQUEST_LOCALE_ROUTES.has(stablePath)
     ? resolvePublicLocale("", rawLang)
@@ -81,7 +82,7 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
 
   return (
     <header
-      className={`bh-header${home ? " bh-header-home" : ""}${btc ? " bh-header-btc" : ""}`}
+      className={`bh-header${home ? " bh-header-home" : ""}${btc ? " bh-header-btc" : ""}${services ? " bh-header-services" : ""}`}
       data-hdr={home
         ? "BHRIGU_PUBLIC_HOME_HEADER_V0_1"
         : btc
@@ -106,6 +107,19 @@ export default function BhriguPhiHeader({ routeOverride = null }) {
     {btc && <a className="bh-btc-route" href={btcHref}>BTC Field</a>}
     <a className="bh-systems-route" href={systemsHref}>{ru ? "СИСТЕМЫ" : "SYSTEMS"}</a>
     <a className="bh-services-route" href={servicesHref}>{ru ? "УСЛУГИ" : "SERVICES"}</a>
+    <a
+      className="bh-language"
+      href={languageHref}
+      onClick={handleLanguageSwitch}
+      aria-label={ru ? "Открыть страницу на английском" : "View this page in Russian"}
+    >
+      {ru ? "EN" : "RU"}
+    </a>
+  </>
+) : services ? (
+  <>
+    <a className="bh-services-route" href={servicesHref} aria-current="page">{ru ? "УСЛУГИ" : "SERVICES"}</a>
+    <a className="bh-systems-route" href={systemsHref}>{ru ? "СИСТЕМЫ" : "SYSTEMS"}</a>
     <a
       className="bh-language"
       href={languageHref}
@@ -247,6 +261,16 @@ max-width: 1180px;
 min-height: 68px;
 padding: 0 32px;
         }
+        .bh-header-services .bh-shell {
+max-width: 1360px;
+min-height: 68px;
+padding: 0 32px;
+        }
+        .bh-header-services .bh-services-route {
+border-color: rgba(98,168,216,0.62);
+color: rgba(241,239,233,0.96) !important;
+background: linear-gradient(180deg, rgba(98,168,216,0.14), rgba(255,255,255,0.035));
+        }
         .bh-header-home .bh-brand,
         .bh-header-btc .bh-brand {
 color: #dec27d !important;
@@ -280,6 +304,10 @@ text-decoration: none !important;
   gap: 6px;
 }
 .bh-header-home .bh-shell {
+  min-height: 62px;
+  padding: 0 18px;
+}
+.bh-header-services .bh-shell {
   min-height: 62px;
   padding: 0 18px;
 }
