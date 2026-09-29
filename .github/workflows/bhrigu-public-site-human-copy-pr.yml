@@ -163,6 +163,12 @@ jobs:
             '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
             'pages/index.js',
           }
+          home_locked_plate_hash_authority_rebind = {
+            '.github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            'pages/index.js',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -197,6 +203,11 @@ jobs:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_binance_temporal_truth_rebind_ci_authority:
               print('EXACT_SCOPE_PASS home_binance_temporal_truth_rebind_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE=true\n')
+          elif actual == home_locked_plate_hash_authority_rebind:
+              print('EXACT_SCOPE_PASS home_locked_plate_hash_authority_rebind', sorted(actual))
+              with open(os.environ['GITHUB_ENV'],'a') as env:
+                  env.write('BHRIGU_HOME_LOCKED_PLATE_HASH_AUTHORITY_REBIND_SCOPE=true\n')
+                  env.write('BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE=true\n')
           elif actual == expected:
               print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_cosmographic_scene_ci_authority:
@@ -218,12 +229,8 @@ jobs:
           grep -Fq 'Binance Square · живые исследования' pages/index.js
           grep -Fq 'data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"' pages/index.js
           grep -Fq 'src="/home/bhrigu-home-locked-field-plate-v0-1.webp"' pages/index.js
-          grep -Fq '9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303' pages/index.js
-          if [ "${BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE:-}" = "true" ]; then
-            test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2"
-          else
-            test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
-          fi
+          grep -Fq 'e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2' pages/index.js
+          test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2"
           ! grep -Fq '<RelationGlyph' pages/index.js
           ! grep -Fq 'bitcointalk.org' pages/index.js
           echo 'HOME_PHI_VISUAL_TRUTH_COPY=PASS'

@@ -497,7 +497,7 @@ export default function Home({ locale, btcAcceptedState = EMPTY_BTC_HOME_ACCEPTE
         <div
           className={styles.scenePlate}
           data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"
-          data-scene-plate-sha256="9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
+          data-scene-plate-sha256="e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2"
           aria-hidden="true"
         >
           <Image

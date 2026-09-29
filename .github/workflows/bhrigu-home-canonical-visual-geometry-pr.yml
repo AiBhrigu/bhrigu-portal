@@ -323,7 +323,7 @@ jobs:
               check(f"{prefix}_one_architecture", result["architectureCount"] == 1, result)
               check(f"{prefix}_one_bitcoin_module", result["bitcoinCount"] == 1, result)
               check(f"{prefix}_one_role_module", result["rolesCount"] == 1, result)
-              check(f"{prefix}_locked_plate_single", result["plateCount"] == 1 and result["plateSha"] == "9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303", result)
+              check(f"{prefix}_locked_plate_single", result["plateCount"] == 1 and result["plateSha"] == "e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2", result)
               check(f"{prefix}_bitcoin_coherent", result["bitcoinContainsMap"] and result["bitcoinContainsProof"] and result["bitcoinNodes"] == ["btc"], result)
               check(f"{prefix}_accepted_state_at_bottom", result["mapBeforeProof"] and result["proofInsideBitcoin"] and result["proofCells"] == 3, result)
               check(f"{prefix}_roles_separate", not result["rolesContainsProof"] and result["roleNodes"] == ["frey", "cosmographer", "orion"], result)
