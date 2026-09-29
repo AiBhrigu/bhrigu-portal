@@ -256,7 +256,30 @@ export default function Services({ locale }) {
             <p className="ey">{c.finalEyebrow}</p>
             <h2>{c.finalTitle}</h2>
           </div>
-          <p>{c.finalBody}</p>
+
+          <div className="entryDecision">
+            <p>{c.finalBody}</p>
+
+            <nav className="entryActions" aria-label={locale === "ru" ? "Выбрать услугу" : "Choose a service"}>
+              {c.cards.map((card) => (
+                <Link key={card.id} href={local(card.href, locale)}>
+                  <span>
+                    <strong>{card.title}</strong>
+                    <small>{card.price}</small>
+                  </span>
+                  <span aria-hidden="true">→</span>
+                </Link>
+              ))}
+            </nav>
+
+            {specialized ? (
+              <Link className="entrySpecial" href={local(specialized.href, locale)}>
+                <span>{specialized.title}</span>
+                <small>{specialized.price} · {specialized.meta}</small>
+                <span aria-hidden="true">→</span>
+              </Link>
+            ) : null}
+          </div>
         </section>
 
         <style jsx>{`
@@ -638,13 +661,83 @@ export default function Services({ locale }) {
 
           .entry h2 { max-width:820px; }
 
-          .entry>p {
+          .entryDecision {
+            display:grid;
+            gap:24px;
+            align-content:end;
+          }
+
+          .entryDecision>p {
             max-width:680px;
-            margin:0 0 5px;
+            margin:0;
             color:var(--muted);
             font-size:16px;
             line-height:1.68;
           }
+
+          .entryActions {
+            display:grid;
+            border-top:1px solid rgba(200,164,90,.35);
+          }
+
+          .entryActions :global(a) {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:18px;
+            padding:14px 0;
+            border-bottom:1px solid var(--line);
+            color:rgba(241,239,233,.88)!important;
+            text-decoration:none!important;
+          }
+
+          .entryActions :global(a>span:first-child) {
+            display:flex;
+            align-items:baseline;
+            justify-content:space-between;
+            gap:18px;
+            width:100%;
+          }
+
+          .entryActions :global(strong) {
+            font-size:11px;
+            font-weight:650;
+          }
+
+          .entryActions :global(small) {
+            color:var(--faint);
+            font:650 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+            letter-spacing:.08em;
+          }
+
+          .entryActions :global(a>span:last-child) {
+            color:var(--gold);
+          }
+
+          :global(.entrySpecial) {
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto auto;
+            align-items:center;
+            gap:14px;
+            padding:12px 14px;
+            border:1px solid rgba(98,168,216,.24);
+            color:rgba(241,239,233,.82)!important;
+            text-decoration:none!important;
+            background:rgba(98,168,216,.025);
+          }
+
+          :global(.entrySpecial>span:first-child) {
+            font-size:10px;
+            font-weight:650;
+          }
+
+          :global(.entrySpecial small) {
+            color:var(--faint);
+            font:650 8px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+            letter-spacing:.08em;
+          }
+
+          :global(.entrySpecial>span:last-child) { color:var(--blue); }
 
           :global(a:hover) { opacity:.88; }
           :global(a:focus-visible) { outline:1px solid var(--gold); outline-offset:5px; }
@@ -657,6 +750,7 @@ export default function Services({ locale }) {
             .specialAction { max-width:360px; }
             .boundaryBody { grid-template-columns:1fr; margin-left:86px; gap:34px; }
             .entry { grid-template-columns:1fr; gap:24px; }
+            .entryDecision { gap:20px; }
           }
 
           @media(max-width:620px) {
@@ -670,6 +764,8 @@ export default function Services({ locale }) {
             .specialRail { padding:22px 20px; }
             .signal { font-size:8px; line-height:1.6; }
             .entry { padding:56px 0 72px; }
+            :global(.entrySpecial) { grid-template-columns:1fr auto; }
+            :global(.entrySpecial small) { grid-column:1 / -1; order:3; }
           }
         `}</style>
       </main>
