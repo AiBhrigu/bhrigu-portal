@@ -158,6 +158,17 @@ jobs:
             'pages/index.js',
             'pages/index.module.css',
           }
+          home_binance_temporal_truth_rebind_ci_authority = {
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            'pages/index.js',
+          }
+          home_locked_plate_hash_authority_rebind = {
+            '.github/workflows/bhrigu-home-canonical-visual-geometry-pr.yml',
+            '.github/workflows/bhrigu-public-home-btc-visual-selling-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            'pages/index.js',
+          }
           actual = set(subprocess.check_output(
               ['git', 'diff', '--name-only', os.environ['BASE_SHA'], os.environ['HEAD_SHA']],
               text=True,
@@ -190,6 +201,13 @@ jobs:
               print('EXACT_SCOPE_PASS public_discovery_ci_closure', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_PUBLIC_DISCOVERY_SCOPE=true\n')
           elif actual == home_phi_visual_truth:
               print('SHARED_SCOPE_PASS home_phi_visual_truth', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual == home_binance_temporal_truth_rebind_ci_authority:
+              print('EXACT_SCOPE_PASS home_binance_temporal_truth_rebind_ci_authority', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE=true\n')
+          elif actual == home_locked_plate_hash_authority_rebind:
+              print('EXACT_SCOPE_PASS home_locked_plate_hash_authority_rebind', sorted(actual))
+              with open(os.environ['GITHUB_ENV'],'a') as env:
+                  env.write('BHRIGU_HOME_LOCKED_PLATE_HASH_AUTHORITY_REBIND_SCOPE=true\n')
+                  env.write('BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE=true\n')
           elif actual == expected:
               print('SHARED_SCOPE_PASS home_cosmographic_scene', sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual == home_cosmographic_scene_ci_authority:
@@ -211,11 +229,42 @@ jobs:
           grep -Fq 'Binance Square · живые исследования' pages/index.js
           grep -Fq 'data-home-locked-scene-plate="bhrigu-home-locked-field-plate-v0-1"' pages/index.js
           grep -Fq 'src="/home/bhrigu-home-locked-field-plate-v0-1.webp"' pages/index.js
-          grep -Fq '9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303' pages/index.js
-          test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "9040a0cd9ac3bebfeed2f1ce3aac92f3133efa7fe08af2e3b20cd76824284303"
+          grep -Fq 'e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2' pages/index.js
+          test "$(sha256sum public/home/bhrigu-home-locked-field-plate-v0-1.webp | cut -d' ' -f1)" = "e5759306a81435f6646d1a9aa99bd693a28d76472107117049e2e5c33a89b3c2"
           ! grep -Fq '<RelationGlyph' pages/index.js
           ! grep -Fq 'bitcointalk.org' pages/index.js
           echo 'HOME_PHI_VISUAL_TRUTH_COPY=PASS'
+
+      - name: Verify Binance temporal public-truth authority
+        if: env.BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          home = Path('pages/index.js').read_text(encoding='utf-8')
+          required_once = [
+              'title: "Two temporal windows are now durable records."',
+              'title: "Два темпоральных окна получили durable evidence."',
+              'Binance judging remains separate from this temporal-evidence chain.',
+              'Результат judging Binance остаётся отдельным от этой temporal-evidence цепочки.',
+          ]
+          missing = [token for token in required_once if home.count(token) != 1]
+          if missing:
+              raise SystemExit('BINANCE_TEMPORAL_PUBLIC_TRUTH_EXACT_ASSERTION_FAIL=' + repr(missing))
+          if home.count('id: "binance-temporal"') != 2:
+              raise SystemExit('BINANCE_TEMPORAL_ID_BIND=FAIL')
+          if home.count('status: "FROZEN ORIGIN · TWO DURABLE CYCLES"') != 2:
+              raise SystemExit('BINANCE_TEMPORAL_STATUS_BIND=FAIL')
+          proof_links = [
+              'https://github.com/AiBhrigu/bhrigu-binance-agent-os-track-a',
+              'https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api',
+          ]
+          missing_links = [url for url in proof_links if home.count(url) < 2]
+          if missing_links:
+              raise SystemExit('BINANCE_TEMPORAL_PROOF_LINK_BIND=FAIL=' + repr(missing_links))
+          print('BINANCE_TEMPORAL_PUBLIC_TRUTH_AUTHORITY=PASS')
+          PY
 
       - name: Verify revenue discovery contract
         if: env.BHRIGU_REVENUE_DISCOVERY_SCOPE == 'true'
@@ -282,7 +331,7 @@ jobs:
           echo 'PUBLIC_DISCOVERY_MINIMAL_PATCH=PASS'
 
       - name: Verify copy, boundary, SEO and agent truth
-        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true' && env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE != 'true' && env.BHRIGU_PUBLIC_DISCOVERY_SCOPE != 'true'
+        if: env.BHRIGU_SHARED_SCOPE != 'true' && env.BHRIGU_REVENUE_DISCOVERY_SCOPE != 'true' && env.BHRIGU_PASSPORT_NAV_SCOPE != 'true' && env.BHRIGU_HOME_MAP_LINK_REPAIR_SCOPE != 'true' && env.BHRIGU_PUBLIC_DISCOVERY_SCOPE != 'true' && env.BHRIGU_HOME_BINANCE_TEMPORAL_TRUTH_REBIND_SCOPE != 'true'
         run: |
           python3 - <<'PY'
           from pathlib import Path
