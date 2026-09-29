@@ -1752,6 +1752,7 @@
     order: 2;
     width: 100%;
     margin: 18px 0 0;
+    padding-inline-start: 8px;
     font-size: clamp(42px, 12vw, 64px);
     text-shadow: none;
   }
