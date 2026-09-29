@@ -16,7 +16,7 @@ const META = {
   "/investors": { en:["System Context · BHRIGU","Factual orientation to BHRIGU's current product, evidence architecture and research surfaces."], ru:["Контекст системы · BHRIGU","Фактическая ориентация по текущему продукту BHRIGU, архитектуре доказательств и исследовательским поверхностям."] },
   "/map": { en:["Φ Research Systems Map · BHRIGU","Public map of Φ Research Systems: capability root, Market and Temporal paths, Cosmographer, ORION, evidence and public boundaries."], ru:["Карта Φ Research Systems · BHRIGU","Публичная карта Φ Research Systems: корень возможностей, рыночный и темпоральный пути, Космограф, ORION, доказательства и публичные границы."] },
   "/faq": { en:["FAQ · BHRIGU","Current public answers about BHRIGU, BTC Field, Frey, proof, access and boundaries."], ru:["FAQ · BHRIGU","Актуальные ответы о BHRIGU, BTC Field, Frey, доказательствах, доступе и границах."] },
-  "/services": { en:["Services · BHRIGU","Three live BHRIGU commercial objects: External Systems Recon, Frey Personal and AI Founding Field, with a specialized x402 Failure-Surface Recon path."], ru:["Услуги · BHRIGU","Три действующих коммерческих объекта BHRIGU: External Systems Recon, Frey Personal и AI Founding Field, включая специализированный x402 Failure-Surface Recon."] },
+  "/services": { en:["AI Systems Recon & x402 Audit Services | BHRIGU","External Systems Recon for AI, agent and payment systems, x402 Failure-Surface Recon, Frey Personal and AI Founding Field. Fixed scope and evidence."], ru:["Аудит AI-систем и x402 · Услуги BHRIGU","External Systems Recon для AI-, agent- и payment-систем, x402 Failure-Surface Recon, Frey Personal и AI Founding Field. Фиксированный scope и evidence."] },
   "/dao": { en:["DAO · Future Boundary | BHRIGU","A future peripheral economic coordination layer; not current product authority."], ru:["DAO · Будущая граница | BHRIGU","Будущий периферийный слой экономической координации; не текущая продуктовая authority."] },
   "/orion": { en:["ORION · Protected Research Depth | BHRIGU","Public boundary for BHRIGU's protected research depth."], ru:["ORION · Защищённая исследовательская глубина | BHRIGU","Публичная граница защищённой исследовательской глубины BHRIGU."] },
   "/signal": { en:["Signal · Historical Artifact | BHRIGU","Historical signal artifact preserved as archive, not a current runtime state."], ru:["Signal · Исторический артефакт | BHRIGU","Исторический signal-артефакт: архив, а не текущее состояние runtime."] },
@@ -166,6 +166,70 @@ function buildMachineGraph(path, lang){
     ],
     mentions:{"@type":"CreativeWork",name:"Frey AI Reading Packet",url:`${freyUrl}#ai-reading-packet`},
   };
+  if(path==="/services") return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":pageUrl+"#page",
+    url:pageUrl,
+    name:ru?"Аудит AI-систем и x402 · Услуги BHRIGU":"AI Systems Recon & x402 Audit Services | BHRIGU",
+    description:ru?"Три фиксированных коммерческих объекта BHRIGU: External Systems Recon, Frey Personal и AI Founding Field; x402 Failure-Surface Recon — специализированный путь внутри Recon.":"Three fixed BHRIGU commercial objects: External Systems Recon, Frey Personal and AI Founding Field; x402 Failure-Surface Recon is a specialized path inside Recon.",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"OfferCatalog",
+      name:ru?"Действующие услуги BHRIGU":"Live BHRIGU services",
+      itemListElement:[
+        {
+          "@type":"Offer",
+          price:"300",
+          priceCurrency:"USD",
+          url:localizedUrl("/access",lang),
+          itemOffered:{
+            "@type":"Service",
+            name:"External Systems Recon",
+            description:ru?"Read-only разведка одной ограниченной AI-, agent-, research-, knowledge- или payment-системы с evidence и repair / verification blueprint.":"Read-only recon of one bounded AI, agent, research, knowledge or payment system with evidence and a repair / verification blueprint.",
+            hasOfferCatalog:{
+              "@type":"OfferCatalog",
+              name:ru?"Специализированный путь External Systems Recon":"External Systems Recon specialized path",
+              itemListElement:[{
+                "@type":"Offer",
+                price:"300",
+                priceCurrency:"USD",
+                url:BASE+"/access?lang="+lang+"&offer=x402-recon",
+                itemOffered:{
+                  "@type":"Service",
+                  name:"x402 Failure-Surface Recon",
+                  description:ru?"Специализированная read-only разведка одного x402 payment path.":"Specialized read-only recon of one x402 payment path."
+                }
+              }]
+            }
+          }
+        },
+        {
+          "@type":"Offer",
+          price:"79",
+          priceCurrency:"USD",
+          url:BASE+"/access?lang="+lang+"&offer=frey-personal",
+          itemOffered:{
+            "@type":"Service",
+            name:"Frey Personal",
+            description:ru?"Одно полное Космографическое чтение одного объекта и временного горизонта.":"One complete Cosmographic Reading of one subject and temporal horizon."
+          }
+        },
+        {
+          "@type":"Offer",
+          price:"99",
+          priceCurrency:"USD",
+          url:localizedUrl("/field",lang),
+          itemOffered:{
+            "@type":"Service",
+            name:"AI Founding Field",
+            description:ru?"Одна долговечная публичная founding-координата для агента, модели, проекта или продукта.":"One durable public founding coordinate for an agent, model, project or product."
+          }
+        }
+      ]
+    }
+  };
   if(path==="/astro") return {
     "@context":"https://schema.org",
     "@type":"CollectionPage",
@@ -254,7 +318,8 @@ export default function App({ Component, pageProps }) {
         {localized&&!NOINDEX.has(path)&&<link rel="alternate" hrefLang="x-default" href={alternateHref("en")} key="alt-default" />}
         {NOINDEX.has(path)&&<meta name="robots" content="noindex,follow" key="robots" />}
         <meta property="og:type" content="website" key="og-type"/><meta property="og:title" content={pair[0]} key="og-title"/><meta property="og:description" content={pair[1]} key="og-description"/><meta property="og:url" content={canonical} key="og-url"/>
-        <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>
+        {path==="/services"&&<><meta property="og:image" content={BASE+"/og/og.png"} key="og-image"/><meta property="og:image:width" content="1200" key="og-image-width"/><meta property="og:image:height" content="630" key="og-image-height"/></>}
+        <meta name="twitter:card" content="summary_large_image" key="twitter-card"/><meta name="twitter:title" content={pair[0]} key="twitter-title"/><meta name="twitter:description" content={pair[1]} key="twitter-description"/>{path==="/services"&&<meta name="twitter:image" content={BASE+"/og/og.png"} key="twitter-image"/>}
         {freyAccess&&<meta name="theme-color" content="#070b13" key="frey-theme-color"/>}
       </>}
       {machineGraph&&<script type="application/ld+json" data-bhrigu-machine-graph="OSI_PHI_PUBLIC_RELATIONS_V0_1" dangerouslySetInnerHTML={{__html:JSON.stringify(machineGraph).replace(/</g,"\\u003c")}} />}
