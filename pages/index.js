@@ -29,10 +29,10 @@ const PUBLIC_EVIDENCE_COPY = {
       {
         id: "binance-temporal",
         kicker: "TEMPORAL EVIDENCE · BINANCE",
-        title: "A claim existed before the outcome.",
+        title: "Two temporal windows are now durable records.",
         body:
-          "Track A was frozen before the Sep 10 boundary. The first post-boundary cycle was preserved; Sep 17 was precommitted seven days before its boundary. The second durable append is still being bound.",
-        status: "FROZEN ORIGIN · APPEND-ONLY",
+          "The Track A capsule was frozen before the Sep 10 boundary. Sep 10 then crossed into durable post-boundary evidence. A second window was captured on Sep 10 before the Sep 17 boundary and later received its own separately appended, hash-pinned post-boundary observation. Binance judging remains separate from this temporal-evidence chain.",
+        status: "FROZEN ORIGIN · TWO DURABLE CYCLES",
         links: [
           ["Frozen submission", "https://github.com/AiBhrigu/bhrigu-binance-agent-os-track-a"],
           ["Research state", "https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api"],
@@ -76,10 +76,10 @@ const PUBLIC_EVIDENCE_COPY = {
       {
         id: "binance-temporal",
         kicker: "TEMPORAL EVIDENCE · BINANCE",
-        title: "Утверждение существовало до результата.",
+        title: "Два темпоральных окна получили durable evidence.",
         body:
-          "Track A был заморожен до границы 10 сентября. Первый post-boundary цикл сохранён; окно 17 сентября было precommit за семь дней до границы. Второй durable append ещё связывается с публичным evidence.",
-        status: "FROZEN ORIGIN · APPEND-ONLY",
+          "Track A был заморожен до границы 10 сентября. После границы цикл Sep 10 получил durable post-boundary evidence. Второе окно было зафиксировано 10 сентября до границы Sep 17 и позже получило собственное отдельно добавленное, hash-pinned post-boundary observation. Результат judging Binance остаётся отдельным от этой temporal-evidence цепочки.",
+        status: "FROZEN ORIGIN · TWO DURABLE CYCLES",
         links: [
           ["Замороженная заявка", "https://github.com/AiBhrigu/bhrigu-binance-agent-os-track-a"],
           ["Research state", "https://github.com/AiBhrigu/bhrigu-bitcoin-research-state-api"],
