@@ -1434,7 +1434,7 @@
 .heroCopy > .category {
   position: absolute;
   top: 7.4%;
-  left: 5.3%;
+  left: 6.8%;
   z-index: 4;
   margin: 0;
   color: var(--home-gold-bright);
@@ -1744,6 +1744,7 @@
     position: static;
     order: 1;
     margin: 0;
+    padding-inline-start: 8px;
     font-size: 10px !important;
   }
 
