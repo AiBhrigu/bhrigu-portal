@@ -134,9 +134,29 @@ jobs:
             'public/llms.txt',
             'public/sitemap.xml',
           }
+          cosmography_atlas_public_entry_discovery = {
+            'pages/_app.js',
+            'pages/astro.tsx',
+            'pages/cosmography.js',
+            'pages/map.js',
+            'pages/systems.js',
+            'public/llms.txt',
+          }
+          cosmography_atlas_public_entry_discovery_ci_scope_bind = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, btc_agent_x402_base_sepolia_testnet_binding, btc_agent_x402_base_sepolia_runtime_bridge, agent_commerce_v0_ci_authority, public_discovery_ci_closure), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
-          if actual == btc_agent_x402_base_sepolia_testnet_binding:
+          assert actual in (frey_passport_preview, frey_passport_ci_authority, frey_http_literal_alignment, frey_browser_copy_alignment, frey_personal, access_visual_ci_repair, passport_navigation, passport_navigation_ci_authority, home_map_link_repair, frey_guide_visual_primary_surfacing, btc_agent_x402_base_sepolia_testnet_binding, btc_agent_x402_base_sepolia_runtime_bridge, agent_commerce_v0_ci_authority, public_discovery_ci_closure, cosmography_atlas_public_entry_discovery, cosmography_atlas_public_entry_discovery_ci_scope_bind), f'FREY_COMMERCIAL_SCOPE_FAIL actual={sorted(actual)}'
+          if actual == cosmography_atlas_public_entry_discovery:
+              print('FREY_SHARED_SCOPE=cosmography_atlas_public_entry_discovery')
+          elif actual == cosmography_atlas_public_entry_discovery_ci_scope_bind:
+              print('FREY_SHARED_SCOPE=cosmography_atlas_public_entry_discovery_ci_scope_bind')
+          elif actual == btc_agent_x402_base_sepolia_testnet_binding:
               open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_AGENT_COMMERCE_SHARED_SCOPE=true\n')
               print('FREY_SHARED_SCOPE=btc_agent_x402_base_sepolia_testnet_binding')
           elif actual == btc_agent_x402_base_sepolia_runtime_bridge:
