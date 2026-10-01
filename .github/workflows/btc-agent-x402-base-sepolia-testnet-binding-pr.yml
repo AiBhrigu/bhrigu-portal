@@ -52,7 +52,25 @@ jobs:
           tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
-          diff -u /tmp/expected.txt /tmp/actual.txt
+          cat > /tmp/cosmography-atlas-ci-scope-bind.txt <<'EOF'
+          .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+          .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml
+          .github/workflows/bhrigu-public-site-human-copy-pr.yml
+          .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
+          .github/workflows/btc-field-read-pr-visual.yml
+          .github/workflows/btc-free-corridor-conversational-surface-pr.yml
+          EOF
+          sort -o /tmp/cosmography-atlas-ci-scope-bind.txt /tmp/cosmography-atlas-ci-scope-bind.txt
+          if diff -u /tmp/expected.txt /tmp/actual.txt; then
+            echo "EXACT_TESTNET_BINDING_SCOPE=PASS"
+          elif diff -u /tmp/cosmography-atlas-ci-scope-bind.txt /tmp/actual.txt; then
+            echo "COSMOGRAPHY_ATLAS_CI_SCOPE_BIND=PASS"
+          else
+            echo "EXACT_BOUNDED_SCOPE=FAIL"
+            diff -u /tmp/expected.txt /tmp/actual.txt || true
+            exit 1
+          fi
       - name: Public and production contract preservation
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

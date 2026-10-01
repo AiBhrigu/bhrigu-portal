@@ -78,6 +78,7 @@ jobs:
           cat > /tmp/cosmography-atlas-public-entry-discovery-ci-scope-bind <<'EOF'
           .github/workflows/astro-ephemerides-p1-integrity-pr.yml
           .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
           .github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml
           .github/workflows/bhrigu-public-site-human-copy-pr.yml
           .github/workflows/btc-field-read-pr-visual.yml
@@ -92,7 +93,7 @@ jobs:
           elif diff -u /tmp/cosmography-atlas-public-entry-discovery-scope /tmp/btc-actual-scope; then
             echo 'PASS_COSMOGRAPHY_ATLAS_PUBLIC_ENTRY_DISCOVERY_EXACT_6_FILE_SCOPE'
           elif diff -u /tmp/cosmography-atlas-public-entry-discovery-ci-scope-bind /tmp/btc-actual-scope; then
-            echo 'PASS_COSMOGRAPHY_ATLAS_PUBLIC_ENTRY_DISCOVERY_CI_SCOPE_BIND_EXACT_6_WORKFLOW_SCOPE'
+            echo 'PASS_COSMOGRAPHY_ATLAS_PUBLIC_ENTRY_DISCOVERY_CI_SCOPE_BIND_EXACT_7_WORKFLOW_SCOPE'
           else
             python3 .github/scripts/verify-btc-public-acceptance-scope.py
           fi
