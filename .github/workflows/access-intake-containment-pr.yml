@@ -122,6 +122,12 @@ jobs:
             'pages/access.tsx',
             'pages/frey.js',
           }
+          prepayment_access_copy = {
+            '.github/workflows/access-intake-containment-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            'pages/access.tsx',
+          }
           access_visual_ci_repair = {
             '.github/workflows/access-intake-containment-pr.yml',
             '.github/workflows/bhrigu-frey-preservation-pr.yml',
@@ -136,7 +142,7 @@ jobs:
             'pages/api/access/submit.ts','pages/api/founding/phi-btc-timing-windows/request.ts',
             'tests/access-private-intake-acceptance.ts','migrations/20260809_access_private_intake_v1.sql',
           ]
-          if actual in (commercial_access, ci_authority_repair, revenue_discovery, revenue_discovery_ci_repair, frey_passport_preview, frey_passport_ci_authority, frey_personal_research, access_visual_ci_repair):
+          if actual in (commercial_access, ci_authority_repair, revenue_discovery, revenue_discovery_ci_repair, frey_passport_preview, frey_passport_ci_authority, frey_personal_research, access_visual_ci_repair, prepayment_access_copy):
               drift = subprocess.check_output(
                   ['git','diff','--name-only',f"origin/{os.environ['GITHUB_BASE_REF']}...HEAD",'--',*protected], text=True
               ).strip()
