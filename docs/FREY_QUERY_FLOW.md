@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL UI-ONLY QUERY FLOW SPEC — LOCAL SCOPE ONLY  
+> This v0.1 flow is preserved as an implementation-history artifact. Its UI/runtime assumptions do not define current Frey identity or cross-project authority; for those, use the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md).
+
 # FREY · QUERY FLOW SPEC (UI‑only) v0.1
 
 Status: CANON DRAFT  
