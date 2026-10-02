@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL ORION IMPLEMENTATION SNAPSHOT — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as an earlier implementation description. Current ORION role authority is defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md): ORION is the protected core, not a public interface or repository-local API definition.
+
 # ORION Core
 
 ## EN
