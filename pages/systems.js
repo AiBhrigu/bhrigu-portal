@@ -18,6 +18,7 @@ const PROOF_ROUTES = {
   agent: "https://www.bhrigu.io/openapi/agent-commerce-v0.json",
   ephemerides: "https://www.bhrigu.io/ephemerides?lang=en",
   astro: "https://www.bhrigu.io/astro?lang=en",
+  cosmography: "https://aibhrigu.github.io/phi-cosmography-open/",
   btc: "https://www.bhrigu.io/?lang=en",
   entropy: "https://github.com/captainchapster/Entropy32-Plus/blob/a69f95c0098d25b762845d3b2b4751ef412b00a0/README.md",
   phi: "https://github.com/AiBhrigu",
@@ -243,6 +244,15 @@ const PROOF_OBJECTS = [
   },
   {
     number: "04",
+    className: "Cosmography / Public Visual Atlas",
+    title: "Φ-Cosmography Public Atlas",
+    description: "Read-only public visual atlas of historical and conceptual Solar-System structure with explicit provenance and protected-mechanism boundaries.",
+    cta: "Open public Atlas ↗",
+    status: "PROVEN",
+    href: PROOF_ROUTES.cosmography,
+  },
+  {
+    number: "05",
     className: "Bitcoin State + Change",
     title: "BTC Field / Market Cosmographer",
     description: "Evidence-linked public corridor for verified Bitcoin state, change, temporal context, conditions and visible source boundaries.",
@@ -251,7 +261,7 @@ const PROOF_OBJECTS = [
     href: PROOF_ROUTES.btc,
   },
   {
-    number: "05",
+    number: "06",
     className: "External System Finding",
     title: "Entropy32 Plus",
     description: "Independent external repository adopted a BHRIGU/Cosmographer finding concerning overlapping entropy comparisons and publicly documented the change.",
@@ -260,7 +270,7 @@ const PROOF_OBJECTS = [
     href: PROOF_ROUTES.entropy,
   },
   {
-    number: "06",
+    number: "07",
     className: "Public Architecture Layer",
     title: "AiBhrigu / Φ Research Systems",
     description: "Public-safe system hierarchy, selected repositories, proof surfaces, machine-readable discovery routes and protected-IP boundary.",
@@ -269,7 +279,7 @@ const PROOF_OBJECTS = [
     href: PROOF_ROUTES.phi,
   },
   {
-    number: "07",
+    number: "08",
     className: "Human / Temporal Interface",
     title: "Frey",
     description: "Public Human ↔ AI temporal interface with an explicit time anchor, structural state, interpretation, navigation and visible boundary.",
@@ -278,7 +288,7 @@ const PROOF_OBJECTS = [
     href: PROOF_ROUTES.frey,
   },
   {
-    number: "08",
+    number: "09",
     className: "AI / Agent Machine Capability",
     title: "BHRIGU BTC Evidence Answer V0",
     description: "Production-deployed deterministic agent capability for bounded Bitcoin evidence queries, with public discovery, OpenAPI and explicit no-payment/no-settlement boundaries.",
@@ -589,6 +599,10 @@ const RU_TEXT = new Map([
   ["View commercial entry points ↑", "Посмотреть коммерческие точки входа ↑"],
   ["Evidence-bound systems across AI, time, astronomy, research and markets.", "Системы, связанные с доказательствами, на пересечении AI, времени, астрономии, исследований и рынков."],
   [CANONICAL_DESCRIPTION, "Φ Research Systems — исследовательское и системное поле, работающее с AI и интеллектом с непрерывностью состояния, астрономией и эфемеридами, исследовательскими системами астрологии, темпоральными и проспективными системами, верификацией доказательств, исследованием состояния рынка Bitcoin и информационной архитектурой. Его публичные системы сохраняют явные границы между источником, наблюдением, состоянием, изменением, интерпретацией, неопределённостью и защищённым механизмом. BHRIGU — публичная продуктовая и исследовательская поверхность. ORION остаётся защищённой аналитической глубиной. AiBhrigu — публичное пространство доказательств."],
+  ["Cosmography / Public Visual Atlas", "Космография / публичный визуальный Атлас"],
+  ["Φ-Cosmography Public Atlas", "Публичный атлас Φ-Космографии"],
+  ["Read-only public visual atlas of historical and conceptual Solar-System structure with explicit provenance and protected-mechanism boundaries.", "Read-only публичный визуальный атлас исторической и концептуальной структуры Солнечной системы с явным provenance и защищёнными границами механизма."],
+  ["Open public Atlas ↗", "Открыть публичный Атлас ↗"],
 ]);
 
 function tr(locale, value) {
@@ -673,7 +687,7 @@ function SystemsStructuredData({ locale }) {
       {
         "@type": "ItemList",
         name: "public_proof",
-        numberOfItems: 8,
+        numberOfItems: 9,
         itemListElement: PROOF_OBJECTS.map((item, index) => ({
           "@type": "ListItem",
           position: index + 1,

@@ -20,6 +20,7 @@ Use these relations when reading the public system:
 - Frey Guide -> method authority for how to read one date, compare two dates, understand Delta, use Timeline, and hand a Frey reading to another AI.
 - BTC Field -> evidence-linked Bitcoin intelligence surface with explicit source and causality boundaries.
 - Cosmography -> public research language for structure, cycles and relations; protected mechanisms are not implied by public descriptions.
+- Φ-Cosmography Public Atlas -> canonical read-only visual evidence surface for historical and conceptual Solar-System maps. It is separate from current ephemerides and exposes no protected analytical mechanism.
 - Access -> bounded commercial entry for Φ External Systems Recon, usable by humans and external agents.
   Base object: one read-only bounded system recon, USD 300, system map + 3 findings + evidence + repair blueprint.
   Implementation is not included.
@@ -81,6 +82,16 @@ For method interpretation, prefer the Frey Guide and approved method materials b
 ## Astro research and ephemerides
 - https://www.bhrigu.io/astro?lang=en
 - https://www.bhrigu.io/astro?lang=ru
+
+### Φ-Cosmography public visual Atlas
+- https://aibhrigu.github.io/phi-cosmography-open/
+- https://aibhrigu.github.io/phi-cosmography-open/phi_atlas.html
+- https://aibhrigu.github.io/phi-cosmography-open/phi_inner_core.html
+- https://aibhrigu.github.io/phi-cosmography-open/phi_floors.html
+- https://aibhrigu.github.io/phi-cosmography-open/phi_helion.html
+- https://aibhrigu.github.io/phi-cosmography-open/phi_x_domain.html
+
+The Atlas is a static, read-only historical/conceptual map surface. It is not a live ephemeris engine, discovery system, predictive model or public ORION runtime.
 - https://www.bhrigu.io/ephemerides?lang=en
 - https://www.bhrigu.io/ephemerides?lang=ru
 - https://www.bhrigu.io/ephemerides/2026?lang=en

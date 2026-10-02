@@ -7,6 +7,7 @@ import BhriguPhiHeader from "../components/BhriguPhiHeader";
 import BtcFreeCorridorSurfaceAdapter from "../components/btc/BtcFreeCorridorSurfaceAdapter";
 
 const BASE = "https://www.bhrigu.io";
+const COSMOGRAPHY_ATLAS_URL = "https://aibhrigu.github.io/phi-cosmography-open/";
 const META = {
   "/": { en:["BHRIGU · Φ Research Systems | Market Cosmographer","Public home of Φ Research Systems: AI, ephemerides, astrology systems, temporal evidence, verification and market-state research; Market Cosmographer is the current Bitcoin application."], ru:["BHRIGU · Φ Research Systems | Market Cosmographer","Публичный дом Φ Research Systems: AI, эфемериды, системы астрологии, темпоральные доказательства, верификация и исследования состояния рынка; Market Cosmographer — текущее Bitcoin-приложение."] },
   "/start": { en:["Start · BHRIGU","Choose the current BHRIGU surface: BTC Field, Frey, public proof, system map, live services or the full Φ Research Systems architecture."], ru:["Старт · BHRIGU","Выберите текущую поверхность BHRIGU: BTC Field, Frey, публичные доказательства, карту системы, действующие услуги или полную архитектуру Φ Research Systems."] },
@@ -22,7 +23,7 @@ const META = {
   "/signal": { en:["Signal · Historical Artifact | BHRIGU","Historical signal artifact preserved as archive, not a current runtime state."], ru:["Signal · Исторический артефакт | BHRIGU","Исторический signal-артефакт: архив, а не текущее состояние runtime."] },
   "/archive": { en:["Archive · BHRIGU","Historical public artifacts and preserved snapshots."], ru:["Архив · BHRIGU","Исторические публичные артефакты и сохранённые снимки."] },
   "/chronicle": { en:["Chronicle · Historical Ledger | BHRIGU","Dated historical milestones; not a statement of current system state."], ru:["Хроника · Исторический реестр | BHRIGU","Датированные исторические вехи; не описание текущего состояния системы."] },
-  "/cosmography": { en:["Cosmography · BHRIGU","Research language for structure, cycles and relations, with protected mechanism boundaries."], ru:["Космография · BHRIGU","Исследовательский язык структуры, циклов и связей с защищёнными границами механизма."] },
+  "/cosmography": { en:["Cosmography · Public Atlas | BHRIGU","Research language for structure, cycles and relations, bound to the live read-only Φ-Cosmography Public Atlas and explicit protected-mechanism boundaries."], ru:["Космография · Публичный Атлас | BHRIGU","Исследовательский язык структуры, циклов и связей, связанный с живым read-only публичным Атласом Φ-Космографии и явными границами защищённого механизма."] },
   "/astro": { en:["Astro Research Atlas · BHRIGU","Public map of BHRIGU ephemerides, aspects, stations, eclipses, Semenko, cosmography and Bitcoin research layers."], ru:["Атлас астро-исследований · BHRIGU","Публичная карта эфемерид, аспектов, станций, затмений, Семенко, космографии и Bitcoin-исследований BHRIGU."] },
   "/ephemerides": { en:["Planetary Ephemerides Today · BHRIGU","Fresh canonical planetary positions, aspect phase and lunar context, with source-bound 2026 archive pages."], ru:["Планетные эфемериды сегодня · BHRIGU","Свежие canonical положения планет, фазы аспектов и лунный контекст с source-bound архивом 2026."] },
   "/access": { en:["Access · Φ External Systems Recon | BHRIGU","Agent-first commercial access for one bounded read-only systems recon: 3 findings, evidence and an exact repair blueprint for USD 300."], ru:["Доступ · Φ External Systems Recon | BHRIGU","Agent-first коммерческий доступ к одной ограниченной read-only разведке системы: 3 вывода, доказательства и точный blueprint исправления за USD 300."] },
@@ -114,7 +115,8 @@ function buildMachineGraph(path, lang){
         {"@type":"ListItem",position:4,name:"Reading",url:readingUrl},
         {"@type":"ListItem",position:5,name:ru?"Гид Frey":"Frey Guide",url:guideUrl},
         {"@type":"ListItem",position:6,name:ru?"Космограф":"Cosmographer",url:localizedUrl("/cosmographer",lang)},
-        {"@type":"ListItem",position:7,name:"ORION",url:localizedUrl("/orion",lang)},
+        {"@type":"ListItem",position:7,name:ru?"Публичный атлас Космографии":"Public Cosmography Atlas",url:COSMOGRAPHY_ATLAS_URL},
+        {"@type":"ListItem",position:8,name:"ORION",url:localizedUrl("/orion",lang)},
       ],
     },
   };
@@ -230,6 +232,24 @@ function buildMachineGraph(path, lang){
       ]
     }
   };
+  if(path==="/cosmography") return {
+    "@context":"https://schema.org",
+    "@type":"WebPage",
+    "@id":`${pageUrl}#page`,
+    url:pageUrl,
+    name:ru?"Космография · Публичный Атлас BHRIGU":"Cosmography · BHRIGU Public Atlas",
+    description:ru?"Публичная языковая и boundary-поверхность BHRIGU для Космографии, связанная с отдельным read-only визуальным Атласом.":"BHRIGU public language and boundary surface for Cosmography, bound to a separate read-only visual Atlas.",
+    inLanguage:lang,
+    isPartOf:site,
+    mainEntity:{
+      "@type":"CreativeWork",
+      "@id":`${COSMOGRAPHY_ATLAS_URL}#atlas`,
+      name:ru?"Публичный исследовательский атлас Φ-Космографии":"Φ-Cosmography Public Research Atlas",
+      url:COSMOGRAPHY_ATLAS_URL,
+      description:ru?"Read-only исторические и концептуальные карты Солнечной системы с явным provenance и защищённой границей механизма.":"Read-only historical and conceptual Solar-System maps with explicit provenance and a protected-mechanism boundary.",
+    },
+    relatedLink:[COSMOGRAPHY_ATLAS_URL,localizedUrl("/astro",lang),localizedUrl("/ephemerides",lang)],
+  };
   if(path==="/astro") return {
     "@context":"https://schema.org",
     "@type":"CollectionPage",
@@ -241,8 +261,9 @@ function buildMachineGraph(path, lang){
     mainEntity:{"@type":"ItemList",itemListElement:[
       {"@type":"ListItem",position:1,name:ru?"Эфемериды":"Ephemerides",url:localizedUrl("/ephemerides",lang)},
       {"@type":"ListItem",position:2,name:ru?"Космография":"Cosmography",url:localizedUrl("/cosmography",lang)},
-      {"@type":"ListItem",position:3,name:"BTC × Astro",url:localizedUrl("/crypto-astro/btc",lang)},
-      {"@type":"ListItem",position:4,name:"ORION",url:localizedUrl("/orion",lang)},
+      {"@type":"ListItem",position:3,name:ru?"Публичный атлас Космографии":"Public Cosmography Atlas",url:COSMOGRAPHY_ATLAS_URL},
+      {"@type":"ListItem",position:4,name:"BTC × Astro",url:localizedUrl("/crypto-astro/btc",lang)},
+      {"@type":"ListItem",position:5,name:"ORION",url:localizedUrl("/orion",lang)},
     ]},
   };
   const monthIdentity=ephemeridesMonthIdentity(path,lang);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 const MARKET_COSMOGRAPHER_URL = "https://aibhrigu.github.io/phi-cosmography-open/crypto-astro/index#surface";
+const COSMOGRAPHY_ATLAS_URL = "https://aibhrigu.github.io/phi-cosmography-open/";
 
 const COPY = {
   en: {
@@ -23,6 +24,7 @@ const COPY = {
       ["Interpretation & depth", [
         ["Cosmographer", "Interpretation/navigation role", "/cosmographer"],
         ["Cosmography", "Research language and boundary", "/cosmography"],
+        ["Cosmography Atlas", "Read-only public visual Atlas", COSMOGRAPHY_ATLAS_URL],
         ["Astro Research Atlas", "Ephemerides and research-module map", "/astro"],
         ["Ephemerides", "Source-bound 2026 planetary research data", "/ephemerides"],
         ["ORION", "Protected research depth", "/orion"],
@@ -55,6 +57,7 @@ const COPY = {
       ["Интерпретация и глубина", [
         ["Космограф", "Роль интерпретации/навигации", "/cosmographer"],
         ["Космография", "Исследовательский язык и граница", "/cosmography"],
+        ["Атлас Космографии", "Read-only публичный визуальный Атлас", COSMOGRAPHY_ATLAS_URL],
         ["Атлас астро-исследований", "Эфемериды и карта исследовательских модулей", "/astro"],
         ["Эфемериды", "Source-bound планетные данные 2026", "/ephemerides"],
         ["ORION", "Защищённая исследовательская глубина", "/orion"],
