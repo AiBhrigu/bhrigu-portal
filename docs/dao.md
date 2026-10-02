@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL GOVERNANCE / ECONOMIC LAYER MODEL — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as an earlier architecture model. It must not be read as a current root-system layer declaration; current role authority is defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md).
+
 # DAO Layer
 
 ## EN

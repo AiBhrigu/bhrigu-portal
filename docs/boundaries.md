@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL SYSTEM-BOUNDARY MODEL — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as an earlier boundary model. Current cross-project role hierarchy and non-collapse laws are defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md).
+
 # System Boundaries
 
 ## EN

@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL FREY ROLE SNAPSHOT — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as an earlier operational description of Frey. Current Frey role authority is defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md), including Frey as the AI co-author / intelligence contour under final human authority.
+
 # Frey
 
 ## EN
