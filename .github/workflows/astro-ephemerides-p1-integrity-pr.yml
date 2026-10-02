@@ -160,6 +160,23 @@ jobs:
             'public/llms.txt',
             'public/sitemap.xml',
           }
+          cosmography_atlas_public_entry_discovery = {
+            'pages/_app.js',
+            'pages/astro.tsx',
+            'pages/cosmography.js',
+            'pages/map.js',
+            'pages/systems.js',
+            'public/llms.txt',
+          }
+          cosmography_atlas_public_entry_discovery_ci_scope_bind = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
           if actual==legacy:
             print('EXACT_SCOPE_PASS legacy',sorted(actual))
@@ -185,6 +202,10 @@ jobs:
             print('SHARED_SCOPE_PASS agent_commerce_v0_ci_authority',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           elif actual==public_discovery_ci_closure:
             print('SHARED_SCOPE_PASS public_discovery_ci_closure',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==cosmography_atlas_public_entry_discovery:
+            print('SHARED_SCOPE_PASS cosmography_atlas_public_entry_discovery',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==cosmography_atlas_public_entry_discovery_ci_scope_bind:
+            print('SHARED_SCOPE_PASS cosmography_atlas_public_entry_discovery_ci_scope_bind',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
           else:
             raise SystemExit(f'EXACT_SCOPE_FAIL actual={sorted(actual)} legacy={sorted(legacy)} sky_now_phi={sorted(sky_now_phi)} phi_visual_parity={sorted(phi_visual_parity)}')
           PY

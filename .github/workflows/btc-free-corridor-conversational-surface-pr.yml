@@ -52,8 +52,29 @@ jobs:
             'public/llms.txt',
             'public/sitemap.xml',
           }
+          cosmography_atlas_public_entry_discovery = {
+            'pages/_app.js',
+            'pages/astro.tsx',
+            'pages/cosmography.js',
+            'pages/map.js',
+            'pages/systems.js',
+            'public/llms.txt',
+          }
+          cosmography_atlas_public_entry_discovery_ci_scope_bind = {
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            '.github/workflows/bhrigu-public-prevnext-first-http-locale-pr.yml',
+            '.github/workflows/bhrigu-public-site-human-copy-pr.yml',
+            '.github/workflows/btc-field-read-pr-visual.yml',
+            '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
+          }
           actual = set(subprocess.check_output(['git','diff','--name-only',os.environ['BTC_ACCEPTANCE_BASE_SHA'],os.environ['BTC_ACCEPTANCE_HEAD_SHA']], text=True).splitlines())
-          if actual == expected:
+          if actual == cosmography_atlas_public_entry_discovery:
+              print('PASS_COSMOGRAPHY_ATLAS_PUBLIC_ENTRY_DISCOVERY_EXACT_6_FILE_SCOPE')
+          elif actual == cosmography_atlas_public_entry_discovery_ci_scope_bind:
+              print('PASS_COSMOGRAPHY_ATLAS_PUBLIC_ENTRY_DISCOVERY_CI_SCOPE_BIND_EXACT_7_WORKFLOW_SCOPE')
+          elif actual == expected:
               print('PASS_PUBLIC_DISCOVERY_CI_CLOSURE_EXACT_14_FILE_SCOPE')
           else:
               subprocess.run(['python3','.github/scripts/verify-btc-public-acceptance-scope.py'], check=True)
