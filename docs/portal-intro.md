@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL PORTAL POSITIONING SNAPSHOT — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as an earlier description of BHRIGU. Current system identity and BHRIGU role authority are defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md). Where legacy wording conflicts, the root canon supersedes it for current routing and identity.
+
 # BHRIGU Portal
 
 ## EN
