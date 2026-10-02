@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL WORK SUMMARY — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as a milestone summary from an earlier project state. It is not a current completeness, architecture, or authority statement. Current role authority is defined by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md).
+
 # Work Completed
 
 ## EN
