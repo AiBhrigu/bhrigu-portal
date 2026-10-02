@@ -1,3 +1,6 @@
+> **Authority status:** HISTORICAL / LOCALLY SCOPED Φ-COSMOGRAPHY DESCRIPTION — NOT CURRENT ROOT AUTHORITY  
+> Preserved unchanged below as a scoped research-layer description. It does not redefine the current cross-project role hierarchy, which is governed by the [Φ Authority & Authorship Canon](https://github.com/AiBhrigu/AiBhrigu/blob/main/PHI_AUTHORITY_CANON.md).
+
 # Φ-Cosmography
 
 ## EN
