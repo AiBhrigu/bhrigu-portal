@@ -62,10 +62,19 @@ jobs:
           .github/workflows/btc-free-corridor-conversational-surface-pr.yml
           EOF
           sort -o /tmp/cosmography-atlas-ci-scope-bind.txt /tmp/cosmography-atlas-ci-scope-bind.txt
+          cat > /tmp/prepayment-access-copy.txt <<'EOF'
+          .github/workflows/access-intake-containment-pr.yml
+          .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
+          pages/access.tsx
+          EOF
+          sort -o /tmp/prepayment-access-copy.txt /tmp/prepayment-access-copy.txt
           if diff -u /tmp/expected.txt /tmp/actual.txt; then
             echo "EXACT_TESTNET_BINDING_SCOPE=PASS"
           elif diff -u /tmp/cosmography-atlas-ci-scope-bind.txt /tmp/actual.txt; then
             echo "COSMOGRAPHY_ATLAS_CI_SCOPE_BIND=PASS"
+          elif diff -u /tmp/prepayment-access-copy.txt /tmp/actual.txt; then
+            echo "USD300_PREPAYMENT_ACCESS_COPY_SCOPE=PASS"
           else
             echo "EXACT_BOUNDED_SCOPE=FAIL"
             diff -u /tmp/expected.txt /tmp/actual.txt || true
