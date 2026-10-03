@@ -160,13 +160,17 @@ jobs:
           fi
           btc_return_topic_exact_prior_subject_natural_callback_expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
             ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
             "pages/crypto-astro/btc/live.tsx"
             "tests/btc-active-context-anaphoric-followup-routing-acceptance.ts"
           )
           mapfile -t btc_return_topic_exact_prior_subject_natural_callback_expected_sorted < <(printf '%s\n' "${btc_return_topic_exact_prior_subject_natural_callback_expected[@]}" | sort)
           if diff -q <(printf '%s\n' "${btc_return_topic_exact_prior_subject_natural_callback_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
-            echo "PASS_BTC_RETURN_TOPIC_EXACT_PRIOR_SUBJECT_NATURAL_CALLBACK_PUBLIC_SURFACE_EXACT_4_FILE_SCOPE"
+            echo "PASS_BTC_RETURN_TOPIC_EXACT_PRIOR_SUBJECT_NATURAL_CALLBACK_PUBLIC_SURFACE_EXACT_8_FILE_SCOPE"
             exit 0
           fi
           protected=$(git diff --name-only "$base" "$head" -- lib/routeTruth.js pages/_document.js lib/public-locale-transport.js public/robots.txt pages/crypto-astro/btc.tsx pages/crypto-astro/btc/live.tsx pages/crypto-astro/btc/clean-chat.tsx pages/crypto-astro/btc/local-rc.tsx 'pages/crypto-astro/btc/field/**' components/btc ui/btc pages/api 'lib/btc-*')

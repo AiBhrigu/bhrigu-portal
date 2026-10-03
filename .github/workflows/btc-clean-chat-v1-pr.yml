@@ -100,6 +100,16 @@ jobs:
             "public/openapi/agent-commerce-v0.json"
             "tests/btc-agent-evidence-answer-v0-acceptance.ts"
           )
+          btc_return_topic_exact_prior_subject_natural_callback_expected=(
+            ".github/scripts/verify-btc-public-acceptance-scope.py"
+            ".github/workflows/astro-ephemerides-p1-integrity-pr.yml"
+            ".github/workflows/bhrigu-frey-preservation-pr.yml"
+            ".github/workflows/bhrigu-public-surface-integrity-pr.yml"
+            ".github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml"
+            ".github/workflows/btc-clean-chat-v1-pr.yml"
+            "pages/crypto-astro/btc/live.tsx"
+            "tests/btc-active-context-anaphoric-followup-routing-acceptance.ts"
+          )
           expected=(
             ".github/scripts/verify-btc-public-acceptance-scope.py"
             ".github/workflows/btc-clean-chat-v1-pr.yml"
@@ -319,6 +329,7 @@ jobs:
           mapfile -t btc_agent_x402_base_sepolia_testnet_binding_expected_sorted < <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected[@]}" | sort)
           mapfile -t btc_agent_x402_base_sepolia_runtime_bridge_expected_sorted < <(printf '%s\n' "${btc_agent_x402_base_sepolia_runtime_bridge_expected[@]}" | sort)
           mapfile -t agent_commerce_v0_ci_authority_expected_sorted < <(printf '%s\n' "${agent_commerce_v0_ci_authority_expected[@]}" | sort)
+          mapfile -t btc_return_topic_exact_prior_subject_natural_callback_expected_sorted < <(printf '%s\n' "${btc_return_topic_exact_prior_subject_natural_callback_expected[@]}" | sort)
           mapfile -t expected_sorted < <(printf '%s\n' "${expected[@]}" | sort)
           mapfile -t link_expected_sorted < <(printf '%s\n' "${link_expected[@]}" | sort)
           mapfile -t pending_expected_sorted < <(printf '%s\n' "${pending_expected[@]}" | sort)
@@ -343,7 +354,10 @@ jobs:
           mapfile -t commercial_access_expected_sorted < <(printf '%s\n' "${commercial_access_expected[@]}" | sort)
           mapfile -t ci_authority_repair_expected_sorted < <(printf '%s\n' "${ci_authority_repair_expected[@]}" | sort)
           mapfile -t ephemerides_sexagesimal_expected_sorted < <(printf '%s\n' "${ephemerides_sexagesimal_expected[@]}" | sort)
-          if diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+          if diff -q <(printf '%s\n' "${btc_return_topic_exact_prior_subject_natural_callback_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
+            echo "PASS_BTC_RETURN_TOPIC_EXACT_PRIOR_SUBJECT_NATURAL_CALLBACK_CLEAN_CHAT_SHARED_SCOPE_EXACT_8_FILE_SCOPE"
+            echo "BTC_CLEAN_CHAT_SHARED_SCOPE=true" >> "$GITHUB_ENV"
+          elif diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_testnet_binding_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_AGENT_X402_BASE_SEPOLIA_TESTNET_BINDING_EXACT_8_FILE_SCOPE"
           elif diff -q <(printf '%s\n' "${btc_agent_x402_base_sepolia_runtime_bridge_expected_sorted[@]}") <(printf '%s\n' "${actual[@]}") >/dev/null; then
             echo "PASS_BTC_AGENT_X402_BASE_SEPOLIA_RUNTIME_BRIDGE_EXACT_10_FILE_SCOPE"
