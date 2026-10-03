@@ -279,6 +279,25 @@ function isReturnRequest(question: string): boolean {
   return /back to|return to|go back|previous topic|prior topic|верн[её]мся|вернись|вернуться|снова к|предыдущ(?:ей|ему|ая|ий) тем/i.test(question);
 }
 
+export function shouldRestoreReturnPacket(
+  question: string,
+  currentPacket: BtcCosmographerContextPacket | null,
+  returnPacket: BtcCosmographerContextPacket | null,
+): boolean {
+  if (isReturnRequest(question)) return Boolean(returnPacket);
+  if (
+    !currentPacket ||
+    !returnPacket ||
+    currentPacket.prior_domain !== "btc_market" ||
+    currentPacket.prior_subject !== "general_btc_field" ||
+    returnPacket.prior_domain !== "bitcoin_protocol" ||
+    returnPacket.prior_subject !== "halving"
+  ) return false;
+
+  const normalized = question.trim().toLowerCase().replace(/\s+/g, " ").replace(/[?!.]+$/g, "");
+  return normalized === "а следующая высота" || normalized === "and the next height";
+}
+
 function parseReturnContext(
   query: Record<string, string | string[] | undefined>,
 ): BtcCosmographerContextPacket | null {
@@ -439,9 +458,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ query, res
   const pendingClarification = parsePendingClarification(query);
   const routingQuestion = resolvePendingClarificationQuestion(resolvedLocale.locale, initialQuestion, pendingClarification);
   const retainedAstroMemory = parseRetainedAstroMemory(query);
-  const activePacket = isReturnRequest(routingQuestion) ? returnPacket ?? packet : packet;
+  const returnRequested = shouldRestoreReturnPacket(routingQuestion, packet, returnPacket);
+  const activePacket = returnRequested ? returnPacket ?? packet : packet;
   const initialRoute = routeBtcCosmographerLocalRc(resolvedLocale.locale, routingQuestion, activePacket, initialDate || undefined, retainedAstroMemory);
-  const explicitReturn = Boolean(returnPacket && isReturnRequest(routingQuestion));
+  const explicitReturn = Boolean(returnPacket && returnRequested);
   const returnRoute = explicitReturn && returnPacket
     ? {
         ...initialRoute,
