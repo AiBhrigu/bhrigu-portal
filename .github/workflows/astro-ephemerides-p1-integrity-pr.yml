@@ -177,8 +177,20 @@ jobs:
             '.github/workflows/btc-field-read-pr-visual.yml',
             '.github/workflows/btc-free-corridor-conversational-surface-pr.yml',
           }
+          btc_return_topic_exact_prior_subject_natural_callback_repair = {
+            '.github/scripts/verify-btc-public-acceptance-scope.py',
+            '.github/workflows/astro-ephemerides-p1-integrity-pr.yml',
+            '.github/workflows/bhrigu-frey-preservation-pr.yml',
+            '.github/workflows/bhrigu-public-surface-integrity-pr.yml',
+            '.github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml',
+            '.github/workflows/btc-clean-chat-v1-pr.yml',
+            'pages/crypto-astro/btc/live.tsx',
+            'tests/btc-active-context-anaphoric-followup-routing-acceptance.ts',
+          }
           actual=set(subprocess.check_output(['git','diff','--name-only',os.environ['BASE_SHA'],os.environ['HEAD_SHA']],text=True).splitlines())
-          if actual==legacy:
+          if actual==btc_return_topic_exact_prior_subject_natural_callback_repair:
+            print('PASS_BTC_RETURN_TOPIC_EXACT_PRIOR_SUBJECT_NATURAL_CALLBACK_ASTRO_SHARED_SCOPE_EXACT_8_FILE_SCOPE',sorted(actual)); open(os.environ['GITHUB_ENV'],'a').write('BHRIGU_SHARED_SCOPE=true\n')
+          elif actual==legacy:
             print('EXACT_SCOPE_PASS legacy',sorted(actual))
           elif actual==sky_now_phi:
             print('EXACT_SCOPE_PASS sky_now_phi',sorted(actual))

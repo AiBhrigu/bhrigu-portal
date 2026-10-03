@@ -9,6 +9,7 @@ import {
   specializeMarketAnswer,
 } from "../lib/btc-cosmographer-specialized-answer";
 import type { BtcCosmographerAnswerProjection } from "../lib/btc-protocol-evidence";
+import { shouldRestoreReturnPacket } from "../pages/crypto-astro/btc/live";
 
 // Keep these probes shorter and more natural than canonical corpus wording.
 function marketAnswer(locale: "ru" | "en"): BtcCosmographerAnswerProjection {
@@ -131,7 +132,78 @@ for (const [locale, question, headlinePattern, directPattern] of proofCases) {
   assert.match(answer.source_boundary, /evidence|доказ|Методолог/i);
 }
 
+const halvingReturnPacket: BtcCosmographerContextPacket = {
+  schema: "btc_cosmographer_context_v0_1",
+  prior_domain: "bitcoin_protocol",
+  prior_subject: "halving",
+  prior_intents: ["explain"],
+  prior_answer_state: "CONFIRMED",
+  prior_market_question_class: null,
+  prior_time_start: null,
+  prior_time_end: null,
+  prior_snapshot_generated_at_utc: null,
+};
+
+for (const [locale, question] of [
+  ["ru", "А следующая высота?"],
+  ["en", "And the next height?"],
+] as const) {
+  const ordinaryRoute = routeBtcCosmographerQuestion(locale, question, marketPacket);
+  assert.equal(ordinaryRoute.domain, "bitcoin_protocol", `${locale} baseline callback must remain protocol-classified before return selection`);
+  assert.equal(ordinaryRoute.subject, "blocks", `${locale} baseline callback must expose the proven blocks misclassification`);
+  assert.equal(ordinaryRoute.context_relation, "NEW_TOPIC", `${locale} baseline callback must expose the proven NEW_TOPIC relation`);
+  assert.equal(
+    shouldRestoreReturnPacket(question, marketPacket, halvingReturnPacket),
+    true,
+    `${locale} exact natural callback must select the preserved halving return packet`,
+  );
+}
+
+const explicitBlockHeight = routeBtcCosmographerQuestion("en", "What is the current Bitcoin block height?", marketPacket);
+assert.equal(explicitBlockHeight.domain, "bitcoin_protocol", "explicit block-height question remains Bitcoin Protocol");
+assert.equal(explicitBlockHeight.subject, "blocks", "explicit block-height question remains blocks");
+assert.equal(explicitBlockHeight.context_relation, "NEW_TOPIC", "explicit block-height question remains NEW_TOPIC");
+assert.equal(
+  shouldRestoreReturnPacket("What is the current Bitcoin block height?", marketPacket, halvingReturnPacket),
+  false,
+  "explicit block-height question must not activate natural return",
+);
+
+const explicitSupply = routeBtcCosmographerQuestion("en", "How does Bitcoin's supply limit work?", marketPacket);
+assert.equal(explicitSupply.domain, "bitcoin_protocol", "explicit new protocol subject remains Bitcoin Protocol");
+assert.equal(explicitSupply.subject, "supply", "explicit new protocol subject must override prior halving");
+assert.equal(explicitSupply.context_relation, "NEW_TOPIC", "explicit new protocol subject remains NEW_TOPIC");
+assert.equal(
+  shouldRestoreReturnPacket("How does Bitcoin's supply limit work?", marketPacket, halvingReturnPacket),
+  false,
+  "explicit new protocol subject must not activate natural return",
+);
+
+assert.equal(
+  shouldRestoreReturnPacket("Let's go back to halving.", marketPacket, halvingReturnPacket),
+  true,
+  "existing explicit return wording must remain accepted",
+);
+
 const live = fs.readFileSync("pages/crypto-astro/btc/live.tsx", "utf8");
+assert.match(
+  live,
+  /const returnRequested = shouldRestoreReturnPacket\(routingQuestion, packet, returnPacket\)/,
+  "live route must bind the exact natural-return selector",
+);
+assert.match(
+  live,
+  /const activePacket = returnRequested \? returnPacket \?\? packet : packet/,
+  "selected natural return must activate the preserved return packet",
+);
+assert.match(
+  live,
+  /const explicitReturn = Boolean\(returnPacket && returnRequested\)/,
+  "selected natural return must enter the existing exact prior-subject restoration path",
+);
+assert.match(live, /domain: returnPacket\.prior_domain/, "return route must restore exact prior domain");
+assert.match(live, /subject: returnPacket\.prior_subject/, "return route must restore exact prior subject");
+assert.match(live, /context_relation: "RETURN_TO_PREVIOUS_TOPIC" as const/, "return route must preserve return relation");
 assert.match(live, /active_answer_reference/, "live route must preserve active-answer proof binding");
 assert.match(live, /priorContext\.prior_market_question_class/, "active market evidence must be re-bound from prior context");
 assert.match(live, /buildEvidenceNavigation\(route, envelope, servedDeploymentSha, sourceTimestamp, activePacket\)/, "evidence navigation must receive active context");

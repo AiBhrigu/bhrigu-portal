@@ -52,6 +52,17 @@ jobs:
           tests/btc-agent-x402-base-sepolia-runtime-v0-acceptance.ts
           EOF
           sort -o /tmp/expected.txt /tmp/expected.txt
+          cat > /tmp/btc-return-topic-exact-prior-subject-natural-callback.txt <<'EOF'
+          .github/scripts/verify-btc-public-acceptance-scope.py
+          .github/workflows/astro-ephemerides-p1-integrity-pr.yml
+          .github/workflows/bhrigu-frey-preservation-pr.yml
+          .github/workflows/bhrigu-public-surface-integrity-pr.yml
+          .github/workflows/btc-agent-x402-base-sepolia-testnet-binding-pr.yml
+          .github/workflows/btc-clean-chat-v1-pr.yml
+          pages/crypto-astro/btc/live.tsx
+          tests/btc-active-context-anaphoric-followup-routing-acceptance.ts
+          EOF
+          sort -o /tmp/btc-return-topic-exact-prior-subject-natural-callback.txt /tmp/btc-return-topic-exact-prior-subject-natural-callback.txt
           cat > /tmp/cosmography-atlas-ci-scope-bind.txt <<'EOF'
           .github/workflows/astro-ephemerides-p1-integrity-pr.yml
           .github/workflows/bhrigu-frey-preservation-pr.yml
@@ -69,7 +80,9 @@ jobs:
           pages/access.tsx
           EOF
           sort -o /tmp/prepayment-access-copy.txt /tmp/prepayment-access-copy.txt
-          if diff -u /tmp/expected.txt /tmp/actual.txt; then
+          if diff -u /tmp/btc-return-topic-exact-prior-subject-natural-callback.txt /tmp/actual.txt; then
+            echo "PASS_BTC_RETURN_TOPIC_EXACT_PRIOR_SUBJECT_NATURAL_CALLBACK_X402_SHARED_SCOPE_EXACT_8_FILE_SCOPE"
+          elif diff -u /tmp/expected.txt /tmp/actual.txt; then
             echo "EXACT_TESTNET_BINDING_SCOPE=PASS"
           elif diff -u /tmp/cosmography-atlas-ci-scope-bind.txt /tmp/actual.txt; then
             echo "COSMOGRAPHY_ATLAS_CI_SCOPE_BIND=PASS"
